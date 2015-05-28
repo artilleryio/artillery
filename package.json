@@ -4,7 +4,9 @@
   "description": "Load-testing for HTTP-based applications",
   "main": "index.js",
   "scripts": {
-    "test": "exit 1"
+    "test": "exit 1",
+    "is_formatted": "find . -name '*.js' | grep -v node_modules | xargs jscs --preset=google",
+    "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint"
   },
   "keywords": [
     "load testing",
@@ -44,6 +46,7 @@
     "mustache": "^2.0.0",
     "npm": "^2.10.1",
     "poisson-process": "^0.2.1",
+    "pre-commit": "^1.0.7",
     "request": "^2.55.0",
     "sprintf-js": "^1.0.2",
     "traverse": "^0.6.6"
@@ -52,5 +55,10 @@
     "eslint": "^0.21.2",
     "nock": "^2.2.0",
     "tape": "^4.0.0"
-  }
+  },
+  "pre-commit": [
+    "test",
+    "is_linted",
+    "is_formatted"
+  ]
 }
