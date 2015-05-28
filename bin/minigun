@@ -1,3 +1,25 @@
 #!/usr/bin/env node
 
-require('../');
+var program = require('commander');
+var version = require('../package.json').version;
+
+var commands = require('../lib/commands');
+
+program.version(version);
+program
+  .command('run <script>')
+  .description('Run a test script. Example: `minigun run benchmark.json`')
+  .option('-p, --payload <path>', 'Set payload file (CSV)')
+  .option('-o, --output <path>', 'Set file to write stats to (will output to stdout by default)')
+  .action(commands.run);
+
+program
+  .command('dino')
+  .description('Show dinosaur of the day')
+  .action(commands.dino);
+
+program.parse(process.argv);
+
+if (!process.argv.slice(2).length) {
+  program.help();
+}
