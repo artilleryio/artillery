@@ -1,0 +1,41 @@
+{
+  "name": "minigun",
+  "version": "0.0.1",
+  "description": "HTTP load generator",
+  "main": "index.js",
+  "scripts": {
+    "test": "exit 1"
+  },
+  "keywords": [
+    "load testing",
+    "stress testing",
+    "benchmark",
+    "performance",
+    "blackbox testing"
+  ],
+  "author": "Hassy Veldstra <h@artillery.io>",
+  "license": "ISC",
+  "preferGlobal": true,
+  "dependencies": {
+    "async": "^1.0.0",
+    "cli": "^0.6.6",
+    "colors": "^1.1.0",
+    "commander": "^2.8.1",
+    "csv-parse": "^0.1.1",
+    "debug": "^2.2.0",
+    "install": "^0.1.8",
+    "jsck": "^0.2.4",
+    "lodash": "^3.9.1",
+    "measured": "^1.0.0",
+    "mustache": "^2.0.0",
+    "npm": "^2.10.1",
+    "poisson-process": "^0.2.1",
+    "request": "^2.55.0",
+    "sprintf-js": "^1.0.2",
+    "traverse": "^0.6.6"
+  },
+  "devDependencies": {
+    "eslint": "^0.21.2",
+    "nock": "^2.2.0"
+  }
+}

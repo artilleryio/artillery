@@ -1,0 +1,32 @@
+{
+  "config": {
+      "target": "http://requestb.in",
+      "phases": [
+        { "duration": 15, "users": 20, "name": "warmup" },
+        { "duration": 15, "users": 100 }
+
+      ],
+      "payload": {
+        "fields": ["species", "name"]
+      },
+      "defaults": {
+        "headers": {
+          "content-type": "application/json",
+          "x-auth": "987401838271002188298567"
+        },
+        "think": 2
+      },
+      "ensure": {
+        "p95": 500
+      }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        { "post": {"url": "/1ek86ck1", "json": {"name": "{{ name }}", "species": "{{ species }}"}, "headers": {"x-custom": "moo", "x-auth":"0123456789"} }},
+        { "think": 0 },
+        { "post": {"url": "/1ek86ck1", "body": "{\"name\": \"{{ name }}\", \"species\": \"{{ species }}\"}" }}
+      ]
+    }
+  ]
+}
