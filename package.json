@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "eslint": "^0.21.2",
-    "nock": "^2.2.0"
+    "nock": "^2.2.0",
+    "tape": "^4.0.0"
   }
 }
