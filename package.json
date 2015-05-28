@@ -1,7 +1,7 @@
 {
   "name": "minigun",
   "version": "0.0.1",
-  "description": "HTTP load generator",
+  "description": "Load-testing for HTTP-based applications",
   "main": "index.js",
   "scripts": {
     "test": "exit 1"
