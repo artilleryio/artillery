@@ -1,0 +1,38 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3000",
+      "phases": [
+        { "duration": 10, "users": 100 },
+        { "duration": 60, "users": 1200 }
+      ],
+      "payload": {
+        "fields": ["species", "name"]
+      },
+      "defaults": {
+        "headers": {
+          "content-type": "application/json",
+          "x-auth": "987401838271002188298567"
+        },
+        "think": 2
+      },
+      "ensure": {
+        "p95": 200
+      },
+      "mode": "poisson"
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/test"}},
+        {"think": 20},
+        {"post": {"url": "/test", "json": {"name": "{{ name }}", "species": "{{ species }}"}}},
+        {"post": {"url": "http://127.0.0.1:3000/test", "body": "{\"name\": \"{{ name }}\", \"species\": \"{{ species }}\"}" }},
+        {"get": {"url": "/test", "headers": {"x-auth": "overrides-the-value-in-defaults"}}}
+      ]
+    }
+  ]
+}
+
+
+
+
