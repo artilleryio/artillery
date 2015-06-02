@@ -6,6 +6,9 @@ var fs = require('fs');
 var Interfake = require('interfake');
 var _ = require('lodash');
 
+//
+//
+//
 test('Basics', function(t) {
 
   fs.readFile('test/scripts/hello.json', 'utf-8', function(err, contents) {
@@ -85,6 +88,9 @@ test('Basics', function(t) {
 
 });
 
+//
+//
+//
 test('Multiple phases', function(t) {
   fs.readFile('test/scripts/multiple_phases.json', 'utf-8',
     function(err, contents) {
@@ -104,7 +110,7 @@ test('Multiple phases', function(t) {
       }
       var target = new Interfake(interfakeOpts);
       target.get('/test').status(200);
-      target.listen(3000);
+      target.listen(3001);
 
       var expectedPhases = testScript.config.phases.length * 2;
       var expectedStats = Math.floor(_.foldl(
