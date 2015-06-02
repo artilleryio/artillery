@@ -139,3 +139,53 @@ test('Multiple phases', function(t) {
       ee.run();
     });
 });
+
+//
+//
+//
+test('All features', function(t) {
+  fs.readFile('test/scripts/all_features.json', 'utf-8',
+    function(err, contents) {
+
+      if (err) {
+        t.end(err);
+      }
+
+      var testScript = JSON.parse(contents);
+
+      //
+      // Set up our target
+      //
+      var interfakeOpts = {};
+      if (process.env.DEBUG && process.env.DEBUG.match(/interfake/)) {
+        interfakeOpts.debug = true;
+      }
+      var target = new Interfake(interfakeOpts);
+      target.get('/test').status(200);
+      target.post('/test').status(200);
+      target.listen(3002);
+
+      //
+      // Run the test
+      //
+      var ee = runner(testScript);
+      ee.on('phaseStarted', function(x) {
+        t.ok(x, 'phaseStarted event emitted');
+      });
+      ee.on('phaseCompleted', function(x) {
+        t.ok(x, 'phaseCompleted event emitted');
+      });
+      ee.on('stats', function(stats) {
+        t.ok(stats, 'intermediate stats event emitted');
+      });
+      ee.on('done', function(stats) {
+        _.each(stats, function(v, k) {
+          console.log('%s -> %s', k, JSON.stringify(v));
+        });
+        target.stop();
+        t.end();
+      });
+
+      ee.run();
+    });
+});
