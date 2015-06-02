@@ -86,54 +86,56 @@ test('Basics', function(t) {
 });
 
 test('Multiple phases', function(t) {
-    fs.readFile('test/scripts/multiple_phases.json', 'utf-8', function(err, contents) {
+  fs.readFile('test/scripts/multiple_phases.json', 'utf-8',
+    function(err, contents) {
 
-    if (err) {
-      t.end(err);
-    }
+      if (err) {
+        t.end(err);
+      }
 
-    var testScript = JSON.parse(contents);
+      var testScript = JSON.parse(contents);
 
-    //
-    // Set up our target
-    //
-    var interfakeOpts = {};
-    if (process.env.DEBUG && process.env.DEBUG.match(/interfake/)) {
-      interfakeOpts.debug = true;
-    }
-    var target = new Interfake(interfakeOpts);
-    target.get('/test').status(200);
-    target.listen(3000);
+      //
+      // Set up our target
+      //
+      var interfakeOpts = {};
+      if (process.env.DEBUG && process.env.DEBUG.match(/interfake/)) {
+        interfakeOpts.debug = true;
+      }
+      var target = new Interfake(interfakeOpts);
+      target.get('/test').status(200);
+      target.listen(3000);
 
-    var expectedPhases = testScript.config.phases.length * 2;
-    var expectedStats = Math.floor(_.foldl(
-      testScript.config.phases, function(acc, phase) {
-        acc += phase.duration / 10;
-        return acc;
-      }, 0));
+      var expectedPhases = testScript.config.phases.length * 2;
+      var expectedStats = Math.floor(_.foldl(
+        testScript.config.phases, function(acc, phase) {
+          acc += phase.duration / 10;
+          return acc;
+        }, 0));
 
-    console.log('expectedPhases: %s, expectedStats: %s', expectedPhases, expectedStats);
+      console.log('expectedPhases: %s, expectedStats: %s',
+        expectedPhases, expectedStats);
 
-    t.plan(expectedPhases + expectedStats);
+      t.plan(expectedPhases + expectedStats);
 
-    //
-    // Run the test
-    //
-    var ee = runner(testScript);
-    ee.on('phaseStarted', function(x) {
-      t.ok(x, 'phaseStarted event emitted');
+      //
+      // Run the test
+      //
+      var ee = runner(testScript);
+      ee.on('phaseStarted', function(x) {
+        t.ok(x, 'phaseStarted event emitted');
+      });
+      ee.on('phaseCompleted', function(x) {
+        t.ok(x, 'phaseCompleted event emitted');
+      });
+      ee.on('stats', function(stats) {
+        t.ok(stats, 'intermediate stats event emitted');
+      });
+      ee.on('done', function(stats) {
+        target.stop();
+        t.end();
+      });
+
+      ee.run();
     });
-    ee.on('phaseCompleted', function(x) {
-      t.ok(x, 'phaseCompleted event emitted');
-    });
-    ee.on('stats', function(stats) {
-      t.ok(stats, 'intermediate stats event emitted');
-    });
-    ee.on('done', function(stats) {
-      target.stop();
-      t.end();
-    });
-
-    ee.run();
-  });
 });
