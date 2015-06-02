@@ -1,10 +1,10 @@
 {
   "config": {
-      "target": "http://127.0.0.1:3000",
+      "target": "http://127.0.0.1:3001",
       "phases": [
         {"duration": 10, "users": 100},
-        {"duration": 20, "users": 200},
-        {"duration": 10, "users": 300}
+        {"duration": 5, "users": 100},
+        {"duration": 10, "users": 100}
       ]
   },
   "scenarios": [
