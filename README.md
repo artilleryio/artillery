@@ -7,10 +7,10 @@
 |_| |_| |_| |_| |_| |_| |_|  \__, |  \__,_| |_| |_|
                               __/ |
                              |___/
-Load-testing for HTTP-based applications
 ```
 
-**minigun** is a simple but powerful load-testing utility designed to help you make your apps more performant, reliable, and scalable.
+**minigun** is a simple but powerful load-testing tool designed to help you
+make your apps more performant, reliable, and scalable.
 
 # Quickstart
 
@@ -49,6 +49,64 @@ Where `hello.json` is your tests script that contains something like:
   ]
 }
 ```
+
+# Features
+
+- Full HTTP(S) support
+- 100% declarative tests scenarios (no code, just JSON)
+- Detailed performance stats
+- Use minigun as a standalone CLI tool or as a Node.js library
+- Good performance
+- Open-source & free
+
+# Use cases
+
+- Benchmark the performance of your API or microservice as you're building it
+- Ensure new code does not introduce performance regressions or memory leaks before releasing into staging
+- Show that the code you're about to ship satisfies performance requirements
+- Run a performance benchmark for a framework or library you're considering using to get a feel for its performance characteristics
+
+# Design
+
+## Declarative tests
+
+**minigun** test cases are 100% declarative. Your test-case describes _what_
+needs to happen, not _how_ it happens.
+
+Benefits of this approach:
+
+- Tests can be 100% reproducible, since there is no custom code.
+- Test cases can be auto-generated and statically analysed by other tools.
+- DSLs can be written for any language. **minigun** ships with a JS DSL, but
+  you can write one for Ruby, Python, Lua or another language easily.
+- Stronger performance guarantees can be made in absence of custom code.
+
+Further reading:
+- [Imperative vs Declarative Programming](http://latentflip.com/imperative-vs-declarative/)
+
+## Statistically-sound testing
+
+### Modeling user arrivals
+
+**minigun** uses the [Poisson distribution](http://en.wikipedia.org/wiki/Poisson_process)
+by default to model how requests are spread over the duration of the test. This a
+statistically more sound way to model real-world behavior than distributing
+requests evenly, which is what most other load-testing tools do.
+
+### Reported stats
+
+**minigun** aims to give you only meaningful and actionable measurements.
+
+#### No averages
+
+Averages are useless because they are meaningless. In a typical application,
+outliers will drag the average up - even more so under load.
+
+#### Percentiles
+
+Knowing that the average response time is 300ms doesn't actually tell you
+anything. What's far more useful to know is that 95% of all requests complete
+in 280ms or less.
 
 # License
 
