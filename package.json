@@ -45,7 +45,6 @@
     "measured": "^1.0.0",
     "mustache": "^2.0.0",
     "npm": "^2.10.1",
-    "pre-commit": "^1.0.7",
     "request": "^2.55.0",
     "sprintf-js": "^1.0.2",
     "traverse": "^0.6.6"
@@ -54,7 +53,8 @@
     "eslint": "^0.21.2",
     "interfake": "^1.13.0",
     "istanbul": "^0.3.14",
-    "tape": "^4.0.0"
+    "tape": "^4.0.0",
+    "pre-commit": "^1.0.7"
   },
   "pre-commit": [
     "is_linted",
