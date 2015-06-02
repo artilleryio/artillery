@@ -2,9 +2,9 @@
   "config": {
       "target": "http://127.0.0.1:3001",
       "phases": [
-        {"duration": 10, "users": 100},
-        {"duration": 5, "users": 100},
-        {"duration": 10, "users": 100}
+        {"duration": 10, "arrivalRate": 10},
+        {"duration": 5,  "arrivalRate": 5},
+        {"duration": 10, "arrivalRate": 20}
       ]
   },
   "scenarios": [

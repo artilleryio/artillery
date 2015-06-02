@@ -2,8 +2,8 @@
   "config": {
       "target": "http://127.0.0.1:3002",
       "phases": [
-        { "duration": 10, "users": 100 },
-        { "duration": 60, "users": 1200 }
+        { "duration": 10, "arrivalRate": 5 },
+        { "duration": 60, "arrivalRate": 10 }
       ],
       "payload": {
         "fields": ["species", "name"]

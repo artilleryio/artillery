@@ -31,7 +31,7 @@ Where `hello.json` is your tests script that contains something like:
   "config": {
       "target": "http://127.0.0.1:3000",
       "phases": [
-        { "duration": 120, "users": 1200 }
+        { "duration": 120, "arrivalRate": 10 }
       ],
       "defaults": {
         "headers": {
