@@ -45,7 +45,6 @@
     "measured": "^1.0.0",
     "mustache": "^2.0.0",
     "npm": "^2.10.1",
-    "poisson-process": "^0.2.1",
     "pre-commit": "^1.0.7",
     "request": "^2.55.0",
     "sprintf-js": "^1.0.2",
