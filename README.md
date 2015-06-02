@@ -12,6 +12,44 @@ Load-testing for HTTP-based applications
 
 **minigun** is a simple but powerful load-testing utility designed to help you make your apps more performant, reliable, and scalable.
 
+# Quickstart
+
+## Install
+
+**minigun** is available via [npm](http://npmjs.org)
+
+`npm install -g minigun`
+
+## Run
+
+`minigun run hello.json`
+
+Where `hello.json` is your tests script that contains something like:
+
+```javascript
+{
+  "config": {
+      "target": "http://127.0.0.1:3000",
+      "phases": [
+        { "duration": 120, "users": 1200 }
+      ],
+      "defaults": {
+        "headers": {
+          "content-type": "application/json",
+          "x-my-service-auth": "987401838271002188298567"
+        }
+      }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        { "get": {"url": "/test"}}
+      ]
+    }
+  ]
+}
+```
+
 # License
 
 **minigun** is 100% open-source software distributed under the terms of the [ISC](http://en.wikipedia.org/wiki/ISC_license) license.
