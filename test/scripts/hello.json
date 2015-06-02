@@ -1,0 +1,15 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3000",
+      "phases": [
+        {"duration": 20, "users": 200}
+      ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/test"}}
+      ]
+    }
+  ]
+}

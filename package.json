@@ -4,7 +4,7 @@
   "description": "Load-testing for HTTP-based applications",
   "main": "index.js",
   "scripts": {
-    "test": "exit 1",
+    "test": "node test/*.js",
     "is_formatted": "find . -name '*.js' | grep -v node_modules | xargs jscs --preset=google",
     "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint"
   },
