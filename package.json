@@ -52,11 +52,11 @@
   },
   "devDependencies": {
     "eslint": "^0.21.2",
-    "nock": "^2.2.0",
+    "interfake": "^1.13.0",
+    "istanbul": "^0.3.14",
     "tape": "^4.0.0"
   },
   "pre-commit": [
-    "test",
     "is_linted",
     "is_formatted"
   ]
