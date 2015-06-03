@@ -168,7 +168,7 @@ test('All features', function(t) {
       }
       var target = new Interfake(interfakeOpts);
       target.get('/test').status(200);
-      target.post('/test').status(200);
+      target.post('/test').status(201);
       target.listen(3002);
 
       //
@@ -185,9 +185,7 @@ test('All features', function(t) {
         t.ok(stats, 'intermediate stats event emitted');
       });
       ee.on('done', function(stats) {
-        _.each(stats, function(v, k) {
-          console.log('%s -> %s', k, JSON.stringify(v));
-        });
+        console.log(JSON.stringify(stats, null, 2));
         target.stop();
         t.end();
       });
