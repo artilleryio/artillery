@@ -1,6 +1,6 @@
 {
   "name": "minigun",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Load-testing for HTTP-based applications",
   "main": "index.js",
   "scripts": {
