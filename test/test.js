@@ -71,8 +71,8 @@ test('Basics', function(t) {
       // var plausibleMax = testScript.config.phases[0].users * 1.1;
       // var plausibleMin = plausibleMax * 0.8;
 
-      var requests = stats.completedRequests.toJSON();
-      var scenarios = stats.completedScenarios.toJSON();
+      var requests = stats.aggregate.completedRequests;
+      var scenarios = stats.aggregate.completedScenarios;
       console.log('requests = %s, scenarios = %s', requests, scenarios);
       // t.assert(
       //   requests >= plausibleMin && requests <= plausibleMax,
