@@ -1,6 +1,6 @@
 {
   "name": "minigun",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Load-testing for HTTP-based applications",
   "main": "index.js",
   "scripts": {
@@ -20,9 +20,7 @@
   "preferGlobal": true,
   "man": "./man/minigun.1",
   "bin": {
-    "minigun": {
       "minigun": "./bin/minigun"
-    }
   },
   "repository": {
     "type": "git",
