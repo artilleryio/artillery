@@ -51,10 +51,11 @@
   },
   "devDependencies": {
     "eslint": "^0.21.2",
+    "hapi": "^8.6.0",
     "interfake": "^1.13.0",
     "istanbul": "^0.3.14",
-    "tape": "^4.0.0",
-    "pre-commit": "^1.0.7"
+    "pre-commit": "^1.0.7",
+    "tape": "^4.0.0"
   },
   "pre-commit": [
     "is_linted",
