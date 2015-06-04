@@ -12,6 +12,9 @@
 **minigun** is a simple but powerful load-testing tool designed to help you
 make your apps more performant, reliable, and scalable.
 
+Made by [@hveldstra](https://twitter.com/hveldstra) - please @-message me with
+feedback and suggestions!
+
 # Quickstart
 
 ## Install
