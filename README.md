@@ -77,8 +77,8 @@ Benefits of this approach:
 
 - Tests can be 100% reproducible, since there is no custom code.
 - Test cases can be auto-generated and statically analysed by other tools.
-- DSLs can be written for any language. **minigun** ships with a JS DSL, but
-  you can write one for Ruby, Python, Lua or another language easily.
+- DSLs can be written for any language. We have a JS DSL on the roadmap, and
+  one can be written easily for Ruby, Python, Lua or another language.
 - Stronger performance guarantees can be made in absence of custom code.
 
 Further reading:
@@ -92,6 +92,17 @@ Further reading:
 by default to model how requests are spread over the duration of the test. This a
 statistically more sound way to model real-world behavior than distributing
 requests evenly, which is what most other load-testing tools do.
+
+**What does this mean in practice?**
+
+If you specify a duration of 60 seconds, with the arrival rate of 10, it means
+*on average* 10 users will arrive every second, with for example 8 arrivals one
+second and 11 arrivals the next. The inter-arrival period would also be slightly
+different every time, i.e. 8 users arriving over 1 second (1000 ms) would not
+be evenly spread out 125ms apart.
+
+This may seem like a subtle difference, but in practice it leads to more robust
+tests.
 
 ### Reported stats
 
@@ -107,6 +118,10 @@ outliers will drag the average up - even more so under load.
 Knowing that the average response time is 300ms doesn't actually tell you
 anything. What's far more useful to know is that 95% of all requests complete
 in 280ms or less.
+
+# Further Reading
+
+Coming soon
 
 # License
 
