@@ -20,7 +20,7 @@
   "preferGlobal": true,
   "man": "./man/minigun.1",
   "bin": {
-      "minigun": "./bin/minigun"
+    "minigun": "./bin/minigun"
   },
   "repository": {
     "type": "git",
@@ -45,7 +45,8 @@
     "npm": "^2.10.1",
     "request": "^2.55.0",
     "sprintf-js": "^1.0.2",
-    "traverse": "^0.6.6"
+    "traverse": "^0.6.6",
+    "ws": "^0.7.2"
   },
   "devDependencies": {
     "eslint": "^0.21.2",
