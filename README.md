@@ -56,6 +56,7 @@ Where `hello.json` is your tests script that contains something like:
 # Features
 
 - Full HTTP(S) support
+- WebSocket support
 - 100% declarative tests scenarios (no code, just JSON)
 - Detailed performance stats
 - Use minigun as a standalone CLI tool or as a Node.js library
