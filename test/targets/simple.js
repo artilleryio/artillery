@@ -53,3 +53,7 @@ function show(req, reply) {
 function stats(req, reply) {
   return reply(REQUEST_COUNT);
 }
+
+setInterval(function() {
+  console.log('REQUEST_COUNT = %s', REQUEST_COUNT);
+}, 20 * 1000);
