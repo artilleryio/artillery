@@ -15,17 +15,34 @@ make your apps more performant, reliable, and scalable.
 Made by [@hveldstra](https://twitter.com/hveldstra) - please @-message me with
 feedback and suggestions!
 
+# Features
+
+- Full HTTP(S) support
+- Experimental WebSocket support
+- 100% declarative tests scenarios (no code, just JSON)
+- Detailed performance stats
+- Use minigun as a standalone CLI tool or as a Node.js library
+- Good performance
+- Open-source & free
+
 # Quickstart
 
 ## Install
 
 **minigun** is available via [npm](http://npmjs.org)
 
-`npm install -g minigun`
+`$ npm install -g minigun`
 
 ## Run
 
-`minigun run hello.json`
+`$ minigun quick -d 30 -r 5 http://127.0.0.1:3000/test`
+
+This will run a test for 30 seconds with an average of 5 new requests to
+`http://127.0.0.1:3000/test` every second.
+
+## Run with a more complex scenario
+
+`$ minigun run hello.json`
 
 Where `hello.json` is your tests script that contains something like:
 
@@ -46,22 +63,14 @@ Where `hello.json` is your tests script that contains something like:
   "scenarios": [
     {
       "flow": [
-        { "get": {"url": "/test"}}
+        { "get": {"url": "/test"}},
+        { "think": 1 },
+        { "post": {"url": "/test", "json": { "name": "hassy" }}}
       ]
     }
   ]
 }
 ```
-
-# Features
-
-- Full HTTP(S) support
-- WebSocket support
-- 100% declarative tests scenarios (no code, just JSON)
-- Detailed performance stats
-- Use minigun as a standalone CLI tool or as a Node.js library
-- Good performance
-- Open-source & free
 
 # Use cases
 
@@ -93,9 +102,7 @@ Further reading:
 ### Modeling user arrivals
 
 **minigun** uses the [Poisson distribution](http://en.wikipedia.org/wiki/Poisson_process)
-by default to model how requests are spread over the duration of the test. This a
-statistically more sound way to model real-world behavior than distributing
-requests evenly, which is what most other load-testing tools do.
+by default to model how requests are spread over the duration of the test. 
 
 **What does this mean in practice?**
 
@@ -107,25 +114,6 @@ be evenly spread out 125ms apart.
 
 This may seem like a subtle difference, but in practice it leads to more robust
 tests.
-
-### Reported stats
-
-**minigun** aims to give you only meaningful and actionable measurements.
-
-#### No averages
-
-Averages are useless because they are meaningless. In a typical application,
-outliers will drag the average up - even more so under load.
-
-#### Percentiles
-
-Knowing that the average response time is 300ms doesn't actually tell you
-anything. What's far more useful to know is that 95% of all requests complete
-in 280ms or less.
-
-# Further Reading
-
-Coming soon
 
 # License
 
