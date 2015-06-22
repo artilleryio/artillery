@@ -14,6 +14,16 @@ program
   .action(commands.run);
 
 program
+  .command('quick <url>')
+  .description('Run a quick test without writing a test script')
+  .option('-d, --duration <seconds>', 'Duration of the test')
+  .option('-r, --rate <number>', 'Arrivals per second')
+  .option('-p, --payload <string>', 'Set POST payload')
+  .option('-t, --content-type <string>',
+    'Set content-type (defaults to application/json)')
+  .action(commands.quick);
+
+program
   .command('dino')
   .description('Show dinosaur of the day')
   .action(commands.dino);
