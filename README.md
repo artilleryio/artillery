@@ -75,9 +75,10 @@ Where `hello.json` is your tests script that contains something like:
 # Use cases
 
 - Benchmark the performance of your API or microservice as you're building it
-- Ensure new code does not introduce performance regressions or memory leaks before releasing into staging
-- Show that the code you're about to ship satisfies performance requirements
-- Run a performance benchmark for a framework or library you're considering using to get a feel for its performance characteristics
+- Ensure new code does not introduce performance regressions
+- Test your code for memory leaks
+- Benchmark dependencies (libraries, frameworks, external services) to get a feel for their performance characteristics before you integrate
+- Run load-tests before you launch to ensure your application can meet projected demand
 
 # Design
 
@@ -89,7 +90,7 @@ needs to happen, not _how_ it happens.
 Benefits of this approach:
 
 - Tests can be 100% reproducible, since there is no custom code.
-- Test cases can be auto-generated and statically analysed by other tools.
+- Test cases can be auto-generated and analysed by other tools - it's just JSON.
 - DSLs can be written for any language. We have a JS DSL on the roadmap, and
   one can be written easily for Ruby, Python, Lua or another language.
 - Stronger performance guarantees can be made in absence of custom code.
@@ -108,9 +109,7 @@ by default to model how requests are spread over the duration of the test.
 
 If you specify a duration of 60 seconds, with the arrival rate of 10, it means
 *on average* 10 users will arrive every second, with for example 8 arrivals one
-second and 11 arrivals the next. The inter-arrival period would also be slightly
-different every time, i.e. 8 users arriving over 1 second (1000 ms) would not
-be evenly spread out 125ms apart.
+second and 11 arrivals the next. The inter-arrival period would also be slightly different every time, i.e. 5 users arriving within 1 second (1000 ms) would not be evenly spread out 200ms apart.
 
 This may seem like a subtle difference, but in practice it leads to more robust
 tests.
