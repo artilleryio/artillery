@@ -103,7 +103,7 @@ Further reading:
 ### Modeling user arrivals
 
 **minigun** uses the [Poisson distribution](http://en.wikipedia.org/wiki/Poisson_process)
-by default to model how requests are spread over the duration of the test. 
+by default to model how requests are spread over the duration of the test.
 
 **What does this mean in practice?**
 
@@ -113,6 +113,11 @@ second and 11 arrivals the next. The inter-arrival period would also be slightly
 
 This may seem like a subtle difference, but in practice it leads to more robust
 tests.
+
+# Contributing
+
+Thinking of contributing to Minigun? Awesome! Please have a quick look at [the
+guide](CONTRIBUTING.md).
 
 # License
 
