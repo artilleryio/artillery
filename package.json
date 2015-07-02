@@ -42,6 +42,7 @@
     "lodash": "^3.9.1",
     "measured": "^1.0.0",
     "mustache": "^2.0.0",
+    "nock": "^2.6.0",
     "npm": "^2.10.1",
     "request": "^2.55.0",
     "sprintf-js": "^1.0.2",
