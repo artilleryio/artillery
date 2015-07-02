@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node test/*.js",
-    "is_formatted": "find . -name '*.js' | grep -v node_modules | xargs jscs --preset=google",
-    "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint",
+    "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
+    "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "istanbul cover test/index.js && istanbul check-coverage"
   },
   "keywords": [
