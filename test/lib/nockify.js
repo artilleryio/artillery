@@ -1,3 +1,5 @@
+'use strict';
+
 var l = require('lodash');
 var nock = require('nock');
 
