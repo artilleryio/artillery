@@ -32,6 +32,7 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
+    "JSONPath": "^0.10.0",
     "async": "^1.0.0",
     "cli": "^0.6.6",
     "colors": "^1.1.0",
@@ -48,6 +49,7 @@
     "request": "^2.55.0",
     "sprintf-js": "^1.0.2",
     "traverse": "^0.6.6",
+    "uuid": "^2.0.1",
     "ws": "^0.7.2"
   },
   "devDependencies": {

@@ -80,6 +80,52 @@ Where `hello.json` is your tests script that contains something like:
 - Benchmark dependencies (libraries, frameworks, external services) to get a feel for their performance characteristics before you integrate
 - Run load-tests before you launch to ensure your application can meet projected demand
 
+## Chain HTTP requests
+
+You can parse responses and reuse those values them in subsequent requests.
+
+In the following example, we POST to `/pets` to create a new resource, capture part
+of the response (the id of the new resource) and store it in the variable `id`.
+We then use that value in the subsequent request to load the resource and to
+check to see if the resource we get back looks right.
+
+```javascript
+{"post":
+  {
+    "url": "/pets",
+    "json": {"name": "Mali", "species": "dog"},
+    "capture": {"json": "$.id", "as": "id"}
+  }
+},
+{"get":
+  {
+    "url": "/pets/{{ id }}",
+    "match": {"json": "$.name", "value": "{{ name }}"}
+  }
+}
+```
+
+By default, every response body is captured in the variable `$`, so the
+example above could also be rewritten as:
+
+```javascript
+{"post":
+  {
+    "url": "/pets",
+    "json": {"name": "Mali", "species": "dog"}
+  }
+},
+{"get":
+  {
+    "url": "/pets/{{ $.id }}",
+    "match": {"json": "$.name", "value": "{{ name }}"}
+  }
+}
+```
+
+**NOTE**: Only JSON is supported at the moment. Support for XML and arbitrary
+regexps is in the works.
+
 # Design
 
 ## Declarative tests
