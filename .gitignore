@@ -19,3 +19,4 @@ coverage.*
 lib-cov
 *scratch*
 minigun_report*
+coverage/*
