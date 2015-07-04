@@ -80,6 +80,23 @@ Where `hello.json` is your tests script that contains something like:
 - Benchmark dependencies (libraries, frameworks, external services) to get a feel for their performance characteristics before you integrate
 - Run load-tests before you launch to ensure your application can meet projected demand
 
+# HTTP Features
+
+## Set headers
+
+You can set arbitrary headers like this:
+
+```javascript
+{"get":
+  {
+    "url": "/test",
+    "headers": {
+      "X-My-Header": "123"
+    }
+  }
+}
+```
+
 ## Chain HTTP requests
 
 You can parse responses and reuse those values them in subsequent requests.
