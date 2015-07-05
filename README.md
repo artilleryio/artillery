@@ -12,13 +12,14 @@
 **minigun** is a simple but powerful load-testing tool designed to help you
 make your apps more performant, reliable, and scalable.
 
+[https://artillery.io/minigun](https://artillery.io/minigun)
+
 Made by [@hveldstra](https://twitter.com/hveldstra) - please @-message me with
 feedback and suggestions!
 
 # Features
 
-- Full HTTP(S) support
-- Experimental WebSocket support
+- HTTP(S) and WebSocket support
 - 100% declarative tests scenarios (no code, just JSON)
 - Detailed performance stats
 - Use minigun as a standalone CLI tool or as a Node.js library
@@ -82,9 +83,39 @@ Where `hello.json` is your tests script that contains something like:
 
 # HTTP Features
 
+## GET/POST/PUT/DELETE
+
+Send a GET request:
+
+```javascript
+{"get": {"url": "/test"}}
+```
+
+POST some JSON:
+
+```javascript
+{"post":
+  {
+    "url": "/test",
+    "json": {"name": "Hassy", "occupation": "software developer"}
+  }
+}
+```
+
+POST arbitrary data:
+
+```javascript
+{"post":
+  {
+    "url": "/test",
+    "body": "name=hassy&occuptaion=software%20developer"
+  }
+}
+```
+
 ## Set headers
 
-You can set arbitrary headers like this:
+You can set headers like this:
 
 ```javascript
 {"get":
@@ -142,6 +173,36 @@ example above could also be rewritten as:
 
 **NOTE**: Only JSON is supported at the moment. Support for XML and arbitrary
 regexps is in the works.
+
+## Websocket features
+
+
+
+Set the `"engine"` field of a scenario to `"ws"` to enable WS support (the
+default engine is `"http"`).
+
+```javascript
+{
+  "config": {
+      "target": "ws://echo.websocket.org",
+      "phases": [
+        {"duration": 20, "arrivalRate": 10}
+      ]
+  },
+  "scenarios": [
+    {
+      "engine": "ws",
+      "flow": [
+        {"send": "hello"},
+        {"think": 1},
+        {"send": "world"}
+      ]
+    }
+  ]
+}
+```
+
+**NOTE**: Support for matching and reusing responses is under development.
 
 # Design
 
