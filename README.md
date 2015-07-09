@@ -21,7 +21,7 @@ feedback and suggestions!
 
 - HTTP(S) and WebSocket support
 - 100% declarative tests scenarios (no code, just JSON)
-- Detailed performance stats
+- Detailed performance metrics
 - Use minigun as a standalone CLI tool or as a Node.js library
 - Good performance
 - Open-source & free
@@ -175,8 +175,6 @@ example above could also be rewritten as:
 regexps is in the works.
 
 ## Websocket features
-
-
 
 Set the `"engine"` field of a scenario to `"ws"` to enable WS support (the
 default engine is `"http"`).
