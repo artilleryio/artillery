@@ -39,6 +39,7 @@
     "commander": "^2.8.1",
     "csv-parse": "^0.1.1",
     "debug": "^2.2.0",
+    "gaussian": "^1.0.0",
     "install": "^0.1.8",
     "jsck": "^0.2.4",
     "lodash": "^3.9.1",
