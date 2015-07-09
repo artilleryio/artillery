@@ -23,7 +23,7 @@ function create(requests, config) {
   var target = new Interfake(interfakeOpts);
   l.each(requests, function(requestSpec) {
     var verb = l.keys(requestSpec)[0];
-    if(responses[verb]) { // skip thinks etc that's not a HTTP verb
+    if (responses[verb]) { // skip thinks etc that's not a HTTP verb
       var params = requestSpec[verb];
       target[verb].call(target, params.url).status(responses[verb]);
     }

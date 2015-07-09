@@ -1,8 +1,16 @@
 'use strict';
 
+//
+// Test that HTTP request specs are translated into request objects and then
+// executed successfully.
+//
+// To do that we take a full test script, discard phase config, and run each
+// scenario just once.
+//
+
 var test = require('tape');
 var l = require('lodash');
-var nockify = require('./nockify');
+var nockify = require('./lib/nockify');
 
 var httpWorker = require('../lib/worker_http');
 // nockify does not support payloads yet
@@ -14,7 +22,10 @@ var scripts = [
 l.each(scripts, function(script) {
   test(script[0], function(t) {
     var server = nockify(script[1].scenarios[0].flow, script[1].config, t);
-    var scenario = httpWorker.create(script[1].scenarios[0].flow, script[1].config, {});
+    var scenario = httpWorker.create(
+      script[1].scenarios[0].flow,
+      script[1].config,
+      {});
     scenario.on('error', function(err) {
       t.fail(err);
     });
