@@ -1,7 +1,7 @@
 {
   "name": "minigun-core",
   "version": "0.0.8",
-  "description": "minigun-core",
+  "description": "minigun-core - load-generator library used by `minigun`",
   "main": "index.js",
   "scripts": {
     "test": "node test/index.js",
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "eslint": "^0.24.0",
+    "interfake": "^1.13.0",
     "istanbul": "^0.3.17",
     "nock": "^2.7.0",
     "pre-commit": "^1.0.10",
