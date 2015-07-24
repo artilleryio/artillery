@@ -1,6 +1,6 @@
 {
   "name": "minigun",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Load-testing for HTTP-based applications",
   "main": "./bin/minigun",
   "scripts": {
@@ -38,7 +38,7 @@
     "csv-parse": "^0.1.1",
     "debug": "^2.2.0",
     "lodash": "^3.9.1",
-    "minigun-core": "0.0.8"
+    "minigun-core": "latest"
   },
   "devDependencies": {
     "eslint": "^0.21.2",
