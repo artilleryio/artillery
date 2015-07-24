@@ -34,7 +34,6 @@
   "dependencies": {
     "async": "^1.0.0",
     "cli": "^0.6.6",
-    "colors": "^1.1.0",
     "commander": "^2.8.1",
     "csv-parse": "^0.1.1",
     "debug": "^2.2.0",
