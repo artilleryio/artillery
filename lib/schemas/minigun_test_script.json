@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Schema for Minigun test scripts",
+  "type": "object",
+  "properties": {
+    "config": {
+      "type": "object",
+      "properties": {
+        "target": { "type": "string" },
+        "phases": {
+          "type": "array"
+        },
+        "payload": {
+          "type": "object"
+        },
+        "defaults": {
+          "type": "object"
+        },
+        "ensure": {
+          "type": "object"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [ "poisson", "uniform" ]
+        }
+      },
+      "required": ["target", "phases"]
+    },
+    "scenarios": {
+      "type": "array"
+    }
+  },
+  "required": ["scenarios"]
+}
