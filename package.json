@@ -31,6 +31,10 @@
     "pre-commit": "^1.0.10",
     "tape": "^4.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/artilleryio/minigun-core.git"
+  },
   "pre-commit": [
     "is_linted",
     "is_formatted"
