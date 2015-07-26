@@ -1,6 +1,6 @@
 {
   "name": "minigun-core",
-  "version": "0.0.8",
+  "version": "0.1.0",
   "description": "minigun-core - load-generator library used by `minigun`",
   "main": "index.js",
   "scripts": {
