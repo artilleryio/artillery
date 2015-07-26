@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var runner = require('../lib/runner');
+var runner = require('../lib/runner').runner;
 var l = require('lodash');
 var url = require('url');
 var createTarget = require('./lib/interfakify').create;
