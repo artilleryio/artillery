@@ -10,8 +10,16 @@ feel free to get in touch over email:
 
 ## Guide for Contributions
 
-* Pull requests should have tests
-* Ideally, pull requests should reference an Issue
+* Pull requests should have tests. (We aim for 100% test coverage, which isn't
+  always possible, but test coverage of less than 80% should be considered a
+  bug.)
+* Ideally, pull requests should reference an Issue.
+
+  Before you write more than a few lines of code, please make sure that:
+
+  * If it's a new feature proposal - that it has been discussed and accepted
+  * Let others know that you are working on the issue (e.g. by self-assigning the issue)
+
 * New code should follow the style guidelines
   These are checked automatically when new code is committed. You can also run
   the checks at any time yourself with:
@@ -33,3 +41,8 @@ feel free to get in touch over email:
   around 72 characters. Most commits should reference an existing
   issue, such as #101 above.
   ```
+
+## Credits
+
+Shout out to [PouchDB](https://github.com/pouchdb/pouchdb) for having a great
+Contributor's Guide that served as the starting point for this one.
