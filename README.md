@@ -281,6 +281,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 # Bonus Dinosaur
 
+You made it all the way down here, so here's a dinosaur with a minigun:
+
 ![Dinosaur with a minigun](https://cldup.com/L_LKn5MZLk-1200x1200.jpeg)
 
-It's a dinosaur with a minigun.
+
