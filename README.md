@@ -21,7 +21,7 @@ feedback and suggestions!
 
 - HTTP(S) and WebSocket support
 - Detailed performance metrics (latency, RPS, throughput)
-- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](examples/hello_world_http.json))
+- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/artilleryio/minigun-core/blob/master/test/scripts/all_features.json))
 - Use minigun as a standalone CLI tool or as a Node.js library
 - Good performance
 - Open-source & free
