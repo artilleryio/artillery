@@ -204,29 +204,18 @@ default engine is `"http"`).
 
 **NOTE**: Support for matching and reusing responses is under development.
 
-# Performance
-
-**Hardware:** a 512MB Digital Ocean droplet.
-
-**Target:** [simple.js](tests/targets/simple.js) running on another 512MB droplet
-in the same region.
-
-**Results:**
-
 ## When NOT to use Minigun
 
 Minigun is **not** a web server benchmarking tool. Its sweet spot is performance
 testing of applications and APIs with complex transactional scenarios.
 
-Having said that, Minigun is capable of generating 500+ RPS on modest hardware.
-Still though, if you are after raw RPS while simply hammering a single URL in
-a loop, you might want to use `wrk` instead.
-
-(You could also use a cluster of Miniguns of course...)
+Having said that, Minigun is capable of generating 500+ RPS on modest hardware
+(a 512MB Digital Ocean droplet). Still though, if you are after raw RPS to
+simply hammer a single URL, you may want to use `ab` instead.
 
 **tldr:**
-Benchmarking an Nginx installation? Use wrk. Testing a Node.js-based API, a
-RoR webapp, or a realtime WS-based app? Use Minigun.
+Benchmarking an Nginx installation? Use `ab`. Testing a Node.js
+API, a RoR webapp, or a realtime WebSocket-based app? Use Minigun.
 
 # Design
 
