@@ -20,8 +20,8 @@ feedback and suggestions!
 # Features
 
 - HTTP(S) and WebSocket support
-- 100% declarative tests scenarios (no code, just JSON)
-- Detailed performance metrics
+- Detailed performance metrics (latency, RPS, throughput)
+- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](examples/hello_world_http.json))
 - Use minigun as a standalone CLI tool or as a Node.js library
 - Good performance
 - Open-source & free
@@ -78,8 +78,10 @@ Where `hello.json` is your tests script that contains something like:
 - Benchmark the performance of your API or microservice as you're building it
 - Ensure new code does not introduce performance regressions
 - Test your code for memory leaks
-- Benchmark dependencies (libraries, frameworks, external services) to get a feel for their performance characteristics before you integrate
-- Run load-tests before you launch to ensure your application can meet projected demand
+- Benchmark dependencies (libraries, frameworks, external services) to get a
+  feel for their performance characteristics before you integrate
+- Run load-tests before you launch to ensure your application can meet
+  projected demand
 
 # HTTP Features
 
@@ -174,7 +176,7 @@ example above could also be rewritten as:
 **NOTE**: Only JSON is supported at the moment. Support for XML and arbitrary
 regexps is in the works.
 
-## Websocket features
+## WebSocket features
 
 Set the `"engine"` field of a scenario to `"ws"` to enable WS support (the
 default engine is `"http"`).
@@ -201,6 +203,30 @@ default engine is `"http"`).
 ```
 
 **NOTE**: Support for matching and reusing responses is under development.
+
+# Performance
+
+**Hardware:** a 512MB Digital Ocean droplet.
+
+**Target:** [simple.js](tests/targets/simple.js) running on another 512MB droplet
+in the same region.
+
+**Results:**
+
+## When NOT to use Minigun
+
+Minigun is **not** a web server benchmarking tool. Its sweet spot is performance
+testing of applications and APIs with complex transactional scenarios.
+
+Having said that, Minigun is capable of generating 500+ RPS on modest hardware.
+Still though, if you are after raw RPS while simply hammering a single URL in
+a loop, you might want to use `wrk` instead.
+
+(You could also use a cluster of Miniguns of course...)
+
+**tldr:**
+Benchmarking an Nginx installation? Use wrk. Testing a Node.js-based API, a
+RoR webapp, or a realtime WS-based app? Use Minigun.
 
 # Design
 
@@ -231,7 +257,9 @@ by default to model how requests are spread over the duration of the test.
 
 If you specify a duration of 60 seconds, with the arrival rate of 10, it means
 *on average* 10 users will arrive every second, with for example 8 arrivals one
-second and 11 arrivals the next. The inter-arrival period would also be slightly different every time, i.e. 5 users arriving within 1 second (1000 ms) would not be evenly spread out 200ms apart.
+second and 11 arrivals the next. The inter-arrival period would also be
+slightly different every time, i.e. 5 users arriving within 1 second (1000 ms)
+would not be evenly spread out 200ms apart.
 
 This may seem like a subtle difference, but in practice it leads to more robust
 tests.
@@ -243,7 +271,8 @@ guide](CONTRIBUTING.md).
 
 # License
 
-**minigun** is 100% open-source software distributed under the terms of the [ISC](http://en.wikipedia.org/wiki/ISC_license) license.
+**minigun** is 100% open-source software distributed under the terms of the
+[ISC](http://en.wikipedia.org/wiki/ISC_license) license.
 
 ```
 Copyright (c) 2015, Hassy Veldstra <h@veldstra.org>
