@@ -24,6 +24,11 @@ program
   .action(commands.quick);
 
 program
+  .command('report <file>')
+  .description('Create a report from a JSON file created by "minigun run"')
+  .action(commands.report);
+
+program
   .command('dino')
   .description('Show dinosaur of the day')
   .action(commands.dino);
