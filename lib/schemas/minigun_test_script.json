@@ -6,6 +6,9 @@
     "config": {
       "type": "object",
       "properties": {
+        "environments": {
+          "type": "object"
+        },
         "target": { "type": "string" },
         "phases": {
           "type": "array"
@@ -23,8 +26,7 @@
           "type": "string",
           "enum": [ "poisson", "uniform" ]
         }
-      },
-      "required": ["target", "phases"]
+      }
     },
     "scenarios": {
       "type": "array"
