@@ -20,3 +20,4 @@ lib-cov
 *scratch*
 minigun_report*
 coverage/*
+node_modules
