@@ -1,6 +1,6 @@
 {
   "name": "minigun",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "description": "Load-testing for HTTP-based applications",
   "main": "./bin/minigun",
   "scripts": {
