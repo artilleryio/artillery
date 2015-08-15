@@ -17,6 +17,9 @@
     "blackbox testing"
   ],
   "author": "Hassy Veldstra <h@artillery.io>",
+  "contributors": [
+    "Kieran Gorman (https://github.com/kjgorman)"
+  ],
   "license": "ISC",
   "preferGlobal": true,
   "man": "./man/minigun.1",
