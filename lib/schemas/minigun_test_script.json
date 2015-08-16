@@ -22,6 +22,9 @@
         "mode": {
           "type": "string",
           "enum": [ "poisson", "uniform" ]
+        },
+        "tls": {
+          "type": "object"
         }
       },
       "required": ["target", "phases"]
