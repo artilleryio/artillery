@@ -10,6 +10,9 @@
     "coverage": "istanbul cover test/index.js && istanbul check-coverage"
   },
   "author": "Hassy Veldstra <h@veldstra.org>",
+  "contributors": [
+    "Kieran Gorman (https://github.com/kjgorman)"
+  ],
   "license": "ISC",
   "dependencies": {
     "JSONPath": "^0.10.0",
