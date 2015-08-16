@@ -3,6 +3,9 @@
   "version": "0.1.4",
   "description": "minigun-core - load-generator library used by `minigun`",
   "main": "index.js",
+  "engines": {
+    "node": ">= 0.12.0"
+  },
   "scripts": {
     "test": "node test/index.js",
     "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
