@@ -10,7 +10,11 @@ program
   .command('run <script>')
   .description('Run a test script. Example: `minigun run benchmark.json`')
   .option('-p, --payload <path>', 'Set payload file (CSV)')
-  .option('-o, --output <path>', 'Set file to write stats to (will output to stdout by default)')
+  .option('-o, --output <path>', 'Set file to write stats to (will output ' +
+          'to stdout by default)')
+  .option('-k, --insecure', 'This  option explicitly allows Minigun to ' +
+          'perform "insecure" TLS connections, for testing with' +
+          'self-signed certificates')
   .action(commands.run);
 
 program
@@ -21,6 +25,9 @@ program
   .option('-p, --payload <string>', 'Set POST payload')
   .option('-t, --content-type <string>',
     'Set content-type (defaults to application/json)')
+  .option('-k, --insecure', 'This  option explicitly allows Minigun to ' +
+          'perform "insecure" TLS connections, for testing with' +
+          'self-signed certificates')
   .action(commands.quick);
 
 program
