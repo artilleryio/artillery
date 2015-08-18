@@ -1,8 +1,11 @@
 {
   "name": "minigun",
-  "version": "0.0.14",
-  "description": "Load-testing for HTTP-based applications",
+  "version": "0.0.15",
+  "description": "Load-testing for HTTP and WebSocket-based applications",
   "main": "./bin/minigun",
+  "engines": {
+    "node": ">= 0.12.0"
+  },
   "scripts": {
     "test": "node test/*.js",
     "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
