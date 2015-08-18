@@ -14,13 +14,15 @@ make your apps more performant, reliable, and scalable.
 
 [https://artillery.io/minigun](https://artillery.io/minigun)
 
-Made by [@hveldstra](https://twitter.com/hveldstra) - please @-message me with
-feedback and suggestions!
+Made by [@hveldstra](https://twitter.com/hveldstra) - please @-message me or
+drop me a line on [h@veldstra.org](mailto:h@veldstra.org) with feedback and
+suggestions. I love hearing from users.
 
 # Features
 
 - HTTP(S) and WebSocket support
 - Detailed performance metrics (latency, RPS, throughput)
+- NEW! Graphical reports
 - Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/artilleryio/minigun-core/blob/master/test/scripts/all_features.json))
 - Use minigun as a standalone CLI tool or as a Node.js library
 - Good performance
@@ -72,6 +74,15 @@ Where `hello.json` is your tests script that contains something like:
   ]
 }
 ```
+
+# Create a report
+
+Create a graphical report from the JSON stats produced by `minigun run` with:
+`minigun report <minigun_report_xxxxx.json>`
+
+An example: :tophat:
+
+![https://cldup.com/PYeZJTCe86-1200x1200.png](https://cldup.com/PYeZJTCe86-1200x1200.png)
 
 # Use cases
 
@@ -175,6 +186,29 @@ example above could also be rewritten as:
 
 **NOTE**: Only JSON is supported at the moment. Support for XML and arbitrary
 regexps is in the works.
+
+## TLS/SSL
+
+By default, Minigun will reject self-signed certificates. You can disable this
+behavior (for testing in a staging environment for example):
+
+1. Pass --k (or --insecure) option to `minigun run` or `minigun quick`
+2. By setting the `config.tls` property in your test script like so:
+
+```javascript
+{
+  "config": {
+    "target": "https://myapp.staging:3002",
+    "tls": {
+      "rejectUnauthorized": false
+    }
+    // ...
+  },
+  "scenarios": [
+    // ...
+  ]
+}
+```
 
 ## WebSocket features
 
