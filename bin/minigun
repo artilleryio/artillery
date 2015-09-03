@@ -15,6 +15,8 @@ program
   .option('-k, --insecure', 'This  option explicitly allows Minigun to ' +
           'perform "insecure" TLS connections, for testing with' +
           'self-signed certificates')
+  .option('-f, --profiler <number>', 'Use minigun-profiler to collect ' +
+          ' cpu & memory usage of local node application')
   .action(commands.run);
 
 program
@@ -28,6 +30,8 @@ program
   .option('-k, --insecure', 'This  option explicitly allows Minigun to ' +
           'perform "insecure" TLS connections, for testing with' +
           'self-signed certificates')
+  .option('-f, --profiler <number>', 'Use minigun-profiler to collect ' +
+          ' cpu & memory usage of local node application')
   .action(commands.quick);
 
 program
