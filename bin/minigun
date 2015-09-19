@@ -15,6 +15,7 @@ program
   .option('-k, --insecure', 'This  option explicitly allows Minigun to ' +
           'perform "insecure" TLS connections, for testing with' +
           'self-signed certificates')
+  .option('-e, --environment <name>', 'Specify the environment to be used')
   .action(commands.run);
 
 program
