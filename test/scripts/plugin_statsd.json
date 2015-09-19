@@ -1,0 +1,19 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        {"duration": 120, "arrivalRate": 50}
+      ],
+      "plugins": {
+        "statsd": {}
+      }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/"}},
+        {"post": {"url": "/pets", "json": {"name": "Figo", "species": "dog"}}}
+      ]
+    }
+  ]
+}
