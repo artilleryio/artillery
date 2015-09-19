@@ -1,19 +1,25 @@
 {
   "config": {
-      "target": "http://127.0.0.1:3003",
+      "target": "http://wontresolve.local:3003",
       "phases": [
         {"duration": 10, "arrivalRate": 1}
       ],
       "environments": {
         "production": {
-          "target": "http://127.0.0.1:44321"
+          "target": "http://wontresolve.prod:44321"
+        },
+        "staging": {
+          "target": "http://127.0.0.1:3003",
+          "phases": [
+            {"duration": 20, "arrivalRate": 1}
+          ]
         }
       }
   },
   "scenarios": [
     {
       "flow": [
-        {"get": {"url": "/"}}
+        {"get": {"url": "/pets"}}
       ]
     }
   ]
