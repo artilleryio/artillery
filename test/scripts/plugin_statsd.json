@@ -5,7 +5,9 @@
         {"duration": 120, "arrivalRate": 50}
       ],
       "plugins": {
-        "statsd": {}
+        "statsd": {
+          "enableUselessReporting": true
+        }
       }
   },
   "scenarios": [
