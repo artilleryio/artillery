@@ -26,6 +26,7 @@ suggestions. I love hearing from users.
 - Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/artilleryio/minigun-core/blob/master/test/scripts/all_features.json))
 - Use minigun as a standalone CLI tool or as a Node.js library
 - Good performance
+- Plugin support (experimental) - [docs](https://github.com/artilleryio/minigun/blob/master/docs/plugins.md)
 - Open-source & free
 
 # Quickstart
