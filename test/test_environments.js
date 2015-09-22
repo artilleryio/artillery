@@ -7,7 +7,7 @@ var url = require('url');
 
 test('environments - override target', function(t) {
   var script = require('./scripts/hello_environments.json');
-  var ee = runner(script, null, { environment: 'production' });
+  var ee = runner(script, null, {environment: 'production'});
   ee.on('done', function(stats) {
     t.assert(stats.aggregate.requestsCompleted === 0,
       'there should be no completed requests');
