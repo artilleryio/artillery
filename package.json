@@ -29,7 +29,7 @@
     "mustache": "2.1.2",
     "request": "2.58.0",
     "traverse": "0.6.6",
-    "ws": "0.7.2"
+    "ws": "0.8.0"
   },
   "devDependencies": {
     "eslint": "^0.24.0",
