@@ -14,9 +14,7 @@ make your apps more performant, reliable, and scalable.
 
 [https://artillery.io/minigun](https://artillery.io/minigun)
 
-Made by [@hveldstra](https://twitter.com/hveldstra) - please @-message me or
-drop me a line on [h@veldstra.org](mailto:h@veldstra.org) with feedback and
-suggestions. I love hearing from users.
+[![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/artilleryio/minigun)
 
 # Features
 
