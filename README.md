@@ -20,6 +20,8 @@ suggestions. I love hearing from users.
 
 # Features
 
+[![Join the chat at https://gitter.im/artilleryio/minigun](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/artilleryio/minigun?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 - HTTP(S) and WebSocket support
 - Detailed performance metrics (latency, RPS, throughput)
 - NEW! Graphical reports
