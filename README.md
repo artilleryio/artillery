@@ -186,6 +186,10 @@ example above could also be rewritten as:
 **NOTE**: Only JSON is supported at the moment. Support for XML and arbitrary
 regexps is in the works.
 
+## Cookies
+
+Cookies are remembered and re-used by individual virtual users. Custom cookies can be specified with `cookie` attribute in individual requests.
+
 ## TLS/SSL
 
 By default, Minigun will reject self-signed certificates. You can disable this
