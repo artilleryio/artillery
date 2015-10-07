@@ -56,7 +56,7 @@ server.route({
 
 server.state('testCookie', {
   ttl: null,
-  isSecure: true,
+  isSecure: false,
   isHttpOnly: true,
   encoding: 'base64json',
   clearInvalid: false,
