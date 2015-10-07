@@ -33,11 +33,15 @@
   },
   "devDependencies": {
     "eslint": "^0.24.0",
+    "good": "6.4.0",
+    "good-console": "5.1.0",
+    "hapi": "10.4.0",
     "interfake": "^1.13.0",
     "istanbul": "^0.3.17",
     "nock": "^2.7.0",
     "pre-commit": "^1.0.10",
-    "tape": "^4.0.0"
+    "tape": "^4.0.0",
+    "uuid": "^2.0.1"
   },
   "repository": {
     "type": "git",
