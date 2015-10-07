@@ -5,7 +5,7 @@ var runner = require('../lib/runner').runner;
 var l = require('lodash');
 var request = require('request');
 
-test('think', function(t) {
+test('cookie jar', function(t) {
   var script = require('./scripts/cookies.json');
   var ee = runner(script);
   ee.on('done', function(stats) {
