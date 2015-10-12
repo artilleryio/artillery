@@ -16,6 +16,7 @@ program
           'perform "insecure" TLS connections, for testing with' +
           'self-signed certificates')
   .option('-e, --environment <name>', 'Specify the environment to be used')
+  .option('-q, --quiet', 'Do not print anything to stdout')
   .action(commands.run);
 
 program
@@ -29,6 +30,7 @@ program
   .option('-k, --insecure', 'This  option explicitly allows Minigun to ' +
           'perform "insecure" TLS connections, for testing with' +
           'self-signed certificates')
+  .option('-q, --quiet', 'Do not print anything to stdout')
   .action(commands.quick);
 
 program
@@ -39,6 +41,7 @@ program
 program
   .command('dino')
   .description('Show dinosaur of the day')
+  .option('-q, --quiet', 'Do not print anything to stdout')
   .action(commands.dino);
 
 program.parse(process.argv);
