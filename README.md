@@ -22,6 +22,7 @@ make your apps more performant, reliable, and scalable.
 - Detailed performance metrics (latency, RPS, throughput)
 - NEW! Graphical reports
 - Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/artilleryio/minigun-core/blob/master/test/scripts/all_features.json))
+- Dynamic payloads
 - Use minigun as a standalone CLI tool or as a Node.js library
 - Good performance
 - Plugin support (experimental) - [docs](https://github.com/artilleryio/minigun/blob/master/docs/plugins.md)
@@ -211,6 +212,49 @@ behavior (for testing in a staging environment for example):
     // ...
   ]
 }
+```
+
+## Dynamic payloads
+
+You can create variables to use in your scenarios with values from an external CSV file.
+
+Take this CSV file for example:
+
+```csv
+dog,Leo
+dog,Figo
+dog,Mali
+cat,Chewbacca
+cat,Puss
+cat,Bonnie
+cat,Blanco
+pony,Tiki
+```
+
+Add `payload` to config:
+
+```javascript
+{
+  "config": {
+    "payload": {
+      "fields": ["species", "name"]
+    }
+  }
+}
+```
+
+This will make `species` and `name` variables available in scenario definitions.
+
+Use those variables in your scenarios:
+
+```javascript
+{ "post": {"url": "/pets", "json": { "name": "{{ name }}", "species": "{{ species }}" }} }
+```
+
+Then tell `minigun` to use the payload file:
+
+```shell
+minigun run my_test.json -p pets.csv
 ```
 
 ## WebSocket features
