@@ -12,7 +12,7 @@
 **minigun** is a simple but powerful load-testing tool designed to help you
 make your apps more performant, reliable, and scalable.
 
-[https://artillery.io/minigun](https://artillery.io/minigun)
+[http://minigun.io](http://minigun.io)
 
 [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/artilleryio/minigun)
 
