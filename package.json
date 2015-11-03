@@ -48,7 +48,6 @@
     "url": "https://github.com/artilleryio/minigun-core.git"
   },
   "pre-commit": [
-    "is_linted",
-    "is_formatted"
+    "is_linted"
   ]
 }
