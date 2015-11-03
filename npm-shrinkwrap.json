@@ -1,6 +1,6 @@
 {
   "name": "minigun-core",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "dependencies": {
     "JSONPath": {
       "version": "0.10.0",
