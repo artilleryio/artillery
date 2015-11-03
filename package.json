@@ -55,7 +55,6 @@
     "tape": "^4.0.0"
   },
   "pre-commit": [
-    "is_linted",
-    "is_formatted"
+    "is_linted"
   ]
 }
