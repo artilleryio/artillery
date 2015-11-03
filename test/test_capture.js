@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var runner = require('../lib/runner');
+var runner = require('../lib/runner').runner;
 var l = require('lodash');
 var Interfake = require('interfake');
 
