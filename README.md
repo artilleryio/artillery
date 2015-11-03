@@ -1,10 +1,8 @@
 # minigun-core
 
-This package is a dependency of [Minigun](https://github.com/artilleryio/minigun).
+[![Build Status](https://travis-ci.org/shoreditch-ops/minigun-core.svg?branch=master)](https://travis-ci.org/shoreditch-ops/minigun-core)
 
-It provides a load-generator for HTTP and WebSockets as a Node.js library.
-
-## API
+This package is a dependency of [Minigun](https://github.com/shoreditch-ops/minigun).
 
 ## License
 
