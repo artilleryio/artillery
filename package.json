@@ -4,7 +4,7 @@
   "description": "minigun-core - load-generator library used by `minigun`",
   "main": "index.js",
   "engines": {
-    "node": ">= 0.12.0"
+    "node": ">= 4.2.0"
   },
   "scripts": {
     "test": "node test/index.js",
