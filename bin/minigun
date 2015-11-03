@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-var program = require('commander');
-var version = require('../package.json').version;
+const program = require('commander');
+const version = require('../package.json').version;
 
-var commands = require('../lib/commands');
+const commands = require('../lib/commands');
 
 program.version(version);
 program

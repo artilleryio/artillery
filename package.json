@@ -4,7 +4,7 @@
   "description": "Load-testing for HTTP and WebSocket-based applications",
   "main": "./bin/minigun",
   "engines": {
-    "node": ">= 0.12.0"
+    "node": ">= 4.2.0"
   },
   "scripts": {
     "test": "node test/*.js",
