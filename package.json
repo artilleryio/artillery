@@ -7,7 +7,7 @@
     "node": ">= 4.2.0"
   },
   "scripts": {
-    "test": "node test/*.js",
+    "test": "bats test/test.sh",
     "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "istanbul cover test/index.js && istanbul check-coverage"
@@ -19,7 +19,7 @@
     "performance",
     "blackbox testing"
   ],
-  "author": "Hassy Veldstra <h@artillery.io>",
+  "author": "Hassy Veldstra <h@veldstra.org>",
   "contributors": [
     "Kieran Gorman (https://github.com/kjgorman)"
   ],
@@ -31,10 +31,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/artilleryio/minigun.git"
+    "url": "https://github.com/shoreditch-ops/minigun.git"
   },
   "bugs": {
-    "url": "https://github.com/artilleryio/minigun/issues",
+    "url": "https://github.com/shoreditch-ops/minigun/issues",
     "email": "npm@veldstra.org"
   },
   "dependencies": {

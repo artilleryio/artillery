@@ -14,18 +14,18 @@ make your apps more performant, reliable, and scalable.
 
 [http://minigun.io](http://minigun.io)
 
-[![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/artilleryio/minigun)
+[![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/minigun)
 
 # Features
 
 - HTTP(S) and WebSocket support
 - Detailed performance metrics (latency, RPS, throughput)
 - NEW! Graphical reports
-- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/artilleryio/minigun-core/blob/master/test/scripts/all_features.json))
+- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/shoreditch-ops/minigun-core/blob/master/test/scripts/all_features.json))
 - Dynamic payloads
 - Use minigun as a standalone CLI tool or as a Node.js library
 - Good performance
-- Plugin support (experimental) - [docs](https://github.com/artilleryio/minigun/blob/master/docs/plugins.md)
+- Plugin support (experimental) - [docs](https://github.com/shoreditch-ops/minigun/blob/master/docs/plugins.md)
 - Open-source & free
 
 # Quickstart

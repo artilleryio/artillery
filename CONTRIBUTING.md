@@ -2,11 +2,11 @@
 
 ## Need to get in touch?
 
-All project discussions should happen in the [issue tracker](https://github.com/artilleryio/minigun/issues).
+All project discussions should happen in the [issue tracker](https://github.com/shoreditch-ops/minigun/issues).
 However if you are a first-time contributor and want some help getting started,
 feel free to get in touch over email:
 
-* Hassy Veldstra - [h@artillery.io](mailto:h@artillery.io)
+* Hassy Veldstra - [h@veldstra.org](mailto:h@veldstra.org)
 
 ## Guide for Contributions
 

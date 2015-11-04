@@ -44,10 +44,10 @@ Events that plugins can subscribe to:
 
 ## Example
 
-Take a look at [minigun-plugin-statsd](https://github.com/artilleryio/plugin-statsd) for a simple example of a plugin.
+Take a look at [minigun-plugin-statsd](https://github.com/shoreditch-ops/plugin-statsd) for a simple example of a plugin.
 
 ## Writing a plugin?
 
-Let us know if you run into any issues or need guidance by creating an [Issue](https://github.com/artilleryio/minigun/issues).
+Let us know if you run into any issues or need guidance by creating an [Issue](https://github.com/shoreditch-ops/minigun/issues).
 
 Minigun has a focus on UX and a "batteries included" philosophy, therefore if your plugin is stable and published under a non-viral open-source license, we will include it in the default Minigun distribution.
