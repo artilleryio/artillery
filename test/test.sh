@@ -7,6 +7,6 @@
 
 @test "minigun -V prints the right version number" {
   version1=$(./bin/minigun -V)
-  version2=$(jq .version ./package.json | tr -d '"')
+  version2=$(grep version package.json | tr -d '"version:, ''"')
   [[ $version1 = $version2 ]]
 }
