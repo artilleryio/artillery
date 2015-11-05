@@ -7,12 +7,16 @@ before_script:
   - mkdir -p /tmp/local
   - bash /tmp/bats/install.sh /tmp/local
   - export PATH=$PATH:/tmp/local/bin
+env:
+  - CXX=g++-4.8
 addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
     packages:
     - jq
+    - gcc-4.8
+    - g++-4.8
 notifications:
   email:
     on_success: never
