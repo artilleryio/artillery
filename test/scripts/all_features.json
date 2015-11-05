@@ -10,7 +10,8 @@
       "defaults": {
         "headers": {
           "content-type": "application/json",
-          "x-auth": "987401838271002188298567"
+          "x-auth": "987401838271002188298567",
+          "x-name": "{{ name }}"
         },
         "think": 2
       },
