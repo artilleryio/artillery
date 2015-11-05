@@ -1,0 +1,18 @@
+language: node_js
+node_js:
+  - "4.2"
+sudo: false
+before_script:
+  - git clone https://github.com/sstephenson/bats.git /tmp/bats
+  - mkdir -p /tmp/local
+  - bash /tmp/bats/install.sh /tmp/local
+  - export PATH=$PATH:/tmp/local/bin
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - jq
+notifications:
+  email:
+    on_success: never
