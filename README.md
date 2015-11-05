@@ -14,6 +14,8 @@ make your apps more performant, reliable, and scalable.
 
 [http://minigun.io](http://minigun.io)
 
+[![Build Status](https://travis-ci.org/shoreditch-ops/minigun.svg?branch=master)](https://travis-ci.org/shoreditch-ops/minigun)
+
 [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/minigun)
 
 # Features
