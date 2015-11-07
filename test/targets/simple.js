@@ -1,3 +1,5 @@
+'use strict';
+
 var Hapi = require('hapi');
 var uuid = require('uuid');
 
@@ -14,6 +16,9 @@ server.connection({
   host: '0.0.0.0',
   port: PORT
 });
+
+
+// TODO: clean up
 
 server.route({
   method: 'POST',
@@ -54,6 +59,12 @@ server.route({
   handler: stats
 });
 
+server.route({
+  method: 'GET',
+  path: '/',
+  handler: index
+});
+
 server.state('testCookie', {
   ttl: null,
   isSecure: false,
@@ -72,7 +83,7 @@ server.register({
     reporters: [
       {
         reporter: require('good-console'),
-        events: {error: '*'} //log: '*', response: '*' }
+        events: {error: '*', log: '*', response: '*'}
       }
     ]
   }
