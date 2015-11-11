@@ -26,7 +26,8 @@ program
   .option('-r, --rate <number>', 'Arrivals per second')
   .option('-p, --payload <string>', 'Set POST payload')
   .option('-t, --content-type <string>',
-    'Set content-type (defaults to application/json)')
+          'Set content-type (defaults to application/json)')
+  .option('-o, --output <path>', 'Set file to write stats to (will output to stdout by default)')
   .option('-k, --insecure', 'This  option explicitly allows Minigun to ' +
           'perform "insecure" TLS connections, for testing with' +
           'self-signed certificates')
