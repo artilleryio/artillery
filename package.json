@@ -45,7 +45,8 @@
     "debug": "^2.2.0",
     "lodash": "^3.9.1",
     "minigun-core": "latest",
-    "open": "0.0.5"
+    "open": "0.0.5",
+    "yamljs": "^0.2.4"
   },
   "devDependencies": {
     "eslint": "^0.21.2",
