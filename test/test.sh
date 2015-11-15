@@ -1,7 +1,16 @@
 #!/usr/bin/env bats
 
+function minigun() {
+  if [ -n "ISTANBUL" ]
+  then
+    istanbul cover ./bin/minigun "$@"
+  else
+    ./bin/minigun "$@"
+  fi
+}
+
 @test "Running with no arguments prints out usage information" {
-  ./bin/minigun | grep Usage
+  minigun | grep Usage
   [ $? -eq 0 ]
 }
 
