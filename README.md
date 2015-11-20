@@ -109,10 +109,10 @@ testing of applications and APIs with complex transactional scenarios.
 
 Having said that, Minigun is capable of generating 500+ RPS on modest hardware
 (a 512MB Digital Ocean droplet). Still though, if you are after raw RPS to
-simply hammer a single URL, you may want to use `ab` instead.
+simply hammer a single URL, you may want to use [`wrk`](https://github.com/wg/wrk) instead.
 
 **tldr:**
-Benchmarking an Nginx installation? Use `ab`. Testing a Node.js
+Benchmarking an Nginx installation? Use [`wrk`](https://github.com/wg/wrk). Testing a Node.js
 API, a RoR webapp, or a realtime WebSocket-based app? Use Minigun.
 
 # Design
