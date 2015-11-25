@@ -41,6 +41,11 @@ program
   .action(commands.report);
 
 program
+  .command('convert <file>')
+  .description('Convert JSON to YAML and vice versa')
+  .action(commands.convert);
+
+program
   .command('dino')
   .description('Show dinosaur of the day')
   .option('-q, --quiet', 'Do not print anything to stdout')
