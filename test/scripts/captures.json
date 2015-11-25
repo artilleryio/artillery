@@ -19,7 +19,11 @@
           {
             "url": "/pets",
             "json": {"name": "{{ name }}", "species": "{{ species }}"},
-            "capture": {"json": "$.id", "as": "id"}
+            "capture": {
+              "json": "$.id",
+              "transform": "this.id.toUpperCase()",
+              "as": "id"
+            }
           }
         },
         {"get":
