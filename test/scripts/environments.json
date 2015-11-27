@@ -1,0 +1,22 @@
+{
+  "config": {
+    "phases": [
+      {"duration": 10, "arrivalRate": 1}
+    ],
+    "environments": {
+      "production": {
+        "target": "http://wontresolve.prod:44321"
+      },
+      "dev": {
+        "target": "http://dev.wontresolve.prod:44321"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        { "get": { "url": "/test" } }
+      ]
+    }
+  ]
+}
