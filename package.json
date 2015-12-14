@@ -1,6 +1,6 @@
 {
   "name": "minigun",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "description": "Load-testing for HTTP and WebSocket-based applications",
   "main": "./bin/minigun",
   "engines": {
