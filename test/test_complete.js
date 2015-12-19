@@ -11,7 +11,8 @@ var createTarget = require('./lib/interfakify').create;
 var SCRIPTS = [
   'hello.json',
   'multiple_phases.json',
-  'all_features.json'
+  'all_features.json',
+  'large_payload.json'
   ];
 
 l.each(SCRIPTS, function(fn) {
