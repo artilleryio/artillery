@@ -65,6 +65,12 @@ server.route({
   handler: index
 });
 
+server.route({
+  method: 'POST',
+  path: '/',
+  handler: postIndex
+});
+
 server.state('testCookie', {
   ttl: null,
   isSecure: false,
@@ -108,6 +114,10 @@ function index(req, reply) {
     REQUEST_COUNT++;
     reply('ok');
   }, Math.floor(Math.random() * 100));
+}
+
+function postIndex(req, reply) {
+  reply('ok');
 }
 
 function create(req, reply) {
