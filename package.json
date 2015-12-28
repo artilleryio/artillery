@@ -7,7 +7,7 @@
     "node": ">= 4.2.0"
   },
   "scripts": {
-    "test": "node test/index.js",
+    "test": "bash test/run.sh",
     "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "istanbul cover test/index.js && istanbul check-coverage"
@@ -36,9 +36,7 @@
     "good": "6.4.0",
     "good-console": "5.1.0",
     "hapi": "10.4.0",
-    "interfake": "^1.13.0",
     "istanbul": "^0.3.17",
-    "nock": "^2.7.0",
     "pre-commit": "^1.0.10",
     "tape": "^4.0.0",
     "uuid": "^2.0.1"
