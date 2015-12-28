@@ -4,9 +4,6 @@ var test = require('tape');
 var runner = require('../lib/runner').runner;
 var l = require('lodash');
 var url = require('url');
-var createTarget = require('./lib/interfakify').create;
-
-// Does not work with test scripts that include substitutions in URLs.
 
 var SCRIPTS = [
   'hello.json',
@@ -29,9 +26,6 @@ l.each(SCRIPTS, function(fn) {
     // Set up for expectations
     var completedPhases = 0;
     var startedAt = process.hrtime();
-
-    var target = createTarget(script.scenarios[0].flow, script.config);
-    target.listen(url.parse(script.config.target).port || 80);
 
     var ee = runner(script);
     ee.on('phaseStarted', function(x) {
@@ -59,7 +53,6 @@ l.each(SCRIPTS, function(fn) {
       t.assert(delta >= minDuration,
         'Should run for at least the total duration of phases');
 
-      target.stop();
       t.end();
     });
 
