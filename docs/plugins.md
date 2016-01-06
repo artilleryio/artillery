@@ -44,7 +44,7 @@ Events that plugins can subscribe to:
 
 ## Example
 
-Take a look at [minigun-plugin-statsd](https://github.com/shoreditch-ops/plugin-statsd) for a simple example of a plugin.
+Take a look at [minigun-plugin-statsd](https://github.com/shoreditch-ops/minigun-plugin-statsd) for a simple example of a plugin.
 
 ## Writing a plugin?
 
