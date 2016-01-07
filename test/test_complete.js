@@ -17,12 +17,6 @@ l.each(SCRIPTS, function(fn) {
   var script = require('./scripts/' + fn);
   test('Script: ' + fn, function(t) {
 
-    // Preconditions
-    t.assert(
-      script.scenarios.length === 1,
-      'Expecting the test script to have one scenario'
-    );
-
     // Set up for expectations
     var completedPhases = 0;
     var startedAt = process.hrtime();
