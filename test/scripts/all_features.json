@@ -22,6 +22,7 @@
   },
   "scenarios": [
     {
+      "weight": 10,
       "flow": [
         {"get": {"url": "/pets"}},
         {"think": 1},
@@ -29,6 +30,13 @@
         {"post": {"url": "http://127.0.0.1:3003/pets", "body": "{\"name\": \"{{ name }}\", \"species\": \"{{ species }}\"}" }},
         {"get": {"url": "/pets", "headers": {"x-auth": "overrides-the-value-in-defaults"}}},
         {"post": {"url": "/pets", "json": {"name": "{{ name }}", "species": "{{ species }}"}, "headers": {"user-agent": "minigun"}}}
+      ]
+    },
+    {
+      "weight": 1,
+      "name": "weighted scenario",
+      "flow": [
+        {"get": {"url": "/will404"}}
       ]
     }
   ]
