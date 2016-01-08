@@ -14,7 +14,7 @@
           "type": "array"
         },
         "payload": {
-          "type": "object"
+          "anyOf": [ {"type": "object"}, {"type": "array"}]
         },
         "defaults": {
           "type": "object"

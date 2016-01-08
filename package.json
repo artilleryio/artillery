@@ -32,6 +32,7 @@
     "ws": "0.8.0"
   },
   "devDependencies": {
+    "csv-parse": "1.0.1",
     "eslint": "^0.24.0",
     "good": "6.4.0",
     "good-console": "5.1.0",
