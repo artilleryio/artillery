@@ -8,7 +8,6 @@ var url = require('url');
 var SCRIPTS = [
   'hello.json',
   'multiple_phases.json',
-  'all_features.json',
   'large_payload.json'
   ];
 
