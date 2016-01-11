@@ -1,6 +1,6 @@
 require('./unit/index');
 require('./test_multiple_payloads');
-require('./test_complete');
+require('./test_misc');
 
 //require('./test_worker_http');
 //require('./test_environments.js');
