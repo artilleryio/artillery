@@ -7,7 +7,7 @@
     "node": ">= 4.2.0"
   },
   "scripts": {
-    "test": "bats test/test.sh",
+    "test": "bash test/runner.sh",
     "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "ISTANBUL=y npm test && istanbul check-coverage"
@@ -51,10 +51,14 @@
   "devDependencies": {
     "bats": "^0.4.2",
     "eslint": "^0.21.2",
+    "good": "^6.4.0",
+    "good-console": "^5.2.0",
+    "hapi": "^12.1.0",
     "istanbul": "^0.3.14",
     "jscs": "^2.3.0",
     "pre-commit": "^1.0.7",
-    "tape": "^4.0.0"
+    "tape": "^4.0.0",
+    "uuid": "^2.0.1"
   },
   "pre-commit": [
     "is_linted"
