@@ -22,7 +22,6 @@
     "no-unused-expressions": 1,
     "no-native-reassign": 1,
     "no-fallthrough": 1,
-    "handle-callback-err": 1,
     "camelcase": 1,
     "no-unused-vars": 1,
 
