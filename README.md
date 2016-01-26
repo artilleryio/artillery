@@ -1,8 +1,6 @@
-# minigun-core
+# artillery-core
 
-[![Build Status](https://travis-ci.org/shoreditch-ops/minigun-core.svg?branch=master)](https://travis-ci.org/shoreditch-ops/minigun-core)
-
-This package is a dependency of [Minigun](https://github.com/shoreditch-ops/minigun).
+[![Build Status](https://travis-ci.org/shoreditch-ops/artillery-core.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery-core)
 
 ## License
 

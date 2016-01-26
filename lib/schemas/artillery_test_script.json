@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "Schema for Minigun test scripts",
+  "title": "Schema for Artillery test scripts",
   "type": "object",
   "properties": {
     "config": {

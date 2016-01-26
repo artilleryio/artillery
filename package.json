@@ -1,7 +1,7 @@
 {
-  "name": "minigun-core",
+  "name": "artillery-core",
   "version": "1.4.2",
-  "description": "minigun-core - load-generator library used by `minigun`",
+  "description": "core load-generating functionality of Artillery",
   "main": "index.js",
   "engines": {
     "node": ">= 4.2.0"
@@ -44,7 +44,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/artilleryio/minigun-core.git"
+    "url": "https://github.com/shoreditch-ops/artillery-core.git"
   },
   "pre-commit": [
     "is_linted"
