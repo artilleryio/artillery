@@ -1,8 +1,8 @@
 {
-  "name": "minigun",
+  "name": "artillery",
   "version": "1.3.2",
   "description": "Load-testing for HTTP and WebSocket-based applications",
-  "main": "./bin/minigun",
+  "main": "./bin/artillery",
   "engines": {
     "node": ">= 4.2.0"
   },
@@ -25,16 +25,16 @@
   ],
   "license": "ISC",
   "preferGlobal": true,
-  "man": "./man/minigun.1",
+  "man": "./man/artillery.1",
   "bin": {
-    "minigun": "./bin/minigun"
+    "artillery": "./bin/artillery"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/shoreditch-ops/minigun.git"
+    "url": "https://github.com/shoreditch-ops/artillery.git"
   },
   "bugs": {
-    "url": "https://github.com/shoreditch-ops/minigun/issues",
+    "url": "https://github.com/shoreditch-ops/artillery/issues",
     "email": "npm@veldstra.org"
   },
   "dependencies": {
@@ -44,7 +44,7 @@
     "csv-parse": "^0.1.1",
     "debug": "^2.2.0",
     "lodash": "^3.9.1",
-    "minigun-core": "latest",
+    "artillery-core": "latest",
     "open": "0.0.5",
     "yamljs": "^0.2.4"
   },

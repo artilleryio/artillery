@@ -1,53 +1,51 @@
 ```
-             _           _
-            (_)         (_)
- _ __ ___    _   _ __    _    __ _   _   _   _ __
-| '_ ` _ \  | | | '_ \  | |  / _` | | | | | | '_ \
-| | | | | | | | | | | | | | | (_| | | |_| | | | | |
-|_| |_| |_| |_| |_| |_| |_|  \__, |  \__,_| |_| |_|
-                              __/ |
-                             |___/
+            _   _ _ _
+  __ _ _ __| |_(_) | | ___ _ __ _   _
+ / _` | '__| __| | | |/ _ \ '__| | | |
+| (_| | |  | |_| | | |  __/ |  | |_| |
+ \__,_|_|   \__|_|_|_|\___|_|   \__, |
+                                |___/
 ```
 
-**minigun** is a simple but powerful load-testing tool designed to help you
+**Artillery** is a simple but powerful load-testing tool designed to help you
 make your apps more performant, reliable, and scalable.
 
-[http://minigun.io](http://minigun.io)
+[https://artillery.io](https://artillery.io)
 
-[![Build Status](https://travis-ci.org/shoreditch-ops/minigun.svg?branch=master)](https://travis-ci.org/shoreditch-ops/minigun)
+[![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery)
 
-[![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/minigun)
+[![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
 # Features
 
 - HTTP(S) and WebSocket support
 - Detailed performance metrics (latency, RPS, throughput)
 - NEW! Graphical reports
-- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/shoreditch-ops/minigun-core/blob/master/test/scripts/all_features.json))
+- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/shoreditch-ops/artillery-core/blob/master/test/scripts/all_features.json))
 - Dynamic payloads
-- Use minigun as a standalone CLI tool or as a Node.js library
+- Use Artillery as a standalone CLI tool or as a Node.js library
 - Good performance
-- Plugin support (experimental) - [docs](https://github.com/shoreditch-ops/minigun/blob/master/docs/plugins.md)
+- Plugin support (experimental) - [docs](https://github.com/shoreditch-ops/artillery/blob/master/docs/plugins.md)
 - Open-source & free
 
 # Quickstart
 
 ## Install
 
-**minigun** is available via [npm](http://npmjs.org)
+**Artillery** is available via [npm](http://npmjs.org)
 
-`$ npm install -g minigun`
+`$ npm install -g artillery`
 
 ## Run
 
-`$ minigun quick -d 30 -r 5 http://127.0.0.1:3000/test`
+`$ artillery quick -d 30 -r 5 http://127.0.0.1:3000/test`
 
 This will run a test for 30 seconds with an average of 5 new requests to
 `http://127.0.0.1:3000/test` every second.
 
 ## Run with a more complex scenario
 
-`$ minigun run hello.json`
+`$ artillery run hello.json`
 
 Where `hello.json` is your tests script that contains something like:
 
@@ -79,10 +77,10 @@ Where `hello.json` is your tests script that contains something like:
 
 # Create a report
 
-Create a graphical report from the JSON stats produced by `minigun run` with:
-`minigun report <minigun_report_xxxxx.json>`
+Create a graphical report from the JSON stats produced by `artillery run` with:
+`artillery report <report_xxxxx.json>`
 
-An example: :tophat:
+An example:
 
 ![https://cldup.com/PYeZJTCe86-1200x1200.png](https://cldup.com/PYeZJTCe86-1200x1200.png)
 
@@ -98,28 +96,14 @@ An example: :tophat:
 
 # Learn More
 
-- [HTTP Features](https://github.com/shoreditch-ops/minigun/wiki/HTTP-Features)
-- [WebSocket Features](https://github.com/shoreditch-ops/minigun/wiki/WebSocket-Features)
-
-
-## When NOT to use Minigun
-
-Minigun is **not** a web server benchmarking tool. Its sweet spot is performance
-testing of applications and APIs with complex transactional scenarios.
-
-Having said that, Minigun is capable of generating 500+ RPS on modest hardware
-(a 512MB Digital Ocean droplet). Still though, if you are after raw RPS to
-simply hammer a single URL, you may want to use [`wrk`](https://github.com/wg/wrk) instead.
-
-**tldr:**
-Benchmarking an Nginx installation? Use [`wrk`](https://github.com/wg/wrk). Testing a Node.js
-API, a RoR webapp, or a realtime WebSocket-based app? Use Minigun.
+- [HTTP Features](https://github.com/shoreditch-ops/artillery/wiki/HTTP-Features)
+- [WebSocket Features](https://github.com/shoreditch-ops/artillery/wiki/WebSocket-Features)
 
 # Design
 
 ## Declarative tests
 
-**minigun** test cases are 100% declarative. Your test-case describes _what_
+**Artillery** test cases aim to be 100% declarative. Your test-case describes _what_
 needs to happen, not _how_ it happens.
 
 Benefits of this approach:
@@ -133,32 +117,26 @@ Benefits of this approach:
 Further reading:
 - [Imperative vs Declarative Programming](http://latentflip.com/imperative-vs-declarative/)
 
-## Statistically-sound testing
+## Virtual users
 
-### Modeling user arrivals
+Artillery is centered around virtual users arriving to use your service
+according to a predefined scenario (or a number of scenarios) for realistic
+simulation of load on the system. This stands in contrast to conventional
+load-testing tools that create a small number of connections to the target
+server and send many requests in a loop over the same connection.
 
-**minigun** uses the [Poisson distribution](http://en.wikipedia.org/wiki/Poisson_process)
-by default to model how requests are spread over the duration of the test.
-
-**What does this mean in practice?**
-
-If you specify a duration of 60 seconds, with the arrival rate of 10, it means
-*on average* 10 users will arrive every second, with for example 8 arrivals one
-second and 11 arrivals the next. The inter-arrival period would also be
-slightly different every time, i.e. 5 users arriving within 1 second (1000 ms)
-would not be evenly spread out 200ms apart.
-
-This may seem like a subtle difference, but in practice it leads to more robust
-tests.
+That said, some situations do call for the latter approach (e.g. for
+testing AMQP or long-lived WebSocket connections) and Artillery provides
+functionality to support this type of usage.
 
 # Contributing
 
-Thinking of contributing to Minigun? Awesome! Please have a quick look at [the
+Thinking of contributing to Artillery? Awesome! Please have a quick look at [the
 guide](CONTRIBUTING.md).
 
 # License
 
-**minigun** is 100% open-source software distributed under the terms of the
+**Artillery** is open-source software distributed under the terms of the
 [ISC](http://en.wikipedia.org/wiki/ISC_license) license.
 
 ```
@@ -176,11 +154,3 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ```
-
-# Bonus Dinosaur
-
-You made it all the way down here, so here's a dinosaur with a minigun:
-
-![Dinosaur with a minigun](https://cldup.com/L_LKn5MZLk-1200x1200.jpeg)
-
-

@@ -1,6 +1,6 @@
-# Writing a Minigun plugin
+# Writing an Artillery plugin
 
-Minigun has a plugin interface. A plugin can register to receive events emitted by Minigun as a test is running and do various useful things.
+Artillery has a plugin interface. A plugin can register to receive events emitted by Artillery as a test is running and do various useful things.
 
 ## Plugin lifecycle
 
@@ -23,8 +23,8 @@ Minigun has a plugin interface. A plugin can register to receive events emitted 
   }
   ```
 
-- Minigun looks through `config.plugins` before running the test, and for each entry:
-  - `require()`s `'minigun-plugin'+ pluginName` where `pluginName` is the key in `config.plugins`, i.e. `minigun-plugin-statsd` in this instance.
+- Artillery looks through `config.plugins` before running the test, and for each entry:
+  - `require()`s `'artillery-plugin'+ pluginName` where `pluginName` is the key in `config.plugins`, i.e. `artillery-plugin-statsd` in this instance.
   - The plugin is initialised by calling the exported constructor function with two parameters:
     1. `config` - the entirety of the config
     2. `ee` - an EventEmitter instance on which the plugin can subscribe to events from the core
@@ -44,10 +44,10 @@ Events that plugins can subscribe to:
 
 ## Example
 
-Take a look at [minigun-plugin-statsd](https://github.com/shoreditch-ops/minigun-plugin-statsd) for a simple example of a plugin.
+Take a look at [artillery-plugin-statsd](https://github.com/shoreditch-ops/artillery-plugin-statsd) for a simple example of a plugin.
 
 ## Writing a plugin?
 
-Let us know if you run into any issues or need guidance by creating an [Issue](https://github.com/shoreditch-ops/minigun/issues).
+Let us know if you run into any issues or need guidance by creating an [Issue](https://github.com/shoreditch-ops/artillery/issues).
 
-Minigun has a focus on UX and a "batteries included" philosophy, therefore if your plugin is stable and published under a non-viral open-source license, we will include it in the default Minigun distribution.
+Artillery has a focus on UX and a "batteries included" philosophy, therefore if your plugin is stable and published under a non-viral open-source license, we will include it in the default Artillery distribution.

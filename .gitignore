@@ -17,5 +17,5 @@ config.json
 coverage.*
 lib-cov
 *scratch*
-minigun_report*
+artillery_report*
 coverage/*

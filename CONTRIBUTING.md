@@ -1,8 +1,8 @@
-# minigun
+# Artillery
 
 ## Need to get in touch?
 
-All project discussions should happen in the [issue tracker](https://github.com/shoreditch-ops/minigun/issues).
+All project discussions should happen in the [issue tracker](https://github.com/shoreditch-ops/artillery/issues).
 However if you are a first-time contributor and want some help getting started,
 feel free to get in touch over email:
 
