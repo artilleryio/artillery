@@ -44,3 +44,13 @@ function artillery() {
   ./bin/artillery run ./test/scripts/multiple_payloads.json | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
+
+@test "Run a script using default options (output)" {
+  ./bin/artillery run ./test/scripts/hello.json | grep 'Log file: artillery_report.json'
+  [ $? -eq 0 ]
+}
+
+@test "Run a script overwriting default options (output)" {
+  ./bin/artillery run ./test/scripts/hello.json -o artillery_report_custom | grep 'Log file: artillery_report_custom.json'
+  [ $? -eq 0 ]
+}
