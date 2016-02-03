@@ -75,6 +75,8 @@ Where `hello.json` is your tests script that contains something like:
 }
 ```
 
+You can specify config default values using a `.artilleryrc` file on your home folder or in any other [location supported by `rc`](https://github.com/dominictarr/rc#standards). Have a look at the included `.artilleryrc` for an example.
+
 # Create a report
 
 Create a graphical report from the JSON stats produced by `artillery run` with:
