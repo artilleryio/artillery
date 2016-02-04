@@ -46,7 +46,7 @@ function artillery() {
 }
 
 @test "Run a script using default options (output)" {
-  ./bin/artillery run ./test/scripts/hello.json | grep 'Log file: artillery_report.json'
+  ./bin/artillery run ./test/scripts/hello.json | grep "Log file: artillery_report_*"
   [ $? -eq 0 ]
 }
 

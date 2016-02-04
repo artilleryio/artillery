@@ -38,13 +38,14 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
+    "artillery-core": "latest",
     "async": "^1.0.0",
     "cli": "^0.6.6",
     "commander": "^2.8.1",
     "csv-parse": "^0.1.1",
     "debug": "^2.2.0",
     "lodash": "^3.9.1",
-    "artillery-core": "latest",
+    "moment": "2.11.2",
     "open": "0.0.5",
     "rc": "^1.1.6",
     "yamljs": "^0.2.4"
