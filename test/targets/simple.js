@@ -103,7 +103,7 @@ server.register({
       setInterval(function() {
         console.log(new Date());
         console.log('REQUEST_COUNT = %s', REQUEST_COUNT);
-      }, 20 * 1000 * 20);
+      }, 20 * 1000);
     });
   }
 });
