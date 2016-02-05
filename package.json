@@ -38,9 +38,9 @@
     "good-console": "5.1.0",
     "hapi": "10.4.0",
     "istanbul": "^0.3.17",
+    "node-uuid": "1.4.7",
     "pre-commit": "^1.0.10",
-    "tape": "^4.0.0",
-    "uuid": "^2.0.1"
+    "tape": "^4.0.0"
   },
   "repository": {
     "type": "git",
