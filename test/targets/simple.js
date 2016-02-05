@@ -71,6 +71,19 @@ server.route({
   handler: postIndex
 });
 
+server.route(
+  {
+    method: 'GET',
+    path: '/journeys',
+    handler: getJourneys
+  });
+
+server.route({
+    method: 'GET',
+    path: '/journey/{id}',
+    handler: getJourney
+  });
+
 server.state('testCookie', {
   ttl: null,
   isSecure: false,
@@ -121,7 +134,7 @@ function postIndex(req, reply) {
 }
 
 function create(req, reply) {
-  var id = uuid.v4().split('-')[0];
+  var id = uuid.v4();//.split('-')[0];
   DB[id] = req.payload;
   DB[id].id = id;
   REQUEST_COUNT++;
@@ -131,9 +144,13 @@ function create(req, reply) {
 function read(req, reply) {
   REQUEST_COUNT++;
   var result = DB[req.params.id];
-  console.log(typeof result);
-  console.log(result);
-  return reply(result).code(200);
+  //console.log(typeof result);
+  //console.log(result);
+  if (result) {
+    return reply(result).code(200);
+  } else {
+    return reply().code(404);
+  }
 }
 
 function stats(req, reply) {
@@ -164,4 +181,56 @@ function expectsCookie(req, reply) {
     }
   }
   reply('ok');
+}
+
+function getJourneys(req, reply) {
+  var response = `
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:tns1="http://" xmlns:tns="http://">
+  <soap:Header></soap:Header>
+  <soap:Body>
+    <tns1:GetJourneys xmlns:tns1="http://">
+        <Journey>
+            <JourneyId>1</JourneyId>
+            <JourneyFromCode>781</JourneyFromCode>
+            <JourneyToCode>871</JourneyToCode>
+        </Journey>
+        <Journey>
+            <JourneyId>2</JourneyId>
+            <JourneyFromCode>781</JourneyFromCode>
+            <JourneyToCode>915</JourneyToCode>
+        </Journey>
+        <Journey>
+            <JourneyId>3</JourneyId>
+            <JourneyFromCode>781</JourneyFromCode>
+            <JourneyToCode>641</JourneyToCode>
+        </Journey>
+    </tns1:GetJourneys>
+  </soap:Body>
+</soap:Envelope>`;
+  return reply(response)
+    .type('application/xml');
+}
+
+function getJourney(req, reply) {
+  console.log(req.params.id);
+  if (req.params.id === '1') {
+    let response = `
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:tns1="http://" xmlns:tns="http://">
+  <soap:Header></soap:Header>
+  <soap:Body>
+    <tns1:GetJourney xmlns:tns1="http://">
+        <Journey>
+            <JourneyId>1</JourneyId>
+            <JourneyFromCode>781</JourneyFromCode>
+            <JourneyToCode>871</JourneyToCode>
+            <JourneyAvailability>5</JourneyAvailability>
+            <JourneyPrice>199</JourneyPrice>
+        </Journey>
+    </tns1:GetJourney>
+  </soap:Body>
+</soap:Envelope>`;
+    return reply(response).type('application/xml');
+  }
+
+  return reply('').code(404);
 }

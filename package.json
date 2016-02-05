@@ -25,6 +25,7 @@
     "esprima": "2.5.0",
     "hogan.js": "^3.0.2",
     "jsck": "0.2.5",
+    "libxmljs": "0.17.1",
     "lodash": "3.10.0",
     "measured": "1.1.0",
     "request": "2.58.0",
