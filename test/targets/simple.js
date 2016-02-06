@@ -1,7 +1,7 @@
 'use strict';
 
 var Hapi = require('hapi');
-var uuid = require('uuid');
+var uuid = require('node-uuid');
 
 var PORT = 3003;
 
