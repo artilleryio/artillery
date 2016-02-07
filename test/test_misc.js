@@ -7,6 +7,7 @@ var url = require('url');
 
 var SCRIPTS = [
   'hello.json',
+  'hello_ws.json',
   'multiple_phases.json',
   'large_payload.json'
   ];
@@ -45,6 +46,9 @@ l.each(SCRIPTS, function(fn) {
       }, 0);
       t.assert(delta >= minDuration,
         'Should run for at least the total duration of phases');
+
+      t.assert(requests > 0, 'Should have successful requests');
+      t.assert(scenarios > 0, 'Should have successful scenarios');
 
       t.end();
     });
