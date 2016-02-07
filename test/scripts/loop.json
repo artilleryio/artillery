@@ -2,7 +2,7 @@
   "config": {
     "target": "http://localhost:3003",
     "phases": [
-      {"duration": 10, "arrivalRate": 20}
+      {"duration": 10, "arrivalRate": 1}
     ],
     "statsInterval": 1
   },
@@ -13,7 +13,7 @@
           "loop": [
             {"get": {"url": "/"}}
           ],
-          "count": 100
+          "count": 5
         }
       ]
     }
