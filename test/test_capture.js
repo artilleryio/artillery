@@ -19,9 +19,15 @@ test('Capture - JSON', (t) => {
     let ee = runner(script, parsedData, {});
 
     ee.on('done', function(stats) {
-      t.assert(stats.aggregate.codes[201] * 2 ===
-               stats.aggregate.codes[200] + stats.aggregate.codes[404],
-               'There should be a 200 and a 400 for every 201');
+      let c200 = stats.aggregate.codes[200];
+      let c201 = stats.aggregate.codes[201];
+      let c404 = stats.aggregate.codes[404];
+      let cond = c201 * 2 === c200 + c404;
+      t.assert(cond,
+               'There should be a 200 and a 404 for every 201');
+      if (!cond) {
+        console.log('200: %s; 201: %s; 404: %s', c200, c201, c404);
+      }
       t.end();
     });
 

@@ -95,16 +95,19 @@ server.state('testCookie', {
 
 var DB = {};
 
+let reporters = [];
+if (!process.env.SILENT) {
+  reporters.push({
+    reporter: require('good-console'),
+    events: {error: '*', log: '*', response: '*'}
+  });
+}
+
 server.register({
   register: require('good'),
   options: {
     opsInterval: 1000,
-    reporters: [
-      {
-        reporter: require('good-console'),
-        events: {error: '*', log: '*', response: '*'}
-      }
-    ]
+    reporters: reporters
   }
 }, function(err) {
   if (err) {

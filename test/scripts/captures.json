@@ -28,12 +28,12 @@
         },
         {"get":
           {
-            "url": "/pets/{{ id }}",
+            "url": "/pets/{{ $.id }}",
             "match": {"json": "$.name", "value": "{{ name }}"}
           }
         },
         {"get": {
-          "url": "/pets/{{ $.id }}",
+          "url": "/pets/{{ id }}",
           "match": {"json": "$.name", "value": "{{ name }}"}
         }}
       ]
