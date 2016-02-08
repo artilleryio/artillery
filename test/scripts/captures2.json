@@ -1,0 +1,40 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 1 }
+      ],
+      "payload": {
+        "fields": ["species", "name"]
+      },
+      "ensure": {
+        "p95": 300
+      }
+  },
+  "scenarios": [
+    {
+      "name": "Test XML capture",
+      "flow": [
+        {"get":
+          {
+            "url": "/journeys",
+            "capture": {
+              "xpath": "(//Journey)[1]/JourneyId/text()",
+              "transform": "this.JourneyId.toUpperCase()",
+              "as": "JourneyId"
+            }
+          }
+        },
+        {"get":
+          {
+            "url": "/journey/{{ JourneyId }}",
+            "match": {
+              "xpath": "(//Journey/JourneyPrice)[1]/text()",
+              "value": "199"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

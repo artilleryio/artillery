@@ -1,6 +1,6 @@
 #!/bin/bash
 
-node test/targets/simple.js &
+SILENT=true node test/targets/simple.js &
 simple_pid=$!
 node test/targets/simple_ws.js &
 ws_pid=$!
