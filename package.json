@@ -27,8 +27,9 @@
     "jsck": "0.2.5",
     "libxmljs": "0.17.1",
     "lodash": "3.10.0",
-    "measured": "1.1.0",
+    "node-uuid": "1.4.7",
     "request": "2.58.0",
+    "stats-lite": "2.0.0",
     "traverse": "0.6.6",
     "ws": "1.0.1"
   },
@@ -39,7 +40,6 @@
     "good-console": "5.1.0",
     "hapi": "10.4.0",
     "istanbul": "^0.3.17",
-    "node-uuid": "1.4.7",
     "pre-commit": "^1.0.10",
     "tape": "^4.0.0"
   },
