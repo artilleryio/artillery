@@ -16,7 +16,7 @@
   "contributors": [
     "Kieran Gorman (https://github.com/kjgorman)"
   ],
-  "license": "ISC",
+  "license": "MPL-2.0",
   "dependencies": {
     "JSONPath": "0.10.0",
     "arrivals": "latest",
