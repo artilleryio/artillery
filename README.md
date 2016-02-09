@@ -24,7 +24,7 @@ and more scalable.
 - Use Artillery as a standalone CLI tool or as a Node.js library
 - Good performance (1.2k RPS for HTTP on a modest VPS)
 - Plugin support (experimental) - [docs](https://github.com/shoreditch-ops/artillery/blob/master/docs/plugins.md) - e.g. publish stats to Graphite/Librato/DataDog in real-time
-- Open-source & free (commercial support is available for enterprise users - [team@artillery.io](team@artillery.io))
+- Open-source & free (commercial support is available for enterprise users - [team@artillery.io](mailto:team@artillery.io))
 
 # Use Cases
 
