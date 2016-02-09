@@ -16,15 +16,15 @@ and more scalable.
 
 # Features
 
-- HTTP and WebSocket support
+- HTTP and WebSocket support (AMQP coming next)
 - Detailed performance metrics (latency, RPS, throughput)
-- Graphical reports
-- Test scenarios are just easy-to-read JSON - all declarative, no code ([see an example](https://github.com/shoreditch-ops/artillery-core/blob/master/test/scripts/all_features.json))
-- Dynamic payloads from external CSV files
+- Graphical reports (self-contained HTML file, handy for embedding in CI or emailing around)
+- Test scenarios are just easy-to-read JSON (or YAML) - all declarative, no code ([see an example](https://github.com/shoreditch-ops/artillery-core/blob/master/test/scripts/all_features.json))
+- Dynamic payloads from external CSV files (e.g. usernames/passwords for making auth requests)
 - Use Artillery as a standalone CLI tool or as a Node.js library
-- Good performance
-- Plugin support (experimental) - [docs](https://github.com/shoreditch-ops/artillery/blob/master/docs/plugins.md)
-- Open-source & free
+- Good performance (1.2k RPS for HTTP on a modest VPS)
+- Plugin support (experimental) - [docs](https://github.com/shoreditch-ops/artillery/blob/master/docs/plugins.md) - e.g. publish stats to Graphite/Librato/DataDog in real-time
+- Open-source & free (commercial support is available for enterprise users - [team@artillery.io](team@artillery.io))
 
 # Use Cases
 
