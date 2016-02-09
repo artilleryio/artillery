@@ -23,7 +23,7 @@
   "contributors": [
     "Kieran Gorman (https://github.com/kjgorman)"
   ],
-  "license": "ISC",
+  "license": "MPL-2.0",
   "preferGlobal": true,
   "man": "./man/artillery.1",
   "bin": {
