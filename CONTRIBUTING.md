@@ -6,7 +6,7 @@ All project discussions should happen in the [issue tracker](https://github.com/
 However if you are a first-time contributor and want some help getting started,
 feel free to get in touch over email:
 
-* Hassy Veldstra - [h@veldstra.org](mailto:h@veldstra.org)
+* Hassy Veldstra - [h@artillery.io](mailto:h@artillery.io)
 
 ## Guide for Contributions
 
@@ -41,6 +41,10 @@ feel free to get in touch over email:
   around 72 characters. Most commits should reference an existing
   issue, such as #101 above.
   ```
+
+## Licensing
+
+By sending a patch to Artillery you agree for your contribution to be distributed under the terms of [MPL2](https://www.mozilla.org/en-US/MPL/2.0/).
 
 ## Credits
 
