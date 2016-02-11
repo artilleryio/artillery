@@ -30,3 +30,30 @@ test('cookie jar', function(t) {
   });
   ee.run();
 });
+
+test('default cookies', function(t) {
+  var script = require('./scripts/defaults_cookies.json');
+  var ee = runner(script);
+  ee.on('done', function(stats) {
+    t.assert(stats.aggregate.codes[200] && stats.aggregate.codes[200] > 0,
+      'There should be some 200s');
+    t.assert(stats.aggregate.codes[403] === undefined,
+      'There should be no 403s');
+    t.end();
+  });
+  ee.run();
+});
+
+test('no default cookie', function(t) {
+  var script = require('./scripts/defaults_cookies.json');
+  delete script.config.defaults.cookie;
+  var ee = runner(script);
+  ee.on('done', function(stats) {
+    t.assert(stats.aggregate.codes[403] && stats.aggregate.codes[403] > 0,
+      'There should be some 403s');
+    t.assert(stats.aggregate.codes[200] === undefined,
+      'There should be no 200s');
+    t.end();
+  });
+  ee.run();
+});

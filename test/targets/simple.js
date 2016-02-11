@@ -212,15 +212,18 @@ function setsCookie(req, reply) {
 }
 
 function expectsCookie(req, reply) {
-  console.log('req.state.testCookie = %j', req.state.testCookie);
+  console.log('req.state = %j', req.state);
+  //console.log('req.state.testCookie = %j', req.state.testCookie);
   if (req.state.testCookie) {
     if (COOKIES[req.state.testCookie.uid]) {
       COOKIES[req.state.testCookie.uid]++;
     } else {
       COOKIES[req.state.testCookie.uid] = 1;
     }
+    return reply('ok');
+  } else {
+    return reply().code(403);
   }
-  reply('ok');
 }
 
 function getJourneys(req, reply) {
