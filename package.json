@@ -34,11 +34,13 @@
     "ws": "1.0.1"
   },
   "devDependencies": {
+    "bcrypt": "0.8.5",
     "csv-parse": "1.0.1",
     "eslint": "^0.24.0",
     "good": "6.4.0",
     "good-console": "5.1.0",
     "hapi": "10.4.0",
+    "hapi-auth-basic": "4.1.0",
     "istanbul": "^0.3.17",
     "pre-commit": "^1.0.10",
     "tape": "^4.0.0"

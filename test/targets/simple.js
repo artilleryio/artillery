@@ -2,6 +2,8 @@
 
 var Hapi = require('hapi');
 var uuid = require('node-uuid');
+var Bcrypt = require('bcrypt');
+var Basic = require('hapi-auth-basic');
 
 var PORT = 3003;
 
@@ -17,6 +19,24 @@ server.connection({
   port: PORT
 });
 
+var users = {
+  leo: {
+    name: 'leo',
+    password: '$2a$10$iqJSHD.BGr0E2IxQwYgJmeP3NvhPrXAeLSaGCj6IR/XU5QtjVu5Tm',   // 'secret'
+    id: '1'
+  }
+};
+
+var validate = function(request, username, password, callback) {
+  var user = users[username];
+  if (!user) {
+    return callback(null, false);
+  }
+
+  Bcrypt.compare(password, user.password, (err, isValid) => {
+      callback(err, isValid, { id: user.id, name: user.name });
+  });
+};
 
 // TODO: clean up
 
@@ -103,16 +123,33 @@ if (!process.env.SILENT) {
   });
 }
 
-server.register({
+server.register([{
   register: require('good'),
   options: {
     opsInterval: 1000,
     reporters: reporters
   }
-}, function(err) {
+},
+{
+  register: Basic
+}], function(err) {
   if (err) {
     console.error(err);
   } else {
+    server.auth.strategy('simple', 'basic', { validateFunc: validate });
+
+    server.route({
+      method: 'GET',
+      path: '/protected',
+      config: {
+        auth: 'simple',
+        handler: function(request, reply) {
+          console.log(request.auth);
+          return reply('secret timestamp for ' + request.auth.credentials.name + ': ' + Date.now());
+        }
+      }
+    });
+
     server.start(function() {
       console.log('Target listening on 0.0.0.0:' + PORT);
 
