@@ -1,3 +1,6 @@
+![artillery.io logo](https://artillery.io/img/logo.png) [![https://artillery.io](https://dl.dropboxusercontent.com/u/476522/artillery/wwwbadge.png)](https://artillery.io) [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
+
+
 ```
             _   _ _ _
   __ _ _ __| |_(_) | | ___ _ __ _   _
@@ -5,14 +8,13 @@
 | (_| | |  | |_| | | |  __/ |  | |_| |
  \__,_|_|   \__|_|_|_|\___|_|   \__, |
                                 |___/
+
 ```
 
 **Artillery** is modern multi-protocol load-generator with a strong focus on
 developer happiness and a batteries-included philosophy. Use it to load-test
 your webapp backend, API or microservice to help make it faster, more resilient,
 and more scalable.
-
-[![https://artillery.io](https://dl.dropboxusercontent.com/u/476522/artillery/wwwbadge.png)](https://artillery.io) [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
 # Features
 
