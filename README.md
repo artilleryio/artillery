@@ -1,20 +1,21 @@
-![artillery.io logo](https://artillery.io/img/logo.png) [![https://artillery.io](https://dl.dropboxusercontent.com/u/476522/artillery/wwwbadge.png)](https://artillery.io) [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
-
-
-```
-            _   _ _ _
-  __ _ _ __| |_(_) | | ___ _ __ _   _
- / _` | '__| __| | | |/ _ \ '__| | | |
-| (_| | |  | |_| | | |  __/ |  | |_| |
- \__,_|_|   \__|_|_|_|\___|_|   \__, |
-                                |___/
-
-```
+<p align="center">
+<a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/logo.png" /></a>
+</p>
 
 **Artillery** is modern multi-protocol load-generator with a strong focus on
 developer happiness and a batteries-included philosophy. Use it to load-test
 your webapp backend, API or microservice to help make it faster, more resilient,
 and more scalable.
+
+---
+
+- **Source**: [https://github.com/shoreditch-ops/artillery](https://github.com/shoreditch-ops/artillery)
+- **Issues**: [https://github.com/shoreditch-ops/artillery/issues](https://github.com/shoreditch-ops/artillery/issues)
+- **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/shoreditch-ops/artillery)
+- **Docs**: [https://github.com/shoreditch-ops/artillery/wiki](https://github.com/shoreditch-ops/artillery/wiki)
+- **Twitter**: [@ShoreditchOps](https://twitter.com/shoreditchops)
+
+[![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
 # Features
 
