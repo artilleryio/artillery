@@ -41,6 +41,8 @@ feel free to get in touch over email:
   around 72 characters. Most commits should reference an existing
   issue, such as #101 above.
   ```
+  
+* Once your first PR has been merged, please add yourself to `package.json` for the relevant module and send another PR.
 
 ## Licensing
 
