@@ -12,10 +12,10 @@ test('loop', (t) => {
     let scenarios = stats.aggregate.scenariosCompleted;
     let requests = stats.aggregate.requestsCompleted;
     let loopCount = script.scenarios[0].flow[0].count;
-    let expected = scenarios * loopCount;
+    let expected = scenarios * loopCount * 2;
     t.assert(
       requests === expected,
-      'Should have ' + loopCount + ' requests for each completed scenario');
+      'Should have ' + expected + ' requests for each completed scenario');
     t.end();
   });
   ee.run();

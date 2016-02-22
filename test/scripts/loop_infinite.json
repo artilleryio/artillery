@@ -4,7 +4,7 @@
     "phases": [
       {"duration": 10, "arrivalRate": 1}
     ],
-    "statsInterval": 1
+    "statsInterval": 10
   },
   "scenarios": [
     {
@@ -12,10 +12,8 @@
         {
           "loop": [
             {"get": {"url": "/"}},
-            {"think": 1},
-            {"get": {"url": "/"}}
-          ],
-          "count": 5
+            {"think": 1}
+          ]
         }
       ]
     }
