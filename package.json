@@ -38,7 +38,7 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
-    "artillery-core": "latest",
+    "artillery-core": "1.5.3",
     "async": "^1.0.0",
     "cli": "^0.6.6",
     "commander": "^2.8.1",
