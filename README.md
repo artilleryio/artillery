@@ -1,5 +1,5 @@
 <p align="center">
-<a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/logo.png" /></a>
+<a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/flag.png" width="300" /></a>
 </p>
 
 **Artillery** is modern multi-protocol load-generator with a strong focus on
