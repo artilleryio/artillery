@@ -12,7 +12,7 @@ and more scalable.
 - **Source**: [https://github.com/shoreditch-ops/artillery](https://github.com/shoreditch-ops/artillery)
 - **Issues**: [https://github.com/shoreditch-ops/artillery/issues](https://github.com/shoreditch-ops/artillery/issues)
 - **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/shoreditch-ops/artillery)
-- **Docs**: [https://github.com/shoreditch-ops/artillery/wiki](https://github.com/shoreditch-ops/artillery/wiki)
+- **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@ShoreditchOps](https://twitter.com/shoreditchops)
 
