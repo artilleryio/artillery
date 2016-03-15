@@ -18,7 +18,7 @@
   ],
   "license": "MPL-2.0",
   "dependencies": {
-    "JSONPath": "0.10.0",
+    "JSONPath": "0.11.2",
     "arrivals": "latest",
     "async": "1.5.2",
     "debug": "2.2.0",
