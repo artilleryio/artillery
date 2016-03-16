@@ -32,6 +32,16 @@ function artillery() {
   [ $? -eq 0 ]
 }
 
+@test "Environment specified with -e should be used" {
+  # FIXME: Should not need to use "-k" here, see #59
+  STATS=`mktemp`
+  ./bin/artillery run -k -e production -o "$STATS" test/scripts/environments2.json
+  # TODO: Use jq
+  # Here if the right environment is not picked up, we'll have a bunch of ECONNREFUSED errors in the report
+  REPORT="$STATS.json" node -e 'var fs = require("fs");var j = JSON.parse(fs.readFileSync(process.env.REPORT));if(Object.keys(j.aggregate.errors).length !== 0) process.exit(1)'
+  [ $? -eq 0 ]
+}
+
 @test "Can run a quick HTTP test with 'artillery quick'" {
   ./bin/artillery quick -d 10 -r 1 -o `mktemp` https://artillery.io | grep 'all scenarios completed'
   [ $? -eq 0 ]

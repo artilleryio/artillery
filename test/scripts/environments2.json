@@ -1,0 +1,23 @@
+{
+  "config": {
+    "target": "http://localhost",
+    "phases": [
+      {"duration": 10, "arrivalRate": 1}
+    ],
+    "environments": {
+      "production": {
+        "target": "https://artillery.io"
+      },
+      "dev": {
+        "target": "http://dev.wontresolve.prod:44321"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        { "get": { "url": "/" } }
+      ]
+    }
+  ]
+}
