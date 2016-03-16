@@ -55,3 +55,23 @@ test('Capture - XML', (t) => {
     ee.run();
   });
 });
+
+test('Capture - RegExp', (t) => {
+  const fn = './scripts/captures-regexp.json';
+  const script = require(fn);
+  let ee = runner(script);
+  ee.on('done', (stats) => {
+      let c200 = stats.aggregate.codes[200];
+      let c201 = stats.aggregate.codes[201];
+      let c404 = stats.aggregate.codes[404];
+      let cond = c201 * 2 === c200 + c404;
+      t.assert(cond,
+               'There should be a 200 and a 404 for every 201');
+      if (!cond) {
+        console.log('200: %s; 201: %s; 404: %s', c200, c201, c404);
+      }
+      t.end();
+  });
+
+  ee.run();
+});
