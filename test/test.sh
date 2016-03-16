@@ -9,6 +9,13 @@ function artillery() {
   fi
 }
 
+@test "If we report specifying output, no browser is opened" {
+  HTML_OUT=`mktemp`
+  ./bin/artillery report -o $HTML_OUT test/scripts/report.json | grep "Report generated: $HTML_OUT"
+  [ $? -eq 0 ]
+  [ -f $HTML_OUT ]
+}
+
 @test "Running with no arguments prints out usage information" {
   ./bin/artillery | grep Usage
   [ $? -eq 0 ]

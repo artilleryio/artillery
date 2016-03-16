@@ -17,7 +17,6 @@ server.connection({
   port: PORT
 });
 
-
 // TODO: clean up
 
 server.route({

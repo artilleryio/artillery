@@ -1,0 +1,40 @@
+{
+  "intermediate": [],
+  "aggregate": {
+    "timestamp": "2016-03-16T15:22:25.502Z",
+    "scenariosCreated": 1,
+    "scenariosCompleted": 0,
+    "requestsCompleted": 0,
+    "latency": {
+      "min": null,
+      "max": null,
+      "median": null,
+      "p95": null,
+      "p99": null
+    },
+    "rps": {
+      "count": 1,
+      "mean": 0.68
+    },
+    "scenarioDuration": {
+      "min": null,
+      "max": null,
+      "median": null,
+      "p95": null,
+      "p99": null
+    },
+    "errors": {
+      "UNABLE_TO_VERIFY_LEAF_SIGNATURE": 1
+    },
+    "codes": {},
+    "matches": 0,
+    "latencies": []
+  },
+  "phases": [
+    {
+      "duration": "1",
+      "arrivalRate": "1",
+      "mode": "uniform"
+    }
+  ]
+}
