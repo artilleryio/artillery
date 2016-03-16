@@ -42,6 +42,7 @@ program
 program
   .command('report <file>')
   .description('Create a report from a JSON file created by "artillery run"')
+  .option('-o, --output <path>', 'Set file to write html report to (will open in browser by default)')
   .action(commands.report);
 
 program
