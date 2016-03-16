@@ -37,6 +37,12 @@ function artillery() {
   [ $? -eq 0 ]
 }
 
+@test "Can specify output filename for artillery quick" {
+  JSON_REPORT=`mktemp`
+  ./bin/artillery quick -d 1 -r 1 -o $JSON_REPORT https://artillery.io | grep "Log file: $JSON_REPORT"
+  [ $? -eq 0 ]
+}
+
 @test "Run a simple script" {
   ./bin/artillery run ./test/scripts/hello.json | grep 'all scenarios completed'
   [ $? -eq 0 ]
