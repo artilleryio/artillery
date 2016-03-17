@@ -104,6 +104,18 @@ server.route({
     handler: getJourney
   });
 
+server.route({
+  method: 'GET',
+  path: '/devices',
+  handler: getDevices
+});
+
+server.route({
+  method: 'PUT',
+  path: '/devices/{id}',
+  handler: putDevice
+});
+
 server.state('testCookie', {
   ttl: null,
   isSecure: false,
@@ -276,4 +288,51 @@ function getJourney(req, reply) {
   }
 
   return reply('').code(404);
+}
+
+function getDevices(req, reply) {
+  var response = `
+[
+  {
+    "id": "4dcb754442b1285785b81833c77f4a46",
+    "label": "Lamp 1",
+    "power": true,
+    "group": {
+      "id": "1c8de82b81f445e7cfaafae49b259c71",
+      "name": "Room"
+    },
+    "location": {
+      "id": "1d6fe8ef0fde4c6d77b0012dc736662c",
+      "name": "Home"
+    }
+  },
+  {
+    "id": "e87c45241a484a3db9730ae4b98678d4",
+    "label": "Lamp 2",
+    "power": false,
+    "group": {
+      "id": "1c8de82b81f445e7cfaafae49b259c71",
+      "name": "Room"
+    },
+    "location": {
+      "id": "1d6fe8ef0fde4c6d77b0012dc736662c",
+      "name": "Home"
+    }
+  }
+]
+`;
+  return reply(response)
+    .type('application/json')
+    .code(200);
+}
+
+function putDevice(req, reply) {
+  if (req.params.id === "4dcb754442b1285785b81833c77f4a46" || req.params.id === "e87c45241a484a3db9730ae4b98678d4") {
+    return reply('{"status": "ok"}')
+      .type('application/json')
+      .code(200);
+  } else {
+    return reply('')
+      .code(404);
+  }
 }
