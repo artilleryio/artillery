@@ -56,6 +56,20 @@ test('Capture - XML', (t) => {
   });
 });
 
+test('Capture - Random value from array', (t) => {
+  const fn = './scripts/captures_array_random.json';
+  const script = require(fn);
+  let ee = runner(script);
+
+  ee.on('done', (stats) => {
+    t.assert(stats.aggregate.codes[200] > 0, 'Should have a few 200s');
+    t.assert(stats.aggregate.codes[404] === undefined, 'Should have no 404s');
+    t.end();
+  });
+
+  ee.run();
+});
+
 test('Capture - RegExp', (t) => {
   const fn = './scripts/captures-regexp.json';
   const script = require(fn);
