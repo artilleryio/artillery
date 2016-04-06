@@ -51,5 +51,8 @@
   },
   "pre-commit": [
     "is_linted"
-  ]
+  ],
+  "optionalDependencies": {
+    "artillery-xml-capture": "^1.0.0"
+  }
 }
