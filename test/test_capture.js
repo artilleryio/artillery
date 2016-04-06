@@ -7,6 +7,13 @@ const csv = require('csv-parse');
 const fs = require('fs');
 const path = require('path');
 
+let xmlCapture = null;
+try {
+  xmlCapture = require('artillery-xml-capture');
+} catch (e) {
+
+}
+
 test('Capture - JSON', (t) => {
   const fn = './scripts/captures.json';
   const script = require(fn);
@@ -36,6 +43,12 @@ test('Capture - JSON', (t) => {
 });
 
 test('Capture - XML', (t) => {
+  if (!xmlCapture) {
+    console.log('artillery-xml-capture does not seem to be installed, skipping XML capture test.');
+    t.assert(true);
+    return t.end();
+  }
+
   const fn = './scripts/captures2.json';
   const script = require(fn);
   const data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
