@@ -77,3 +77,11 @@ function artillery() {
   ./bin/artillery run ./test/scripts/hello.json -o artillery_report_custom | grep 'Log file: artillery_report_custom.json'
   [ $? -eq 0 ]
 }
+
+@test "Running a script that uses XPath capture when libxmljs is not installed produces a warning" {
+    find . -name "artillery-xml-capture" -type d | xargs rm -r
+    ./bin/artillery run ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
+    grep_status=$?
+    npm install artillery-xml-capture
+    [ $grep_status -eq 0 ]
+}
