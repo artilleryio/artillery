@@ -94,8 +94,7 @@ Create a graphical report from the JSON stats produced by `artillery run` with:
 
 # Learn More
 
-- [HTTP Features](https://github.com/shoreditch-ops/artillery/wiki/HTTP-Features)
-- [WebSocket Features](https://github.com/shoreditch-ops/artillery/wiki/WebSocket-Features)
+See [Artillery docs](https://artillery.io/docs/) for docs and examples.
 
 # Contributing
 
