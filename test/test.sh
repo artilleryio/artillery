@@ -85,3 +85,23 @@ function artillery() {
     npm install artillery-xml-capture
     [ $grep_status -eq 0 ]
 }
+
+@test "Quick: does not accept invalid combination of options" {
+
+    set +e
+    ./bin/artillery quick -c 10 -r 10 -n 50 https://artillery.io
+    status1=$?
+    ./bin/artillery quick -d 60 -n 50 https://artillery.io
+    status2=$?
+    set -e
+
+    [[ $status1 -eq 1 && $status2 -eq 1 ]]
+}
+
+@test "Quick: specified number of requests is sent on each connection" {
+    ./bin/artillery quick -c 200 -n 5 -o report.json http://localhost:3003/
+    requestCount=$(jq .aggregate.requestsCompleted report.json)
+    rm report.json
+
+    [[ $requestCount -eq 1000 ]]
+}
