@@ -1,0 +1,28 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 1 }
+      ],
+      "ensure": {
+        "p95": 300
+      }
+  },
+  "scenarios": [
+    {
+      "name": "Get an input value.",
+      "flow": [
+        {
+          "get":  {
+            "url": "/devices",
+            "capture": {
+              "regexp": "<input name=\"some-name\" type=\"text\" value=\"(.*?)\" ",
+              "as": "inputvalue",
+              "group" : 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
