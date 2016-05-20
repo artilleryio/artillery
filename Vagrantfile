@@ -35,7 +35,7 @@ Vagrant.configure("2") do |config|
 
     # Install project dependencies
     server.vm.provision "shell" do |s|
-      s.inline = "cd /opt/artillery; npm install"
+      s.inline = "cd /opt/artillery; npm install; npm install -g eslint; npm install jscs -g"
       s.privileged = true
     end
     # Install git
@@ -46,7 +46,7 @@ Vagrant.configure("2") do |config|
     
     # Install bats
     server.vm.provision "shell" do |s|
-      s.inline = "git clone https://github.com/sstephenson/bats.git;cd bats; ./install.sh /usr/local"
+      s.inline = "git clone https://github.com/sstephenson/bats.git; cd bats; ./install.sh /usr/local"
       s.privileged = true
     end
 
