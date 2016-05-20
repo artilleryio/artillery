@@ -58,12 +58,12 @@ function artillery() {
   [ $? -eq 0 ]
 }
 
-@test "Run a script with one payload" {
+@test "Run a script with one payload command line" {
   ./bin/artillery run ./test/scripts/single_payload.json -p ./test/scripts/pets.csv | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
-@test "Run a script with one payload" {
+@test "Run a script with one payload json config" {
   ./bin/artillery run ./test/scripts/single_payload_object.json| grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
