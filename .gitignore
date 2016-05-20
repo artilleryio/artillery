@@ -19,3 +19,5 @@ lib-cov
 *scratch*
 artillery_report*
 coverage/*
+.vagrant/
+.vscode

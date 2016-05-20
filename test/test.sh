@@ -63,6 +63,11 @@ function artillery() {
   [ $? -eq 0 ]
 }
 
+@test "Run a script with one payload" {
+  ./bin/artillery run ./test/scripts/single_payload_object.json| grep 'all scenarios completed'
+  [ $? -eq 0 ]
+}
+
 @test "Run a script with multiple payloads" {
   ./bin/artillery run ./test/scripts/multiple_payloads.json | grep 'all scenarios completed'
   [ $? -eq 0 ]
