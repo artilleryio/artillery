@@ -5,7 +5,7 @@
         { "duration": 10, "arrivalRate": 5 }
       ],
       "payload": {
-        "path": "./test/scripts/pets.csv",
+        "path": "./pets.csv",
         "fields": ["species", "name"]
       }
   },
