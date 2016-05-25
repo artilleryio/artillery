@@ -17,6 +17,6 @@ wss.on('connection', function connection(ws) {
 
 setInterval(function() {
   console.log(new Date());
-  console.log('CONNECTION_COUNT = %s', CONNECTION_COUNT);
-  console.log('MESSAGE_COUNT    = %s', MESSAGE_COUNT);
+  console.log('CONNECTION_COUNT [ws] = %s', CONNECTION_COUNT);
+  console.log('MESSAGE_COUNT    [ws] = %s', MESSAGE_COUNT);
 }, 5 * 1000);
