@@ -1,5 +1,9 @@
 var app = require('express')();
-app.get('/test', handler);
+app.get('/test-get', handler);
+app.post('/test-post', handler);
+app.put('/test-put', handler);
+app.delete('/test-delete', handler);
+
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 var PORT = 9092;
