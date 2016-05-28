@@ -91,6 +91,26 @@ server.route({
   handler: postIndex
 });
 
+server.route({
+  method: 'GET',
+  path: '/header',
+  handler: function(request, reply) {
+    return reply().header('x-auth', 'secret');
+  }
+});
+
+server.route({
+  method: 'GET',
+  path: '/expectsHeader',
+  handler: function(request, reply) {
+    if (request.headers['x-auth'] && request.headers['x-auth'] === 'secret') {
+      return reply({success: true}).code(200);
+    } else {
+      return reply().code(403);
+    }
+  }
+});
+
 server.route(
   {
     method: 'GET',
