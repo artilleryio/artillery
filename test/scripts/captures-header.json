@@ -1,0 +1,26 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:3003",
+    "phases": [
+      { "duration": 10, "arrivalRate": 1 }
+    ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get":
+         {
+           "url": "/header",
+           "capture": { "header": "x-auth", "as": "authToken"}
+         }
+        },
+        {"get":
+         {
+           "url": "/expectsHeader",
+           "headers": {"x-auth": "{{ authToken }}"}
+         }
+        }
+      ]
+    }
+  ]
+}

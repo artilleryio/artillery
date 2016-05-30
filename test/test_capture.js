@@ -14,6 +14,21 @@ try {
 
 }
 
+test('Capture - headers', (t) => {
+  const fn = './scripts/captures-header.json';
+  const script = require(fn);
+  let ee = runner(script);
+  ee.on('done', function(stats) {
+    // This will fail if header capture isn't working
+    t.assert(!stats.aggregate.codes[403], 'No unauthorized responses');
+    t.assert(stats.aggregate.codes[200] > 0, 'Successful responses');
+    t.end();
+  });
+  ee.run();
+});
+
+
+
 test('Capture - JSON', (t) => {
   const fn = './scripts/captures.json';
   const script = require(fn);
