@@ -1,6 +1,10 @@
 {
   "config": {
       "target": "http://127.0.0.1:9092",
+      "tls": {
+        "rejectUnauthorized": false
+      },
+      "timeout": 3,
       "phases": [
         {"duration": 20, "arrivalRate": 1}
       ]
