@@ -10,6 +10,7 @@ feel free to get in touch over email:
 
 ## Guide for Contributions
 
+* We use the usual Fork+Pull model (more info: [https://help.github.com/articles/using-pull-requests/](https://help.github.com/articles/using-pull-requests/)]
 * Pull requests should have tests
 * Ideally, pull requests should reference an Issue
 
