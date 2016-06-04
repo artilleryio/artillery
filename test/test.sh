@@ -53,6 +53,11 @@ function artillery() {
   [ $? -eq 0 ]
 }
 
+@test "'artilery quick' accepts a variety of options" {
+    ./bin/artillery quick --duration 10 --rate 1 https://artillery.io/
+    [ $? -eq 0 ]
+}
+
 @test "Run a simple script" {
   ./bin/artillery run ./test/scripts/hello.json | grep 'all scenarios completed'
   [ $? -eq 0 ]
