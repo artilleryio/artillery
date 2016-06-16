@@ -58,3 +58,33 @@ test('reuse', function(t) {
   });
   ee.run();
 });
+
+test('concurrent runners', function(t) {
+  let script = require('./scripts/hello.json');
+  let ee1 = runner(script);
+  let ee2 = runner(script);
+
+  let done = 0;
+
+  ee1.on('done', function(report) {
+    console.log('HTTP 200 count:', report.aggregate.codes[200]);
+    t.assert(report.aggregate.codes[200] <= 20,
+             'Stats from the other runner don\'t get merged in');
+    done++;
+    if (done === 2) {
+      t.end();
+    }
+  });
+
+  ee2.on('done', function(report) {
+    t.assert(report.aggregate.codes[200] <= 20,
+             'Stats from the other runner don\'t get merged in');
+    done++;
+    if (done === 2) {
+      t.end();
+    }
+  });
+
+  ee1.run();
+  ee2.run();
+});
