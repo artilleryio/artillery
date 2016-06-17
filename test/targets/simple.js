@@ -136,6 +136,31 @@ server.route({
   handler: putDevice
 });
 
+//
+// Used by loop_range.json test
+//
+server.route([
+  {
+    method: 'GET',
+    path: '/loop/9',
+    handler: ok
+  },
+  {
+    method: 'GET',
+    path: '/loop/10',
+    handler: ok
+  },
+  {
+    method: 'GET',
+    path: '/loop/11',
+    handler: ok
+  }
+]);
+
+function ok(req, reply) {
+  reply('ok');
+}
+
 server.state('testCookie', {
   ttl: null,
   isSecure: false,
