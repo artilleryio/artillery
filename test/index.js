@@ -7,6 +7,7 @@ require('./test_arrivals');
 require('./test_reuse');
 require('./test_loop');
 require('./test_probability');
+require('./test_if');
 
 //require('./test_worker_http');
 //require('./test_environments.js');

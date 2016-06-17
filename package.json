@@ -23,15 +23,16 @@
     "async": "1.5.2",
     "debug": "2.2.0",
     "esprima": "2.5.0",
+    "filtrex": "0.5.4",
     "hogan.js": "^3.0.2",
     "jsck": "0.2.5",
     "lodash": "3.10.0",
     "node-uuid": "1.4.7",
     "request": "2.58.0",
+    "socket.io-client": "1.4.6",
     "stats-lite": "2.0.0",
     "traverse": "0.6.6",
-    "ws": "1.0.1",
-    "socket.io-client": "1.4.6"
+    "ws": "1.0.1"
   },
   "devDependencies": {
     "bcrypt": "0.8.5",
