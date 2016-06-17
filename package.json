@@ -21,6 +21,7 @@
     "JSONPath": "0.11.2",
     "arrivals": "latest",
     "async": "1.5.2",
+    "cheerio": "0.20.0",
     "debug": "2.2.0",
     "esprima": "2.5.0",
     "filtrex": "0.5.4",
