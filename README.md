@@ -5,6 +5,7 @@
 <em><strong>Artillery</strong> - modern, powerful, easy-to-use load-testing framework</em>
 
 ## At A Glance
+
 - Load-test HTTP, WebSocket and Socket.io applications
 - Specify *scenarios* to simulate complex virtual user behavior (perfect for transactional APIs, ecommerce applications etc)
 - Detailed performance metrics (latency, requests per second, concurrency, throughput)
@@ -15,10 +16,9 @@
 - Good performance
 - Statsd support out of the box for real-time reporting
 
-is modern multi-protocol load-generator with a strong focus on
-developer happiness and a batteries-included philosophy. Use it to load-test
-your webapp backend, API or microservice to help make it faster, more resilient,
-and more scalable.
+Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy.
+
+Artillery's goal is to help developers build faster, more resilient and more scalable applications.
 
 ---
 
