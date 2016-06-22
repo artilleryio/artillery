@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "1.5.0-7",
+  "version": "1.5.0-8",
   "description": "Load-testing for HTTP and WebSocket-based applications",
   "main": "./bin/artillery",
   "engines": {
