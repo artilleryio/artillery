@@ -1,8 +1,9 @@
 <p align="center">
 <a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/flag.png" width="390" /></a>
 </p>
-
+<p align="center">
 <em><strong>Artillery</strong> - modern, powerful, easy-to-use load-testing framework</em>
+</p>
 
 ## At A Glance
 
