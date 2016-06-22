@@ -43,7 +43,7 @@ l.each(SCRIPTS, function(fn) {
         'Should\'ve completed all phases');
       var completedAt = process.hrtime(startedAt);
       var delta = ((completedAt[0] * 1e9) + completedAt[1]) / 1e6;
-      var minDuration = l.foldl(script.config.phases, function(acc, phaseSpec) {
+      var minDuration = l.reduce(script.config.phases, function(acc, phaseSpec) {
         return acc + (phaseSpec.duration * 1000);
       }, 0);
       t.assert(delta >= minDuration,

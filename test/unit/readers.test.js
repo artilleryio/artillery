@@ -24,7 +24,7 @@ test('random payload reader should pick at random', function(t) {
   const readElements = readPayloadData(reader);
 
   _.each(readElements, function(el) {
-    t.assert(_.contains(payloadData, el), 'read element is one of payload elements');
+    t.assert(_.includes(payloadData, el), 'read element is one of payload elements');
   });
   t.end();
 });
@@ -34,7 +34,7 @@ test('create reader should default to random', function(t) {
   const readElements = readPayloadData(reader);
 
   _.each(readElements, function(el) {
-    t.assert(_.contains(payloadData, el), 'read element is one of payload elements');
+    t.assert(_.includes(payloadData, el), 'read element is one of payload elements');
   });
   t.end();
 });
