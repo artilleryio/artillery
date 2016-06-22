@@ -1,8 +1,21 @@
 <p align="center">
-<a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/flag.png" width="300" /></a>
+<a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/flag.png" width="390" /></a>
 </p>
 
-**Artillery** is modern multi-protocol load-generator with a strong focus on
+<em><strong>Artillery</strong> - modern, powerful, easy-to-use load-testing framework</em>
+
+## At A Glance
+- Load-test HTTP, WebSocket and Socket.io applications
+- Specify *scenarios* to simulate complex virtual user behavior (perfect for transactional APIs, ecommerce applications etc)
+- Detailed performance metrics (latency, requests per second, concurrency, throughput)
+- Dynamic payloads from external CSV files (e.g. usernames/passwords for making auth requests)
+- Scriptable with JS
+- HTML reports
+- Nice CLI
+- Good performance
+- Statsd support out of the box for real-time reporting
+
+is modern multi-protocol load-generator with a strong focus on
 developer happiness and a batteries-included philosophy. Use it to load-test
 your webapp backend, API or microservice to help make it faster, more resilient,
 and more scalable.
@@ -17,16 +30,6 @@ and more scalable.
 - **Twitter**: [@ShoreditchOps](https://twitter.com/shoreditchops)
 
 [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
-
-# Features
-
-- HTTP, WebSocket and Socket.io support
-- Detailed performance metrics (latency, RPS, throughput)
-- HTML reports
-- Support for *scenarios* (simulate complex user behavior with steps)
-- Dynamic payloads from external CSV files (e.g. usernames/passwords for making auth requests)
-- Good performance (1.2k RPS for HTTP on a modest VPS)
-- Plugin support (experimental) - [docs](https://github.com/shoreditch-ops/artillery/blob/master/docs/plugins.md) - e.g. publish stats to Graphite/Librato/DataDog in real-time
 
 # Use Cases
 
