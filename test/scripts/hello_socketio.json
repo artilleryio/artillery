@@ -5,7 +5,7 @@
         "rejectUnauthorized": true
       },
       "phases": [
-        {"duration": 10, "arrivalRate": 1}
+        {"duration": 15, "arrivalRate": 1}
       ]
   },
   "scenarios": [
@@ -13,14 +13,15 @@
       "engine": "socketio",
       "flow": [
         {"emit": { "channel": "echo", "data": "hello", "response": { "channel": "echoed", "data": "hello"} }},
-        {"think": 1},
         {"emit": { "channel": "echo", "data": "world", "response": { "channel": "echoed", "data": "world"} }},
         {"think": 1},
         {"emit": { "channel": "echo", "data": "do not care about the response" }},
-        {"think": 1},
         {"emit": { "channel": "echo", "data": "still do not care about the response" }},
         {"think": 1},
         {"emit": { "channel": "echo", "data": "{\"key\":\"value\"}", "response": { "channel": "echoed", "data": "{\"key\":\"value\"}"} }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "random number: {{ $randomNumber(1, 20) }}" }},
+        {"emit": { "channel": "echo", "data": "random string: {{ $randomString(10) }}" }},
         {"think": 1}
       ]
     }
