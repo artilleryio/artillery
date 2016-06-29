@@ -15,11 +15,11 @@
 - HTML reports
 - Nice CLI
 - Good performance
-- `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/) [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html) [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc)
+- `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc)
 
 Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy.
 
-Artillery's goal is to help developers build faster, more resilient and more scalable applications.
+Artillery's goal is to help developers build **faster**, more **resilient** and more **scalable** applications.
 
 ---
 
@@ -29,6 +29,7 @@ Artillery's goal is to help developers build faster, more resilient and more sca
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@ShoreditchOps](https://twitter.com/shoreditchops)
+- **Commercial support**: [enterprise@artillery.io](enterprise@artillery.io)
 
 [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
@@ -61,6 +62,8 @@ This will run a test for 30 seconds, with 5 new virtual users created every seco
 `$ artillery run hello.json`
 
 Where `hello.json` is your tests script that contains something like:
+
+(*NB:* test scripts can be written as YAML too)
 
 ```javascript
 {
