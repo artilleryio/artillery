@@ -92,7 +92,7 @@ function artillery() {
     find . -name "artillery-xml-capture" -type d | xargs rm -r
     ./bin/artillery run ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
     grep_status=$?
-    npm install artillery-xml-capture
+    npm install artillery-xml-capture || true
     [ $grep_status -eq 0 ]
 }
 
