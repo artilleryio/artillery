@@ -10,7 +10,7 @@
     "test": "bash test/runner.sh",
     "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
-    "coverage": "ISTANBUL=y npm test && istanbul check-coverage"
+    "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary"
   },
   "keywords": [
     "load testing",
