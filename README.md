@@ -19,6 +19,7 @@ Artillery's goal is to help developers build <strong>faster</strong>, more <stro
 - **Scriptable**: write custom logic in JS to do pretty much anything
 - **High performance**: generate serious load on modest hardware
 - **Integrations**: `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc)
+- **Extensible**: custom reporting plugins, custom protocol engines etc
 - **and more!** HTML reports, nice CLI, parameterization with CSV files
 
 ---
