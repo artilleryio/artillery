@@ -2,24 +2,24 @@
 <a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/flag.gif" width="390" /></a>
 </p>
 <p align="center">
-<em><strong>Artillery</strong> - modern, powerful, easy-to-use load-testing framework</em>
+<em><strong>Artillery</strong> is a modern, powerful, easy-to-use load-testing tool.</em>
 </p>
 
-## Artillery At A Glance
-
-- Load-test HTTP, WebSocket and Socket.io applications
-- Specify *scenarios* to simulate complex virtual user behavior (perfect for transactional APIs, ecommerce applications etc)
-- Detailed performance metrics (latency, requests per second, concurrency, throughput)
-- Dynamic payloads from external CSV files (e.g. usernames/passwords for making auth requests)
-- Scriptable with JS
-- HTML reports
-- Nice CLI
-- Good performance
-- `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc)
-
+<p align="center">
 Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy.
 
-Artillery's goal is to help developers build **faster**, more **resilient** and more **scalable** applications.
+Artillery's goal is to help developers build <strong>faster</strong>, more <strong>resilient</strong> and more <strong>scalable</strong> applications.
+</p>
+
+## Features
+
+- **Mulitple protocols**:  Load-test HTTP, WebSocket and Socket.io applications
+- **Scenarios**: Specify *scenarios* to test multi-step interactions in your API or web app
+- **Perfomance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput)
+- **Scriptable**: write custom logic in JS to do pretty much anything
+- **High performance**: generate serious load on modest hardware
+- **Integrations**: `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc)
+- **and more!** HTML reports, nice CLI, parameterization with CSV files
 
 ---
 
@@ -29,7 +29,7 @@ Artillery's goal is to help developers build **faster**, more **resilient** and 
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@ShoreditchOps](https://twitter.com/shoreditchops)
-- **Commercial support**: [enterprise@artillery.io](enterprise@artillery.io)
+- Support SLAs, custom integrations, professional services: [enterprise@artillery.io](enterprise@artillery.io)
 
 [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
