@@ -27,7 +27,7 @@ test('reuse', function(t) {
   }
   expected *= weightedFlowLengths;
   ee.on('stats', function(stats) {
-    intermediate.push(stats);
+    intermediate.push(stats.report());
   });
   ee.on('done', function(report) {
     let total = 0;
