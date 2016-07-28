@@ -8,9 +8,9 @@ test('simple loop', (t) => {
   const script = require('./scripts/loop.json');
 
   let ee = runner(script);
-  ee.on('done', (stats) => {
-    let scenarios = stats.aggregate.scenariosCompleted;
-    let requests = stats.aggregate.requestsCompleted;
+  ee.on('done', (report) => {
+    let scenarios = report.scenariosCompleted;
+    let requests = report.requestsCompleted;
     let loopCount = script.scenarios[0].flow[0].count;
     let expected = scenarios * loopCount * 2;
     t.assert(
@@ -25,12 +25,12 @@ test('loop with range', (t) => {
   const script = require('./scripts/loop_range.json');
 
   let ee = runner(script);
-  ee.on('done', (stats) => {
-    let scenarios = stats.aggregate.scenariosCompleted;
-    let requests = stats.aggregate.requestsCompleted;
+  ee.on('done', (report) => {
+    let scenarios = report.scenariosCompleted;
+    let requests = report.requestsCompleted;
     let expected = scenarios * 3 * 2;
-    let code200 = stats.aggregate.codes[200];
-    let code404 = stats.aggregate.codes[404];
+    let code200 = report.codes[200];
+    let code404 = report.codes[404];
 
     t.assert(
       requests === expected,

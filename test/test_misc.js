@@ -34,9 +34,9 @@ l.each(SCRIPTS, function(fn) {
     ee.on('stats', function(stats) {
       t.ok(stats, 'intermediate stats event emitted');
     });
-    ee.on('done', function(stats) {
-      var requests = stats.aggregate.requestsCompleted;
-      var scenarios = stats.aggregate.scenariosCompleted;
+    ee.on('done', function(report) {
+      var requests = report.requestsCompleted;
+      var scenarios = report.scenariosCompleted;
       console.log('requests = %s, scenarios = %s', requests, scenarios);
 
       t.assert(completedPhases === script.config.phases.length,

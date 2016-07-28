@@ -10,6 +10,7 @@ test('reuse', function(t) {
   let expected = 0;
   let weightedFlowLengths = 0;
   let lastLatency = null;
+  let intermediate = [];
   for (let i = 0; i < script.config.phases.length; i++) {
     let arrivalRate = script.config.phases[0].arrivalRate;
     let duration = script.config.phases[0].duration;
@@ -25,13 +26,16 @@ test('reuse', function(t) {
     }
   }
   expected *= weightedFlowLengths;
-  ee.on('done', function(stats) {
+  ee.on('stats', function(stats) {
+    intermediate.push(stats);
+  });
+  ee.on('done', function(report) {
     let total = 0;
-    for (let i = 0; i < stats.intermediate.length; i++) {
-      total += stats.intermediate[i].latencies.length;
+    for (let i = 0; i < intermediate.length; i++) {
+      total += intermediate[i].latencies.length;
       t.assert(
           'intermediate should have the same or fewer results',
-          stats.intermediate[i].latencies.length <= expected
+          intermediate[i].latencies.length <= expected
       );
     }
     t.assert(
@@ -40,18 +44,18 @@ test('reuse', function(t) {
     );
     t.assert(
         'aggregate should have the expected number of latencies',
-        stats.aggregate.latencies.length === expected
+        report.latencies.length === expected
     );
     if (first) {
-      let last = stats.aggregate.latencies.length - 1;
+      let last = report.latencies.length - 1;
       first = false;
-      lastLatency = stats.aggregate.latencies[last][0];
+      lastLatency = report.latencies[last][0];
       ee.run();
     } else {
       t.assert(
           'first latency of second aggregate should be after ' +
           'the last latency of the first aggregate',
-          lastLatency <= stats.aggregate.latencies[0][0]
+          lastLatency <= report.latencies[0][0]
       );
       t.end();
     }
@@ -67,8 +71,8 @@ test('concurrent runners', function(t) {
   let done = 0;
 
   ee1.on('done', function(report) {
-    console.log('HTTP 200 count:', report.aggregate.codes[200]);
-    t.assert(report.aggregate.codes[200] <= 20,
+    console.log('HTTP 200 count:', report.codes[200]);
+    t.assert(report.codes[200] <= 20,
              'Stats from the other runner don\'t get merged in');
     done++;
     if (done === 2) {
@@ -77,7 +81,7 @@ test('concurrent runners', function(t) {
   });
 
   ee2.on('done', function(report) {
-    t.assert(report.aggregate.codes[200] <= 20,
+    t.assert(report.codes[200] <= 20,
              'Stats from the other runner don\'t get merged in');
     done++;
     if (done === 2) {

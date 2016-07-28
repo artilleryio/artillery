@@ -33,11 +33,11 @@ test('single payload', function(t) {
       t.ok(stats, 'intermediate stats event emitted');
     });
 
-    ee.on('done', function(stats) {
-      let requests = stats.aggregate.requestsCompleted;
-      let scenarios = stats.aggregate.scenariosCompleted;
-      t.assert(stats.aggregate.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
-      t.assert(stats.aggregate.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
+    ee.on('done', function(report) {
+      let requests = report.requestsCompleted;
+      let scenarios = report.scenariosCompleted;
+      t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
+      t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
       t.end();
     });
 
@@ -83,12 +83,12 @@ test('multiple_payloads', function(t) {
         t.ok(stats, 'intermediate stats event emitted');
       });
 
-      ee.on('done', function(stats) {
-        let requests = stats.aggregate.requestsCompleted;
-        let scenarios = stats.aggregate.scenariosCompleted;
-        t.assert(stats.aggregate.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
-        t.assert(stats.aggregate.codes[200] > 0, 'There are some 200s (URLs constructed from urls.csv)');
-        t.assert(stats.aggregate.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
+      ee.on('done', function(report) {
+        let requests = report.requestsCompleted;
+        let scenarios = report.scenariosCompleted;
+        t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
+        t.assert(report.codes[200] > 0, 'There are some 200s (URLs constructed from urls.csv)');
+        t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
         t.end();
       });
 
