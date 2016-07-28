@@ -18,10 +18,10 @@ test('Capture - headers', (t) => {
   const fn = './scripts/captures-header.json';
   const script = require(fn);
   let ee = runner(script);
-  ee.on('done', function(stats) {
+  ee.on('done', function(report) {
     // This will fail if header capture isn't working
-    t.assert(!stats.aggregate.codes[403], 'No unauthorized responses');
-    t.assert(stats.aggregate.codes[200] > 0, 'Successful responses');
+    t.assert(!report.codes[403], 'No unauthorized responses');
+    t.assert(report.codes[200] > 0, 'Successful responses');
     t.end();
   });
   ee.run();
@@ -40,10 +40,10 @@ test('Capture - JSON', (t) => {
 
     let ee = runner(script, parsedData, {});
 
-    ee.on('done', function(stats) {
-      let c200 = stats.aggregate.codes[200];
-      let c201 = stats.aggregate.codes[201];
-      let c404 = stats.aggregate.codes[404];
+    ee.on('done', function(report) {
+      let c200 = report.codes[200];
+      let c201 = report.codes[201];
+      let c404 = report.codes[404];
       let cond = c201 * 2 === c200 + c404;
       t.assert(cond,
                'There should be a 200 and a 404 for every 201');
@@ -74,9 +74,9 @@ test('Capture - XML', (t) => {
 
     let ee = runner(script, parsedData, {});
 
-    ee.on('done', function(stats) {
-      t.assert(stats.aggregate.codes[200] > 0, 'Should have a few 200s');
-      t.assert(stats.aggregate.codes[404] === undefined, 'Should have no 404s');
+    ee.on('done', function(report) {
+      t.assert(report.codes[200] > 0, 'Should have a few 200s');
+      t.assert(report.codes[404] === undefined, 'Should have no 404s');
       t.end();
     });
 
@@ -89,9 +89,9 @@ test('Capture - Random value from array', (t) => {
   const script = require(fn);
   let ee = runner(script);
 
-  ee.on('done', (stats) => {
-    t.assert(stats.aggregate.codes[200] > 0, 'Should have a few 200s');
-    t.assert(stats.aggregate.codes[404] === undefined, 'Should have no 404s');
+  ee.on('done', (report) => {
+    t.assert(report.codes[200] > 0, 'Should have a few 200s');
+    t.assert(report.codes[404] === undefined, 'Should have no 404s');
     t.end();
   });
 
@@ -102,10 +102,10 @@ test('Capture - RegExp', (t) => {
   const fn = './scripts/captures-regexp.json';
   const script = require(fn);
   let ee = runner(script);
-  ee.on('done', (stats) => {
-      let c200 = stats.aggregate.codes[200];
-      let c201 = stats.aggregate.codes[201];
-      let c404 = stats.aggregate.codes[404];
+  ee.on('done', (report) => {
+      let c200 = report.codes[200];
+      let c201 = report.codes[201];
+      let c404 = report.codes[404];
       let cond = c201 * 2 === c200 + c404;
       t.assert(cond,
                'There should be a 200 and a 404 for every 201');
