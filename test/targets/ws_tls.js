@@ -6,7 +6,7 @@ const debug = require('debug')('test:target:ws_tls');
 const WebSocketServer = require('ws').Server;
 
 var options = {
-  port: 9090,
+  port: 9443,
   key: fs.readFileSync('./test/certs/private-key.pem'),
   cert: fs.readFileSync('./test/certs/public-cert.pem')
 };
@@ -20,7 +20,7 @@ var app = https.createServer(
     res.writeHead(200);
     res.end();
   }).listen(options.port, function() {
-    debug('Listening on :9090');
+    debug('Listening on :9443');
   });
 
 const wss = new WebSocketServer({ server: app });

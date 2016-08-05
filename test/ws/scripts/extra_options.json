@@ -1,6 +1,6 @@
 {
   "config": {
-    "target": "wss://localhost:9090",
+    "target": "wss://localhost:9443",
     "phases": [
       {"duration": 1, "arrivalCount": 1}
     ],
