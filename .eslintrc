@@ -13,6 +13,7 @@
     "no-mixed-requires": 0,
     "no-use-before-define": 0,
     "no-process-exit": 0,
+    "no-shadow": 0,
 
     // Warnings
     "no-debugger": 1,
@@ -32,7 +33,6 @@
     "no-self-compare": 2,
     "valid-typeof": 2,
     "handle-callback-err": 2,
-    "no-shadow-restricted-names": 2,
     "radix": 2,
     "no-new-require": 2,
     "no-mixed-spaces-and-tabs": 2,
