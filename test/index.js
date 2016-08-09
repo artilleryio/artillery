@@ -9,6 +9,8 @@ require('./test_loop');
 require('./test_probability');
 require('./test_if');
 
+require('./ws/test_options');
+
 //require('./test_worker_http');
 //require('./test_environments.js');
 //require('./test_think');
