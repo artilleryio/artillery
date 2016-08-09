@@ -28,6 +28,7 @@
     "hogan.js": "^3.0.2",
     "jsck": "0.2.5",
     "lodash": "4.13.1",
+    "nanotimer": "0.3.14",
     "node-uuid": "1.4.7",
     "request": "2.72.0",
     "socket.io-client": "1.4.6",
