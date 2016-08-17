@@ -9,7 +9,9 @@
     {
       "name": "Just think",
       "flow": [
-        {"think": 2}
+        {"think": 2},
+        {"think": "2:2"},
+        {"think": "2:2%"}
       ]
     }
   ]
