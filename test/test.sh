@@ -5,7 +5,7 @@ function artillery() {
 }
 
 @test "If we report specifying output, no browser is opened" {
-  HTML_OUT=`mktemp`
+  HTML_OUT=`mktemp -t report.html`
   artillery report -o $HTML_OUT test/scripts/report.json | grep "Report generated: $HTML_OUT"
   [ $? -eq 0 ]
   [ -f $HTML_OUT ]
@@ -29,7 +29,7 @@ function artillery() {
 
 @test "Environment specified with -e should be used" {
   # FIXME: Should not need to use "-k" here, see #59
-  STATS=`mktemp`
+  STATS=`mktemp -t stats`
   artillery run -k -e production -o "$STATS" test/scripts/environments2.json
   # TODO: Use jq
   # Here if the right environment is not picked up, we'll have a bunch of ECONNREFUSED errors in the report
@@ -38,12 +38,12 @@ function artillery() {
 }
 
 @test "Can run a quick HTTP test with 'artillery quick'" {
-  artillery quick -d 10 -r 1 -o `mktemp` https://artillery.io | grep 'all scenarios completed'
+  artillery quick -d 10 -r 1 -o `mktemp -t report.json` https://artillery.io | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
 @test "Can specify output filename for artillery quick" {
-  JSON_REPORT=`mktemp`
+  JSON_REPORT=`mktemp -t report.json`
   artillery quick -d 1 -r 1 -o $JSON_REPORT https://artillery.io | grep "Log file: $JSON_REPORT"
   [ $? -eq 0 ]
 }
