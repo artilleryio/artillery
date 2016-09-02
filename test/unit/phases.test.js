@@ -6,7 +6,6 @@ const util = require('util');
 const _ = require('lodash');
 const debug = require('debug')('test:phases');
 
-/*
 test('pause', function(t) {
   const phaseSpec = {pause: 5};
 
@@ -81,11 +80,10 @@ test('arrivalCount', function(t) {
   });
   phaser.run();
 });
-*/
 
 test('ramp', function(t) {
   const phaseSpec = {
-    duration: 60,
+    duration: 20,
     arrivalRate: 15,
     rampTo: 100
   };
