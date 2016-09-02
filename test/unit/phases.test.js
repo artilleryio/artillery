@@ -83,7 +83,7 @@ test('arrivalCount', function(t) {
 
 test('ramp', function(t) {
   const phaseSpec = {
-    duration: 60,
+    duration: 20,
     arrivalRate: 15,
     rampTo: 100
   };
@@ -98,7 +98,7 @@ test('ramp', function(t) {
 
   t.plan(5);
 
-  let startedAt = Date.now();
+  let startedAt;
   let phaseStartedTimestamp;
   let arrivals = 0;
   phaser.on('phaseStarted', function(spec) {
@@ -133,5 +133,6 @@ test('ramp', function(t) {
 
     t.end();
   });
+  startedAt = Date.now();
   phaser.run();
 });
