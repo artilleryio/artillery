@@ -33,7 +33,7 @@ function artillery() {
   artillery run -k -e production -o "$STATS" test/scripts/environments2.json
   # TODO: Use jq
   # Here if the right environment is not picked up, we'll have a bunch of ECONNREFUSED errors in the report
-  REPORT="$STATS.json" node -e 'var fs = require("fs");var j = JSON.parse(fs.readFileSync(process.env.REPORT));if(Object.keys(j.errors).length !== 0) process.exit(1)'
+  REPORT="$STATS.json" node -e 'var fs = require("fs");var j = JSON.parse(fs.readFileSync(process.env.REPORT));if(Object.keys(j.aggregate.errors).length !== 0) process.exit(1)'
   [ $? -eq 0 ]
 }
 
@@ -103,9 +103,9 @@ function artillery() {
 }
 
 @test "Quick: specified number of requests is sent on each connection" {
-    artillery quick -c 200 -n 5 -o report.json http://localhost:3003/
-    requestCount=$(jq .requestsCompleted report.json)
+    artillery quick -c 10 -n 5 -o report.json http://localhost:3003/
+    requestCount=$(jq .aggregate.requestsCompleted report.json)
     rm report.json
 
-    [[ $requestCount -eq 1000 ]]
+    [[ $requestCount -eq 50 ]]
 }
