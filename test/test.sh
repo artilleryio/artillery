@@ -23,7 +23,7 @@ function artillery() {
 }
 
 @test "Running with no target and no -e should exit with an error" {
-  artillery run test/scripts/environments.json | grep "No target"
+  artillery run test/scripts/environments.yaml | grep "No target"
   [ $? -eq 0 ]
 }
 
