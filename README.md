@@ -56,7 +56,7 @@ Artillery's goal is to help developers build <strong>faster</strong>, more <stro
 
 `$ artillery quick -d 30 -r 5 -n 20 http://127.0.0.1:3000/test`
 
-This will run a test for 30 seconds, with 5 new virtual users created every second, with each user sending 5 a `GET` requests to `http://127.0.0.1:3000/test`.
+This will run a test for 30 seconds, with 5 new virtual users created every second, with each user sending 20 a `GET` requests to `http://127.0.0.1:3000/test`.
 
 ## Run With A More Complex Scenario
 
