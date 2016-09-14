@@ -30,7 +30,7 @@ function artillery() {
 @test "Environment specified with -e should be used" {
   # FIXME: Should not need to use "-k" here, see #59
   STATS=`mktemp -t stats`
-  artillery run -k -e production -o "$STATS" test/scripts/environments2.json
+  artillery run -k -e production -o "$STATS.json" test/scripts/environments2.json
   # TODO: Use jq
   # Here if the right environment is not picked up, we'll have a bunch of ECONNREFUSED errors in the report
   REPORT="$STATS.json" node -e 'var fs = require("fs");var j = JSON.parse(fs.readFileSync(process.env.REPORT));if(Object.keys(j.aggregate.errors).length !== 0) process.exit(1)'
@@ -79,7 +79,7 @@ function artillery() {
 }
 
 @test "Run a script overwriting default options (output)" {
-  artillery run ./test/scripts/hello.json -o artillery_report_custom | grep 'Log file: artillery_report_custom.json'
+  artillery run ./test/scripts/hello.json -o artillery_report_custom.json | grep 'Log file: artillery_report_custom.json'
   [ $? -eq 0 ]
 }
 
