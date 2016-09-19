@@ -64,7 +64,7 @@ This will run a test for 30 seconds, with 5 new virtual users created every seco
 
 Where `hello.yaml` is your tests script that contains something like:
 
-(*NB:* test scripts can be written as YAML too)
+(*NB:* test scripts can be written as JSON too)
 
 ```yaml
 config:
