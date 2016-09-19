@@ -60,36 +60,31 @@ This will run a test for 30 seconds, with 5 new virtual users created every seco
 
 ## Run With A More Complex Scenario
 
-`$ artillery run hello.json`
+`$ artillery run hello.yaml`
 
-Where `hello.json` is your tests script that contains something like:
+Where `hello.yaml` is your tests script that contains something like:
 
 (*NB:* test scripts can be written as YAML too)
 
-```javascript
-{
-  "config": {
-      "target": "http://127.0.0.1:3000",
-      "phases": [
-        { "duration": 120, "arrivalRate": 10 }
-      ],
-      "defaults": {
-        "headers": {
-          "content-type": "application/json",
-          "x-my-service-auth": "987401838271002188298567"
-        }
-      }
-  },
-  "scenarios": [
-    {
-      "flow": [
-        { "get": {"url": "/test"}},
-        { "think": 1 },
-        { "post": {"url": "/test", "json": { "name": "hassy" }}}
-      ]
-    }
-  ]
-}
+```yaml
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 120
+      arrivalRate: 10
+  defaults:
+    headers:
+      content-type: "application/json"
+      x-my-service-auth: fedcba9876543210
+scenarios:
+  - flow:
+      - get:
+          url: "/test"
+      - think: 1
+      - post:
+          url: "/test"
+          json:
+            name: "Hassy"
 ```
 
 This will run a test for 2 minutes, with 10 virtual users created every second, each of which will send a `GET` and a `POST` request with a pause of 1 second in between. Each request will include two custom headers (`Content-Type` and `X-My-Service-Auth`).
