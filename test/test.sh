@@ -103,8 +103,9 @@ function artillery() {
 }
 
 @test "Quick: specified number of requests is sent on each connection" {
-    artillery quick -c 50 -n 5 -o report.json http://localhost:3003/
+    artillery quick -c 25 -n 5 -o report.json http://localhost:3003/
     requestCount=$(jq .aggregate.requestsCompleted report.json)
     rm report.json
-    [[ $requestCount -eq 250 ]]
+
+    [[ $requestCount -eq 125 ]]
 }
