@@ -109,3 +109,8 @@ function artillery() {
 
     [[ $requestCount -eq 125 ]]
 }
+
+@test "Processor" {
+  artillery run ./test/scripts/hello.json | grep 'hello from processor'
+  [[ $? -eq 0 ]]
+}
