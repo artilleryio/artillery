@@ -92,7 +92,6 @@ function artillery() {
 }
 
 @test "Quick: does not accept invalid combination of options" {
-
     set +e
     artillery quick -c 10 -r 10 -n 50 https://artillery.io
     status1=$?
@@ -109,4 +108,9 @@ function artillery() {
     rm report.json
 
     [[ $requestCount -eq 125 ]]
+}
+
+@test "Processor" {
+  artillery run ./test/scripts/hello.json | grep 'hello from processor'
+  [[ $? -eq 0 ]]
 }
