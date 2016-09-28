@@ -1,5 +1,9 @@
 #!/usr/bin/env bats
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/
+
 function artillery() {
   istanbul test --print none ./bin/artillery -- "$@"
 }
@@ -110,7 +114,17 @@ function artillery() {
     [[ $requestCount -eq 125 ]]
 }
 
-@test "Processor" {
+@test "Script using hook functions" {
   artillery run ./test/scripts/hello.json | grep 'hello from processor'
   [[ $? -eq 0 ]]
+}
+
+@test "Script using a plugin" {
+  ARTILLERY_WORKERS=3 ARTILLERY_PLUGIN_PATH="`pwd`/test/plugins/" artillery run -o report.json ./test/scripts/hello_plugin.json
+  requestCount1=$(awk '{ sum += $1 } END { print sum }' plugin-data.csv)
+  requestCount2=$(jq .aggregate.requestsCompleted report.json)
+  rm plugin-data.csv
+  rm report.json
+
+  [[ $requestCount1 -eq $requestCount2 ]]
 }
