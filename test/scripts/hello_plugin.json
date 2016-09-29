@@ -12,7 +12,7 @@
   "scenarios": [
     {
       "flow": [
-        {"get": {"url": "/", "beforeRequest": "printHello"}},
+        {"get": {"url": "/"}},
         {"post": {"url": "/pets", "json": {"name": "Figo", "species": "dog"}}}
       ]
     }
