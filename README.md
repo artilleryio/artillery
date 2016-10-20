@@ -46,19 +46,25 @@ Artillery's goal is to help developers build <strong>faster</strong>, more <stro
 
 # Quickstart
 
-## Install
+### Install
 
 **Artillery** is available via [npm](http://npmjs.org)
 
 `$ npm install -g artillery`
 
-## Run A Quick Test
+Node.js v4+ is required (Node.js 6 is recommended).
+
+### Run A Quick Test
 
 `$ artillery quick -d 30 -r 5 -n 20 http://127.0.0.1:3000/test`
 
 This will run a test for 30 seconds, with 5 new virtual users created every second, with each user sending 20 a `GET` requests to `http://127.0.0.1:3000/test`.
 
-## Run With A More Complex Scenario
+### Run With A Scenario
+
+Artillery's power lies in emulating complex behavior, like that of users of an e-commerce website, a transactional API etc.
+
+Run a scenario with:
 
 `$ artillery run hello.yaml`
 
@@ -89,14 +95,14 @@ scenarios:
 
 This will run a test for 2 minutes, with 10 virtual users created every second, each of which will send a `GET` and a `POST` request with a pause of 1 second in between. Each request will include two custom headers (`Content-Type` and `X-My-Service-Auth`).
 
-# Create A HTML Report
+### Create A HTML Report
 
 Once the test completes, you can create a graphical report from the JSON stats produced by `artillery run` with:
 `artillery report <report_xxxxx.json>`
 
 These are self-contained HTML files that can be easily shared via email or Dropbox for example.
 
-# Learn More
+### Learn More
 
 See [Artillery docs](https://artillery.io/docs/) for docs and examples.
 
@@ -104,6 +110,11 @@ See [Artillery docs](https://artillery.io/docs/) for docs and examples.
 
 Thinking of contributing to Artillery? Awesome! Please have a quick look at [the
 guide](CONTRIBUTING.md).
+
+# Using Artillery?
+
+Are you using Artillery to ship faster, more resilient and more scalable systems? Add your team to the [Artillery users list on the wiki](https://github.com/shoreditch-ops/artillery/wiki/Companies-using-Artillery).
+
 
 # License
 
