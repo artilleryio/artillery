@@ -28,10 +28,6 @@ Artillery has a plugin interface. A plugin can register to receive events emitte
   - The plugin is initialised by calling the exported constructor function with two parameters:
     1. `config` - the entirety of the config
     2. `ee` - an EventEmitter instance on which the plugin can subscribe to events from the core
-  - If the plugin instance has a `report` method, that will be called just before the final test JSON report is returned from core. This can be used by plugins to extend the report. The `report` function can return:
-    1. `null` - this means there is nothing to report
-    2. an object - this will be inserted into the `aggregate` section of the report, under the key `pluginName` (`"statsd"` to continue with our example)
-    3. an array of objects - each of the objects should have a `timestamp` property which should be either a timestamp or `"aggregate"`. Objects with a timestamp will be appended to the appropriate `intermediate` entry in the final report (one that matches the timestamp), and the object with `timestamp` = `"aggregate"` will be inserted into the `aggregate` section of the report as in (2). The key name, as above, is `pluginName`.
 
 ### Events
 
