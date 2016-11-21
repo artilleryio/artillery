@@ -14,8 +14,8 @@
       "flow": [
         {"think": 2},
         {"think": "{{ durations }}"},
-        {"think": "2:2"},
-        {"think": "2:2%"}
+        {"think": "2", "jitter": 2},
+        {"think": "2", "jitter": "50%"}
       ]
     }
   ]
