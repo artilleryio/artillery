@@ -2,7 +2,7 @@
 <a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/flag.gif" width="390" /></a>
 </p>
 <p align="center">
-<em><strong>Artillery</strong> is a modern, powerful, easy-to-use load-testing tool.</em>
+<em><strong>Artillery</strong> is a modern, powerful, easy-to-use load-testing toolkit.</em>
 </p>
 
 <p align="center">
@@ -30,19 +30,19 @@ Artillery's goal is to help developers build <strong>faster</strong>, more <stro
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@ShoreditchOps](https://twitter.com/shoreditchops)
-- Support SLAs, custom integrations, professional services: [enterprise@artillery.io](enterprise@artillery.io)
+- **Enterprise**: Training, custom integrations, professional services: [https://artillery.io/services-support.html](https://artillery.io/services-support.html)
 
 [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
 # Use Cases
 
-- Benchmark the performance of your API or microservice as you're building it
-- Ensure new code does not introduce performance regressions
-- Test your code for memory leaks
-- Benchmark dependencies (libraries, frameworks, external services) to get a
-  feel for their performance characteristics before you integrate
-- Run load-tests before you launch to ensure your application can meet
-  projected demand
+- **Peak traffic testing** - ensure your e-commerce backend, IoT service or web API can handle max traffic
+- **Pre-launch load testing** - for new websites, mobile app backends, web APIs etc
+- **Continuous performance testing** for new microservices as they are being built
+- **Preventing performance regressions** - stop performance regressions due to new code or config changes before they are shipped to users
+- **Help profile & debug** common issues such as extensive GC pauses, memory leaks, improperly configured resource pools etc
+
+There's a lot of fun to be had with a good load generator like Artillery.
 
 # Quickstart
 
