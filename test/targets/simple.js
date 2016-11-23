@@ -1,7 +1,7 @@
 'use strict';
 
 var Hapi = require('hapi');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var Bcrypt = require('bcrypt');
 var Basic = require('hapi-auth-basic');
 
