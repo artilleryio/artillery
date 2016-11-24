@@ -88,7 +88,7 @@ test('arrivalCount', function(t) {
 test('ramp', function(t) {
   const phaseSpec = {
     duration: 20,
-    arrivalRate: 15,
+    arrivalRate: 0,
     rampTo: 100
   };
   let phaser = createPhaser([phaseSpec]);
