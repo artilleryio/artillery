@@ -15,7 +15,10 @@
         {"send": "hello"},
         {"think": 1},
         {"send": {"zip": "{{ zipCode }}"}},
-        {"send": "{{ zipCode }}"}
+        {"send": "{{ zipCode }}"},
+        {"loop": [
+          {"send": "{{ zipCode }}"}
+        ], "count": 10}
       ]
     }
   ]
