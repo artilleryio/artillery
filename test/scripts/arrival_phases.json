@@ -3,9 +3,9 @@
     "target": "http://localhost:3003",
 
     "phases": [
-      {"duration": 20, "arrivalCount": 10},
-      {"pause": 20},
-      {"duration": 20, "arrivalCount": 50}
+      {"duration": 10, "arrivalCount": 10},
+      {"pause": 5},
+      {"duration": 10, "arrivalCount": 50}
     ]
   },
   "scenarios": [
