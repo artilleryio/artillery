@@ -6,3 +6,4 @@ require('./templates.test.js');
 require('./phases.test.js');
 require('./readers.test.js');
 require('./util.test.js');
+require('./engine_http.test.js');
