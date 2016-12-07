@@ -135,3 +135,9 @@
   sleep 4
   [[ -z $(pgrep -lfa node | grep worker) ]]
 }
+
+# Ref: https://github.com/shoreditch-ops/artillery/issues/215
+@test "GH #215 regression" {
+  ./bin/artillery run test/scripts/gh_215_add_token.json
+  [[ true ]]
+}
