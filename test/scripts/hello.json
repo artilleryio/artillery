@@ -2,7 +2,7 @@
   "config": {
       "target": "http://127.0.0.1:3003",
       "phases": [
-        {"duration": 10, "arrivalRate": 1}
+        {"duration": 5, "arrivalCount": 1}
       ],
       "processor": "./processor.js"
   },
@@ -10,7 +10,12 @@
     {
       "flow": [
         {"get": {"url": "/", "beforeRequest": "printHello"}},
-        {"post": {"url": "/pets", "json": {"name": "Figo", "species": "dog"}}}
+        {"post": {"url": "/pets", "json": {"name": "Figo", "species": "dog"}}},
+        {"loop": [
+          {"loop": [
+            {"log": "outer: {{ $loopCount }}; inner: {{ k }}"}
+          ], "count": "5", "loopValue": "k"}
+        ], "count": 3}
       ]
     }
   ]

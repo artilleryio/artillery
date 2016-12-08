@@ -1,0 +1,24 @@
+{
+    "config": {
+        "target": "http://127.0.0.1:3004",
+        "phases": [
+            {
+                "duration": 20,
+                "arrivalRate": 20,
+                "name": "Stress"
+            }
+        ]
+    },
+    "scenarios": [
+        {
+            "name": "Add token",
+            "flow": [
+                {
+                    "post": {
+                        "url": "/api/v1/register"
+                    }
+                }
+            ]
+        }
+    ]
+}
