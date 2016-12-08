@@ -8,6 +8,9 @@ echo "running tests"
 echo
 
 bats ./test/test.sh
+status=$?
 
 echo "done"
 kill $target_pid
+
+exit $status

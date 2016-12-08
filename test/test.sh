@@ -4,37 +4,33 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-function artillery() {
-  istanbul test --print none ./bin/artillery -- "$@"
-}
-
 @test "If we report specifying output, no browser is opened" {
-  HTML_OUT=`mktemp -t report.html`
-  artillery report -o $HTML_OUT test/scripts/report.json | grep "Report generated: $HTML_OUT"
+  HTML_OUT="$(mktemp -d)/report.html"
+  ./bin/artillery report -o $HTML_OUT test/scripts/report.json | grep "Report generated: $HTML_OUT"
   [ $? -eq 0 ]
   [ -f $HTML_OUT ]
 }
 
 @test "Running with no arguments prints out usage information" {
-  artillery | grep Usage
+  ./bin/artillery | grep Usage
   [ $? -eq 0 ]
 }
 
 @test "artillery -V prints the right version number" {
-  version1=$(artillery -V)
+  version1=$(./bin/artillery -V)
   version2=$(grep version package.json | tr -d '"version:, ''"')
   [[ $version1 = $version2 ]]
 }
 
 @test "Running with no target and no -e should exit with an error" {
-  artillery run test/scripts/environments.yaml | grep "No target"
+  ./bin/artillery run test/scripts/environments.yaml | grep "No target"
   [ $? -eq 0 ]
 }
 
 @test "Environment specified with -e should be used" {
   # FIXME: Should not need to use "-k" here, see #59
-  STATS=`mktemp -t stats`
-  artillery run -k -e production -o "$STATS.json" test/scripts/environments2.json
+  STATS="$(mktemp -d)/stats"
+  ./bin/artillery run -k -e production -o "$STATS.json" test/scripts/environments2.json
   # TODO: Use jq
   # Here if the right environment is not picked up, we'll have a bunch of ECONNREFUSED errors in the report
   REPORT="$STATS.json" node -e 'var fs = require("fs");var j = JSON.parse(fs.readFileSync(process.env.REPORT));if(Object.keys(j.aggregate.errors).length !== 0) process.exit(1)'
@@ -42,54 +38,56 @@ function artillery() {
 }
 
 @test "Can run a quick HTTP test with 'artillery quick'" {
-  artillery quick -d 10 -r 1 -o `mktemp -t report.json` https://artillery.io | grep 'all scenarios completed'
+  ./bin/artillery quick -d 10 -r 1 -o "$(mktemp -d)/report.json" https://artillery.io | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
 @test "Can specify output filename for artillery quick" {
-  JSON_REPORT=`mktemp -t report.json`
-  artillery quick -d 1 -r 1 -o $JSON_REPORT https://artillery.io | grep "Log file: $JSON_REPORT"
+  JSON_REPORT="$(mktemp -d)/report.json"
+  ./bin/artillery quick -d 1 -r 1 -o $JSON_REPORT https://artillery.io | grep "Log file: $JSON_REPORT"
   [ $? -eq 0 ]
 }
 
 @test "'artilery quick' accepts a variety of options" {
-    artillery quick --duration 10 --rate 1 https://artillery.io/
+    ./bin/artillery quick --duration 10 --rate 1 https://artillery.io/
     [ $? -eq 0 ]
 }
 
 @test "Run a simple script" {
-  artillery run ./test/scripts/hello.json | grep 'all scenarios completed'
+  ./bin/artillery run ./test/scripts/hello.json | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
 @test "Run a script with one payload command line" {
-  artillery run ./test/scripts/single_payload.json -p ./test/scripts/pets.csv | grep 'all scenarios completed'
+  ./bin/artillery run ./test/scripts/single_payload.json -p ./test/scripts/pets.csv | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
 @test "Run a script with one payload json config" {
-  artillery run ./test/scripts/single_payload_object.json| grep 'all scenarios completed'
+  ./bin/artillery run ./test/scripts/single_payload_object.json| grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
 @test "Run a script with multiple payloads" {
-  artillery run ./test/scripts/multiple_payloads.json | grep 'all scenarios completed'
+  ./bin/artillery run ./test/scripts/multiple_payloads.json | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
 @test "Run a script using default options (output)" {
-  artillery run ./test/scripts/hello.json | grep "Log file: artillery_report_*"
+  ./bin/artillery run ./test/scripts/hello.json | grep "Log file: artillery_report_*"
   [ $? -eq 0 ]
 }
 
 @test "Run a script overwriting default options (output)" {
-  artillery run ./test/scripts/hello.json -o artillery_report_custom.json | grep 'Log file: artillery_report_custom.json'
+  ./bin/artillery run ./test/scripts/hello.json -o artillery_report_custom.json | grep 'Log file: artillery_report_custom.json'
   [ $? -eq 0 ]
 }
 
 @test "Running a script that uses XPath capture when libxmljs is not installed produces a warning" {
-    find . -name "artillery-xml-capture" -type d | xargs rm -r
-    artillery run ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
+    if [[ ! -z `find . -name "artillery-xml-capture" -type d` ]]; then
+      find . -name "artillery-xml-capture" -type d | xargs rm -r
+    fi
+    ./bin/artillery run ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
     grep_status=$?
     npm install artillery-xml-capture || true
     [ $grep_status -eq 0 ]
@@ -97,9 +95,9 @@ function artillery() {
 
 @test "Quick: does not accept invalid combination of options" {
     set +e
-    artillery quick -c 10 -r 10 -n 50 https://artillery.io
+    ./bin/artillery quick -c 10 -r 10 -n 50 https://artillery.io
     status1=$?
-    artillery quick -d 60 -n 50 https://artillery.io
+    ./bin/artillery quick -d 60 -n 50 https://artillery.io
     status2=$?
     set -e
 
@@ -107,7 +105,7 @@ function artillery() {
 }
 
 @test "Quick: specified number of requests is sent on each connection" {
-    artillery quick -c 25 -n 5 -o report.json http://localhost:3003/
+    ./bin/artillery quick -c 25 -n 5 -o report.json http://localhost:3003/
     requestCount=$(jq .aggregate.requestsCompleted report.json)
     rm report.json
 
@@ -115,16 +113,25 @@ function artillery() {
 }
 
 @test "Script using hook functions" {
-  artillery run ./test/scripts/hello.json | grep 'hello from processor'
+  ./bin/artillery run ./test/scripts/hello.json | grep 'hello from processor'
   [[ $? -eq 0 ]]
 }
 
 @test "Script using a plugin" {
-  ARTILLERY_WORKERS=3 ARTILLERY_PLUGIN_PATH="`pwd`/test/plugins/" artillery run -o report.json ./test/scripts/hello_plugin.json
+  ARTILLERY_WORKERS=3 ARTILLERY_PLUGIN_PATH="`pwd`/test/plugins/" ./bin/artillery run -o report.json ./test/scripts/hello_plugin.json
   requestCount1=$(awk '{ sum += $1 } END { print sum }' plugin-data.csv)
   requestCount2=$(jq .aggregate.requestsCompleted report.json)
   rm plugin-data.csv
   rm report.json
 
   [[ $requestCount1 -eq $requestCount2 ]]
+}
+
+@test "Clean up when killed" {
+  ARTILLERY_WORKERS=4 ./bin/artillery quick -d 120 -r 1 http://localhost:3003/ &
+  artillery_pid=$!
+  sleep 5
+  kill $artillery_pid
+  sleep 4
+  [[ -z $(pgrep -lfa node | grep worker) ]]
 }
