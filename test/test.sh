@@ -5,7 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 @test "If we report specifying output, no browser is opened" {
-  HTML_OUT=`mktemp -t report.html`
+  HTML_OUT="$(mktemp -d)/report.html"
   ./bin/artillery report -o $HTML_OUT test/scripts/report.json | grep "Report generated: $HTML_OUT"
   [ $? -eq 0 ]
   [ -f $HTML_OUT ]
@@ -29,7 +29,7 @@
 
 @test "Environment specified with -e should be used" {
   # FIXME: Should not need to use "-k" here, see #59
-  STATS=`mktemp -t stats`
+  STATS="$(mktemp -d)/stats"
   ./bin/artillery run -k -e production -o "$STATS.json" test/scripts/environments2.json
   # TODO: Use jq
   # Here if the right environment is not picked up, we'll have a bunch of ECONNREFUSED errors in the report
@@ -38,12 +38,12 @@
 }
 
 @test "Can run a quick HTTP test with 'artillery quick'" {
-  ./bin/artillery quick -d 10 -r 1 -o `mktemp -t report.json` https://artillery.io | grep 'all scenarios completed'
+  ./bin/artillery quick -d 10 -r 1 -o "$(mktemp -d)/report.json" https://artillery.io | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
 @test "Can specify output filename for artillery quick" {
-  JSON_REPORT=`mktemp -t report.json`
+  JSON_REPORT="$(mktemp -d)/report.json"
   ./bin/artillery quick -d 1 -r 1 -o $JSON_REPORT https://artillery.io | grep "Log file: $JSON_REPORT"
   [ $? -eq 0 ]
 }
