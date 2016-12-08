@@ -10,6 +10,24 @@ const util = require('util');
 const _ = require('lodash');
 const debug = require('debug')('test:phases');
 
+//
+// Ref: https://github.com/shoreditch-ops/artillery/issues/215
+//
+test('GH #215 regression', function(t) {
+  const phaseSpec = { duration: 2, arrivalRate: 20 };
+  let phaser = createPhaser([phaseSpec]);
+  phaser.on('phaseCompleted', function() {
+    t.comment('+ phaseCompleted event');
+  });
+  // The process will lock up if the Node.js bug is triggered and the test
+  // will time out.
+  phaser.on('done', function() {
+    t.comment('+ done event');
+    t.end();
+  });
+  phaser.run();
+});
+
 test('pause', function(t) {
   const phaseSpec = {pause: 5};
 
@@ -87,18 +105,21 @@ test('arrivalCount', function(t) {
 
 test('ramp', function(t) {
   const phaseSpec = {
-    duration: 20,
-    arrivalRate: 0,
-    rampTo: 100
+    duration: 15,
+    arrivalRate: 1,
+    rampTo: 20
   };
   let phaser = createPhaser([phaseSpec]);
 
-  let incBy = (phaseSpec.rampTo - phaseSpec.arrivalRate) / (phaseSpec.duration - 1);
-  let expected = phaseSpec.arrivalRate;
-  for(let i = 0; i < phaseSpec.duration; i++) {
-    let tick = 1000 / (phaseSpec.arrivalRate + i * incBy);
-    expected += Math.floor(1000 / Math.ceil(tick));
+
+  let expected = 0;
+  let periods = phaseSpec.rampTo - phaseSpec.arrivalRate + 1;
+  let periodLenSec = phaseSpec.duration / periods;
+  for(let i = 1; i <= periods; i++) {
+    let expectedInPeriod = periodLenSec * i;
+    expected += expectedInPeriod;
   }
+  expected = Math.floor(expected);
 
   t.plan(5);
 
@@ -120,7 +141,6 @@ test('ramp', function(t) {
       'phaseCompleted event emitted with correct spec');
   });
   phaser.on('arrival', function() {
-    //debug('+ arrival');
     arrivals++;
   });
   phaser.on('done', function() {
@@ -132,7 +152,7 @@ test('ramp', function(t) {
     debug('expected: %s, arrived: %s', expected, arrivals);
 
     t.assert(
-      arrivals * 1.1 > expected,
+      Math.abs(arrivals - expected) <= expected * 0.2, // large allowance
       'seen arrivals within expected bounds');
 
     t.end();
