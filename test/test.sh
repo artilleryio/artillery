@@ -84,7 +84,9 @@
 }
 
 @test "Running a script that uses XPath capture when libxmljs is not installed produces a warning" {
-    find . -name "artillery-xml-capture" -type d | xargs rm -r
+    if [[ ! -z `find . -name "artillery-xml-capture" -type d` ]]; then
+      find . -name "artillery-xml-capture" -type d | xargs rm -r
+    fi
     ./bin/artillery run ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
     grep_status=$?
     npm install artillery-xml-capture || true
