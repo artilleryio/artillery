@@ -32,7 +32,7 @@
     "lodash": "4.13.1",
     "nanotimer": "0.3.14",
     "request": "2.72.0",
-    "rolex": "https://codeload.github.com/hassy/rolex/tar.gz/master",
+    "rolex": "1.0.0",
     "socket.io-client": "1.4.6",
     "stats-lite": "2.0.0",
     "tough-cookie": "2.2.2",
