@@ -9,6 +9,9 @@
       },
       "ensure": {
         "p95": 300
+      },
+      "variables": {
+        "jsonPathExpr": ["$.id"]
       }
   },
   "scenarios": [
@@ -20,7 +23,7 @@
             "url": "/pets",
             "json": {"name": "{{ name }}", "species": "{{ species }}"},
             "capture": [{
-              "json": "$.id",
+              "json": "{{{ jsonPathExpr }}}",
               "transform": "this.id.toUpperCase()",
               "as": "id"
             }, {
