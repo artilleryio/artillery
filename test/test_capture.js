@@ -43,12 +43,13 @@ test('Capture - JSON', (t) => {
     ee.on('done', function(report) {
       let c200 = report.codes[200];
       let c201 = report.codes[201];
-      let c404 = report.codes[404];
-      let cond = c201 * 2 === c200 + c404;
+
+      let cond = c201 === c200;
+
       t.assert(cond,
-               'There should be a 200 and a 404 for every 201');
+               'There should be a 200 for every 201');
       if (!cond) {
-        console.log('200: %s; 201: %s; 404: %s', c200, c201, c404);
+        console.log('200: %s; 201: %s', c200, c201);
       }
       t.end();
     });
@@ -105,12 +106,12 @@ test('Capture - RegExp', (t) => {
   ee.on('done', (report) => {
       let c200 = report.codes[200];
       let c201 = report.codes[201];
-      let c404 = report.codes[404];
-      let cond = c201 * 2 === c200 + c404;
+      let cond = c201 === c200;
+
       t.assert(cond,
-               'There should be a 200 and a 404 for every 201');
+               'There should be a 200 for every 201');
       if (!cond) {
-        console.log('200: %s; 201: %s; 404: %s', c200, c201, c404);
+        console.log('200: %s; 201: %s;', c200, c201);
       }
       t.end();
   });
