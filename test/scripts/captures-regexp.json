@@ -21,14 +21,8 @@
             "json": {"name": "{{ name }}", "species": "{{ species }}"},
             "capture": {
               "regexp": "[a-f0-9-]+-[a-f0-9]+",
-              "transform": "this.id.toUpperCase()",
               "as": "id"
             }
-          }
-        },
-        {"get":
-          {
-            "url": "/pets/{{ $.id }}"
           }
         },
         {"get": {

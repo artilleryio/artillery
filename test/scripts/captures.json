@@ -24,7 +24,6 @@
             "json": {"name": "{{ name }}", "species": "{{ species }}"},
             "capture": [{
               "json": "{{{ jsonPathExpr }}}",
-              "transform": "this.id.toUpperCase()",
               "as": "id"
             }, {
               "json": "$.doesnotexist",
@@ -34,12 +33,6 @@
               "regexp": ".+",
               "as": "id2"
             }]
-          }
-        },
-        {"get":
-          {
-            "url": "/pets/{{ $.id }}",
-            "match": {"json": "$.name", "value": "{{ name }}"}
           }
         },
         {"get": {
