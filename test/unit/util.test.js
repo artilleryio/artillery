@@ -61,3 +61,37 @@ test('loop - error handling', function(t) {
     t.end();
   });
 });
+
+test('rendering variables', function(t) {
+  let str = 'Hello {{ name }}, hope your {{{ day }}} is going great!';
+  let vars = {
+    name: 'Hassy',
+    day: 'Friday'
+  };
+
+  t.assert(
+    util._renderVariables(str, vars) === 'Hello Hassy, hope your Friday is going great!',
+    'Variables are substituted with either double or triple curly braces');
+
+  t.assert(
+    util._renderVariables('{{ s }} - {{ s }} {}', { s: 'foo' }) === 'foo - foo {}',
+    'Multiple instances of a variable get replaced');
+
+  t.assert(
+    util._renderVariables(' {{   foo}} ', { foo: 'bar' }) === ' bar ',
+    'Whitespace inside templates is not significant');
+
+  t.assert(
+    util._renderVariables('Hello {{ name }}', { foo: 'bar', day: 'Sunday' }) === 'Hello ',
+    'Undefined variables get replaced with an empty string');
+
+  t.assert(
+    util._renderVariables('', { foo: 'bar', name: 'Hassy', color: 'red' }) === '',
+    'Empty string produces an empty string');
+
+  t.assert(
+    util._renderVariables('Hello world!', { foo: 'bar', name: 'Hassy', color: 'red' }) === 'Hello world!',
+    'String with no templates produces itself');
+
+  t.end();
+});
