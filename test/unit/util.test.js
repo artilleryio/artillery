@@ -7,6 +7,7 @@
 const test = require('tape');
 const L = require('lodash');
 const jitter = require('../../lib/jitter').jitter;
+const util = require('../../lib/engine_util');
 
 test('jitter', function(t) {
   t.assert(jitter(1000) === 1000, 'Number and no other params should return the number');
@@ -37,4 +38,26 @@ test('jitter', function(t) {
   }
 
   t.end();
+});
+
+test('loop - error handling', function(t) {
+  let steps = [
+    function(context, next) {
+      return next(null, context);
+    },
+    function(context, next) {
+      if (context.vars.$loopCount === 5) {
+        return next(new Error('ESOMEERR'), context);
+      } else {
+        return next(null, context);
+      }
+    }
+  ];
+  let loop = util.createLoopWithCount(10, steps, { });
+  loop({ vars: {} }, function(err, context) {
+    t.assert(
+      typeof err === 'object' && err.message === 'ESOMEERR',
+      'Errors are returned normally from loop steps');
+    t.end();
+  });
 });
