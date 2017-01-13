@@ -49,6 +49,7 @@
     "hapi": "10.4.0",
     "hapi-auth-basic": "4.1.0",
     "istanbul": "^0.3.17",
+    "nock": "^9.0.2",
     "pre-commit": "^1.0.10",
     "sinon": "1.17.6",
     "socket.io": "1.4.6",

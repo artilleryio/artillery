@@ -8,6 +8,7 @@ const test = require('tape');
 const sinon = require('sinon');
 const HttpEngine = require('../../lib/engine_http');
 const EventEmitter = require('events');
+const nock = require('nock');
 
 const THINKTIME_SEC = 1;
 
@@ -90,4 +91,53 @@ test('HTTP virtual user', function(t) {
   function onStarted() {
     t.assert(true, 'started event emitted');
   }
+});
+
+test('url and uri parameters', function (t) {
+  const target = nock('http://localhost:8888')
+    .get('/hello')
+    .reply(200, 'ok');
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888',
+      processor: {
+        rewriteUrl: function(req, context, ee, next) {
+          req.uri = '/hello';
+          return next();
+        }
+      }
+    },
+    scenarios: [
+      {
+        name: 'Whatever',
+        flow: [
+          {
+            get: {
+              uri: '/will/404',
+              beforeRequest: 'rewriteUrl'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  const initialContext = {
+    vars: {}
+  };
+
+  runScenario(initialContext, function userDone(err, finalContext) {
+    if (err) {
+      t.fail();
+    }
+
+    t.assert(target.isDone(), 'Should have made a request to /hello');
+    t.end();
+  });
 });
