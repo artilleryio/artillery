@@ -6,6 +6,7 @@
 
 const test = require('tape');
 const sinon = require('sinon');
+
 const HttpEngine = require('../../lib/engine_http');
 const EventEmitter = require('events');
 const nock = require('nock');
@@ -83,7 +84,7 @@ test('HTTP virtual user', function(t) {
       }
     });
     t.assert(seen, 'log worked');
-
+    console.log.restore(); // unwrap the spy
     // loop count starts at 0, hence 2 rather than 3 here:
     t.assert(finalContext.vars.inc === 2, 'Function called in a loop');
   });
@@ -105,11 +106,17 @@ test('url and uri parameters', function (t) {
         rewriteUrl: function(req, context, ee, next) {
           req.uri = '/hello';
           return next();
+        },
+        printHello: function(req, context, ee, next) {
+          console.log('# hello from printHello hook!');
+          return next();
         }
       }
     },
     scenarios: [
       {
+        // test for https://github.com/shoreditch-ops/artillery/issues/184:
+        beforeRequest: 'printHello',
         name: 'Whatever',
         flow: [
           {
@@ -125,7 +132,7 @@ test('url and uri parameters', function (t) {
 
   const engine = new HttpEngine(script);
   const ee = new EventEmitter();
-
+  const spy = sinon.spy(console, 'log');
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
   const initialContext = {
@@ -138,6 +145,18 @@ test('url and uri parameters', function (t) {
     }
 
     t.assert(target.isDone(), 'Should have made a request to /hello');
+
+    const expectedLog = '# hello from printHello hook!';
+    let seen = false;
+    spy.args.forEach(function(args) {
+      if (args[0] === expectedLog) {
+        t.comment(`string: "${args[0]}" found`);
+        seen = true;
+      }
+    });
+    t.assert(seen, 'scenario-level beforeRequest worked');
+    console.log.restore(); // unwrap the spy
+
     t.end();
   });
 });
