@@ -44,67 +44,7 @@ Artillery's goal is to help developers build <strong>faster</strong>, more <stro
 
 There's a lot of fun to be had with a good load generator like Artillery.
 
-# Quickstart
-
-### Install
-
-**Artillery** is available via [npm](http://npmjs.org)
-
-`$ npm install -g artillery`
-
-Node.js v4+ is required (Node.js 6 is recommended).
-
-### Run A Quick Test
-
-`$ artillery quick -d 30 -r 5 -n 20 http://127.0.0.1:3000/test`
-
-This will run a test for 30 seconds, with 5 new virtual users created every second, with each user sending 20 a `GET` requests to `http://127.0.0.1:3000/test`.
-
-### Run With A Scenario
-
-Artillery's power lies in emulating complex behavior, like that of users of an e-commerce website, a transactional API etc.
-
-Run a scenario with:
-
-`$ artillery run hello.yaml`
-
-Where `hello.yaml` is your tests script that contains something like:
-
-(*NB:* test scripts can be written as JSON too)
-
-```yaml
-config:
-  target: "http://127.0.0.1:3000"
-  phases:
-    - duration: 120
-      arrivalRate: 10
-  defaults:
-    headers:
-      content-type: "application/json"
-      x-my-service-auth: fedcba9876543210
-scenarios:
-  - flow:
-      - get:
-          url: "/test"
-      - think: 1
-      - post:
-          url: "/test"
-          json:
-            name: "Hassy"
-```
-
-This will run a test for 2 minutes, with 10 virtual users created every second, each of which will send a `GET` and a `POST` request with a pause of 1 second in between. Each request will include two custom headers (`Content-Type` and `X-My-Service-Auth`).
-
-### Create A HTML Report
-
-Once the test completes, you can create a graphical report from the JSON stats produced by `artillery run` with:
-`artillery report <report_xxxxx.json>`
-
-These are self-contained HTML files that can be easily shared via email or Dropbox for example.
-
-### Learn More
-
-See [Artillery docs](https://artillery.io/docs/) for docs and examples.
+# [Get Started With Artillery](https://artillery.io/docs/gettingstarted.html) 🎯
 
 # Contributing
 
@@ -115,10 +55,13 @@ guide](CONTRIBUTING.md).
 
 Are you using Artillery to ship faster, more resilient and more scalable systems? Add your team to the [Artillery users list on the wiki](https://github.com/shoreditch-ops/artillery/wiki/Companies-using-Artillery).
 
-
 # License
 
 **Artillery** is open-source software distributed under the terms of the
-[MPL2](https://www.mozilla.org/en-US/MPL/2.0/) license.
+[MPLv2](https://www.mozilla.org/en-US/MPL/2.0/) license.
 
-[MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
+# Swag
+
+<a href="https://shoreditch-ops.teemill.co.uk/product/artillery-io-hoodie-2976/"><img src="https://shoreditch-ops.teemill.co.uk/uploaded/public/58a0c5f5ce9cd5.85445284.png" alt="artillery.io hoodie" width="180" /></a>
+
+Get some comfy, stylish, and eco-friendly Artilllery.io swag from <a href="https://shoreditch-ops.teemill.co.uk/">our shop</a> All profits go to charity.
