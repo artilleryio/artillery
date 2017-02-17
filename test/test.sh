@@ -48,7 +48,7 @@
   [ $? -eq 0 ]
 }
 
-@test "'artilery quick' accepts a variety of options" {
+@test "'artillery quick' accepts a variety of options" {
     ./bin/artillery quick --duration 10 --rate 1 https://artillery.io/
     [ $? -eq 0 ]
 }
