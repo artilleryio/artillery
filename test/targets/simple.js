@@ -40,6 +40,18 @@ var validate = function(request, username, password, callback) {
 
 // TODO: clean up
 
+const LARGE_RESPONSE = JSON.stringify({
+  data: new Array(1024 * 1024 * 10).join('0')
+});
+
+server.route({
+  method: 'GET',
+  path: '/largeResponse',
+  handler: function largeResponse(req, reply) {
+    return reply(LARGE_RESPONSE);
+  }
+});
+
 server.route({
   method: 'POST',
   path: '/setscookie',
