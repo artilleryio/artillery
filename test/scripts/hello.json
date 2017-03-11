@@ -8,14 +8,16 @@
   },
   "scenarios": [
     {
+      "beforeRequest": ["printHello"],
       "flow": [
-        {"get": {"url": "/", "beforeRequest": "printHello"}},
+        {"get": {"url": "/"}},
         {"post": {"url": "/pets", "json": {"name": "Figo", "species": "dog"}}},
         {"loop": [
           {"loop": [
             {"log": "outer: {{ $loopCount }}; inner: {{ k }}"}
           ], "count": "5", "loopValue": "k"}
-        ], "count": 3}
+        ], "count": 3},
+        {"get": "/does/not/exist", "beforeRequest": "rewriteUrl"}
       ]
     }
   ]

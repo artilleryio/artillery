@@ -122,6 +122,13 @@
   [[ $? -eq 0 ]]
 }
 
+@test "Hook functions - can rewrite the URL" {
+  # Ref: https://github.com/shoreditch-ops/artillery/issues/185
+  ./bin/artillery run ./test/scripts/hello.json -o report.json
+  node -e 'var fs = require("fs"); var j = JSON.parse(fs.readFileSync("report.json", "utf8"));process.exit(j.aggregate.codes[404] ? -1 : 0);'
+  [[ $? -eq 0 ]]
+}
+
 @test "Script using a plugin" {
   ARTILLERY_WORKERS=3 ARTILLERY_PLUGIN_PATH="`pwd`/test/plugins/" ./bin/artillery run -o report.json ./test/scripts/hello_plugin.json
   requestCount1=$(awk '{ sum += $1 } END { print sum }' plugin-data.csv)
