@@ -9,12 +9,16 @@
       },
       "dev": {
         "target": "http://dev.wontresolve.prod:44321"
+      },
+      "local": {
+        "target": "http://localhost:3003"
       }
     }
   },
   "scenarios": [
     {
       "flow": [
+        { "log": "current environment: {{ $environment }}" },
         { "get": { "url": "/test" } }
       ]
     }
