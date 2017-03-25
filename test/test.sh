@@ -153,3 +153,8 @@
   ./bin/artillery run test/scripts/gh_215_add_token.json
   [[ true ]]
 }
+
+@test "Should produce no output when run with --quiet" {
+  output=$(./bin/artillery quick --quiet -d 1 -c 10 http://localhost:3003/)
+  [[ -z "$output" ]]
+}
