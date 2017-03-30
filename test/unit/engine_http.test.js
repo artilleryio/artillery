@@ -10,8 +10,6 @@ const sinon = require('sinon');
 const HttpEngine = require('../../lib/engine_http');
 const EventEmitter = require('events');
 const nock = require('nock');
-const path = require('path');
-const fs = require('fs');
 
 const THINKTIME_SEC = 1;
 
@@ -159,111 +157,6 @@ test('url and uri parameters', function (t) {
     t.assert(seen, 'scenario-level beforeRequest worked');
     console.log.restore(); // unwrap the spy
 
-    t.end();
-  });
-});
-
-test('file as body', function (t) {
-  const target = nock('http://localhost:8888')
-    .post('/hello')
-    .reply(200, 'ok');
-
-  const files = ['../files/image.png', '../files/archive.tar'].reduce((streamMap, relative) => {
-    const resolved = path.resolve(__dirname, relative);
-    return Object.assign(streamMap, { [relative]: fs.createReadStream(resolved) });
-  }, {});
-
-  const script = {
-    config: {
-      target: 'http://localhost:8888',
-      files: files
-    },
-    scenarios: [
-      {
-        name: 'Whatever',
-        flow: [
-          {
-            post: {
-              uri: '/hello',
-              body: '@../files/image.png'
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  const initialContext = {
-    vars: {}
-  };
-
-  runScenario(initialContext, function userDone(err, finalContext) {
-    if (err) {
-      t.fail();
-    }
-
-    t.assert(target.isDone(), 'Should have made a request to /hello with formData');
-    t.end();
-  });
-});
-
-test('files in formData', function (t) {
-  const target = nock('http://localhost:8888', {
-    reqheaders: {
-      'content-type': /multipart/
-    }
-  })
-    .post('/hello', function (body) {
-      return Boolean(body.length);
-    })
-    .reply(200, 'ok');
-
-  const files = ['../files/image.png', '../files/archive.tar'].reduce((streamMap, relative) => {
-    const resolved = path.resolve(__dirname, relative);
-    return Object.assign(streamMap, { [relative]: fs.createReadStream(resolved) });
-  }, {});
-
-  const script = {
-    config: {
-      target: 'http://localhost:8888',
-      files: files
-    },
-    scenarios: [
-      {
-        name: 'Whatever',
-        flow: [
-          {
-            post: {
-              uri: '/hello',
-              formData: {
-                'preview_img': '@../files/image.png',
-                data: '@../files/image.png'
-              }
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  const initialContext = {
-    vars: {}
-  };
-
-  runScenario(initialContext, function userDone(err, finalContext) {
-    if (err) {
-      t.fail();
-    }
-
-    t.assert(target.isDone(), 'Should have made a request to /hello with formData');
     t.end();
   });
 });
