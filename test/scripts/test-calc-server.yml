@@ -1,0 +1,43 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+config:
+  target: ""
+
+  phases:
+    - duration: 1
+      arrivalCount: 10
+
+  environments:
+    single-cli:
+      payload:
+        fields: ["endpoint", "input", "expectedOutput"]
+
+    single-inside-script:
+      payload:
+        fields: ["endpoint", "input", "expectedOutput"]
+        path: "../data/calc-test-data-1.csv"
+
+    multiple:
+      payload:
+        - fields: ["endpoint", "input", "expectedOutput"]
+          path: "../data/calc-test-data-1.csv"
+        - fields: ["endpoint2", "input2", "expectedOutput2"]
+          path: "../data/calc-test-data-2.csv"
+
+scenarios:
+  - name: "Run a few simple calculations"
+    flow:
+      - log: "{{ endpoint }} - {{ input }}"
+      - post:
+          url: "/{{ endpoint }}"
+          headers:
+            content-type: "application/x-www-form-urlencoded"
+          body: "number={{ input }}"
+
+      - post:
+          url: "/{{ endpoint2 }}"
+          form:
+            number: "{{ input2 }}"
+          ifTrue: "endpoint2"

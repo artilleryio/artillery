@@ -9,7 +9,7 @@ target2_pid=$!
 echo "running tests"
 echo
 
-bats ./test/test.sh
+bats ./test/test.bats ./test/test-variables-from-external-files.bats
 status=$?
 
 echo "done"
