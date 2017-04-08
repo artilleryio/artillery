@@ -6,17 +6,17 @@ const runner = require('../lib/runner').runner;
 test('arrival phases', function(t) {
   var script = require('./scripts/arrival_phases.json');
 
-  var ee = runner(script);
+  runner(script).then(function(ee) {
+    ee.on('phaseStarted', function(info) {
+      console.log('Starting phase: %j - %s', info, new Date());
+    });
+    ee.on('phaseCompleted', function() {
+      console.log('Phase completed - %s', new Date());
+    });
 
-  ee.on('phaseStarted', function(info) {
-    console.log('Starting phase: %j - %s', info, new Date());
+    ee.on('done', function(stats) {
+      t.end();
+    });
+    ee.run();
   });
-  ee.on('phaseCompleted', function() {
-    console.log('Phase completed - %s', new Date());
-  });
-
-  ee.on('done', function(stats) {
-    t.end();
-  });
-  ee.run();
 });

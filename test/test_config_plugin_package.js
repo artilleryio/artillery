@@ -24,8 +24,8 @@ test('Normal artillery-plugin-*', function(t) {
 });
 
 function runTest(t, scriptName){
-    const script = require(scriptName);
-    const ee = runner(script);
+  const script = require(scriptName);
+  runner(script).then(function(ee) {
 
     ee.on('plugin_loaded', function(stats){
       t.assert(true);
@@ -33,4 +33,5 @@ function runTest(t, scriptName){
     });
 
     ee.run();
+  });
 }
