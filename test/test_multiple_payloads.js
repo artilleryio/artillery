@@ -19,29 +19,30 @@ test('single payload', function(t) {
       t.fail(err);
     }
 
-    let ee = runner(script, parsedData, {});
+    runner(script, parsedData, {}).then(function(ee) {
 
-    ee.on('phaseStarted', function(x) {
-      t.ok(x, 'phaseStarted event emitted');
+      ee.on('phaseStarted', function(x) {
+        t.ok(x, 'phaseStarted event emitted');
+      });
+
+      ee.on('phaseCompleted', function(x) {
+        t.ok(x, 'phaseCompleted event emitted');
+      });
+
+      ee.on('stats', function(stats) {
+        t.ok(stats, 'intermediate stats event emitted');
+      });
+
+      ee.on('done', function(report) {
+        let requests = report.requestsCompleted;
+        let scenarios = report.scenariosCompleted;
+        t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
+        t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
+        t.end();
+      });
+
+      ee.run();
     });
-
-    ee.on('phaseCompleted', function(x) {
-      t.ok(x, 'phaseCompleted event emitted');
-    });
-
-    ee.on('stats', function(stats) {
-      t.ok(stats, 'intermediate stats event emitted');
-    });
-
-    ee.on('done', function(report) {
-      let requests = report.requestsCompleted;
-      let scenarios = report.scenariosCompleted;
-      t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
-      t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
-      t.end();
-    });
-
-    ee.run();
   });
 });
 
@@ -69,29 +70,30 @@ test('multiple_payloads', function(t) {
         t.fail(err);
       }
 
-      let ee = runner(script, script.config.payload, {});
+      runner(script, script.config.payload, {}).then(function(ee) {
 
-      ee.on('phaseStarted', function(x) {
-        t.ok(x, 'phaseStarted event emitted');
+        ee.on('phaseStarted', function(x) {
+          t.ok(x, 'phaseStarted event emitted');
+        });
+
+        ee.on('phaseCompleted', function(x) {
+          t.ok(x, 'phaseCompleted event emitted');
+        });
+
+        ee.on('stats', function(stats) {
+          t.ok(stats, 'intermediate stats event emitted');
+        });
+
+        ee.on('done', function(report) {
+          let requests = report.requestsCompleted;
+          let scenarios = report.scenariosCompleted;
+          t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
+          t.assert(report.codes[200] > 0, 'There are some 200s (URLs constructed from urls.csv)');
+          t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
+          t.end();
+        });
+
+        ee.run();
       });
-
-      ee.on('phaseCompleted', function(x) {
-        t.ok(x, 'phaseCompleted event emitted');
-      });
-
-      ee.on('stats', function(stats) {
-        t.ok(stats, 'intermediate stats event emitted');
-      });
-
-      ee.on('done', function(report) {
-        let requests = report.requestsCompleted;
-        let scenarios = report.scenariosCompleted;
-        t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
-        t.assert(report.codes[200] > 0, 'There are some 200s (URLs constructed from urls.csv)');
-        t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
-        t.end();
-      });
-
-      ee.run();
     });
 });
