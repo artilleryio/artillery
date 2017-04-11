@@ -22,6 +22,7 @@ program
           'self-signed certificates')
   .option('-e, --environment <name>', 'Specify the environment to be used')
   .option('-q, --quiet', 'Do not print anything to stdout')
+  .option('-c, --config <path>', 'Load test config from a file')
   .action(commands.run);
 
 program

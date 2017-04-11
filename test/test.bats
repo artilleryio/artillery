@@ -54,7 +54,7 @@
 }
 
 @test "Run a simple script" {
-  ./bin/artillery run ./test/scripts/hello.json | grep 'all scenarios completed'
+  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json | grep 'all scenarios completed'
   [ $? -eq 0 ]
 }
 
@@ -74,12 +74,12 @@
 }
 
 @test "Run a script using default options (output)" {
-  ./bin/artillery run ./test/scripts/hello.json | grep "Log file: artillery_report_*"
+  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json | grep "Log file: artillery_report_*"
   [ $? -eq 0 ]
 }
 
 @test "Run a script overwriting default options (output)" {
-  ./bin/artillery run ./test/scripts/hello.json -o artillery_report_custom.json | grep 'Log file: artillery_report_custom.json'
+  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json -o artillery_report_custom.json | grep 'Log file: artillery_report_custom.json'
   [ $? -eq 0 ]
 }
 
@@ -87,7 +87,7 @@
     if [[ ! -z `find . -name "artillery-xml-capture" -type d` ]]; then
       find . -name "artillery-xml-capture" -type d | xargs rm -r
     fi
-    ./bin/artillery run ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
+    ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
     grep_status=$?
     npm install artillery-xml-capture || true
     [ $grep_status -eq 0 ]
@@ -113,13 +113,13 @@
 }
 
 @test "Script using hook functions" {
-  ./bin/artillery run ./test/scripts/hello.json | grep 'hello from processor'
+  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json | grep 'hello from processor'
   [[ $? -eq 0 ]]
 }
 
 @test "Hook functions - can rewrite the URL" {
   # Ref: https://github.com/shoreditch-ops/artillery/issues/185
-  ./bin/artillery run ./test/scripts/hello.json -o report.json
+  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json -o report.json
   node -e 'var fs = require("fs"); var j = JSON.parse(fs.readFileSync("report.json", "utf8"));process.exit(j.aggregate.codes[404] ? -1 : 0);'
   [[ $? -eq 0 ]]
 }

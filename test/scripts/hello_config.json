@@ -1,0 +1,9 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:3003",
+    "phases": [
+      {"duration": 5, "arrivalCount": 1}
+    ],
+    "processor": "./processor.js"
+  }
+}
