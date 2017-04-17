@@ -1,14 +1,9 @@
 <p align="center">
-<a href="https://artillery.io"><img src="https://dl.dropboxusercontent.com/u/476522/artillery/flag.gif" width="390" /></a>
+<a href="https://artillery.io"><img src="https://artillery.io/img/A9.png" height="100" /></a>
 </p>
 <p align="center">
-<em><strong>Artillery</strong> is a modern, powerful, easy-to-use load-testing toolkit.</em>
-</p>
+<em><strong>Artillery</strong> is a modern, powerful, easy-to-use load-testing toolkit.</em> Artillery has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy. Our goal is to help developers build <strong>faster</strong>, more <strong>resilient</strong> and more <strong>scalable</strong> applications.
 
-<p align="center">
-Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy.
-
-Artillery's goal is to help developers build <strong>faster</strong>, more <strong>resilient</strong> and more <strong>scalable</strong> applications.
 </p>
 
 ## Features
