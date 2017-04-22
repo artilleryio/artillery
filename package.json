@@ -30,14 +30,14 @@
     "jsck": "0.2.5",
     "lodash": "4.13.1",
     "nanotimer": "0.3.14",
-    "request": "2.72.0",
+    "request": "^2.81.0",
     "rolex": "1.0.0",
-    "socket.io-client": "1.4.6",
+    "socket.io-client": "^1.7.3",
     "stats-lite": "2.0.0",
-    "tough-cookie": "2.2.2",
+    "tough-cookie": "^2.3.2",
     "traverse": "0.6.6",
     "uuid": "^3.0.0",
-    "ws": "1.0.1"
+    "ws": "^1.1.4"
   },
   "devDependencies": {
     "bcrypt": "^0.8.5",
