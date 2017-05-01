@@ -149,6 +149,11 @@
   [[ true ]]
 }
 
+@test "issue-301 should accept js file as input" {
+  ./bin/artiller run test/scripts/simple.js
+  [[ true ]]
+}
+
 @test "Should produce no output when run with --quiet" {
   output=$(./bin/artillery quick --quiet -d 1 -c 10 http://localhost:3003/)
   [[ -z "$output" ]]
