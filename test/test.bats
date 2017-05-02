@@ -150,7 +150,7 @@
 }
 
 @test "issue-301 should accept js file as input" {
-  ./bin/artiller run test/scripts/simple.js
+  ./bin/artillery run test/scripts/simple.js
   [[ true ]]
 }
 
