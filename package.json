@@ -53,6 +53,7 @@
     "open": "0.0.5",
     "rc": "^1.1.6",
     "tmp": "0.0.28",
+    "update-notifier": "^2.1.0",
     "yaml-js": "0.1.4"
   },
   "devDependencies": {
