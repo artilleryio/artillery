@@ -13,7 +13,7 @@
   "scenarios": [
     {
       "flow": [
-        {"get": {"url": "/expectscookie"}}
+        {"get": {"url": "/expectscookie", "cookie": {"biscuit": "tunnocks"}}}
       ]
     }
   ]
