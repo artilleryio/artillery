@@ -38,7 +38,7 @@
 }
 
 @test "Can run a quick HTTP test with 'artillery quick'" {
-  ./bin/artillery quick -d 10 -r 1 -o "$(mktemp -d)/report.json" https://artillery.io | grep 'all scenarios completed'
+  ./bin/artillery quick -d 10 -r 1 -o "$(mktemp -d)/report.json" https://artillery.io | grep 'All virtual users finished'
   [ $? -eq 0 ]
 }
 
@@ -54,22 +54,22 @@
 }
 
 @test "Run a simple script" {
-  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json | grep 'all scenarios completed'
+  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json | grep 'All virtual users finished'
   [ $? -eq 0 ]
 }
 
 @test "Run a script with one payload command line" {
-  ./bin/artillery run ./test/scripts/single_payload.json -p ./test/scripts/pets.csv | grep 'all scenarios completed'
+  ./bin/artillery run ./test/scripts/single_payload.json -p ./test/scripts/pets.csv | grep 'All virtual users finished'
   [ $? -eq 0 ]
 }
 
 @test "Run a script with one payload json config" {
-  ./bin/artillery run ./test/scripts/single_payload_object.json| grep 'all scenarios completed'
+  ./bin/artillery run ./test/scripts/single_payload_object.json| grep 'All virtual users finished'
   [ $? -eq 0 ]
 }
 
 @test "Run a script with multiple payloads" {
-  ./bin/artillery run ./test/scripts/multiple_payloads.json | grep 'all scenarios completed'
+  ./bin/artillery run ./test/scripts/multiple_payloads.json | grep 'All virtual users finished'
   [ $? -eq 0 ]
 }
 
