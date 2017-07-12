@@ -8,7 +8,6 @@
   },
   "scripts": {
     "test": "bash test/runner.sh",
-    "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary"
   },
@@ -63,7 +62,6 @@
     "good-console": "^5.2.0",
     "hapi": "^12.1.0",
     "istanbul": "^0.3.14",
-    "jscs": "^2.3.0",
     "pre-commit": "^1.0.7",
     "tape": "^4.0.0",
     "uuid": "^2.0.1"
