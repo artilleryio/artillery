@@ -73,11 +73,6 @@
   [ $? -eq 0 ]
 }
 
-@test "Run a script using default options (output)" {
-  ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json | grep "Log file: artillery_report_*"
-  [ $? -eq 0 ]
-}
-
 @test "Run a script overwriting default options (output)" {
   ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json -o artillery_report_custom.json | grep 'Log file: artillery_report_custom.json'
   [ $? -eq 0 ]
