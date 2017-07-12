@@ -1,3 +1,3 @@
 {
-  "output": "[artillery_report_]YMMDD_HHmmSS[.json]"
+  "logFilenameFormat": "[artillery_report_]YMMDD_HHmmSS[.json]"
 }
