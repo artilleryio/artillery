@@ -20,7 +20,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "JSONPath": "0.11.2",
-    "arrivals": "2.1.0",
+    "arrivals": "2.1.1",
     "async": "1.5.2",
     "cheerio": "0.20.0",
     "debug": "2.2.0",
