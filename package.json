@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "1.5.8-3",
+  "version": "1.6.0-2",
   "description": "Load-testing for HTTP and WebSocket-based applications",
   "main": "./lib",
   "engines": {
@@ -8,7 +8,6 @@
   },
   "scripts": {
     "test": "bash test/runner.sh",
-    "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary"
   },
@@ -40,19 +39,20 @@
   },
   "dependencies": {
     "arrivals": "^2.0.2",
-    "artillery-core": "4.2.0",
+    "artillery-core": "4.4.0",
     "artillery-plugin-statsd": "^2.2.0",
     "async": "1.5.2",
     "chalk": "1.1.3",
-    "cli": "^0.6.6",
     "commander": "2.9.0",
     "csv-parse": "^0.1.1",
     "debug": "2.2.0",
     "lodash": "4.17.2",
     "moment": "2.11.2",
     "open": "0.0.5",
+    "ora": "^1.3.0",
     "rc": "^1.1.6",
     "tmp": "0.0.28",
+    "update-notifier": "^2.1.0",
     "yaml-js": "0.1.4"
   },
   "devDependencies": {
@@ -62,8 +62,8 @@
     "good-console": "^5.2.0",
     "hapi": "^12.1.0",
     "istanbul": "^0.3.14",
-    "jscs": "^2.3.0",
     "pre-commit": "^1.0.7",
+    "prettier": "^1.5.2",
     "tape": "^4.0.0",
     "uuid": "^2.0.1"
   },
