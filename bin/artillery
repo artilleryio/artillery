@@ -4,11 +4,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+'use strict';
+
+const debug = require('debug')('artillery:cli');
 const updateNotifier = require('update-notifier');
 const program = require('commander');
 const pkg = require('../package.json');
 const version = pkg.version;
 const chalk = require('chalk');
+const tryResolve = require('try-require').resolve;
 
 const commands = require('../lib/commands');
 
@@ -18,6 +22,13 @@ if (notifier.update) {
   notifier.notify({
     message: `👋 Good news! An update is available! (${chalk.yellow('v' + version)} → ${chalk.green('v' + notifier.update.latest)})\nRun ${chalk.green('npm install -g artillery@latest')} to upgrade`
   });
+}
+
+let pro = null;
+if (tryResolve('artillery-pro')) {
+  pro = require('artillery-pro');
+} else {
+  debug('Artillery Pro is not installed');
 }
 
 program.version(version);
@@ -69,6 +80,10 @@ program
   .description('Show dinosaur of the day')
   .option('-q, --quiet', 'Do not print anything to stdout')
   .action(commands.dino);
+
+if (pro) {
+  pro.init(program);
+}
 
 program.parse(process.argv);
 
