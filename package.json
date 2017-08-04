@@ -46,6 +46,7 @@
     "commander": "2.9.0",
     "csv-parse": "^0.1.1",
     "debug": "2.2.0",
+    "debug-mode": "^1.0.4",
     "lodash": "4.17.2",
     "moment": "2.11.2",
     "open": "0.0.5",
