@@ -39,7 +39,7 @@
 
 There's a lot of fun to be had with a good load generator like Artillery.
 
-# [Get Started With Artillery](https://artillery.io/docs/gettingstarted.html) 🎯
+# [Get Started With Artillery](https://artillery.io/docs/getting-started/) 🎯
 
 # Contributing
 
