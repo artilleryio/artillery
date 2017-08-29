@@ -9,10 +9,9 @@
 ## Features
 
 - **Mulitple protocols**:  Load-test HTTP, WebSocket and Socket.io applications
-- **Scenarios**: Specify *scenarios* to test multi-step interactions in your API or web app
+- **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc)
 - **Perfomance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput)
-- **Scriptable**: write custom logic in JS to do pretty much anything
-- **High performance**: generate serious load on modest hardware
+- **Scriptable**: write custom logic in JS using any `npm` module
 - **Integrations**: `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc)
 - **Extensible**: custom reporting plugins, custom protocol engines etc
 - **and more!** HTML reports, nice CLI, parameterization with CSV files
@@ -25,7 +24,10 @@
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@ShoreditchOps](https://twitter.com/shoreditchops)
-- **Enterprise**: Training, custom integrations, professional services: [https://artillery.io/services-support.html](https://artillery.io/services-support.html)
+
+---
+
+- **Enterprise**: [Artillery Pro](https://artillery.io/pro.html) is an add-on for teams running large-scale tests and integrating performance testing into their CI/CD pipelines. For training, custom integrations, and professional services see our [professional services page](https://artillery.io/services-support.html).
 
 [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
@@ -41,10 +43,7 @@ There's a lot of fun to be had with a good load generator like Artillery.
 
 # [Get Started With Artillery](https://artillery.io/docs/getting-started/) 🎯
 
-# Contributing
-
-Thinking of contributing to Artillery? Awesome! Please have a quick look at [the
-guide](CONTRIBUTING.md).
+👉&nbsp;&nbsp;[Artillery Getting Started Guide](https://artillery.io/docs/getting-started/)
 
 # Using Artillery?
 
@@ -59,4 +58,4 @@ Are you using Artillery to ship faster, more resilient and more scalable systems
 
 <a href="https://shoreditch-ops.teemill.co.uk/product/artillery-io-hoodie-2976/"><img src="https://shoreditch-ops.teemill.co.uk/uploaded/public/58a0c5f5ce9cd5.85445284.png" alt="artillery.io hoodie" width="180" /></a>
 
-Get some comfy, stylish, and eco-friendly Artilllery.io swag from <a href="https://shoreditch-ops.teemill.co.uk/">our shop</a> All profits go to charity.
+Get some comfy, stylish, and eco-friendly Artilllery.io swag from <a href="https://shoreditch-ops.teemill.co.uk/">our shop</a>. All profits go to [Surfers Against Sewage](https://www.sas.org.uk), an environmental charity. 🏄‍
