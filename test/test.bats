@@ -148,3 +148,8 @@
   output=$(./bin/artillery quick --quiet -d 1 -c 10 http://localhost:3003/)
   [[ -z "$output" ]]
 }
+
+@test "Warns when CPU usage exceeds a threshold" {
+    ARTILLERY_CPU_THRESHOLD=-1 ./bin/artillery quick -d 10 -c 10 http://localhost:3003/ | grep 'CPU usage'
+    [[ $? -eq 0  ]]
+}
