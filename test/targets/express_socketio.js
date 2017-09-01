@@ -38,3 +38,40 @@ function handler(req, res) {
   res.writeHead(200);
   res.end(JSON.stringify({ key: 'value' }));
 }
+
+var cookieParser = require('cookie-parser');
+var uuid = require('uuid');
+
+var COOKIES = {};
+
+app.post('/setscookie', setsCookie);
+app.get('/expectscookie', cookieParser(), expectsCookie);
+app.get('/_stats', stats);
+
+function setsCookie(req, res) {
+  var newuid = uuid.v4();
+  console.log('setting testCookie.uid to %j', newuid);
+  res.cookie('testCookie', {uid: newuid}).send('ok');
+}
+
+function expectsCookie(req, res) {
+  console.log('req.cookies = %j', req.cookies);
+  console.log('req.cookies.testCookie = %j', req.cookies.testCookie);
+  var cookie = req.cookies.testCookie;
+  if (cookie) {
+    if (COOKIES[cookie.uid]) {
+      COOKIES[cookie.uid]++;
+    } else {
+      COOKIES[cookie.uid] = 1;
+    }
+    return res.send('ok');
+  } else {
+    return res.status(403).send();
+  }
+}
+
+function stats(req, res) {
+  return res.json({
+    cookies: COOKIES
+  });
+}

@@ -5,7 +5,7 @@ var runner = require('../lib/runner').runner;
 var l = require('lodash');
 var request = require('request');
 
-test('cookie jar', function(t) {
+test('cookie jar http', function(t) {
   var script = require('./scripts/cookies.json');
   runner(script).then(function(ee) {
     ee.on('done', function(report) {
@@ -20,7 +20,35 @@ test('cookie jar', function(t) {
             return t.fail();
           }
 
-          var ok = l.size(body.cookies) >= report.scenariosCompleted;
+          var ok = report.scenariosCompleted && l.size(body.cookies) === report.scenariosCompleted;
+          t.assert(ok, 'Each scenario had a unique cookie');
+          if (!ok) {
+            console.log(body);
+            console.log(report);
+          }
+          t.end();
+        });
+    });
+    ee.run();
+  });
+});
+
+test('cookie jar socketio', function(t) {
+  var script = require('./scripts/cookies_socketio.json');
+  runner(script).then(function(ee) {
+    ee.on('done', function(report) {
+      request(
+        {
+          method: 'GET',
+          url: 'http://127.0.0.1:9092/_stats',
+          json: true
+        },
+        function(err, res, body) {
+          if (err) {
+            return t.fail();
+          }
+
+          var ok = report.scenariosCompleted && l.size(body.cookies) === report.scenariosCompleted;
           t.assert(ok, 'Each scenario had a unique cookie');
           if (!ok) {
             console.log(body);
