@@ -7,7 +7,14 @@
       "timeout": 3,
       "phases": [
         {"duration": 20, "arrivalRate": 1}
-      ]
+      ],
+    "socketio": {
+      "transports": ["websocket"],
+      "_query": "user_id=4f5bc00e-8516-49a9-8507-d475d40d06b5",
+      "query": {
+        "user_id": "$randomString(10)"
+      }
+      }
   },
   "scenarios": [
     {
