@@ -25,6 +25,11 @@ const script = {
       inc: function(context, ee, next) {
         context.vars.inc = context.vars.$loopCount;
         return next();
+      },
+
+      processLoopElement: function(context, ee, next) {
+        context.vars.loopElement = context.vars.$loopElement;
+        return next();
       }
     }
   },
@@ -34,11 +39,17 @@ const script = {
       flow: [
         { think: THINKTIME_SEC },
         { function: 'f' },
-        { log: 'This is printed from the script with "log": {{ newVar }}' },
+        { log: '# This is printed from the script with "log": {{ newVar }}' },
         { loop: [
           { function: 'inc' },
           { think: 1 }
-        ], count: 3 }
+        ], count: 3 },
+        { loop: [
+          { log: '# {{ $loopElement }}' }
+        ], over: [0, 1, 2]},
+        { loop: [
+          { function: 'processLoopElement'}
+        ], over: 'aCapturedList'}
       ]
     }
   ]
@@ -63,10 +74,12 @@ test('HTTP virtual user', function(t) {
   ee.once('started', onStarted);
 
   const initialContext = {
-    vars: {}
+    vars: {
+      aCapturedList: ['hello', 'world']
+    }
   };
 
-  t.plan(6);
+  t.plan(7);
 
   const startedAt = Date.now();
   runScenario(initialContext, function userDone(err, finalContext) {
@@ -75,7 +88,7 @@ test('HTTP virtual user', function(t) {
     t.assert(finalContext.vars.newVar === 1234, 'Function spec was executed');
     t.assert(finishedAt - startedAt >= THINKTIME_SEC * 1000, 'User spent some time thinking');
 
-    const expectedLog = 'This is printed from the script with "log": 1234';
+    const expectedLog = '# This is printed from the script with "log": 1234';
     let seen = false;
     spy.args.forEach(function(args) {
       if (args[0] === expectedLog) {
@@ -87,6 +100,9 @@ test('HTTP virtual user', function(t) {
     console.log.restore(); // unwrap the spy
     // loop count starts at 0, hence 2 rather than 3 here:
     t.assert(finalContext.vars.inc === 2, 'Function called in a loop');
+    t.assert(finalContext.vars.loopElement === 'world', 'loopElement set by custom function');
+
+    t.end();
   });
 
   function onStarted() {
