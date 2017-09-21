@@ -30,6 +30,18 @@ const script = {
       processLoopElement: function(context, ee, next) {
         context.vars.loopElement = context.vars.$loopElement;
         return next();
+      },
+
+      loopChecker: function(context, next) {
+        if (context.vars.someCounter === undefined) {
+          context.vars.someCounter = 1;
+        }
+
+        context.vars.someCounter++;
+
+        let cond = context.vars.someCounter < 3;
+        console.log(context.vars.someCounter);
+        return next(cond);
       }
     }
   },
@@ -49,7 +61,13 @@ const script = {
         ], over: [0, 1, 2]},
         { loop: [
           { function: 'processLoopElement'}
-        ], over: 'aCapturedList'}
+        ], over: 'aCapturedList'},
+        { loop: [
+          { log: '# whileTrue loop' }
+        ],
+          whileTrue: 'loopChecker',
+          count: 10 // whileTrue takes precedence, checked in an assert
+        }
       ]
     }
   ]
@@ -79,7 +97,7 @@ test('HTTP virtual user', function(t) {
     }
   };
 
-  t.plan(7);
+  t.plan(8);
 
   const startedAt = Date.now();
   runScenario(initialContext, function userDone(err, finalContext) {
@@ -101,6 +119,9 @@ test('HTTP virtual user', function(t) {
     // loop count starts at 0, hence 2 rather than 3 here:
     t.assert(finalContext.vars.inc === 2, 'Function called in a loop');
     t.assert(finalContext.vars.loopElement === 'world', 'loopElement set by custom function');
+
+    // someCounter is set by a whileTrue hook function:
+    t.assert(finalContext.vars.someCounter === 3, 'whileTrue aborted the loop');
 
     t.end();
   });
