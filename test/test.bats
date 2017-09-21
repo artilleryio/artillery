@@ -153,3 +153,24 @@
     ARTILLERY_CPU_THRESHOLD=-1 ./bin/artillery quick -d 10 -c 10 http://localhost:3003/ | grep 'CPU usage'
     [[ $? -eq 0  ]]
 }
+
+@test "The --overrides option may be used to change the script" {
+    ./bin/artillery run -e dev --overrides '{"config": {"environments": {"dev":{"target":"http://localhost:3003"}}, "phases": [{"arrivalCount": 1, "duration": 1}]}}' -o report.json test/scripts/environments.yaml
+
+    count=$(jq ".aggregate.scenariosCreated" report.json)
+
+    echo $count
+
+    rm report.json
+
+    [[ $count = "1" ]]
+}
+
+@test "The value provided with --overrides must be valid JSON" {
+    set +e
+    ./bin/artillery run -e local --overrides '{config: {}}' test/scripts/environments.yaml
+    status=$?
+    set -e
+
+    [[ $status -eq 1 ]]
+}

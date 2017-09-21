@@ -40,11 +40,12 @@ program
   .option('-o, --output <path>', 'Set file to write stats to (will output ' +
           'to stdout by default)')
   .option('-k, --insecure', 'This  option explicitly allows Artillery to ' +
-          'perform "insecure" TLS connections, for testing with' +
+          'perform "insecure" TLS connections, for testing with ' +
           'self-signed certificates')
   .option('-e, --environment <name>', 'Specify the environment to be used')
   .option('-q, --quiet', 'Do not print anything to stdout')
   .option('-c, --config <path>', 'Load test config from a file')
+  .option('--overrides <JSON>', 'Object describing parts of the test script to override (experimental)')
   .action(commands.run);
 
 program
