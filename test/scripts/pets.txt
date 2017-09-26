@@ -1,0 +1,8 @@
+dog Leo
+dog Figo
+dog Mali
+cat Chewbacca
+cat Puss
+cat Bonnie
+cat Blanco
+pony Tiki
