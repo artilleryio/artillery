@@ -68,6 +68,11 @@
   [ $? -eq 0 ]
 }
 
+@test "Run a script with one payload json config with parse options passed" {
+  ./bin/artillery run ./test/scripts/single_payload_options.json | grep 'All virtual users finished'
+  [ $? -eq 0 ]
+}
+
 @test "Run a script with multiple payloads" {
   ./bin/artillery run ./test/scripts/multiple_payloads.json | grep 'All virtual users finished'
   [ $? -eq 0 ]
