@@ -24,6 +24,10 @@
         {"emit": { "channel": "echo", "data": {"key": "{{ $randomString(10) }}"}, "response": { "channel": "echoed", "capture": {"json": "$.key", "as": "rand" } }}},
         {"think": 1},
         {"emit": { "channel": "echo", "data": {"key": "{{ rand }}"}, "response": { "channel": "echoed", "match": {"json": "$.key", "value": "{{ rand }}" } }}},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "ping", "acknowledge": {"match": {"value": "pong"}} }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "ping", "acknowledge": {"match": {"json": "$.1.answer", "value": 42}} }},
         {"think": 1}
       ]
     }
