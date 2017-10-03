@@ -27,7 +27,8 @@
 
 ---
 
-- **Enterprise**: [Artillery Pro](https://artillery.io/pro.html) is an add-on for teams running large-scale tests and integrating performance testing into their CI/CD pipelines. For training, custom integrations, and professional services see our [professional services page](https://artillery.io/services-support.html).
+- **Enterprise**: Run distributed tests from the cloud, integrate with CI/CD easily, and add support for enterprise features such as SOAP testing and extra authentication methods (SSL client auth, NTLM) with [Artillery Pro](https://artillery.io/pro/).
+- For training, custom integrations, and performance consulting services see our [professional services page](https://artillery.io/services-support.html).
 
 [![Build Status](https://travis-ci.org/shoreditch-ops/artillery.svg?branch=master)](https://travis-ci.org/shoreditch-ops/artillery) [![gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/shoreditch-ops/artillery)
 
