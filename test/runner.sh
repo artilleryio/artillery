@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
-echo "starting target"
-node ./test/target.js &
+echo "# starting target"
+&>/dev/null node ./test/target.js &
 target_pid=$!
-node ./test/gh_215_target.js &
+&>/dev/null node ./test/gh_215_target.js &
 target2_pid=$!
 
-echo "running tests"
+echo "# running tests"
 echo
 
-bats ./test/test.bats ./test/test-variables-from-external-files.bats
+bats --tap ./test/testcases/*.bats
+
 status=$?
 
-echo "done"
+echo "# done"
 kill $target_pid
 kill $target2_pid
 
