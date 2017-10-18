@@ -32,55 +32,18 @@ if (tryResolve('artillery-pro')) {
 }
 
 program.version(version);
-program
-  .command('run <script>')
-  .description('Run a test script. Example: `artillery run benchmark.json`')
-  .option('-t, --target <url>', 'Set target URL')
-  .option('-p, --payload <path>', 'Set payload file (CSV)')
-  .option('-o, --output <path>', 'Set file to write stats to (will output ' +
-          'to stdout by default)')
-  .option('-k, --insecure', 'This  option explicitly allows Artillery to ' +
-          'perform "insecure" TLS connections, for testing with ' +
-          'self-signed certificates')
-  .option('-e, --environment <name>', 'Specify the environment to be used')
-  .option('-q, --quiet', 'Do not print anything to stdout')
-  .option('-c, --config <path>', 'Load test config from a file')
-  .option('--overrides <JSON>', 'Object describing parts of the test script to override (experimental)')
-  .action(commands.run);
 
-program
-  .command('quick <url>')
-  .description('Run a quick test without writing a test script')
-  .option('-r, --rate <number>', 'New arrivals per second')
-  .option('-c, --count <number>', 'Fixed number of arrivals')
-  .option('-d, --duration <seconds>', 'Duration of the arrival phase')
-  .option('-n, --num <number>', 'Number of requests each new arrival will send')
-  .option('-p, --payload <string>', 'Set POST payload')
-  .option('-t, --content-type <string>',
-          'Set content-type (defaults to application/json)')
-  .option('-o, --output <path>', 'Set file to write stats to (will output to stdout by default)')
-  .option('-k, --insecure', 'This  option explicitly allows Artillery to ' +
-          'perform "insecure" TLS connections, for testing with' +
-          'self-signed certificates')
-  .option('-q, --quiet', 'Do not print anything to stdout')
-  .action(commands.quick);
-
-program
-  .command('report <file>')
-  .description('Create a report from a JSON file created by "artillery run"')
-  .option('-o, --output <path>', 'Set file to write html report to (will open in browser by default)')
-  .action(commands.report);
-
-program
-  .command('convert <file>')
-  .description('Convert JSON to YAML and vice versa')
-  .action(commands.convert);
-
-program
-  .command('dino')
-  .description('Show dinosaur of the day')
-  .option('-q, --quiet', 'Do not print anything to stdout')
-  .action(commands.dino);
+Object.keys(commands).forEach(function(name) {
+  if (commands[name].getConfig) {
+    let config = commands[name].getConfig();
+    let command = program.command(config.command);
+    command.description(config.description);
+    config.options.forEach(function(option) {
+      command.option(option[0], option[1]);
+    });
+    command.action(commands[name]);
+  }
+});
 
 if (pro) {
   pro.init(program);
