@@ -11,8 +11,17 @@ express_pid=$!
 node test/targets/ws_tls.js &
 ws_tls_pid=$!
 
-node test/index.js
+
+if [ $# -eq 1 ] ; then
+    echo Running Single Test: $1
+    node $1
+else
+    echo Running All Available Tests
+    node test/index.js
+fi
+
 test_status=$?
+
 
 kill $simple_pid
 kill $ws_pid

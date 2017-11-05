@@ -55,8 +55,11 @@ function createServer() {
       ws.emit('hello', 'whatever');
     }, 500);
 
-    ws.on('echo', function incoming(message) {
+    ws.on('echo', function incoming(message, cb) {
       MESSAGE_COUNT++;
+      if (message === 'ping') {
+        cb("pong", {answer: 42});
+      }
       debug('Socket.io echoing message: %s', message);
       ws.emit('echoed', message);
     });
