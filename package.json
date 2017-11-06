@@ -4,7 +4,7 @@
   "description": "Flexible and powerful toolkit for load and functional testing",
   "main": "./lib",
   "engines": {
-    "node": ">= 4.2.0"
+    "node": ">= 6"
   },
   "scripts": {
     "test": "bash test/runner.sh",
