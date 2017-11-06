@@ -1,6 +1,6 @@
 {
   "name": "artillery-core",
-  "version": "4.6.1",
+  "version": "4.7.0",
   "description": "core load-generating functionality of Artillery",
   "main": "index.js",
   "engines": {
