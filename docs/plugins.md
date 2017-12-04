@@ -24,7 +24,7 @@ Artillery has a plugin interface. A plugin can register to receive events emitte
   ```
 
 - Artillery looks through `config.plugins` before running the test, and for each entry:
-  - `require()`s `'artillery-plugin'+ pluginName` where `pluginName` is the key in `config.plugins`, i.e. `artillery-plugin-statsd` in this instance.
+  - `require()`s `'artillery-plugin-'+ pluginName` where `pluginName` is the key in `config.plugins`, i.e. `artillery-plugin-statsd` in this instance.
   - The plugin is initialised by calling the exported constructor function with two parameters:
     1. `config` - the entirety of the config
     2. `ee` - an EventEmitter instance on which the plugin can subscribe to events from the core
