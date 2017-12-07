@@ -59,4 +59,4 @@ Are you using Artillery to ship faster, more resilient and more scalable systems
 
 <a href="https://shoreditch-ops.teemill.co.uk/product/artillery-io-hoodie-2976/"><img src="https://shoreditch-ops.teemill.co.uk/uploaded/public/58a0c5f5ce9cd5.85445284.png" alt="artillery.io hoodie" width="180" /></a>
 
-Get some comfy, stylish, and eco-friendly Artilllery.io swag from <a href="https://shoreditch-ops.teemill.co.uk/">our shop</a>. All profits go to [Surfers Against Sewage](https://www.sas.org.uk), an environmental charity. 🏄‍
+Get some comfy, stylish, and eco-friendly Artillery.io swag from <a href="https://shoreditch-ops.teemill.co.uk/">our shop</a>. All profits go to [Surfers Against Sewage](https://www.sas.org.uk), an environmental charity. 🏄‍
