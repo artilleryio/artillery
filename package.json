@@ -46,6 +46,7 @@
     "commander": "2.9.0",
     "csv-parse": "^0.1.1",
     "debug": "2.2.0",
+    "js-yaml": "^3.10.0",
     "lodash": "4.17.2",
     "moment": "2.11.2",
     "open": "0.0.5",
@@ -54,8 +55,7 @@
     "rc": "^1.1.6",
     "tmp": "0.0.28",
     "try-require": "^1.2.1",
-    "update-notifier": "^2.1.0",
-    "yaml-js": "0.1.4"
+    "update-notifier": "^2.1.0"
   },
   "devDependencies": {
     "bats": "^0.4.2",
