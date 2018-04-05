@@ -1,0 +1,16 @@
+{
+  "name": "artillery-plugin-expect",
+  "version": "1.0.0",
+  "description": "Expectations and assertions for HTTP",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/index"
+  },
+  "author": "Hassy Veldstra <h@artillery.io>",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "dependencies": {
+    "chalk": "^2.3.2",
+    "datadog-metrics": "^0.8.1",
+    "debug": "^3.1.0"
+  }
+}
