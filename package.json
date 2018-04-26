@@ -91,6 +91,5 @@
     "uuid": "^2.0.3"
   },
   "pre-commit": [
-    "is_linted"
   ]
 }
