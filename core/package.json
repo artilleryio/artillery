@@ -1,0 +1,68 @@
+{
+  "name": "artillery-core",
+  "version": "4.8.1",
+  "description": "core load-generating functionality of Artillery",
+  "main": "index.js",
+  "engines": {
+    "node": ">= 4.2.0"
+  },
+  "scripts": {
+    "test": "bash test/run.sh",
+    "is_formatted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs jscs --preset=google",
+    "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
+    "coverage": "istanbul cover test/index.js && istanbul check-coverage"
+  },
+  "author": "Hassy Veldstra <h@veldstra.org>",
+  "contributors": [
+    "Kieran Gorman (https://github.com/kjgorman)",
+    "Judson Neer (https://github.com/lordjabez)"
+  ],
+  "license": "MPL-2.0",
+  "dependencies": {
+    "JSONPath": "0.11.2",
+    "arrivals": "2.1.1",
+    "async": "1.5.2",
+    "cheerio": "0.20.0",
+    "debug": "2.2.0",
+    "deep-equal": "^1.0.1",
+    "esprima": "2.5.0",
+    "filtrex": "0.5.4",
+    "jsck": "0.2.5",
+    "lodash": "4.13.1",
+    "nanotimer": "0.3.14",
+    "request": "^2.81.0",
+    "rolex": "1.0.0",
+    "socket.io-client": "^1.7.3",
+    "socketio-wildcard": "2.0.0",
+    "stats-lite": "2.0.0",
+    "tough-cookie": "^2.3.2",
+    "traverse": "0.6.6",
+    "try-require": "^1.2.1",
+    "uuid": "^3.0.0",
+    "ws": "^1.1.4"
+  },
+  "devDependencies": {
+    "bcrypt": "^0.8.5",
+    "cookie-parser": "^1.4.3",
+    "csv-parse": "1.0.1",
+    "eslint": "^0.24.0",
+    "express": "4.13.4",
+    "good": "6.4.0",
+    "good-console": "5.1.0",
+    "hapi": "10.4.0",
+    "hapi-auth-basic": "4.1.0",
+    "istanbul": "^0.3.17",
+    "nock": "^9.0.2",
+    "pre-commit": "^1.0.10",
+    "sinon": "1.17.6",
+    "socket.io": "1.4.6",
+    "tape": "^4.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shoreditch-ops/artillery-core.git"
+  },
+  "pre-commit": [
+    "is_linted"
+  ]
+}

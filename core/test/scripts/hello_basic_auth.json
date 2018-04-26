@@ -1,0 +1,20 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        {"duration": 10, "arrivalRate": 1}
+      ],
+      "variables": {
+        "password": ["secret"]
+      }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/protected", "auth": {"user": "leo", "pass": "secret"}}},
+        {"get": {"url": "/protected", "auth": {"user": "leo", "pass": "{{ password }}"}}},
+        {"get": {"url": "/protected"}}
+      ]
+    }
+  ]
+}

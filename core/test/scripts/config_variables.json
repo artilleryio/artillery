@@ -1,0 +1,20 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:3003",
+    "phases": [
+      { "duration": 10, "arrivalRate": 1}
+    ],
+    "variables": {
+      "url": ["/", "/will/404"]
+    }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {
+          "url": "{{{ url }}}"
+        }}
+      ]
+    }
+  ]
+}

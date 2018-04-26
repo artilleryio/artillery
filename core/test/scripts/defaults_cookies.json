@@ -1,0 +1,20 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        {"duration": 10, "arrivalRate": 1}
+      ],
+      "defaults": {
+        "cookie": {
+          "testCookie":"eyJ1aWQiOiIxNWMwMjNkMC02YmMxLTRkODEtYmQ1OS0wNjRmYjhmMGU0YTkifQ==;"
+        }
+      }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/expectscookie", "cookie": {"biscuit": "tunnocks"}}}
+      ]
+    }
+  ]
+}

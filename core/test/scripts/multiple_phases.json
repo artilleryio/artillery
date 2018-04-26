@@ -1,0 +1,17 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        {"duration": 10, "arrivalRate": 1},
+        {"duration": 5,  "arrivalRate": 2},
+        {"duration": 10, "arrivalRate": 3}
+      ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/test"}}
+      ]
+    }
+  ]
+}

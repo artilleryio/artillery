@@ -1,0 +1,48 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:9092",
+      "tls": {
+        "rejectUnauthorized": false
+      },
+      "timeout": 3,
+      "phases": [
+        {"duration": 20, "arrivalRate": 1}
+      ],
+    "socketio": {
+      "transports": ["websocket"],
+      "_query": "user_id=4f5bc00e-8516-49a9-8507-d475d40d06b5",
+      "query": {
+        "user_id": "$randomString(10)"
+      }
+      }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": { "url": "/test" }}
+      ]
+    },
+    {
+      "engine": "socketio",
+      "flow": [
+        {"emit": { "channel": "echo", "data": "first one" }},
+        {"get": { "url": "/test-get", "capture": { "json": "$.key", "as": "key" } }},
+        {"post": { "url": "/test-post?param1=value1&param2={{key}}" }},
+        {"put": { "url": "/test-put?param1=value1&param2={{key}}" }},
+        {"delete": { "url": "/test-delete?param1=value1&param2={{key}}" }},
+        {"emit": { "channel": "echo", "data": "{{key}}", "response": { "channel": "echoed", "data": "{{key}}"} }},
+        {"emit": { "channel": "echo", "data": "hello", "response": { "channel": "echoed", "data": "hello"} }},
+        {"emit": { "channel": "echo", "data": "world", "response": { "channel": "echoed", "data": "world"} }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "do not care about the response" }},
+        {"emit": { "channel": "echo", "data": "still do not care about the response" }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "random number: {{ $randomNumber(1, 20) }}" }},
+        {"emit": { "channel": "echo", "data": "random string: {{ $randomString(10) }}" }},
+        {"post": { "url": "/test-post?param1=value1&param2={{ $randomNumber(1, 20) }}" }},
+        {"post": { "url": "/test-post?param1=value1&param2={{ $randomString(10) }}" }},
+        {"think": 1}
+      ]
+    }
+  ]
+}
