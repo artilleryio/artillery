@@ -6,21 +6,22 @@
 
 const test = require('tape');
 const runner = require('../lib/runner').runner;
+const path = require('path');
 
 test('Plugin package name inside plugin config', function(t) {
-    runTest(t, './scripts/plugin_packaged_inner.json');
+    runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_inner.json'));
 });
 
 test('Plugin package name outside plugin config', function(t) {
-    runTest(t, './scripts/plugin_packaged_outer.json');
+    runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_outer.json'));
 });
 
 test('Plugin package name inside plugin config overriding outter package name', function(t) {
-    runTest(t, './scripts/plugin_packaged_inner_override_outter.json');
+    runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_inner_override_outter.json'));
 });
 
 test('Normal artillery-plugin-*', function(t) {
-    runTest(t, './scripts/artillery_plugin.json');
+    runTest(t, path.resolve(__dirname, './scripts/artillery_plugin.json'));
 });
 
 function runTest(t, scriptName){

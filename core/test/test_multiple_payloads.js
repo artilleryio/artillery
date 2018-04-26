@@ -10,7 +10,7 @@ const csv = require('csv-parse');
 const async = require('async');
 
 test('single payload', function(t) {
-  const fn = './scripts/single_payload.json';
+  const fn = path.resolve(__dirname, './scripts/single_payload.json');
   let script = require(fn);
 
   let data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
@@ -48,14 +48,14 @@ test('single payload', function(t) {
 
 
 test('multiple_payloads', function(t) {
-  const fn = './scripts/multiple_payloads.json';
+  const fn = path.resolve(__dirname, './scripts/multiple_payloads.json');
   let script = require(fn);
 
   async.map(
     script.config.payload,
     function(item, callback) {
       let payloadFile = path.resolve(
-        path.dirname(path.join(__dirname, fn)),
+        path.dirname(fn),
         item.path);
 
       let data = fs.readFileSync(payloadFile, 'utf-8');

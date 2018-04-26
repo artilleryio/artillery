@@ -4,10 +4,11 @@ var test = require('tape');
 var runner = require('../lib/runner').runner;
 var tls = require('tls');
 var fs = require('fs');
+var path = require('path');
 
 var options = {
-  key: fs.readFileSync('./test/certs/private-key.pem'),
-  cert: fs.readFileSync('./test/certs/public-cert.pem'),
+  key: fs.readFileSync(path.resolve(__dirname, './certs/private-key.pem')),
+  cert: fs.readFileSync(path.resolve(__dirname, './certs/public-cert.pem')),
   path: '/'
 };
 

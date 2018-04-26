@@ -1,14 +1,16 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
+
 const https = require('https');
 const debug = require('debug')('test:target:ws_tls');
 const WebSocketServer = require('ws').Server;
 
 var options = {
   port: 9443,
-  key: fs.readFileSync('./test/certs/private-key.pem'),
-  cert: fs.readFileSync('./test/certs/public-cert.pem')
+  key: fs.readFileSync(path.resolve(__dirname, '../certs/private-key.pem')),
+  cert: fs.readFileSync(path.resolve(__dirname, '../certs/public-cert.pem'))
 };
 
 var app = https.createServer(

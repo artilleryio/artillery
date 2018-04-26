@@ -15,7 +15,7 @@ try {
 }
 
 test('Capture - headers', (t) => {
-  const fn = './scripts/captures-header.json';
+  const fn = path.resolve(__dirname, './scripts/captures-header.json');
   const script = require(fn);
   runner(script).then(function(ee) {
     ee.on('done', function(report) {
@@ -31,7 +31,7 @@ test('Capture - headers', (t) => {
 
 
 test('Capture - JSON', (t) => {
-  const fn = './scripts/captures.json';
+  const fn = path.resolve(__dirname, './scripts/captures.json');
   const script = require(fn);
   const data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
   csv(data, function(err, parsedData) {
@@ -67,7 +67,7 @@ test('Capture - XML', (t) => {
     return t.end();
   }
 
-  const fn = './scripts/captures2.json';
+  const fn = path.resolve(__dirname, './scripts/captures2.json');
   const script = require(fn);
   const data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
   csv(data, function(err, parsedData) {
@@ -89,7 +89,7 @@ test('Capture - XML', (t) => {
 });
 
 test('Capture - Random value from array', (t) => {
-  const fn = './scripts/captures_array_random.json';
+  const fn = path.resolve(__dirname, './scripts/captures_array_random.json');
   const script = require(fn);
   runner(script).then(function(ee) {
 
@@ -104,7 +104,7 @@ test('Capture - Random value from array', (t) => {
 });
 
 test('Capture - RegExp', (t) => {
-  const fn = './scripts/captures-regexp.json';
+  const fn = path.resolve(__dirname, './scripts/captures-regexp.json');
   const script = require(fn);
   let ee = runner(script).then(function(ee) {
     ee.on('done', (report) => {

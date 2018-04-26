@@ -1,14 +1,16 @@
 #!/bin/bash
 
-SILENT=true node test/targets/simple.js &
+typeset -r DIR=$(cd "$(dirname "$0")" && pwd)
+
+SILENT=true node $DIR/targets/simple.js &
 simple_pid=$!
-node test/targets/simple_ws.js &
+node $DIR/targets/simple_ws.js &
 ws_pid=$!
-node test/targets/simple_socketio.js &
+node $DIR/targets/simple_socketio.js &
 io_pid=$!
-node test/targets/express_socketio.js &
+node $DIR/targets/express_socketio.js &
 express_pid=$!
-node test/targets/ws_tls.js &
+node $DIR/targets/ws_tls.js &
 ws_tls_pid=$!
 
 
@@ -17,7 +19,7 @@ if [ $# -eq 1 ] ; then
     node $1
 else
     echo Running All Available Tests
-    node test/index.js
+    node $DIR/index.js
 fi
 
 test_status=$?
