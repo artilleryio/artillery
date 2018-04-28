@@ -1,0 +1,34 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 1 }
+      ],
+      "payload": {
+        "fields": ["species", "name"]
+      },
+      "ensure": {
+        "p95": 300
+      }
+  },
+  "scenarios": [
+    {
+      "name": "Create a pet and verify it's been created (JSON).",
+      "flow": [
+        {"post":
+          {
+            "url": "/pets",
+            "json": {"name": "{{ name }}", "species": "{{ species }}"},
+            "capture": {
+              "regexp": "[a-f0-9-]+-[a-f0-9]+",
+              "as": "id"
+            }
+          }
+        },
+        {"get": {
+          "url": "/pets/{{ id }}"
+        }}
+      ]
+    }
+  ]
+}

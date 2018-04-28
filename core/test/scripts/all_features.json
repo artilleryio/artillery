@@ -1,0 +1,47 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 5 }
+      ],
+      "payload": {
+        "fields": ["species", "name"]
+      },
+      "defaults": {
+        "headers": {
+          "content-type": "application/json",
+          "x-auth": "987401838271002188298567",
+          "x-name": "{{ name }}"
+        },
+        "think": 2
+      },
+      "ensure": {
+        "p95": 2000
+      },
+      "mode": "uniform"
+  },
+  "scenarios": [
+    {
+      "weight": 10,
+      "flow": [
+        {"get": {"url": "/pets"}},
+        {"think": 1},
+        {"post": {"url": "/pets", "json": {"name": "{{ name }}", "species": "{{ species }}"}}},
+        {"post": {"url": "http://127.0.0.1:3003/pets", "body": "{\"name\": \"{{ name }}\", \"species\": \"{{ species }}\"}" }},
+        {"get": {"url": "/pets", "headers": {"x-auth": "overrides-the-value-in-defaults"}}},
+        {"post": {"url": "/pets", "json": {"name": "{{ name }}", "species": "{{ species }}"}, "headers": {"user-agent": "artillery"}}}
+      ]
+    },
+    {
+      "weight": 1,
+      "name": "weighted scenario",
+      "flow": [
+        {"get": {"url": "/will404"}}
+      ]
+    }
+  ]
+}
+
+
+
+

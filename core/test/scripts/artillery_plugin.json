@@ -1,0 +1,22 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        {"duration": 2, "arrivalRate": 1}
+      ],
+      "plugins": {
+        "someNormalPlugin": {}
+      }
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {
+          "get": {
+            "url": "/"
+          }
+        }
+      ]
+    }
+  ]
+}

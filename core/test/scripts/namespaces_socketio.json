@@ -1,0 +1,22 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:9091",
+      "tls": {
+        "rejectUnauthorized": true
+      },
+      "phases": [
+        {"duration": 15, "arrivalRate": 1}
+      ]
+  },
+  "scenarios": [
+    {
+      "engine": "socketio",
+      "flow": [
+        {"emit": { "namespace": "/nsp1", "channel": "echo", "data": "hello ns1", "response": { "channel": "echoed:nsp1", "data": "hello ns1"} }},
+        {"think": 1},
+        {"emit": { "namespace": "/nsp2", "channel": "echo", "data": "hello ns2", "response": { "channel": "echoed:nsp2", "data": "hello ns2"} }},
+        {"think": 1}
+      ]
+    }
+  ]
+}

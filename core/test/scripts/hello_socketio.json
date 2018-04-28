@@ -1,0 +1,35 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:9091",
+      "tls": {
+        "rejectUnauthorized": true
+      },
+      "phases": [
+        {"duration": 15, "arrivalRate": 1}
+      ]
+  },
+  "scenarios": [
+    {
+      "engine": "socketio",
+      "flow": [
+        {"emit": { "channel": "echo", "data": "hello", "response": { "channel": "echoed", "data": "hello"} }},
+        {"emit": { "channel": "echo", "data": "world", "response": { "channel": "echoed", "data": "world"} }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "do not care about the response" }},
+        {"emit": { "channel": "echo", "data": "still do not care about the response" }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "{\"key\":\"value\"}", "response": { "channel": "echoed", "data": "{\"key\":\"value\"}"} }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "random number: {{ $randomNumber(1, 20) }}" }},
+        {"emit": { "channel": "echo", "data": {"key": "{{ $randomString(10) }}"}, "response": { "channel": "echoed", "capture": {"json": "$.key", "as": "rand" } }}},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": {"key": "{{ rand }}"}, "response": { "channel": "echoed", "match": {"json": "$.key", "value": "{{ rand }}" } }}},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "ping", "acknowledge": {"match": {"value": "pong"}} }},
+        {"think": 1},
+        {"emit": { "channel": "echo", "data": "ping", "acknowledge": {"match": {"json": "$.1.answer", "value": 42}} }},
+        {"think": 1}
+      ]
+    }
+  ]
+}

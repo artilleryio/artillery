@@ -1,0 +1,18 @@
+{
+  "config": {
+    "target": "http://localhost:3003",
+
+    "phases": [
+      {"duration": 10, "arrivalCount": 10},
+      {"pause": 5},
+      {"duration": 10, "arrivalCount": 50}
+    ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/"}}
+      ]
+    }
+  ]
+}

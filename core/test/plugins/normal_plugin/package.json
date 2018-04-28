@@ -1,0 +1,11 @@
+{
+  "name": "artillery-plugin-someNormalPlugin",
+  "version": "1.0.0",
+  "description": "Normal plugin",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "https://github.com/cppbit",
+  "license": "MPL-2.0"
+}

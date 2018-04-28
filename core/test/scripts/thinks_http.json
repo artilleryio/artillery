@@ -1,0 +1,27 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 1 }
+      ],
+      "variables": {
+        "durations": [0, 1, 2, 3, 4, 5]
+      },
+      "defaults": {
+        "think": {
+          "jitter": "20%"
+        }
+      }
+  },
+  "scenarios": [
+    {
+      "name": "Just think",
+      "flow": [
+        {"think": 2},
+        {"think": "{{ durations }}"},
+        {"think": "2", "jitter": 2},
+        {"think": "2", "jitter": "50%"}
+      ]
+    }
+  ]
+}
