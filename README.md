@@ -10,7 +10,7 @@
 
 - **Mulitple protocols**:  Load-test HTTP, WebSocket and Socket.io applications
 - **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc)
-- **Perfomance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput)
+- **Performance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput)
 - **Scriptable**: write custom logic in JS using any `npm` module
 - **Integrations**: `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc)
 - **Extensible**: custom reporting plugins, custom protocol engines etc
