@@ -213,6 +213,21 @@ function renderVariables (str, vars) {
   let rxmatch;
   let result = str.substring(0, str.length);
 
+
+  // Special case for handling integer/boolean/object substitution:
+  //
+  // Does the template string contain one variable and nothing else?
+  // e.g.: "{{ myvar }" or "{{    myvar }", but NOT " {{ myvar }"
+  // If so, we treat it as a special case.
+  const matches = str.match(RX);
+  if (matches && matches.length === 1) {
+    if (matches[0] === str) {
+      // there's nothing else in the template but the variable
+      const varName = str.replace(/{/g, '').replace(/}/g, '').trim();
+      return vars[varName] || '';
+    }
+  }
+
   while (result.search(RX) > -1) {
     let templateStr = result.match(RX)[0];
     const varName = templateStr.replace(/{/g, '').replace(/}/g, '').trim();
