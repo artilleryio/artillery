@@ -6,8 +6,8 @@
 
 const test = require('tape');
 const L = require('lodash');
-const jitter = require('../../lib/jitter').jitter;
-const util = require('../../lib/engine_util');
+const jitter = require('../../../core/lib/jitter').jitter;
+const util = require('../../../core/lib/engine_util');
 
 test('jitter', function(t) {
   t.assert(jitter(1000) === 1000, 'Number and no other params should return the number');

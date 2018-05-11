@@ -27,11 +27,11 @@ io.on('connection', function connection(ws) {
 
 });
 
-setInterval(function() {
-  console.log(new Date());
-  console.log('CONNECTION_COUNT [express] = %s', CONNECTION_COUNT);
-  console.log('MESSAGE_COUNT    [express] = %s', MESSAGE_COUNT);
-}, 5 * 1000);
+// setInterval(function() {
+//   console.log(new Date());
+//   console.log('CONNECTION_COUNT [express] = %s', CONNECTION_COUNT);
+//   console.log('MESSAGE_COUNT    [express] = %s', MESSAGE_COUNT);
+// }, 5 * 1000);
 
 function handler(req, res) {
   console.log('Express send HTTP OK');

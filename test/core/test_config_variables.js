@@ -1,7 +1,7 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../lib/runner').runner;
+const runner = require('../../core/lib/runner').runner;
 
 test('config variables', function(t) {
   const script = require('./scripts/config_variables.json');

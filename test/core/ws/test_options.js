@@ -1,7 +1,7 @@
 'use strict';
 
 const test = require('tape');
-const vuserLauncher = require('../../lib/runner').runner;
+const vuserLauncher = require('../../../core/lib/runner').runner;
 
 //
 // If config.ws.rejectUnauthorized is not set, we will have an error.

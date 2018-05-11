@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var runner = require('../lib/runner').runner;
+var runner = require('../../core/lib/runner').runner;
 
 test('think', function(t) {
   var script = require('./scripts/thinks_http.json');

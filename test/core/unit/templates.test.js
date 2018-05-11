@@ -5,7 +5,7 @@
 'use strict';
 
 var test = require('tape');
-var template = require('../../lib/engine_util').template;
+var template = require('../../../core/lib/engine_util').template;
 
 // TODO:
 // plain strings

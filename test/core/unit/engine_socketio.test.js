@@ -6,7 +6,7 @@
 
 const EventEmitter = require('events');
 const test = require('tape');
-const SocketIoEngine = require('../../lib/engine_socketio');
+const SocketIoEngine = require('../../../core/lib/engine_socketio');
 
 const createServer = require('../targets/simple_socketio');
 

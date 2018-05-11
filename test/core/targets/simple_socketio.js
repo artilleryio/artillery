@@ -66,14 +66,14 @@ function createServer() {
   });
 
   if (require.main === module) {
-    setInterval(function() {
-      console.log(new Date());
-      console.log('CONNECTION_COUNT [socketio] = %s', CONNECTION_COUNT);
-      console.log('MESSAGE_COUNT    [socketio] = %s', MESSAGE_COUNT + CONNECTIONS.nsp1.messages + CONNECTIONS.nsp2.messages);
-      if(PRINT_NS_CONNECTIONS) {
-        console.log('CONNECTIONS      [socketio] = %s', JSON.stringify(CONNECTIONS));
-      }
-    }, 5 * 1000);
+    // setInterval(function() {
+    //   console.log(new Date());
+    //   console.log('CONNECTION_COUNT [socketio] = %s', CONNECTION_COUNT);
+    //   console.log('MESSAGE_COUNT    [socketio] = %s', MESSAGE_COUNT + CONNECTIONS.nsp1.messages + CONNECTIONS.nsp2.messages);
+    //   if(PRINT_NS_CONNECTIONS) {
+    //     console.log('CONNECTIONS      [socketio] = %s', JSON.stringify(CONNECTIONS));
+    //   }
+    // }, 5 * 1000);
   }
 
   function handler(req, res) {

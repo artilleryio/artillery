@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var runner = require('../lib/runner').runner;
+var runner = require('../../core/lib/runner').runner;
 var tls = require('tls');
 var fs = require('fs');
 var path = require('path');

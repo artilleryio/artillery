@@ -1,7 +1,7 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../lib/runner').runner;
+const runner = require('../../core/lib/runner').runner;
 
 test('arrival phases', function(t) {
   var script = require('./scripts/arrival_phases.json');

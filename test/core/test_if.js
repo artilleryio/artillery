@@ -1,7 +1,7 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../lib/runner').runner;
+const runner = require('../../core/lib/runner').runner;
 const L = require('lodash');
 
 test('ifTrue', (t) => {
