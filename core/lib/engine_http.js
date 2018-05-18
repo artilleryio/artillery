@@ -98,6 +98,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       steps,
       {
         loopValue: requestSpec.loopValue || '$loopCount',
+        loopElement: requestSpec.loopElement || '$loopElement',
         overValues: requestSpec.over,
         whileTrue: self.config.processor ?
           self.config.processor[requestSpec.whileTrue] : undefined
