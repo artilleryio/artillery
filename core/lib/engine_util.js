@@ -63,6 +63,8 @@ function createLoopWithCount(count, steps, opts) {
     let newContext = context;
     let loopIndexVar = (opts && opts.loopValue) || '$loopCount';
     let loopElementVar = (opts && opts.loopElement) || '$loopElement';
+    // Should we stop early because the value of "over" is not an array
+    let abortEarly = false;
 
     let overValues = null;
     let loopValue = null;
@@ -72,7 +74,11 @@ function createLoopWithCount(count, steps, opts) {
         loopValue = overValues[i];
       } else if (opts.overValues && typeof opts.overValues === 'string') {
         overValues = context.vars[opts.overValues];
-        loopValue = overValues[i];
+        if (L.isArray(overValues)) {
+          loopValue = overValues[i];
+        } else {
+          abortEarly = true;
+        }
       }
     }
 
@@ -83,6 +89,9 @@ function createLoopWithCount(count, steps, opts) {
 
     A.whilst(
       function test() {
+        if (abortEarly) {
+          return false;
+        }
         if (opts.whileTrue) {
           return shouldContinue;
         }
