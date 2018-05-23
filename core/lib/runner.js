@@ -419,6 +419,7 @@ function createContext(script) {
     });
   }
   result._uid = uuid.v4();
+  result.vars.$uuid = result._uid;
   return result;
 }
 
