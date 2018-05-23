@@ -113,6 +113,7 @@ function createLoopWithCount(count, steps, opts) {
           }
           i++;
           newContext = context2;
+
           newContext.vars[loopIndexVar]++;
           if (overValues !== null) {
             newContext.vars[loopElementVar] = overValues[i];
@@ -129,6 +130,12 @@ function createLoopWithCount(count, steps, opts) {
         });
       },
       function(err, finalContext) {
+        if (typeof finalContext === 'undefined') {
+          // this happens if test() returns false immediately, e.g. with
+          // nested loops where one of the inner loops goes over an
+          // empty array
+          return callback(err, newContext);
+        }
         return callback(err, finalContext);
       });
   };
