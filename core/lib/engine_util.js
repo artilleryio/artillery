@@ -241,7 +241,7 @@ function renderVariables (str, vars) {
     let templateStr = result.match(RX)[0];
     const varName = templateStr.replace(/{/g, '').replace(/}/g, '').trim();
 
-    let varValue = vars[varName] || '';
+    let varValue = vars[varName];
     if (typeof varValue === 'object') {
       varValue = JSON.stringify(varValue);
     }
