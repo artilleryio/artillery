@@ -249,7 +249,7 @@ function run(script, ee, options, runState) {
 
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function() {
-    runScenario(script, intermediate, runState);
+    runScenario(script, intermediate, runState, options);
   });
   phaser.on('phaseStarted', function(spec) {
     ee.emit('phaseStarted', spec);
@@ -285,17 +285,18 @@ function run(script, ee, options, runState) {
   const periodicStatsTimer = setInterval(sendStats, options.periodicStats * 1000);
 
   function sendStats() {
-    aggregate.push(intermediate.clone());
     intermediate._concurrency = runState.pendingScenarios;
     intermediate._pendingRequests = runState.pendingRequests;
     ee.emit('stats', intermediate.clone());
+    delete intermediate._entries;
+    aggregate.push(intermediate.clone());
     intermediate.reset();
   }
 
   phaser.run();
 }
 
-function runScenario(script, intermediate, runState) {
+function runScenario(script, intermediate, runState, options) {
   const start = process.hrtime();
 
   //
@@ -328,12 +329,16 @@ function runScenario(script, intermediate, runState) {
     runState.scenarioEvents.on('match', function() {
       intermediate.addMatch();
     });
-    runState.scenarioEvents.on('response', function(delta, code, uid) {
+    runState.scenarioEvents.on('response', function(delta, code, uid, requestPath) {
       intermediate.completedRequest();
       intermediate.addLatency(delta);
       intermediate.addCode(code);
 
       let entry = [Date.now(), uid, delta, code];
+      if (options.addRequestPath) {
+        addRequestPath(entry, requestPath, options);
+      }
+
       intermediate.addEntry(entry);
 
       runState.pendingRequests--;
@@ -421,6 +426,11 @@ function createContext(script) {
   result._uid = uuid.v4();
   result.vars.$uuid = result._uid;
   return result;
+}
+
+function addRequestPath(entry, requestPath, options) {
+  requestPath = requestPath.replace(options.addRequestPath.regex, options.addRequestPath.replacer);
+  entry.push(requestPath);
 }
 
 //
