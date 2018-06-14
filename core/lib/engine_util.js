@@ -55,10 +55,16 @@ function createThink(requestSpec, opts) {
 // "count" can be an integer (negative or positive) or a string defining a range
 // like "1-15"
 function createLoopWithCount(count, steps, opts) {
-  let from = parseLoopCount(count).from;
-  let to = parseLoopCount(count).to;
-
   return function aLoop(context, callback) {
+
+    let count2 = count;
+    if (typeof count === 'string') {
+      count2 = template(count, context);
+    }
+
+    let from = parseLoopCount(count2).from;
+    let to = parseLoopCount(count2).to;
+
     let i = from;
     let newContext = context;
     let loopIndexVar = (opts && opts.loopValue) || '$loopCount';
