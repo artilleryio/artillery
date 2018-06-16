@@ -311,6 +311,13 @@ function runScenario(script, intermediate, runState) {
     runState.picker = wl(script.scenarios);
 
     runState.scenarioEvents = new EventEmitter();
+    runState.scenarioEvents.on('counter', function(name, value) {
+      intermediate.counter(name, value);
+    });
+    runState.scenarioEvents.on('histogram', function(name, value) {
+      intermediate.addCustomStat(name, value);
+    });
+    // TODO: Deprecate
     runState.scenarioEvents.on('customStat', function(stat) {
       intermediate.addCustomStat(stat.stat, stat.value);
     });
