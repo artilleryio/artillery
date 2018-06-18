@@ -64,6 +64,12 @@ function combine(statsObjects) {
     });
     result._matches += stats._matches;
 
+    L.each(stats._counters, function(value, name) {
+      if (!result._counters[name]) {
+        result._counters[name] = 0;
+      }
+      result._counters[name] += value;
+    });
     L.each(stats._customStats, function(values, name) {
       if (!result._customStats[name]) {
         result._customStats[name] = [];
@@ -212,6 +218,7 @@ Stats.prototype.report = function() {
       p99: round(sl.percentile(ns, 0.99), 1)
     };
   });
+  result.counters = this._counters;
 
   if (this._concurrency !== null) {
     result.concurrency = this._concurrency;
@@ -230,6 +237,14 @@ Stats.prototype.addCustomStat = function(name, n) {
   return this;
 };
 
+Stats.prototype.counter = function(name, value) {
+  if (!this._counters[name]) {
+    this._counters[name] = 0;
+  }
+  this._counters[name] += value;
+  return this;
+};
+
 Stats.prototype.reset = function() {
   this._entries = [];
   this._latencies = [];
@@ -242,6 +257,7 @@ Stats.prototype.reset = function() {
   this._scenarioLatencies = [];
   this._matches = 0;
   this._customStats = {};
+  this._counters = {};
   this._concurrency = null;
   this._pendingRequests = 0;
   this._scenarioCounter = {};
