@@ -190,7 +190,7 @@ function isProbableEnough(obj) {
 
 function template(o, context) {
   let result;
-  if (typeof o === 'object') {
+  if (o.constructor === Object) {
     result = traverse(o).map(function(x) {
 
       if (typeof x === 'string') {
@@ -199,7 +199,7 @@ function template(o, context) {
         return x;
       }
     });
-  } else {
+  } else if (typeof o === 'string') {
     if (!/{{/.test(o)) {
       return o;
     }
@@ -226,7 +226,10 @@ function template(o, context) {
 
       result = renderVariables(o, context.vars);
     }
+  } else {
+    return o;
   }
+
   return result;
 }
 
