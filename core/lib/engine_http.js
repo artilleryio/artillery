@@ -227,6 +227,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           // TODO: Warn if body is not a string or a buffer
         }
 
+        // TODO: Use traverse on the entire flow instead
+
         if (params.form) {
           requestParams.form = _.reduce(
             requestParams.form,
@@ -236,6 +238,17 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             },
             {});
         }
+
+        if (params.formData) {
+          requestParams.formData = _.reduce(
+            requestParams.formData,
+            function(acc, v, k) {
+              acc[k] = template(v, context);
+              return acc;
+            },
+          {});
+        }
+
 
         // Assign default headers then overwrite as needed
         let defaultHeaders = lowcaseKeys(
