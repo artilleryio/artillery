@@ -190,6 +190,11 @@ function isProbableEnough(obj) {
 
 function template(o, context) {
   let result;
+
+  if (typeof o === 'undefined') {
+    return undefined;
+  }
+
   if (o.constructor === Object) {
     result = traverse(o).map(function(x) {
 
