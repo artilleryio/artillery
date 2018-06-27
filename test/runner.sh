@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+# set -eu -o pipefail
+
 echo "# starting target"
-&>/dev/null node ./test/target.js &
+&>/dev/null PORT=3003 node ./test/core/targets/simple.js &
 target_pid=$!
 &>/dev/null node ./test/gh_215_target.js &
 target2_pid=$!
