@@ -15,12 +15,12 @@
 }
 
 @test "Clean up when killed" {
-  ARTILLERY_WORKERS=4 ./bin/artillery quick -d 120 -r 1 http://localhost:3003/ &
+  MULTICORE=1 ARTILLERY_WORKERS=4 ./bin/artillery quick -d 120 -r 1 http://localhost:3003/ &
   artillery_pid=$!
   sleep 5
   kill $artillery_pid
   sleep 4
-  [[ -z $(pgrep -lfa node | grep worker) ]]
+  [[ -z $(pgrep -lfa node | grep worker.js) ]]
 }
 
 # Ref: https://github.com/shoreditch-ops/artillery/issues/215

@@ -11,10 +11,7 @@ module.exports = {
 };
 
 function createServer(host, port) {
-  const server = new Hapi.Server();
-  host = host || '127.0.0.1';
-  port = port || Math.floor(Math.random() * 50000) + 4048;
-  server.connection({ host: host, port: port });
+  const server = Hapi.server({ port: port, host: host });
   return server;
 }
 
@@ -43,18 +40,18 @@ function createCalcServer(host, port) {
  * Example: curl -sv -X POST localhost:52628/double --data 'number=5'
  *
  */
-function double(req, reply) {
+function double(req, h) {
   if (!req.payload || !req.payload.number) {
-    return reply().code(400);
+    return h.response().code(400);
   }
 
   const number = Number(req.payload.number);
 
   if (isNaN(number)) {
-    return reply().code(400);
+    return h.response().code(400);
   }
 
-  return reply({ result: number * 2 }).code(200);
+  return h.response({ result: number * 2 }).code(200);
 }
 
 /**
@@ -63,16 +60,16 @@ function double(req, reply) {
  * Example: curl -sv -X POST localhost:52628/double --data 'number=1'
  *
  */
-function inc(req, reply) {
+function inc(req, h) {
   if (!req.payload || !req.payload.number) {
-    return reply().code(400);
+    return h.response().code(400);
   }
 
   const number = Number(req.payload.number);
 
   if (isNaN(number)) {
-    return reply().code(400);
+    return h.response().code(400);
   }
 
-  return reply({ result: number + 1 }).code(200);
+  return h.response({ result: number + 1 }).code(200);
 }

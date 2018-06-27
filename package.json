@@ -7,7 +7,7 @@
     "node": ">= 6"
   },
   "scripts": {
-    "test": "bash test/runner.sh",
+    "test": "bash test/runner.sh && bash test/core/run.sh",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary"
   },
@@ -80,7 +80,7 @@
     "express": "^4.16.3",
     "good": "^6.6.3",
     "good-console": "^5.3.2",
-    "hapi": "^12.1.0",
+    "hapi": "^17.5.2",
     "hapi-auth-basic": "^5.0.0",
     "istanbul": "^0.3.22",
     "nock": "^9.2.5",

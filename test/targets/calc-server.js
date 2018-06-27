@@ -5,8 +5,17 @@
 'use strict';
 
 const create = require('./targetServer').createCalcServer;
-const server = create('127.0.0.1', process.env.PORT);
 
-server.start().then(function() {
-  console.log('server listening on:', server.info.uri);
-});
+
+const main = async () => {
+  const server = create('127.0.0.1', process.env.PORT);
+  await server.start();
+  return server;
+};
+
+main()
+  .then((server) => console.log(`Server listening on ${server.info.uri}`))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
