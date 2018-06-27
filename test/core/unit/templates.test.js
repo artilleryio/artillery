@@ -29,6 +29,6 @@ test('templating a plain string should return the same string', function(t) {
 
 test.test('variables can be substituted', function(t) {
   t.assert(template('hello {{name}}', { vars: { name: 'Hassy'} }) === 'hello Hassy', '');
-  t.assert(template('hello {{name}}', emptyContext) === 'hello ', '');
+  t.assert(template('hello {{name}}', emptyContext) === 'hello undefined', '');
   t.end();
 });

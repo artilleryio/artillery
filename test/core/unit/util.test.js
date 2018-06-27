@@ -82,8 +82,8 @@ test('rendering variables', function(t) {
     'Whitespace inside templates is not significant');
 
   t.assert(
-    util._renderVariables('Hello {{ name }}', { foo: 'bar', day: 'Sunday' }) === 'Hello ',
-    'Undefined variables get replaced with an empty string');
+    util._renderVariables('Hello {{ name }}', { foo: 'bar', day: 'Sunday' }) === 'Hello undefined',
+    'Undefined variables get replaced with undefined string');
 
   t.assert(
     util._renderVariables('', { foo: 'bar', name: 'Hassy', color: 'red' }) === '',
