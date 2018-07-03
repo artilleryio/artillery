@@ -323,9 +323,15 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 requestInfo.body = requestParams.body;
               } else {
                 // Only show the beginning of long bodies
-                requestInfo.body = requestParams.body.substring(0, 512);
-                if (requestParams.body.length > 512) {
-                  requestInfo.body += ' ...';
+                if (typeof requestParams.body === 'string') {
+                  requestInfo.body = requestParams.body.substring(0, 512);
+                  if (requestParams.body.length > 512) {
+                    requestInfo.body += ' ...';
+                  }
+                } else if (typeof requestParams.body === 'object')  {
+                  requestInfo.body = `< ${requestParams.body.constructor.name} >`;
+                } else {
+                  requestInfo.body = String(requestInfo.body);
                 }
               }
             }
