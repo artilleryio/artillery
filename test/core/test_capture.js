@@ -60,6 +60,36 @@ test('Capture - JSON', (t) => {
   });
 });
 
+test('Capture before test - JSON', (t) => {
+  const fn = path.resolve(__dirname, './scripts/before_test.json');
+  const script = require(fn);
+  const data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
+  csv(data, function(err, parsedData) {
+    if (err) {
+      t.fail(err);
+    }
+    let beforeRequest = 0;
+
+    runner(script, parsedData, {}).then(function(ee) {
+      ee.on('beforeTestRequest', function(){
+        beforeRequest++;
+      });
+      ee.on('done', function(report) {
+        let c200 = report.codes[200];
+        let expectedAmountRequests = script.config.phases[0].duration * script.config.phases[0].arrivalRate;
+        t.assert(c200 === expectedAmountRequests,
+                'There should be ' + expectedAmountRequests + ' requests');
+        t.assert(report.matches === expectedAmountRequests, 'All requests should have the same match');
+        t.assert(beforeRequest === 1,
+                 'There should be only one request before test starts');
+        t.end();
+      });
+
+      ee.run();
+    });
+  });
+});
+
 test('Capture - XML', (t) => {
   if (!xmlCapture) {
     console.log('artillery-xml-capture does not seem to be installed, skipping XML capture test.');
