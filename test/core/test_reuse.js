@@ -26,6 +26,9 @@ test('reuse', function(t) {
       }
     }
     expected *= weightedFlowLengths;
+    ee.on('beforeTestRequest', function(){
+      t.assert('should preform before requests in the \'before requests\' test', script === 'before requests');
+    });
     ee.on('stats', function(stats) {
       intermediate.push(stats.report());
     });
@@ -47,15 +50,16 @@ test('reuse', function(t) {
         report.latencies.length === expected
       );
       if (first) {
-        let last = report.latencies.length - 1;
+        let lastIntermediate = intermediate.length - 1;
+        let last = intermediate[lastIntermediate].latencies.length - 1;
         first = false;
-        lastLatency = report.latencies[last][0];
+        lastLatency = intermediate[lastIntermediate].latencies[last];
         ee.run();
       } else {
         t.assert(
           'first latency of second aggregate should be after ' +
             'the last latency of the first aggregate',
-          lastLatency <= report.latencies[0][0]
+          lastLatency <= intermediate[0].latencies[0]
         );
         t.end();
       }

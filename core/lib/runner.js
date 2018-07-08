@@ -25,6 +25,8 @@ const Engines = {
   socketio: {}
 };
 
+let contextVars;
+
 JSCK.Draft4 = JSCK.draft4;
 
 const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
@@ -120,195 +122,200 @@ function runner(script, payload, options, callback) {
       }
   );
 
-  //
-  // load plugins:
-  //
-  let runnerPlugins = [];
-  let requirePaths = [];
 
-  let pro = null;
-  if (tryResolve('artillery-pro')) {
-    pro = require('artillery-pro');
-    requirePaths = requirePaths.concat(pro.getPluginPath());
-  } else {
-    debug('Artillery Pro is not installed.');
-  }
+  return handleBeforeRequests(script, runnableScript, runnerEngines)
+    .then(function(){
+        //
+        // load plugins:
+        //
+        let runnerPlugins = [];
+        let requirePaths = [];
 
-  requirePaths.push('');
-
-  if (process.env.ARTILLERY_PLUGIN_PATH) {
-    requirePaths = requirePaths.concat(process.env.ARTILLERY_PLUGIN_PATH.split(':'));
-  }
-
-  debug('require paths: ', requirePaths);
-
-  runnableScript.config.plugins = runnableScript.config.plugins || {};
-
-  if (process.env.ARTILLERY_PLUGINS) {
-    let additionalPlugins = {};
-    try {
-      additionalPlugins = JSON.parse(process.env.ARTILLERY_PLUGINS);
-    } catch (ignoreErr) {
-      debug(ignoreErr);
-    }
-    runnableScript.config.plugins = Object.assign(
-      runnableScript.config.plugins,
-      additionalPlugins);
-  }
-
-  _.each(runnableScript.config.plugins, function tryToLoadPlugin(pluginConfig, pluginName) {
-    let pluginConfigScope = pluginConfig.scope || runnableScript.config.pluginsScope;
-    let pluginPrefix = pluginConfigScope ? pluginConfigScope : 'artillery-plugin-';
-    let requireString = pluginPrefix + pluginName;
-    let Plugin, plugin;
-
-    requirePaths.forEach(function(rp) {
-      try {
-        Plugin = require(path.join(rp, requireString));
-        if (typeof Plugin === 'function') {
-          // Plugin interface v1
-          plugin = new Plugin(runnableScript.config, ee);
-          plugin.__name = pluginName;
-        } else if (typeof Plugin === 'object' && typeof Plugin.Plugin === 'function') {
-          // Plugin interface 2+
-          plugin = new Plugin.Plugin(runnableScript, ee, options);
-          plugin.__name = pluginName;
+        let pro = null;
+        if (tryResolve('artillery-pro')) {
+            pro = require('artillery-pro');
+            requirePaths = requirePaths.concat(pro.getPluginPath());
+        } else {
+            debug('Artillery Pro is not installed.');
         }
-      } catch (err) {
-        debug(err);
-      }
+
+        requirePaths.push('');
+
+        if (process.env.ARTILLERY_PLUGIN_PATH) {
+            requirePaths = requirePaths.concat(process.env.ARTILLERY_PLUGIN_PATH.split(':'));
+        }
+
+        debug('require paths: ', requirePaths);
+
+        runnableScript.config.plugins = runnableScript.config.plugins || {};
+
+        if (process.env.ARTILLERY_PLUGINS) {
+            let additionalPlugins = {};
+            try {
+            additionalPlugins = JSON.parse(process.env.ARTILLERY_PLUGINS);
+            } catch (ignoreErr) {
+            debug(ignoreErr);
+            }
+            runnableScript.config.plugins = Object.assign(
+            runnableScript.config.plugins,
+            additionalPlugins);
+        }
+
+        _.each(runnableScript.config.plugins, function tryToLoadPlugin(pluginConfig, pluginName) {
+            let pluginConfigScope = pluginConfig.scope || runnableScript.config.pluginsScope;
+            let pluginPrefix = pluginConfigScope ? pluginConfigScope : 'artillery-plugin-';
+            let requireString = pluginPrefix + pluginName;
+            let Plugin, plugin;
+
+            requirePaths.forEach(function(rp) {
+            try {
+                Plugin = require(path.join(rp, requireString));
+                if (typeof Plugin === 'function') {
+                // Plugin interface v1
+                plugin = new Plugin(runnableScript.config, ee);
+                plugin.__name = pluginName;
+                } else if (typeof Plugin === 'object' && typeof Plugin.Plugin === 'function') {
+                // Plugin interface 2+
+                plugin = new Plugin.Plugin(runnableScript, ee, options);
+                plugin.__name = pluginName;
+                }
+            } catch (err) {
+                debug(err);
+            }
+            });
+
+            if (!Plugin || !plugin) {
+            console.log(
+                'WARNING: plugin %s specified but module %s could not be loaded',
+                pluginName,
+                requireString);
+            warnings.plugins[pluginName] = {
+                message: 'Could not load'
+            };
+            } else {
+            debug('Plugin %s loaded from %s', pluginName, requireString);
+            runnerPlugins.push(plugin);
+            }
+        });
+
+        const promise = new Promise(function(resolve, reject) {
+            ee.run = function() {
+            let runState = {
+                pendingScenarios: 0,
+                pendingRequests: 0,
+                compiledScenarios: null,
+                scenarioEvents: null,
+                picker: undefined,
+                plugins: runnerPlugins,
+                engines: runnerEngines
+            };
+            debug('run() with: %j', runnableScript);
+            run(runnableScript, ee, opts, runState);
+            };
+
+            ee.stop = function (done) {
+            // allow plugins to cleanup
+            A.eachSeries(
+                runnerPlugins,
+                function(plugin, next) {
+                if (plugin.cleanup) {
+                    plugin.cleanup(function(err) {
+                    if (err) {
+                        debug(err);
+                    }
+                    return next();
+                    });
+                } else {
+                    return next();
+                }
+                },
+                function(err) {
+                return done(err);
+                });
+            };
+
+            // FIXME: Warnings should be returned from this function instead along with
+            // the event emitter. That will be a breaking change.
+            ee.warnings = warnings;
+
+            resolve(ee);
     });
 
-    if (!Plugin || !plugin) {
-      console.log(
-        'WARNING: plugin %s specified but module %s could not be loaded',
-        pluginName,
-        requireString);
-      warnings.plugins[pluginName] = {
-        message: 'Could not load'
-      };
-    } else {
-      debug('Plugin %s loaded from %s', pluginName, requireString);
-      runnerPlugins.push(plugin);
+    if (callback && typeof callback === 'function') {
+        promise.then(callback.bind(null, null), callback);
     }
+
+    return promise;
   });
-
-  const promise = new Promise(function(resolve, reject) {
-    ee.run = function() {
-      let runState = {
-        pendingScenarios: 0,
-        pendingRequests: 0,
-        compiledScenarios: null,
-        scenarioEvents: null,
-        picker: undefined,
-        plugins: runnerPlugins,
-        engines: runnerEngines
-      };
-      debug('run() with: %j', runnableScript);
-      run(runnableScript, ee, opts, runState);
-    };
-
-    ee.stop = function (done) {
-      // allow plugins to cleanup
-      A.eachSeries(
-        runnerPlugins,
-        function(plugin, next) {
-          if (plugin.cleanup) {
-            plugin.cleanup(function(err) {
-              if (err) {
-                debug(err);
-              }
-              return next();
-            });
-          } else {
-            return next();
-          }
-        },
-        function(err) {
-          return done(err);
-        });
-    };
-
-    // FIXME: Warnings should be returned from this function instead along with
-    // the event emitter. That will be a breaking change.
-    ee.warnings = warnings;
-
-    resolve(ee);
-  });
-
-  if (callback && typeof callback === 'function') {
-    promise.then(callback.bind(null, null), callback);
-  }
-
-  return promise;
 }
 
 function run(script, ee, options, runState) {
-  let intermediate = Stats.create();
-  let aggregate = [];
+    let intermediate = Stats.create();
+    let aggregate = [];
 
-  let phaser = createPhaser(script.config.phases);
-  phaser.on('arrival', function() {
-    runScenario(script, intermediate, runState);
-  });
-  phaser.on('phaseStarted', function(spec) {
-    ee.emit('phaseStarted', spec);
-  });
-  phaser.on('phaseCompleted', function(spec) {
-    ee.emit('phaseCompleted', spec);
-  });
-  phaser.on('done', function() {
-    debug('All phases launched');
+    let phaser = createPhaser(script.config.phases);
+    phaser.on('arrival', function() {
+            runScenario(script, intermediate, runState);
+    });
+    phaser.on('phaseStarted', function(spec) {
+        ee.emit('phaseStarted', spec);
+    });
+    phaser.on('phaseCompleted', function(spec) {
+        ee.emit('phaseCompleted', spec);
+    });
+    phaser.on('done', function() {
+        debug('All phases launched');
 
-    const doneYet = setInterval(function checkIfDone() {
-      if (runState.pendingScenarios === 0) {
-        if (runState.pendingRequests !== 0) {
-          debug('DONE. Pending requests: %s', runState.pendingRequests);
-        }
+        const doneYet = setInterval(function checkIfDone() {
+            if (runState.pendingScenarios === 0) {
+                if (runState.pendingRequests !== 0) {
+                    debug('DONE. Pending requests: %s', runState.pendingRequests);
+                }
 
-        clearInterval(doneYet);
-        clearInterval(periodicStatsTimer);
+                clearInterval(doneYet);
+                clearInterval(periodicStatsTimer);
 
-        sendStats();
+                sendStats();
 
-        intermediate.free();
+                intermediate.free();
 
-        let aggregateReport = Stats.combine(aggregate).report();
-        return ee.emit('done', aggregateReport);
-      } else {
-        debug('Pending requests: %s', runState.pendingRequests);
-        debug('Pending scenarios: %s', runState.pendingScenarios);
-      }
-    }, 500);
-  });
+                let aggregateReport = Stats.combine(aggregate).report();
+                return ee.emit('done', aggregateReport);
+            } else {
+                debug('Pending requests: %s', runState.pendingRequests);
+                debug('Pending scenarios: %s', runState.pendingScenarios);
+            }
+        }, 500);
+    });
 
-  const periodicStatsTimer = setInterval(sendStats, options.periodicStats * 1000);
+    const periodicStatsTimer = setInterval(sendStats, options.periodicStats * 1000);
 
-  function sendStats() {
-    aggregate.push(intermediate.clone());
-    intermediate._concurrency = runState.pendingScenarios;
-    intermediate._pendingRequests = runState.pendingRequests;
-    ee.emit('stats', intermediate.clone());
-    intermediate.reset();
-  }
+    function sendStats() {
+        intermediate._concurrency = runState.pendingScenarios;
+        intermediate._pendingRequests = runState.pendingRequests;
+        ee.emit('stats', intermediate.clone());
+        delete intermediate._entries;
+        aggregate.push(intermediate.clone());
+        intermediate.reset();
+    }
 
-  phaser.run();
+    phaser.run();
 }
 
 function runScenario(script, intermediate, runState) {
-  const start = process.hrtime();
+    const start = process.hrtime();
 
-  //
-  // Compile scenarios if needed
-  //
-  if (!runState.compiledScenarios) {
-    _.each(script.scenarios, function(scenario) {
-      if (!scenario.weight) {
-        scenario.weight = 1;
-      }
-    });
+    //
+    // Compile scenarios if needed
+    //
+    if (!runState.compiledScenarios) {
+        _.each(script.scenarios, function(scenario) {
+            if (!scenario.weight) {
+                scenario.weight = 1;
+            }
+        });
 
-    runState.picker = wl(script.scenarios);
+        runState.picker = wl(script.scenarios);
 
     runState.scenarioEvents = new EventEmitter();
     runState.scenarioEvents.on('counter', function(name, value) {
@@ -330,74 +337,83 @@ function runScenario(script, intermediate, runState) {
     runState.scenarioEvents.on('request', function() {
       intermediate.newRequest();
 
-      runState.pendingRequests++;
-    });
-    runState.scenarioEvents.on('match', function() {
-      intermediate.addMatch();
-    });
-    runState.scenarioEvents.on('response', function(delta, code, uid) {
-      intermediate.completedRequest();
-      intermediate.addLatency(delta);
-      intermediate.addCode(code);
+            runState.pendingRequests++;
+        });
+        runState.scenarioEvents.on('match', function() {
+            intermediate.addMatch();
+        });
+        runState.scenarioEvents.on('response', function(delta, code, uid) {
+            intermediate.completedRequest();
+            intermediate.addLatency(delta);
+            intermediate.addCode(code);
 
-      let entry = [Date.now(), uid, delta, code];
-      intermediate.addEntry(entry);
+            let entry = [Date.now(), uid, delta, code];
 
-      runState.pendingRequests--;
-    });
+            intermediate.addEntry(entry);
 
-    runState.compiledScenarios = _.map(
-        script.scenarios,
-        function(scenarioSpec) {
-          const name = scenarioSpec.engine || 'http';
-          const engine = runState.engines.find((e) => e.__name === name);
-          return engine.createScenario(scenarioSpec, runState.scenarioEvents);
-        }
-    );
-  }
+            runState.pendingRequests--;
+        });
 
-  let i = runState.picker()[0];
+        runState.compiledScenarios = _.map(
+            script.scenarios,
+            function(scenarioSpec) {
+                const name = scenarioSpec.engine || 'http';
+                const engine = runState.engines.find((e) => e.__name === name);
+                return engine.createScenario(scenarioSpec, runState.scenarioEvents);
+            }
+        );
+    }
 
-  debug('picking scenario %s (%s) weight = %s',
+    let i = runState.picker()[0];
+
+    debug('picking scenario %s (%s) weight = %s',
         i,
         script.scenarios[i].name,
         script.scenarios[i].weight);
 
-  intermediate.newScenario(script.scenarios[i].name || i);
+    intermediate.newScenario(script.scenarios[i].name || i);
 
-  const scenarioStartedAt = process.hrtime();
-  const scenarioContext = createContext(script);
-  const finish = process.hrtime(start);
-  const runScenarioDelta = (finish[0] * 1e9) + finish[1];
-  debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
-  runState.compiledScenarios[i](scenarioContext, function(err, context) {
-    runState.pendingScenarios--;
-    if (err) {
-      debug(err);
-    } else {
-      const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
-      const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
-      intermediate.addScenarioLatency(delta);
-      intermediate.completedScenario();
-    }
-  });
+    const scenarioStartedAt = process.hrtime();
+    const scenarioContext = createContext(script);
+    const finish = process.hrtime(start);
+    const runScenarioDelta = (finish[0] * 1e9) + finish[1];
+    debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
+    runState.compiledScenarios[i](scenarioContext, function(err, context) {
+        runState.pendingScenarios--;
+        if (err) {
+            debug(err);
+        } else {
+            const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
+            const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
+            intermediate.addScenarioLatency(delta);
+            intermediate.completedScenario();
+        }
+    });
 }
 
 /**
- * Create initial context for a scenario.
- */
+* Create initial context for a scenario.
+*/
 function createContext(script) {
-  const INITIAL_CONTEXT = {
-    vars: {
-      target: script.config.target,
-      $environment: script._environment
-    },
-    funcs: {
-      $randomNumber: $randomNumber,
-      $randomString: $randomString
-    }
+  let initialContext = {};
+  if (contextVars) {
+    initialContext = {
+      vars: contextVars
+    };
+  } else {
+    initialContext = {
+      vars: {
+        target: script.config.target,
+        $environment: script._environment
+      }
+    };
+  }
+  initialContext.funcs = {
+    $randomNumber: $randomNumber,
+    $randomString: $randomString
   };
-  let result = _.cloneDeep(INITIAL_CONTEXT);
+
+  let result = _.cloneDeep(initialContext);
 
   //
   // variables from payloads
@@ -434,9 +450,31 @@ function createContext(script) {
 // Generator functions for template strings:
 //
 function $randomNumber(min, max) {
-  return _.random(min, max);
+    return _.random(min, max);
 }
 
 function $randomString(length) {
-  return Math.random().toString(36).substr(2, length);
+    return Math.random().toString(36).substr(2, length);
+}
+
+function handleBeforeRequests(script, runnableScript, runnerEngines) {
+    return new Promise(function(resolve, reject){
+        if (script.before) {
+            let name = runnableScript.before.engine || 'http';
+            let engine = runnerEngines.find((e) => e.__name === name);
+            let beforeTestScenario = engine.createScenario(runnableScript.before);
+            let beforeTestContext = createContext(script);
+            beforeTestScenario(beforeTestContext, function(err, context) {
+              if (err) {
+                debug(err);
+                return reject(err);
+              } else {
+                contextVars = context.vars;
+                return resolve();
+              }
+            });
+        } else {
+            return resolve();
+        }
+    });
 }
