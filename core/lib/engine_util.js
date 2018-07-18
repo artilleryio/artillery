@@ -371,8 +371,8 @@ function captureOrMatch(params, response, context, done) {
               result.captures,
               spec.transform);
 
-            debug('transform: %s = %o', spec.as, result.captures[spec.as]);
             result.captures[spec.as] = transformedValue !== null ? transformedValue : extractedValue;
+            debug('transform: %s = %o', spec.as, result.captures[spec.as]);
           }
         }
 
