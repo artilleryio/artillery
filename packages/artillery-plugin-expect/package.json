@@ -12,5 +12,15 @@
     "chalk": "^2.3.2",
     "datadog-metrics": "^0.8.1",
     "debug": "^3.1.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^7.0.0",
+    "@commitlint/config-conventional": "^7.0.1",
+    "husky": "^1.0.0-rc.13"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -e"
+    }
   }
 }
