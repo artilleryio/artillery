@@ -6,6 +6,7 @@
 
 const debug = require('debug')('plugin:expect');
 const urlparse = require('url').parse;
+const chalk = require('chalk');
 
 const EXPECTATIONS = require('./lib/expectations');
 const FORMATTERS = require('./lib/formatters');
@@ -22,6 +23,9 @@ function ExpectationsPlugin(script, events) {
   }
 
   script.scenarios.forEach(function(scenario) {
+    scenario.onError = [].concat(scenario.onError || []);
+    scenario.onError.push('expectationsPluginOnError');
+
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('expectationsPluginCheckExpectations');
 
@@ -33,6 +37,7 @@ function ExpectationsPlugin(script, events) {
   });
 
   script.config.processor.expectationsPluginCheckExpectations = expectationsPluginCheckExpectations;
+  script.config.processor.expectationsPluginOnError = expectationsPluginOnError;
 
   script.config.processor.expectationsPluginSetExpectOptions = function(
     userContext,
@@ -57,6 +62,15 @@ function ExpectationsPlugin(script, events) {
   };
 
   debug('Initialized');
+}
+
+function expectationsPluginOnError(scenarioErr, requestParams, userContext, events, done) {
+  if (userContext.expectationsPlugin.outputFormat === 'json') {
+    console.log(JSON.stringify({ ok: false, error: scenarioErr.message }));
+  } else {
+    console.log(chalk.red('Error:'), scenarioErr.message);
+  }
+  return done();
 }
 
 function expectationsPluginCheckExpectations(
