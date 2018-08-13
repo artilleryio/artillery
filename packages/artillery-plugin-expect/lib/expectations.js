@@ -69,7 +69,8 @@ function expectContentType(expectation, body, req, res, userContext) {
       return result;
     }
   } else {
-    result.got = 'Expectations other than "json" are not supported yet';
+    result.ok = res.headers['content-type'] && res.headers['content-type'].toLowerCase() === expectation.contentType.toLowerCase();
+    result.got = res.headers['content-type'] || 'content-type header not set';
     return result;
   }
 }
