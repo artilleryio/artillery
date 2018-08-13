@@ -6,6 +6,7 @@
 
 const debug = require('debug')('plugin:expect');
 const chalk = require('chalk');
+const urlparse = require('url').parse;
 
 module.exports = {
   pretty: prettyPrint,
