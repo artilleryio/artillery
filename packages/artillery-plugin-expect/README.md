@@ -4,6 +4,8 @@
 
 Add expectations to your HTTP scenarios for functional API testing with Artillery.
 
+🐞 Please report issues over at [https://github.com/shoreditch-ops/artillery/issues](https://github.com/shoreditch-ops/artillery/issues)
+
 ## Usage
 
 ### Install the plugin
