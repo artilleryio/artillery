@@ -5,12 +5,41 @@
 'use strict';
 
 const debug = require('debug')('plugin:expect');
+const chalk = require('chalk');
+const renderVariables = require('artillery/util').renderVariables;
+const _ = require('lodash');
 
 module.exports = {
   contentType: expectContentType,
   statusCode: expectStatusCode,
-  hasProperty: expectHasProperty
+  hasProperty: expectHasProperty,
+  equals: expectEquals
 };
+
+// FIXME: Current implementation only works with primitive values,
+// and forces everything to a string. Objects, lists, and type checks
+// can be implemented with template() exported from artillery/util.
+function expectEquals(expectation, body, req, res, userContext) {
+  debug('check equals');
+  debug('expectation:', expectation);
+  debug('body:', typeof body);
+
+  let result = {
+    ok: false,
+    expected: 'all values to be equal',
+    type: 'equals'
+  };
+
+  const values = _.map(expectation.equals, (str) => {
+    return String(renderVariables(String(str), userContext.vars));
+  });
+
+  const unique = _.uniq(values);
+  result.ok = unique.length === 1;
+  result.got = `${ values.join(', ' )}`;
+
+  return result;
+}
 
 function expectContentType(expectation, body, req, res, userContext) {
   debug('check contentType');
