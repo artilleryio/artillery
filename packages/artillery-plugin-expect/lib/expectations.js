@@ -99,7 +99,7 @@ function expectHasProperty(expectation, body, req, res, userContext) {
   };
 
   if (typeof body === 'object') {
-    if (expectation.hasProperty in body) {
+    if (_.has(body, expectation.hasProperty)) {
       result.ok = true;
       result.got = `${body[expectation.hasProperty]}`;
       return result;
