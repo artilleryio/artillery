@@ -8,7 +8,7 @@
 
 ## Features
 
-- **Mulitple protocols**:  Load-test HTTP, WebSocket and Socket.io applications
+- **Multiple protocols**:  Load-test HTTP, WebSocket and Socket.io applications
 - **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc)
 - **Performance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput)
 - **Scriptable**: write custom logic in JS using any `npm` module
