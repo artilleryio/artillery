@@ -231,7 +231,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
   function preStep(context, callback){
     // Set default namespace in emit action
-    requestSpec.emit.namespace = template(requestSpec.emit.namespace, context) || "/";
+    requestSpec.emit.namespace = template(requestSpec.emit.namespace, context) || "";
 
     self.loadContextSocket(requestSpec.emit.namespace, context, function(err, socket){
       if(err) {
