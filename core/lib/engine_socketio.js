@@ -304,7 +304,7 @@ SocketIoEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
   function zero(callback, context) {
     context.__receivedMessageCount = 0;
     ee.emit('started');
-    self.loadContextSocket('/', context, function done(err) {
+    self.loadContextSocket('', context, function done(err) {
       if (err) {
         ee.emit('error', err);
         return callback(err, context);
