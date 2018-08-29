@@ -11,8 +11,7 @@ const isUndefined = _.isUndefined;
 const arrivals = require('arrivals');
 const debug = require('debug')('phases');
 const crypto = require('crypto');
-const Rolex = require('rolex');
-Rolex.noConflict();
+const driftless = require('driftless');
 
 module.exports = phaser;
 
@@ -110,7 +109,7 @@ function createRamp(spec, ee) {
     let ticksElapsed = 0;
 
     let i = 0;
-    const timer = Rolex.setInterval(function maybeArrival() {
+    const timer = driftless.setDriftlessInterval(function maybeArrival() {
       let startedAt = Date.now();
       if(++ticksElapsed > ticksPerPeriod) {
         debug(`ticksElapsed: ${ticksElapsed}; upping probability or stopping`);
@@ -125,7 +124,7 @@ function createRamp(spec, ee) {
         } else {
           debug(`done: ticksElapsed = ${ticksElapsed}; currentRate = ${currentRate}; spec.rampTo = ${spec.rampTo} `);
 
-          Rolex.clearInterval(timer);
+          driftless.clearDriftless(timer);
           ee.emit('phaseCompleted', spec);
 
           /*
