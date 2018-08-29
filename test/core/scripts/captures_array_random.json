@@ -16,7 +16,7 @@
           "get":  {
             "url": "/devices",
             "capture": {
-              "json": "$.[?(@parentProperty !== 'location' && @parentProperty !== 'group' && @property === 'id')]",
+              "json": "$..[?(@parentProperty !== 'location' && @parentProperty !== 'group' && @property === 'id')]",
               "as": "id"
             }
           },

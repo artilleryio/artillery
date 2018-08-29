@@ -16,7 +16,7 @@ ws_tls_pid=$!
 
 if [ $# -eq 1 ] ; then
     echo Running Single Test: $1
-    node $1
+     $1
 else
     echo Running All Available Tests
     node $DIR/index.js
