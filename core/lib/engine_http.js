@@ -419,7 +419,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         if (typeof requestParams.capture === 'object' ||
             typeof requestParams.match === 'object' ||
             requestParams.afterResponse ||
-            opts.afterResponse ||
+            (typeof opts.afterResponse === 'object' && opts.afterResponse.length > 0) ||
             process.env.DEBUG) {
           maybeCallback = requestCallback;
         }
