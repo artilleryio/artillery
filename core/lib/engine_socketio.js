@@ -130,7 +130,9 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
       steps,
       {
         loopValue: requestSpec.loopValue,
-        overValues: requestSpec.over
+        overValues: requestSpec.over,
+        whileTrue: self.config.processor ?
+          self.config.processor[requestSpec.whileTrue] : undefined
       }
     );
   }

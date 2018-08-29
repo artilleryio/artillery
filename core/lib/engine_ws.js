@@ -42,7 +42,9 @@ WSEngine.prototype.step = function (requestSpec, ee) {
       steps,
       {
         loopValue: requestSpec.loopValue || '$loopCount',
-        overValues: requestSpec.over
+        overValues: requestSpec.over,
+        whileTrue: self.config.processor ?
+          self.config.processor[requestSpec.whileTrue] : undefined
       });
   }
 
