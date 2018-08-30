@@ -133,8 +133,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     return function(context, callback) {
       let processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
-        return processFunc(context, ee, function() {
-          return callback(null, context);
+        return processFunc(context, ee, function(hookErr) {
+          if (hookErr) {
+            ee.emit('error', hookErr.code || hookErr.message);
+          }
+          return callback(hookErr, context);
         });
       } else {
         return process.nextTick(function () { callback(null, context); });
