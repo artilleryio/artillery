@@ -11,7 +11,7 @@ const esprima = require('esprima');
 const L = require('lodash');
 const vm = require('vm');
 const A = require('async');
-const jsonpath = require('JSONPath');
+const jsonpath = require('jsonpath');
 const cheerio = require('cheerio');
 const jitter = require('./jitter').jitter;
 
@@ -473,7 +473,11 @@ function dummyParser(body, callback) {
 
 // doc is a JSON object
 function extractJSONPath(doc, expr) {
-  let results = jsonpath.eval(doc, expr);
+  if (typeof doc !== 'object') {
+    return '';
+  }
+
+  let results = jsonpath.query(doc, expr);
 
   if (!results) {
     return '';
