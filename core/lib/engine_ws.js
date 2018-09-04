@@ -52,11 +52,8 @@ WSEngine.prototype.step = function (requestSpec, ee) {
     return engineUtil.createThink(requestSpec, _.get(self.config, 'defaults.think', {}));
   }
 
-  let f = function(context, callback) {
-    ee.emit('request');
-    let startedAt = process.hrtime();
-
-    if (requestSpec.function) {
+  if (requestSpec.function) {
+    return function(context, callback) {
       let processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
         processFunc(context, ee, function () {
@@ -64,6 +61,11 @@ WSEngine.prototype.step = function (requestSpec, ee) {
         });
       }
     }
+  }
+
+  let f = function(context, callback) {
+    ee.emit('request');
+    let startedAt = process.hrtime();
 
     let payload = template(requestSpec.send, context);
     if (typeof payload === 'object') {
