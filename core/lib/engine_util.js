@@ -239,7 +239,7 @@ function template(o, context) {
 }
 
 function renderVariables (str, vars) {
-  const RX = /{{{?[\s$\w]+}}}?/g;
+  const RX = /{{{?[\s$\w\.\[\]\'\"]+}}}?/g;
   let rxmatch;
   let result = str.substring(0, str.length);
 
@@ -254,7 +254,7 @@ function renderVariables (str, vars) {
     if (matches[0] === str) {
       // there's nothing else in the template but the variable
       const varName = str.replace(/{/g, '').replace(/}/g, '').trim();
-      return vars[varName] || '';
+      return L.get(vars, varName) || '';
     }
   }
 
@@ -262,7 +262,8 @@ function renderVariables (str, vars) {
     let templateStr = result.match(RX)[0];
     const varName = templateStr.replace(/{/g, '').replace(/}/g, '').trim();
 
-    let varValue = vars[varName];
+    let varValue = L.get(vars, varName);
+
     if (typeof varValue === 'object') {
       varValue = JSON.stringify(varValue);
     }
