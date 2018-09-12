@@ -390,7 +390,8 @@ function createContext(script) {
   const INITIAL_CONTEXT = {
     vars: {
       target: script.config.target,
-      $environment: script._environment
+      $environment: script._environment,
+      $processEnvironment: process.env
     },
     funcs: {
       $randomNumber: $randomNumber,
