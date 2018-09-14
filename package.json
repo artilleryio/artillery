@@ -80,7 +80,7 @@
     "express": "^4.16.3",
     "good": "^8.1.1",
     "good-console": "^7.1.0",
-    "hapi": "^17.5.2",
+    "hapi": "^17.5.4",
     "hapi-auth-basic": "^5.0.0",
     "istanbul": "^0.4.5",
     "nock": "^9.2.5",
