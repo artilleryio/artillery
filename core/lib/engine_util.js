@@ -478,7 +478,13 @@ function extractJSONPath(doc, expr) {
     return '';
   }
 
-  let results = jsonpath.query(doc, expr);
+  let results;
+
+  try {
+    results = jsonpath.query(doc, expr);
+  } catch (queryErr) {
+    debug(queryErr);
+  }
 
   if (!results) {
     return '';
