@@ -43,7 +43,8 @@ function validate(script) {
 function runner(script, payload, options, callback) {
   let opts = _.assign({
     periodicStats: script.config.statsInterval || 10,
-    mode: script.config.mode || 'uniform'
+    mode: script.config.mode || 'uniform',
+    lastTarget: script.config.target
   },
   options);
 
@@ -247,6 +248,8 @@ function run(script, ee, options, runState) {
   let intermediate = Stats.create();
   let aggregate = [];
 
+  intermediate.lastTarget = options.lastTarget;
+
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function() {
     runScenario(script, intermediate, runState);
@@ -273,8 +276,9 @@ function run(script, ee, options, runState) {
 
         intermediate.free();
 
-        let aggregateReport = Stats.combine(aggregate).report();
-        return ee.emit('done', aggregateReport);
+
+        let aggregateReport = Stats.combine(aggregate).report()
+        return ee.emit('done', aggregateReport,  intermediate.lastTarget);
       } else {
         debug('Pending requests: %s', runState.pendingRequests);
         debug('Pending scenarios: %s', runState.pendingScenarios);
