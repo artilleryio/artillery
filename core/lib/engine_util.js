@@ -474,11 +474,18 @@ function dummyParser(body, callback) {
 
 // doc is a JSON object
 function extractJSONPath(doc, expr) {
-  if (typeof doc !== 'object') {
+  // typeof null is 'object' hence the explicit check here
+  if (typeof doc !== 'object' || doc === null) {
     return '';
   }
 
-  let results = jsonpath.query(doc, expr);
+  let results;
+
+  try {
+    results = jsonpath.query(doc, expr);
+  } catch (queryErr) {
+    debug(queryErr);
+  }
 
   if (!results) {
     return '';
