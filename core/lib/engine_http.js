@@ -7,7 +7,6 @@
 const async = require('async');
 const _ = require('lodash');
 const request = require('request');
-
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
 const debugResponse = require('debug')('http:response');
@@ -22,14 +21,30 @@ const filtrex = require('filtrex');
 
 module.exports = HttpEngine;
 
+const DEFAULT_AGENT_OPTIONS = {
+  keepAlive: true,
+  keepAliveMsec: 1000
+};
+
 function HttpEngine(script) {
   this.config = script.config;
 
+  // If config.http.pool is set, create & reuse agents for all requests (with
+  // max sockets set). That's what we're done here.
+  // If config.http.pool is not set, we create new agents for each virtual user.
+  // That's done when the VU is initialized.
+
+  let maxSockets = Infinity;
   if (script.config.http && script.config.http.pool) {
-    this.pool = {
-      maxSockets: Number(script.config.http.pool)
-    };
+    maxSockets = Number(script.config.http.pool);
   }
+  let agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+    maxSockets: maxSockets,
+    maxFreeSockets: maxSockets
+  });
+
+  this._httpAgent = new http.Agent(agentOpts);
+  this._httpsAgent = new https.Agent(agentOpts);
 }
 
 HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
@@ -294,14 +309,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         requestParams.url = url;
 
-        if (!self.pool) {
-          if ((/^https/i).test(requestParams.url)) {
-            requestParams.agent = context._httpsAgent;
-          } else {
-            requestParams.agent = context._httpAgent;
-          }
+        if ((/^https/i).test(requestParams.url)) {
+          requestParams.agent = context._httpsAgent;
         } else {
-          requestParams.pool = self.pool;
+          requestParams.agent = context._httpAgent;
         }
 
         function requestCallback(err, res, body) {
@@ -475,30 +486,25 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
 HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
-  let config = this.config;
-  let tls = config.tls || {};
 
   return function scenario(initialContext, callback) {
     initialContext._successCount = 0;
 
     initialContext._jar = request.jar();
-    let keepAliveMsec = 1000;
-    let maxSockets = 1;
-    if (self.config.http && self.config.http.maxSockets) {
-      maxSockets = self.config.http.maxSockets;
-    }
-    if (!self.pool) {
-      let agentOpts = {
-        keepAlive: true,
-        keepAliveMsecs: keepAliveMsec,
-        maxSockets: maxSockets,
-        maxFreeSockets: maxSockets
-      };
 
+    if (self.config.http && typeof self.config.http.pool !== 'undefined') {
+      // Reuse common agents (created in the engine instance constructor)
+      initialContext._httpAgent = self._httpAgent;
+      initialContext._httpsAgent = self._httpsAgent;
+    } else {
+      // Create agents just for this VU
+      const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+        maxSockets: 1,
+        maxFreeSockets: 1
+      });
       initialContext._httpAgent = new http.Agent(agentOpts);
       initialContext._httpsAgent = new https.Agent(agentOpts);
     }
-
 
     let steps = _.flatten([
       function zero(cb) {
