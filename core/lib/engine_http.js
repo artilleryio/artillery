@@ -233,6 +233,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           let errCode = err.code || err.message;
           // FIXME: Should not need to have to emit manually here
           ee.emit('error', errCode);
+          if (err.ignore) {
+            return process.nextTick(function () {
+              callback(null, context);
+            });
+          }
           return callback(err, context);
         }
 
