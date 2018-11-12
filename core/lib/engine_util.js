@@ -254,7 +254,7 @@ function renderVariables (str, vars) {
     if (matches[0] === str) {
       // there's nothing else in the template but the variable
       const varName = str.replace(/{/g, '').replace(/}/g, '').trim();
-      return L.get(vars, varName) || '';
+      return sanitiseValue(L.get(vars, varName));
     }
   }
 
@@ -572,4 +572,9 @@ function isXML(res) {
 
 function randomInt (low, high) {
   return Math.floor(Math.random() * (high - low + 1) + low);
+}
+
+function sanitiseValue (value) {
+  if (value === 0) return value;
+  return value ? value : '';
 }

@@ -72,7 +72,8 @@ test('rendering variables', function(t) {
       food: 'tacos',
       day: 'Friday',
       animals: ['dogs', 'cats', 'ponies', 'donkeys']
-    }
+    },
+    zeroValue: 0
   };
 
   const render = util._renderVariables;
@@ -124,6 +125,11 @@ test('rendering variables', function(t) {
   t.assert(
     render('abc-{{ favoriteThings.animals[1] }}-123-{{ day }} 🐢🚀', vars) === 'abc-cats-123-Friday 🐢🚀',
     'Values returned from property lookups are interpolated as expected'
+  );
+
+  t.assert(
+    render('{{ zeroValue }}', vars) === 0,
+    'Can render zero values'
   );
 
   t.end();
