@@ -189,12 +189,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       let cond;
       let result;
       try {
-        cond = filtrex(params.ifTrue);
+        cond = _.has(config.processor, params.ifTrue) ?  config.processor[params.ifTrue]  : filtrex(params.ifTrue);
         result = cond(context.vars);
       } catch (e) {
         result = 1; // if the expression is incorrect, just proceed // TODO: debug message
       }
-      if (typeof result === 'undefined' || result === 0) {
+      if (!result) {
         return process.nextTick(function () {
           callback(null, context);
         });
