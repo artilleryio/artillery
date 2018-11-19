@@ -575,6 +575,6 @@ function randomInt (low, high) {
 }
 
 function sanitiseValue (value) {
-  if (value === 0) return value;
+  if (value === 0 || value === false) return value;
   return value ? value : '';
 }
