@@ -32,3 +32,20 @@ test.test('variables can be substituted', function(t) {
   t.assert(template('hello {{name}}', emptyContext) === 'hello undefined', '');
   t.end();
 });
+
+test.test('arrays can be substituted', function(t) {
+  t.same(template(['{{name}}'], { vars: { name: 'Hassy'} }),  [ 'Hassy' ], '');
+  t.same(template(['hello {{name}}'], emptyContext),  ['hello undefined'], '');
+  t.end();
+});
+
+test.test('hashes can be substituted', function(t) {
+  t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': '{{ v2 }}'}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname', v2: 'Has'} }),  {name: 'Hassy', nickname: 'Has'}, '');
+  t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': 'hello {{ v2 }}'}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname'} }),  {name: 'Hassy', nickname: 'hello undefined'}, '');
+  t.end();
+});
+
+test.test('nested objects can be substituted', function(t) {
+  t.same(template({'{{ k1 }}': ['{{ v1 }}', {'{{ k3 }}': '{{ v3 }}'}], '{{ k2 }}': '{{ v2 }}'}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname', v2: 'Has', k3: 'lastname', v3: 'Veldstra'} }),  {name: ['Hassy', {lastname: 'Veldstra'}], nickname: 'Has'}, '');
+  t.end();
+});
