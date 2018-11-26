@@ -198,15 +198,13 @@ function template(o, context) {
   const objtype = Object.prototype.toString.call(o);
   if (objtype === '[object Object]') {
     return Object.keys(o).reduce(
-      (hash, key) => {
-      return {
-        ...hash,
-        [template(key, context)]: template(o[key], context)
-      }},
+      (hash, key) =>
+        Object.assign({}, hash, {
+          [template(key, context)]: template(o[key], context)
+        }),
       {}
     );
-  } else if (objtype === '[object Array]') {
-    return o.reduce(
+  } else if (objtype === '[object Array]') {    return o.reduce(
       (array, current) => array.concat(template(current, context)),
       []
     );   
