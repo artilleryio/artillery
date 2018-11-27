@@ -46,7 +46,7 @@
     "chalk": "1.1.3",
     "cheerio": "^1.0.0-rc.2",
     "commander": "2.9.0",
-    "csv-parse": "^0.1.4",
+    "csv-parse": "^4.0.1",
     "debug": "^2.2.0",
     "deep-equal": "^1.0.1",
     "driftless": "^2.0.3",
