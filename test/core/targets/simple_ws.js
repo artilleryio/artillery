@@ -1,5 +1,10 @@
 var WebSocketServer = require('ws').Server;
-var wss = new WebSocketServer({host: '127.0.0.1', port: 9090});
+
+var wss = new WebSocketServer({
+  host: '127.0.0.1',
+  port: parseInt(process.env.PORT) || 9090,
+  handleProtocols: handleProtocols
+});
 
 var MESSAGE_COUNT = 0;
 var CONNECTION_COUNT = 0;
@@ -15,8 +20,13 @@ wss.on('connection', function connection(ws) {
   ws.send('something');
 });
 
-// setInterval(function() {
-//   console.log(new Date());
-//   console.log('CONNECTION_COUNT [ws] = %s', CONNECTION_COUNT);
-//   console.log('MESSAGE_COUNT    [ws] = %s', MESSAGE_COUNT);
-// }, 5 * 1000);
+function handleProtocols(protocols, request) {
+  const SUBPROTOCOL = 'my-custom-protocol';
+  if (protocols.indexOf(SUBPROTOCOL) > -1) {
+    console.log('setting', SUBPROTOCOL);
+    return SUBPROTOCOL;
+  } else {
+    console.log('Unsupported subprotocols', protocols);
+    return false;
+  }
+}
