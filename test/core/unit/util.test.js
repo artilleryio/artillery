@@ -73,7 +73,9 @@ test('rendering variables', function(t) {
       day: 'Friday',
       animals: ['dogs', 'cats', 'ponies', 'donkeys']
     },
-    zeroValue: 0
+    zeroValue: 0,
+    falseValue: false,
+    trueValue: true
   };
 
   const render = util._renderVariables;
@@ -130,6 +132,16 @@ test('rendering variables', function(t) {
   t.assert(
     render('{{ zeroValue }}', vars) === 0,
     'Can render zero values'
+  );
+
+  t.assert(
+    render('{{ falseValue }}', vars) === false,
+    'Can render false values'
+  );
+
+  t.assert(
+    render('{{ trueValue }}', vars) === true,
+    'Can render true values'
   );
 
   t.end();
