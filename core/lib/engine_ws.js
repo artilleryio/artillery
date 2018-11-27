@@ -121,7 +121,7 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
 
       ws.once('error', function(err) {
         debug(err);
-        ee.emit('error', err.code);
+        ee.emit('error', err.message || err.code);
         return callback(err, {});
       });
     }
