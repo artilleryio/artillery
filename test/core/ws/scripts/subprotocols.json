@@ -1,0 +1,26 @@
+{
+  "config": {
+      "target": "ws://127.0.0.1:9090",
+      "phases": [
+        {"duration": 1, "arrivalCount": 1}
+      ],
+      "variables": {
+        "zipCode": ["35801", "99501", "85001", "94203", "90210"]
+      },
+    "ws": {
+      "subprotocols": ["json", "my-custom-protocol"],
+      "headers": {
+        "sec-websocket-protocol": "my-custom-protocol"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "engine": "ws",
+      "flow": [
+        {"send": "hello"},
+        {"send": "{{ zipCode }}"}
+      ]
+    }
+  ]
+}

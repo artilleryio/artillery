@@ -97,28 +97,36 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
 
   return function scenario(initialContext, callback) {
     function zero(callback) {
-      let tls = config.tls || {}; // TODO: config.tls is deprecated
+      let tls = config.tls || {};
       let options = _.extend(tls, config.ws);
+
+      let subprotocols = _.get(config, 'ws.subprotocols', []);
+      const headers = _.get(config, 'ws.headers', {});
+      const subprotocolHeader = _.find(headers, (value, headerName) => {
+        return headerName.toLowerCase() === 'sec-websocket-protocol';
+      });
+      if (typeof subprotocolHeader !== 'undefined') {
+        // NOTE: subprotocols defined via config.ws.subprotocols take precedence:
+        subprotocols = subprotocols.concat(subprotocolHeader.split(',').map(s => s.trim()));
+      }
 
       ee.emit('started');
 
-      let ws = new WebSocket(config.target, options);
+      let ws = new WebSocket(config.target, subprotocols, options);
+
       ws.on('open', function() {
         initialContext.ws = ws;
         return callback(null, initialContext);
       });
+
       ws.once('error', function(err) {
         debug(err);
-        ee.emit('error', err.code);
+        ee.emit('error', err.message || err.code);
         return callback(err, {});
       });
     }
 
     initialContext._successCount = 0;
-    initialContext._pendingRequests = _.size(
-      _.reject(scenarioSpec, function(rs) {
-        return (typeof rs.think === 'number');
-      }));
 
     let steps = _.flatten([
       zero,
