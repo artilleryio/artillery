@@ -32,7 +32,11 @@ const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 module.exports = {
   runner: runner,
   validate: validate,
-  stats: Stats
+  stats: Stats,
+  contextFuncs: {
+    $randomString,
+    $randomNumber
+  }
 };
 
 function validate(script) {
@@ -367,6 +371,7 @@ function runScenario(script, intermediate, runState) {
 
   const scenarioStartedAt = process.hrtime();
   const scenarioContext = createContext(script);
+
   const finish = process.hrtime(start);
   const runScenarioDelta = (finish[0] * 1e9) + finish[1];
   debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
