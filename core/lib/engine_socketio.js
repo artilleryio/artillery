@@ -78,12 +78,13 @@ function processResponse(ee, data, response, context, callback) {
     }
 
     // Do we have any failed matches?
-    let haveFailedMatches = _.some(result.matches, function(v, k) {
+    let failedMatches = _.filter(result.matches, (v, k) => {
       return !v.success;
     });
 
     // How to handle failed matches?
-    if (haveFailedMatches) {
+    if (failedMatches.length > 0) {
+      debug(failedMatches);
       // TODO: Should log the details of the match somewhere
       ee.emit('error', 'Failed match');
       return callback(new Error('Failed match'), context);
@@ -119,7 +120,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
   if (requestSpec.loop) {
     let steps = _.map(requestSpec.loop, function(rs) {
-      if (!rs.emit) {
+      if (!rs.emit && !rs.loop) {
         return self.httpDelegate.step(rs, ee);
       }
       return self.step(rs, ee);
@@ -130,6 +131,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
       steps,
       {
         loopValue: requestSpec.loopValue,
+        loopElement: requestSpec.loopElement || '$loopElement',
         overValues: requestSpec.over,
         whileTrue: self.config.processor ?
           self.config.processor[requestSpec.whileTrue] : undefined
