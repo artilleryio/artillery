@@ -17,7 +17,7 @@ var SCRIPTS = [
 l.each(SCRIPTS, function(fn) {
 
   var script = require('./scripts/' + fn);
-  test('Script: ' + fn, function(t) {
+  test('# running script: ' + fn, function(t) {
 
     // Set up for expectations
     var completedPhases = 0;
@@ -37,7 +37,7 @@ l.each(SCRIPTS, function(fn) {
       ee.on('done', function(report) {
         var requests = report.requestsCompleted;
         var scenarios = report.scenariosCompleted;
-        console.log('requests = %s, scenarios = %s', requests, scenarios);
+        console.log('# requests = %s, scenarios = %s', requests, scenarios);
 
         t.assert(completedPhases === script.config.phases.length,
                  'Should\'ve completed all phases');
@@ -51,6 +51,11 @@ l.each(SCRIPTS, function(fn) {
 
         t.assert(requests > 0, 'Should have successful requests');
         t.assert(scenarios > 0, 'Should have successful scenarios');
+
+        if (report.errors) {
+          console.log(`# errors: ${JSON.stringify(report.errors, null, 4)}`);
+        }
+        t.assert(Object.keys(report.errors).length === 0, 'Should have no errors');
 
         t.end();
       });
