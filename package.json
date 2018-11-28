@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "1.6.0-25",
+  "version": "1.6.0-26",
   "description": "Flexible and powerful toolkit for load and functional testing",
   "main": "./lib",
   "engines": {
