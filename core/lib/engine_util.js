@@ -73,7 +73,7 @@ function createLoopWithCount(count, steps, opts) {
     let abortEarly = false;
 
     let overValues = null;
-    let loopValue = null;
+    let loopValue = i; // default to the current iteration of the loop, ie same as $loopCount
     if (typeof opts.overValues !== 'undefined') {
       if (opts.overValues && typeof opts.overValues === 'object') {
         overValues = opts.overValues;
