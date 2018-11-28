@@ -1,6 +1,6 @@
 var http = require('http');
 var socketio = require('socket.io');
-const debug = require('debug');
+const debug = require('debug')('target:socketio');
 module.exports = createServer;
 
 if (require.main === module) {
@@ -55,11 +55,25 @@ function createServer() {
       ws.emit('hello', 'whatever');
     }, 500);
 
+    let loopCounter = 0;
     ws.on('echo', function incoming(message, cb) {
       MESSAGE_COUNT++;
+
       if (message === 'ping') {
         cb("pong", {answer: 42});
       }
+      if (message === 'count:inc') {
+        loopCounter++;
+        cb('count', {answer: loopCounter});
+      }
+      if (message === 'count:reset') {
+        loopCounter = 0;
+        cb('count', {answer: loopCounter});
+      }
+      if (message === 'count:read') {
+        cb('count', {answer: loopCounter});
+      }
+
       debug('Socket.io echoing message: %s', message);
       ws.emit('echoed', message);
     });
