@@ -3,7 +3,8 @@
 module.exports = {
   printHello: printHello,
   createNewVar: createNewVar,
-  rewriteUrl: rewriteUrl
+  rewriteUrl: rewriteUrl,
+  checkGlobal: checkGlobal
 };
 
 function printHello(req, ctx, events, done) {
@@ -29,3 +30,12 @@ function rewriteUrl(req, ctx, events, done) {
   req.url = '/';
   return done();
 }
+
+function checkGlobal(ctx, events, done) {
+  if (!global.artillery) {
+    return done(new Error('global artillery object not found'));
+  } else {
+    console.log(`[${process.pid}] artillery.version: ${artillery.version}`);
+    return done();
+  }
+};

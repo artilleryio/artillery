@@ -3,6 +3,7 @@
     {
       "beforeRequest": ["printHello"],
       "flow": [
+        {"function": "checkGlobal"},
         {"get": {"url": "/"}},
         {"post": {"url": "/pets", "json": {"name": "Figo", "species": "dog"}}},
         {"loop": [
@@ -10,7 +11,7 @@
             {"log": "outer: {{ $loopCount }}; inner: {{ k }}"}
           ], "count": "5", "loopValue": "k"}
         ], "count": 3},
-        {"get": "/does/not/exist", "beforeRequest": "rewriteUrl"}
+        {"get": {"url": "/does/not/exist", "beforeRequest": "rewriteUrl"}}
       ]
     }
   ]
