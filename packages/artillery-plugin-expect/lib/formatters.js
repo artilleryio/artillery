@@ -41,7 +41,7 @@ function prettyPrint(requestExpectations, req, res, userContext) {
       console.log(prepend(String(JSON.stringify(res.body, null, 2)), '    '));
 
       console.log(chalk.yellow('  User variables:'));
-      Object.keys(userContext.vars).forEach(function(varName) {
+      Object.keys(userContext.vars).filter(varName => varName !== '$processEnvironment').forEach(function(varName) {
         console.log('    ', varName, ':', userContext.vars[varName]);
       });
     } else {
