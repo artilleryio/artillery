@@ -5,6 +5,9 @@ import createDebug from 'debug';
 const debug = createDebug('expect-plugin:test');
 import EventEmitter from 'events';
 
+const shelljs = require('shelljs');
+const path = require('path');
+
 //
 // We only need this when running unit tests. When the plugin actually runs inside
 // a recent version of Artillery, the appropriate object is already set up.
@@ -58,4 +61,19 @@ test('Expectation: statusCode', async (t) => {
 
     t.true(result.ok === e[3]);
   });
+});
+
+test('Integration with Artillery', async (t) => {
+  const output = shelljs.exec(
+    `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
+  {
+    env: {
+      ARTILLERY_PLUGIN_PATH: path.resolve(__dirname, '..', '..'),
+      PATH: process.env.PATH
+    },
+    silent: true
+  }).stdout;
+
+  t.true(output.indexOf('ok contentType json') > -1);
+  t.true(output.indexOf('ok statusCode 404') > -1);
 });

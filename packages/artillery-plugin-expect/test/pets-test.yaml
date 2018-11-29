@@ -1,0 +1,47 @@
+config:
+  target: http://localhost:9090
+  phases:
+    - duration: 1
+      arrivalCount: 1
+  plugins:
+    expect: {}
+  payload:
+    - path: "./urls.csv"
+      fields:
+        - url
+        - statusCode
+scenarios:
+  - flow:
+      - get:
+          url: "/pets"
+          expect:
+            - contentType: json
+            - statusCode: 200
+            - hasProperty: result
+      - post:
+          url: "/pets"
+          json:
+            name: Tiki
+            species: pony
+          expect:
+            statusCode: 202
+      - get:
+          url: "/pets/1"
+          capture:
+            - json: "$.result.0.name"
+              as: "name"
+          expect:
+            statusCode: 200
+            contentType: json
+            equals:
+              - "{{ name }}"
+              - "Luna"
+      - get:
+          url: "/pets/2"
+          expect:
+            statusCode: 404
+      - get:
+          name: "CSV-driven expectation"
+          url: "{{ url }}"
+          expect:
+            statusCode: "{{ statusCode }}"

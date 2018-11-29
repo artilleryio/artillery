@@ -1,0 +1,25 @@
+- request:
+    uri: /pets
+    method: POST
+    body: "*"
+  response:
+    code: 202
+    body: '{"success:"true"}'
+    headers:
+      content-type: application/json
+- request:
+    uri: /pets
+    method: GET
+  response:
+    code: 200
+    body: '{"result": [{"name":"Tiki", "species":"pony"}]}'
+    headers:
+      content-type: application/json
+- request:
+    uri: /pets/1
+    method: GET
+  response:
+    code: 200
+    body: '{"result": [{"name": "Luna", "species": "dog"}]}'
+    headers:
+      content-type: application/json
