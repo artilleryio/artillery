@@ -59,6 +59,39 @@ Failed expectations provide request and response details:
 
 ![artillery expectations plugin screenshot](./docs/expect-output.png)
 
+### Re-using scenarios as load tests or functional tests
+
+This plugin allows for the same scenario to be re-used for either load testing or functional testing of an API. (The only real difference between the two, of course, is how many virtual users you run -- only one for functional tests, and `$BIG_NUMBER` for a load test.)
+
+In practical terms, what you probably want to do is use the [`environments` functionality](https://artillery.io/docs/script-reference/#environments) in Artillery to create a separate "environment" with configuration for functional testing. Something like:
+
+```yaml
+config:
+  target: "https://my.api.internal"
+  environments:
+    #
+    # This is our load testing profile, where we create a lot of virtual users.
+    # Note that we don't load the plugin here, so that we don't see the output
+    # from the plugin.
+    #
+    load:
+      phases:
+        - duration: 600
+          arrivalRate: 10
+    #
+    # This is our functional testing profile, with a single virtual user, and
+    # the plugin enabled.
+    #
+    functional:
+      phases:
+        - duration: 1
+          arrivalCount: 1
+      plugins:
+        expect: {}
+scenarios:
+  # Your scenario definitions go here.
+```
+
 ## Expectations
 
 ### `statusCode`
