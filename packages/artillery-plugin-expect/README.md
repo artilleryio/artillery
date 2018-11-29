@@ -14,6 +14,8 @@ Add expectations to your HTTP scenarios for functional API testing with Artiller
 npm install -g artillery-plugin-expect
 ```
 
+**Important**: this plugin requires Artillery `v1.6.0-26` or higher.
+
 ### Enable the plugin in the config section
 
 ```yaml
