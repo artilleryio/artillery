@@ -17,6 +17,8 @@
   "devDependencies": {
     "@commitlint/cli": "^7.0.0",
     "@commitlint/config-conventional": "^7.0.1",
+    "artillery": "^1.6.0-26",
+    "ava": "^0.25.0",
     "husky": "^1.0.0-rc.13"
   },
   "husky": {
