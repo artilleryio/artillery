@@ -45,6 +45,20 @@ scenarios:
               - "{{ name }}"
 ```
 
+### Run your test & see results
+
+Run your script that uses expectations with:
+
+```
+artillery run --quiet my-script.yaml
+```
+
+The `--quiet` option is to stop Artillery from printing its default reports to the console.
+
+Failed expectations provide request and response details:
+
+![artillery expectations plugin screenshot](./docs/expect-output.png)
+
 ## Expectations
 
 ### `statusCode`
