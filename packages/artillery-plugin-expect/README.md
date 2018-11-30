@@ -2,7 +2,10 @@
 
 ## Functional API testing with Artillery
 
-Add expectations to your HTTP scenarios for functional API testing with Artillery.
+- Add expectations and assertions to your HTTP scenarios
+- Use the same `artillery` command to run functional / acceptance tests on your APIs
+- See details of any failed assertions (request headers & body, response etc)
+- Use your Artillery scenarios for **both** functional testing and load testing
 
 🐞 Please report issues over at [https://github.com/shoreditch-ops/artillery/issues](https://github.com/shoreditch-ops/artillery/issues)
 
@@ -25,7 +28,7 @@ config:
     expect: {}
 ```
 
-### Use expectations on your requests
+### Add expectations to your requests
 
 ```yaml
 scenarios:
@@ -131,6 +134,10 @@ Check that two or more values are the same. **NOTE** only primitive values (e.g.
           - "{{ species }}"
           - "dog"
 ```
+
+## Feedback
+
+This plugin is still in the early stages and we would love to hear your comments, ideas and suggestions for improvements. Please file an issue over at [https://github.com/shoreditch-ops/artillery/issues](https://github.com/shoreditch-ops/artillery/issues).
 
 ## License
 
