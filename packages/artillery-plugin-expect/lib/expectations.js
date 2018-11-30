@@ -6,7 +6,7 @@
 
 const debug = require('debug')('plugin:expect');
 const chalk = require('chalk');
-const renderVariables = require('artillery/util').renderVariables;
+const template = global.artillery ? global.artillery.util.template : require('artillery/util').template;
 const _ = require('lodash');
 
 module.exports = {
@@ -16,9 +16,6 @@ module.exports = {
   equals: expectEquals
 };
 
-// FIXME: Current implementation only works with primitive values,
-// and forces everything to a string. Objects, lists, and type checks
-// can be implemented with template() exported from artillery/util.
 function expectEquals(expectation, body, req, res, userContext) {
   debug('check equals');
   debug('expectation:', expectation);
@@ -31,7 +28,7 @@ function expectEquals(expectation, body, req, res, userContext) {
   };
 
   const values = _.map(expectation.equals, (str) => {
-    return String(renderVariables(String(str), userContext.vars));
+    return String(template(String(str), userContext.vars));
   });
 
   const unique = _.uniq(values);
@@ -46,13 +43,14 @@ function expectContentType(expectation, body, req, res, userContext) {
   debug('expectation:', expectation);
   debug('body:', typeof body);
 
+  const expectedContentType = template(expectation.contentType, userContext);
   let result = {
     ok: false,
-    expected: expectation.contentType,
+    expected: expectedContentType,
     type: 'contentType'
   };
 
-  if (expectation.contentType === 'json') {
+  if (expectedContentType === 'json') {
     if (
       typeof body === 'object' &&
       res.headers['content-type'].indexOf('application/json') !== -1
@@ -69,7 +67,7 @@ function expectContentType(expectation, body, req, res, userContext) {
       return result;
     }
   } else {
-    result.ok = res.headers['content-type'] && res.headers['content-type'].toLowerCase() === expectation.contentType.toLowerCase();
+    result.ok = res.headers['content-type'] && res.headers['content-type'].toLowerCase() === expectedContentType.toLowerCase();
     result.got = res.headers['content-type'] || 'content-type header not set';
     return result;
   }
@@ -78,13 +76,15 @@ function expectContentType(expectation, body, req, res, userContext) {
 function expectStatusCode(expectation, body, req, res, userContext) {
   debug('check statusCode');
 
+  const expectedStatusCode = template(expectation.statusCode, userContext);
+
   let result = {
     ok: false,
-    expected: expectation.statusCode,
+    expected: expectedStatusCode,
     type: 'statusCode'
   };
 
-  result.ok = res.statusCode === expectation.statusCode;
+  result.ok = Number(res.statusCode) === Number(expectedStatusCode);
   result.got = res.statusCode;
   return result;
 }
@@ -92,19 +92,20 @@ function expectStatusCode(expectation, body, req, res, userContext) {
 function expectHasProperty(expectation, body, req, res, userContext) {
   debug('check hasProperty');
 
+  const expectedProperty = template(expectation.hasProperty, userContext);
   let result = {
     ok: false,
-    expected: expectation.hasProperty,
+    expected: expectedProperty,
     type: 'hasProperty'
   };
 
   if (typeof body === 'object') {
-    if (_.has(body, expectation.hasProperty)) {
+    if (_.has(body, expectedProperty)) {
       result.ok = true;
-      result.got = `${body[expectation.hasProperty]}`;
+      result.got = expectedProperty;
       return result;
     } else {
-      result.got = `response body has no ${expectation.hasProperty} property`;
+      result.got = `response body has no ${expectedProperty} property`;
       return result;
     }
   } else {
