@@ -13,7 +13,7 @@ mock_server_pid=
 mock_server_status=
 
 if [[ ! -z ${CIRCLECI:-""} ]] ; then
-    curl -o mockingjay-server "https://github.com/quii/mockingjay-server/releases/download/$MOCKINGJAY_VERSION/linux_386_mockingjay-server"
+    curl -L -o mockingjay-server "https://github.com/quii/mockingjay-server/releases/download/$MOCKINGJAY_VERSION/linux_386_mockingjay-server"
     chmod +x mockingjay-server
     ./mockingjay-server --config ./test/mock-pets-server.yaml
     mock_server_pid=$!
