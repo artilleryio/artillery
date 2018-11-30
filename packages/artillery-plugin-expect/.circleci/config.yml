@@ -26,6 +26,10 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      # Need this for the artillery CLI to be able to load the plugin in integration
+      # tests:
+      - run: ln -s ~/repo ~/$CIRCLE_PROJECT_REPONAME
+
       - run: npm install
 
       - save_cache:
