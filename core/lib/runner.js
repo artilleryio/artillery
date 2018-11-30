@@ -410,7 +410,10 @@ function createContext(script) {
   //
   if (script.config.payload) {
     _.each(script.config.payload, function(el) {
-      let row = el.reader(el.data);
+
+      // If data = [] (i.e. the CSV file is empty, or only has headers and
+      // skipHeaders = true), then row could = undefined
+      let row = el.reader(el.data) || [];
       _.each(el.fields, function(fieldName, j) {
         result.vars[fieldName] = row[j];
       });
