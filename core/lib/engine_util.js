@@ -243,7 +243,7 @@ function template(o, context) {
 }
 
 function renderVariables (str, vars) {
-  const RX = /{{{?[\s$\w\.\[\]\'\"]+}}}?/g;
+  const RX = /{{{?[\s$\w\.\[\]\'\"-]+}}}?/g;
   let rxmatch;
   let result = str.substring(0, str.length);
 
