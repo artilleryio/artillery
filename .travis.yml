@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - "7.8.0"
+  - "10.14.1"
 sudo: false
 before_script:
   - git clone https://github.com/sstephenson/bats.git /tmp/bats
