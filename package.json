@@ -7,7 +7,7 @@
     "node": ">= 6"
   },
   "scripts": {
-    "test": "bash test/runner.sh && bash test/core/run.sh",
+    "test": "bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary"
   },
