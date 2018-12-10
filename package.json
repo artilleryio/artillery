@@ -33,10 +33,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/shoreditch-ops/artillery.git"
+    "url": "https://github.com/artilleryio/artillery.git"
   },
   "bugs": {
-    "url": "https://github.com/shoreditch-ops/artillery/issues",
+    "url": "https://github.com/artilleryio/artillery/issues",
     "email": "npm@veldstra.org"
   },
   "dependencies": {
