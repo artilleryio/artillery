@@ -353,7 +353,7 @@ function runScenario(script, intermediate, runState) {
     runState.compiledScenarios = _.map(
         script.scenarios,
         function(scenarioSpec) {
-          const name = scenarioSpec.engine || 'http';
+          const name = scenarioSpec.engine || script.config.engine || 'http';
           const engine = runState.engines.find((e) => e.__name === name);
           return engine.createScenario(scenarioSpec, runState.scenarioEvents);
         }
