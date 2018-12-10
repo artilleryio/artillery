@@ -195,15 +195,19 @@ function template(o, context) {
     return undefined;
   }
 
-  if (o.constructor === Object) {
-    result = traverse(o).map(function(x) {
-
-      if (typeof x === 'string') {
-        this.update(template(x, context));
-      } else {
-        return x;
-      }
-    });
+  const objtype = Object.prototype.toString.call(o);
+  if (objtype === '[object Object]') {
+    return Object.keys(o).reduce(
+      (hash, key) =>
+        Object.assign({}, hash, {
+          [template(key, context)]: template(o[key], context)
+        }),
+      {}
+    );
+  } else if (objtype === '[object Array]') {    return o.reduce(
+      (array, current) => array.concat(template(current, context)),
+      []
+    );   
   } else if (typeof o === 'string') {
     if (!/{{/.test(o)) {
       return o;
@@ -239,7 +243,7 @@ function template(o, context) {
 }
 
 function renderVariables (str, vars) {
-  const RX = /{{{?[\s$\w\.\[\]\'\"]+}}}?/g;
+  const RX = /{{{?[\s$\w\.\[\]\'\"-]+}}}?/g;
   let rxmatch;
   let result = str.substring(0, str.length);
 

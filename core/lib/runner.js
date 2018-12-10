@@ -400,7 +400,8 @@ function createContext(script) {
     },
     funcs: {
       $randomNumber: $randomNumber,
-      $randomString: $randomString
+      $randomString: $randomString,
+      $template: input => engineUtil.template(input, { vars: result.vars })
     }
   };
   let result = _.cloneDeep(INITIAL_CONTEXT);
