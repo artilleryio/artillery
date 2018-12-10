@@ -3,16 +3,13 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:10
 
     working_directory: ~/repo
 
     steps:
-      - run: sudo apt-get install jq
-      - run: sudo apt-get install gcc-4.8
-      - run: sudo apt-get install g++-4.8
       - run: sudo git clone https://github.com/sstephenson/bats.git
-      - run: pushd bats && sudo bash install.sh /usr/local && popd && sudo rm -rf bats
+      - run: cd bats && sudo bash install.sh /usr/local
 
       - checkout
 
