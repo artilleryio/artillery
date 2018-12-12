@@ -86,11 +86,9 @@
     "hapi-auth-basic": "^5.0.0",
     "istanbul": "^0.4.5",
     "nock": "^9.2.5",
-    "pre-commit": "^1.2.2",
     "prettier": "^1.5.2",
     "sinon": "^4.5.0",
     "socket.io": "^2.1.0",
     "tape": "^4.9.0"
   },
-  "pre-commit": []
 }
