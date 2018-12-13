@@ -1,6 +1,6 @@
 # artillery-plugin-expect
 
-CI status: [![CircleCI](https://circleci.com/gh/shoreditch-ops/artillery-plugin-expect/tree/master.svg?style=svg)](https://circleci.com/gh/shoreditch-ops/artillery-plugin-expect/tree/master)
+[![CircleCI](https://circleci.com/gh/artilleryio/artillery-plugin-expect/tree/master.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery-plugin-expect/tree/master)
 
 ## Functional API testing with Artillery
 
