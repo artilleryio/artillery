@@ -258,7 +258,8 @@ function renderVariables (str, vars) {
     if (matches[0] === str) {
       // there's nothing else in the template but the variable
       const varName = str.replace(/{/g, '').replace(/}/g, '').trim();
-      return sanitiseValue(L.get(vars, varName));
+      const resolvedStr = sanitiseValue(L.get(vars, varName));
+      return resolvedStr || str; // return resolved or template.
     }
   }
 
