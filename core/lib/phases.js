@@ -83,9 +83,11 @@ function createPause(spec, ee) {
 }
 
 function createRamp(spec, ee) {
-  const tick = 1000 / spec.rampTo; // smallest tick
+  const tick = 1000 / Math.max(spec.arrivalRate, spec.rampTo); // smallest tick
   const r0 = spec.arrivalRate; // initial arrival rate
-  const periods = spec.rampTo - spec.arrivalRate + 1;
+  const difference = spec.rampTo - spec.arrivalRate;
+  const offset = difference < 0 ? -1 : 1;
+  const periods = Math.abs(difference) + 1;
   const ticksPerPeriod = (spec.duration / periods) * 1000 / tick;
   const periodLenSec = spec.duration / periods;
 
@@ -113,8 +115,8 @@ function createRamp(spec, ee) {
       let startedAt = Date.now();
       if(++ticksElapsed > ticksPerPeriod) {
         debug(`ticksElapsed: ${ticksElapsed}; upping probability or stopping`);
-        if (currentRate < spec.rampTo) {
-          currentRate++;
+        if (offset === -1 ? currentRate > spec.rampTo : currentRate < spec.rampTo) {
+          currentRate += offset;
           ticksElapsed = 0;
 
           p = (periodLenSec * currentRate) / ticksPerPeriod;
