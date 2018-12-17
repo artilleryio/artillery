@@ -10,9 +10,8 @@
 }
 
 @test "artillery -V prints the right version number" {
-  version1=$(./bin/artillery -V)
-  version2=$(grep version package.json | tr -d '"version:, ''"')
-  [[ $version1 = $version2 ]]
+  ./bin/artillery -V | grep -i 'version info'
+  [[ $? -eq 0 ]]
 }
 
 @test "Can run a quick HTTP test with 'artillery quick'" {
