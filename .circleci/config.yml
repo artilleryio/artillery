@@ -31,45 +31,22 @@ jobs:
 
       - run: npm run commitlint-since-last-mr
       - run: npm test
-  docker_build:
-    working_directory: /app
+
+  maybe_build_docker_image:
+    working_directory: ~/repo
     docker:
       - image: docker:18
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          name: Build image
-          command: docker build -t artilleryio/artillery:$CIRCLE_TAG .
-      - run:
-          name: Test image
-          command: docker run --rm -it artilleryio/artillery:$CIRCLE_TAG quick -d 20 -c 10 -n 20 https://artillery.io/
-      - run:
-          name: Publish image
-          command: |
-            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-            docker push artilleryio/artillery:$CIRCLE_TAG
+      - run: sh .circleci/docker-build.sh
 
 workflows:
   version: 2
-  untagged_build:
+  test:
     jobs:
-      - run_tests:
-          filters:
-            tags:
-              ignore: /v.+/
-  tagged_build:
-    jobs:
-      - run_tests:
-          filters:
-            tags:
-              only: /v.+/
-      - docker_build:
+      - run_tests
+      - maybe_build_docker_image:
           requires:
             - run_tests
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9])+(-[a-zA-Z0-9]+)*$/
-            branches:
-              ignore: /.*/
