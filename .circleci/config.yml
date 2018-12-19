@@ -55,7 +55,10 @@ workflows:
   version: 2
   untagged_build:
     jobs:
-      - run_tests
+      - run_tests:
+          filters:
+            tags:
+              ignore: /v.+/
   tagged_build:
     jobs:
       - run_tests:
