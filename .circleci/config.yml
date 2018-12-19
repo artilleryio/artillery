@@ -53,12 +53,20 @@ jobs:
 
 workflows:
   version: 2
-  test:
+  untagged_build:
     jobs:
       - run_tests
+  tagged_build:
+    jobs:
+      - run_tests:
+          filters:
+            tags:
+              only: /v.+/
       - docker_build:
           requires:
             - run_tests
           filters:
             tags:
               only: /v[0-9]+(\.[0-9])+(-[a-zA-Z0-9]+)*$/
+            branches:
+              ignore: /.*/
