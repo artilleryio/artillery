@@ -56,8 +56,6 @@ workflows:
   test:
     jobs:
       - run_tests
-  docker:
-    jobs:
       - docker_build:
           requires:
             - run_tests
