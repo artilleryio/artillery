@@ -7,6 +7,7 @@
 const debug = require('debug')('plugin:expect');
 const urlparse = require('url').parse;
 const chalk = require('chalk');
+const _ = require('lodash');
 
 const EXPECTATIONS = require('./lib/expectations');
 const FORMATTERS = require('./lib/formatters');
@@ -82,13 +83,16 @@ function expectationsPluginCheckExpectations(
 ) {
   debug('Checking expectations');
 
-  const expectations = [].concat(req.expect || []);
+  const expectations = _.isArray(req.expect) ?
+        req.expect :
+        _.map(req.expect, (v, k) => { const o = {}; o[k] = v; return o; });
+
   const results = [];
 
   let body = maybeParseBody(res);
 
-  expectations.forEach(ex => {
-    const checker = Object.keys(ex)[0]; // TODO: can only have one
+  _.each(expectations, ex => {
+    const checker = Object.keys(ex)[0];
     debug(`checker: ${checker}`);
     let result = EXPECTATIONS[checker].call(
       this,
