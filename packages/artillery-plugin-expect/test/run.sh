@@ -12,6 +12,12 @@ MOCKINGJAY_VERSION="1.10.7"
 mock_server_pid=
 mock_server_status=
 
+cleanup() {
+    kill $mock_server_pid
+}
+
+trap cleanup EXIT
+
 if [[ ! -z ${CIRCLECI:-""} ]] ; then
     curl -L -o mockingjay-server "https://github.com/quii/mockingjay-server/releases/download/$MOCKINGJAY_VERSION/linux_386_mockingjay-server"
     chmod +x mockingjay-server
@@ -19,7 +25,7 @@ if [[ ! -z ${CIRCLECI:-""} ]] ; then
     mock_server_pid=$!
     mock_server_status=$?
 else
-    docker run --rm -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_SERVER" --config /data/mock-pets-server.yaml &
+    docker run --rm -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml &
     mock_server_pid=$!
     mock_server_status=$?
 fi
@@ -32,8 +38,5 @@ fi
 sleep 5
 
 test_status=$("$DIR"/../node_modules/.bin/ava $DIR/index.js)
-
-kill $mock_server_pid
-sleep 5
 
 exit $test_status
