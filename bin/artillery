@@ -73,4 +73,13 @@ program.parse(process.argv);
 
 if (!process.argv.slice(2).length) {
   program.help();
+} else {
+  const commands = program.args.filter((a) => typeof a === 'object');
+  if (commands.length != 1) {
+    console.log(
+      `${chalk.red('  Error:')} Unknown Artillery command`
+    );
+    program.help();
+    process.exitCode = 1;
+  }
 }
