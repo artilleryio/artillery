@@ -10,15 +10,19 @@ config:
       fields:
         - url
         - statusCode
+  ensure:
+    maxErrorRate: 0
 scenarios:
   - flow:
       - get:
+          name: "List all pets"
           url: "/pets"
           expect:
             - contentType: json
             - statusCode: 200
             - hasProperty: result
       - post:
+          name: "Create a pet"
           url: "/pets"
           json:
             name: Tiki
@@ -26,6 +30,7 @@ scenarios:
           expect:
             statusCode: 202
       - get:
+          name: "Get a pet"
           url: "/pets/1"
           capture:
             - json: "$.result.0.name"
@@ -37,6 +42,7 @@ scenarios:
               - "{{ name }}"
               - "Luna"
       - get:
+          name: "Get a non-existent pet"
           url: "/pets/2"
           expect:
             statusCode: 404
@@ -45,3 +51,13 @@ scenarios:
           url: "{{ url }}"
           expect:
             statusCode: "{{ statusCode }}"
+      - get:
+          name: "Get a user"
+          url: "/users/1"
+          capture:
+            - json: $.user
+              as: uid
+          expect:
+            equals:
+              - "{{ uid }}"
+              - "banana"

@@ -28,7 +28,7 @@ function expectEquals(expectation, body, req, res, userContext) {
   };
 
   const values = _.map(expectation.equals, (str) => {
-    return String(template(String(str), userContext.vars));
+    return String(template(String(str), userContext));
   });
 
   const unique = _.uniq(values);
