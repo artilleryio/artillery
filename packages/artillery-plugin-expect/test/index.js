@@ -64,7 +64,7 @@ test('Expectation: statusCode', async (t) => {
 });
 
 test('Integration with Artillery', async (t) => {
-  const output = shelljs.exec(
+  const result = shelljs.exec(
     `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
   {
     env: {
@@ -72,8 +72,18 @@ test('Integration with Artillery', async (t) => {
       PATH: process.env.PATH
     },
     silent: true
-  }).stdout;
+  });
+
+  const output = result.stdout;
+
+  const EXPECTED_EXPECTATION_COUNT = 10;
+  const actualCount = output.split('\n').filter((s) => {
+    return s.startsWith('  ok') || s.startsWith('  not ok');
+  }).length;
+
+  t.true(EXPECTED_EXPECTATION_COUNT === actualCount);
 
   t.true(output.indexOf('ok contentType json') > -1);
   t.true(output.indexOf('ok statusCode 404') > -1);
+  t.true(result.code === 0);
 });

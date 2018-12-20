@@ -23,3 +23,11 @@
     body: '{"result": [{"name": "Luna", "species": "dog"}]}'
     headers:
       content-type: application/json
+- request:
+    uri: /users/1
+    method: GET
+  response:
+    code: 200
+    body: '{"user": "banana", "user_id": 15}'
+    headers:
+      content-type: application/json
