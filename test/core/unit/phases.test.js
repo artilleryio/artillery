@@ -103,17 +103,28 @@ test('arrivalCount', function(t) {
   phaser.run();
 });
 
-test('ramp', function(t) {
-  const phaseSpec = {
+test('rampUp', function(t) {
+  testRamp(t, {
     duration: 15,
     arrivalRate: 1,
     rampTo: 20
-  };
+  });
+});
+
+test('rampDown', function(t) {
+  testRamp(t, {
+    duration: 15,
+    arrivalRate: 20,
+    rampTo: 1
+  });
+});
+
+function testRamp(t, phaseSpec) {
   let phaser = createPhaser([phaseSpec]);
 
 
   let expected = 0;
-  let periods = phaseSpec.rampTo - phaseSpec.arrivalRate + 1;
+  let periods = Math.abs(phaseSpec.rampTo - phaseSpec.arrivalRate) + 1;
   let periodLenSec = phaseSpec.duration / periods;
   for(let i = 1; i <= periods; i++) {
     let expectedInPeriod = periodLenSec * i;
@@ -159,4 +170,4 @@ test('ramp', function(t) {
   });
   startedAt = Date.now();
   phaser.run();
-});
+}

@@ -7,7 +7,6 @@
 const async = require('async');
 const _ = require('lodash');
 const request = require('request');
-
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
 const debugResponse = require('debug')('http:response');
@@ -22,14 +21,30 @@ const filtrex = require('filtrex');
 
 module.exports = HttpEngine;
 
+const DEFAULT_AGENT_OPTIONS = {
+  keepAlive: true,
+  keepAliveMsec: 1000
+};
+
 function HttpEngine(script) {
   this.config = script.config;
 
+  // If config.http.pool is set, create & reuse agents for all requests (with
+  // max sockets set). That's what we're done here.
+  // If config.http.pool is not set, we create new agents for each virtual user.
+  // That's done when the VU is initialized.
+
+  let maxSockets = Infinity;
   if (script.config.http && script.config.http.pool) {
-    this.pool = {
-      maxSockets: Number(script.config.http.pool)
-    };
+    maxSockets = Number(script.config.http.pool);
   }
+  let agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+    maxSockets: maxSockets,
+    maxFreeSockets: maxSockets
+  });
+
+  this._httpAgent = new http.Agent(agentOpts);
+  this._httpsAgent = new https.Agent(agentOpts);
 }
 
 HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
@@ -133,8 +148,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     return function(context, callback) {
       let processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
-        return processFunc(context, ee, function() {
-          return callback(null, context);
+        return processFunc(context, ee, function(hookErr) {
+          if (hookErr) {
+            ee.emit('error', hookErr.code || hookErr.message);
+          }
+          return callback(hookErr, context);
         });
       } else {
         return process.nextTick(function () { callback(null, context); });
@@ -171,12 +189,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       let cond;
       let result;
       try {
-        cond = filtrex(params.ifTrue);
+        cond = _.has(config.processor, params.ifTrue) ?  config.processor[params.ifTrue]  : filtrex(params.ifTrue);
         result = cond(context.vars);
       } catch (e) {
         result = 1; // if the expression is incorrect, just proceed // TODO: debug message
       }
-      if (typeof result === 'undefined' || result === 0) {
+      if (!result) {
         return process.nextTick(function () {
           callback(null, context);
         });
@@ -225,6 +243,20 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         } else if (requestParams.body) {
           requestParams.body = template(requestParams.body, context);
           // TODO: Warn if body is not a string or a buffer
+        }
+        
+        // add loop, name & uri elements to be interpolated
+        if (context.vars.$loopElement) {
+          context.vars.$loopElement = template(context.vars.$loopElement, context);
+        }        
+        if (requestParams.name) {
+          requestParams.name = template(requestParams.name, context);
+        }
+        if (requestParams.uri) {
+          requestParams.uri = template(requestParams.uri, context);
+        }
+        if (requestParams.url) {
+          requestParams.url = template(requestParams.url, context);
         }
 
         // TODO: Use traverse on the entire flow instead
@@ -291,14 +323,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         requestParams.url = url;
 
-        if (!self.pool) {
-          if ((/^https/i).test(requestParams.url)) {
-            requestParams.agent = context._httpsAgent;
-          } else {
-            requestParams.agent = context._httpAgent;
-          }
+        if ((/^https/i).test(requestParams.url)) {
+          requestParams.agent = context._httpsAgent;
         } else {
-          requestParams.pool = self.pool;
+          requestParams.agent = context._httpAgent;
         }
 
         function requestCallback(err, res, body) {
@@ -419,7 +447,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         if (typeof requestParams.capture === 'object' ||
             typeof requestParams.match === 'object' ||
             requestParams.afterResponse ||
-            opts.afterResponse ||
+            (typeof opts.afterResponse === 'object' && opts.afterResponse.length > 0) ||
             process.env.DEBUG) {
           maybeCallback = requestCallback;
         }
@@ -436,7 +464,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         request(requestParams, maybeCallback)
           .on('request', function(req) {
-            debugRequests("request start: %s", req.path);
+            debugRequests('request start: %s', req.path);
             ee.emit('request');
 
             const startedAt = process.hrtime();
@@ -445,7 +473,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               let code = res.statusCode;
               const endedAt = process.hrtime(startedAt);
               let delta = (endedAt[0] * 1e9) + endedAt[1];
-              debugRequests("request end: %s", req.path);
+              debugRequests('request end: %s', req.path);
               ee.emit('response', delta, code, context._uid);
             });
           }).on('end', function() {
@@ -472,30 +500,25 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
 HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
-  let config = this.config;
-  let tls = config.tls || {};
 
   return function scenario(initialContext, callback) {
     initialContext._successCount = 0;
 
     initialContext._jar = request.jar();
-    let keepAliveMsec = 1000;
-    let maxSockets = 1;
-    if (self.config.http && self.config.http.maxSockets) {
-      maxSockets = self.config.http.maxSockets;
-    }
-    if (!self.pool) {
-      let agentOpts = {
-        keepAlive: true,
-        keepAliveMsecs: keepAliveMsec,
-        maxSockets: maxSockets,
-        maxFreeSockets: maxSockets
-      };
 
+    if (self.config.http && typeof self.config.http.pool !== 'undefined') {
+      // Reuse common agents (created in the engine instance constructor)
+      initialContext._httpAgent = self._httpAgent;
+      initialContext._httpsAgent = self._httpsAgent;
+    } else {
+      // Create agents just for this VU
+      const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+        maxSockets: 1,
+        maxFreeSockets: 1
+      });
       initialContext._httpAgent = new http.Agent(agentOpts);
       initialContext._httpsAgent = new https.Agent(agentOpts);
     }
-
 
     let steps = _.flatten([
       function zero(cb) {

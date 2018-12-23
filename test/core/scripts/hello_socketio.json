@@ -5,7 +5,7 @@
         "rejectUnauthorized": true
       },
       "phases": [
-        {"duration": 15, "arrivalRate": 1}
+        {"duration": 1, "arrivalRate": 1}
       ]
   },
   "scenarios": [
@@ -28,7 +28,22 @@
         {"emit": { "channel": "echo", "data": "ping", "acknowledge": {"match": {"value": "pong"}} }},
         {"think": 1},
         {"emit": { "channel": "echo", "data": "ping", "acknowledge": {"match": {"json": "$.1.answer", "value": 42}} }},
-        {"think": 1}
+        {"think": 1},
+
+        {"loop": [
+          {"emit": { "channel": "echo", "data": "outer {{ outerElement }} {{ outerCount }}" }},
+          {"emit": { "channel": "echo", "data": "count:inc", "acknowledge": {"match": {"value": "count"}}}},
+          {"think": 1},
+          {"emit": { "channel": "echo", "data": "outer - element: {{ outerElement }} count: {{ outerCount }}" }},
+          {"think": 1},
+          {"loop": [
+            {"emit": { "channel": "echo", "data": "count:inc", "acknowledge": {"match": {"value": "count"}}}},
+            {"emit": { "channel": "echo", "data": "inner - element: {{ innerElement }} count: {{ innerCount }}" }}
+          ], "loopElement": "innerElement", "loopValue": "innerCount", "over": ["one", "two", "three"]}
+        ], "loopElement": "outerElement", "loopValue":"outerCount", "count": 3},
+
+        {"emit": {"channel": "echo", "data": "count:read", "acknowledge": {"match": {"json": "$.1.answer", "value": 12}}}},
+        {"emit": {"channel": "echo", "data": "count:reset", "acknowledge": {"match": {"json": "$.1.answer", "value": 0}}}}
       ]
     }
   ]

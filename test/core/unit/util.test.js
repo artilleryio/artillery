@@ -66,32 +66,83 @@ test('rendering variables', function(t) {
   let str = 'Hello {{ name }}, hope your {{{ day }}} is going great!';
   let vars = {
     name: 'Hassy',
-    day: 'Friday'
+    day: 'Friday',
+    favoriteThings: {
+      color: 'red',
+      food: 'tacos',
+      day: 'Friday',
+      animals: ['dogs', 'cats', 'ponies', 'donkeys']
+    },
+    zeroValue: 0,
+    falseValue: false,
+    trueValue: true
   };
 
+  const render = util._renderVariables;
+
   t.assert(
-    util._renderVariables(str, vars) === 'Hello Hassy, hope your Friday is going great!',
+    render(str, vars) === 'Hello Hassy, hope your Friday is going great!',
     'Variables are substituted with either double or triple curly braces');
 
   t.assert(
-    util._renderVariables('{{ s }} - {{ s }} {}', { s: 'foo' }) === 'foo - foo {}',
+    render('{{ s }} - {{ s }} {}', { s: 'foo' }) === 'foo - foo {}',
     'Multiple instances of a variable get replaced');
 
   t.assert(
-    util._renderVariables(' {{   foo}} ', { foo: 'bar' }) === ' bar ',
+    render(' {{   foo}} ', { foo: 'bar' }) === ' bar ',
     'Whitespace inside templates is not significant');
 
   t.assert(
-    util._renderVariables('Hello {{ name }}', { foo: 'bar', day: 'Sunday' }) === 'Hello undefined',
+    render('Hello {{ name }}', { foo: 'bar', day: 'Sunday' }) === 'Hello undefined',
     'Undefined variables get replaced with undefined string');
 
   t.assert(
-    util._renderVariables('', { foo: 'bar', name: 'Hassy', color: 'red' }) === '',
+    render('', { foo: 'bar', name: 'Hassy', color: 'red' }) === '',
     'Empty string produces an empty string');
 
   t.assert(
-    util._renderVariables('Hello world!', { foo: 'bar', name: 'Hassy', color: 'red' }) === 'Hello world!',
+    render('Hello world!', { foo: 'bar', name: 'Hassy', color: 'red' }) === 'Hello world!',
     'String with no templates produces itself');
+
+  t.assert(
+    render('{{ favoriteThings.color }}', vars) === 'red',
+    'Object properties may be looked up with dots'
+  );
+
+  t.assert(
+    render('{{ favoriteThings.animals[0] }}', vars) === 'dogs',
+    'Numeric indexes may be used for property lookups'
+  );
+
+  t.assert(
+    render('{{favoriteThings.dayOfTheWeek}}', vars) === '',
+    'Non-existent property lookup returns an empty string'
+  );
+
+  t.assert(
+    render('{{ favoriteThings.animals }}', vars) === vars.favoriteThings.animals,
+    'Values returned from property lookups retain their type'
+  );
+
+  t.assert(
+    render('abc-{{ favoriteThings.animals[1] }}-123-{{ day }} 🐢🚀', vars) === 'abc-cats-123-Friday 🐢🚀',
+    'Values returned from property lookups are interpolated as expected'
+  );
+
+  t.assert(
+    render('{{ zeroValue }}', vars) === 0,
+    'Can render zero values'
+  );
+
+  t.assert(
+    render('{{ falseValue }}', vars) === false,
+    'Can render false values'
+  );
+
+  t.assert(
+    render('{{ trueValue }}', vars) === true,
+    'Can render true values'
+  );
 
   t.end();
 });

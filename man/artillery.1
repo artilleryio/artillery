@@ -1,10 +1,44 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "ARTILLERY" "1" "January 2016" "artillery.io" ""
+.TH "ARTILLERY" "8" "December 2018" "" ""
 .
 .SH "NAME"
-\fBartillery\fR \- simple and powerful load\-generator
+\fBartillery\fR \- backend & API testing toolkit
+.
+.SH "DESCRIPTION"
+Artillery is a toolkit for load testing and functional testing of backend services & APIs\. It supports HTTP, WebSocket, and Socket\.io out of the box, and can be extended with plugins\.
+.
+.SH "SYNOPSIS"
+The artillery CLI has several commands\. Run artillery \-\-help to see all of the available commands:
+.
+.IP "" 4
+.
+.nf
+
+artillery \-\-help
+
+
+Usage: artillery [options] [command]
+
+
+Commands:
+
+run [options] <script>  Run a test script\. Example: `artillery run benchmark\.yml`
+quick [options] <url>   Run a quick test without writing a test script
+report <file>           Create a report from a JSON file created by "artillery run"
+
+Options:
+
+\-h, \-\-help     output usage information
+\-V, \-\-version  output the version number
+.
+.fi
+.
+.IP "" 0
 .
 .P
-Please see https://artillery\.io for documentation\.
+To see detailed help on a specific artillery command, use the \-\-help flag with that command, e\.g\. artillery run \-\-help\.
+.
+.SH "WWW"
+https://artillery\.io

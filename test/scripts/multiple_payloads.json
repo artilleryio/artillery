@@ -12,6 +12,10 @@
         {
           "path": "./urls.csv",
           "fields": ["url"]
+        },
+        {
+          "path": "./{{$environment}}-urls.csv",
+          "fields": ["url"]
         }
       ]
   },

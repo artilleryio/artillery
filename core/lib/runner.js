@@ -34,7 +34,11 @@ const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 module.exports = {
   runner: runner,
   validate: validate,
-  stats: Stats
+  stats: Stats,
+  contextFuncs: {
+    $randomString,
+    $randomNumber
+  }
 };
 
 function validate(script) {
@@ -253,69 +257,68 @@ function run(script, ee, options, runState) {
     let intermediate = Stats.create();
     let aggregate = [];
 
-    let phaser = createPhaser(script.config.phases);
-    phaser.on('arrival', function() {
-            runScenario(script, intermediate, runState);
-    });
-    phaser.on('phaseStarted', function(spec) {
-        ee.emit('phaseStarted', spec);
-    });
-    phaser.on('phaseCompleted', function(spec) {
-        ee.emit('phaseCompleted', spec);
-    });
-    phaser.on('done', function() {
-        debug('All phases launched');
+  let phaser = createPhaser(script.config.phases);
+  phaser.on('arrival', function() {
+    runScenario(script, intermediate, runState);
+  });
+  phaser.on('phaseStarted', function(spec) {
+    ee.emit('phaseStarted', spec);
+  });
+  phaser.on('phaseCompleted', function(spec) {
+    ee.emit('phaseCompleted', spec);
+  });
+  phaser.on('done', function() {
+    debug('All phases launched');
 
-        const doneYet = setInterval(function checkIfDone() {
-            if (runState.pendingScenarios === 0) {
-                if (runState.pendingRequests !== 0) {
-                    debug('DONE. Pending requests: %s', runState.pendingRequests);
-                }
+    const doneYet = setInterval(function checkIfDone() {
+      if (runState.pendingScenarios === 0) {
+        if (runState.pendingRequests !== 0) {
+          debug('DONE. Pending requests: %s', runState.pendingRequests);
+        }
 
-                clearInterval(doneYet);
-                clearInterval(periodicStatsTimer);
+        clearInterval(doneYet);
+        clearInterval(periodicStatsTimer);
 
-                sendStats();
+        sendStats();
 
-                intermediate.free();
+        intermediate.free();
 
-                let aggregateReport = Stats.combine(aggregate).report();
-                return ee.emit('done', aggregateReport);
-            } else {
-                debug('Pending requests: %s', runState.pendingRequests);
-                debug('Pending scenarios: %s', runState.pendingScenarios);
-            }
-        }, 500);
-    });
+        let aggregateReport = Stats.combine(aggregate).report();
+        return ee.emit('done', aggregateReport);
+      } else {
+        debug('Pending requests: %s', runState.pendingRequests);
+        debug('Pending scenarios: %s', runState.pendingScenarios);
+      }
+    }, 500);
+  });
 
-    const periodicStatsTimer = setInterval(sendStats, options.periodicStats * 1000);
+  const periodicStatsTimer = setInterval(sendStats, options.periodicStats * 1000);
 
-    function sendStats() {
-        intermediate._concurrency = runState.pendingScenarios;
-        intermediate._pendingRequests = runState.pendingRequests;
-        ee.emit('stats', intermediate.clone());
-        delete intermediate._entries;
-        aggregate.push(intermediate.clone());
-        intermediate.reset();
-    }
+  function sendStats() {
+    aggregate.push(intermediate.clone());
+    intermediate._concurrency = runState.pendingScenarios;
+    intermediate._pendingRequests = runState.pendingRequests;
+    ee.emit('stats', intermediate.clone());
+    intermediate.reset();
+  }
 
-    phaser.run();
+  phaser.run();
 }
 
 function runScenario(script, intermediate, runState) {
-    const start = process.hrtime();
+  const start = process.hrtime();
 
-    //
-    // Compile scenarios if needed
-    //
-    if (!runState.compiledScenarios) {
-        _.each(script.scenarios, function(scenario) {
-            if (!scenario.weight) {
-                scenario.weight = 1;
-            }
-        });
+  //
+  // Compile scenarios if needed
+  //
+  if (!runState.compiledScenarios) {
+    _.each(script.scenarios, function(scenario) {
+      if (!scenario.weight) {
+        scenario.weight = 1;
+      }
+    });
 
-        runState.picker = wl(script.scenarios);
+    runState.picker = wl(script.scenarios);
 
     runState.scenarioEvents = new EventEmitter();
     runState.scenarioEvents.on('counter', function(name, value) {
@@ -337,63 +340,63 @@ function runScenario(script, intermediate, runState) {
     runState.scenarioEvents.on('request', function() {
       intermediate.newRequest();
 
-            runState.pendingRequests++;
-        });
-        runState.scenarioEvents.on('match', function() {
-            intermediate.addMatch();
-        });
-        runState.scenarioEvents.on('response', function(delta, code, uid) {
-            intermediate.completedRequest();
-            intermediate.addLatency(delta);
-            intermediate.addCode(code);
+      runState.pendingRequests++;
+    });
+    runState.scenarioEvents.on('match', function() {
+      intermediate.addMatch();
+    });
+    runState.scenarioEvents.on('response', function(delta, code, uid) {
+      intermediate.completedRequest();
+      intermediate.addLatency(delta);
+      intermediate.addCode(code);
 
-            let entry = [Date.now(), uid, delta, code];
+      let entry = [Date.now(), uid, delta, code];
+      intermediate.addEntry(entry);
 
-            intermediate.addEntry(entry);
+      runState.pendingRequests--;
+    });
 
-            runState.pendingRequests--;
-        });
+    runState.compiledScenarios = _.map(
+        script.scenarios,
+        function(scenarioSpec) {
+          const name = scenarioSpec.engine || script.config.engine || 'http';
+          const engine = runState.engines.find((e) => e.__name === name);
+          return engine.createScenario(scenarioSpec, runState.scenarioEvents);
+        }
+    );
+  }
 
-        runState.compiledScenarios = _.map(
-            script.scenarios,
-            function(scenarioSpec) {
-                const name = scenarioSpec.engine || 'http';
-                const engine = runState.engines.find((e) => e.__name === name);
-                return engine.createScenario(scenarioSpec, runState.scenarioEvents);
-            }
-        );
-    }
+  let i = runState.picker()[0];
 
-    let i = runState.picker()[0];
-
-    debug('picking scenario %s (%s) weight = %s',
+  debug('picking scenario %s (%s) weight = %s',
         i,
         script.scenarios[i].name,
         script.scenarios[i].weight);
 
-    intermediate.newScenario(script.scenarios[i].name || i);
+  intermediate.newScenario(script.scenarios[i].name || i);
 
-    const scenarioStartedAt = process.hrtime();
-    const scenarioContext = createContext(script);
-    const finish = process.hrtime(start);
-    const runScenarioDelta = (finish[0] * 1e9) + finish[1];
-    debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
-    runState.compiledScenarios[i](scenarioContext, function(err, context) {
-        runState.pendingScenarios--;
-        if (err) {
-            debug(err);
-        } else {
-            const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
-            const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
-            intermediate.addScenarioLatency(delta);
-            intermediate.completedScenario();
-        }
-    });
+  const scenarioStartedAt = process.hrtime();
+  const scenarioContext = createContext(script);
+
+  const finish = process.hrtime(start);
+  const runScenarioDelta = (finish[0] * 1e9) + finish[1];
+  debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
+  runState.compiledScenarios[i](scenarioContext, function(err, context) {
+    runState.pendingScenarios--;
+    if (err) {
+      debug(err);
+    } else {
+      const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
+      const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
+      intermediate.addScenarioLatency(delta);
+      intermediate.completedScenario();
+    }
+  });
 }
 
 /**
-* Create initial context for a scenario.
-*/
+ * Create initial context for a scenario.
+ */
 function createContext(script) {
   let initialContext = {};
   if (contextVars) {
@@ -404,14 +407,17 @@ function createContext(script) {
     initialContext = {
       vars: {
         target: script.config.target,
-        $environment: script._environment
+        $environment: script._environment,
+        $processEnvironment: process.env
       }
     };
   }
   initialContext.funcs = {
     $randomNumber: $randomNumber,
-    $randomString: $randomString
-  };
+    $randomString: $randomString,
+    $template: input => engineUtil.template(input, { vars: result.vars })
+
+};
 
   let result = _.cloneDeep(initialContext);
 
@@ -420,7 +426,10 @@ function createContext(script) {
   //
   if (script.config.payload) {
     _.each(script.config.payload, function(el) {
-      let row = el.reader(el.data);
+
+      // If data = [] (i.e. the CSV file is empty, or only has headers and
+      // skipHeaders = true), then row could = undefined
+      let row = el.reader(el.data) || [];
       _.each(el.fields, function(fieldName, j) {
         result.vars[fieldName] = row[j];
       });
@@ -450,11 +459,11 @@ function createContext(script) {
 // Generator functions for template strings:
 //
 function $randomNumber(min, max) {
-    return _.random(min, max);
+  return _.random(min, max);
 }
 
 function $randomString(length) {
-    return Math.random().toString(36).substr(2, length);
+  return Math.random().toString(36).substr(2, length);
 }
 
 function handleBeforeRequests(script, runnableScript, runnerEngines) {
