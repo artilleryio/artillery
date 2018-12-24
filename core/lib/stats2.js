@@ -26,6 +26,9 @@ function create() {
 function combine(statsObjects) {
   let result = create();
   L.each(statsObjects, function(stats) {
+    L.each(stats._entries, function(entry) {
+      result._entries.push(entry);
+    });
     L.each(stats._latencies, function(latency) {
       result._latencies.push(latency);
     });
@@ -166,7 +169,9 @@ Stats.prototype.report = function() {
   result.scenariosCompleted = this._completedScenarios;
   result.requestsCompleted = this._completedRequests;
 
-  let latencies = this._latencies;
+  let latencies = L.map(this._entries, (e) => {
+    return e[2];
+  });
 
   result.latency = {
     min: round(L.min(latencies) / 1e6, 1),

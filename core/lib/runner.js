@@ -25,8 +25,6 @@ const Engines = {
   socketio: {}
 };
 
-let contextVars;
-
 JSCK.Draft4 = JSCK.draft4;
 
 const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
@@ -46,7 +44,7 @@ function validate(script) {
   return validation;
 }
 
-function runner(script, payload, options, callback) {
+async function runner(script, payload, options, callback) {
   let opts = _.assign({
     periodicStats: script.config.statsInterval || 10,
     mode: script.config.mode || 'uniform'
@@ -126,140 +124,144 @@ function runner(script, payload, options, callback) {
       }
   );
 
+  //
+  // compile and run before script
+  //
+  let contextVars;
+  if (script.before) {
+    contextVars = await handleBeforeRequests(script, runnableScript, runnerEngines, ee);
+  }
 
-  return handleBeforeRequests(script, runnableScript, runnerEngines)
-    .then(function(){
-        //
-        // load plugins:
-        //
-        let runnerPlugins = [];
-        let requirePaths = [];
+  //
+  // load plugins:
+  //
+  let runnerPlugins = [];
+  let requirePaths = [];
 
-        let pro = null;
-        if (tryResolve('artillery-pro')) {
-            pro = require('artillery-pro');
-            requirePaths = requirePaths.concat(pro.getPluginPath());
-        } else {
-            debug('Artillery Pro is not installed.');
+  let pro = null;
+  if (tryResolve('artillery-pro')) {
+    pro = require('artillery-pro');
+    requirePaths = requirePaths.concat(pro.getPluginPath());
+  } else {
+    debug('Artillery Pro is not installed.');
+  }
+
+  requirePaths.push('');
+
+  if (process.env.ARTILLERY_PLUGIN_PATH) {
+    requirePaths = requirePaths.concat(process.env.ARTILLERY_PLUGIN_PATH.split(':'));
+  }
+
+  debug('require paths: ', requirePaths);
+
+  runnableScript.config.plugins = runnableScript.config.plugins || {};
+
+  if (process.env.ARTILLERY_PLUGINS) {
+    let additionalPlugins = {};
+    try {
+      additionalPlugins = JSON.parse(process.env.ARTILLERY_PLUGINS);
+    } catch (ignoreErr) {
+      debug(ignoreErr);
+    }
+    runnableScript.config.plugins = Object.assign(
+      runnableScript.config.plugins,
+      additionalPlugins);
+  }
+
+  _.each(runnableScript.config.plugins, function tryToLoadPlugin(pluginConfig, pluginName) {
+    let pluginConfigScope = pluginConfig.scope || runnableScript.config.pluginsScope;
+    let pluginPrefix = pluginConfigScope ? pluginConfigScope : 'artillery-plugin-';
+    let requireString = pluginPrefix + pluginName;
+    let Plugin, plugin;
+
+    requirePaths.forEach(function(rp) {
+      try {
+        Plugin = require(path.join(rp, requireString));
+        if (typeof Plugin === 'function') {
+          // Plugin interface v1
+          plugin = new Plugin(runnableScript.config, ee);
+          plugin.__name = pluginName;
+        } else if (typeof Plugin === 'object' && typeof Plugin.Plugin === 'function') {
+          // Plugin interface 2+
+          plugin = new Plugin.Plugin(runnableScript, ee, options);
+          plugin.__name = pluginName;
         }
-
-        requirePaths.push('');
-
-        if (process.env.ARTILLERY_PLUGIN_PATH) {
-            requirePaths = requirePaths.concat(process.env.ARTILLERY_PLUGIN_PATH.split(':'));
-        }
-
-        debug('require paths: ', requirePaths);
-
-        runnableScript.config.plugins = runnableScript.config.plugins || {};
-
-        if (process.env.ARTILLERY_PLUGINS) {
-            let additionalPlugins = {};
-            try {
-            additionalPlugins = JSON.parse(process.env.ARTILLERY_PLUGINS);
-            } catch (ignoreErr) {
-            debug(ignoreErr);
-            }
-            runnableScript.config.plugins = Object.assign(
-            runnableScript.config.plugins,
-            additionalPlugins);
-        }
-
-        _.each(runnableScript.config.plugins, function tryToLoadPlugin(pluginConfig, pluginName) {
-            let pluginConfigScope = pluginConfig.scope || runnableScript.config.pluginsScope;
-            let pluginPrefix = pluginConfigScope ? pluginConfigScope : 'artillery-plugin-';
-            let requireString = pluginPrefix + pluginName;
-            let Plugin, plugin;
-
-            requirePaths.forEach(function(rp) {
-            try {
-                Plugin = require(path.join(rp, requireString));
-                if (typeof Plugin === 'function') {
-                // Plugin interface v1
-                plugin = new Plugin(runnableScript.config, ee);
-                plugin.__name = pluginName;
-                } else if (typeof Plugin === 'object' && typeof Plugin.Plugin === 'function') {
-                // Plugin interface 2+
-                plugin = new Plugin.Plugin(runnableScript, ee, options);
-                plugin.__name = pluginName;
-                }
-            } catch (err) {
-                debug(err);
-            }
-            });
-
-            if (!Plugin || !plugin) {
-            console.log(
-                'WARNING: plugin %s specified but module %s could not be loaded',
-                pluginName,
-                requireString);
-            warnings.plugins[pluginName] = {
-                message: 'Could not load'
-            };
-            } else {
-            debug('Plugin %s loaded from %s', pluginName, requireString);
-            runnerPlugins.push(plugin);
-            }
-        });
-
-        const promise = new Promise(function(resolve, reject) {
-            ee.run = function() {
-            let runState = {
-                pendingScenarios: 0,
-                pendingRequests: 0,
-                compiledScenarios: null,
-                scenarioEvents: null,
-                picker: undefined,
-                plugins: runnerPlugins,
-                engines: runnerEngines
-            };
-            debug('run() with: %j', runnableScript);
-            run(runnableScript, ee, opts, runState);
-            };
-
-            ee.stop = function (done) {
-            // allow plugins to cleanup
-            A.eachSeries(
-                runnerPlugins,
-                function(plugin, next) {
-                if (plugin.cleanup) {
-                    plugin.cleanup(function(err) {
-                    if (err) {
-                        debug(err);
-                    }
-                    return next();
-                    });
-                } else {
-                    return next();
-                }
-                },
-                function(err) {
-                return done(err);
-                });
-            };
-
-            // FIXME: Warnings should be returned from this function instead along with
-            // the event emitter. That will be a breaking change.
-            ee.warnings = warnings;
-
-            resolve(ee);
+      } catch (err) {
+        debug(err);
+      }
     });
 
-    if (callback && typeof callback === 'function') {
-        promise.then(callback.bind(null, null), callback);
+    if (!Plugin || !plugin) {
+      console.log(
+        'WARNING: plugin %s specified but module %s could not be loaded',
+        pluginName,
+        requireString);
+      warnings.plugins[pluginName] = {
+        message: 'Could not load'
+      };
+    } else {
+      debug('Plugin %s loaded from %s', pluginName, requireString);
+      runnerPlugins.push(plugin);
     }
-
-    return promise;
   });
+
+  const promise = new Promise(function(resolve, reject) {
+    ee.run = function() {
+      let runState = {
+        pendingScenarios: 0,
+        pendingRequests: 0,
+        compiledScenarios: null,
+        scenarioEvents: null,
+        picker: undefined,
+        plugins: runnerPlugins,
+        engines: runnerEngines
+      };
+      debug('run() with: %j', runnableScript);
+      run(runnableScript, ee, opts, runState, contextVars);
+    };
+
+    ee.stop = function (done) {
+      // allow plugins to cleanup
+      A.eachSeries(
+        runnerPlugins,
+        function(plugin, next) {
+          if (plugin.cleanup) {
+            plugin.cleanup(function(err) {
+              if (err) {
+                debug(err);
+              }
+              return next();
+            });
+          } else {
+            return next();
+          }
+        },
+        function(err) {
+          return done(err);
+        });
+    };
+
+    // FIXME: Warnings should be returned from this function instead along with
+    // the event emitter. That will be a breaking change.
+    ee.warnings = warnings;
+
+    resolve(ee);
+  });
+
+  if (callback && typeof callback === 'function') {
+    promise.then(callback.bind(null, null), callback);
+  }
+
+  return promise;
 }
 
-function run(script, ee, options, runState) {
-    let intermediate = Stats.create();
-    let aggregate = [];
+function run(script, ee, options, runState, contextVars) {
+  let intermediate = Stats.create();
+  let aggregate = [];
 
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function() {
-    runScenario(script, intermediate, runState);
+    runScenario(script, intermediate, runState, contextVars);
   });
   phaser.on('phaseStarted', function(spec) {
     ee.emit('phaseStarted', spec);
@@ -305,7 +307,7 @@ function run(script, ee, options, runState) {
   phaser.run();
 }
 
-function runScenario(script, intermediate, runState) {
+function runScenario(script, intermediate, runState, contextVars) {
   const start = process.hrtime();
 
   //
@@ -376,7 +378,7 @@ function runScenario(script, intermediate, runState) {
   intermediate.newScenario(script.scenarios[i].name || i);
 
   const scenarioStartedAt = process.hrtime();
-  const scenarioContext = createContext(script);
+  const scenarioContext = createContext(script, contextVars);
 
   const finish = process.hrtime(start);
   const runScenarioDelta = (finish[0] * 1e9) + finish[1];
@@ -397,29 +399,22 @@ function runScenario(script, intermediate, runState) {
 /**
  * Create initial context for a scenario.
  */
-function createContext(script) {
-  let initialContext = {};
-  if (contextVars) {
-    initialContext = {
-      vars: contextVars
-    };
-  } else {
-    initialContext = {
-      vars: {
-        target: script.config.target,
-        $environment: script._environment,
-        $processEnvironment: process.env
-      }
-    };
-  }
-  initialContext.funcs = {
-    $randomNumber: $randomNumber,
-    $randomString: $randomString,
-    $template: input => engineUtil.template(input, { vars: result.vars })
-
-};
-
-  let result = _.cloneDeep(initialContext);
+function createContext(script, contextVars) {
+  const INITIAL_CONTEXT_VARIABLES = {
+    target: script.config.target,
+    $environment: script._environment,
+    $processEnvironment: process.env
+  };
+  const CONTEXT_VARIABLES = contextVars ? contextVars : INITIAL_CONTEXT_VARIABLES;
+  const CONTEXT = {
+    vars: CONTEXT_VARIABLES,
+    funcs: {
+      $randomNumber: $randomNumber,
+      $randomString: $randomString,
+      $template: input => engineUtil.template(input, { vars: result.vars })
+    }
+  };
+  let result = _.cloneDeep(CONTEXT);
 
   //
   // variables from payloads
@@ -466,24 +461,27 @@ function $randomString(length) {
   return Math.random().toString(36).substr(2, length);
 }
 
-function handleBeforeRequests(script, runnableScript, runnerEngines) {
-    return new Promise(function(resolve, reject){
-        if (script.before) {
-            let name = runnableScript.before.engine || 'http';
-            let engine = runnerEngines.find((e) => e.__name === name);
-            let beforeTestScenario = engine.createScenario(runnableScript.before);
-            let beforeTestContext = createContext(script);
-            beforeTestScenario(beforeTestContext, function(err, context) {
-              if (err) {
-                debug(err);
-                return reject(err);
-              } else {
-                contextVars = context.vars;
-                return resolve();
-              }
-            });
-        } else {
-            return resolve();
-        }
+function handleBeforeRequests(script, runnableScript, runnerEngines, testEvents) {
+  let ee = new EventEmitter();
+  return new Promise(function(resolve, reject){
+    ee.on('request', function() {
+      testEvents.emit('beforeTestRequest');
     });
+    ee.on('error', function(error) {
+      testEvents.emit('beforeTestError', error);
+    });
+
+    let name = runnableScript.before.engine || 'http';
+    let engine = runnerEngines.find((e) => e.__name === name);
+    let beforeTestScenario = engine.createScenario(runnableScript.before, ee);
+    let beforeTestContext = createContext(script);
+    beforeTestScenario(beforeTestContext, function(err, context) {
+      if (err) {
+        debug(err);
+        return reject(err);
+      } else {
+        return resolve(context.vars);
+      }
+    });
+  });
 }

@@ -70,7 +70,6 @@ test('Capture before test - JSON', (t) => {
     }
 
     runner(script, parsedData, {}).then(function(ee) {
-
       ee.on('done', function(report) {
         let c200 = report.codes[200];
         let expectedAmountRequests = script.config.phases[0].duration * script.config.phases[0].arrivalRate;
