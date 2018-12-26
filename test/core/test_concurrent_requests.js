@@ -14,7 +14,6 @@ test('scenarios avoided', function(t) {
     });
 
     ee.on('done', function(stats) {
-      console.log(stats);
       t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
       t.end();
     });
