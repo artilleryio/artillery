@@ -41,6 +41,7 @@ function combine(statsObjects) {
       }
     });
     result._completedScenarios += stats._completedScenarios;
+    result._scenariosAvoided += stats._scenariosAvoided;
     L.each(stats._codes, function(count, code) {
       if(result._codes[code]) {
         result._codes[code] += count;
@@ -224,6 +225,7 @@ Stats.prototype.report = function() {
     result.concurrency = this._concurrency;
   }
   result.pendingRequests = this._pendingRequests;
+  result.scenariosAvoided = this._scenariosAvoided;
 
   return result;
 };
@@ -261,6 +263,7 @@ Stats.prototype.reset = function() {
   this._concurrency = null;
   this._pendingRequests = 0;
   this._scenarioCounter = {};
+  this._scenariosAvoided = 0;
   return this;
 };
 
