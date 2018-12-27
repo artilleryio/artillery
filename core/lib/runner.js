@@ -29,14 +29,16 @@ JSCK.Draft4 = JSCK.draft4;
 
 const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 
+let contextFuncs = {
+  $randomString,
+  $randomNumber
+};
+
 module.exports = {
   runner: runner,
   validate: validate,
   stats: Stats,
-  contextFuncs: {
-    $randomString,
-    $randomNumber
-  }
+  contextFuncs: contextFuncs
 };
 
 function validate(script) {
@@ -50,6 +52,12 @@ async function runner(script, payload, options, callback) {
       mode: script.config.mode || 'uniform'
     },
     options);
+
+  if (script.config.customFunctions) {
+    Object.keys(script.config.customFunctions).forEach((customFunction) => {
+      contextFuncs[customFunction] = script.config.customFunctions[customFunction]
+    });
+  }
 
   let warnings = {
     plugins: {
@@ -412,11 +420,7 @@ function createContext(script, contextVars) {
   const CONTEXT_VARIABLES = contextVars ? contextVars : INITIAL_CONTEXT_VARIABLES;
   const CONTEXT = {
     vars: CONTEXT_VARIABLES,
-    funcs: {
-      $randomNumber: $randomNumber,
-      $randomString: $randomString,
-      $template: input => engineUtil.template(input, { vars: result.vars })
-    }
+    funcs: contextFuncs
   };
   let result = _.cloneDeep(CONTEXT);
 
