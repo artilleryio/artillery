@@ -1,0 +1,34 @@
+{
+  "config": {
+    "target": "http://localhost:3000",
+    "customFunctions": "./customFunctions.js",
+    "phases": [
+      {
+        "duration": 1,
+        "arrivalRate": 1
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Use random uuid",
+      "flow": [
+        {
+          "post": {
+            "url": "/pets",
+            "json": {"name": "{{uuid()}}", "species":  "{{$dateNow}}"},
+            "capture": [{
+              "json": "$.id",
+              "as": "pet_id"
+            }]
+          }
+        },
+        {
+          "get": {
+            "url": "/pets/{{pet_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -29,14 +29,16 @@ JSCK.Draft4 = JSCK.draft4;
 
 const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 
+let contextFuncs = {
+  $randomString,
+  $randomNumber
+};
+
 module.exports = {
   runner: runner,
   validate: validate,
   stats: Stats,
-  contextFuncs: {
-    $randomString,
-    $randomNumber
-  }
+  contextFuncs: contextFuncs
 };
 
 function validate(script) {
@@ -50,6 +52,16 @@ function runner(script, payload, options, callback) {
     mode: script.config.mode || 'uniform'
   },
   options);
+
+  if (script.config.customFunctions) {
+    const customFunctionsPath = path.resolve(
+      path.dirname(options.absoluteScriptPath),
+      script.config.customFunctions);
+    let customFunctions = require(customFunctionsPath);
+    Object.keys(customFunctions).forEach((customFunction) => {
+      contextFuncs[customFunction] = customFunctions[customFunction]
+    });
+  }
 
   let warnings = {
     plugins: {
@@ -404,18 +416,8 @@ function createContext(script) {
       $template: input => engineUtil.template(input, { vars: result.vars })
     }
   };
-  let result = _.cloneDeep(INITIAL_CONTEXT);
 
-  let absoluteScriptPath = path.resolve(process.cwd());
-  if (script.config.customFunctions) {
-    let customFunctionsPath = path.resolve(
-      path.dirname(absoluteScriptPath),
-      script.config.customFunctions);
-    let customFunctions = require(customFunctionsPath);
-    Object.keys(customFunctions).forEach((customFunction) => {
-      initialContext.funcs[customFunction] = customFunctions[customFunction]
-    })
-  }
+  let result = _.cloneDeep(INITIAL_CONTEXT);
 
   //
   //
