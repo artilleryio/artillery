@@ -260,8 +260,12 @@ function run(script, ee, options, runState, contextVars) {
   let aggregate = [];
 
   let phaser = createPhaser(script.config.phases);
-  phaser.on('arrival', function() {
-    runScenario(script, intermediate, runState, contextVars);
+  phaser.on('arrival', function () {
+    if (runState.pendingRequests >= (process.env.CONCURRENCY_LIMIT || 250)) {
+      intermediate._scenariosAvoided++;
+    } else {
+      runScenario(script, intermediate, runState);
+    }
   });
   phaser.on('phaseStarted', function(spec) {
     ee.emit('phaseStarted', spec);
