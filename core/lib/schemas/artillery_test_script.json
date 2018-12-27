@@ -31,18 +31,6 @@
         }
       }
     },
-    "before": {
-      "type": "object",
-      "properties": {
-        "flow": {
-          "type": "array",
-          "items": {
-            "type": "object"            
-          }
-        }
-      },
-      "required": ["flow"]
-    },
     "scenarios": {
       "type": "array"
     }
