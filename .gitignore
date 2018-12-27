@@ -21,4 +21,3 @@ artillery_report*
 coverage/*
 .vagrant/
 .vscode
-.history
