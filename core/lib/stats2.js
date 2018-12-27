@@ -201,7 +201,7 @@ Stats.prototype.report = function() {
   result.codes = this._codes;
   result.matches = this._matches;
 
-  result.latencies = this.getEntries();
+  result.latencies = latencies;
 
   result.customStats = {};
   L.each(this._customStats, function(ns, name) {
