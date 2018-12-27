@@ -256,6 +256,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.uri = template(requestParams.uri, context);
         }
         if (requestParams.url) {
+          requestParams.requestEntryPath = params.url || params.uri;
           requestParams.url = template(requestParams.url, context);
         }
 
@@ -471,10 +472,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
             req.on('response', function updateLatency(res) {
               let code = res.statusCode;
+              let path = res.req.method + ' ' + requestParams.requestEntryPath;
               const endedAt = process.hrtime(startedAt);
               let delta = (endedAt[0] * 1e9) + endedAt[1];
               debugRequests('request end: %s', req.path);
-              ee.emit('response', delta, code, context._uid);
+              ee.emit('response', delta, code, context._uid, path);
             });
           }).on('end', function() {
             context._successCount++;
