@@ -309,10 +309,11 @@ function run(script, ee, options, runState, contextVars) {
   const periodicStatsTimer = setInterval(sendStats, options.periodicStats * 1000);
 
   function sendStats() {
-    aggregate.push(intermediate.clone());
     intermediate._concurrency = runState.pendingScenarios;
     intermediate._pendingRequests = runState.pendingRequests;
     ee.emit('stats', intermediate.clone());
+    delete intermediate._entries;
+    aggregate.push(intermediate.clone());
     intermediate.reset();
   }
 
