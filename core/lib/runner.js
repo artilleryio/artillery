@@ -253,7 +253,7 @@ function run(script, ee, options, runState) {
 
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function () {
-    if (runState.pendingRequests >= (process.env.CONCURRENCY_LIMIT || 250)) {
+    if (process.env.CONCURRENCY_LIMIT && runState.pendingRequests >= process.env.CONCURRENCY_LIMIT) {
       intermediate._scenariosAvoided++;
     } else {
       runScenario(script, intermediate, runState);
