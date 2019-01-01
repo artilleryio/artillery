@@ -272,7 +272,7 @@ function run(script, ee, options, runState, contextVars) {
     if (process.env.CONCURRENCY_LIMIT && runState.pendingRequests >= process.env.CONCURRENCY_LIMIT) {
       intermediate._scenariosAvoided++;
     } else {
-      runScenario(script, intermediate, runState);
+      runScenario(script, intermediate, runState, contextVars);
     }
   });
   phaser.on('phaseStarted', function(spec) {
