@@ -1,0 +1,49 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 1 }
+      ],
+      "payload": {
+        "fields": ["species", "name"]
+      },
+      "ensure": {
+        "p95": 300
+      },
+      "variables": {
+        "jsonPathExpr": ["$.id"]
+      }
+  },
+  "before": {
+    "flow": [
+      {"post":
+        {
+          "url": "/pets",
+          "json": {"name": "Guiness", "species": "Dog"},
+          "capture": [{
+            "json": "{{{ jsonPathExpr }}}",
+            "as": "id"
+          }, {
+            "json": "$.doesnotexist",
+            "transform": "this.doesnotexist.toUpperCase()",
+            "as": "doesnotexist"
+          }, {
+            "regexp": ".+",
+            "as": "id2"
+          }]
+        }
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Get the same pet in every scenario, as the pet was created once before the test started. ",
+      "flow": [
+        {"get": {
+          "url": "/pets/{{ id }}",
+          "match": {"json": "$.name", "value": "Guiness"}
+        }}
+      ]
+    }
+  ]
+}
