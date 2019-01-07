@@ -1,0 +1,185 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+const datadogMetrics = require('datadog-metrics');
+const dogapi = require('dogapi');
+const Hotshots = require('hot-shots');
+const debug = require('debug')('plugin:publish-metrics');
+
+function DatadogReporter(config, events, script) {
+  this.metrics = null;
+  this.dogapi = dogapi;
+  this.events = events;
+  this.reportingType = '';
+
+  config = Object.assign({
+    host: '127.0.0.1',
+    port: 8125,
+    event: { send: false },
+    tags: []
+  }, config);
+
+  config.event = Object.assign(
+    {
+      title: `Artillery.io Test ${Date.now()}`,
+      text: `Target: ${script.config.target}`,
+      priority: 'low',
+      alertType: 'info',
+      tags: []
+    },
+    config.event);
+
+  debug('creating DatadogReporter with config');
+  debug(config);
+
+  this.config = config;
+  if (config.apiKey) {
+    debug('Initializing datadog via HTTPS');
+
+    this.metrics = new datadogMetrics.BufferedMetricsLogger({
+      apiKey: config.apiKey,
+      prefix: config.prefix,
+      defaultTags: config.tags,
+      flushIntervalSeconds: 5
+    });
+
+    this.reportingType = 'api';
+  } else if (config.host && config.port) {
+    debug('Initializing datadog via agent');
+    this.metrics = new Hotshots({
+      host: config.host,
+      port: config.port,
+      prefix: config.prefix,
+      globalTags: config.tags, // list of strings:likethis?
+      bufferFlushInterval: 1000
+    });
+    this.reportingType = 'agent';
+  } else {
+    events.emit('userWarning', `datadog reporting requires apiKey or both host and port to be set`);
+  }
+
+  this.startedEventSent = false;
+  if (config.event && String(config.event.send) !== "false") {
+    if (this.reportingType === 'api') {
+      this.dogapi.initialize({
+        api_key: config.apiKey
+      });
+    }
+
+    events.on('phaseStarted', () => {
+      if(!this.startedEventSent) {
+        debug('sending start event');
+        this.event({
+          title: `Started: ${config.event.title}`,
+          text: config.event.text,
+          aggregationKey: config.event.aggregationKey,
+          sourceTypeName: config.event.sourceTypeName,
+          priority: config.event.priority,
+          tags: config.event.tags,
+          alertType: config.event.alertType
+        });
+        this.startedEventSent = true;
+      }
+    });
+  }
+
+  events.on('stats', (stats) => {
+    const report = stats.report();
+
+    let metrics = this.metrics;
+
+    metrics.increment('scenarios.created', report.scenariosCreated);
+    metrics.increment('scenarios.completed', report.scenariosCompleted);
+    metrics.increment('requests.completed', report.requestsCompleted);
+
+    if (report.latency) {
+      metrics.gauge('latency.min', report.latency.min);
+      metrics.gauge('latency.max', report.latency.max);
+      metrics.gauge('latency.median', report.latency.median);
+      metrics.gauge('latency.p95', report.latency.p95);
+      metrics.gauge('latency.p99', report.latency.p99);
+    }
+
+    if (report.errors) {
+      Object.keys(report.errors).forEach((errCode) => {
+        metrics.increment(`errors.${errCode}`, errors[errCode]);
+      });
+    }
+
+    if (report.codes) {
+      let codeCounts = {};
+      Object.keys(report.codes).forEach((code) => {
+        const codeFamily = `${String(code)[0]}xx`;
+        if (!codeCounts[codeFamily]) {
+          codeCounts[codeFamily] = 0;
+        }
+        codeCounts[codeFamily] += report.codes[code];
+      });
+      Object.keys(codeCounts).forEach((codeFamily) => {
+        metrics.increment(`response.${codeFamily}`, codeCounts[codeFamily]);
+      });
+    }
+
+    if (report.rps) {
+      metrics.gauge('rps.mean', report.rps.mean);
+      metrics.increment('rps.count', report.count);
+    }
+  });
+
+  return this;
+}
+
+DatadogReporter.prototype.event = function(opts) {
+  const send = this.reportingType === 'api' ? this.dogapi.event.create : this.metrics.event;
+  send(opts.title,
+       opts.text || opts.title,
+       {
+         aggregation_key: opts.aggregationKey,
+         priority: opts.priority,
+         sourceTypeName: opts.sourceTypeName,
+         alertType: opts.alertType
+       },
+       opts.tags);
+};
+
+DatadogReporter.prototype.cleanup = function(done) {
+  if (this.startedEventSent) {
+    const config = this.config;
+    this.event({
+      title: `Finished: ${config.event.title}`,
+      text: config.event.text,
+      aggregationKey: config.event.aggregationKey,
+      sourceTypeName: config.event.sourceTypeName,
+      priority: config.event.priority,
+      tags: config.event.tags,
+      alertType: config.event.alertType
+    });
+  }
+
+  debug('flushing metrics');
+  if (typeof this.metrics.flush === 'function') {
+    this.metrics.flush((_err) => {
+      done();
+    });
+  } else {
+    setTimeout(
+      () => {
+        this.metrics.close((_err) => {
+          done();
+        });
+      },
+      // see bufferFlushInterval above, needs to be higher; close()
+      // doesn't flush (yet)
+      1500);
+  }
+};
+
+
+function createDatadogReporter(config, events, script) {
+  return new DatadogReporter(config, events, script);
+}
+
+module.exports = {
+  createDatadogReporter
+};

@@ -1,0 +1,19 @@
+{
+  "name": "artillery-plugin-publish-metrics",
+  "version": "1.0.0",
+  "description": "Publish metrics from your Artillery.io tests to Datadog and other external monitoring & observability systems.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "async": "^2.6.1",
+    "datadog-metrics": "^0.8.1",
+    "debug": "^4.1.1",
+    "dogapi": "^2.8.3",
+    "hot-shots": "^6.0.1"
+  }
+}
