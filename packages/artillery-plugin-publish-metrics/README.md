@@ -4,6 +4,8 @@
 
 Use this plugin to send metrics tracked by Artillery (e.g. response latency, network errors, HTTP response codes) to an external monitoring system such as Datadog or InfluxDB.
 
+![Datadog example](./doc/datadog.png)
+
 **Supported targets:**
 
 - Datadog (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
