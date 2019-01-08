@@ -10,7 +10,7 @@ const debug = require('debug')('plugin:publish-metrics:datadog-statsd');
 function DatadogReporter(config, events, script) {
   this.metrics = null;
   this.dogapi = dogapi;
-  this.reportingType = '';
+  this.reportingType = ''; // api | agent (DogStatsD, StatsD, Telegraf/StatsD)
 
   config = Object.assign({
     host: '127.0.0.1',
@@ -109,7 +109,7 @@ function DatadogReporter(config, events, script) {
 
     if (report.errors) {
       Object.keys(report.errors).forEach((errCode) => {
-        metrics.increment(`errors.${errCode}`, errors[errCode]);
+        metrics.increment(`errors.${errCode}`, report.errors[errCode]);
       });
     }
 
