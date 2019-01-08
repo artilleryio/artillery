@@ -19,6 +19,16 @@ Use this plugin to send metrics tracked by Artillery (e.g. response latency, net
 
 (Want to help add your favorite monitoring system? Drop us a line.)
 
+## Published metrics
+
+- Virtual user metrics: `scenarios.created`, `scenarios.completed` - number of sessions created and successfully completed
+- HTTP-specific metrics:
+  - `requests.completed` -- number of requests completed successfully
+  - `latency.min / max / median / p95 / p99` -- response time latency distribution
+  - `codes.2xx / 3xx / 4xx / 5xx` -- response code counts
+  - `rps.mean` -- mean per/second rate of successful responses
+- Errors: `errors.ETIMEOUT / ENOTFOUND / EMFILE` - any errors encountered
+
 ## Usage
 
 An example configuration to publish metrics to Datadog via its HTTP API:
