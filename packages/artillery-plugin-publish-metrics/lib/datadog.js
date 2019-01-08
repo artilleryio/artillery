@@ -5,17 +5,17 @@
 const datadogMetrics = require('datadog-metrics');
 const dogapi = require('dogapi');
 const Hotshots = require('hot-shots');
-const debug = require('debug')('plugin:publish-metrics');
+const debug = require('debug')('plugin:publish-metrics:datadog-statsd');
 
 function DatadogReporter(config, events, script) {
   this.metrics = null;
   this.dogapi = dogapi;
-  this.events = events;
   this.reportingType = '';
 
   config = Object.assign({
     host: '127.0.0.1',
     port: 8125,
+    prefix: 'artillery.',
     event: { send: false },
     tags: []
   }, config);
@@ -47,13 +47,19 @@ function DatadogReporter(config, events, script) {
     this.reportingType = 'api';
   } else if (config.host && config.port) {
     debug('Initializing datadog via agent');
-    this.metrics = new Hotshots({
+    const options = {
       host: config.host,
       port: config.port,
       prefix: config.prefix,
-      globalTags: config.tags, // list of strings:likethis?
+      globalTags: config.tags,
       bufferFlushInterval: 1000
-    });
+    };
+
+    if (config.type === 'influxdb-statsd') {
+      options.telegraf = true;
+    }
+
+    this.metrics = new Hotshots(options);
     this.reportingType = 'agent';
   } else {
     events.emit('userWarning', `datadog reporting requires apiKey or both host and port to be set`);
@@ -131,7 +137,8 @@ function DatadogReporter(config, events, script) {
 }
 
 DatadogReporter.prototype.event = function(opts) {
-  const send = this.reportingType === 'api' ? this.dogapi.event.create : this.metrics.event;
+  const send = this.reportingType === 'api' ? this.dogapi.event.create.bind(this.dogapi) : this.metrics.event.bind(this.metrics);
+
   send(opts.title,
        opts.text || opts.title,
        {

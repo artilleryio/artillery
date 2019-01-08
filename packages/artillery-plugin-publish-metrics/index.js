@@ -17,10 +17,9 @@ function Plugin(script, events) {
   this.reporters = [];
 
   script.config.plugins['publish-metrics'].forEach((config) => {
-    if (config.type === 'datadog') {
+    if (config.type === 'datadog' || config.type === 'statsd' || config.type === 'influxdb-statsd') {
       const { createDatadogReporter } = require('./lib/datadog');
       this.reporters.push(createDatadogReporter(config, events, script));
-      // TODO: Emit user warnings if no API key is present etc.
     } else {
       events.emit(
         'userWarning',
