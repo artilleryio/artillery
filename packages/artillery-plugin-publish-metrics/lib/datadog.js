@@ -31,7 +31,9 @@ function DatadogReporter(config, events, script) {
     config.event);
 
   debug('creating DatadogReporter with config');
-  debug(config);
+  debug(config.apiKey ?
+        Object.assign(config, { apiKey: `${config.apiKey.substring(0, 3)}********************${config.apiKey.substring(30, 33)}` }) :
+        config );
 
   this.config = config;
   if (config.apiKey) {
