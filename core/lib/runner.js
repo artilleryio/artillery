@@ -32,7 +32,11 @@ const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 module.exports = {
   runner: runner,
   validate: validate,
-  stats: Stats
+  stats: Stats,
+  contextFuncs: {
+    $randomString,
+    $randomNumber
+  }
 };
 
 function validate(script) {
@@ -350,7 +354,7 @@ function runScenario(script, intermediate, runState) {
     runState.compiledScenarios = _.map(
         script.scenarios,
         function(scenarioSpec) {
-          const name = scenarioSpec.engine || 'http';
+          const name = scenarioSpec.engine || script.config.engine || 'http';
           const engine = runState.engines.find((e) => e.__name === name);
           return engine.createScenario(scenarioSpec, runState.scenarioEvents);
         }
@@ -368,6 +372,7 @@ function runScenario(script, intermediate, runState) {
 
   const scenarioStartedAt = process.hrtime();
   const scenarioContext = createContext(script);
+
   const finish = process.hrtime(start);
   const runScenarioDelta = (finish[0] * 1e9) + finish[1];
   debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
@@ -391,11 +396,13 @@ function createContext(script) {
   const INITIAL_CONTEXT = {
     vars: {
       target: script.config.target,
-      $environment: script._environment
+      $environment: script._environment,
+      $processEnvironment: process.env
     },
     funcs: {
       $randomNumber: $randomNumber,
-      $randomString: $randomString
+      $randomString: $randomString,
+      $template: input => engineUtil.template(input, { vars: result.vars })
     }
   };
   let result = _.cloneDeep(INITIAL_CONTEXT);
@@ -405,7 +412,10 @@ function createContext(script) {
   //
   if (script.config.payload) {
     _.each(script.config.payload, function(el) {
-      let row = el.reader(el.data);
+
+      // If data = [] (i.e. the CSV file is empty, or only has headers and
+      // skipHeaders = true), then row could = undefined
+      let row = el.reader(el.data) || [];
       _.each(el.fields, function(fieldName, j) {
         result.vars[fieldName] = row[j];
       });

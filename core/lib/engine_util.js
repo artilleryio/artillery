@@ -11,7 +11,7 @@ const esprima = require('esprima');
 const L = require('lodash');
 const vm = require('vm');
 const A = require('async');
-const jsonpath = require('JSONPath');
+const jsonpath = require('jsonpath');
 const cheerio = require('cheerio');
 const jitter = require('./jitter').jitter;
 
@@ -73,7 +73,7 @@ function createLoopWithCount(count, steps, opts) {
     let abortEarly = false;
 
     let overValues = null;
-    let loopValue = null;
+    let loopValue = i; // default to the current iteration of the loop, ie same as $loopCount
     if (typeof opts.overValues !== 'undefined') {
       if (opts.overValues && typeof opts.overValues === 'object') {
         overValues = opts.overValues;
@@ -195,15 +195,19 @@ function template(o, context) {
     return undefined;
   }
 
-  if (o.constructor === Object) {
-    result = traverse(o).map(function(x) {
-
-      if (typeof x === 'string') {
-        this.update(template(x, context));
-      } else {
-        return x;
-      }
-    });
+  const objtype = Object.prototype.toString.call(o);
+  if (objtype === '[object Object]') {
+    return Object.keys(o).reduce(
+      (hash, key) =>
+        Object.assign({}, hash, {
+          [template(key, context)]: template(o[key], context)
+        }),
+      {}
+    );
+  } else if (objtype === '[object Array]') {    return o.reduce(
+      (array, current) => array.concat(template(current, context)),
+      []
+    );   
   } else if (typeof o === 'string') {
     if (!/{{/.test(o)) {
       return o;
@@ -239,7 +243,7 @@ function template(o, context) {
 }
 
 function renderVariables (str, vars) {
-  const RX = /{{{?[\s$\w]+}}}?/g;
+  const RX = /{{{?[\s$\w\.\[\]\'\"-]+}}}?/g;
   let rxmatch;
   let result = str.substring(0, str.length);
 
@@ -254,7 +258,7 @@ function renderVariables (str, vars) {
     if (matches[0] === str) {
       // there's nothing else in the template but the variable
       const varName = str.replace(/{/g, '').replace(/}/g, '').trim();
-      return vars[varName] || '';
+      return sanitiseValue(L.get(vars, varName));
     }
   }
 
@@ -262,7 +266,8 @@ function renderVariables (str, vars) {
     let templateStr = result.match(RX)[0];
     const varName = templateStr.replace(/{/g, '').replace(/}/g, '').trim();
 
-    let varValue = vars[varName];
+    let varValue = L.get(vars, varName);
+
     if (typeof varValue === 'object') {
       varValue = JSON.stringify(varValue);
     }
@@ -473,7 +478,18 @@ function dummyParser(body, callback) {
 
 // doc is a JSON object
 function extractJSONPath(doc, expr) {
-  let results = jsonpath.eval(doc, expr);
+  // typeof null is 'object' hence the explicit check here
+  if (typeof doc !== 'object' || doc === null) {
+    return '';
+  }
+
+  let results;
+
+  try {
+    results = jsonpath.query(doc, expr);
+  } catch (queryErr) {
+    debug(queryErr);
+  }
 
   if (!results) {
     return '';
@@ -560,4 +576,9 @@ function isXML(res) {
 
 function randomInt (low, high) {
   return Math.floor(Math.random() * (high - low + 1) + low);
+}
+
+function sanitiseValue (value) {
+  if (value === 0 || value === false) return value;
+  return value ? value : '';
 }

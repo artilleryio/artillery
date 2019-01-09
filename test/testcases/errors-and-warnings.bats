@@ -33,3 +33,8 @@
     CPU_HOT_BEFORE_WARN=5 ARTILLERY_CPU_THRESHOLD=-1 ./bin/artillery quick -d 10 -c 10 http://localhost:3003/ | grep 'CPU usage'
     [[ $? -eq 0  ]]
 }
+
+@test "Prints an error message when an unknown command is used" {
+    run './bin/artillery makemeasandwich --with cheese'
+    [[ $status -gt 0 ]]
+}

@@ -30,6 +30,6 @@ function createSequencedReader() {
 
 function createRandomReader() {
   return function(data) {
-    return data[_.random(0, data.length - 1)];
+    return data[Math.max(0, _.random(0, data.length - 1))];
   };
 }

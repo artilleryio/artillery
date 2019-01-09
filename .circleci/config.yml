@@ -1,20 +1,19 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 version: 2
 jobs:
-  build:
+  run_tests:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:10
 
     working_directory: ~/repo
 
     steps:
-      - run: sudo apt-get install jq
-      - run: sudo apt-get install gcc-4.8
-      - run: sudo apt-get install g++-4.8
-      - run: sudo git clone https://github.com/sstephenson/bats.git
-      - run: pushd bats && sudo bash install.sh /usr/local && popd && sudo rm -rf bats
-
       - checkout
+
+      - run: sudo git clone https://github.com/sstephenson/bats.git ~/bats
+      - run: pushd ~/bats && sudo bash install.sh /usr/local && popd
+
+      - run: ln -s ~/repo ~/$CIRCLE_PROJECT_REPONAME
 
       # Download and cache dependencies
       - restore_cache:
@@ -30,10 +29,24 @@ jobs:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
+      - run: npm run commitlint-since-last-mr
       - run: npm test
+
+  maybe_build_docker_image:
+    working_directory: ~/repo
+    docker:
+      - image: docker:18
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: sh .circleci/docker-build.sh
 
 workflows:
   version: 2
-  test_and_publish:
+  test:
     jobs:
-      - build
+      - run_tests
+      - maybe_build_docker_image:
+          requires:
+            - run_tests

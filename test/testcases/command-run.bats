@@ -39,8 +39,8 @@
   [ $? -eq 0 ]
 }
 
-@test "Run a script with multiple payloads" {
-  ./bin/artillery run ./test/scripts/multiple_payloads.json | grep 'All virtual users finished'
+@test "Run a script with multiple payloads and use of $environment in path" {
+  ./bin/artillery run -e local ./test/scripts/multiple_payloads.json | grep 'All virtual users finished'
   [ $? -eq 0 ]
 }
 

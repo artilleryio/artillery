@@ -22,7 +22,7 @@
 
     num200=`jq '.aggregate.codes."200"' $REPORT`
     num400=`jq '.aggregate.codes."400"' $REPORT`
-    rm "$REPORT"
+    rm "$REPORT" || true
     [[ $num200 = 10  &&  num400  -eq "null" ]]
 }
 
