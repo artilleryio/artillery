@@ -26,6 +26,9 @@
               "json": "{{{ jsonPathExpr }}}",
               "as": "id"
             }, {
+              "json": "{{{ jsonPathExpr }}}",
+              "as": "pet[id]"
+            },{
               "json": "$.doesnotexist",
               "transform": "this.doesnotexist.toUpperCase()",
               "as": "doesnotexist"
@@ -38,7 +41,11 @@
         {"get": {
           "url": "/pets/{{ id }}",
           "match": {"json": "$.name", "value": "{{ name }}"}
-        }}
+        }},
+        {"get": {
+          "url": "/pets/{{ pet.id }}",
+          "match": {"json": "$.name", "value": "{{ name }}"}
+        }}        
       ]
     }
   ]

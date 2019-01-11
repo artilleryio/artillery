@@ -45,10 +45,10 @@ test('Capture - JSON', (t) => {
         let c200 = report.codes[200];
         let c201 = report.codes[201];
 
-        let cond = c201 === c200;
+        let cond = 2 * c201 === c200;
 
         t.assert(cond,
-                 'There should be a 200 for every 201');
+                 'There should be 2 200\'s for every 201');
         if (!cond) {
           console.log('200: %s; 201: %s', c200, c201);
         }
