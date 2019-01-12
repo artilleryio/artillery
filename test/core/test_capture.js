@@ -60,6 +60,36 @@ test('Capture - JSON', (t) => {
   });
 });
 
+test('Capture and save to attribute of an Object in context.vars - JSON', (t) => {
+  const fn = path.resolve(__dirname, './scripts/captures3.json');
+  const script = require(fn);
+  const data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
+  csv(data, function(err, parsedData) {
+    if (err) {
+      t.fail(err);
+    }
+
+    runner(script, parsedData, {}).then(function(ee) {
+
+      ee.on('done', function(report) {
+        let c200 = report.codes[200];
+        let c201 = report.codes[201];
+
+        let cond = c201 === c200;
+
+        t.assert(cond,
+                 'There should be a 200 for every 201');
+        if (!cond) {
+          console.log('200: %s; 201: %s', c200, c201);
+        }
+        t.end();
+      });
+
+      ee.run();
+    });
+  });
+});
+
 test('Capture - XML', (t) => {
   if (!xmlCapture) {
     console.log('artillery-xml-capture does not seem to be installed, skipping XML capture test.');

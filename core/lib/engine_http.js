@@ -408,7 +408,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 });
 
                 _.each(result.captures, function(v, k) {
-                  context.vars[k] = v;
+                  _.set(context.vars, k, v);
                 });
               }
 
