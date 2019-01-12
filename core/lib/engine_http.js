@@ -407,7 +407,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   });
                 });
 
-                // Allows 'capture' to save to an attribute of Object in context.vars
+                // Allows 'capture' in .yaml to save to an attribute of Object in context.vars
                 _.each(result.captures, function(v, k) {
                   _.set(context.vars, k, v);
                 });
