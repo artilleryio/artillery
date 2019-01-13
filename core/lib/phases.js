@@ -31,6 +31,10 @@ function phaser(phaseSpecs) {
       return createPause(spec, ee);
     }
 
+    if (!isUndefined(spec.maxVusers)) {
+      spec.pendingVusers = 0;
+    }
+
     if (!isUndefined(spec.arrivalCount)) {
       return createArrivalCount(spec, ee);
     }
@@ -104,6 +108,11 @@ function createRamp(spec, ee) {
 
   debug(`rampTo: tick = ${tick}ms; r0 = ${r0}; periods = ${periods}; ticksPerPeriod = ${ticksPerPeriod}; period length = ${periodLenSec}s`);
 
+  let maxVusers = Infinity;
+  if (!isUndefined(spec.maxVusers)) {
+    maxVusers = spec.maxVusers;
+  }
+
   return function rampTask(callback) {
     ee.emit('phaseStarted', spec);
     let currentRate = r0;
@@ -146,20 +155,32 @@ function createRamp(spec, ee) {
 
       let prob = probabilities[i++] / 256;
       if (prob <= p) {
-        ee.emit('arrival');
+        if (spec.maxVusers) {
+          fireScenarioIfFreeVUsers(maxVusers, spec, ee);
+        } else {
+          ee.emit('arrival');
+        }
       }
     }, tick);
   };
 }
 
 function createArrivalCount(spec, ee) {
+  let maxVusers = Infinity;
+  if (!isUndefined(spec.maxVusers)) {
+    maxVusers = spec.maxVusers;
+  }
   const task = function(callback) {
     ee.emit('phaseStarted', spec);
     const duration = spec.duration * 1000;
     const interval = duration / spec.arrivalCount;
     const p = arrivals.uniform.process(interval, duration);
     p.on('arrival', function() {
-      ee.emit('arrival');
+      if (spec.maxVusers) {
+        fireScenarioIfFreeVUsers(maxVusers, spec, ee);
+      } else {
+        ee.emit('arrival');
+      }
     });
     p.on('finished', function() {
       ee.emit('phaseCompleted', spec);
@@ -172,6 +193,10 @@ function createArrivalCount(spec, ee) {
 }
 
 function createArrivalRate(spec, ee) {
+  let maxVusers = Infinity;
+  if (!isUndefined(spec.maxVusers)) {
+    maxVusers = spec.maxVusers;
+  }
   const task = function(callback) {
     ee.emit('phaseStarted', spec);
     const ar = 1000 / spec.arrivalRate;
@@ -179,7 +204,11 @@ function createArrivalRate(spec, ee) {
     debug('creating a %s process for arrivalRate', spec.mode);
     const p = arrivals[spec.mode].process(ar, duration);
     p.on('arrival', function() {
-      ee.emit('arrival');
+      if (spec.maxVusers) {
+        fireScenarioIfFreeVUsers(maxVusers, spec, ee);
+      } else {
+        ee.emit('arrival');
+      }
     });
     p.on('finished', function() {
       ee.emit('phaseCompleted', spec);
@@ -189,4 +218,13 @@ function createArrivalRate(spec, ee) {
   };
 
   return task;
+}
+
+function fireScenarioIfFreeVUsers (maxVusers, spec, ee) {
+  if (spec.pendingVusers < maxVusers) {
+    spec.pendingVusers++;
+    ee.emit('arrival', spec);
+  } else {
+    ee.emit('avoidScenario');
+  }
 }

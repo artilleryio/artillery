@@ -117,6 +117,11 @@ Stats.prototype.completedScenario = function() {
   return this;
 };
 
+Stats.prototype.avoidedScenario = function() {
+  this._scenariosAvoided++;
+  return this;
+};
+
 Stats.prototype.addCode = function(code) {
   if (!this._codes[code]) {
     this._codes[code] = 0;

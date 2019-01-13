@@ -252,12 +252,11 @@ function run(script, ee, options, runState) {
   let aggregate = [];
 
   let phaser = createPhaser(script.config.phases);
-  phaser.on('arrival', function () {
-    if (process.env.CONCURRENCY_LIMIT && runState.pendingRequests >= process.env.CONCURRENCY_LIMIT) {
-      intermediate._scenariosAvoided++;
-    } else {
-      runScenario(script, intermediate, runState);
-    }
+  phaser.on('arrival', function (spec) {
+      runScenario(script, intermediate, runState, spec);
+  });
+  phaser.on('avoidScenario', function () {
+    intermediate.avoidedScenario();
   });
   phaser.on('phaseStarted', function(spec) {
     ee.emit('phaseStarted', spec);
@@ -303,7 +302,7 @@ function run(script, ee, options, runState) {
   phaser.run();
 }
 
-function runScenario(script, intermediate, runState) {
+function runScenario(script, intermediate, runState, phaserSpec) {
   const start = process.hrtime();
 
   //
@@ -381,6 +380,9 @@ function runScenario(script, intermediate, runState) {
   debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
   runState.compiledScenarios[i](scenarioContext, function(err, context) {
     runState.pendingScenarios--;
+    if (phaserSpec && phaserSpec.pendingVusers) {
+      phaserSpec.pendingVusers--;
+    }
     if (err) {
       debug(err);
     } else {
