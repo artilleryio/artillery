@@ -4,7 +4,6 @@ const test = require('tape');
 const runner = require('../../core/lib/runner').runner;
 test('scenarios avoided - arrival rate', function(t) {
   var script = require('./scripts/concurrent_requests_arrival_rate.json');
-  process.env.CONCURRENCY_LIMIT = 10;
   runner(script).then(function(ee) {
     ee.on('phaseStarted', function(info) {
       console.log('Starting phase: %j - %s', info, new Date());
@@ -24,7 +23,6 @@ test('scenarios avoided - arrival rate', function(t) {
 
 test('scenarios avoided - arrival count', function(t) {
   var script = require('./scripts/concurrent_requests_arrival_count.json');
-  process.env.CONCURRENCY_LIMIT = 10;
   runner(script).then(function(ee) {
     ee.on('phaseStarted', function(info) {
       console.log('Starting phase: %j - %s', info, new Date());
@@ -44,7 +42,6 @@ test('scenarios avoided - arrival count', function(t) {
 
 test('scenarios avoided - ramp to', function(t) {
   var script = require('./scripts/concurrent_requests_ramp_to.json');
-  process.env.CONCURRENCY_LIMIT = 10;
   runner(script).then(function(ee) {
     ee.on('phaseStarted', function(info) {
       console.log('Starting phase: %j - %s', info, new Date());
@@ -64,7 +61,6 @@ test('scenarios avoided - ramp to', function(t) {
 
 test('scenarios avoided - multiple phases', function(t) {
   var script = require('./scripts/concurrent_requests_multiple_phases.json');
-  process.env.CONCURRENCY_LIMIT = 10;
   runner(script).then(function(ee) {
     ee.on('phaseStarted', function(info) {
       console.log('Starting phase: %j - %s', info, new Date());

@@ -12,11 +12,11 @@ env:
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test
+    - ubuntu-toolchain-r-test
     packages:
-      - jq
-      - gcc-4.8
-      - g++-4.8
+    - jq
+    - gcc-4.8
+    - g++-4.8
 notifications:
   email:
     on_success: never
