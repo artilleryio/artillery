@@ -146,7 +146,7 @@ function createRamp(spec, ee) {
 
       let prob = probabilities[i++] / 256;
       if (prob <= p) {
-        ee.emit('arrival');
+        ee.emit('arrival', spec);
       }
     }, tick);
   };
@@ -159,7 +159,7 @@ function createArrivalCount(spec, ee) {
     const interval = duration / spec.arrivalCount;
     const p = arrivals.uniform.process(interval, duration);
     p.on('arrival', function() {
-      ee.emit('arrival');
+      ee.emit('arrival', spec);
     });
     p.on('finished', function() {
       ee.emit('phaseCompleted', spec);
@@ -179,7 +179,7 @@ function createArrivalRate(spec, ee) {
     debug('creating a %s process for arrivalRate', spec.mode);
     const p = arrivals[spec.mode].process(ar, duration);
     p.on('arrival', function() {
-      ee.emit('arrival');
+      ee.emit('arrival', spec);
     });
     p.on('finished', function() {
       ee.emit('phaseCompleted', spec);

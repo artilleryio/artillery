@@ -268,9 +268,9 @@ function run(script, ee, options, runState, contextVars) {
   let aggregate = [];
 
   let phaser = createPhaser(script.config.phases);
-  phaser.on('arrival', function () {
-    if (process.env.CONCURRENCY_LIMIT && runState.pendingRequests >= process.env.CONCURRENCY_LIMIT) {
-      intermediate._scenariosAvoided++;
+  phaser.on('arrival', function (spec) {
+    if (spec.maxVusers && runState.pendingScenarios >= spec.maxVusers) {
+      intermediate.avoidedScenario();
     } else {
       runScenario(script, intermediate, runState, contextVars);
     }
