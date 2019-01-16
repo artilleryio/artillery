@@ -139,17 +139,44 @@ function DatadogReporter(config, events, script) {
 }
 
 DatadogReporter.prototype.event = function(opts) {
-  const send = this.reportingType === 'api' ? this.dogapi.event.create.bind(this.dogapi) : this.metrics.event.bind(this.metrics);
+  debug(`sending event ${opts.text || opts.title}`);
 
-  send(opts.title,
-       opts.text || opts.title,
-       {
-         aggregation_key: opts.aggregationKey,
-         priority: opts.priority,
-         sourceTypeName: opts.sourceTypeName,
-         alertType: opts.alertType
-       },
-       opts.tags);
+  const eventOpts = {
+    aggregation_key: opts.aggregationKey,
+    priority: opts.priority,
+    source_type_name: opts.sourceTypeName,
+    alert_type: opts.alertType
+  };
+
+  if (this.reportingType === 'api') {
+    this.dogapi.event.create(
+      opts.title,
+      opts.text || opts.title,
+      Object.assign({ tags: opts.tags }, eventOpts),
+      (err, res) => {
+        if (err) {
+          debug(err);
+        }
+        if (res.status !== 'ok') {
+          // A non-JSON response can be sent back when API key is not valid
+          // See https://github.com/DataDog/datadogpy/issues/169
+          debug(res);
+        }
+      });
+  } else {
+    this.metrics.event(
+      opts.title,
+      opts.text || opts.title,
+      eventOpts,
+      opts.tags,
+      (err) => {
+        if (err) {
+          debug('hotshots event callback');
+          debug(err);
+        }
+      }
+    );
+  }
 };
 
 DatadogReporter.prototype.cleanup = function(done) {
