@@ -32,8 +32,8 @@ function DatadogReporter(config, events, script) {
 
   debug('creating DatadogReporter with config');
   debug(config.apiKey ?
-        Object.assign(config, { apiKey: `${config.apiKey.substring(0, 3)}********************${config.apiKey.substring(30, 33)}` }) :
-        config );
+        Object.assign({ apiKey: sanitize(config.apiKey) }, config) :
+        config);
 
   this.config = config;
   if (config.apiKey) {
@@ -187,6 +187,10 @@ DatadogReporter.prototype.cleanup = function(done) {
 
 function createDatadogReporter(config, events, script) {
   return new DatadogReporter(config, events, script);
+}
+
+function sanitize(str) {
+  return `${str.substring(0, 3)}********************${str.substring(str.length - 3, str.length)}`;
 }
 
 module.exports = {
