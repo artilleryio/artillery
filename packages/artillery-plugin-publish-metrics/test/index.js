@@ -3,15 +3,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const test = require('ava');
-
 const path = require('path');
 const EventEmitter = require('events');
-
 const shelljs = require('shelljs');
 const dogapi = require('dogapi');
+const debug = require('debug')('test');
 
 const testId = `test${process.hrtime()[0]}${process.hrtime()[1]}`;
-console.log({ testId });
+
+debug({ testId });
 
 test.cb('Basic interface checks', t => {
   const script = {
@@ -34,8 +34,8 @@ test.cb('Basic interface checks', t => {
 });
 
 test.cb('Check that metrics are written to Datadog', t => {
-  const POLLING_INTERVAL_MS = 10 * 1e3;
-  const TIMEOUT_MS = 240 * 1e3;
+  const POLLING_INTERVAL_MS = 20 * 1e3;
+  const TIMEOUT_MS = (parseInt(process.env.DD_QUERY_TIMEOUT_SEC) || 600) * 1e3;
   const i = setInterval(checkDatadog, POLLING_INTERVAL_MS);
   let elapsed = 0;
 
@@ -50,6 +50,9 @@ test.cb('Check that metrics are written to Datadog', t => {
 
   function checkDatadog() {
     dogapi.metric.query(oneHourAgo, now, query, (err, res) => {
+      if (err) debug(err);
+      if (res) debug(res);
+
       if (res.status === 'ok' && res.series.length > 0) {
         clearInterval(i);
         t.pass(`Metrics tagged with testId:${testId} are in Datadog`);
