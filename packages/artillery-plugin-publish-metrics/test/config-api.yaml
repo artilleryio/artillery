@@ -1,7 +1,7 @@
 config:
   target: https://artillery.io
   phases:
-    - duration: 12
+    - duration: 32
       arrivalRate: 1
   plugins:
     publish-metrics:
