@@ -1,8 +1,26 @@
 # artillery-plugin-publish-metrics
 
+[![CircleCI](https://circleci.com/gh/artilleryio/artillery-plugin-publish-metrics.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery-plugin-publish-metrics)
+
 ## Purpose
 
 Use this plugin to send metrics tracked by Artillery (e.g. response latency, network errors, HTTP response codes) to an external monitoring system such as Datadog or InfluxDB.
+
+## Install
+
+The plugin needs to be installed in the same scope (globally or as a project-specific dependency) as Artillery.
+
+If you installed Artillery globally (i.e. with `npm install -g artillery`) then the plugin needs to be installed globally too:
+
+```sh
+npm install -g artillery-plugin-publish-metrics
+```
+
+If `artillery` is installed as a project-specific dependency (i.e. in a directory with `package.json` in it), install it with:
+
+```sh
+npm install artillery-plugin-publish-metrics
+```
 
 **Supported targets:**
 
