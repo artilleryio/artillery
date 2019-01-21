@@ -18,6 +18,7 @@ const createPhaser = require('./phases');
 const createReader = require('./readers');
 const engineUtil = require('./engine_util');
 const wl = require('./weighted-pick');
+const {$randomNumber, $randomString, $uuid, $dateNow} = require('./template-strings');
 
 const Engines = {
   http: {},
@@ -31,7 +32,9 @@ const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 
 let contextFuncs = {
   $randomString,
-  $randomNumber
+  $randomNumber,
+  $uuid,
+  $dateNow
 };
 
 module.exports = {
@@ -52,12 +55,6 @@ async function runner(script, payload, options, callback) {
       mode: script.config.mode || 'uniform'
     },
     options);
-
-  if (script.config.customFunctions) {
-    Object.keys(script.config.customFunctions).forEach((customFunction) => {
-      contextFuncs[customFunction] = script.config.customFunctions[customFunction]
-    });
-  }
 
   let warnings = {
     plugins: {
@@ -457,17 +454,6 @@ function createContext(script, contextVars) {
   result._uid = uuid.v4();
   result.vars.$uuid = result._uid;
   return result;
-}
-
-//
-// Generator functions for template strings:
-//
-function $randomNumber(min, max) {
-  return _.random(min, max);
-}
-
-function $randomString(length) {
-  return Math.random().toString(36).substr(2, length);
 }
 
 function handleBeforeRequests(script, runnableScript, runnerEngines, testEvents) {
