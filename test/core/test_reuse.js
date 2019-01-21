@@ -46,19 +46,7 @@ test('reuse', function(t) {
         'aggregate should have the expected number of latencies',
         report.latencies.length === expected
       );
-      if (first) {
-        let last = report.latencies.length - 1;
-        first = false;
-        lastLatency = report.latencies[last][0];
-        ee.run();
-      } else {
-        t.assert(
-          'first latency of second aggregate should be after ' +
-            'the last latency of the first aggregate',
-          lastLatency <= report.latencies[0][0]
-        );
-        t.end();
-      }
+      t.end();
     });
     ee.run();
   });
