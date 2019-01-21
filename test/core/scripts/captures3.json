@@ -1,0 +1,45 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 1 }
+      ],
+      "payload": {
+        "fields": ["species", "name"]
+      },
+      "ensure": {
+        "p95": 300
+      },
+      "variables": {
+        "jsonPathExpr": ["$.id"]
+      }
+  },
+  "scenarios": [
+    {
+      "name": "Create a pet and verify it's been created by using pet object with id attribute (JSON).",
+      "flow": [
+        {"post":
+          {
+            "url": "/pets",
+            "json": {"name": "{{ name }}", "species": "{{ species }}"},
+            "capture": [{
+              "json": "{{{ jsonPathExpr }}}",
+              "as": "pet[id]"
+            }, {
+              "json": "$.doesnotexist",
+              "transform": "this.doesnotexist.toUpperCase()",
+              "as": "doesnotexist"
+            }, {
+              "regexp": ".+",
+              "as": "id2"
+            }]
+          }
+        },
+        {"get": {
+          "url": "/pets/{{ pet.id }}",
+          "match": {"json": "$.name", "value": "{{ name }}"}
+        }}        
+      ]
+    }
+  ]
+}
