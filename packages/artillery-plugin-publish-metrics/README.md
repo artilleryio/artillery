@@ -50,7 +50,9 @@ npm install artillery-plugin-publish-metrics
   - `latency.min / max / median / p95 / p99` -- response time latency distribution
   - `codes.2xx / 3xx / 4xx / 5xx` -- response code counts
   - `rps.mean` -- mean per/second rate of successful responses
-- Errors: `errors.ETIMEOUT / ENOTFOUND / EMFILE` - any errors encountered
+- Errors:
+  - `error_count` - total number of errors encountered (useful for setting alerts that don't enumerating specific error codes)
+  - `errors.ETIMEOUT / ENOTFOUND / EMFILE` - count of specific error codes
 
 ## Usage
 
