@@ -8,10 +8,14 @@ const EventEmitter = require('events');
 const shelljs = require('shelljs');
 const dogapi = require('dogapi');
 const debug = require('debug')('test');
+const assert = require('assert');
 
 const testId = `test${process.hrtime()[0]}${process.hrtime()[1]}`;
 
 debug({ testId });
+
+assert(process.env.DD_API_KEY, 'DD_API_KEY must be set');
+assert(process.env.DD_APP_KEY, 'DD_APP_KEY must be set');
 
 test.cb('Basic interface checks', t => {
   const script = {
@@ -53,7 +57,7 @@ test.cb('Check that metrics are written to Datadog', t => {
       if (err) debug(err);
       if (res) debug(res);
 
-      if (res.status === 'ok' && res.series.length > 0) {
+      if (res && res.status === 'ok' && res.series.length > 0) {
         clearInterval(i);
         t.pass(`Metrics tagged with testId:${testId} are in Datadog`);
         t.end();
