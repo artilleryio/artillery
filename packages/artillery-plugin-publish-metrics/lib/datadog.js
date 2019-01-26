@@ -109,25 +109,34 @@ function DatadogReporter(config, events, script) {
       metrics.gauge('latency.p99', report.latency.p99);
     }
 
+    let errorCount = 0;
     if (report.errors) {
       Object.keys(report.errors).forEach((errCode) => {
+        errorCount += report.errors[errCode];
         metrics.increment(`errors.${errCode}`, report.errors[errCode]);
       });
     }
+    metrics.increment(`error_count`, errorCount);
 
+    let codeCounts = {
+      '1xx': 0,
+      '2xx': 0,
+      '3xx': 0,
+      '4xx': 0,
+      '5xx': 0
+    };
     if (report.codes) {
-      let codeCounts = {};
       Object.keys(report.codes).forEach((code) => {
         const codeFamily = `${String(code)[0]}xx`;
         if (!codeCounts[codeFamily]) {
-          codeCounts[codeFamily] = 0;
+          codeCounts[codeFamily] = 0; // 6xx etc
         }
         codeCounts[codeFamily] += report.codes[code];
       });
-      Object.keys(codeCounts).forEach((codeFamily) => {
-        metrics.increment(`response.${codeFamily}`, codeCounts[codeFamily]);
-      });
     }
+    Object.keys(codeCounts).forEach((codeFamily) => {
+      metrics.increment(`response.${codeFamily}`, codeCounts[codeFamily]);
+    });
 
     if (report.rps) {
       metrics.gauge('rps.mean', report.rps.mean);
