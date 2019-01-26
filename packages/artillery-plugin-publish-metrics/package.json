@@ -1,6 +1,6 @@
 {
   "name": "artillery-plugin-publish-metrics",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Publish metrics from your Artillery.io tests to Datadog and other external monitoring & observability systems.",
   "main": "index.js",
   "scripts": {
