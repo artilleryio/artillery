@@ -34,13 +34,13 @@ function HttpEngine(script) {
   // If config.http.pool is not set, we create new agents for each virtual user.
   // That's done when the VU is initialized.
 
-  let maxSockets = Infinity;
+  this.maxSockets = Infinity;
   if (script.config.http && script.config.http.pool) {
-    maxSockets = Number(script.config.http.pool);
+    this.maxSockets = Number(script.config.http.pool);
   }
   let agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
-    maxSockets: maxSockets,
-    maxFreeSockets: maxSockets
+    maxSockets: this.maxSockets,
+    maxFreeSockets: this.maxSockets
   });
 
   this._httpAgent = new http.Agent(agentOpts);
@@ -244,11 +244,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.body = template(requestParams.body, context);
           // TODO: Warn if body is not a string or a buffer
         }
-        
+
         // add loop, name & uri elements to be interpolated
         if (context.vars.$loopElement) {
           context.vars.$loopElement = template(context.vars.$loopElement, context);
-        }        
+        }
         if (requestParams.name) {
           requestParams.name = template(requestParams.name, context);
         }
@@ -531,14 +531,6 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
     async.waterfall(
       steps,
       function scenarioWaterfallCb(err, context) {
-        // If the connection was refused we might not have a context
-        if (context && context._httpAgent) {
-          context._httpAgent.destroy();
-        }
-        if (context && context._httpsAgent) {
-          context._httpsAgent.destroy();
-        }
-
         if (err) {
           //ee.emit('error', err.message);
           return callback(err, context);
