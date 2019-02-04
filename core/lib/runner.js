@@ -18,6 +18,7 @@ const createPhaser = require('./phases');
 const createReader = require('./readers');
 const engineUtil = require('./engine_util');
 const wl = require('./weighted-pick');
+const {$randomNumber, $randomString, $uuid, $dateNow} = require('./template-strings');
 
 const Engines = {
   http: {},
@@ -35,7 +36,9 @@ module.exports = {
   stats: Stats,
   contextFuncs: {
     $randomString,
-    $randomNumber
+    $randomNumber,
+    $uuid,
+    $dateNow
   }
 };
 
@@ -399,8 +402,10 @@ function createContext(script) {
       $processEnvironment: process.env
     },
     funcs: {
-      $randomNumber: $randomNumber,
-      $randomString: $randomString,
+      $randomNumber,
+      $randomString,
+      $uuid,
+      $dateNow,
       $template: input => engineUtil.template(input, { vars: result.vars })
     }
   };
@@ -438,15 +443,4 @@ function createContext(script) {
   result._uid = uuid.v4();
   result.vars.$uuid = result._uid;
   return result;
-}
-
-//
-// Generator functions for template strings:
-//
-function $randomNumber(min, max) {
-  return _.random(min, max);
-}
-
-function $randomString(length) {
-  return Math.random().toString(36).substr(2, length);
 }

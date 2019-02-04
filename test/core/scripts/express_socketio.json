@@ -39,6 +39,8 @@
         {"think": 1},
         {"emit": { "channel": "echo", "data": "random number: {{ $randomNumber(1, 20) }}" }},
         {"emit": { "channel": "echo", "data": "random string: {{ $randomString(10) }}" }},
+        {"emit": { "channel": "echo", "data": "random uuid: {{ $uuid() }}" }},
+        {"emit": { "channel": "echo", "data": "date now: {{ $dateNow() }}" }},
         {"post": { "url": "/test-post?param1=value1&param2={{ $randomNumber(1, 20) }}" }},
         {"post": { "url": "/test-post?param1=value1&param2={{ $randomString(10) }}" }},
         {"think": 1}
