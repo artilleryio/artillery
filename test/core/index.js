@@ -13,6 +13,7 @@ require('./ws/test_options');
 require('./test_think');
 require('./test_basic_auth');
 require('./test_cookies');
+require('./test_request_path_in_entry');
 
 //require('./test_worker_http');
 //require('./test_environments.js');
