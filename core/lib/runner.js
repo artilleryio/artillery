@@ -252,8 +252,12 @@ function run(script, ee, options, runState) {
   let aggregate = [];
 
   let phaser = createPhaser(script.config.phases);
-  phaser.on('arrival', function() {
-    runScenario(script, intermediate, runState);
+  phaser.on('arrival', function (spec) {
+    if (runState.pendingScenarios >= spec.maxVusers) {
+      intermediate.avoidedScenario();
+    } else {
+      runScenario(script, intermediate, runState);
+    }
   });
   phaser.on('phaseStarted', function(spec) {
     ee.emit('phaseStarted', spec);

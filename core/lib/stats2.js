@@ -38,6 +38,7 @@ function combine(statsObjects) {
       }
     });
     result._completedScenarios += stats._completedScenarios;
+    result._scenariosAvoided += stats._scenariosAvoided;
     L.each(stats._codes, function(count, code) {
       if(result._codes[code]) {
         result._codes[code] += count;
@@ -110,6 +111,11 @@ Stats.prototype.newScenario = function(name) {
 
 Stats.prototype.completedScenario = function() {
   this._completedScenarios++;
+  return this;
+};
+
+Stats.prototype.avoidedScenario = function() {
+  this._scenariosAvoided++;
   return this;
 };
 
@@ -219,6 +225,7 @@ Stats.prototype.report = function() {
     result.concurrency = this._concurrency;
   }
   result.pendingRequests = this._pendingRequests;
+  result.scenariosAvoided = this._scenariosAvoided;
 
   return result;
 };
@@ -255,6 +262,7 @@ Stats.prototype.reset = function() {
   this._counters = {};
   this._concurrency = null;
   this._pendingRequests = 0;
+  this._scenariosAvoided = 0;
   this._scenarioCounter = {};
   return this;
 };
