@@ -1,0 +1,12 @@
+{
+  "name": "artillery-plugin-metrics-by-endpoint",
+  "version": "0.0.1",
+  "description": "Per-endpoint breakdown of latency and response codes for Artillery HTTP tests.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Hassy Veldstra <h@artillery.io>",
+  "license": "MPL-2.0"
+}
