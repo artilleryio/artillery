@@ -16,7 +16,7 @@ test('url and uri parameters', function (t) {
     .get('/hello')
     .reply(200, 'ok');
 
-    const target2 = nock('http://localhost:8888')
+  const target2 = nock('http://localhost:8888')
     .get('/goodbye')
     .reply(200, 'ok');
 
@@ -24,13 +24,19 @@ test('url and uri parameters', function (t) {
     config: {
       target: 'http://localhost:8888',
       processor: {
-        printHello: function(req, context, ee, next) {
-          console.log('# hello from printHello hook!');
+        printHello: function (req, context, ee, next) {
+          console.log('# output from printHello hook!');
           context.vars.name = 'whatever';
-          context.vars.uriList = [{'dev': 'hello', 'test': 'goodbye'}];
+          context.vars.uriList = [{ 'dev': 'hello', 'test': 'goodbye' }];
           return next();
         },
-        logDetails: function(res, req, ctx, ee, done) {
+        logDetails: function (res, req, ctx, ee, done) {
+          console.log('# output from logDetails hook!')
+          console.log(`# ${res.name}`)
+          return done();
+        },
+        logDetailsAgain: function (res, req, ctx, ee, done) {
+          console.log('# output from logDetailsAgain hook!')
           console.log(`# ${res.name}`)
           return done();
         }
@@ -45,18 +51,24 @@ test('url and uri parameters', function (t) {
                 get: {
                   name: '{{ $loopElement.data[0].uri }} {{ name }} {{ $loopElement.data[0].person }}',
                   uri: '/{{ $loopElement.data[0].uri }}',
-                  beforeRequest: 'printHello',
-                  afterResponse: 'logDetails'
+                  beforeRequest: '{{ $loopElement.data[1].before }}',
+                  afterResponse: '{{ $loopElement.data[1].after }}'
                 }
               }
             ],
             over: [
               {
-                data: [{uri: '{{ uriList[0]["dev"] }}', person: 'Hassy'}]
+                data: [
+                  { uri: '{{ uriList[0]["dev"] }}', person: 'Hassy' },
+                  { before: 'printHello', after: 'logDetails' }
+                ]
               },
               {
-                data: [{uri: '{{ uriList[0]["test"] }}', person: 'Has'}]
-              }              
+                data: [
+                  { uri: '{{ uriList[0]["test"] }}', person: 'Has' },
+                  { before: 'printHello', after: 'logDetailsAgain' }
+                ]
+              }
             ]
           }
         ]
@@ -77,14 +89,16 @@ test('url and uri parameters', function (t) {
     if (err) {
       t.fail();
     }
-    
+
     t.assert(target.isDone(), 'Should have made a request to /hello');
     t.assert(target2.isDone(), 'Should have made a request to /goodbye');
-    
+
     [
-      '# hello from printHello hook!',
+      '# output from printHello hook!',
       '# hello whatever Hassy',
-      '# goodbye whatever Has'
+      '# output from logDetails hook!',
+      '# goodbye whatever Has',
+      '# output from logDetailsAgain hook!'
     ].forEach(expectedOutput => {
       let seen = false;
       spy.args.forEach(args => {
