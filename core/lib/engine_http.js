@@ -219,7 +219,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       functionNames,
       function iteratee(functionName, next) {
 
-        let processFunc = config.processor[functionName];
+        let processFunc = config.processor[template(functionName, context)];
         processFunc(requestParams, context, ee, function(err) {
           if (err) {
             return next(err);
@@ -417,7 +417,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               async.eachSeries(
                 functionNames,
                 function iteratee(functionName, next) {
-                  let processFunc = config.processor[functionName];
+                  let processFunc = config.processor[template(functionName, context)];
                   processFunc(requestParams, res, context, ee, function(err) {
                     if (err) {
                       return next(err);
