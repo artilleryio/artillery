@@ -351,8 +351,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               let haveFailedCaptures = failedCaptures.length > 0;
 
               if (haveFailedMatches || haveFailedCaptures) {
-                failedMatches.forEach(match => ee.emit('error', `Failed match: ${JSON.stringify(match)}`))
-                failedCaptures.forEach(capture => ee.emit('error', `Failed capture: ${JSON.stringify(capture)}`))
+                failedMatches.forEach(match => ee.emit('error',
+                  `Failed match: expected=${match.expected} got=${match.got} expression=${match.expression}`))
+                failedCaptures.forEach(capture => ee.emit('error', `Failed capture: expression=${capture.expression}`))
               } else {
                 _.each(result.matches, function(v, k) {
                   ee.emit('match', v.success, {
