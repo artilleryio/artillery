@@ -21,7 +21,7 @@
 
 - **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery)
 - **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
-- **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/artilleryio/artillery)
+- **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/shoreditch-ops/artillery)
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@artilleryio](https://twitter.com/artilleryio)
