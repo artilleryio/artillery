@@ -1,9 +1,9 @@
 <p align="center">
 <a href="https://artillery.io"><img src="https://artillery.io/img/flag.png" height="55" /></a>
 </p>
+
 <p align="center">
 <em><strong>Artillery</strong> is a modern, powerful, easy-to-use load-testing toolkit.</em> Artillery has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy. Our goal is to help developers build <strong>faster</strong>, more <strong>resilient</strong> and more <strong>scalable</strong> applications.
-
 </p>
 
 ## Features
@@ -21,7 +21,7 @@
 
 - **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery)
 - **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
-- **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/artilleryio/artillery)
+- **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/shoreditch-ops/artillery)
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@artilleryio](https://twitter.com/artilleryio)
