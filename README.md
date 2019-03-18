@@ -22,6 +22,7 @@
 - **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery)
 - **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
 - **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/artilleryio/artillery)
+- **Community**: [https://spectrum.chat/artillery-io](https://spectrum.chat/artillery-io)
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@artilleryio](https://twitter.com/artilleryio)
@@ -32,6 +33,7 @@
 - For training, custom integrations, and performance consulting services see our [professional services page](https://artillery.io/services-support.html).
 
 [![Build Status](https://travis-ci.org/artilleryio/artillery.svg?branch=master)](https://travis-ci.org/artilleryio/artillery) [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
+<a href="https://spectrum.chat/artillery-io"><img src="https://withspectrum.github.io/badge/badge.svg"></a>
 
 # Use Cases
 
