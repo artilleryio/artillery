@@ -361,7 +361,7 @@ function captureOrMatch(params, response, context, done) {
         if (spec.value) {
           // this is a match spec
           let expected = template(spec.value, context);
-          debug('match: %s, expected: %s, got: %s', expr, expected, extractedValue);
+          debug('match: %s, expected: %s, got: %o', expr, expected, extractedValue);
           if (extractedValue !== expected) {
             result.matches[expr] = {
               success: false,
@@ -371,7 +371,7 @@ function captureOrMatch(params, response, context, done) {
               strict: spec.strict
             };
           } else {
-            result.matches.expr = {
+            result.matches[expr] = {
               success: true,
               expected: expected,
               expression: expr
@@ -383,15 +383,15 @@ function captureOrMatch(params, response, context, done) {
 
         if (spec.as) {
           // this is a capture
-          debug('capture: %s = %s', spec.as, extractedValue);
+          debug('capture: %s = %o', spec.as, extractedValue);
           result.captures[spec.as] = extractedValue;
           if (spec.transform) {
             let transformedValue = evil(
               result.captures,
               spec.transform);
 
-            debug('transform: %s = %s', spec.as, result.captures[spec.as]);
             result.captures[spec.as] = transformedValue !== null ? transformedValue : extractedValue;
+            debug('transform: %s = %o', spec.as, result.captures[spec.as]);
           }
         }
 
