@@ -352,7 +352,7 @@ function captureOrMatch(params, response, context, done) {
               strict: spec.strict
             };
           } else {
-            result.matches.expr = {
+            result.matches[expr] = {
               success: true,
               expected: expected,
               expression: expr

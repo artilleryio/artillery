@@ -340,20 +340,23 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               debug(result.captures);
 
               // match and capture are strict by default:
-              const failedMatches = _.filter(result.matches, function(v, k) {
-                return !v.success && v.strict !== false;
+              const failedMatches = _.keys(result.matches).filter(function(expression) {
+                const match = result.matches[expression]
+                return !match.success && match.strict !== false;
               })
               let haveFailedMatches = failedMatches.length > 0;
 
-              let failedCaptures = _.filter(result.captures, function(v, k) {
-                return v === '';
+              let failedCaptures = _.keys(result.captures).filter(function(expression) {
+                return result.captures[expression] === '';
               });
               let haveFailedCaptures = failedCaptures.length > 0;
 
               if (haveFailedMatches || haveFailedCaptures) {
-                failedMatches.forEach(match => ee.emit('error',
-                  `Failed match: expected=${match.expected} got=${match.got} expression=${match.expression}`))
-                failedCaptures.forEach(capture => ee.emit('error', `Failed capture: expression=${capture.expression}`))
+                failedMatches.forEach(expression => {
+                  const match = results.matches[expression]
+                  ee.emit('error', `Failed match: expected=${match.expected} got=${match.got} expression=${expression}`)
+                })
+                failedCaptures.forEach(expression => ee.emit('error', `Failed capture: expression=${expression}`))
               } else {
                 _.each(result.matches, function(v, k) {
                   ee.emit('match', v.success, {
