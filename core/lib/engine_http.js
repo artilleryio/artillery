@@ -353,7 +353,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
               if (haveFailedMatches || haveFailedCaptures) {
                 failedMatches.forEach(expression => {
-                  const match = results.matches[expression]
+                  const match = result.matches[expression]
                   ee.emit('error', `Failed match: expected=${match.expected} got=${match.got} expression=${expression}`)
                 })
                 failedCaptures.forEach(expression => ee.emit('error', `Failed capture: expression=${expression}`))
