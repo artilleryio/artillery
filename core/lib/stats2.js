@@ -271,6 +271,10 @@ Stats.prototype.free = function() {
   return this;
 };
 
+Stats.prototype.isEmpty = function () {
+  return this._generatedScenarios === 0;
+};
+
 function round(number, decimals) {
   const m = Math.pow(10, decimals);
   return Math.round(number * m) / m;
