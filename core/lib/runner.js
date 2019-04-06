@@ -57,8 +57,8 @@ async function runner(script, payload, options, callback) {
     },
     options);
 
-  if (opts.isAggregateReport) {
-    isAggregateReport = opts.isAggregateReport;
+  if (opts.isAggregateReport === false) {
+    isAggregateReport = false;
   }
 
   let warnings = {
