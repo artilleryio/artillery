@@ -6,7 +6,7 @@
 
 const async = require('async');
 const debug = require('debug')('engine_util');
-const traverse = require('traverse');
+const deepForEach = require('deep-for-each');
 const esprima = require('esprima');
 const L = require('lodash');
 const vm = require('vm');
@@ -195,19 +195,14 @@ function template(o, context) {
     return undefined;
   }
 
-  const objtype = Object.prototype.toString.call(o);
-  if (objtype === '[object Object]') {
-    return Object.keys(o).reduce(
-      (hash, key) =>
-        Object.assign({}, hash, {
-          [template(key, context)]: template(o[key], context)
-        }),
-      {}
-    );
-  } else if (objtype === '[object Array]') {    return o.reduce(
-      (array, current) => array.concat(template(current, context)),
-      []
-    );   
+  if (o.constructor === Object || o.constructor === Array) {
+    result = new o.constructor(); // can't L.set on undefined
+    deepForEach(o, (value, key, subj, path) => {
+      debug(`${path}: ${value} (${typeof value}) -- (subj type: ${subj.length ? 'list':'hash'}`);
+
+      const templated = template(value, context);
+      result = L.set(result, template(path, context), templated);
+    });
   } else if (typeof o === 'string') {
     if (!/{{/.test(o)) {
       return o;
