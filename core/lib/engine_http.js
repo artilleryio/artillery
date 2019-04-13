@@ -259,6 +259,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.url = template(requestParams.url, context);
         }
 
+        // Follow all redirects by default unless specified otherwise
+        if (typeof requestParams.followRedirect === 'undefined') {
+          requestParams.followRedirect = true;
+          requestParams.followAllRedirects = true;
+        } else if (requestParams.followRedirect === false) {
+          requestParams.followAllRedirects = false;
+        }
+
         // TODO: Use traverse on the entire flow instead
 
         if (params.form) {
@@ -340,6 +348,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               method: requestParams.method,
               headers: requestParams.headers
             };
+
+            if (context._jar._jar && typeof context._jar._jar.getCookieStringSync === 'function') {
+              requestInfo = Object.assign(requestInfo, {
+                cookie: context._jar._jar.getCookieStringSync(requestParams.url)
+              });
+            }
+
             if (requestParams.json && typeof requestParams.json !== 'boolean') {
               requestInfo.json = requestParams.json;
             }
@@ -382,9 +397,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 });
               }
 
-              debug('captures and matches:');
-              debug(result.matches);
-              debug(result.captures);
+              if (Object.keys(result.matches).length > 0 ||
+                  Object.keys(result.captures).length > 0) {
+
+                debug('captures and matches:');
+                debug(result.matches);
+                debug(result.captures);
+              }
 
               // match and capture are strict by default:
               let haveFailedMatches = _.some(result.matches, function(v, k) {
