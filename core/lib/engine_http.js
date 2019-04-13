@@ -348,6 +348,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               method: requestParams.method,
               headers: requestParams.headers
             };
+
+            if (context._jar._jar && typeof context._jar._jar.getCookieStringSync === 'function') {
+              requestInfo = Object.assign(requestInfo, {
+                cookie: context._jar._jar.getCookieStringSync(requestParams.url)
+              });
+            }
+
             if (requestParams.json && typeof requestParams.json !== 'boolean') {
               requestInfo.json = requestParams.json;
             }
