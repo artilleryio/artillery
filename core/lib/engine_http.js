@@ -397,9 +397,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 });
               }
 
-              debug('captures and matches:');
-              debug(result.matches);
-              debug(result.captures);
+              if (Object.keys(result.matches).length > 0 ||
+                  Object.keys(result.captures).length > 0) {
+
+                debug('captures and matches:');
+                debug(result.matches);
+                debug(result.captures);
+              }
 
               // match and capture are strict by default:
               let haveFailedMatches = _.some(result.matches, function(v, k) {
