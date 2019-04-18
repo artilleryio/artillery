@@ -46,7 +46,7 @@ program.option('-V, --version', 'Show version information', function() {
   if (pro) {
     console.log(`Artillery Pro: ${pro.version || 'installed'}`);
   } else {
-    console.log('Artillery Pro: not installed');
+    console.log('Artillery Pro: not installed (https://artillery.io/pro)');
   }
   console.log(`Node.js: ${process.version}`);
   console.log(`OS: ${process.platform}/${process.arch}`);
@@ -74,12 +74,15 @@ program.parse(process.argv);
 if (!process.argv.slice(2).length) {
   program.help();
 } else {
-  const commands = program.args.filter((a) => typeof a === 'object');
-  if (commands.length != 1) {
+  const knownCommands = program.args.filter((a) => typeof a === 'object');
+  // unknown commands, --flags not included; empty if we have "--help" or "-V":
+  const unknownCommands = program.args.filter((a) => typeof a !== 'object');
+
+  if (unknownCommands.length !== 0 && knownCommands.length === 0) {
     console.log(
-      `${chalk.red('  Error:')} Unknown Artillery command`
+      `${chalk.red('  Error:')} Unknown Artillery command ${unknownCommands}`
     );
-    program.help();
     process.exitCode = 1;
+    program.help();
   }
 }
