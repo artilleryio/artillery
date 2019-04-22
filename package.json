@@ -54,7 +54,7 @@
     "driftless": "^2.0.3",
     "esprima": "^4.0.0",
     "filtrex": "^0.5.4",
-    "js-yaml": "^3.10.0",
+    "js-yaml": "^3.13.1",
     "jsck": "^0.3.2",
     "jsonpath": "^1.0.1",
     "lodash": "^4.17.11",
