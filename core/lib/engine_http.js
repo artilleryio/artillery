@@ -218,8 +218,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     async.eachSeries(
       functionNames,
       function iteratee(functionName, next) {
+        let fn = template(functionName, context);
+        let processFunc = config.processor[fn];
+        if (!processFunc) {
+          processFunc = function(r, c, e, cb) { return cb(null); };
+          console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
+        }
 
-        let processFunc = config.processor[template(functionName, context)];
         processFunc(requestParams, context, ee, function(err) {
           if (err) {
             return next(err);
@@ -436,7 +441,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               async.eachSeries(
                 functionNames,
                 function iteratee(functionName, next) {
-                  let processFunc = config.processor[template(functionName, context)];
+                  let fn = template(functionName, context);
+                  let processFunc = config.processor[fn];
+                  if (!processFunc) {
+                    // TODO: DRY - #223
+                    processFunc = function(r, c, e, cb) { return cb(null); };
+                    console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
+
+                  }
                   processFunc(requestParams, res, context, ee, function(err) {
                     if (err) {
                       return next(err);
