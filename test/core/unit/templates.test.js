@@ -7,6 +7,9 @@
 var test = require('tape');
 var template = require('../../../core/lib/engine_util').template;
 
+var bigObject = require('./large-json-payload-7.2mb.json');
+var mediumObject = require('./large-json-payload-669kb.json');
+
 // TODO:
 // plain strings
 // string with a {{}}
@@ -21,21 +24,68 @@ var template = require('../../../core/lib/engine_util').template;
 
 var emptyContext = { vars: {} };
 
-test('templating a plain string should return the same string', function(t) {
+test('strings - templating a plain string should return the same string', function(t) {
   t.assert(template('string', emptyContext) === 'string', '');
   t.assert(template('string {}', emptyContext) === 'string {}', '');
   t.end();
 });
 
-test.test('variables can be substituted', function(t) {
+test.test('strings - variables can be substituted', function(t) {
   t.assert(template('hello {{name}}', { vars: { name: 'Hassy'} }) === 'hello Hassy', '');
   t.assert(template('hello {{name}}', emptyContext) === 'hello undefined', '');
   t.end();
 });
 
+test('strings - huge strings are OK', function(t) {
+  const s1 = JSON.stringify(bigObject);
+  const start = Date.now();
+  const s2 = template(s1, { vars: {} });
+  const end = Date.now();
+  t.same(s1, s2);
+  console.log('# delta:', end - start);
+  t.assert(end - start < 10, 'templated in <10ms');
+  t.end();
+});
+
 test.test('arrays can be substituted', function(t) {
+
+  // console.log(
+  //   template(
+  //     [1, {'{{k}}': '{{v}}'}],
+  //     {vars: {k: 'foo', v: 'bar' }})
+  // );
+
+  t.same(
+    [1, {'foo': 'bar'}],
+    template(
+      [1, {'{{k}}': '{{v}}'}],
+      {vars: {k: 'foo', v: 'bar' }})
+  );
+
   t.same(template(['{{name}}', [1, 2, '{{ count }}', {}, {'{{count}}': 3}]], { vars: { name: 'Hassy', count: 'three'} }),  [ 'Hassy', [1,2,'three', {}, {'three': 3}] ], '');
+
   t.same(template(['hello {{name}}'], emptyContext),  ['hello undefined'], '');
+
+  t.end();
+});
+
+test.test('buffers - returned as they are', function(t) {
+  t.same(
+    template(Buffer.from('hello world'), {vars: {}}),
+    Buffer.from('hello world')
+  );
+  t.end();
+});
+
+test.test('buffers - huge buffers are OK', function(t) {
+  const b1 = Buffer.from(JSON.stringify(bigObject));
+  const start = Date.now();
+  const b2 = template(b1, { vars: {}});
+  const end = Date.now();
+  t.same(b1, b2);
+  console.log('# delta:', end - start);
+  t.assert(end - start < 10, 'templated in <10ms');
+
   t.end();
 });
 
