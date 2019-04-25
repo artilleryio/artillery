@@ -188,7 +188,7 @@ function isProbableEnough(obj) {
   return r < probability;
 }
 
-function template(o, context) {
+function template(o, context, inPlace) {
   let result;
 
   if (typeof o === 'undefined') {
@@ -196,13 +196,12 @@ function template(o, context) {
   }
 
   if (o.constructor === Object || o.constructor === Array) {
-    result = new o.constructor(); // can't L.set on undefined
-    deepForEach(o, (value, key, subj, path) => {
-      debug(`${path}: ${value} (${typeof value}) -- (subj type: ${subj.length ? 'list':'hash'}`);
-
-      const templated = template(value, context);
-      result = L.set(result, template(path, context), templated);
-    });
+    if (!inPlace) {
+      result = L.cloneDeep(o);
+    } else {
+      result = o;
+    }
+    templateObjectOrArray(result, context);
   } else if (typeof o === 'string') {
     if (!/{{/.test(o)) {
       return o;
@@ -235,6 +234,31 @@ function template(o, context) {
   }
 
   return result;
+}
+
+// Mutates the object in place
+function templateObjectOrArray(o, context) {
+  deepForEach(o, (value, key, subj, path) => {
+    const newPath = template(path, context, true);
+
+    let newValue;
+    if (value.constructor !== Object && value.constructor !== Array) {
+      newValue = template(value, context, true);
+    } else {
+      newValue = value;
+    }
+
+    debug(`path = ${path} ; value = ${JSON.stringify(value)} (${typeof value}) ; (subj type: ${subj.length ? 'list':'hash'}) ; newValue = ${JSON.stringify(newValue)} ; newPath = ${newPath}`);
+
+    // If path has changed, we need to unset the original path and
+    // explicitly walk down the new subtree from this path:
+    if (path !== newPath) {
+      L.unset(o, path);
+      newValue = template(value, context, true);
+    }
+
+    L.set(o, newPath, newValue);
+  });
 }
 
 function renderVariables (str, vars) {
