@@ -164,7 +164,7 @@ function runner(script, payload, options, callback) {
     let pluginConfigScope = pluginConfig.scope || runnableScript.config.pluginsScope;
     let pluginPrefix = pluginConfigScope ? pluginConfigScope : 'artillery-plugin-';
     let requireString = pluginPrefix + pluginName;
-    let Plugin, plugin;
+    let Plugin, plugin, pluginErr;
 
     requirePaths.forEach(function(rp) {
       try {
@@ -180,14 +180,21 @@ function runner(script, payload, options, callback) {
         }
       } catch (err) {
         debug(err);
+        pluginErr = err;
       }
     });
 
     if (!Plugin || !plugin) {
-      console.log(
-        'WARNING: plugin %s specified but module %s could not be loaded',
-        pluginName,
-        requireString);
+      let msg;
+
+      if (pluginErr.code === 'MODULE_NOT_FOUND') {
+        msg = `WARNING: Plugin ${pluginName} specified but module ${requireString} could not be found (${pluginErr.code})`;
+      } else {
+        msg = `WARNING: Could not initialize plugin ${pluginName} (${pluginErr.message})`;
+      }
+
+      console.log(msg);
+
       warnings.plugins[pluginName] = {
         message: 'Could not load'
       };
