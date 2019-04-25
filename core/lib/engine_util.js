@@ -195,7 +195,7 @@ function template(o, context, inPlace) {
     return undefined;
   }
 
-  if (o.constructor === Object || o.constructor === Array) {
+  if (o && (o.constructor === Object || o.constructor === Array)) {
     if (!inPlace) {
       result = L.cloneDeep(o);
     } else {
@@ -242,7 +242,7 @@ function templateObjectOrArray(o, context) {
     const newPath = template(path, context, true);
 
     let newValue;
-    if (value.constructor !== Object && value.constructor !== Array) {
+    if (value && (value.constructor !== Object && value.constructor !== Array)) {
       newValue = template(value, context, true);
     } else {
       newValue = value;

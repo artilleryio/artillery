@@ -56,9 +56,9 @@ test.test('arrays can be substituted', function(t) {
   // );
 
   t.same(
-    [1, {'foo': 'bar'}],
+    [1, {'foo': 'bar'}, null, { foo: null }],
     template(
-      [1, {'{{k}}': '{{v}}'}],
+      [1, {'{{k}}': '{{v}}'}, null, { foo: null }],
       {vars: {k: 'foo', v: 'bar' }})
   );
 
@@ -89,8 +89,8 @@ test.test('buffers - huge buffers are OK', function(t) {
   t.end();
 });
 
-test.test('hashes can be substituted', function(t) {
-  t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': '{{ v2 }}'}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname', v2: 'Has'} }),  {name: 'Hassy', nickname: 'Has'}, '');
+test.test('objects can be substituted', function(t) {
+  t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': '{{ v2 }}', foo: null}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname', v2: 'Has'} }),  {name: 'Hassy', nickname: 'Has', foo: null}, '');
   t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': 'hello {{ v2 }}'}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname'} }),  {name: 'Hassy', nickname: 'hello undefined'}, '');
   t.end();
 });
