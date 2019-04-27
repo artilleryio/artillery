@@ -13,6 +13,7 @@ const pkg = require('../package.json');
 const version = pkg.version;
 const chalk = require('chalk');
 const tryResolve = require('try-require').resolve;
+const { rainbow } = require('../util');
 
 const commands = require('../lib/commands');
 
@@ -31,15 +32,17 @@ if (tryResolve('artillery-pro')) {
   debug('Artillery Pro is not installed');
 }
 
-program.option('-V, --version', 'Show version information', function() {
-  console.log(`
+const banner = `
         ___         __  _ ____                  _
   _____/   |  _____/ /_(_) / /__  _______  __  (_)___  _____
  /____/ /| | / ___/ __/ / / / _ \\/ ___/ / / / / / __ \\/____/
 /____/ ___ |/ /  / /_/ / / /  __/ /  / /_/ / / / /_/ /____/
     /_/  |_/_/   \\__/_/_/_/\\___/_/   \\__, (_)_/\\____/
                                     /____/
-`);
+`;
+
+program.option('-V, --version', 'Show version information', function() {
+  console.log(banner);
 
   console.log('------------ Version Info ------------');
   console.log(`Artillery: ${version}`);
@@ -72,6 +75,7 @@ if (pro) {
 program.parse(process.argv);
 
 if (!process.argv.slice(2).length) {
+  console.log(Math.random() * 100 > 34 ? banner : rainbow(banner));
   program.help();
 } else {
   const knownCommands = program.args.filter((a) => typeof a === 'object');
