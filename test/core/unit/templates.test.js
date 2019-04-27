@@ -7,18 +7,12 @@
 var test = require('tape');
 var template = require('../../../core/lib/engine_util').template;
 
+const { contextFuncs } = require('../../../core/lib/runner');
+
 var bigObject = require('./large-json-payload-7.2mb.json');
 var mediumObject = require('./large-json-payload-669kb.json');
 
 // TODO:
-// plain strings
-// string with a {{}}
-// string with multiple {{}}s
-// string with a function
-// string with multiple functions
-// string with a function and a {{}}
-// same but for an object
-
 // variables that aren't defined
 // functions that aren't defined
 
@@ -111,5 +105,25 @@ test.test('nested objects can be substituted', function(t) {
     {name: ['Hassy', {lastname: 'Veldstra'}], nickname: 'Has'},
     ''
   );
+  t.end();
+});
+
+test.test('template functions', (t) => {
+  const context = { funcs: contextFuncs, vars: { greeting: 'hello', foo: 'bar'} };
+
+  t.assert(
+    template('{{ $randomString( ) }}', context).length > 0,
+    'template functions may be used');
+
+  t.assert(
+    template('{{ $randomString(3) }} hello world {{ $randomString(10) }} {{ $randomNumber(   100, 900) }}', context).length === 30,
+    'multiple template functions may be used'
+  );
+
+  t.assert(
+    template('{{ greeting}} {{ $randomString(5) }}! {{ foo }}', context).length === 16,
+    'functions and variable substitutions may be mixed'
+  );
+
   t.end();
 });
