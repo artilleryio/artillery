@@ -342,6 +342,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.agent = context._httpAgent;
         }
 
+        if (!requestParams.url.startsWith('http')) {
+          let err = new Error(`Invalid URL - ${requestParams.url}`);
+          ee.emit('error', err.message);
+          return callback(err, context);
+        }
+
         function requestCallback(err, res, body) {
           if (err) {
             return;
