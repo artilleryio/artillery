@@ -25,6 +25,7 @@ function create(list) {
 
 function bench() {
   const items = [
+    { weight: 0, value: 'zero' },
     { weight: 1, value: 'a' },
     { weight: 2, value: 'b' },
     { weight: 3, value: 'c' },
@@ -63,7 +64,7 @@ function bench() {
   console.log('sumWeights = %s', sumWeights);
 
   l.each(items, function(p) {
-    let count = l.where(picks, {value: p.value}).length;
+    let count = l.filter(picks, {value: p.value}).length;
     console.log('Count of %s = %s (should be: %s\%, is: %s\%)',
       p.value,
       count,
