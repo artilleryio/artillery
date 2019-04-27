@@ -321,6 +321,18 @@ function runScenario(script, intermediate, runState) {
     _.each(script.scenarios, function(scenario) {
       if (typeof scenario.weight === 'undefined') {
         scenario.weight = 1;
+      } else {
+        debug(`scenario ${scenario.name} weight = ${scenario.weight}`);
+        const variableValues = Object.assign(
+          datafileVariables(script),
+          inlineVariables(script),
+          { $processEnvironment: process.env });
+
+        const w = engineUtil.template(
+          scenario.weight,
+          { vars: variableValues });
+        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w);
+        debug(`scenario ${scenario.name} weight has been set to ${scenario.weight}`);
       }
     });
 
@@ -400,6 +412,38 @@ function runScenario(script, intermediate, runState) {
   });
 }
 
+function datafileVariables(script) {
+  let result = {};
+  if (script.config.payload) {
+    _.each(script.config.payload, function(el) {
+
+      // If data = [] (i.e. the CSV file is empty, or only has headers and
+      // skipHeaders = true), then row could = undefined
+      let row = el.reader(el.data) || [];
+      _.each(el.fields, function(fieldName, j) {
+        result[fieldName] = row[j];
+      });
+    });
+  }
+  return result;
+}
+
+function inlineVariables(script) {
+  let result = {};
+  if (script.config.variables) {
+    _.each(script.config.variables, function(v, k) {
+      let val;
+      if (_.isArray(v)) {
+        val = _.sample(v);
+      } else {
+        val = v;
+      }
+      result[k] = val;
+    });
+  }
+  return result;
+}
+
 /**
  * Create initial context for a scenario.
  */
@@ -416,37 +460,16 @@ function createContext(script) {
       $template: input => engineUtil.template(input, { vars: result.vars })
     }
   };
+
   let result = _.cloneDeep(INITIAL_CONTEXT);
 
-  //
-  // variables from payloads
-  //
-  if (script.config.payload) {
-    _.each(script.config.payload, function(el) {
+  // variables from payloads:
+  const variableValues1 = datafileVariables(script);
+  Object.assign(result.vars, variableValues1);
+  // inline variables:
+  const variableValues2 = inlineVariables(script);
+  Object.assign(result.vars, variableValues2);
 
-      // If data = [] (i.e. the CSV file is empty, or only has headers and
-      // skipHeaders = true), then row could = undefined
-      let row = el.reader(el.data) || [];
-      _.each(el.fields, function(fieldName, j) {
-        result.vars[fieldName] = row[j];
-      });
-    });
-  }
-
-  //
-  // inline variables
-  //
-  if (script.config.variables) {
-    _.each(script.config.variables, function(v, k) {
-      let val;
-      if (_.isArray(v)) {
-        val = _.sample(v);
-      } else {
-        val = v;
-      }
-      result.vars[k] = val;
-    });
-  }
   result._uid = uuid.v4();
   result.vars.$uuid = result._uid;
   return result;
