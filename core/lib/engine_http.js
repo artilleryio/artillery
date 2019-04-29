@@ -17,7 +17,9 @@ const template = engineUtil.template;
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const qs = require('querystring');
 const filtrex = require('filtrex');
+const urlparse = require('url').parse;
 
 module.exports = HttpEngine;
 
@@ -274,6 +276,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         // TODO: Use traverse on the entire flow instead
 
+        if (params.qs) {
+          requestParams.qs = template(params.qs, context);
+        }
+
         if (params.form) {
           requestParams.form = _.reduce(
             requestParams.form,
@@ -389,6 +395,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 }
               }
             }
+
+            if (requestParams.qs) {
+              requestInfo.qs = qs.encode(
+                Object.assign(
+                  qs.parse(urlparse(requestParams.url).query), requestParams.qs));
+            }
+
             debug('request: %s', JSON.stringify(requestInfo, null, 2));
           }
 
