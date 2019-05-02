@@ -263,7 +263,7 @@ function run(script, ee, options, runState) {
     if (runState.pendingScenarios >= spec.maxVusers) {
       intermediate.avoidedScenario();
     } else {
-      runScenario(script, intermediate, runState);
+      runScenario(script, intermediate, runState, ee);
     }
   });
   phaser.on('phaseStarted', function(spec) {
@@ -311,7 +311,7 @@ function run(script, ee, options, runState) {
   phaser.run();
 }
 
-function runScenario(script, intermediate, runState) {
+function runScenario(script, intermediate, runState, ee) {
   const start = process.hrtime();
 
   //
@@ -373,7 +373,10 @@ function runScenario(script, intermediate, runState) {
 
       runState.pendingRequests--;
     });
-
+    runState.scenarioEvents.on('custom', function(payload) {
+      // Bubble up custom events from a scenario's processor function(s)
+      ee.emit('custom', payload);
+    })
     runState.compiledScenarios = _.map(
         script.scenarios,
         function(scenarioSpec) {
