@@ -17,18 +17,32 @@ const template = engineUtil.template;
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
+const qs = require('querystring');
 const filtrex = require('filtrex');
+const urlparse = require('url').parse;
 
 module.exports = HttpEngine;
 
 function HttpEngine(script) {
   this.config = script.config;
 
+
+  // If config.http.pool is set, create & reuse agents for all requests (with
+  // max sockets set). That's what we're done here.
+  // If config.http.pool is not set, we create new agents for each virtual user.
+  // That's done when the VU is initialized.
+
+  this.maxSockets = Infinity;
   if (script.config.http && script.config.http.pool) {
-    this.pool = {
-      maxSockets: Number(script.config.http.pool)
-    };
+    this.maxSockets = Number(script.config.http.pool);
   }
+  let agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+    maxSockets: this.maxSockets,
+    maxFreeSockets: this.maxSockets
+  });
+
+  this._httpAgent = new http.Agent(agentOpts);
+  this._httpsAgent = new https.Agent(agentOpts);
 }
 
 HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
@@ -202,8 +216,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     async.eachSeries(
       functionNames,
       function iteratee(functionName, next) {
+        let fn = template(functionName, context);
+        let processFunc = config.processor[fn];
+        if (!processFunc) {
+          processFunc = function(r, c, e, cb) { return cb(null); };
+          console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
+        }
 
-        let processFunc = config.processor[functionName];
         processFunc(requestParams, context, ee, function(err) {
           if (err) {
             return next(err);
@@ -244,7 +263,19 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.url = template(requestParams.url, context);
         }
 
+        // Follow all redirects by default unless specified otherwise
+        if (typeof requestParams.followRedirect === 'undefined') {
+          requestParams.followRedirect = true;
+          requestParams.followAllRedirects = true;
+        } else if (requestParams.followRedirect === false) {
+          requestParams.followAllRedirects = false;
+        }
+
         // TODO: Use traverse on the entire flow instead
+
+        if (params.qs) {
+          requestParams.qs = template(params.qs, context);
+        }
 
         if (params.form) {
           requestParams.form = _.reduce(
@@ -318,6 +349,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.pool = self.pool;
         }
 
+        if (!requestParams.url.startsWith('http')) {
+          let err = new Error(`Invalid URL - ${requestParams.url}`);
+          ee.emit('error', err.message);
+          return callback(err, context);
+        }
+
         function requestCallback(err, res, body) {
           if (err) {
             return;
@@ -329,6 +366,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               method: requestParams.method,
               headers: requestParams.headers
             };
+
+            if (context._jar._jar && typeof context._jar._jar.getCookieStringSync === 'function') {
+              requestInfo = Object.assign(requestInfo, {
+                cookie: context._jar._jar.getCookieStringSync(requestParams.url)
+              });
+            }
+
             if (requestParams.json && typeof requestParams.json !== 'boolean') {
               requestInfo.json = requestParams.json;
             }
@@ -352,6 +396,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 }
               }
             }
+
+            if (requestParams.qs) {
+              requestInfo.qs = qs.encode(
+                Object.assign(
+                  qs.parse(urlparse(requestParams.url).query), requestParams.qs));
+            }
+
             debug('request: %s', JSON.stringify(requestInfo, null, 2));
           }
 
@@ -371,9 +422,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 });
               }
 
-              debug('captures and matches:');
-              debug(result.matches);
-              debug(result.captures);
+              if (Object.keys(result.matches).length > 0 ||
+                  Object.keys(result.captures).length > 0) {
+
+                debug('captures and matches:');
+                debug(result.matches);
+                debug(result.captures);
+              }
 
               // match and capture are strict by default:
               let haveFailedMatches = _.some(result.matches, function(v, k) {
@@ -397,7 +452,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 });
 
                 _.each(result.captures, function(v, k) {
-                  context.vars[k] = v;
+                  _.set(context.vars, k, v);
                 });
               }
 
@@ -406,7 +461,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               async.eachSeries(
                 functionNames,
                 function iteratee(functionName, next) {
-                  let processFunc = config.processor[functionName];
+                  let fn = template(functionName, context);
+                  let processFunc = config.processor[fn];
+                  if (!processFunc) {
+                    // TODO: DRY - #223
+                    processFunc = function(r, c, e, cb) { return cb(null); };
+                    console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
+
+                  }
                   processFunc(requestParams, res, context, ee, function(err) {
                     if (err) {
                       return next(err);
@@ -526,14 +588,6 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
     async.waterfall(
       steps,
       function scenarioWaterfallCb(err, context) {
-        // If the connection was refused we might not have a context
-        if (context && context._httpAgent) {
-          context._httpAgent.destroy();
-        }
-        if (context && context._httpsAgent) {
-          context._httpsAgent.destroy();
-        }
-
         if (err) {
           //ee.emit('error', err.message);
           return callback(err, context);

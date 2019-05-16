@@ -1,0 +1,19 @@
+{
+  "config": {
+    "target": "http://localhost:3003",
+    "phases": [
+      {
+        "duration": 1,
+        "arrivalRate": 1000,
+        "maxVusers": 1
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/pets"}}
+      ]
+    }
+  ]
+}

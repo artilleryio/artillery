@@ -262,6 +262,7 @@ Stats.prototype.reset = function() {
   this._counters = {};
   this._concurrency = null;
   this._pendingRequests = 0;
+  this._scenariosAvoided = 0;
   this._scenarioCounter = {};
   this._scenariosAvoided = 0;
   return this;
