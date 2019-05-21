@@ -208,7 +208,7 @@ function runner(script, payload, options, callback) {
     ee.run = function() {
       let runState = {
         pendingScenarios: 0,
-        pendingRequests: 0,
+        // pendingRequests: 0,
         compiledScenarios: null,
         scenarioEvents: null,
         picker: undefined,
@@ -277,9 +277,6 @@ function run(script, ee, options, runState) {
 
     const doneYet = setInterval(function checkIfDone() {
       if (runState.pendingScenarios === 0) {
-        if (runState.pendingRequests !== 0) {
-          debug('DONE. Pending requests: %s', runState.pendingRequests);
-        }
 
         clearInterval(doneYet);
         clearInterval(periodicStatsTimer);
@@ -291,7 +288,6 @@ function run(script, ee, options, runState) {
         let aggregateReport = Stats.combine(aggregate).report();
         return ee.emit('done', aggregateReport);
       } else {
-        debug('Pending requests: %s', runState.pendingRequests);
         debug('Pending scenarios: %s', runState.pendingScenarios);
       }
     }, 500);
@@ -301,7 +297,7 @@ function run(script, ee, options, runState) {
 
   function sendStats() {
     intermediate._concurrency = runState.pendingScenarios;
-    intermediate._pendingRequests = runState.pendingRequests;
+    // intermediate._pendingRequests = runState.pendingRequests;
     ee.emit('stats', intermediate.clone());
     delete intermediate._entries;
     aggregate.push(intermediate.clone());
@@ -353,25 +349,24 @@ function runScenario(script, intermediate, runState) {
       runState.pendingScenarios++;
     });
     runState.scenarioEvents.on('error', function(errCode) {
-      intermediate.addError(errCode);
+      intermediate.counter(`errors.${errCode}`, 1);
     });
     runState.scenarioEvents.on('request', function() {
-      intermediate.newRequest();
+      intermediate.counter('engine.http.requests_sent', 1);
+      // this is used to calculate rps count and mean
+      // intermediate.newRequest();
 
-      runState.pendingRequests++;
+
+      // runState.pendingRequests++;
     });
     runState.scenarioEvents.on('match', function() {
-      intermediate.addMatch();
+      // intermediate.addMatch();
+      intermediate.counter('matches', 1);
     });
     runState.scenarioEvents.on('response', function(delta, code, uid) {
-      intermediate.completedRequest();
-      intermediate.addLatency(delta);
-      intermediate.addCode(code);
-
-      let entry = [Date.now(), uid, delta, code];
-      intermediate.addEntry(entry);
-
-      runState.pendingRequests--;
+      intermediate.counter('engine.http.responses_received', 1);
+      intermediate.addCustomStat('engine.http.response_time', delta / 1e6);
+      intermediate.counter(`engine.http.response_code.${code}`, 1);
     });
 
     runState.compiledScenarios = _.map(
@@ -391,7 +386,9 @@ function runScenario(script, intermediate, runState) {
         script.scenarios[i].name,
         script.scenarios[i].weight);
 
-  intermediate.newScenario(script.scenarios[i].name || i);
+  intermediate.counter(`scenarios.created.${script.scenarios[i].name || i}`, 1);
+  intermediate.counter('scenarios.created', 1);
+  // intermediate.newScenario(script.scenarios[i].name || i);
 
   const scenarioStartedAt = process.hrtime();
   const scenarioContext = createContext(script);
@@ -401,13 +398,12 @@ function runScenario(script, intermediate, runState) {
   debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
   runState.compiledScenarios[i](scenarioContext, function(err, context) {
     runState.pendingScenarios--;
+    intermediate.counter('scenarios.completed', 1);
     if (err) {
       debug(err);
     } else {
       const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
       const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
-      intermediate.addScenarioLatency(delta);
-      intermediate.completedScenario();
     }
   });
 }

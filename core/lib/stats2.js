@@ -6,6 +6,7 @@
 
 const L = require('lodash');
 const sl = require('stats-lite');
+const HdrHistogram = require('hdr-histogram-js');
 
 module.exports = {
   create: create,
@@ -26,9 +27,6 @@ function create() {
 function combine(statsObjects) {
   let result = create();
   L.each(statsObjects, function(stats) {
-    L.each(stats._latencies, function(latency) {
-      result._latencies.push(latency);
-    });
     result._generatedScenarios += stats._generatedScenarios;
     L.each(stats._scenarioCounter, function(count, name) {
       if(result._scenarioCounter[name]) {
@@ -37,30 +35,10 @@ function combine(statsObjects) {
         result._scenarioCounter[name] = count;
       }
     });
-    result._completedScenarios += stats._completedScenarios;
     result._scenariosAvoided += stats._scenariosAvoided;
-    L.each(stats._codes, function(count, code) {
-      if(result._codes[code]) {
-        result._codes[code] += count;
-      } else {
-        result._codes[code] = count;
-      }
-    });
-    L.each(stats._errors, function(count, error) {
-      if(result._errors[error]) {
-        result._errors[error] += count;
-      } else {
-        result._errors[error] = count;
-      }
-    });
     L.each(stats._requestTimestamps, function(timestamp) {
       result._requestTimestamps.push(timestamp);
     });
-    result._completedRequests += stats._completedRequests;
-    L.each(stats._scenarioLatencies, function(latency) {
-      result._scenarioLatencies.push(latency);
-    });
-    result._matches += stats._matches;
 
     L.each(stats._counters, function(value, name) {
       if (!result._counters[name]) {
@@ -89,15 +67,6 @@ function Stats() {
   return this.reset();
 }
 
-Stats.prototype.addEntry = function(entry) {
-  this._entries.push(entry);
-  return this;
-};
-
-Stats.prototype.getEntries = function() {
-  return this._entries;
-};
-
 Stats.prototype.newScenario = function(name) {
   if (this._scenarioCounter[name]) {
     this._scenarioCounter[name]++;
@@ -109,54 +78,13 @@ Stats.prototype.newScenario = function(name) {
   return this;
 };
 
-Stats.prototype.completedScenario = function() {
-  this._completedScenarios++;
-  return this;
-};
-
 Stats.prototype.avoidedScenario = function() {
   this._scenariosAvoided++;
   return this;
 };
 
-Stats.prototype.addCode = function(code) {
-  if (!this._codes[code]) {
-    this._codes[code] = 0;
-  }
-  this._codes[code]++;
-  return this;
-};
-
-Stats.prototype.addError = function(errCode) {
-  if (!this._errors[errCode]) {
-    this._errors[errCode] = 0;
-  }
-  this._errors[errCode]++;
-  return this;
-};
-
 Stats.prototype.newRequest = function() {
   this._requestTimestamps.push(Date.now());
-  return this;
-};
-
-Stats.prototype.completedRequest = function() {
-  this._completedRequests++;
-  return this;
-};
-
-Stats.prototype.addLatency = function(delta) {
-  this._latencies.push(delta);
-  return this;
-};
-
-Stats.prototype.addScenarioLatency = function(delta) {
-  this._scenarioLatencies.push(delta);
-  return this;
-};
-
-Stats.prototype.addMatch = function() {
-  this._matches++;
   return this;
 };
 
@@ -168,46 +96,51 @@ Stats.prototype.report = function() {
   let result = {};
 
   result.timestamp = new Date().toISOString();
-  result.scenariosCreated = this._generatedScenarios;
-  result.scenariosCompleted = this._completedScenarios;
-  result.requestsCompleted = this._completedRequests;
+  result.scenariosCreated = this._counters['scenarios.created'];
 
-  let latencies = this._latencies;
+  result.scenarioCounts = {};
+  L.each(this._counters, (count, name) => {
+    if (name.startsWith('scenarios.created.')) {
+      const scname = name.split('scenarios.created.')[1];
+      result.scenarioCounts[scname] = count;
+    }
+  });
+
+  result.scenariosCompleted = this._counters['scenarios.completed'];
+  result.requestsCompleted = this._counters['engine.http.responses_received'];
+
+  const ns = this._customStats['engine.http.response_time'];
 
   result.latency = {
-    min: round(L.min(latencies) / 1e6, 1),
-    max: round(L.max(latencies) / 1e6, 1),
-    median: round(sl.median(latencies) / 1e6, 1),
-    p95: round(sl.percentile(latencies, 0.95) / 1e6, 1),
-    p99: round(sl.percentile(latencies, 0.99) / 1e6, 1)
+    min: round(L.min(ns), 1),
+    max: round(L.max(ns), 1),
+    median: round(sl.median(ns), 1),
+    p95: round(sl.percentile(ns, 0.95), 1),
+    p99: round(sl.percentile(ns, 0.99), 1)
   };
-
-  let startedAt = L.min(this._requestTimestamps);
-  let now = Date.now();
-  let count = L.size(this._requestTimestamps);
-  let mean = Math.round(
-    (count / (Math.round((now - startedAt) / 10) / 100)) * 100) / 100;
 
   result.rps = {
-    count: count,
-    mean: mean
+    count: result.requestsCompleted,
+    mean: result.requestsCompleted / 10 // FIXME: depends on the period...
   };
 
-  result.scenarioDuration = {
-    min: round(L.min(this._scenarioLatencies) / 1e6, 1),
-    max: round(L.max(this._scenarioLatencies) / 1e6, 1),
-    median: round(sl.median(this._scenarioLatencies) / 1e6, 1),
-    p95: round(sl.percentile(this._scenarioLatencies, 0.95) / 1e6, 1),
-    p99: round(sl.percentile(this._scenarioLatencies, 0.99) / 1e6, 1)
-  };
+  result.errors = {}; // retain as an object
+  L.each(this._counters, (count, name) => {
+    if (name.startsWith('errors.')) {
+      const errCode = name.split('errors.')[1];
+      result.errors[errCode] = count;
+    }
+  });
 
-  result.scenarioCounts = this._scenarioCounter;
+  result.codes = {};
+  L.each(this._counters, (count, name) => {
+    if (name.startsWith('engine.http.response_code')) {
+      const code = name.split('response_code.')[1];
+      result.codes[code] = count;
+    }
+  });
 
-  result.errors = this._errors;
-  result.codes = this._codes;
-  result.matches = this._matches;
-
-  result.latencies = latencies;
+  result.matches = this._counters['matches'];
 
   result.customStats = {};
   L.each(this._customStats, function(ns, name) {
@@ -248,16 +181,8 @@ Stats.prototype.counter = function(name, value) {
 };
 
 Stats.prototype.reset = function() {
-  this._entries = [];
-  this._latencies = [];
   this._generatedScenarios = 0;
-  this._completedScenarios = 0;
-  this._codes = {};
-  this._errors = {};
   this._requestTimestamps = [];
-  this._completedRequests = 0;
-  this._scenarioLatencies = [];
-  this._matches = 0;
   this._customStats = {};
   this._counters = {};
   this._concurrency = null;
