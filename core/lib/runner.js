@@ -261,7 +261,7 @@ function run(script, ee, options, runState) {
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function (spec) {
     if (runState.pendingScenarios >= spec.maxVusers) {
-      intermediate.avoidedScenario();
+      intermediate.counter('scenarios.skipped', 1);
     } else {
       runScenario(script, intermediate, runState);
     }

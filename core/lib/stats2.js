@@ -5,14 +5,32 @@
 'use strict';
 
 const L = require('lodash');
-const sl = require('stats-lite');
+// const sl = require('stats-lite');
 const HdrHistogram = require('hdr-histogram-js');
 
 module.exports = {
   create: create,
   combine: combine,
-  round: round
+  round: round,
+  deserialize
 };
+
+ function deserialize(serialized) {
+  const o = JSON.parse(serialized);
+  const histos = L.reduce(
+    o.encodedHistograms,
+    (acc, encodedHisto, name) => {
+      acc[name] = HdrHistogram.decodeFromCompressedBase64(encodedHisto);
+      return acc;
+    },
+    {});
+
+  const result = create();
+  result._counters = o.counters;
+  result._customStats = histos;
+  return result;
+};
+
 
 /**
  * Create a new stats object
@@ -26,38 +44,29 @@ function create() {
  */
 function combine(statsObjects) {
   let result = create();
-  L.each(statsObjects, function(stats) {
-    result._generatedScenarios += stats._generatedScenarios;
-    L.each(stats._scenarioCounter, function(count, name) {
-      if(result._scenarioCounter[name]) {
-        result._scenarioCounter[name] += count;
-      } else {
-        result._scenarioCounter[name] = count;
-      }
-    });
-    result._scenariosAvoided += stats._scenariosAvoided;
-    L.each(stats._requestTimestamps, function(timestamp) {
-      result._requestTimestamps.push(timestamp);
-    });
 
+  L.each(statsObjects, function(stats) {
     L.each(stats._counters, function(value, name) {
       if (!result._counters[name]) {
         result._counters[name] = 0;
       }
       result._counters[name] += value;
     });
-    L.each(stats._customStats, function(values, name) {
-      if (!result._customStats[name]) {
-        result._customStats[name] = [];
+
+    L.each(stats._customStats, (histo, name) => {
+      if(!result._customStats[name]) {
+        // TODO: DRY
+        result._customStats[name] = HdrHistogram.build({
+          bitBucketSize: 64,
+          autoResize: true,
+          lowestDiscernibleValue: 2,
+          highestTrackableValue: 1e12,
+          numberOfSignificantValueDigits: 1
+        });
       }
 
-      L.each(values, function(v) {
-        result._customStats[name].push(v);
-      });
+      result._customStats[name].add(histo);
     });
-
-    result._concurrency += stats._concurrency || 0;
-    result._pendingRequests += stats._pendingRequests;
   });
 
   return result;
@@ -66,27 +75,6 @@ function combine(statsObjects) {
 function Stats() {
   return this.reset();
 }
-
-Stats.prototype.newScenario = function(name) {
-  if (this._scenarioCounter[name]) {
-    this._scenarioCounter[name]++;
-  } else {
-    this._scenarioCounter[name] = 1;
-  }
-
-  this._generatedScenarios++;
-  return this;
-};
-
-Stats.prototype.avoidedScenario = function() {
-  this._scenariosAvoided++;
-  return this;
-};
-
-Stats.prototype.newRequest = function() {
-  this._requestTimestamps.push(Date.now());
-  return this;
-};
 
 Stats.prototype.clone = function() {
   return L.cloneDeep(this);
@@ -112,11 +100,11 @@ Stats.prototype.report = function() {
   const ns = this._customStats['engine.http.response_time'];
 
   result.latency = {
-    min: round(L.min(ns), 1),
-    max: round(L.max(ns), 1),
-    median: round(sl.median(ns), 1),
-    p95: round(sl.percentile(ns, 0.95), 1),
-    p99: round(sl.percentile(ns, 0.99), 1)
+    min: round(ns.minNonZeroValue, 1),
+    max: round(ns.maxValue, 1),
+    median: round(ns.getValueAtPercentile(50), 1),
+    p95: round(ns.getValueAtPercentile(95), 1),
+    p99: round(ns.getValueAtPercentile(99), 1)
   };
 
   result.rps = {
@@ -145,30 +133,34 @@ Stats.prototype.report = function() {
   result.customStats = {};
   L.each(this._customStats, function(ns, name) {
     result.customStats[name] = {
-      min: round(L.min(ns), 1),
-      max: round(L.max(ns), 1),
-      median: round(sl.median(ns), 1),
-      p95: round(sl.percentile(ns, 0.95), 1),
-      p99: round(sl.percentile(ns, 0.99), 1)
+      min: round(ns.minNonZeroValue, 1),
+      max: round(ns.maxValue, 1),
+      median: round(ns.getValueAtPercentile(50), 1),
+      p75: round(ns.getValueAtPercentile(75), 1),
+      p95: round(ns.getValueAtPercentile(95), 1),
+      p99: round(ns.getValueAtPercentile(99), 1)
     };
   });
   result.counters = this._counters;
 
-  if (this._concurrency !== null) {
-    result.concurrency = this._concurrency;
-  }
-  result.pendingRequests = this._pendingRequests;
-  result.scenariosAvoided = this._scenariosAvoided;
+  result.scenariosAvoided = this._counters['scenarios.skipped'];
 
   return result;
 };
 
 Stats.prototype.addCustomStat = function(name, n) {
+  // TODO: Should below be configurable / does it need tweaked?
   if (!this._customStats[name]) {
-    this._customStats[name] = [];
+    this._customStats[name] = HdrHistogram.build({
+      bitBucketSize: 64,
+      autoResize: true,
+      lowestDiscernibleValue: 2,
+      highestTrackableValue: 1e12,
+      numberOfSignificantValueDigits: 1
+    });
   }
 
-  this._customStats[name].push(n);
+  this._customStats[name].recordValue(n); // ns, ms conversion happens later
   return this;
 };
 
@@ -181,15 +173,21 @@ Stats.prototype.counter = function(name, value) {
 };
 
 Stats.prototype.reset = function() {
-  this._generatedScenarios = 0;
-  this._requestTimestamps = [];
   this._customStats = {};
   this._counters = {};
-  this._concurrency = null;
-  this._pendingRequests = 0;
-  this._scenariosAvoided = 0;
-  this._scenarioCounter = {};
   return this;
+};
+
+Stats.prototype.serialize = function() {
+  this._encodedHistograms = {};
+  L.each(this._customStats, (histo, name) => {
+    this._encodedHistograms[name] = HdrHistogram.encodeIntoBase64String(histo);
+  });
+
+  return JSON.stringify({
+    counters: this._counters,
+    encodedHistograms: this._encodedHistograms
+  });
 };
 
 Stats.prototype.free = function() {

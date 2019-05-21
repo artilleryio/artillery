@@ -67,7 +67,6 @@
     "request": "^2.88.0",
     "socket.io-client": "^2.1.0",
     "socketio-wildcard": "^2.0.0",
-    "stats-lite": "^2.1.0",
     "tmp": "0.0.28",
     "tough-cookie": "^2.3.4",
     "try-require": "^1.2.1",
