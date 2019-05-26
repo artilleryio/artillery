@@ -5,7 +5,6 @@
 'use strict';
 
 const L = require('lodash');
-// const sl = require('stats-lite');
 const HdrHistogram = require('hdr-histogram-js');
 
 module.exports = {
@@ -95,21 +94,33 @@ Stats.prototype.report = function() {
   });
 
   result.scenariosCompleted = this._counters['scenarios.completed'];
-  result.requestsCompleted = this._counters['engine.http.responses_received'];
 
-  const ns = this._customStats['engine.http.response_time'];
 
-  result.latency = {
-    min: round(ns.minNonZeroValue, 1),
-    max: round(ns.maxValue, 1),
-    median: round(ns.getValueAtPercentile(50), 1),
-    p95: round(ns.getValueAtPercentile(95), 1),
-    p99: round(ns.getValueAtPercentile(99), 1)
-  };
+  result.requestsCompleted = this._counters['artillery.responses'];
+
+  const ns = this._customStats['artillery.latency_ms'];
+
+  if (ns) {
+    result.latency = {
+      min: round(ns.minNonZeroValue, 1),
+      max: round(ns.maxValue, 1),
+      median: round(ns.getValueAtPercentile(50), 1),
+      p95: round(ns.getValueAtPercentile(95), 1),
+      p99: round(ns.getValueAtPercentile(99), 1)
+    };
+  } else {
+    result.latency = {
+      min: NaN,
+      max: NaN,
+      median: NaN,
+      p95: NaN,
+      p99: NaN
+    };
+  }
 
   result.rps = {
     count: result.requestsCompleted,
-    mean: result.requestsCompleted / 10 // FIXME: depends on the period...
+    mean: result.requestsCompleted / 10 // FIXME: depends on the aggregation period
   };
 
   result.errors = {}; // retain as an object
@@ -122,8 +133,8 @@ Stats.prototype.report = function() {
 
   result.codes = {};
   L.each(this._counters, (count, name) => {
-    if (name.startsWith('engine.http.response_code')) {
-      const code = name.split('response_code.')[1];
+    if (name.startsWith('artillery.codes')) {
+      const code = name.split('artillery.codes.')[1];
       result.codes[code] = count;
     }
   });
@@ -162,6 +173,10 @@ Stats.prototype.addCustomStat = function(name, n) {
 
   this._customStats[name].recordValue(n); // ns, ms conversion happens later
   return this;
+};
+
+Stats.prototype.histogram = function(name, n) {
+  return this.addCustomStat(name, n);
 };
 
 Stats.prototype.counter = function(name, value) {

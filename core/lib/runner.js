@@ -351,22 +351,21 @@ function runScenario(script, intermediate, runState) {
     runState.scenarioEvents.on('error', function(errCode) {
       intermediate.counter(`errors.${errCode}`, 1);
     });
+    //
+    // NOTE: artillery.-prefixed metrics are for backwards compatibility with
+    // existing third-party engines/custom code that do not track their own
+    // metrics exclusively via counter/histogram events.
+    //
     runState.scenarioEvents.on('request', function() {
-      intermediate.counter('engine.http.requests_sent', 1);
-      // this is used to calculate rps count and mean
-      // intermediate.newRequest();
-
-
-      // runState.pendingRequests++;
+      intermediate.counter('artillery.requests', 1);
     });
     runState.scenarioEvents.on('match', function() {
-      // intermediate.addMatch();
       intermediate.counter('matches', 1);
     });
     runState.scenarioEvents.on('response', function(delta, code, uid) {
-      intermediate.counter('engine.http.responses_received', 1);
-      intermediate.addCustomStat('engine.http.response_time', delta / 1e6);
-      intermediate.counter(`engine.http.response_code.${code}`, 1);
+      intermediate.counter('artillery.responses', 1);
+      intermediate.histogram('artillery.latency_ms', delta / 1e6);
+      intermediate.counter(`artillery.codes.${code}`, 1);
     });
 
     runState.compiledScenarios = _.map(
