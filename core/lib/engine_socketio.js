@@ -157,9 +157,14 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     }
 
     let outgoing = {
-      channel: template(requestSpec.emit.channel, context),
-      data: template(requestSpec.emit.data, context)
+      channel: template(requestSpec.emit.channel, context)
     };
+
+    if(requestSpec.emit.args) {
+      outgoing.args = template(requestSpec.emit.args, context);
+    } else {
+      outgoing.args = [template(requestSpec.emit.data, context)];
+    }
 
     let endCallback = function (err, context, needEmit) {
       if (err) {
@@ -190,14 +195,14 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
         // Acknowledge required so add callback to emit
         if (needEmit) {
-          socketio.emit(outgoing.channel, outgoing.data, ackCallback);
+          socketio.emit(outgoing.channel, ...outgoing.args, ackCallback);
         } else {
           ackCallback();
         }
       } else {
         // No acknowledge data is expected, so emit without a listener
         if (needEmit) {
-          socketio.emit(outgoing.channel, outgoing.data);
+          socketio.emit(outgoing.channel, ...outgoing.args);
         }
         markEndTime(ee, context, startedAt);
         return callback(null, context);
@@ -225,7 +230,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
         });
       });
       // Send the data on the specified socket.io channel
-      socketio.emit(outgoing.channel, outgoing.data);
+      socketio.emit(outgoing.channel, ...outgoing.args);
       // If we don't get a response within the timeout, fire an error
       let waitTime = self.config.timeout || 10;
       waitTime *= 1000;
