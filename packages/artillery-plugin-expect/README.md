@@ -48,6 +48,10 @@ scenarios:
             - equals:
               - "Tiki"
               - "{{ name }}"
+            - hasHeader: "<Any header key>"
+            - headerEquals:
+              - "<Any header key>"
+              - "<Expected header value>"
 ```
 
 ### Run your test & see results

@@ -12,6 +12,8 @@ const _ = require('lodash');
 module.exports = {
   contentType: expectContentType,
   statusCode: expectStatusCode,
+  hasHeader: expectHasHeader,
+  headerEquals: expectHeaderEquals,
   hasProperty: expectHasProperty,
   equals: expectEquals
 };
@@ -34,6 +36,58 @@ function expectEquals(expectation, body, req, res, userContext) {
   const unique = _.uniq(values);
   result.ok = unique.length === 1;
   result.got = `${ values.join(', ' )}`;
+
+  return result;
+}
+
+function expectHasHeader(expectation, body, req, res, userContext) {
+  debug('hasHeader');
+
+  const expectedHeader = template(expectation.hasHeader, userContext);
+
+    debug(expectedHeader);
+
+  let result = {
+    ok: false,
+    expected: expectedHeader,
+    type: 'hasHeader'
+  };
+
+  if (res.headers[expectedHeader]) {
+    result.ok = true;
+    result.got = expectedHeader;
+  } else {
+    result.got = `response has no ${expectedHeader} header`;
+  }
+
+  return result;
+}
+
+function expectHeaderEquals(expectation, body, req, res, userContext) {
+  debug('check header equals');
+  debug('expectation:', expectation);
+
+  const expected = template(expectation.headerEquals, userContext);
+  let result = {
+    ok: false,
+    type: `header ${expected[0]} values equals`
+  };
+
+  debug('expected:', expected);
+  if (res.headers[expected[0]]) {
+    result.expected = expected[1];
+
+    const valueToCheck = res.headers[expected[0]];
+    debug('valueToCheck = ' + valueToCheck);
+    result.got = valueToCheck;
+
+    if (valueToCheck === expected[1]) {
+      result.ok = true;
+    }
+  } else {
+    result.expected = `response to have ${expected[0]} header`;
+    result.got = `response has no ${expected[0]} header`;
+  }
 
   return result;
 }
