@@ -44,7 +44,7 @@ function validate(script) {
   return validation;
 }
 
-function runner(script, payload, options, callback) {
+async function runner(script, payload, options, callback) {
   let opts = _.assign({
     periodicStats: script.config.statsInterval || 10,
     mode: script.config.mode || 'uniform'
@@ -123,6 +123,14 @@ function runner(script, payload, options, callback) {
         }
       }
   );
+
+  //
+  // compile and run before script
+  //
+  let contextVars;
+  if (script.before) {
+    contextVars = await handleBeforeRequests(script, runnableScript, runnerEngines, ee);
+  }
 
   //
   // load plugins:
@@ -216,7 +224,7 @@ function runner(script, payload, options, callback) {
         engines: runnerEngines
       };
       debug('run() with: %j', runnableScript);
-      run(runnableScript, ee, opts, runState);
+      run(runnableScript, ee, opts, runState, contextVars);
     };
 
     ee.stop = function (done) {
@@ -254,7 +262,7 @@ function runner(script, payload, options, callback) {
   return promise;
 }
 
-function run(script, ee, options, runState) {
+function run(script, ee, options, runState, contextVars) {
   let intermediate = Stats.create();
   let aggregate = [];
 
@@ -263,7 +271,7 @@ function run(script, ee, options, runState) {
     if (runState.pendingScenarios >= spec.maxVusers) {
       intermediate.avoidedScenario();
     } else {
-      runScenario(script, intermediate, runState);
+      runScenario(script, intermediate, runState, contextVars);
     }
   });
   phaser.on('phaseStarted', function(spec) {
@@ -311,7 +319,7 @@ function run(script, ee, options, runState) {
   phaser.run();
 }
 
-function runScenario(script, intermediate, runState) {
+function runScenario(script, intermediate, runState, contextVars) {
   const start = process.hrtime();
 
   //
@@ -394,7 +402,7 @@ function runScenario(script, intermediate, runState) {
   intermediate.newScenario(script.scenarios[i].name || i);
 
   const scenarioStartedAt = process.hrtime();
-  const scenarioContext = createContext(script);
+  const scenarioContext = createContext(script, contextVars);
 
   const finish = process.hrtime(start);
   const runScenarioDelta = (finish[0] * 1e9) + finish[1];
@@ -484,4 +492,29 @@ function $randomNumber(min, max) {
 
 function $randomString(length) {
   return Math.random().toString(36).substr(2, length);
+}
+
+function handleBeforeRequests(script, runnableScript, runnerEngines, testEvents) {
+  let ee = new EventEmitter();
+  return new Promise(function(resolve, reject){
+    ee.on('request', function() {
+      testEvents.emit('beforeTestRequest');
+    });
+    ee.on('error', function(error) {
+      testEvents.emit('beforeTestError', error);
+    });
+
+    let name = runnableScript.before.engine || 'http';
+    let engine = runnerEngines.find((e) => e.__name === name);
+    let beforeTestScenario = engine.createScenario(runnableScript.before, ee);
+    let beforeTestContext = createContext(script);
+    beforeTestScenario(beforeTestContext, function(err, context) {
+      if (err) {
+        debug(err);
+        return reject(err);
+      } else {
+        return resolve(context.vars);
+      }
+    });
+  });
 }
