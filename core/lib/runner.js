@@ -455,13 +455,15 @@ function inlineVariables(script) {
 /**
  * Create initial context for a scenario.
  */
-function createContext(script) {
+function createContext(script, contextVars) {
   const INITIAL_CONTEXT = {
-    vars: {
-      target: script.config.target,
-      $environment: script._environment,
-      $processEnvironment: process.env
-    },
+    vars: Object.assign(
+      {
+        target: script.config.target,
+        $environment: script._environment,
+        $processEnvironment: process.env
+      },
+      contextVars || {}),
     funcs: {
       $randomNumber: $randomNumber,
       $randomString: $randomString,

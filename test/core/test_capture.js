@@ -99,7 +99,7 @@ test('Capture before test - JSON', (t) => {
       let c200 = report.codes[200];
       let expectedAmountRequests = script.config.phases[0].duration * script.config.phases[0].arrivalRate;
       t.assert(c200 === expectedAmountRequests,
-        'There should be ' + expectedAmountRequests + ' responses with status code 200');
+        'There should be ' + expectedAmountRequests + ' responses with status code 200; got ' + c200);
       t.assert(report.matches === expectedAmountRequests, 'All responses match expectation value');
 
       let c201 = report.codes[201];
