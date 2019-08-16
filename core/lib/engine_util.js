@@ -206,7 +206,7 @@ function template(o, context, inPlace) {
     if (!/{{/.test(o)) {
       return o;
     }
-    const funcCallRegex = /{{\s*(\$[A-Za-z0-9_]+\s*\(\s*[A-Za-z0-9_,\s]*\s*\))\s*}}/;
+    const funcCallRegex = /{{\s*(\$[A-Za-z0-9_]+\s*\(\s*[A-Za-z-\d_,\s]*\s*\))\s*}}/;
     let match = o.match(funcCallRegex);
     if (match) {
       // This looks like it could be a function call:
