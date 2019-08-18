@@ -113,14 +113,18 @@ function expectHasProperty(expectation, body, req, res, userContext) {
     result.got = `response body is not an object`;
     return result;
   }
+}
 
-  function expectRegex(expectation, body, req, res, userContext) {
-    const expectedRegex = template(expectation.validRegex, userContext);
+function expectValidRegex(expectation, body, req, res, userContext) {
+  debug('check valid regex');
 
-    let result = {
-      ok: false,
-      expected: expectedRegex,
-      type: 'validRegex'
-    };
-  }
+  const expectedRegex = template(expectation.validRegex, userContext);
+
+  let result = {
+    ok: pattern.test(body),
+    expected: expectedRegex,
+    type: 'validRegex'
+  };
+
+  return result;
 }
