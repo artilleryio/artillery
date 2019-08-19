@@ -77,27 +77,27 @@ test('Expectation: validRegex', async (t) => {
   t.true(result.ok === true);
 });
 
-// test('Integration with Artillery', async (t) => {
-//   const result = shelljs.exec(
-//     `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
-//   {
-//     env: {
-//       ARTILLERY_PLUGIN_PATH: path.resolve(__dirname, '..', '..'),
-//       PATH: process.env.PATH
-//     },
-//     silent: true
-//   });
+test('Integration with Artillery', async (t) => {
+  const result = shelljs.exec(
+    `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
+  {
+    env: {
+      ARTILLERY_PLUGIN_PATH: path.resolve(__dirname, '..', '..'),
+      PATH: process.env.PATH
+    },
+    silent: true
+  });
 
-//   const output = result.stdout;
+  const output = result.stdout;
 
-//   const EXPECTED_EXPECTATION_COUNT = 10;
-//   const actualCount = output.split('\n').filter((s) => {
-//     return s.startsWith('  ok') || s.startsWith('  not ok');
-//   }).length;
+  const EXPECTED_EXPECTATION_COUNT = 10;
+  const actualCount = output.split('\n').filter((s) => {
+    return s.startsWith('  ok') || s.startsWith('  not ok');
+  }).length;
 
-//   t.true(EXPECTED_EXPECTATION_COUNT === actualCount);
+  t.true(EXPECTED_EXPECTATION_COUNT === actualCount);
 
-//   t.true(output.indexOf('ok contentType json') > -1);
-//   t.true(output.indexOf('ok statusCode 404') > -1);
-//   t.true(result.code === 0);
-// });
+  t.true(output.indexOf('ok contentType json') > -1);
+  t.true(output.indexOf('ok statusCode 404') > -1);
+  t.true(result.code === 0);
+});
