@@ -121,9 +121,10 @@ function expectValidRegex(expectation, body, req, res, userContext) {
   const expectedRegex = template(expectation.validRegex, userContext);
 
   let result = {
-    ok: pattern.test(body),
+    ok: new RegExp(expectation.validRegex[1]).test(expectation.validRegex[0]),
     expected: expectedRegex,
-    type: 'validRegex'
+    type: 'validRegex',
+    got: expectation.validRegex[1]
   };
 
   return result;
