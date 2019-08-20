@@ -13,7 +13,8 @@ module.exports = {
   contentType: expectContentType,
   statusCode: expectStatusCode,
   hasProperty: expectHasProperty,
-  equals: expectEquals
+  equals: expectEquals,
+  validRegex: expectValidRegex
 };
 
 function expectEquals(expectation, body, req, res, userContext) {
@@ -112,4 +113,18 @@ function expectHasProperty(expectation, body, req, res, userContext) {
     result.got = `response body is not an object`;
     return result;
   }
+}
+
+function expectValidRegex(expectation, body, req, res, userContext) {
+  debug('check valid regex');
+
+  const expectedRegex = template(expectation.validRegex, userContext);
+
+  let result = {
+    ok: pattern.test(body),
+    expected: expectedRegex,
+    type: 'validRegex'
+  };
+
+  return result;
 }

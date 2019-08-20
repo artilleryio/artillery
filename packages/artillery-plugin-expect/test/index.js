@@ -63,6 +63,20 @@ test('Expectation: statusCode', async (t) => {
   });
 });
 
+test('Expectation: validRegex', async (t) => {
+  const expectations = require('../lib/expectations');
+
+  const result = expectations.validRegex(
+    { match: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i }, // expectation
+    "ea91af53-a673-4ceb-999b-1ab0d247bd48", // body
+    {}, // req
+    {}, // res
+    "" // userContext
+  );
+
+  t.true(result.ok === true);
+});
+
 test('Integration with Artillery', async (t) => {
   const result = shelljs.exec(
     `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
