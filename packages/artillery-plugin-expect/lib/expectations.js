@@ -13,6 +13,7 @@ module.exports = {
   contentType: expectContentType,
   statusCode: expectStatusCode,
   hasProperty: expectHasProperty,
+  notHasProperty: expectNotHasProperty,
   equals: expectEquals
 };
 
@@ -106,6 +107,31 @@ function expectHasProperty(expectation, body, req, res, userContext) {
       return result;
     } else {
       result.got = `response body has no ${expectedProperty} property`;
+      return result;
+    }
+  } else {
+    result.got = `response body is not an object`;
+    return result;
+  }
+}
+
+function expectNotHasProperty(expectation, body, req, res, userContext) {
+  debug('check notHasProperty');
+
+  const expectedProperty = template(expectation.notHasProperty, userContext);
+  let result = {
+    ok: false,
+    expected: expectedProperty,
+    type: 'notHasProperty'
+  };
+
+  if (typeof body === 'object') {
+    if (!_.has(body, expectedProperty)) {
+      result.ok = true;
+      result.got = expectedProperty;
+      return result;
+    } else {
+      result.got = `response body has ${expectedProperty} property`;
       return result;
     }
   } else {
