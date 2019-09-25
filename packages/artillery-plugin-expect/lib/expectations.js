@@ -90,23 +90,20 @@ function expectStatusCode(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectHasProperty(expectation, body, req, res, userContext) {
-  debug('check hasProperty');
-
-  const expectedProperty = template(expectation.hasProperty, userContext);
+function checkProperty(expectationName, expectedProperty, expectedCondition, failureTemplate, body) {
   let result = {
     ok: false,
     expected: expectedProperty,
-    type: 'hasProperty'
+    type: expectationName
   };
 
   if (typeof body === 'object') {
-    if (_.has(body, expectedProperty)) {
+    if (expectedCondition(body, expectedProperty)) {
       result.ok = true;
       result.got = expectedProperty;
       return result;
     } else {
-      result.got = `response body has no ${expectedProperty} property`;
+      result.got = failureTemplate;
       return result;
     }
   } else {
@@ -115,27 +112,22 @@ function expectHasProperty(expectation, body, req, res, userContext) {
   }
 }
 
+function expectHasProperty(expectation, body, req, res, userContext) {
+  const expectationName = 'hasProperty';
+  debug(`check ${expectationName}`);
+
+  const expectedCondition = _.has;
+  const expectedProperty = template(expectation[expectationName], userContext);
+  const failureTemplate = `response body has no ${expectedProperty} property`;
+  return checkProperty(expectationName, expectedProperty, expectedCondition, failureTemplate, body)
+}
+
 function expectNotHasProperty(expectation, body, req, res, userContext) {
-  debug('check notHasProperty');
+  const expectationName = 'notHasProperty';
+  debug(`check ${expectationName}`);
 
-  const expectedProperty = template(expectation.notHasProperty, userContext);
-  let result = {
-    ok: false,
-    expected: expectedProperty,
-    type: 'notHasProperty'
-  };
-
-  if (typeof body === 'object') {
-    if (!_.has(body, expectedProperty)) {
-      result.ok = true;
-      result.got = expectedProperty;
-      return result;
-    } else {
-      result.got = `response body has ${expectedProperty} property`;
-      return result;
-    }
-  } else {
-    result.got = `response body is not an object`;
-    return result;
-  }
+  const expectedCondition = (body, expectedProperty) => !_.has(body, expectedProperty);
+  const expectedProperty = template(expectation[expectationName], userContext);
+  const failureTemplate = `response body has ${expectedProperty} property`;
+  return checkProperty(expectationName, expectedProperty, expectedCondition, failureTemplate, body);
 }
