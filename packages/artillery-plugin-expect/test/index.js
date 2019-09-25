@@ -72,6 +72,8 @@ test('Expectation: hasProperty', t => {
     [ 'someProperty', { someProperty: 'someValue'}, { vars: { }}, true ],
     [ '{{ hasProperty }}', { someOtherProperty: 'someValue'}, { vars: { hasProperty: "someProperty" }}, false ],
     [ 'someProperty', { someOtherProperty: 'someValue'}, { vars: { }}, false ],
+    [ '{{ hasProperty }}', null, { vars: { hasProperty: "someProperty" }}, false ],
+    [ 'someProperty', null, { vars: { }}, false ],
   ];
 
   data.forEach((e) => {
@@ -94,6 +96,8 @@ test('Expectation: notHasProperty', t => {
     [ 'someProperty', { someOtherProperty: 'someValue'}, { vars: { }}, true ],
     [ '{{ notHasProperty }}', { someProperty: 'someValue'}, { vars: { notHasProperty: "someProperty" }}, false ],
     [ 'someProperty', { someProperty: 'someValue'}, { vars: { }}, false ],
+    [ '{{ notHasProperty }}', null, { vars: { notHasProperty: "someProperty" }}, false ],
+    [ 'someProperty', null, { vars: { }}, false ],
   ];
 
   data.forEach((e) => {

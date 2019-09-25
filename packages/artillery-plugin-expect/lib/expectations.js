@@ -97,7 +97,7 @@ function checkProperty(expectationName, expectedProperty, expectedCondition, fai
     type: expectationName
   };
 
-  if (!typeof body === 'object') {
+  if (body === null || typeof body !== 'object') {
     result.got = `response body is not an object`;
     return result;
   }
@@ -115,7 +115,7 @@ function expectHasProperty(expectation, body, req, res, userContext) {
   const expectedCondition = _.has;
   const expectedProperty = template(expectation[expectationName], userContext);
   const failureMessage = `response body has no ${expectedProperty} property`;
-  return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body)
+  return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body);
 }
 
 function expectNotHasProperty(expectation, body, req, res, userContext) {
