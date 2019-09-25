@@ -63,6 +63,50 @@ test('Expectation: statusCode', async (t) => {
   });
 });
 
+test('Expectation: hasProperty', t => {
+  const expectations = require('../lib/expectations');
+
+  const data = [
+    // expectation - body received - user context - expected result
+    [ '{{ hasProperty }}', { someProperty: 'someValue'}, { vars: { hasProperty: "someProperty" }}, true ],
+    [ 'someProperty', { someProperty: 'someValue'}, { vars: { }}, true ],
+    [ '{{ hasProperty }}', { someOtherProperty: 'someValue'}, { vars: { hasProperty: "someProperty" }}, false ],
+    [ 'someProperty', { someOtherProperty: 'someValue'}, { vars: { }}, false ],
+  ];
+
+  data.forEach((e) => {
+    const result = expectations.hasProperty(
+      {hasProperty: e[0]},
+      e[1], // body
+      {}, // req
+      { statusCode: 200 }, // res
+      e[2]); // userContext
+    t.true(result.ok === e[3]);
+  });
+});
+
+test('Expectation: notHasProperty', t => {
+  const expectations = require('../lib/expectations');
+
+  const data = [
+    // expectation - body received - user context - expected result
+    [ '{{ notHasProperty }}', { someOtherProperty: 'someValue'}, { vars: { notHasProperty: "someProperty" }}, true ],
+    [ 'someProperty', { someOtherProperty: 'someValue'}, { vars: { }}, true ],
+    [ '{{ notHasProperty }}', { someProperty: 'someValue'}, { vars: { notHasProperty: "someProperty" }}, false ],
+    [ 'someProperty', { someProperty: 'someValue'}, { vars: { }}, false ],
+  ];
+
+  data.forEach((e) => {
+    const result = expectations.notHasProperty(
+      {notHasProperty: e[0]},
+      e[1], // body
+      {}, // req
+      { statusCode: 200 }, // res
+      e[2]); // userContext
+    t.true(result.ok === e[3]);
+  });
+});
+
 test('Integration with Artillery', async (t) => {
   const result = shelljs.exec(
     `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
