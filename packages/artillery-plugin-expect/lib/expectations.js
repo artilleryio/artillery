@@ -97,19 +97,15 @@ function checkProperty(expectationName, expectedProperty, expectedCondition, fai
     type: expectationName
   };
 
-  if (typeof body === 'object') {
-    if (expectedCondition(body, expectedProperty)) {
-      result.ok = true;
-      result.got = expectedProperty;
-      return result;
-    } else {
-      result.got = failureMessage;
-      return result;
-    }
-  } else {
+  if (!typeof body === 'object') {
     result.got = `response body is not an object`;
     return result;
   }
+
+  const isOk = expectedCondition(body, expectedProperty);
+  result.ok = isOk;
+  result.got = isOk ? expectedProperty: failureMessage;
+  return result;
 }
 
 function expectHasProperty(expectation, body, req, res, userContext) {
