@@ -90,7 +90,7 @@ function expectStatusCode(expectation, body, req, res, userContext) {
   return result;
 }
 
-function checkProperty(expectationName, expectedProperty, expectedCondition, failureTemplate, body) {
+function checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body) {
   let result = {
     ok: false,
     expected: expectedProperty,
@@ -103,7 +103,7 @@ function checkProperty(expectationName, expectedProperty, expectedCondition, fai
       result.got = expectedProperty;
       return result;
     } else {
-      result.got = failureTemplate;
+      result.got = failureMessage;
       return result;
     }
   } else {
@@ -118,8 +118,8 @@ function expectHasProperty(expectation, body, req, res, userContext) {
 
   const expectedCondition = _.has;
   const expectedProperty = template(expectation[expectationName], userContext);
-  const failureTemplate = `response body has no ${expectedProperty} property`;
-  return checkProperty(expectationName, expectedProperty, expectedCondition, failureTemplate, body)
+  const failureMessage = `response body has no ${expectedProperty} property`;
+  return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body)
 }
 
 function expectNotHasProperty(expectation, body, req, res, userContext) {
@@ -128,6 +128,6 @@ function expectNotHasProperty(expectation, body, req, res, userContext) {
 
   const expectedCondition = (body, expectedProperty) => !_.has(body, expectedProperty);
   const expectedProperty = template(expectation[expectationName], userContext);
-  const failureTemplate = `response body has ${expectedProperty} property`;
-  return checkProperty(expectationName, expectedProperty, expectedCondition, failureTemplate, body);
+  const failureMessage = `response body has ${expectedProperty} property`;
+  return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body);
 }
