@@ -13,6 +13,7 @@ module.exports = {
   contentType: expectContentType,
   statusCode: expectStatusCode,
   hasProperty: expectHasProperty,
+  notHasProperty: expectNotHasProperty,
   equals: expectEquals
 };
 
@@ -89,27 +90,40 @@ function expectStatusCode(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectHasProperty(expectation, body, req, res, userContext) {
-  debug('check hasProperty');
-
-  const expectedProperty = template(expectation.hasProperty, userContext);
+function checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body) {
   let result = {
     ok: false,
     expected: expectedProperty,
-    type: 'hasProperty'
+    type: expectationName
   };
 
-  if (typeof body === 'object') {
-    if (_.has(body, expectedProperty)) {
-      result.ok = true;
-      result.got = expectedProperty;
-      return result;
-    } else {
-      result.got = `response body has no ${expectedProperty} property`;
-      return result;
-    }
-  } else {
+  if (body === null || typeof body !== 'object') {
     result.got = `response body is not an object`;
     return result;
   }
+
+  const isOk = expectedCondition(body, expectedProperty);
+  result.ok = isOk;
+  result.got = isOk ? expectedProperty: failureMessage;
+  return result;
+}
+
+function expectHasProperty(expectation, body, req, res, userContext) {
+  const expectationName = 'hasProperty';
+  debug(`check ${expectationName}`);
+
+  const expectedCondition = _.has;
+  const expectedProperty = template(expectation[expectationName], userContext);
+  const failureMessage = `response body has no ${expectedProperty} property`;
+  return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body);
+}
+
+function expectNotHasProperty(expectation, body, req, res, userContext) {
+  const expectationName = 'notHasProperty';
+  debug(`check ${expectationName}`);
+
+  const expectedCondition = (body, expectedProperty) => !_.has(body, expectedProperty);
+  const expectedProperty = template(expectation[expectationName], userContext);
+  const failureMessage = `response body has ${expectedProperty} property`;
+  return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body);
 }
