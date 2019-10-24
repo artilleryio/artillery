@@ -112,13 +112,11 @@ test('Expectation: notHasProperty', t => {
 });
 
 test('Integration with Artillery', async (t) => {
+  shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
+  shelljs.env["PATH"] = process.env.PATH;
   const result = shelljs.exec(
     `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
   {
-    env: {
-      ARTILLERY_PLUGIN_PATH: path.resolve(__dirname, '..', '..'),
-      PATH: process.env.PATH
-    },
     silent: true
   });
 
