@@ -439,7 +439,28 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               });
 
               if (haveFailedMatches || haveFailedCaptures) {
-                // TODO: Emit the details of each failed capture/match
+                if (haveFailedMatches) {
+                  console.log('WARNING! Failed match or capture',
+                    _.each(result.matches, function(v) {
+                      ee.emit('error', 'Failed match or capture', {
+                        expected: v.expected,
+                        got: v.got,
+                        expression: v.expression,
+                        strict: v.strict
+                      });
+                  }));
+                }
+                if (haveFailedCaptures) {
+                  console.log('WARNING! Failed match or capture',
+                    _.each(result.captures, function(v) {
+                      ee.emit('error', 'Failed match or capture', {
+                        expected: v.expected,
+                        got: v.got,
+                        expression: v.expression,
+                        strict: v.strict
+                      });
+                  }));
+                }
               } else {
                 _.each(result.matches, function(v, k) {
                   ee.emit('match', v.success, {
