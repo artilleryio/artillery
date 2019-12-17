@@ -6,6 +6,13 @@
   Artillery has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy.
 </p>
 
+# Use Cases
+
+- **Peak traffic testing** - ensure your e-commerce backend, IoT service or web API can handle max traffic
+- **Pre-launch load testing** - for new websites, mobile app backends, web APIs etc
+- **Continuous performance testing** for new microservices as they are being built
+- **Preventing performance regressions** - stop performance regressions due to new code or config changes before they are shipped to users.
+- **Help profile & debug** common issues such as extensive GC pauses, memory leaks, improperly configured resource pools etc
 
 ## Features
 
@@ -36,13 +43,6 @@
 [![Build Status](https://travis-ci.org/artilleryio/artillery.svg?branch=master)](https://travis-ci.org/artilleryio/artillery) [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
 <a href="https://spectrum.chat/artillery-io"><img src="https://withspectrum.github.io/badge/badge.svg"></a>
 
-# Use Cases
-
-- **Peak traffic testing** - ensure your e-commerce backend, IoT service or web API can handle max traffic
-- **Pre-launch load testing** - for new websites, mobile app backends, web APIs etc
-- **Continuous performance testing** for new microservices as they are being built
-- **Preventing performance regressions** - stop performance regressions due to new code or config changes before they are shipped to users.
-- **Help profile & debug** common issues such as extensive GC pauses, memory leaks, improperly configured resource pools etc
 
 # Getting Started With Artillery
 
@@ -50,8 +50,11 @@
 
 # Using Artillery?
 
-* Add your team to the [Artillery users list on the wiki](https://github.com/shoreditch-ops/artillery/wiki/Companies-using-Artillery).
-* Plant a tree in [our forest](https://offset.earth/artilleryio) with Offset.Earth 🌲🌳🌴
+Add your team to the [Artillery users list on the wiki](https://github.com/shoreditch-ops/artillery/wiki/Companies-using-Artillery).
+
+# Help Us Plant 100,000 New Trees
+
+We're hoping to plant 100,000 new trees with [Offset.earth](https://offset.earth) with the help of the Artillery community. If you enjoy using Artillery and would like to help us out, add your tree to the [Artillery.io forest](https://offset.earth/artilleryio). 🌲🌳🌴
 
 # License
 
