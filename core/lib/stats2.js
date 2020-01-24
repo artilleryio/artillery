@@ -68,6 +68,16 @@ function combine(statsObjects) {
       }
       result._counters[name] += value;
     });
+    L.each(stats._scenarioWiseLatencies, function(values, name) {
+      if (!result._scenarioWiseLatencies[name]) {
+        result._scenarioWiseLatencies[name] = [];
+      }
+
+      L.each(values, function(v) {
+        result._scenarioWiseLatencies[name].push(v);
+      });
+    });
+
     L.each(stats._customStats, function(values, name) {
       if (!result._customStats[name]) {
         result._customStats[name] = [];
@@ -155,6 +165,14 @@ Stats.prototype.addScenarioLatency = function(delta) {
   return this;
 };
 
+Stats.prototype.addScenarioWiseLatency = function(delta, name) {
+  if(!(name in this._scenarioWiseLatencies)) {
+    this._scenarioWiseLatencies[name] = [] 
+  }
+  this._scenarioWiseLatencies[name].push(delta);
+  return this;
+};
+
 Stats.prototype.addMatch = function() {
   this._matches++;
   return this;
@@ -209,6 +227,18 @@ Stats.prototype.report = function() {
 
   result.latencies = latencies;
 
+  result.scenarioWiseStats = {};
+  L.each(this._scenarioWiseLatencies, function(ns, name){
+    if(!(name in result.scenarioWiseStats)) result.scenarioWiseStats[name] = {} 
+    result.scenarioWiseStats[name] = {
+      min: round(L.min(ns) / 1e6, 1),
+      max: round(L.max(ns) / 1e6, 1),
+      median: round(sl.median(ns) / 1e6, 1),
+      p95: round(sl.percentile(ns, 0.95) / 1e6, 1),
+      p99: round(sl.percentile(ns, 0.99) / 1e6, 1)
+    }
+  })
+
   result.customStats = {};
   L.each(this._customStats, function(ns, name) {
     result.customStats[name] = {
@@ -257,6 +287,7 @@ Stats.prototype.reset = function() {
   this._requestTimestamps = [];
   this._completedRequests = 0;
   this._scenarioLatencies = [];
+  this._scenarioWiseLatencies = {};
   this._matches = 0;
   this._customStats = {};
   this._counters = {};

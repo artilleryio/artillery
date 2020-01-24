@@ -93,13 +93,13 @@ HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
       beforeRequest: scenarioSpec.beforeRequest,
       afterResponse: scenarioSpec.afterResponse,
       onError: scenarioSpec.onError
-    });
+    }, scenarioSpec.name );
   });
 
   return self.compile(tasks, scenarioSpec.flow, ee);
 };
 
-HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
+HttpEngine.prototype.step = function step(requestSpec, ee, opts, name) {
 
   opts = opts || {};
   let self = this;
@@ -524,7 +524,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               const endedAt = process.hrtime(startedAt);
               let delta = (endedAt[0] * 1e9) + endedAt[1];
               debugRequests('request end: %s', req.path);
-              ee.emit('response', delta, code, context._uid);
+              ee.emit('response', delta, code, context._uid, name);
             });
           }).on('end', function() {
             context._successCount++;
