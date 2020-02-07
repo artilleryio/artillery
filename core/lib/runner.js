@@ -261,7 +261,7 @@ function run(script, ee, options, runState) {
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function (spec) {
     if (runState.pendingScenarios >= spec.maxVusers) {
-      intermediate.counter('scenarios.skipped', 1);
+      intermediate.counter('core.scenarios.skipped', 1);
     } else {
       runScenario(script, intermediate, runState);
     }
@@ -348,24 +348,9 @@ function runScenario(script, intermediate, runState) {
     runState.scenarioEvents.on('started', function() {
       runState.pendingScenarios++;
     });
+    // TODO: Take an object so that it can have code, description etc
     runState.scenarioEvents.on('error', function(errCode) {
       intermediate.counter(`errors.${errCode}`, 1);
-    });
-    //
-    // NOTE: artillery.-prefixed metrics are for backwards compatibility with
-    // existing third-party engines/custom code that do not track their own
-    // metrics exclusively via counter/histogram events.
-    //
-    runState.scenarioEvents.on('request', function() {
-      intermediate.counter('artillery.requests', 1);
-    });
-    runState.scenarioEvents.on('match', function() {
-      intermediate.counter('matches', 1);
-    });
-    runState.scenarioEvents.on('response', function(delta, code, uid) {
-      intermediate.counter('artillery.responses', 1);
-      intermediate.histogram('artillery.latency_ms', delta / 1e6);
-      intermediate.counter(`artillery.codes.${code}`, 1);
     });
 
     runState.compiledScenarios = _.map(
@@ -385,8 +370,8 @@ function runScenario(script, intermediate, runState) {
         script.scenarios[i].name,
         script.scenarios[i].weight);
 
-  intermediate.counter(`scenarios.created.${script.scenarios[i].name || i}`, 1);
-  intermediate.counter('scenarios.created', 1);
+  intermediate.counter(`core.scenarios.created.${script.scenarios[i].name || i}`, 1);
+  intermediate.counter('core.scenarios.created.total', 1);
   // intermediate.newScenario(script.scenarios[i].name || i);
 
   const scenarioStartedAt = process.hrtime();
@@ -397,7 +382,7 @@ function runScenario(script, intermediate, runState) {
   debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
   runState.compiledScenarios[i](scenarioContext, function(err, context) {
     runState.pendingScenarios--;
-    intermediate.counter('scenarios.completed', 1);
+    intermediate.counter('core.scenarios.completed', 1);
     if (err) {
       debug(err);
     } else {

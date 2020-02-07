@@ -75,6 +75,10 @@ function Stats() {
   return this.reset();
 }
 
+Stats.prototype.getCounter = function(name) {
+  return this._counters[name] || 0; // always default to 0
+}
+
 Stats.prototype.clone = function() {
   return L.cloneDeep(this);
 };
@@ -83,7 +87,7 @@ Stats.prototype.report = function() {
   let result = {};
 
   result.timestamp = new Date().toISOString();
-  result.scenariosCreated = this._counters['scenarios.created'];
+  result.scenariosCreated = this.getCounter('scenarios.created');
 
   result.scenarioCounts = {};
   L.each(this._counters, (count, name) => {
@@ -93,35 +97,9 @@ Stats.prototype.report = function() {
     }
   });
 
-  result.scenariosCompleted = this._counters['scenarios.completed'];
+  result.scenariosCompleted = this.getCounter('scenarios.completed');
 
-
-  result.requestsCompleted = this._counters['artillery.responses'];
-
-  const ns = this._customStats['artillery.latency_ms'];
-
-  if (ns) {
-    result.latency = {
-      min: round(ns.minNonZeroValue, 1),
-      max: round(ns.maxValue, 1),
-      median: round(ns.getValueAtPercentile(50), 1),
-      p95: round(ns.getValueAtPercentile(95), 1),
-      p99: round(ns.getValueAtPercentile(99), 1)
-    };
-  } else {
-    result.latency = {
-      min: NaN,
-      max: NaN,
-      median: NaN,
-      p95: NaN,
-      p99: NaN
-    };
-  }
-
-  result.rps = {
-    count: result.requestsCompleted,
-    mean: result.requestsCompleted / 10 // FIXME: depends on the aggregation period
-  };
+  // TODO: rps
 
   result.errors = {}; // retain as an object
   L.each(this._counters, (count, name) => {
@@ -130,16 +108,6 @@ Stats.prototype.report = function() {
       result.errors[errCode] = count;
     }
   });
-
-  result.codes = {};
-  L.each(this._counters, (count, name) => {
-    if (name.startsWith('artillery.codes')) {
-      const code = name.split('artillery.codes.')[1];
-      result.codes[code] = count;
-    }
-  });
-
-  result.matches = this._counters['matches'];
 
   result.customStats = {};
   L.each(this._customStats, function(ns, name) {
@@ -154,7 +122,7 @@ Stats.prototype.report = function() {
   });
   result.counters = this._counters;
 
-  result.scenariosAvoided = this._counters['scenarios.skipped'];
+  result.scenariosAvoided = this.getCounter('scenarios.skipped');
 
   return result;
 };
