@@ -515,7 +515,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         request(requestParams, maybeCallback)
           .on('request', function(req) {
             debugRequests('request start: %s', req.path);
-            ee.emit('request');
+            ee.emit('counter', 'engine.http.requests', 1);
 
             const startedAt = process.hrtime();
 
@@ -524,7 +524,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               const endedAt = process.hrtime(startedAt);
               let delta = (endedAt[0] * 1e9) + endedAt[1];
               debugRequests('request end: %s', req.path);
-              ee.emit('response', delta, code, context._uid);
+              ee.emit('counter', 'engine.http.responses', 1);
+              ee.emit('histogram', 'engine.http.response_time', delta/1e6); // ms
             });
           }).on('end', function() {
             context._successCount++;
