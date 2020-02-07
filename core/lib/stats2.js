@@ -133,8 +133,8 @@ Stats.prototype.addCustomStat = function(name, n) {
     this._customStats[name] = HdrHistogram.build({
       bitBucketSize: 64,
       autoResize: true,
-      lowestDiscernibleValue: 2,
-      highestTrackableValue: 1e12,
+      lowestDiscernibleValue: 1,
+      highestTrackableValue: 1e9,
       numberOfSignificantValueDigits: 1
     });
   }
