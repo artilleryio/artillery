@@ -66,6 +66,12 @@ function combine(statsObjects) {
 
       result._summaries[name].add(histo);
     });
+
+    L.each(stats._rates, (eventTimestamps, name) => {
+      if (!result._rates[name]) {
+        result._rates[name] = [];
+      }
+      result._rates[name] = result._rates[name].concat(eventTimestamps).sort();
     });
 
   });
@@ -100,7 +106,10 @@ Stats.prototype.report = function() {
 
   result.scenariosCompleted = this.getCounter('scenarios.completed');
 
-  // TODO: rps
+  result.rates = {};
+  L.each(this._rates, (events, name) => {
+    result.rates[name] = round(events.length / ((this._rates[name][this._rates[name].length - 1] - this._rates[name][0]) / 1000), 0);
+  });
 
   result.errors = {}; // retain as an object
   L.each(this._counters, (count, name) => {
