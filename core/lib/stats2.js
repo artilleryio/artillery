@@ -26,7 +26,7 @@ module.exports = {
 
   const result = create();
   result._counters = o.counters;
-  result._customStats = histos;
+  result._summaries = histos;
   return result;
 };
 
@@ -52,10 +52,10 @@ function combine(statsObjects) {
       result._counters[name] += value;
     });
 
-    L.each(stats._customStats, (histo, name) => {
-      if(!result._customStats[name]) {
+    L.each(stats._summaries, (histo, name) => {
+      if(!result._summaries[name]) {
         // TODO: DRY
-        result._customStats[name] = HdrHistogram.build({
+        result._summaries[name] = HdrHistogram.build({
           bitBucketSize: 64,
           autoResize: true,
           lowestDiscernibleValue: 2,
@@ -64,10 +64,11 @@ function combine(statsObjects) {
         });
       }
 
-      result._customStats[name].add(histo);
+      result._summaries[name].add(histo);
     });
-  });
+    });
 
+  });
   return result;
 }
 
@@ -109,9 +110,9 @@ Stats.prototype.report = function() {
     }
   });
 
-  result.customStats = {};
-  L.each(this._customStats, function(ns, name) {
-    result.customStats[name] = {
+  result.summaries = {};
+  L.each(this._summaries, function(ns, name) {
+    result.summaries[name] = {
       min: round(ns.minNonZeroValue, 1),
       max: round(ns.maxValue, 1),
       median: round(ns.getValueAtPercentile(50), 1),
@@ -127,10 +128,23 @@ Stats.prototype.report = function() {
   return result;
 };
 
+// TODO: Deprecate and remove
 Stats.prototype.addCustomStat = function(name, n) {
+  return this.summary(name, n)
+};
+
+Stats.prototype.rate = function(name) {
+  if (!this._rates[name]) {
+    this._rates[name] = [];
+  }
+  this._rates[name].push(new Date());
+  return this;
+}
+
+Stats.prototype.summary = function(name, n) {
   // TODO: Should below be configurable / does it need tweaked?
-  if (!this._customStats[name]) {
-    this._customStats[name] = HdrHistogram.build({
+  if (!this._summaries[name]) {
+    this._summaries[name] = HdrHistogram.build({
       bitBucketSize: 64,
       autoResize: true,
       lowestDiscernibleValue: 1,
@@ -139,12 +153,13 @@ Stats.prototype.addCustomStat = function(name, n) {
     });
   }
 
-  this._customStats[name].recordValue(n); // ns, ms conversion happens later
+  this._summaries[name].recordValue(n); // ns, ms conversion happens later
   return this;
-};
+
+}
 
 Stats.prototype.histogram = function(name, n) {
-  return this.addCustomStat(name, n);
+  return this.summary(name, n);
 };
 
 Stats.prototype.counter = function(name, value) {
@@ -156,14 +171,16 @@ Stats.prototype.counter = function(name, value) {
 };
 
 Stats.prototype.reset = function() {
-  this._customStats = {};
+  this._summaries = {};
   this._counters = {};
+  this._rates = {};
+  this._createdOn = new Date();
   return this;
 };
 
 Stats.prototype.serialize = function() {
   this._encodedHistograms = {};
-  L.each(this._customStats, (histo, name) => {
+  L.each(this._summaries, (histo, name) => {
     this._encodedHistograms[name] = HdrHistogram.encodeIntoBase64String(histo);
   });
 
