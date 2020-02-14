@@ -388,12 +388,14 @@ function runScenario(script, intermediate, runState) {
   debugPerf('runScenarioDelta: %s', Math.round(runScenarioDelta / 1e6 * 100) / 100);
   runState.compiledScenarios[i](scenarioContext, function(err, context) {
     runState.pendingScenarios--;
-    intermediate.counter('core.scenarios.completed', 1);
     if (err) {
       debug(err);
+      intermediate.counter('core.scenarios.failed', 1);
     } else {
+      intermediate.counter('core.scenarios.completed', 1);
       const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
       const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
+      intermediate.histogram('core.scenarios.duration', delta/1e6);
     }
   });
 }
