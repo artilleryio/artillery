@@ -104,17 +104,6 @@ Stats.prototype.report = function() {
   let result = {};
 
   result.timestamp = new Date().toISOString();
-  result.scenariosCreated = this.getCounter('scenarios.created');
-
-  result.scenarioCounts = {};
-  L.each(this._counters, (count, name) => {
-    if (name.startsWith('scenarios.created.')) {
-      const scname = name.split('scenarios.created.')[1];
-      result.scenarioCounts[scname] = count;
-    }
-  });
-
-  result.scenariosCompleted = this.getCounter('scenarios.completed');
 
   result.rates = {};
   L.each(this._rates, (events, name) => {
@@ -142,7 +131,46 @@ Stats.prototype.report = function() {
   });
   result.counters = this._counters;
 
-  result.scenariosAvoided = this.getCounter('scenarios.skipped');
+  //
+  // Backwards-compatibility
+  //
+  result.scenariosCreated = this.getCounter('core.scenarios.created.total');
+  result.scenarioCounts = {};
+  L.each(this._counters, (count, name) => {
+    if (name.startsWith('core.scenarios.created.')) {
+      const scname = name.split('core.scenarios.created.')[1];
+      result.scenarioCounts[scname] = count;
+    }
+  });
+  result.scenariosCompleted = this.getCounter('core.scenarios.completed');
+  result.scenariosAvoided = this.getCounter('core.scenarios.skipped');
+  result.requestsCompleted = this.getCounter('engine.http.responses')|| this.getCounter('engine.socketio.emit') || this.getCounter('engine.websocket.messages_sent');
+  // TODO: concurrency
+
+  result.rps = {
+    mean: this.getRate('engine.http.request_rate') || this.getRate('engine.socketio.emit_rate') || this.getRate('engine.websocket.send_rate')
+  };
+
+  const ns = this._summaries['engine.http.response_time'] || this._summaries['engine.socketio.response_time'];
+  if (ns) {
+    result.latency = {
+      min: round(ns.minNonZeroValue, 1),
+      max: round(ns.maxValue, 1),
+      median: round(ns.getValueAtPercentile(50), 1),
+      p75: round(ns.getValueAtPercentile(75), 1),
+      p95: round(ns.getValueAtPercentile(95), 1),
+      p99: round(ns.getValueAtPercentile(99), 1)
+    };
+  }
+  // TODO: scenarioDuration, track if needed
+
+  const codeMetricNames = Object.keys(this._counters).filter(n => n.startsWith('engine.http.codes.'));
+
+  result.codes = codeMetricNames.reduce((acc, name) => {
+    const code = name.split('.')[3];
+    acc[code] = this.getCounter(name);
+    return acc;
+  }, {});
 
   return result;
 };
