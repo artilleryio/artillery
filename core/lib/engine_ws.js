@@ -65,6 +65,7 @@ WSEngine.prototype.step = function (requestSpec, ee) {
 
   let f = function(context, callback) {
     ee.emit('counter', 'engine.websocket.messages_sent', 1);
+    ee.emit('rate', 'engine.websocket.send_rate')
     let startedAt = process.hrtime();
 
     let payload = template(requestSpec.send, context);
