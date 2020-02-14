@@ -338,12 +338,18 @@ function runScenario(script, intermediate, runState) {
     runState.scenarioEvents.on('counter', function(name, value) {
       intermediate.counter(name, value);
     });
-    runState.scenarioEvents.on('histogram', function(name, value) {
-      intermediate.addCustomStat(name, value);
-    });
     // TODO: Deprecate
     runState.scenarioEvents.on('customStat', function(stat) {
-      intermediate.addCustomStat(stat.stat, stat.value);
+      intermediate.summary(stat.stat, stat.value);
+    });
+    runState.scenarioEvents.on('summary', function(name, value) {
+      intermediate.summary(name, value);
+    });
+    runState.scenarioEvents.on('histogram', function(name, value) {
+      intermediate.summary(name, value);
+    });
+    runState.scenarioEvents.on('rate', function(name) {
+      intermediate.rate(name);
     });
     runState.scenarioEvents.on('started', function() {
       runState.pendingScenarios++;
