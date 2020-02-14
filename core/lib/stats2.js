@@ -86,6 +86,16 @@ Stats.prototype.getCounter = function(name) {
   return this._counters[name] || 0; // always default to 0
 }
 
+// Return value of a rate which is average per second of the recorded time period
+Stats.prototype.getRate = function(name) {
+  const events = this._rates[name];
+  if (!events) {
+    return 0;
+  }
+
+  return round(events.length / ((events[events.length - 1] - events[0]) / 1000), 0)
+}
+
 Stats.prototype.clone = function() {
   return L.cloneDeep(this);
 };
@@ -108,7 +118,7 @@ Stats.prototype.report = function() {
 
   result.rates = {};
   L.each(this._rates, (events, name) => {
-    result.rates[name] = round(events.length / ((this._rates[name][this._rates[name].length - 1] - this._rates[name][0]) / 1000), 0);
+    result.rates[name] = this.getRate(name);
   });
 
   result.errors = {}; // retain as an object
