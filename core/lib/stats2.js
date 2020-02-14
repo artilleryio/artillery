@@ -209,7 +209,7 @@ Stats.prototype.histogram = function(name, n) {
   return this.summary(name, n);
 };
 
-Stats.prototype.counter = function(name, value) {
+Stats.prototype.counter = function(name, value = 1) {
   if (!this._counters[name]) {
     this._counters[name] = 0;
   }
