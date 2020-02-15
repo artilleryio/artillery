@@ -1,0 +1,33 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "phases": [
+        { "duration": 10, "arrivalRate": 1 }
+      ]
+  },
+  "before": {
+    "flow": [
+      {"post":
+        {
+          "url": "/pets",
+          "json": {"name": "MickeyTheDog", "species": "Dog"},
+          "capture": {
+            "json": "$.id",
+            "as": "petId"
+          }
+        }
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "name": "Get the same pet in every scenario, as the pet was created once before the test started. ",
+      "flow": [
+        {"get": {
+          "url": "/pets/{{ petId }}",
+          "match": {"json": "$.name", "value": "MickeyTheDog"}
+        }}
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "1.6.0-28",
+  "version": "1.6.0-29",
   "description": "Flexible and powerful toolkit for load and functional testing",
   "main": "./lib",
   "engines": {
@@ -48,7 +48,7 @@
     "cheerio": "^1.0.0-rc.2",
     "cli-table3": "^0.5.1",
     "commander": "2.9.0",
-    "csv-parse": "^4.0.1",
+    "csv-parse": "^4.4.6",
     "debug": "^2.2.0",
     "deep-equal": "^1.0.1",
     "deep-for-each": "^3.0.0",
@@ -58,8 +58,8 @@
     "hdr-histogram-js": "^1.1.4",
     "js-yaml": "^3.13.1",
     "jsck": "^0.3.2",
-    "jsonpath": "^1.0.1",
-    "lodash": "^4.17.11",
+    "jsonpath": "^1.0.2",
+    "lodash": "^4.17.13",
     "moment": "^2.22.1",
     "nanotimer": "^0.3.15",
     "opn": "^5.3.0",
@@ -77,7 +77,7 @@
     "ws": "^5.1.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "^7.2.1",
+    "@commitlint/cli": "^8.1.0",
     "@commitlint/config-conventional": "^7.1.2",
     "bats": "^0.4.2",
     "bcrypt": "^3.0.0",
