@@ -7,9 +7,10 @@
 const async = require('async');
 const _ = require('lodash');
 
-const request = require('request');
 const io = require('socket.io-client');
 const wildcardPatch = require('socketio-wildcard')(io.Manager);
+
+const tough = require('tough-cookie');
 
 const deepEqual = require('deep-equal');
 const debug = require('debug')('socketio');
@@ -331,8 +332,8 @@ SocketIoEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
   }
 
   return function scenario(initialContext, callback) {
-    initialContext._successCount = 0;
-    initialContext._jar = request.jar();
+    initialContext = self.httpDelegate.setInitialContext(initialContext);
+
     initialContext._pendingRequests = _.size(
         _.reject(scenarioSpec, function(rs) {
           return (typeof rs.think === 'number');
