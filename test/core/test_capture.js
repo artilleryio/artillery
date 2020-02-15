@@ -29,7 +29,6 @@ test('Capture - headers', (t) => {
 });
 
 
-
 test('Capture - JSON', (t) => {
   const fn = path.resolve(__dirname, './scripts/captures.json');
   const script = require(fn);
@@ -50,6 +49,7 @@ test('Capture - JSON', (t) => {
         t.assert(cond,
                  'There should be a 200 for every 201');
         if (!cond) {
+          console.log(report);
           console.log('200: %s; 201: %s', c200, c201);
         }
         t.end();
@@ -100,7 +100,6 @@ test('Capture before test - JSON', (t) => {
       let expectedAmountRequests = script.config.phases[0].duration * script.config.phases[0].arrivalRate;
       t.assert(c200 === expectedAmountRequests,
         'There should be ' + expectedAmountRequests + ' responses with status code 200; got ' + c200);
-      t.assert(report.matches === expectedAmountRequests, 'All responses match expectation value');
 
       let c201 = report.codes[201];
       t.assert(c201 === undefined, 'There should be no 201 response codes');

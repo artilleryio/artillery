@@ -64,7 +64,8 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   }
 
   let f = function(context, callback) {
-    ee.emit('request');
+    ee.emit('counter', 'engine.websocket.messages_sent', 1);
+    ee.emit('rate', 'engine.websocket.send_rate')
     let startedAt = process.hrtime();
 
     let payload = template(requestSpec.send, context);
@@ -80,10 +81,6 @@ WSEngine.prototype.step = function (requestSpec, ee) {
       if (err) {
         debug(err);
         ee.emit('error', err);
-      } else {
-        let endedAt = process.hrtime(startedAt);
-        let delta = (endedAt[0] * 1e9) + endedAt[1];
-        ee.emit('response', delta, 0, context._uid);
       }
       return callback(err, context);
     });

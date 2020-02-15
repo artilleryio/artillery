@@ -216,7 +216,7 @@ async function runner(script, payload, options, callback) {
     ee.run = function() {
       let runState = {
         pendingScenarios: 0,
-        pendingRequests: 0,
+        // pendingRequests: 0,
         compiledScenarios: null,
         scenarioEvents: null,
         picker: undefined,
@@ -269,7 +269,7 @@ function run(script, ee, options, runState, contextVars) {
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function (spec) {
     if (runState.pendingScenarios >= spec.maxVusers) {
-      intermediate.avoidedScenario();
+      intermediate.counter('core.scenarios.skipped', 1);
     } else {
       runScenario(script, intermediate, runState, contextVars);
     }
@@ -285,9 +285,6 @@ function run(script, ee, options, runState, contextVars) {
 
     const doneYet = setInterval(function checkIfDone() {
       if (runState.pendingScenarios === 0) {
-        if (runState.pendingRequests !== 0) {
-          debug('DONE. Pending requests: %s', runState.pendingRequests);
-        }
 
         clearInterval(doneYet);
         clearInterval(periodicStatsTimer);
@@ -299,7 +296,6 @@ function run(script, ee, options, runState, contextVars) {
         let aggregateReport = Stats.combine(aggregate).report();
         return ee.emit('done', aggregateReport);
       } else {
-        debug('Pending requests: %s', runState.pendingRequests);
         debug('Pending scenarios: %s', runState.pendingScenarios);
       }
     }, 500);
@@ -309,7 +305,7 @@ function run(script, ee, options, runState, contextVars) {
 
   function sendStats() {
     intermediate._concurrency = runState.pendingScenarios;
-    intermediate._pendingRequests = runState.pendingRequests;
+    // intermediate._pendingRequests = runState.pendingRequests;
     ee.emit('stats', intermediate.clone());
     delete intermediate._entries;
     aggregate.push(intermediate.clone());
@@ -350,36 +346,25 @@ function runScenario(script, intermediate, runState, contextVars) {
     runState.scenarioEvents.on('counter', function(name, value) {
       intermediate.counter(name, value);
     });
-    runState.scenarioEvents.on('histogram', function(name, value) {
-      intermediate.addCustomStat(name, value);
-    });
     // TODO: Deprecate
     runState.scenarioEvents.on('customStat', function(stat) {
-      intermediate.addCustomStat(stat.stat, stat.value);
+      intermediate.summary(stat.stat, stat.value);
+    });
+    runState.scenarioEvents.on('summary', function(name, value) {
+      intermediate.summary(name, value);
+    });
+    runState.scenarioEvents.on('histogram', function(name, value) {
+      intermediate.summary(name, value);
+    });
+    runState.scenarioEvents.on('rate', function(name) {
+      intermediate.rate(name);
     });
     runState.scenarioEvents.on('started', function() {
       runState.pendingScenarios++;
     });
+    // TODO: Take an object so that it can have code, description etc
     runState.scenarioEvents.on('error', function(errCode) {
-      intermediate.addError(errCode);
-    });
-    runState.scenarioEvents.on('request', function() {
-      intermediate.newRequest();
-
-      runState.pendingRequests++;
-    });
-    runState.scenarioEvents.on('match', function() {
-      intermediate.addMatch();
-    });
-    runState.scenarioEvents.on('response', function(delta, code, uid) {
-      intermediate.completedRequest();
-      intermediate.addLatency(delta);
-      intermediate.addCode(code);
-
-      let entry = [Date.now(), uid, delta, code];
-      intermediate.addEntry(entry);
-
-      runState.pendingRequests--;
+      intermediate.counter(`errors.${errCode}`, 1);
     });
 
     runState.compiledScenarios = _.map(
@@ -399,7 +384,9 @@ function runScenario(script, intermediate, runState, contextVars) {
         script.scenarios[i].name,
         script.scenarios[i].weight);
 
-  intermediate.newScenario(script.scenarios[i].name || i);
+  intermediate.counter(`core.scenarios.created.${script.scenarios[i].name || i}`, 1);
+  intermediate.counter('core.scenarios.created.total', 1);
+  // intermediate.newScenario(script.scenarios[i].name || i);
 
   const scenarioStartedAt = process.hrtime();
   const scenarioContext = createContext(script, contextVars);
@@ -411,11 +398,12 @@ function runScenario(script, intermediate, runState, contextVars) {
     runState.pendingScenarios--;
     if (err) {
       debug(err);
+      intermediate.counter('core.scenarios.failed', 1);
     } else {
+      intermediate.counter('core.scenarios.completed', 1);
       const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
       const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
-      intermediate.addScenarioLatency(delta);
-      intermediate.completedScenario();
+      intermediate.histogram('core.scenarios.duration', delta/1e6);
     }
   });
 }
