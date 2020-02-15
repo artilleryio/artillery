@@ -526,6 +526,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               debugRequests('request end: %s', req.path);
               ee.emit('counter', 'engine.http.responses', 1);
               ee.emit('histogram', 'engine.http.response_time', delta/1e6); // ms
+              ee.emit('counter', `engine.http.codes.${code}`, 1);
             });
           }).on('end', function() {
             context._successCount++;
