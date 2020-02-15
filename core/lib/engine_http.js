@@ -6,7 +6,8 @@
 
 const async = require('async');
 const _ = require('lodash');
-const request = require('request');
+const request = require('got');
+const tough = require('tough-cookie');
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
 const debugResponse = require('debug')('http:response');
@@ -20,6 +21,9 @@ const fs = require('fs');
 const qs = require('querystring');
 const filtrex = require('filtrex');
 const urlparse = require('url').parse;
+
+const HttpAgent = require('agentkeepalive');
+const { HttpsAgent } = HttpAgent;
 
 module.exports = HttpEngine;
 
@@ -45,8 +49,8 @@ function HttpEngine(script) {
     maxFreeSockets: this.maxSockets
   });
 
-  this._httpAgent = new http.Agent(agentOpts);
-  this._httpsAgent = new https.Agent(agentOpts);
+  this._httpAgent = new HttpAgent(agentOpts);
+  this._httpsAgent = new HttpsAgent(agentOpts);
 }
 
 HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
@@ -179,7 +183,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     let tls = config.tls || {};
-    let timeout = config.timeout || _.get(config, 'http.timeout') || 120;
+    let timeout = (config.timeout || _.get(config, 'http.timeout') || 10);
 
     if (!engineUtil.isProbableEnough(params)) {
       return process.nextTick(function() {
@@ -211,7 +215,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       headers: {
       },
       timeout: timeout * 1000,
-      jar: context._jar
+      cookieJar: context._jar,
     });
     requestParams = _.extend(requestParams, tls);
 
@@ -323,13 +327,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         if (cookie) {
           _.each(cookie, function(v, k) {
-            context._jar.setCookie(k + '=' + template(v, context), requestParams.url);
+            context._jar.setCookieSync(k + '=' + template(v, context), requestParams.url);
           });
         }
 
         if (typeof requestParams.auth === 'object') {
-          requestParams.auth.user = template(requestParams.auth.user, context);
-          requestParams.auth.pass = template(requestParams.auth.pass, context);
+          requestParams.username = template(requestParams.auth.user, context);
+          requestParams.password = template(requestParams.auth.pass, context);
+          delete requestParams.auth;
         }
 
         let url = maybePrependBase(template(requestParams.uri || requestParams.url, context), config);
@@ -341,12 +346,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         requestParams.url = url;
-
-        if ((/^https/i).test(requestParams.url)) {
-          requestParams.agent = context._httpsAgent;
-        } else {
-          requestParams.agent = context._httpAgent;
+        requestParams.agent = {
+          http: context._httpAgent,
+          https: context._httpsAgent
         }
+
+        requestParams.throwHttpErrors = false;
 
         if (!requestParams.url.startsWith('http')) {
           let err = new Error(`Invalid URL - ${requestParams.url}`);
@@ -408,9 +413,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           debugResponse(JSON.stringify(res.headers, null, 2));
           debugResponse(JSON.stringify(body, null, 2));
 
+          const resForCapture = { headers: res.headers, body: body };
           engineUtil.captureOrMatch(
             params,
-            res,
+            resForCapture,
             context,
             function captured(err, result) {
               if (err) {
@@ -512,66 +518,95 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           });
         }
 
-        request(requestParams, maybeCallback)
+        requestParams.retry = 0; // disable retries - ignored when using streams
+        const startedAt = process.hrtime(); // TODO: use built-in timing API
+
+        request(requestParams)
           .on('request', function(req) {
             debugRequests('request start: %s', req.path);
             ee.emit('counter', 'engine.http.requests', 1);
-
-            const startedAt = process.hrtime();
-
-            req.on('response', function updateLatency(res) {
-              let code = res.statusCode;
-              const endedAt = process.hrtime(startedAt);
-              let delta = (endedAt[0] * 1e9) + endedAt[1];
-              debugRequests('request end: %s', req.path);
-              ee.emit('counter', 'engine.http.responses', 1);
-              ee.emit('histogram', 'engine.http.response_time', delta/1e6); // ms
-              ee.emit('counter', `engine.http.codes.${code}`, 1);
+            ee.emit('rate', 'engine.http.request_rate');
+            req.on('response', function(res) {
+              self._handleResponse(res, ee, context, maybeCallback, startedAt, callback);
             });
-          }).on('end', function() {
-            context._successCount++;
-
-            if (!maybeCallback) {
-              callback(null, context);
-            } // otherwise called from requestCallback
-          }).on('error', function(err) {
+          }).on('error', function(err, body, res) {
+            if (err.name === 'HTTPError') {
+              return;
+            }
+            // this is an ENOTFOUND, ECONNRESET etc
             debug(err);
-
-            // Run onError hooks and end the scenario
+            // Run onError hooks and end the scenario:
             runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
               let errCode = err.code || err.message;
               ee.emit('error', errCode);
               return callback(err, context);
             });
-          });
+          })
+        .catch((gotErr) => {
+          // TODO: Handle the error properly - with run hooks
+          ee.emit('error', gotErr.code || gotErr.message);
+          return callback(gotErr, context);
+        });
       }); // eachSeries
   };
 
   return f;
 };
 
+HttpEngine.prototype._handleResponse = function(res, ee, context, maybeCallback, startedAt, callback) {
+  let code = res.statusCode;
+  const endedAt = process.hrtime(startedAt);
+  let delta = (endedAt[0] * 1e9) + endedAt[1];
+  ee.emit('counter', 'engine.http.codes.' + code, 1);
+  ee.emit('counter', 'engine.http.responses', 1);
+  ee.emit('rate', 'engine.http.response_rate');
+  ee.emit('histogram', 'engine.http.response_time', delta/1e6); // ms
+
+  let body = '';
+  if (maybeCallback) {
+    res.on('data', (d) => {
+      body += d;
+    });
+  }
+
+  res.on('end', () => {
+    context._successCount++;
+    if (!maybeCallback) {
+      callback(null, context);
+    } else {
+      maybeCallback(null, res, body);
+    }
+  });
+
+}
+
+HttpEngine.prototype.setInitialContext = function(initialContext) {
+  let self = this;
+  initialContext._successCount = 0;
+
+  initialContext._jar = new tough.CookieJar();
+
+  if (self.config.http && typeof self.config.http.pool !== 'undefined') {
+    // Reuse common agents (created in the engine instance constructor)
+    initialContext._httpAgent = self._httpAgent;
+    initialContext._httpsAgent = self._httpsAgent;
+  } else {
+    // Create agents just for this VU
+    const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+      maxSockets: 1,
+      maxFreeSockets: 1
+    });
+    initialContext._httpAgent = new http.Agent(agentOpts);
+    initialContext._httpsAgent = new https.Agent(agentOpts);
+  }
+  return initialContext;
+};
+
 HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
 
   return function scenario(initialContext, callback) {
-    initialContext._successCount = 0;
-
-    initialContext._jar = request.jar();
-
-    if (self.config.http && typeof self.config.http.pool !== 'undefined') {
-      // Reuse common agents (created in the engine instance constructor)
-      initialContext._httpAgent = self._httpAgent;
-      initialContext._httpsAgent = self._httpsAgent;
-    } else {
-      // Create agents just for this VU
-      const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
-        maxSockets: 1,
-        maxFreeSockets: 1
-      });
-      initialContext._httpAgent = new http.Agent(agentOpts);
-      initialContext._httpsAgent = new https.Agent(agentOpts);
-    }
-
+    initialContext = self.setInitialContext(initialContext);
     let steps = _.flatten([
       function zero(cb) {
         ee.emit('started');
