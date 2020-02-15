@@ -1,5 +1,5 @@
 <p align="center">
-<a href="https://artillery.io"><img src="https://artillery.io/img/flag.png" height="55" /></a>
+<a href="https://artillery.io"><img src="https://artillery.io/img/artillery-square.jpg" height="120" /></a>
 </p>
 <p align="center">
   Artillery is a modern, powerful & easy-to-use <strong>load testing</strong> and <strong>functional testing</strong> toolkit. Use it to ship <strong>scalable</strong> backends, APIs & services that stay <strong>performant</strong> & <strong>resilient</strong> under high load.<br /><br />
@@ -9,10 +9,10 @@
 # Use Cases
 
 - **Peak traffic testing** - ensure your e-commerce backend, IoT service or web API can handle max traffic
-- **Pre-launch load testing** - for new websites, mobile app backends, web APIs etc
-- **Continuous performance testing** for new microservices as they are being built
-- **Preventing performance regressions** - stop performance regressions due to new code or config changes before they are shipped to users.
-- **Help profile & debug** common issues such as extensive GC pauses, memory leaks, improperly configured resource pools etc
+- **Pre-launch load testing** - for new websites, mobile app backends, web APIs etc, as they are being built
+- **Continuous performance testing** - stop performance regressions in new code or config changes before they are shipped to production
+- **Help profile & debug** - common issues such as extensive GC pauses, memory leaks, and misconfigured resource pools
+- **Semantic monitoring** - run realistic user scenarios against production APIs continuously and alert on wrong responses or errors
 
 ## Features
 
