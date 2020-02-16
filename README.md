@@ -8,13 +8,13 @@
 
 # Use Cases
 
-- **Peak traffic testing** - ensure your e-commerce backend, IoT service or web API can handle max traffic
-- **Pre-launch load testing** - for new websites, mobile app backends, web APIs etc, as they are being built
-- **Continuous performance testing** - stop performance regressions in new code or config changes before they are shipped to production
-- **Help profile & debug** - common issues such as extensive GC pauses, memory leaks, and misconfigured resource pools
+- **Peak traffic testing** - ensure your API, e-commerce backend, IoT service can handle max traffic
+- **Pre-launch load testing** - building a new API or service? test it before launch
+- **Continuous performance testing** - run load tests in CI/CD to stop performance regressions being shipped to prod
+- **Profile & debug performance issues** - run load tests to profile & fix high CPU usage, extensive GC pauses, memory leaks, and misconfigured resource pools
 - **Semantic monitoring** - run realistic user scenarios against production APIs continuously and alert on wrong responses or errors
 
-## Features
+# Features
 
 - **Multiple protocols**:  Load test HTTP, WebSocket, Socket.io, Kinesis, HLS and more.
 - **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc).
@@ -37,12 +37,11 @@
 
 ---
 
-- **Enterprise-grade**: Use [Artillery Pro](https://artillery.io/pro/) to run large-scale distributed tests from your own AWS account with ECS or Fargate; integrate with CI/CD pipelines and with AWS services (IAM, VPC, etc).
-- For training, custom integrations, and performance consulting services see our [professional services page](https://artillery.io/services-support.html).
+- **Artillery Pro** for teams: [Artillery Pro](https://artillery.io/pro/) is a self-hosted self-service load & functional testing solution for your team. Run large-scale distributed tests from your own AWS account with ECS or Fargate; use in CI/CD pipelines; integrate with existing AWS security & compliance controls (IAM, VPC, cost allocation).
+- For **training**, **custom integrations**, and **performance consulting services** see our [professional services page](https://artillery.io/services-support.html).
 
 [![Build Status](https://travis-ci.org/artilleryio/artillery.svg?branch=master)](https://travis-ci.org/artilleryio/artillery) [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
 <a href="https://spectrum.chat/artillery-io"><img src="https://withspectrum.github.io/badge/badge.svg"></a>
-
 
 # Getting Started With Artillery
 
