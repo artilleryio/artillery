@@ -75,6 +75,9 @@ function combine(statsObjects) {
     });
 
   });
+
+  result._createdOn = L.map(statsObjects, '_createdOn').sort()[0];
+
   return result;
 }
 
@@ -93,7 +96,8 @@ Stats.prototype.getRate = function(name) {
     return 0;
   }
 
-  return round(events.length / ((events[events.length - 1] - events[0]) / 1000), 0)
+  const delta = new Date() - this._createdOn;
+  return round(events.length / delta * 1000, 0);
 }
 
 Stats.prototype.clone = function() {
