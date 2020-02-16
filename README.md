@@ -3,8 +3,10 @@
 </p>
 <p align="center">
   Artillery is a modern, powerful & easy-to-use <strong>load testing</strong> and <strong>functional testing</strong> toolkit. Use it to ship <strong>scalable</strong> backends, APIs & services that stay <strong>performant</strong> & <strong>resilient</strong> under high load.<br /><br />
-  Artillery has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy.
+  Artillery has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy.<br><br>
+  <a href="https://spectrum.chat/artillery-io"><img src="https://withspectrum.github.io/badge/badge.svg"></a>
 </p>
+
 
 # Use Cases
 
@@ -27,7 +29,7 @@
 
 ---
 
-- **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery)
+- **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery) - `master` build status: [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
 - **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
 - **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/artilleryio/artillery)
 - **Community**: [https://spectrum.chat/artillery-io](https://spectrum.chat/artillery-io)
@@ -39,9 +41,6 @@
 
 - **Artillery Pro** for teams: [Artillery Pro](https://artillery.io/pro/) is a self-hosted self-service load & functional testing solution for your team. Run large-scale distributed tests from your own AWS account with ECS or Fargate; use in CI/CD pipelines; integrate with existing AWS security & compliance controls (IAM, VPC, cost allocation).
 - For **training**, **custom integrations**, and **performance consulting services** see our [professional services page](https://artillery.io/services-support.html).
-
-[![Build Status](https://travis-ci.org/artilleryio/artillery.svg?branch=master)](https://travis-ci.org/artilleryio/artillery) [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
-<a href="https://spectrum.chat/artillery-io"><img src="https://withspectrum.github.io/badge/badge.svg"></a>
 
 # Getting Started With Artillery
 
