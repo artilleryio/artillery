@@ -81,7 +81,6 @@
     "@commitlint/cli": "^8.1.0",
     "@commitlint/config-conventional": "^7.1.2",
     "bats": "^0.4.2",
-    "bcrypt": "^3.0.0",
     "cookie-parser": "^1.4.3",
     "eslint": "^5.14.1",
     "express": "^4.16.3",

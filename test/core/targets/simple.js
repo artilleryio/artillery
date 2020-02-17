@@ -2,7 +2,6 @@
 
 const Hapi = require('hapi');
 const uuid = require('uuid');
-const Bcrypt = require('bcrypt');
 const Basic = require('hapi-auth-basic');
 
 const PORT = process.env.PORT || 3003;
@@ -37,7 +36,7 @@ const validate = async (request, username, password, h) => {
     return { credentials: null, isValid: false };
   }
 
-  const isValid = await Bcrypt.compare(password, user.password);
+  const isValid = password === user.password;
   const credentials = { id: user.id, name: user.name };
   return { isValid, credentials };
 };
