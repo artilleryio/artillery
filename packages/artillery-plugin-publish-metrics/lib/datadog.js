@@ -111,8 +111,10 @@ function DatadogReporter(config, events, script) {
     let errorCount = 0;
     if (report.errors) {
       Object.keys(report.errors).forEach((errCode) => {
+        const metricName = errCode
+              .replace(/[^a-zA-Z0-9_]/g, '_');
         errorCount += report.errors[errCode];
-        metrics.increment(`errors.${errCode}`, report.errors[errCode]);
+        metrics.increment(`errors.${metricName}`, report.errors[errCode]);
       });
     }
     metrics.increment(`error_count`, errorCount);
