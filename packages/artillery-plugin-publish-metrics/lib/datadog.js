@@ -47,8 +47,9 @@ function DatadogReporter(config, events, script) {
     });
 
     this.reportingType = 'api';
-  } else if (config.host && config.port) {
+  } else {
     debug('Initializing datadog via agent');
+
     const options = {
       host: config.host,
       port: config.port,
@@ -63,8 +64,6 @@ function DatadogReporter(config, events, script) {
 
     this.metrics = new Hotshots(options);
     this.reportingType = 'agent';
-  } else {
-    events.emit('userWarning', `datadog reporting requires apiKey or both host and port to be set`);
   }
 
   this.startedEventSent = false;
