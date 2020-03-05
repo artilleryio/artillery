@@ -148,14 +148,14 @@ Stats.prototype.report = function() {
   });
   result.scenariosCompleted = this.getCounter('core.scenarios.completed');
   result.scenariosAvoided = this.getCounter('core.scenarios.skipped');
-  result.requestsCompleted = this.getCounter('engine.http.responses')|| this.getCounter('engine.socketio.emit') || this.getCounter('engine.websocket.messages_sent');
+  result.requestsCompleted = this.getCounter('engine.http.responses') || this.getCounter('engine.socketio.emit') || this.getCounter('engine.websocket.messages_sent') || this.getCounter('engine.grpc.responses');
   // TODO: concurrency
 
   result.rps = {
-    mean: this.getRate('engine.http.request_rate') || this.getRate('engine.socketio.emit_rate') || this.getRate('engine.websocket.send_rate')
+    mean: this.getRate('engine.http.request_rate') || this.getRate('engine.socketio.emit_rate') || this.getRate('engine.websocket.send_rate') || this.getRate('engine.grpc.request_rate')
   };
 
-  const ns = this._summaries['engine.http.response_time'] || this._summaries['engine.socketio.response_time'];
+  const ns = this._summaries['engine.http.response_time'] || this._summaries['engine.socketio.response_time'] || this._summaries['engine.grpc.response_time'];
   if (ns) {
     result.latency = {
       min: round(ns.minNonZeroValue, 1),
@@ -168,7 +168,9 @@ Stats.prototype.report = function() {
   }
   // TODO: scenarioDuration, track if needed
 
-  const codeMetricNames = Object.keys(this._counters).filter(n => n.startsWith('engine.http.codes.'));
+  const codeMetricNamesHTTP = Object.keys(this._counters).filter(n => n.startsWith('engine.http.codes.'));
+  const codeMetricNamesGRPC = Object.keys(this._counters).filter(n => n.startsWith('engine.grpc.codes.'));
+  const codeMetricNames = codeMetricNamesHTTP.concat(codeMetricNamesGRPC)
 
   result.codes = codeMetricNames.reduce((acc, name) => {
     const code = name.split('.')[3];
