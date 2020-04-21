@@ -5,13 +5,31 @@
 'use strict';
 
 const L = require('lodash');
-const sl = require('stats-lite');
+const HdrHistogram = require('hdr-histogram-js');
 
 module.exports = {
   create: create,
   combine: combine,
-  round: round
+  round: round,
+  deserialize
 };
+
+ function deserialize(serialized) {
+  const o = JSON.parse(serialized);
+  const histos = L.reduce(
+    o.encodedHistograms,
+    (acc, encodedHisto, name) => {
+      acc[name] = HdrHistogram.decodeFromCompressedBase64(encodedHisto);
+      return acc;
+    },
+    {});
+
+  const result = create();
+  result._counters = o.counters;
+  result._summaries = histos;
+  return result;
+};
+
 
 /**
  * Create a new stats object
@@ -25,62 +43,40 @@ function create() {
  */
 function combine(statsObjects) {
   let result = create();
-  L.each(statsObjects, function(stats) {
-    L.each(stats._latencies, function(latency) {
-      result._latencies.push(latency);
-    });
-    result._generatedScenarios += stats._generatedScenarios;
-    L.each(stats._scenarioCounter, function(count, name) {
-      if(result._scenarioCounter[name]) {
-        result._scenarioCounter[name] += count;
-      } else {
-        result._scenarioCounter[name] = count;
-      }
-    });
-    result._completedScenarios += stats._completedScenarios;
-    result._scenariosAvoided += stats._scenariosAvoided;
-    L.each(stats._codes, function(count, code) {
-      if(result._codes[code]) {
-        result._codes[code] += count;
-      } else {
-        result._codes[code] = count;
-      }
-    });
-    L.each(stats._errors, function(count, error) {
-      if(result._errors[error]) {
-        result._errors[error] += count;
-      } else {
-        result._errors[error] = count;
-      }
-    });
-    L.each(stats._requestTimestamps, function(timestamp) {
-      result._requestTimestamps.push(timestamp);
-    });
-    result._completedRequests += stats._completedRequests;
-    L.each(stats._scenarioLatencies, function(latency) {
-      result._scenarioLatencies.push(latency);
-    });
-    result._matches += stats._matches;
 
+  L.each(statsObjects, function(stats) {
     L.each(stats._counters, function(value, name) {
       if (!result._counters[name]) {
         result._counters[name] = 0;
       }
       result._counters[name] += value;
     });
-    L.each(stats._customStats, function(values, name) {
-      if (!result._customStats[name]) {
-        result._customStats[name] = [];
+
+    L.each(stats._summaries, (histo, name) => {
+      if(!result._summaries[name]) {
+        // TODO: DRY
+        result._summaries[name] = HdrHistogram.build({
+          bitBucketSize: 64,
+          autoResize: true,
+          lowestDiscernibleValue: 2,
+          highestTrackableValue: 1e12,
+          numberOfSignificantValueDigits: 1
+        });
       }
 
-      L.each(values, function(v) {
-        result._customStats[name].push(v);
-      });
+      result._summaries[name].add(histo);
     });
 
-    result._concurrency += stats._concurrency || 0;
-    result._pendingRequests += stats._pendingRequests;
+    L.each(stats._rates, (eventTimestamps, name) => {
+      if (!result._rates[name]) {
+        result._rates[name] = [];
+      }
+      result._rates[name] = result._rates[name].concat(eventTimestamps).sort();
+    });
+
   });
+
+  result._createdOn = L.map(statsObjects, '_createdOn').sort()[0];
 
   return result;
 }
@@ -89,76 +85,20 @@ function Stats() {
   return this.reset();
 }
 
-Stats.prototype.addEntry = function(entry) {
-  this._entries.push(entry);
-  return this;
-};
+Stats.prototype.getCounter = function(name) {
+  return this._counters[name] || 0; // always default to 0
+}
 
-Stats.prototype.getEntries = function() {
-  return this._entries;
-};
-
-Stats.prototype.newScenario = function(name) {
-  if (this._scenarioCounter[name]) {
-    this._scenarioCounter[name]++;
-  } else {
-    this._scenarioCounter[name] = 1;
+// Return value of a rate which is average per second of the recorded time period
+Stats.prototype.getRate = function(name) {
+  const events = this._rates[name];
+  if (!events) {
+    return 0;
   }
 
-  this._generatedScenarios++;
-  return this;
-};
-
-Stats.prototype.completedScenario = function() {
-  this._completedScenarios++;
-  return this;
-};
-
-Stats.prototype.avoidedScenario = function() {
-  this._scenariosAvoided++;
-  return this;
-};
-
-Stats.prototype.addCode = function(code) {
-  if (!this._codes[code]) {
-    this._codes[code] = 0;
-  }
-  this._codes[code]++;
-  return this;
-};
-
-Stats.prototype.addError = function(errCode) {
-  if (!this._errors[errCode]) {
-    this._errors[errCode] = 0;
-  }
-  this._errors[errCode]++;
-  return this;
-};
-
-Stats.prototype.newRequest = function() {
-  this._requestTimestamps.push(Date.now());
-  return this;
-};
-
-Stats.prototype.completedRequest = function() {
-  this._completedRequests++;
-  return this;
-};
-
-Stats.prototype.addLatency = function(delta) {
-  this._latencies.push(delta);
-  return this;
-};
-
-Stats.prototype.addScenarioLatency = function(delta) {
-  this._scenarioLatencies.push(delta);
-  return this;
-};
-
-Stats.prototype.addMatch = function() {
-  this._matches++;
-  return this;
-};
+  const delta = new Date() - this._createdOn;
+  return round(events.length / delta * 1000, 0);
+}
 
 Stats.prototype.clone = function() {
   return L.cloneDeep(this);
@@ -168,78 +108,112 @@ Stats.prototype.report = function() {
   let result = {};
 
   result.timestamp = new Date().toISOString();
-  result.scenariosCreated = this._generatedScenarios;
-  result.scenariosCompleted = this._completedScenarios;
-  result.requestsCompleted = this._completedRequests;
 
-  let latencies = this._latencies;
+  result.rates = {};
+  L.each(this._rates, (events, name) => {
+    result.rates[name] = this.getRate(name);
+  });
 
-  result.latency = {
-    min: round(L.min(latencies) / 1e6, 1),
-    max: round(L.max(latencies) / 1e6, 1),
-    median: round(sl.median(latencies) / 1e6, 1),
-    p95: round(sl.percentile(latencies, 0.95) / 1e6, 1),
-    p99: round(sl.percentile(latencies, 0.99) / 1e6, 1)
-  };
+  result.errors = {}; // retain as an object
+  L.each(this._counters, (count, name) => {
+    if (name.startsWith('errors.')) {
+      const errCode = name.split('errors.')[1];
+      result.errors[errCode] = count;
+    }
+  });
 
-  let startedAt = L.min(this._requestTimestamps);
-  let now = Date.now();
-  let count = L.size(this._requestTimestamps);
-  let mean = Math.round(
-    (count / (Math.round((now - startedAt) / 10) / 100)) * 100) / 100;
-
-  result.rps = {
-    count: count,
-    mean: mean
-  };
-
-  result.scenarioDuration = {
-    min: round(L.min(this._scenarioLatencies) / 1e6, 1),
-    max: round(L.max(this._scenarioLatencies) / 1e6, 1),
-    median: round(sl.median(this._scenarioLatencies) / 1e6, 1),
-    p95: round(sl.percentile(this._scenarioLatencies, 0.95) / 1e6, 1),
-    p99: round(sl.percentile(this._scenarioLatencies, 0.99) / 1e6, 1)
-  };
-
-  result.scenarioCounts = this._scenarioCounter;
-
-  result.errors = this._errors;
-  result.codes = this._codes;
-  result.matches = this._matches;
-
-  result.latencies = latencies;
-
-  result.customStats = {};
-  L.each(this._customStats, function(ns, name) {
-    result.customStats[name] = {
-      min: round(L.min(ns), 1),
-      max: round(L.max(ns), 1),
-      median: round(sl.median(ns), 1),
-      p95: round(sl.percentile(ns, 0.95), 1),
-      p99: round(sl.percentile(ns, 0.99), 1)
+  result.summaries = {};
+  L.each(this._summaries, function(ns, name) {
+    result.summaries[name] = {
+      min: round(ns.minNonZeroValue, 1),
+      max: round(ns.maxValue, 1),
+      median: round(ns.getValueAtPercentile(50), 1),
+      p75: round(ns.getValueAtPercentile(75), 1),
+      p95: round(ns.getValueAtPercentile(95), 1),
+      p99: round(ns.getValueAtPercentile(99), 1)
     };
   });
   result.counters = this._counters;
 
-  if (this._concurrency !== null) {
-    result.concurrency = this._concurrency;
+  //
+  // Backwards-compatibility
+  //
+  result.scenariosCreated = this.getCounter('core.scenarios.created.total');
+  result.scenarioCounts = {};
+  L.each(this._counters, (count, name) => {
+    if (name.startsWith('core.scenarios.created.')) {
+      const scname = name.split('core.scenarios.created.')[1];
+      result.scenarioCounts[scname] = count;
+    }
+  });
+  result.scenariosCompleted = this.getCounter('core.scenarios.completed');
+  result.scenariosAvoided = this.getCounter('core.scenarios.skipped');
+  result.requestsCompleted = this.getCounter('engine.http.responses')|| this.getCounter('engine.socketio.emit') || this.getCounter('engine.websocket.messages_sent');
+  // TODO: concurrency
+
+  result.rps = {
+    mean: this.getRate('engine.http.request_rate') || this.getRate('engine.socketio.emit_rate') || this.getRate('engine.websocket.send_rate')
+  };
+
+  const ns = this._summaries['engine.http.response_time'] || this._summaries['engine.socketio.response_time'];
+  if (ns) {
+    result.latency = {
+      min: round(ns.minNonZeroValue, 1),
+      max: round(ns.maxValue, 1),
+      median: round(ns.getValueAtPercentile(50), 1),
+      p75: round(ns.getValueAtPercentile(75), 1),
+      p95: round(ns.getValueAtPercentile(95), 1),
+      p99: round(ns.getValueAtPercentile(99), 1)
+    };
   }
-  result.pendingRequests = this._pendingRequests;
-  result.scenariosAvoided = this._scenariosAvoided;
+  // TODO: scenarioDuration, track if needed
+
+  const codeMetricNames = Object.keys(this._counters).filter(n => n.startsWith('engine.http.codes.'));
+
+  result.codes = codeMetricNames.reduce((acc, name) => {
+    const code = name.split('.')[3];
+    acc[code] = this.getCounter(name);
+    return acc;
+  }, {});
 
   return result;
 };
 
+// TODO: Deprecate and remove
 Stats.prototype.addCustomStat = function(name, n) {
-  if (!this._customStats[name]) {
-    this._customStats[name] = [];
-  }
-
-  this._customStats[name].push(n);
-  return this;
+  return this.summary(name, n)
 };
 
-Stats.prototype.counter = function(name, value) {
+Stats.prototype.rate = function(name) {
+  if (!this._rates[name]) {
+    this._rates[name] = [];
+  }
+  this._rates[name].push(new Date());
+  return this;
+}
+
+Stats.prototype.summary = function(name, n) {
+  // TODO: Should below be configurable / does it need tweaked?
+  if (!this._summaries[name]) {
+    this._summaries[name] = HdrHistogram.build({
+      bitBucketSize: 64,
+      autoResize: true,
+      lowestDiscernibleValue: 1,
+      highestTrackableValue: 1e9,
+      numberOfSignificantValueDigits: 1
+    });
+  }
+
+  this._summaries[name].recordValue(n); // ns, ms conversion happens later
+  return this;
+
+}
+
+Stats.prototype.histogram = function(name, n) {
+  return this.summary(name, n);
+};
+
+Stats.prototype.counter = function(name, value = 1) {
   if (!this._counters[name]) {
     this._counters[name] = 0;
   }
@@ -248,23 +222,23 @@ Stats.prototype.counter = function(name, value) {
 };
 
 Stats.prototype.reset = function() {
-  this._entries = [];
-  this._latencies = [];
-  this._generatedScenarios = 0;
-  this._completedScenarios = 0;
-  this._codes = {};
-  this._errors = {};
-  this._requestTimestamps = [];
-  this._completedRequests = 0;
-  this._scenarioLatencies = [];
-  this._matches = 0;
-  this._customStats = {};
+  this._summaries = {};
   this._counters = {};
-  this._concurrency = null;
-  this._pendingRequests = 0;
-  this._scenariosAvoided = 0;
-  this._scenarioCounter = {};
+  this._rates = {};
+  this._createdOn = new Date();
   return this;
+};
+
+Stats.prototype.serialize = function() {
+  this._encodedHistograms = {};
+  L.each(this._summaries, (histo, name) => {
+    this._encodedHistograms[name] = HdrHistogram.encodeIntoBase64String(histo);
+  });
+
+  return JSON.stringify({
+    counters: this._counters,
+    encodedHistograms: this._encodedHistograms
+  });
 };
 
 Stats.prototype.free = function() {

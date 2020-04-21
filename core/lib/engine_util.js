@@ -6,7 +6,7 @@
 
 const async = require('async');
 const debug = require('debug')('engine_util');
-const traverse = require('traverse');
+const deepForEach = require('deep-for-each');
 const esprima = require('esprima');
 const L = require('lodash');
 const vm = require('vm');
@@ -188,31 +188,25 @@ function isProbableEnough(obj) {
   return r < probability;
 }
 
-function template(o, context) {
+function template(o, context, inPlace) {
   let result;
 
   if (typeof o === 'undefined') {
     return undefined;
   }
 
-  const objtype = Object.prototype.toString.call(o);
-  if (objtype === '[object Object]') {
-    return Object.keys(o).reduce(
-      (hash, key) =>
-        Object.assign({}, hash, {
-          [template(key, context)]: template(o[key], context)
-        }),
-      {}
-    );
-  } else if (objtype === '[object Array]') {    return o.reduce(
-      (array, current) => array.concat(template(current, context)),
-      []
-    );   
+  if (o && (o.constructor === Object || o.constructor === Array)) {
+    if (!inPlace) {
+      result = L.cloneDeep(o);
+    } else {
+      result = o;
+    }
+    templateObjectOrArray(result, context);
   } else if (typeof o === 'string') {
     if (!/{{/.test(o)) {
       return o;
     }
-    const funcCallRegex = /{{\s*(\$[A-Za-z0-9_]+\s*\(\s*.*\s*\))\s*}}/;
+    const funcCallRegex = /{{\s*(\$[A-Za-z0-9_]+\s*\(\s*[A-Za-z0-9_,\s]*\s*\))\s*}}/;
     let match = o.match(funcCallRegex);
     if (match) {
       // This looks like it could be a function call:
@@ -240,6 +234,31 @@ function template(o, context) {
   }
 
   return result;
+}
+
+// Mutates the object in place
+function templateObjectOrArray(o, context) {
+  deepForEach(o, (value, key, subj, path) => {
+    const newPath = template(path, context, true);
+
+    let newValue;
+    if (value && (value.constructor !== Object && value.constructor !== Array)) {
+      newValue = template(value, context, true);
+    } else {
+      newValue = value;
+    }
+
+    debug(`path = ${path} ; value = ${JSON.stringify(value)} (${typeof value}) ; (subj type: ${subj.length ? 'list':'hash'}) ; newValue = ${JSON.stringify(newValue)} ; newPath = ${newPath}`);
+
+    // If path has changed, we need to unset the original path and
+    // explicitly walk down the new subtree from this path:
+    if (path !== newPath) {
+      L.unset(o, path);
+      newValue = template(value, context, true);
+    }
+
+    L.set(o, newPath, newValue);
+  });
 }
 
 function renderVariables (str, vars) {

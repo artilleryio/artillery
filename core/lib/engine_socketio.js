@@ -7,9 +7,10 @@
 const async = require('async');
 const _ = require('lodash');
 
-const request = require('request');
 const io = require('socket.io-client');
 const wildcardPatch = require('socketio-wildcard')(io.Manager);
+
+const tough = require('tough-cookie');
 
 const deepEqual = require('deep-equal');
 const debug = require('debug')('socketio');
@@ -40,7 +41,7 @@ SocketIoEngine.prototype.createScenario = function(scenarioSpec, ee) {
 function markEndTime(ee, context, startedAt) {
   let endedAt = process.hrtime(startedAt);
   let delta = (endedAt[0] * 1e9) + endedAt[1];
-  ee.emit('response', delta, 0, context._uid);
+  ee.emit('histogram', 'engine.socketio.response_time', delta/1e6);
 }
 
 function isResponseRequired(spec) {
@@ -90,13 +91,13 @@ function processResponse(ee, data, response, context, callback) {
       return callback(new Error('Failed match'), context);
     } else {
       // Emit match events...
-      _.each(result.matches, function(v, k) {
-        ee.emit('match', v.success, {
-          expected: v.expected,
-          got: v.got,
-          expression: v.expression
-        });
-      });
+      // _.each(result.matches, function(v, k) {
+      //   ee.emit('match', v.success, {
+      //     expected: v.expected,
+      //     got: v.got,
+      //     expression: v.expression
+      //   });
+      // });
 
       // Populate the context with captured values
       _.each(result.captures, function(v, k) {
@@ -148,12 +149,16 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
       let delegateFunc = self.httpDelegate.step(requestSpec, ee);
       return delegateFunc(context, callback);
     }
-    ee.emit('request');
+    ee.emit('counter', 'engine.socketio.emit', 1);
+    ee.emit('rate', 'engine.socketio.emit_rate');
     let startedAt = process.hrtime();
     let socketio = context.sockets[requestSpec.emit.namespace] || null;
 
     if (!(requestSpec.emit && requestSpec.emit.channel && socketio)) {
-      return ee.emit('error', 'invalid arguments');
+      debug('invalid arguments');
+      ee.emit('error', 'invalid arguments');
+      // TODO: Provide a more helpful message
+      callback(new Error('socketio: invalid arguments'));
     }
 
     let outgoing = {
@@ -202,7 +207,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
         markEndTime(ee, context, startedAt);
         return callback(null, context);
       }
-    };
+    }; // endCallback
 
     if (isResponseRequired(requestSpec)) {
       let response = {
@@ -245,7 +250,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     // Set default namespace in emit action
     requestSpec.emit.namespace = template(requestSpec.emit.namespace, context) || "";
 
-    self.loadContextSocket(requestSpec.emit.namespace, context, function(err, socket){
+    self.loadContextSocket(requestSpec.emit.namespace, context, function(err, socket) {
       if(err) {
         debug(err);
         ee.emit('error', err.message);
@@ -327,8 +332,8 @@ SocketIoEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
   }
 
   return function scenario(initialContext, callback) {
-    initialContext._successCount = 0;
-    initialContext._jar = request.jar();
+    initialContext = self.httpDelegate.setInitialContext(initialContext);
+
     initialContext._pendingRequests = _.size(
         _.reject(scenarioSpec, function(rs) {
           return (typeof rs.think === 'number');
