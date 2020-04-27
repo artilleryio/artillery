@@ -37,6 +37,4 @@ fi
 
 sleep 5
 
-test_status=$("$DIR"/../node_modules/.bin/ava $DIR/index.js)
-
-exit $test_status
+"$DIR"/../node_modules/.bin/ava $DIR/index.js
