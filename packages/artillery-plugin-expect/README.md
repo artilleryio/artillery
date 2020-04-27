@@ -116,9 +116,9 @@ expect:
 
 Check the value of [`Content-Type`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Type) header.
 
-### `hasProperty`
+### `hasProperty` and `notHasProperty`
 
-When the response is JSON, check that the response object has a property. Same as [`lodash#has`](https://lodash.com/docs/#has).
+When the response is JSON, check that the response object has a property (or does not in case of `notHasProperty`) Same behavior as [`lodash#has`](https://lodash.com/docs/#has).
 
 ```
 expect:
@@ -140,6 +140,43 @@ Check that two or more values are the same. **NOTE** only primitive values (e.g.
           - "{{ species }}"
           - "dog"
 ```
+
+### `hasHeader`
+
+Check that the response contains a header.
+
+```
+- get:
+    url: "/pets/f037ed9a"
+    expect:
+      - hasHeader: "object-version"
+```
+
+### `headerEquals`
+
+Check that the response contains a header and its value matches some string.
+
+```
+- get:
+    url: "/pets/f037ed9a"
+    expect:
+      - headerEquals:
+        - "object-version"
+        - "v3"
+
+```
+
+### `matchesRegexp`
+
+Check that response body matches a regular expression. The regular expression provided must be a string which is a valid argument to the [RegExp constructor](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp).
+
+```
+- get:
+    url: "/pets/f037ed9a"
+    expect:
+      - matchesRegexp: .+ # body is not empty
+```
+
 
 ## Feedback
 
