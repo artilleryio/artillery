@@ -15,8 +15,9 @@ module.exports = {
   hasHeader: expectHasHeader,
   headerEquals: expectHeaderEquals,
   hasProperty: expectHasProperty,
-  notHasProperty: expectNotHasProperty,
-  equals: expectEquals
+  equals: expectEquals,
+  validRegex: expectValidRegex,
+  notHasProperty: expectNotHasProperty
 };
 
 function expectEquals(expectation, body, req, res, userContext) {
@@ -180,4 +181,19 @@ function expectNotHasProperty(expectation, body, req, res, userContext) {
   const expectedProperty = template(expectation[expectationName], userContext);
   const failureMessage = `response body has ${expectedProperty} property`;
   return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body);
+}
+
+function expectValidRegex(expectation, body, req, res, userContext) {
+  debug('check valid regex');
+
+  const expectedRegex = template(expectation.validRegex, userContext);
+
+  let result = {
+    ok: new RegExp(expectation.validRegex[1]).test(expectation.validRegex[0]),
+    expected: expectedRegex,
+    type: 'validRegex',
+    got: expectation.validRegex[1]
+  };
+
+  return result;
 }
