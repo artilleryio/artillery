@@ -66,8 +66,8 @@ test('Expectation: statusCode', async (t) => {
 test('Expectation: validRegex', async (t) => {
   const expectations = require('../lib/expectations');
 
-  const result = expectations.validRegex(
-    { match: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i }, // expectation
+  const result = expectations.matchesRegexp(
+    {matchesRegexp: "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
     "ea91af53-a673-4ceb-999b-1ab0d247bd48", // body
     {}, // req
     {}, // res
@@ -123,6 +123,7 @@ test('Expectation: notHasProperty', t => {
       e[2]); // userContext
     t.true(result.ok === e[3]);
   });
+});
 
 test('Integration with Artillery', async (t) => {
   shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
@@ -135,11 +136,15 @@ test('Integration with Artillery', async (t) => {
 
   const output = result.stdout;
 
-  const EXPECTED_EXPECTATION_COUNT = 10;
+  const EXPECTED_EXPECTATION_COUNT = 11;
   const actualCount = output.split('\n').filter((s) => {
     return s.startsWith('  ok') || s.startsWith('  not ok');
   }).length;
 
+  if (EXPECTED_EXPECTATION_COUNT !== actualCount) {
+    console.log('Artillery output:');
+    console.log(output);
+  }
   t.true(EXPECTED_EXPECTATION_COUNT === actualCount);
 
   t.true(output.indexOf('ok contentType json') > -1);

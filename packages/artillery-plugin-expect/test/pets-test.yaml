@@ -21,6 +21,7 @@ scenarios:
             - contentType: json
             - statusCode: 200
             - hasProperty: result
+            - matchesRegexp: .+
       - post:
           name: "Create a pet"
           url: "/pets"

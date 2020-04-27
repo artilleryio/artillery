@@ -16,7 +16,7 @@ module.exports = {
   headerEquals: expectHeaderEquals,
   hasProperty: expectHasProperty,
   equals: expectEquals,
-  validRegex: expectValidRegex,
+  matchesRegexp: expectMatchesRegexp,
   notHasProperty: expectNotHasProperty
 };
 
@@ -183,17 +183,31 @@ function expectNotHasProperty(expectation, body, req, res, userContext) {
   return checkProperty(expectationName, expectedProperty, expectedCondition, failureMessage, body);
 }
 
-function expectValidRegex(expectation, body, req, res, userContext) {
-  debug('check valid regex');
+function expectMatchesRegexp(expectation, body, req, res, userContext) {
+  debug('check valid regexp');
+  const expectationName = 'matchesRegexp';
 
-  const expectedRegex = template(expectation.validRegex, userContext);
+  const expectedRegexp = template(expectation[expectationName], userContext);
 
-  let result = {
-    ok: new RegExp(expectation.validRegex[1]).test(expectation.validRegex[0]),
-    expected: expectedRegex,
-    type: 'validRegex',
-    got: expectation.validRegex[1]
-  };
+  let rx;
+  let result;
+  try {
+    rx = new RegExp(expectedRegexp);
+    const matches = new RegExp(rx).test(body);
+    result = {
+      ok: matches,
+      expected: true,
+      type: 'matchesRegexp',
+      got: matches
+    };
+  } catch (rxErr) {
+    result = {
+      ok: false,
+      expected: true,
+      type: 'matchesRegexp',
+      got: rxErr
+    };
+  }
 
   return result;
 }
