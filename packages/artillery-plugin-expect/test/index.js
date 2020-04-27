@@ -1,9 +1,10 @@
 'use strict';
 
-import test from 'ava';
-import createDebug from 'debug';
+const test = require('ava');
+const createDebug = require('debug');
+const EventEmitter = require('events');
+
 const debug = createDebug('expect-plugin:test');
-import EventEmitter from 'events';
 
 const shelljs = require('shelljs');
 const path = require('path');
