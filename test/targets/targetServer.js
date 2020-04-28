@@ -12,6 +12,7 @@ module.exports = {
 
 function createServer(host, port) {
   const server = Hapi.server({ port: port, host: host });
+  server.listener.keepAliveTimeout = 120e3;
   return server;
 }
 
