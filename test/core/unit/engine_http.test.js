@@ -133,7 +133,7 @@ test('HTTP virtual user', function(t) {
 
 test('url and uri parameters', function (t) {
   const target = nock('http://localhost:8888')
-    .get('/hello')
+    .get('/hello?hello=world')
     .reply(200, 'ok');
 
   const script = {
@@ -159,7 +159,10 @@ test('url and uri parameters', function (t) {
           {
             get: {
               uri: '/will/404',
-              beforeRequest: 'rewriteUrl'
+              beforeRequest: 'rewriteUrl',
+              qs: {
+                hello: 'world'
+              }
             }
           }
         ]

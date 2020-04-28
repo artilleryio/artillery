@@ -280,8 +280,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         // TODO: Use traverse on the entire flow instead
 
+        // Request.js -> Got.js translation
         if (params.qs) {
-          requestParams.qs = template(params.qs, context);
+          requestParams.searchParams = template(params.qs, context);
+        }
+        if (typeof params.gzip !== 'undefined') {
+          requestParams.decompress = params.gzip;
         }
 
         if (params.form) {
@@ -543,7 +547,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             });
           })
         .catch((gotErr) => {
-          // TODO: Handle the error properly - with run hooks
+          // TODO: Handle the error properly with run hooks
           ee.emit('error', gotErr.code || gotErr.message);
           return callback(gotErr, context);
         });
