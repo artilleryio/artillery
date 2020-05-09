@@ -67,18 +67,43 @@ function combine(statsObjects) {
       result._summaries[name].add(histo);
     });
 
-    L.each(stats._rates, (eventTimestamps, name) => {
-      if (!result._rates[name]) {
-        result._rates[name] = [];
-      }
-      result._rates[name] = result._rates[name].concat(eventTimestamps).sort();
-    });
-
+    const ks = Object.keys(stats._rates);
+    for(let i = 0; i < ks.length; i++) {
+      const name = ks[i];
+      const eventTimestamps = stats._rates[name];
+      const eventTimestamps2 = result._rates[name] || [];
+      result._rates[name] = mergeSorted(eventTimestamps, eventTimestamps2);
+    }
   });
 
   result._createdOn = L.map(statsObjects, '_createdOn').sort()[0];
 
   return result;
+}
+
+function mergeSorted(arr1, arr2) {
+  let merged = [];
+  let i1 = 0;
+  let i2 = 0;
+  let curr = 0;
+
+  while (curr < (arr1.length + arr2.length)) {
+
+    const isArr1Depleted = i1 >= arr1.length;
+    const isArr2Depleted = i2 >= arr2.length;
+
+    if (!isArr1Depleted && (isArr2Depleted || (arr1[i1] < arr2[i2]))) {
+      merged[curr] = arr1[i1];
+      i1++;
+    } else {
+      merged[curr] = arr2[i2];
+      i2++;
+    }
+
+    curr++;
+  }
+
+  return merged;
 }
 
 function Stats() {
