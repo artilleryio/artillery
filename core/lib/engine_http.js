@@ -291,8 +291,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         if (params.qs) {
           requestParams.searchParams = template(params.qs, context);
         }
-        if (typeof params.gzip !== 'undefined') {
+        if (typeof params.gzip === 'boolean') {
           requestParams.decompress = params.gzip;
+        } else {
+          requestParams.decompress = false;
         }
 
         if (params.form) {
