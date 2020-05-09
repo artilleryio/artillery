@@ -56,7 +56,7 @@
     "driftless": "^2.0.3",
     "esprima": "^4.0.0",
     "filtrex": "^0.5.4",
-    "got": "^11.0.2",
+    "got": "^11.1.2",
     "hdr-histogram-js": "^1.1.4",
     "js-yaml": "^3.13.1",
     "jsck": "^0.3.2",
