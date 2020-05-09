@@ -219,8 +219,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       headers: {
       },
       timeout: timeout * 1000,
-      cookieJar: context._jar,
     });
+
+    if (context._enableCookieJar) {
+      requestParams.cookieJar = context._jar;
+    }
     requestParams = _.extend(requestParams, tls);
 
     let functionNames = _.concat(opts.beforeRequest || [], params.beforeRequest || []);
@@ -323,19 +326,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         });
         requestParams.headers = templatedHeaders;
 
-        let defaultCookie = config.defaults ? config.defaults.cookie || {} : {};
-
-        let cookie = _.reduce(
-          params.cookie,
-          function(acc, v, k) {
-            acc[k] = v;
-            return acc;
-          },
-          defaultCookie);
-
-        if (cookie) {
-          _.each(cookie, function(v, k) {
-            context._jar.setCookieSync(k + '=' + template(v, context), requestParams.url);
+        if (typeof params.cookie === 'object' || typeof context._defaultCookie === 'object') {
+          const cookie = Object.assign({},
+                                       context._defaultCookie,
+                                       params.cookie);
+          Object.keys(cookie).forEach(function(k) {
+            context._jar.setCookieSync(k+'='+template(cookie[k], context), requestParams.url);
           });
         }
 
@@ -535,7 +531,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             ee.emit('counter', 'engine.http.requests', 1);
             ee.emit('rate', 'engine.http.request_rate');
             req.on('response', function(res) {
-              self._handleResponse(res, ee, context, maybeCallback, startedAt, callback);
+              self._handleResponse(requestParams.url, res, ee, context, maybeCallback, startedAt, callback);
             });
           }).on('error', function(err, body, res) {
             if (err.name === 'HTTPError') {
@@ -561,9 +557,18 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   return f;
 };
 
-HttpEngine.prototype._handleResponse = function(res, ee, context, maybeCallback, startedAt, callback) {
+HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCallback, startedAt, callback) {
   let code = res.statusCode;
   const endedAt = process.hrtime(startedAt);
+
+  if (!context._enableCookieJar) {
+    const rawCookies = res.headers['set-cookie'];
+    if (rawCookies) {
+      context._enableCookieJar = true;
+      context._jar.setCookieSync(rawCookies, url);
+    }
+  }
+
   let delta = (endedAt[0] * 1e9) + endedAt[1];
   ee.emit('counter', 'engine.http.codes.' + code, 1);
   ee.emit('counter', 'engine.http.responses', 1);
@@ -593,6 +598,12 @@ HttpEngine.prototype.setInitialContext = function(initialContext) {
   initialContext._successCount = 0;
 
   initialContext._jar = new tough.CookieJar();
+  initialContext._enableCookieJar = false;
+  // If a default cookie is set, we will use the jar straightaway:
+  if (typeof this.config.defaults.cookie === 'object') {
+    initialContext._defaultCookie = this.config.defaults.cookie;
+    initialContext._enableCookieJar = true;
+  }
 
   if (self.config.http && typeof self.config.http.pool !== 'undefined') {
     // Reuse common agents (created in the engine instance constructor)
