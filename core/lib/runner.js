@@ -9,7 +9,7 @@ const path = require('path');
 const _ = require('lodash');
 const debug = require('debug')('runner');
 const debugPerf = require('debug')('perf');
-const uuid = require('uuid');
+const uuidv4 = require('uuid').v4;
 const A = require('async');
 const Stats = require('./stats2');
 const JSCK = require('jsck');
@@ -468,7 +468,7 @@ function createContext(script, contextVars) {
   const variableValues2 = inlineVariables(script);
   Object.assign(result.vars, variableValues2);
 
-  result._uid = uuid.v4();
+  result._uid = uuidv4();
   result.vars.$uuid = result._uid;
   return result;
 }

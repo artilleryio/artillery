@@ -70,10 +70,10 @@
     "socket.io-client": "^2.1.0",
     "socketio-wildcard": "^2.0.0",
     "tmp": "0.0.28",
-    "tough-cookie": "^2.5.0",
+    "tough-cookie": "^4.0.0",
     "try-require": "^1.2.1",
     "update-notifier": "^2.1.0",
-    "uuid": "^2.0.3",
+    "uuid": "^8.0.0",
     "ws": "^5.1.1"
   },
   "devDependencies": {
