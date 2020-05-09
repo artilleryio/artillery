@@ -319,9 +319,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
 
         // Assign default headers then overwrite as needed
-        let defaultHeaders = lowcaseKeys(
-          (config.defaults && config.defaults.headers) ?
-            config.defaults.headers : {'user-agent': USER_AGENT});
+        let defaultHeaders = lowcaseKeys(config.defaults.headers || {'user-agent': USER_AGENT});
         const combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
         const templatedHeaders = _.mapValues(combinedHeaders, function(v, k, obj) {
           return template(v, context);
