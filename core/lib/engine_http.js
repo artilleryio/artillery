@@ -594,7 +594,6 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
 }
 
 HttpEngine.prototype.setInitialContext = function(initialContext) {
-  let self = this;
   initialContext._successCount = 0;
 
   initialContext._jar = new tough.CookieJar();
@@ -605,10 +604,10 @@ HttpEngine.prototype.setInitialContext = function(initialContext) {
     initialContext._enableCookieJar = true;
   }
 
-  if (self.config.http && typeof self.config.http.pool !== 'undefined') {
+  if (this.config.http && typeof this.config.http.pool !== 'undefined') {
     // Reuse common agents (created in the engine instance constructor)
-    initialContext._httpAgent = self._httpAgent;
-    initialContext._httpsAgent = self._httpsAgent;
+    initialContext._httpAgent = this._httpAgent;
+    initialContext._httpsAgent = this._httpsAgent;
   } else {
     // Create agents just for this VU
     const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
