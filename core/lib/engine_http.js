@@ -565,7 +565,9 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
     const rawCookies = res.headers['set-cookie'];
     if (rawCookies) {
       context._enableCookieJar = true;
-      context._jar.setCookieSync(rawCookies, url);
+      rawCookies.forEach(function(cookieString) {
+        context._jar.setCookieSync(cookieString, url);
+      });
     }
   }
 
