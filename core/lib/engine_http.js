@@ -35,6 +35,10 @@ const DEFAULT_AGENT_OPTIONS = {
 function HttpEngine(script) {
   this.config = script.config;
 
+  if (typeof this.config.defaults === 'undefined') {
+    this.config.defaults = {};
+  }
+
   // If config.http.pool is set, create & reuse agents for all requests (with
   // max sockets set). That's what we're done here.
   // If config.http.pool is not set, we create new agents for each virtual user.
@@ -140,7 +144,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   if (requestSpec.think) {
-    return engineUtil.createThink(requestSpec, _.get(self.config, 'defaults.think', {}));
+    return engineUtil.createThink(requestSpec, self.config.defaults.think);
   }
 
   if (requestSpec.log) {
@@ -353,7 +357,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         requestParams.agent = {
           http: context._httpAgent,
           https: context._httpsAgent
-        }
+        };
 
         requestParams.throwHttpErrors = false;
 
