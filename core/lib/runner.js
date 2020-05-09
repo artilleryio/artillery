@@ -459,7 +459,7 @@ function createContext(script, contextVars) {
     }
   };
 
-  let result = _.cloneDeep(INITIAL_CONTEXT);
+  let result = INITIAL_CONTEXT;
 
   // variables from payloads:
   const variableValues1 = datafileVariables(script);
