@@ -31,6 +31,10 @@ const DEFAULT_AGENT_OPTIONS = {
 function HttpEngine(script) {
   this.config = script.config;
 
+  if(this.config.caseSensitive === 'undefined') {
+    this.config.caseSensitive = false;
+  }
+
   // If config.http.pool is set, create & reuse agents for all requests (with
   // max sockets set). That's what we're done here.
   // If config.http.pool is not set, we create new agents for each virtual user.
@@ -302,10 +306,19 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
 
         // Assign default headers then overwrite as needed
-        let defaultHeaders = lowcaseKeys(
-          (config.defaults && config.defaults.headers) ?
-            config.defaults.headers : {'user-agent': USER_AGENT});
-        const combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
+        let defaultHeaders;
+        let combinedHeaders;
+        if(self.caseSensitive) {
+          defaultHeaders = (config.defaults && config.defaults.headers) ?
+              config.defaults.headers : 
+              {'user-agent': USER_AGENT};
+          combinedHeaders = _.extend(defaultHeaders, params.headers, requestParams.headers);
+        } else {
+          defaultHeaders = lowcaseKeys(
+            (config.defaults && config.defaults.headers) ?
+              config.defaults.headers : {'user-agent': USER_AGENT});
+          combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
+        }
         const templatedHeaders = _.mapValues(combinedHeaders, function(v, k, obj) {
           return template(v, context);
         });
