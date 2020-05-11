@@ -28,7 +28,8 @@
             }, {
               "json": "$.doesnotexist",
               "transform": "this.doesnotexist.toUpperCase()",
-              "as": "doesnotexist"
+              "as": "doesnotexist",
+              "strict": false
             }, {
               "regexp": ".+",
               "as": "id2"

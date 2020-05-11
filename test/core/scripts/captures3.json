@@ -2,7 +2,7 @@
   "config": {
       "target": "http://127.0.0.1:3003",
       "phases": [
-        { "duration": 10, "arrivalRate": 1 }
+        { "duration": 1, "arrivalRate": 1 }
       ],
       "payload": {
         "fields": ["species", "name"]
@@ -28,7 +28,8 @@
             }, {
               "json": "$.doesnotexist",
               "transform": "this.doesnotexist.toUpperCase()",
-              "as": "doesnotexist"
+              "as": "doesnotexist",
+              "strict": false
             }, {
               "regexp": ".+",
               "as": "id2"
@@ -38,7 +39,7 @@
         {"get": {
           "url": "/pets/{{ pet.id }}",
           "match": {"json": "$.name", "value": "{{ name }}"}
-        }}        
+        }}
       ]
     }
   ]

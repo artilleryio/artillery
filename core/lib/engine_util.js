@@ -30,6 +30,7 @@ module.exports = {
   template: template,
   captureOrMatch,
   evil: evil,
+  ensurePropertyIsAList: ensurePropertyIsAList,
   _renderVariables: renderVariables
 };
 
@@ -334,24 +335,51 @@ function parseLoopCount(countSpec) {
   return { from: from, to: to };
 }
 
-//
-// Calls done() with:
-// {captures: { var: value }, matches: { var: {expected: '', got: ''} }}
-//
-function captureOrMatch(params, response, context, done) {
-  let result = {
-    captures: {},
-    matches: {}
-  };
+function isCaptureFailed(v, defaultStrict) {
+  const noValue = ((!v.value || v.value === '') || typeof v.error !== 'undefined');
 
-  if (!params.capture && !params.match) {
-    return done(null, result);
+  if (!noValue) {
+    return false;
   }
 
-  let specs = L.concat(
-    L.get(params, 'capture', []),
-    L.get(params, 'match', []));
+  return !(
+    (typeof defaultStrict === 'undefined' && v.strict === false) ||
+      (defaultStrict === true && v.strict === false) ||
+      (defaultStrict === false && typeof v.strict === 'undefined') ||
+      (defaultStrict === false && v.strict === false)
+  );
+}
 
+// Helper function to wrap an object's property in a list if it's
+// defined, or set it to an empty list if not.
+function ensurePropertyIsAList(obj, prop) {
+  if (Array.isArray(obj[prop])) {
+    return obj;
+  }
+
+  obj[prop] = [].concat(
+    typeof obj[prop] === 'undefined' ?
+      [] : obj[prop]);
+  return obj;
+}
+
+function captureOrMatch(params, response, context, done) {
+  if ((!params.capture || params.capture.length === 0) &&
+      (!params.match || params.match.lenth === 0)) {
+    return done(null, null);
+  }
+
+  let result = {
+    captures: {},
+    matches: {},
+    failedCaptures: false,
+  };
+
+  // Objects updated in place the first time this runs:
+  ensurePropertyIsAList(params, 'capture');
+  ensurePropertyIsAList(params, 'match');
+
+  let specs = params.capture.concat(params.match);
 
   async.eachSeries(
     specs,
@@ -369,10 +397,19 @@ function captureOrMatch(params, response, context, done) {
 
       parser(content, function(err, doc) {
         if (err) {
-          // TODO: The message could be improved still
-          if (spec.strict) {
-            return next(new Error(`Couldn't parse response for '${expr}'`), null);
+          if (spec.as) {
+            result.captures[spec.as] = {
+              error: err,
+              strict: spec.strict
+            };
+            result.captures[spec.as].failed = isCaptureFailed(result.captures[spec.as], context._defaultStrictCapture);
+          } else {
+            result.matches[spec.expr] = {
+              error: err,
+              strict: spec.strict
+            };
           }
+          return next(null);
         }
 
         let extractedValue = extractor(doc, template(expr, context), spec);
@@ -403,15 +440,23 @@ function captureOrMatch(params, response, context, done) {
         if (spec.as) {
           // this is a capture
           debug('capture: %s = %s', spec.as, extractedValue);
-          result.captures[spec.as] = extractedValue;
+          result.captures[spec.as] = {
+            value: extractedValue,
+            strict: spec.strict
+          };
+
           if (spec.transform) {
             let transformedValue = evil(
               result.captures,
               spec.transform);
 
             debug('transform: %s = %s', spec.as, result.captures[spec.as]);
-            result.captures[spec.as] = transformedValue !== null ? transformedValue : extractedValue;
+            if (transformedValue !== null) {
+              result.captures[spec.as].value = transformedValue;
+            }
           }
+
+          result.captures[spec.as].failed = isCaptureFailed(result.captures[spec.as], context._defaultStrictCapture);
         }
 
         return next(null);
@@ -421,6 +466,7 @@ function captureOrMatch(params, response, context, done) {
       if (err) {
         return done(err, null);
       } else {
+
         return done(null, result);
       }
     });
