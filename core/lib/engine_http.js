@@ -14,6 +14,7 @@ const debugResponse = require('debug')('http:response');
 const debugFullBody = require('debug')('http:full_body');
 const USER_AGENT = 'Artillery (https://artillery.io)';
 const engineUtil = require('./engine_util');
+const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 const template = engineUtil.template;
 const http = require('http');
 const https = require('https');
@@ -59,15 +60,6 @@ function HttpEngine(script) {
 
 HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
   var self = this;
-
-  // Helper function to wrap an object's property in a list if it's
-  // defined, or set it to an empty list if not.
-  function ensurePropertyIsAList(obj, prop) {
-    obj[prop] = [].concat(
-      typeof obj[prop] === 'undefined' ?
-        [] : obj[prop]);
-    return obj;
-  }
 
   ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
   ensurePropertyIsAList(scenarioSpec, 'afterResponse');
@@ -431,38 +423,43 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 });
               }
 
-              if (Object.keys(result.matches).length > 0 ||
-                  Object.keys(result.captures).length > 0) {
+              let haveFailedMatches = false;
+              let haveFailedCaptures = false;
 
-                debug('captures and matches:');
-                debug(result.matches);
-                debug(result.captures);
-              }
+              if (result !== null) {
+                if (Object.keys(result.matches).length > 0 ||
+                    Object.keys(result.captures).length > 0) {
 
-              // match and capture are strict by default:
-              let haveFailedMatches = _.some(result.matches, function(v, k) {
-                return !v.success && v.strict !== false;
-              });
+                  debug('captures and matches:');
+                  debug(result.matches);
+                  debug(result.captures);
+                }
 
-              let haveFailedCaptures = _.some(result.captures, function(v, k) {
-                return v === '';
-              });
+                // match and capture are strict by default:
+                haveFailedMatches = _.some(result.matches, function(v, k) {
+                  return !v.success && v.strict !== false;
+                });
 
-              if (haveFailedMatches || haveFailedCaptures) {
-                // TODO: Emit the details of each failed capture/match
-              } else {
-                _.each(result.matches, function(v, k) {
-                  ee.emit('match', v.success, {
-                    expected: v.expected,
-                    got: v.got,
-                    expression: v.expression,
-                    strict: v.strict
+                haveFailedCaptures = _.some(result.captures, function(v, k) {
+                  return v.failed;
+                });
+
+                if (haveFailedMatches || haveFailedCaptures) {
+                  // TODO: Emit the details of each failed capture/match
+                } else {
+                  _.each(result.matches, function(v, k) {
+                    ee.emit('match', v.success, {
+                      expected: v.expected,
+                      got: v.got,
+                      expression: v.expression,
+                      strict: v.strict
+                    });
                   });
-                });
 
-                _.each(result.captures, function(v, k) {
-                  _.set(context.vars, k, v);
-                });
+                  _.each(result.captures, function(v, k) {
+                    _.set(context.vars, k, v.value);
+                  });
+                }
               }
 
               // Now run afterResponse processors
@@ -597,6 +594,8 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
 
 HttpEngine.prototype.setInitialContext = function(initialContext) {
   initialContext._successCount = 0;
+
+  initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
 
   initialContext._jar = new tough.CookieJar();
   initialContext._enableCookieJar = false;

@@ -55,7 +55,10 @@ function isAcknowledgeRequired(spec) {
 function processResponse(ee, data, response, context, callback) {
   // Do we have supplied data to validate?
   if (response.data && !deepEqual(data, response.data)) {
+    debug('data is not valid:');
     debug(data);
+    debug(response);
+
     let err = 'data is not valid';
     ee.emit('error', err);
     return callback(err, context);
@@ -78,31 +81,33 @@ function processResponse(ee, data, response, context, callback) {
       return callback(err, context);
     }
 
-    // Do we have any failed matches?
-    let failedMatches = _.filter(result.matches, (v, k) => {
-      return !v.success;
-    });
-
-    // How to handle failed matches?
-    if (failedMatches.length > 0) {
-      debug(failedMatches);
-      // TODO: Should log the details of the match somewhere
-      ee.emit('error', 'Failed match');
-      return callback(new Error('Failed match'), context);
-    } else {
-      // Emit match events...
-      // _.each(result.matches, function(v, k) {
-      //   ee.emit('match', v.success, {
-      //     expected: v.expected,
-      //     got: v.got,
-      //     expression: v.expression
-      //   });
-      // });
-
-      // Populate the context with captured values
-      _.each(result.captures, function(v, k) {
-        context.vars[k] = v;
+    if (result !== null) {
+      // Do we have any failed matches?
+      let failedMatches = _.filter(result.matches, (v, k) => {
+        return !v.success;
       });
+
+      // How to handle failed matches?
+      if (failedMatches.length > 0) {
+        debug(failedMatches);
+        // TODO: Should log the details of the match somewhere
+        ee.emit('error', 'Failed match');
+        return callback(new Error('Failed match'), context);
+      } else {
+        // Emit match events...
+        // _.each(result.matches, function(v, k) {
+        //   ee.emit('match', v.success, {
+        //     expected: v.expected,
+        //     got: v.got,
+        //     expression: v.expression
+        //   });
+        // });
+
+        // Populate the context with captured values
+        _.each(result.captures, function(v, k) {
+          context.vars[k] = v.value;
+        });
+      }
 
       // Replace the base object context
       // Question: Should this be JSON object or String?
