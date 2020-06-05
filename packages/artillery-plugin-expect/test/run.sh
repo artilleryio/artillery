@@ -37,4 +37,4 @@ fi
 
 sleep 5
 
-"$DIR"/../node_modules/.bin/ava $DIR/index.js
+"$DIR"/../node_modules/.bin/ava $DIR/index.js $DIR/lib/formatters.js

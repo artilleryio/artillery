@@ -177,6 +177,20 @@ Check that response body matches a regular expression. The regular expression pr
       - matchesRegexp: .+ # body is not empty
 ```
 
+## Formatters
+
+You can change the output format for the logs of this plugin via:
+
+```
+plugins:
+  expect:
+    outputFormat: "pretty"
+```
+
+The following formats ship with this plugin:
+* `pretty`
+* `prettyError` (same as pretty, however, just if an expectation fails)
+* `json`
 
 ## Feedback
 

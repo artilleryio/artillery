@@ -10,7 +10,8 @@ const urlparse = require('url').parse;
 
 module.exports = {
   pretty: prettyPrint,
-  json: jsonPrint
+  json: jsonPrint,
+  prettyError: prettyError
 };
 
 function prettyPrint(requestExpectations, req, res, userContext) {
@@ -51,6 +52,13 @@ function prettyPrint(requestExpectations, req, res, userContext) {
 
 function jsonPrint(requestExpectations, req, res, userContext) {
   console.log(JSON.stringify(requestExpectations));
+}
+
+function prettyError(requestExpectations, req, res, userContext) {
+  if (requestExpectations.results.find(result => !result.ok) === undefined) {
+    return;
+  }
+  prettyPrint(requestExpectations, req, res, userContext);
 }
 
 function prepend(text, str) {
