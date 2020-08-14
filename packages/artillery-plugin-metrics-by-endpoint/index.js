@@ -14,7 +14,7 @@ function MetricsByEndpoint(script, events) {
     script.config.processor = {};
   }
 
-  useOnlyRequestNames = script.config.plugins["metrics-by-endpoint-test"].useOnlyRequestNames || false;
+  useOnlyRequestNames = script.config.plugins["metrics-by-endpoint"].useOnlyRequestNames || false;
 
   script.config.processor.metricsByEndpoint_beforeRequest = metricsByEndpoint_beforeRequest;
 script.config.processor.metricsByEndpoint_afterResponse = metricsByEndpoint_afterResponse;
