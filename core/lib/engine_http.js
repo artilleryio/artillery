@@ -18,7 +18,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const filtrex = require('filtrex');
-
+const ENABLE_TIMINGS = !!(process.env.ENABLE_TIMINGS || true);
 module.exports = HttpEngine;
 
 function HttpEngine(script) {
@@ -451,6 +451,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           });
         }
 
+        requestParams.time = !!ENABLE_TIMINGS;
         request(requestParams, maybeCallback)
           .on('request', function(req) {
             debugRequests('request start: %s', req.path);
@@ -463,8 +464,18 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               let path = res.req.method + ' ' + requestParams.requestEntryPath;
               const endedAt = process.hrtime(startedAt);
               let delta = (endedAt[0] * 1e9) + endedAt[1];
+
+              const timings = {};
+              if (res.request.timings) {
+                timings.wait = res.request.timings.socket;
+                timings.dns = res.request.timings.lookup - res.request.timings.socket;
+                timings.tcp = res.request.timings.connect - res.request.timings.socket;
+                timings.response = res.request.timings.response - res.request.timings.connect;
+                timings.total = res.request.timings.response;
+              }
+
               debugRequests('request end: %s', req.path);
-              ee.emit('response', delta, code, context._uid, path);
+              ee.emit('response', delta, code, context._uid, path, timings);
             });
           }).on('end', function() {
           context._successCount++;
