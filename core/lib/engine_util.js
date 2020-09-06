@@ -469,7 +469,7 @@ function parseJSON(body, callback) {
 }
 
 /*
- * Wrap JSON.parse in a callback
+ * Parse xml
  */
 function parseXML(body, callback) {
     let r = null;
