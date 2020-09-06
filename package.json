@@ -73,7 +73,9 @@
     "try-require": "^1.2.1",
     "update-notifier": "^2.1.0",
     "uuid": "^2.0.3",
-    "ws": "^5.1.1"
+    "ws": "^5.1.1",
+    "xmldom": "^0.3.0",
+    "xpath": "0.0.29"
   },
   "devDependencies": {
     "@commitlint/cli": "^8.1.0",
