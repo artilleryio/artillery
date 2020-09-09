@@ -465,7 +465,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
                   const code = res.statusCode;
                   const path = res.req.method + ' ' + requestParams.requestEntryPath;
-                  const requestName = requestParams.name;
+                  const requestName = requestParams.name || `${path} ${code}`;
                   const timings = {};
                   if (res.request.timings) {
                     timings.wait = res.request.timings.socket;
