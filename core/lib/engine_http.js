@@ -38,8 +38,8 @@ HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
   // defined, or set it to an empty list if not.
   function ensurePropertyIsAList(obj, prop) {
     obj[prop] = [].concat(
-      typeof obj[prop] === 'undefined' ?
-        [] : obj[prop]);
+        typeof obj[prop] === 'undefined' ?
+            [] : obj[prop]);
     return obj;
   }
 
@@ -55,18 +55,18 @@ HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
   // TODO: Scenario-level hooks will probably want access to the
   // entire scenario spec rather than just the userContext.
   const beforeScenarioFns = _.map(
-    scenarioSpec.beforeScenario,
-    function(hookFunctionName) {
-      return {'function': hookFunctionName};
-    });
+      scenarioSpec.beforeScenario,
+      function(hookFunctionName) {
+        return {'function': hookFunctionName};
+      });
   const afterScenarioFns = _.map(
-    scenarioSpec.afterScenario,
-    function(hookFunctionName) {
-      return {'function': hookFunctionName};
-    });
+      scenarioSpec.afterScenario,
+      function(hookFunctionName) {
+        return {'function': hookFunctionName};
+      });
 
   const newFlow = beforeScenarioFns.concat(
-    scenarioSpec.flow.concat(afterScenarioFns));
+      scenarioSpec.flow.concat(afterScenarioFns));
 
   scenarioSpec.flow = newFlow;
 
@@ -93,15 +93,15 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     });
 
     return engineUtil.createLoopWithCount(
-      requestSpec.count || -1,
-      steps,
-      {
-        loopValue: requestSpec.loopValue || '$loopCount',
-        loopElement: requestSpec.loopElement || '$loopElement',
-        overValues: requestSpec.over,
-        whileTrue: self.config.processor ?
-          self.config.processor[requestSpec.whileTrue] : undefined
-      });
+        requestSpec.count || -1,
+        steps,
+        {
+          loopValue: requestSpec.loopValue || '$loopCount',
+          loopElement: requestSpec.loopElement || '$loopElement',
+          overValues: requestSpec.over,
+          whileTrue: self.config.processor ?
+              self.config.processor[requestSpec.whileTrue] : undefined
+        });
   }
 
   if (requestSpec.parallel) {
@@ -110,10 +110,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     });
 
     return engineUtil.createParallel(
-      steps,
-      {
-        limitValue: requestSpec.limit
-      }
+        steps,
+        {
+          limitValue: requestSpec.limit
+        }
     );
   }
 
@@ -200,300 +200,301 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     let functionNames = _.concat(opts.beforeRequest || [], params.beforeRequest || []);
 
     async.eachSeries(
-      functionNames,
-      function iteratee(functionName, next) {
+        functionNames,
+        function iteratee(functionName, next) {
 
-        let processFunc = config.processor[functionName];
-        processFunc(requestParams, context, ee, function(err) {
-          if (err) {
-            return next(err);
-          }
-          return next(null);
-        });
-      },
-      function done(err) {
-        if (err) {
-          debug(err);
-          let errCode = err.code || err.message;
-          // FIXME: Should not need to have to emit manually here
-          ee.emit('error', errCode);
-          return callback(err, context);
-        }
-
-        // Order of precedence: json set in a function, json set in the script, body set in a function, body set in the script.
-        if (requestParams.json) {
-          requestParams.json = template(requestParams.json, context);
-          delete requestParams.body;
-        } else if (requestParams.body) {
-          requestParams.body = template(requestParams.body, context);
-          // TODO: Warn if body is not a string or a buffer
-        }
-
-        // add loop, name & uri elements to be interpolated
-        if (context.vars.$loopElement) {
-          context.vars.$loopElement = template(context.vars.$loopElement, context);
-        }
-        if (requestParams.name) {
-          requestParams.name = template(requestParams.name, context);
-        }
-        if (requestParams.uri) {
-          requestParams.uri = template(requestParams.uri, context);
-        }
-        if (requestParams.url) {
-          requestParams.requestEntryPath = params.url || params.uri;
-          requestParams.url = template(requestParams.url, context);
-        }
-
-        // TODO: Use traverse on the entire flow instead
-
-        if (params.form) {
-          requestParams.form = _.reduce(
-            requestParams.form,
-            function (acc, v, k) {
-              acc[k] = template(v, context);
-              return acc;
-            },
-            {});
-        }
-
-        if (params.formData) {
-          requestParams.formData = _.reduce(
-            requestParams.formData,
-            function(acc, v, k) {
-              acc[k] = template(v, context);
-              return acc;
-            },
-            {});
-        }
-
-
-        // Assign default headers then overwrite as needed
-        let defaultHeaders = lowcaseKeys(
-          (config.defaults && config.defaults.headers) ?
-            config.defaults.headers : {'user-agent': USER_AGENT});
-        const combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
-        const templatedHeaders = _.mapValues(combinedHeaders, function(v, k, obj) {
-          return template(v, context);
-        });
-        requestParams.headers = templatedHeaders;
-
-        let defaultCookie = config.defaults ? config.defaults.cookie || {} : {};
-
-        let cookie = _.reduce(
-          params.cookie,
-          function(acc, v, k) {
-            acc[k] = v;
-            return acc;
-          },
-          defaultCookie);
-
-        if (cookie) {
-          _.each(cookie, function(v, k) {
-            context._jar.setCookie(k + '=' + template(v, context), requestParams.url);
-          });
-        }
-
-        if (typeof requestParams.auth === 'object') {
-          requestParams.auth.user = template(requestParams.auth.user, context);
-          requestParams.auth.pass = template(requestParams.auth.pass, context);
-        }
-
-        let url = maybePrependBase(template(requestParams.uri || requestParams.url, context), config);
-
-        if (requestParams.uri) {
-          // If a hook function sets requestParams.uri to something, request.js
-          // will pick that over .url, so we need to delete it.
-          delete requestParams.uri;
-        }
-
-        requestParams.url = url;
-
-        if (!self.pool) {
-          if ((/^https/i).test(requestParams.url)) {
-            requestParams.agent = context._httpsAgent;
-          } else {
-            requestParams.agent = context._httpAgent;
-          }
-        } else {
-          requestParams.pool = self.pool;
-        }
-
-        function requestCallback(err, res, body) {
-          if (err) {
-            return;
-          }
-
-          if (process.env.DEBUG) {
-            let requestInfo = {
-              url: requestParams.url,
-              method: requestParams.method,
-              headers: requestParams.headers
-            };
-            if (requestParams.json && typeof requestParams.json !== 'boolean') {
-              requestInfo.json = requestParams.json;
+          let processFunc = config.processor[functionName];
+          processFunc(requestParams, context, ee, function(err) {
+            if (err) {
+              return next(err);
             }
-
-            // If "json" is set to an object, it will be serialised and sent as body and the value of the "body" attribute will be ignored.
-            if (requestParams.body && typeof requestParams.json !== 'object') {
-              if (process.env.DEBUG.indexOf('http:full_body') > -1) {
-                // Show the entire body
-                requestInfo.body = requestParams.body;
-              } else {
-                // Only show the beginning of long bodies
-                if (typeof requestParams.body === 'string') {
-                  requestInfo.body = requestParams.body.substring(0, 512);
-                  if (requestParams.body.length > 512) {
-                    requestInfo.body += ' ...';
-                  }
-                } else if (typeof requestParams.body === 'object')  {
-                  requestInfo.body = `< ${requestParams.body.constructor.name} >`;
-                } else {
-                  requestInfo.body = String(requestInfo.body);
-                }
-              }
-            }
-            debug('request: %s', JSON.stringify(requestInfo, null, 2));
-          }
-
-          debugResponse(JSON.stringify(res.headers, null, 2));
-          debugResponse(JSON.stringify(body, null, 2));
-
-          engineUtil.captureOrMatch(
-            params,
-            res,
-            context,
-            function captured(err, result) {
-              if (err) {
-                // Run onError hooks and end the scenario:
-                runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
-                  ee.emit('error', err.message);
-                  return callback(err, context);
-                });
-              }
-
-              debug('captures and matches:');
-              debug(result.matches);
-              debug(result.captures);
-
-              // match and capture are strict by default:
-              let haveFailedMatches = _.some(result.matches, function(v, k) {
-                return !v.success && v.strict !== false;
-              });
-
-              let haveFailedCaptures = _.some(result.captures, function(v, k) {
-                return v === '';
-              });
-
-              if (haveFailedMatches || haveFailedCaptures) {
-                // TODO: Emit the details of each failed capture/match
-              } else {
-                _.each(result.matches, function(v, k) {
-                  ee.emit('match', v.success, {
-                    expected: v.expected,
-                    got: v.got,
-                    expression: v.expression,
-                    strict: v.strict
-                  });
-                });
-
-                _.each(result.captures, function(v, k) {
-                  context.vars[k] = v;
-                });
-              }
-
-              // Now run afterResponse processors
-              let functionNames = _.concat(opts.afterResponse || [], params.afterResponse || []);
-              async.eachSeries(
-                functionNames,
-                function iteratee(functionName, next) {
-                  let processFunc = config.processor[functionName];
-                  processFunc(requestParams, res, context, ee, function(err) {
-                    if (err) {
-                      return next(err);
-                    }
-                    return next(null);
-                  });
-                }, function(err) {
-                  if (err) {
-                    debug(err);
-                    ee.emit('error', err.code || err.message);
-                    return callback(err, context);
-                  }
-
-                  if (haveFailedMatches || haveFailedCaptures) {
-                    // FIXME: This means only one error in the report even if multiple captures failed for the same request.
-                    return callback(new Error('Failed capture or match'), context);
-                  }
-
-                  return callback(null, context);
-                });
-            });
-        }
-
-        // If we aren't processing the full response, we don't need the
-        // callback:
-        let maybeCallback;
-        if (typeof requestParams.capture === 'object' ||
-          typeof requestParams.match === 'object' ||
-          requestParams.afterResponse ||
-          (typeof opts.afterResponse === 'object' && opts.afterResponse.length > 0) ||
-          process.env.DEBUG) {
-          maybeCallback = requestCallback;
-        }
-
-        if(!requestParams.url) {
-          let err = new Error('an URL must be specified');
-
-          // Run onError hooks and end the scenario
-          runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
-            ee.emit('error', err.message);
-            return callback(err, context);
+            return next(null);
           });
-        }
-
-        requestParams.time = !!ENABLE_TIMINGS;
-        request(requestParams, maybeCallback)
-          .on('request', function(req) {
-            debugRequests('request start: %s', req.path);
-            ee.emit('request');
-
-            const startedAt = process.hrtime();
-
-            req.on('response', function updateLatency(res) {
-              let code = res.statusCode;
-              let path = res.req.method + ' ' + requestParams.requestEntryPath;
-              const endedAt = process.hrtime(startedAt);
-              let delta = (endedAt[0] * 1e9) + endedAt[1];
-
-              const timings = {};
-              if (res.request.timings) {
-                timings.wait = res.request.timings.socket;
-                timings.dns = res.request.timings.lookup - res.request.timings.socket;
-                timings.tcp = res.request.timings.connect - res.request.timings.socket;
-                timings.response = res.request.timings.response - res.request.timings.connect;
-                timings.total = res.request.timings.response;
-              }
-
-              debugRequests('request end: %s', req.path);
-              ee.emit('response', delta, code, context._uid, path, timings);
-            });
-          }).on('end', function() {
-          context._successCount++;
-
-          if (!maybeCallback) {
-            callback(null, context);
-          } // otherwise called from requestCallback
-        }).on('error', function(err) {
-          debug(err);
-
-          // Run onError hooks and end the scenario
-          runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
+        },
+        function done(err) {
+          if (err) {
+            debug(err);
             let errCode = err.code || err.message;
+            // FIXME: Should not need to have to emit manually here
             ee.emit('error', errCode);
             return callback(err, context);
+          }
+
+          // Order of precedence: json set in a function, json set in the script, body set in a function, body set in the script.
+          if (requestParams.json) {
+            requestParams.json = template(requestParams.json, context);
+            delete requestParams.body;
+          } else if (requestParams.body) {
+            requestParams.body = template(requestParams.body, context);
+            // TODO: Warn if body is not a string or a buffer
+          }
+
+          // add loop, name & uri elements to be interpolated
+          if (context.vars.$loopElement) {
+            context.vars.$loopElement = template(context.vars.$loopElement, context);
+          }
+          if (requestParams.name) {
+            requestParams.name = template(requestParams.name, context);
+          }
+          if (requestParams.uri) {
+            requestParams.uri = template(requestParams.uri, context);
+          }
+          if (requestParams.url) {
+            requestParams.requestEntryPath = params.url || params.uri;
+            requestParams.url = template(requestParams.url, context);
+          }
+
+          // TODO: Use traverse on the entire flow instead
+
+          if (params.form) {
+            requestParams.form = _.reduce(
+                requestParams.form,
+                function (acc, v, k) {
+                  acc[k] = template(v, context);
+                  return acc;
+                },
+                {});
+          }
+
+          if (params.formData) {
+            requestParams.formData = _.reduce(
+                requestParams.formData,
+                function(acc, v, k) {
+                  acc[k] = template(v, context);
+                  return acc;
+                },
+                {});
+          }
+
+
+          // Assign default headers then overwrite as needed
+          let defaultHeaders = lowcaseKeys(
+              (config.defaults && config.defaults.headers) ?
+                  config.defaults.headers : {'user-agent': USER_AGENT});
+          const combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
+          const templatedHeaders = _.mapValues(combinedHeaders, function(v, k, obj) {
+            return template(v, context);
           });
-        });
-      }); // eachSeries
+          requestParams.headers = templatedHeaders;
+
+          let defaultCookie = config.defaults ? config.defaults.cookie || {} : {};
+
+          let cookie = _.reduce(
+              params.cookie,
+              function(acc, v, k) {
+                acc[k] = v;
+                return acc;
+              },
+              defaultCookie);
+
+          if (cookie) {
+            _.each(cookie, function(v, k) {
+              context._jar.setCookie(k + '=' + template(v, context), requestParams.url);
+            });
+          }
+
+          if (typeof requestParams.auth === 'object') {
+            requestParams.auth.user = template(requestParams.auth.user, context);
+            requestParams.auth.pass = template(requestParams.auth.pass, context);
+          }
+
+          let url = maybePrependBase(template(requestParams.uri || requestParams.url, context), config);
+
+          if (requestParams.uri) {
+            // If a hook function sets requestParams.uri to something, request.js
+            // will pick that over .url, so we need to delete it.
+            delete requestParams.uri;
+          }
+
+          requestParams.url = url;
+
+          if (!self.pool) {
+            if ((/^https/i).test(requestParams.url)) {
+              requestParams.agent = context._httpsAgent;
+            } else {
+              requestParams.agent = context._httpAgent;
+            }
+          } else {
+            requestParams.pool = self.pool;
+          }
+
+          function requestCallback(err, res, body) {
+            if (err) {
+              return;
+            }
+
+            if (process.env.DEBUG) {
+              let requestInfo = {
+                url: requestParams.url,
+                method: requestParams.method,
+                headers: requestParams.headers
+              };
+              if (requestParams.json && typeof requestParams.json !== 'boolean') {
+                requestInfo.json = requestParams.json;
+              }
+
+              // If "json" is set to an object, it will be serialised and sent as body and the value of the "body" attribute will be ignored.
+              if (requestParams.body && typeof requestParams.json !== 'object') {
+                if (process.env.DEBUG.indexOf('http:full_body') > -1) {
+                  // Show the entire body
+                  requestInfo.body = requestParams.body;
+                } else {
+                  // Only show the beginning of long bodies
+                  if (typeof requestParams.body === 'string') {
+                    requestInfo.body = requestParams.body.substring(0, 512);
+                    if (requestParams.body.length > 512) {
+                      requestInfo.body += ' ...';
+                    }
+                  } else if (typeof requestParams.body === 'object')  {
+                    requestInfo.body = `< ${requestParams.body.constructor.name} >`;
+                  } else {
+                    requestInfo.body = String(requestInfo.body);
+                  }
+                }
+              }
+              debug('request: %s', JSON.stringify(requestInfo, null, 2));
+            }
+
+            debugResponse(JSON.stringify(res.headers, null, 2));
+            debugResponse(JSON.stringify(body, null, 2));
+
+            engineUtil.captureOrMatch(
+                params,
+                res,
+                context,
+                function captured(err, result) {
+                  if (err) {
+                    // Run onError hooks and end the scenario:
+                    runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
+                      ee.emit('error', err.message);
+                      return callback(err, context);
+                    });
+                  }
+
+                  debug('captures and matches:');
+                  debug(result.matches);
+                  debug(result.captures);
+
+                  // match and capture are strict by default:
+                  let haveFailedMatches = _.some(result.matches, function(v, k) {
+                    return !v.success && v.strict !== false;
+                  });
+
+                  let haveFailedCaptures = _.some(result.captures, function(v, k) {
+                    return v === '';
+                  });
+
+                  if (haveFailedMatches || haveFailedCaptures) {
+                    // TODO: Emit the details of each failed capture/match
+                  } else {
+                    _.each(result.matches, function(v, k) {
+                      ee.emit('match', v.success, {
+                        expected: v.expected,
+                        got: v.got,
+                        expression: v.expression,
+                        strict: v.strict
+                      });
+                    });
+
+                    _.each(result.captures, function(v, k) {
+                      context.vars[k] = v;
+                    });
+                  }
+
+                  // Now run afterResponse processors
+                  let functionNames = _.concat(opts.afterResponse || [], params.afterResponse || []);
+                  async.eachSeries(
+                      functionNames,
+                      function iteratee(functionName, next) {
+                        let processFunc = config.processor[functionName];
+                        processFunc(requestParams, res, context, ee, function(err) {
+                          if (err) {
+                            return next(err);
+                          }
+                          return next(null);
+                        });
+                      }, function(err) {
+                        if (err) {
+                          debug(err);
+                          ee.emit('error', err.code || err.message);
+                          return callback(err, context);
+                        }
+
+                        if (haveFailedMatches || haveFailedCaptures) {
+                          // FIXME: This means only one error in the report even if multiple captures failed for the same request.
+                          return callback(new Error('Failed capture or match'), context);
+                        }
+
+                        return callback(null, context);
+                      });
+                });
+          }
+
+          // If we aren't processing the full response, we don't need the
+          // callback:
+          let maybeCallback;
+          if (typeof requestParams.capture === 'object' ||
+              typeof requestParams.match === 'object' ||
+              requestParams.afterResponse ||
+              (typeof opts.afterResponse === 'object' && opts.afterResponse.length > 0) ||
+              process.env.DEBUG) {
+            maybeCallback = requestCallback;
+          }
+
+          if(!requestParams.url) {
+            let err = new Error('an URL must be specified');
+
+            // Run onError hooks and end the scenario
+            runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
+              ee.emit('error', err.message);
+              return callback(err, context);
+            });
+          }
+
+          requestParams.time = !!ENABLE_TIMINGS;
+          request(requestParams, maybeCallback)
+              .on('request', function(req) {
+                debugRequests('request start: %s', req.path);
+                ee.emit('request');
+
+                const startedAt = process.hrtime();
+
+                req.on('response', function updateLatency(res) {
+                  const endedAt = process.hrtime(startedAt);
+                  let delta = (endedAt[0] * 1e9) + endedAt[1];
+
+                  const code = res.statusCode;
+                  const path = res.req.method + ' ' + requestParams.requestEntryPath;
+                  const requestName = requestParams.name;
+                  const timings = {};
+                  if (res.request.timings) {
+                    timings.wait = res.request.timings.socket;
+                    timings.dns = res.request.timings.lookup - res.request.timings.socket;
+                    timings.tcp = res.request.timings.connect - res.request.timings.socket;
+                    timings.response = res.request.timings.response - res.request.timings.connect;
+                    timings.total = res.request.timings.response;
+                  }
+
+                  debugRequests('request end: %s', req.path);
+                  ee.emit('response', delta, code, context._uid, path, timings, requestName);
+                });
+              }).on('end', function() {
+            context._successCount++;
+
+            if (!maybeCallback) {
+              callback(null, context);
+            } // otherwise called from requestCallback
+          }).on('error', function(err) {
+            debug(err);
+
+            // Run onError hooks and end the scenario
+            runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
+              let errCode = err.code || err.message;
+              ee.emit('error', errCode);
+              return callback(err, context);
+            });
+          });
+        }); // eachSeries
   };
 
   return f;
@@ -535,23 +536,23 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
     ]);
 
     async.waterfall(
-      steps,
-      function scenarioWaterfallCb(err, context) {
-        // If the connection was refused we might not have a context
-        if (context && context._httpAgent) {
-          context._httpAgent.destroy();
-        }
-        if (context && context._httpsAgent) {
-          context._httpsAgent.destroy();
-        }
+        steps,
+        function scenarioWaterfallCb(err, context) {
+          // If the connection was refused we might not have a context
+          if (context && context._httpAgent) {
+            context._httpAgent.destroy();
+          }
+          if (context && context._httpsAgent) {
+            context._httpsAgent.destroy();
+          }
 
-        if (err) {
-          //ee.emit('error', err.message);
-          return callback(err, context);
-        } else {
-          return callback(null, context);
-        }
-      });
+          if (err) {
+            //ee.emit('error', err.message);
+            return callback(err, context);
+          } else {
+            return callback(null, context);
+          }
+        });
   };
 };
 
