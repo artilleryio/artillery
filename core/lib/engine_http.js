@@ -407,9 +407,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                                 functionNames,
                                 function iteratee(functionName, next) {
                                     let processFunc = config.processor[functionName];
-                                    processFunc(requestParams, res, context, ee, function(err) {
+                                    processFunc(requestParams, res, context, ee, function(err, assertionResult) {
                                         if (err) {
                                             return next(err);
+                                        }
+                                        if (assertionResult) {
+                                            ee.emit('assertions', assertionResult)
                                         }
                                         return next(null);
                                     });

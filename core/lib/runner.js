@@ -51,11 +51,11 @@ function validate(script) {
 
 async function runner(script, payload, options, callback) {
   let opts = _.assign({
-      periodicStats: script.config.statsInterval || 10,
-      mode: script.config.mode || "uniform",
-      isAggregateReport: true
-    },
-    options);
+        periodicStats: script.config.statsInterval || 10,
+        mode: script.config.mode || "uniform",
+        isAggregateReport: true
+      },
+      options);
 
   if (opts.isAggregateReport === false) {
     isAggregateReport = false;
@@ -109,29 +109,29 @@ async function runner(script, payload, options, callback) {
   // load engines:
   //
   let runnerEngines = _.map(
-    Object.assign({}, Engines, runnableScript.config.engines),
-    function loadEngine(engineConfig, engineName) {
-      let moduleName = "artillery-engine-" + engineName;
-      try {
-        if (Engines[engineName]) {
-          moduleName = "./engine_" + engineName;
+      Object.assign({}, Engines, runnableScript.config.engines),
+      function loadEngine(engineConfig, engineName) {
+        let moduleName = "artillery-engine-" + engineName;
+        try {
+          if (Engines[engineName]) {
+            moduleName = "./engine_" + engineName;
+          }
+          let Engine = require(moduleName);
+          let engine = new Engine(runnableScript, ee, engineUtil);
+          engine.__name = engineName;
+          return engine;
+        } catch (err) {
+          console.log(
+              "WARNING: engine %s specified but module %s could not be loaded",
+              engineName,
+              moduleName);
+          console.log(err.stack);
+          warnings.engines[engineName] = {
+            message: "Could not load",
+            error: err
+          };
         }
-        let Engine = require(moduleName);
-        let engine = new Engine(runnableScript, ee, engineUtil);
-        engine.__name = engineName;
-        return engine;
-      } catch (err) {
-        console.log(
-          "WARNING: engine %s specified but module %s could not be loaded",
-          engineName,
-          moduleName);
-        console.log(err.stack);
-        warnings.engines[engineName] = {
-          message: "Could not load",
-          error: err
-        };
       }
-    }
   );
 
   //
@@ -174,8 +174,8 @@ async function runner(script, payload, options, callback) {
       debug(ignoreErr);
     }
     runnableScript.config.plugins = Object.assign(
-      runnableScript.config.plugins,
-      additionalPlugins);
+        runnableScript.config.plugins,
+        additionalPlugins);
   }
 
   _.each(runnableScript.config.plugins, function tryToLoadPlugin(pluginConfig, pluginName) {
@@ -203,9 +203,9 @@ async function runner(script, payload, options, callback) {
 
     if (!Plugin || !plugin) {
       console.log(
-        "WARNING: plugin %s specified but module %s could not be loaded",
-        pluginName,
-        requireString);
+          "WARNING: plugin %s specified but module %s could not be loaded",
+          pluginName,
+          requireString);
       warnings.plugins[pluginName] = {
         message: "Could not load"
       };
@@ -233,22 +233,22 @@ async function runner(script, payload, options, callback) {
     ee.stop = function(done) {
       // allow plugins to cleanup
       A.eachSeries(
-        runnerPlugins,
-        function(plugin, next) {
-          if (plugin.cleanup) {
-            plugin.cleanup(function(err) {
-              if (err) {
-                debug(err);
-              }
+          runnerPlugins,
+          function(plugin, next) {
+            if (plugin.cleanup) {
+              plugin.cleanup(function(err) {
+                if (err) {
+                  debug(err);
+                }
+                return next();
+              });
+            } else {
               return next();
-            });
-          } else {
-            return next();
-          }
-        },
-        function(err) {
-          return done(err);
-        });
+            }
+          },
+          function(err) {
+            return done(err);
+          });
     };
 
     // FIXME: Warnings should be returned from this function instead along with
@@ -360,6 +360,9 @@ function runScenario(script, intermediate, runState, contextVars) {
     runState.scenarioEvents.on("error", function(errCode) {
       intermediate.addError(errCode);
     });
+    runState.scenarioEvents.on("assertions", function(assertionsResults) {
+      intermediate.addAssertion(assertionsResults);
+    });
     runState.scenarioEvents.on("request", function() {
       intermediate.newRequest();
 
@@ -381,21 +384,21 @@ function runScenario(script, intermediate, runState, contextVars) {
     });
 
     runState.compiledScenarios = _.map(
-      script.scenarios,
-      function(scenarioSpec) {
-        const name = scenarioSpec.engine || script.config.engine || "http";
-        const engine = runState.engines.find((e) => e.__name === name);
-        return engine.createScenario(scenarioSpec, runState.scenarioEvents);
-      }
+        script.scenarios,
+        function(scenarioSpec) {
+          const name = scenarioSpec.engine || script.config.engine || "http";
+          const engine = runState.engines.find((e) => e.__name === name);
+          return engine.createScenario(scenarioSpec, runState.scenarioEvents);
+        }
     );
   }
 
   let i = runState.picker()[0];
 
   debug("picking scenario %s (%s) weight = %s",
-    i,
-    script.scenarios[i].name,
-    script.scenarios[i].weight);
+      i,
+      script.scenarios[i].name,
+      script.scenarios[i].weight);
 
   intermediate.newScenario(script.scenarios[i].name || i);
 
