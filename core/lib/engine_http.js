@@ -475,6 +475,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                     console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
 
                   }
+
+                  // Got does not have res.body which Request.js used to have, so we attach it here:
+                  res.body = body;
+
                   processFunc(requestParams, res, context, ee, function(err) {
                     if (err) {
                       return next(err);

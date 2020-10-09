@@ -200,3 +200,54 @@ test('url and uri parameters', function (t) {
     t.end();
   });
 });
+
+test('hooks - afterResponse', (t) => {
+  const answer = 'the answer is 42';
+
+  const target = nock('http://localhost:8888')
+        .get('/answer')
+        .reply(200, answer);
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888',
+      processor: {
+        extractAnswer: function(req, res, vuContext, events, next) {
+          vuContext.answer = res.body;
+          return next();
+        }
+      }
+    },
+    scenarios: [
+      {
+        name: 'Get answer',
+        flow: [
+          {
+            get: {
+              uri: '/answer',
+              afterResponse: 'extractAnswer'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  const initialContext = {
+    vars: {}
+  };
+
+  runScenario(initialContext, function userDone(err, finalContext) {
+    if (err) {
+      t.fail();
+    }
+
+    t.assert(finalContext.answer === answer);
+
+    t.end();
+  });
+});
