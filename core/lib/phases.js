@@ -4,7 +4,7 @@
 
 'use strict';
 
-const EventEmitter = require('events');
+const EventEmitter = require('eventemitter3');
 const async = require('async');
 const _ = require('lodash');
 const isUndefined = _.isUndefined;

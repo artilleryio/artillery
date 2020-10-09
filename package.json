@@ -55,6 +55,7 @@
     "deep-for-each": "^3.0.0",
     "driftless": "^2.0.3",
     "esprima": "^4.0.0",
+    "eventemitter3": "^4.0.4",
     "filtrex": "^0.5.4",
     "got": "^11.1.2",
     "hdr-histogram-js": "^1.1.4",

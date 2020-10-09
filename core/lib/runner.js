@@ -4,7 +4,7 @@
 
 'use strict';
 
-const EventEmitter = require('events').EventEmitter;
+const EventEmitter = require('eventemitter3');
 const path = require('path');
 const _ = require('lodash');
 const debug = require('debug')('runner');
