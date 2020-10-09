@@ -1,6 +1,6 @@
 'use strict';
 
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const uuid = require('uuid');
 const Basic = require('hapi-auth-basic');
 

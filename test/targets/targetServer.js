@@ -4,7 +4,7 @@
 
 'use strict';
 
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 
 module.exports = {
   createCalcServer
