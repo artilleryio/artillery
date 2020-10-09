@@ -25,6 +25,7 @@ const urlparse = require('url').parse;
 
 const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
+const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 
 module.exports = HttpEngine;
 
@@ -32,6 +33,45 @@ const DEFAULT_AGENT_OPTIONS = {
   keepAlive: true,
   keepAliveMsec: 1000
 };
+
+function createAgents(proxies, opts) {
+  const agentOpts = Object.assign({}, DEFAULT_AGENT_OPTIONS, opts);
+
+  const result = {
+    httpAgent: null,
+    httpsAgent: null
+  };
+
+  // HTTP proxy endpoint will be used for all requests, unless a separate
+  // HTTPS proxy URL is also set, which will be used for HTTPS requests:
+  if (proxies.http) {
+    agentOpts.proxy = proxies.http;
+    result.httpAgent = new HttpProxyAgent(agentOpts);
+
+    if (proxies.https) {
+      agentOpts.proxy = proxies.https;
+    }
+
+    result.httpsAgent = new HttpsProxyAgent(agentOpts);
+    return result;
+  }
+
+  // If only HTTPS proxy is provided, it will be used for HTTPS requests,
+  // but not for HTTP requests:
+  if (proxies.https) {
+    result.httpAgent = new HttpAgent(agentOpts);
+    result.httpsAgent = new HttpsProxyAgent(Object.assign(
+      { proxy: proxies.https },
+      agentOpts));
+
+    return result;
+  }
+
+  // By default nothing is proxied:
+  result.httpAgent = new HttpAgent(agentOpts);
+  result.httpsAgent = new HttpsAgent(agentOpts);
+  return result;
+}
 
 function HttpEngine(script) {
   this.config = script.config;
@@ -54,8 +94,13 @@ function HttpEngine(script) {
     maxFreeSockets: this.maxSockets
   });
 
-  this._httpAgent = new HttpAgent(agentOpts);
-  this._httpsAgent = new HttpsAgent(agentOpts);
+  const agents = createAgents({
+    http: process.env.HTTP_PROXY,
+    https: process.env.HTTPS_PROXY
+  }, agentOpts);
+
+  this._httpAgent = agents.httpAgent;
+  this._httpsAgent = agents.httpsAgent;
 }
 
 HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
@@ -342,6 +387,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         requestParams.url = url;
+
+        // TODO: Bypass proxy if "proxy: false" is set
         requestParams.agent = {
           http: context._httpAgent,
           https: context._httpsAgent
@@ -473,7 +520,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                     // TODO: DRY - #223
                     processFunc = function(r, c, e, cb) { return cb(null); };
                     console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
-
                   }
 
                   // Got does not have res.body which Request.js used to have, so we attach it here:
@@ -619,8 +665,14 @@ HttpEngine.prototype.setInitialContext = function(initialContext) {
       maxSockets: 1,
       maxFreeSockets: 1
     });
-    initialContext._httpAgent = new http.Agent(agentOpts);
-    initialContext._httpsAgent = new https.Agent(agentOpts);
+
+    const agents = createAgents({
+      http: process.env.HTTP_PROXY,
+      https: process.env.HTTPS_PROXY
+    }, agentOpts);
+
+    initialContext._httpAgent = agents.httpAgent;
+    initialContext._httpsAgent = agents.httpsAgent;
   }
   return initialContext;
 };
