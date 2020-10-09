@@ -8,8 +8,7 @@
   },
   "scripts": {
     "test": "bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
-    "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
-    "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary",
+    "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint",
     "commitlint-last-commit": "commitlint --from $(git show HEAD~1 | grep commit | awk '{print $2}')"
   },
   "keywords": [
@@ -89,7 +88,6 @@
     "good-console": "^7.1.0",
     "hapi-auth-basic": "^5.0.0",
     "husky": "^4.2.5",
-    "istanbul": "^0.4.5",
     "nock": "^11.8.2",
     "prettier": "^1.5.2",
     "sinon": "^4.5.0",
