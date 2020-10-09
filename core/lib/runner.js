@@ -46,7 +46,7 @@ function validate(script) {
 
 async function runner(script, payload, options, callback) {
   let opts = _.assign({
-    periodicStats: script.config.statsInterval || 10,
+    periodicStats: script.config.statsInterval || 30,
     mode: script.config.mode || 'uniform'
   },
   options);
