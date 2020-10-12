@@ -58,6 +58,7 @@
     "filtrex": "^0.5.4",
     "got": "^11.1.2",
     "hdr-histogram-js": "^1.1.4",
+    "hpagent": "^0.1.1",
     "js-yaml": "^3.13.1",
     "jsck": "^0.3.2",
     "jsonpath": "^1.0.2",
