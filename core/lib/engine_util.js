@@ -644,6 +644,6 @@ function randomInt (low, high) {
 }
 
 function sanitiseValue (value) {
-  if (value === 0 || value === false) return value;
+  if (value === 0 || value === false || value === null || value === undefined) return value;
   return value ? value : '';
 }
