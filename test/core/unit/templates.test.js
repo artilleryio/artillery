@@ -10,7 +10,6 @@ var template = require('../../../core/lib/engine_util').template;
 const { contextFuncs } = require('../../../core/lib/runner');
 
 var bigObject = require('./large-json-payload-7.2mb.json');
-var mediumObject = require('./large-json-payload-669kb.json');
 
 // TODO:
 // variables that aren't defined
@@ -42,13 +41,6 @@ test('strings - huge strings are OK', function(t) {
 });
 
 test.test('arrays can be substituted', function(t) {
-
-  // console.log(
-  //   template(
-  //     [1, {'{{k}}': '{{v}}'}],
-  //     {vars: {k: 'foo', v: 'bar' }})
-  // );
-
   t.same(
     [1, {'foo': 'bar'}, null, { foo: null }],
     template(
