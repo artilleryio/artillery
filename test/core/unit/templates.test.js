@@ -50,6 +50,8 @@ test.test('arrays can be substituted', function(t) {
 
   t.same(template(['{{name}}', [1, 2, '{{ count }}', {}, {'{{count}}': 3}]], { vars: { name: 'Hassy', count: 'three'} }),  [ 'Hassy', [1,2,'three', {}, {'three': 3}] ], '');
 
+  t.same(template(['{{ nullVar }}', '{{ undefinedVar }}'], { vars: { nullVar: null, undefinedVar: undefined } }), [ null, undefined ]);
+
   t.same(template(['hello {{name}}'], emptyContext),  ['hello undefined'], '');
 
   t.end();
@@ -78,6 +80,7 @@ test.test('buffers - huge buffers are OK', function(t) {
 test.test('objects can be substituted', function(t) {
   t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': '{{ v2 }}', foo: null}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname', v2: 'Has'} }),  {name: 'Hassy', nickname: 'Has', foo: null}, '');
   t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': 'hello {{ v2 }}'}, { vars: { k1: 'name', v1: 'Hassy', k2: 'nickname'} }),  {name: 'Hassy', nickname: 'hello undefined'}, '');
+  t.same(template({'{{ k1 }}': '{{ v1 }}', '{{ k2 }}': '{{ v2 }}'}, { vars: { k1: 'k1', v1: null, k2: 'k2', v2: undefined } }), { k1: null, k2: undefined });
   t.end();
 });
 
