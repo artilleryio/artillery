@@ -88,6 +88,7 @@
     "good": "^8.1.1",
     "good-console": "^7.1.0",
     "hapi-auth-basic": "^5.0.0",
+    "hpagent": "0.1.1",
     "husky": "^4.2.5",
     "nock": "^11.8.2",
     "prettier": "^1.5.2",
