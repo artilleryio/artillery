@@ -22,7 +22,7 @@ const fs = require('fs');
 const qs = require('querystring');
 const filtrex = require('filtrex');
 const urlparse = require('url').parse;
-
+const FormData = require('form-data');
 const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
@@ -300,6 +300,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           // TODO: Warn if body is not a string or a buffer
         }
 
+
         // add loop, name & uri elements to be interpolated
         if (context.vars.$loopElement) {
           context.vars.$loopElement = template(context.vars.$loopElement, context);
@@ -345,15 +346,16 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         if (params.formData) {
-          requestParams.formData = _.reduce(
-            requestParams.formData,
+          const f = new FormData();
+          requestParams.body = _.reduce(
+            params.formData,
             function(acc, v, k) {
-              acc[k] = template(v, context);
+              // acc[k] = template(v, context);
+              acc.append(k, template(v, context));
               return acc;
             },
-          {});
+            f);
         }
-
 
         // Assign default headers then overwrite as needed
         let defaultHeaders = lowcaseKeys(config.defaults.headers || {'user-agent': USER_AGENT});

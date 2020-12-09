@@ -251,3 +251,121 @@ test('hooks - afterResponse', (t) => {
     t.end();
   });
 });
+
+test('Redirects', (t) => {
+  const target = nock('http://localhost:8888')
+        .get('/foo')
+        .reply(302, undefined, {
+          Location: '/bar'
+        })
+        .get('/bar')
+        .reply(200, {foo: 'bar'});
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {get: {url: '/foo'}}
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+
+  const counters = {};
+  ee.on('counter', (name, val) => {
+    if (counters[name]) {
+      counters[name] += val;
+    } else {
+      counters[name] = val;
+    }
+  });
+
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  const initialContext = {
+    vars: {}
+  };
+
+  runScenario(initialContext, function(err, finalContext) {
+    if (err) {
+      t.fail();
+    }
+
+    t.assert(
+      Object.keys(counters).filter(s => s.indexOf('.codes.') > -1).length === 2,
+      'Should have seen 2 unique response codes');
+
+    t.assert(counters['engine.http.codes.302'] === 1, 'Should have 1 302 response');
+    t.assert(counters['engine.http.codes.200'] === 1, 'Should have 1 200 response');
+
+    t.end();
+  });
+});
+
+test('Forms - formData multipart', (t) => {
+  const target = nock('http://localhost:8888')
+        // .log(console.log)
+        .post('/submit', /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi)
+        .reply(200, 'ok');
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            post: {
+              url: '/submit',
+              formData: {
+                activity: '{{ activity }}',
+                type: '{{ type }}',
+                location: '{{ location }}'
+              }
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+
+  const counters = {};
+  ee.on('counter', (name, val) => {
+    if (counters[name]) {
+      counters[name] += val;
+    } else {
+      counters[name] = val;
+    }
+  });
+
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  const initialContext = {
+    vars: {
+      location: 'Lahinch',
+      type: 'beach',
+      activity: 'surfing'
+    }
+  };
+
+  runScenario(initialContext, function(err, finalContext) {
+    if (err) {
+      t.fail();
+    }
+
+    t.assert(counters['engine.http.codes.200'] === 1, 'Should have a 200 response');
+
+    t.end();
+  });
+
+});
