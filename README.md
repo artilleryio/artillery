@@ -31,7 +31,6 @@
 
 - **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery) - `master` build status: [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
 - **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
-- **Chat**: [https://gitter.im/shoreditch-ops/artillery](https://gitter.im/artilleryio/artillery)
 - **Community**: [https://spectrum.chat/artillery-io](https://spectrum.chat/artillery-io)
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
 - **Website**: [https://artillery.io](https://artillery.io)
