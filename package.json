@@ -4,7 +4,7 @@
   "description": "Modern performance testing toolkit",
   "main": "./lib",
   "engines": {
-    "node": ">= 10.19.0"
+    "node": ">= 12"
   },
   "files": [
     "/bin",
