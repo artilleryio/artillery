@@ -4,35 +4,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
+const command = require('@oclif/command');
+const { createGlobalObject } = require('../lib/artillery-global');
 
-const debug = require('debug')('artillery:cli');
 const updateNotifier = require('update-notifier');
-const program = require('commander');
 const pkg = require('../package.json');
-const version = pkg.version;
-const chalk = require('chalk');
-const tryResolve = require('try-require').resolve;
+
 const { rainbow } = require('../util');
 
-const commands = require('../lib/commands');
-
-const notifier = updateNotifier({ pkg, updateCheckInterval: 1000 * 60 * 60 * 24 });
-
-if (notifier.update) {
-  notifier.notify({
-    message: `Good news! An update for ${chalk.bold(pkg.name)} is available.\n(current version: ${chalk.yellow('v' + version)} → new version: ${chalk.green('v' + notifier.update.latest)})\n\nRun ${chalk.green('npm install -g ' + pkg.name + '@latest')} to upgrade`
-  });
-}
-
-let pro = null;
-if (tryResolve('artillery-pro')) {
-  pro = require('artillery-pro');
-} else {
-  debug('Artillery Pro is not installed');
-}
-
-const banner = `
+async function main() {
+  if (!process.argv.slice(2).length) {
+    const banner = `
         ___         __  _ ____                  _
   _____/   |  _____/ /_(_) / /__  _______  __  (_)___  _____
  /____/ /| | / ___/ __/ / / / _ \\/ ___/ / / / / / __ \\/____/
@@ -41,52 +23,33 @@ const banner = `
                                     /____/
 `;
 
-program.option('-V, --version', 'Show version information', function() {
-  console.log(banner);
-
-  console.log('------------ Version Info ------------');
-  console.log(`Artillery: ${version}`);
-  if (pro) {
-    console.log(`Artillery Pro: ${pro.version || 'installed'}`);
-  } else {
-    console.log('Artillery Pro: not installed (https://artillery.io/pro)');
+    console.log(Math.random() * 100 > 34 ?
+                banner :
+                rainbow(banner));
+  } else if (process.argv.slice(2).length === 1 && process.argv.slice(2)[0] === '-V') {
+    process.argv[2] = 'version';
   }
-  console.log(`Node.js: ${process.version}`);
-  console.log(`OS: ${process.platform}/${process.arch}`);
-  console.log('--------------------------------------');
-});
 
-Object.keys(commands).forEach(function(name) {
-  if (commands[name].getConfig) {
-    let config = commands[name].getConfig();
-    let command = program.command(config.command);
-    command.description(config.description);
-    config.options.forEach(function(option) {
-      command.option(option[0], option[1]);
-    });
-    command.action(commands[name]);
-  }
-});
+  try {
+    const r = await command.run();
+    await require('@oclif/command/flush')(r);
+  } catch(err) {
+    await require('@oclif/errors/handle')(err);
 
-if (pro) {
-  pro.init(program);
-}
-
-program.parse(process.argv);
-
-if (!process.argv.slice(2).length) {
-  console.log(Math.random() * 100 > 34 ? banner : rainbow(banner));
-  program.help();
-} else {
-  const knownCommands = program.args.filter((a) => typeof a === 'object');
-  // unknown commands, --flags not included; empty if we have "--help" or "-V":
-  const unknownCommands = program.args.filter((a) => typeof a !== 'object');
-
-  if (unknownCommands.length !== 0 && knownCommands.length === 0) {
-    console.log(
-      `${chalk.red('  Error:')} Unknown Artillery command ${unknownCommands}`
-    );
-    process.exitCode = 1;
-    program.help();
+    console.log(err.stack);
+    console.log(err.code);
+    console.log(err.message);
   }
 }
+
+const notifier = updateNotifier({
+  pkg,
+  updateCheckInterval: 1000 * 60 * 60 * 24 * 14
+});
+
+if (notifier.update) {
+  notifier.notify();
+}
+
+createGlobalObject();
+main();

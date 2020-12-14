@@ -1,10 +1,22 @@
 {
   "name": "artillery",
   "version": "1.6.0-29",
-  "description": "Flexible and powerful toolkit for load and functional testing",
+  "description": "Modern performance testing toolkit",
   "main": "./lib",
   "engines": {
     "node": ">= 10.19.0"
+  },
+  "files": [
+    "/bin",
+    "/lib"
+  ],
+  "oclif": {
+    "commands": "./lib/cmds",
+    "bin": "artillery",
+    "_helpClass": "./bin/help",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
   },
   "scripts": {
     "test": "bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
@@ -40,6 +52,9 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
+    "@oclif/command": "^1.8.0",
+    "@oclif/config": "^1.17.0",
+    "@oclif/plugin-help": "^3.2.0",
     "agentkeepalive": "^4.1.0",
     "arrivals": "^2.1.2",
     "artillery-plugin-statsd": "^2.2.1",
@@ -66,9 +81,7 @@
     "lodash": "^4.17.19",
     "moment": "^2.22.1",
     "nanotimer": "^0.3.15",
-    "opn": "^5.3.0",
     "ora": "^4.0.4",
-    "rc": "^1.1.6",
     "socket.io-client": "^2.1.0",
     "socketio-wildcard": "^2.0.0",
     "tmp": "0.0.28",
@@ -82,10 +95,12 @@
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^7.1.2",
     "@hapi/hapi": "^20.0.1",
+    "@oclif/dev-cli": "^1.22.2",
     "bats": "^0.4.2",
     "cookie-parser": "^1.4.3",
     "eslint": "^5.14.1",
     "express": "^4.16.3",
+    "globby": "^11.0.0",
     "good": "^8.1.1",
     "good-console": "^7.1.0",
     "hapi-auth-basic": "^5.0.0",
