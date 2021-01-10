@@ -1,0 +1,21 @@
+{
+  "config": {
+      "target": "ws://127.0.0.1:9094",
+      "phases": [
+        {"duration": 10, "arrivalRate": 1}
+      ]
+  },
+  "scenarios": [
+    {
+      "engine": "ws",
+      "flow": [
+        {"send": { "payload": "hello", "capture": {"json": "$.foo", "as": "foo"}} },
+        {"think": 1},
+        {"send": { "payload": "hello {{ foo }}", "capture": {"json": "$.baz", "as": "baz"}} },
+        {"loop": [
+          {"send": "hello {{ baz }}"}
+        ], "count": 10}
+      ]
+    }
+  ]
+}

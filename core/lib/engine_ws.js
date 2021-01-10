@@ -67,8 +67,13 @@ WSEngine.prototype.step = function (requestSpec, ee) {
     ee.emit('counter', 'engine.websocket.messages_sent', 1);
     ee.emit('rate', 'engine.websocket.send_rate')
     let startedAt = process.hrtime();
+    let params = requestSpec.send;
 
-    let payload = template(requestSpec.send, context);
+    // Reset onmessage to stop steps interfering with each other
+    context.ws.onmessage = undefined;
+
+    // Backwards compatible with previous version of `send` api
+    let payload = template(params.capture ? params.payload : params, context);
     if (typeof payload === 'object') {
       payload = JSON.stringify(payload);
     } else {
@@ -77,12 +82,86 @@ WSEngine.prototype.step = function (requestSpec, ee) {
 
     debug('WS send: %s', payload);
 
+    function messageHandler(event) {
+      const { data } = event;
+
+      debug('WS receive: %s', data);
+
+      if (!data) {
+        return callback(new Error('Empty response from WS server'), context)
+      }
+
+      let fauxResponse;
+      try {
+        fauxResponse = {body: JSON.parse(data)};
+      } catch (err) {
+        fauxResponse = {body: event.data}
+      }
+
+      engineUtil.captureOrMatch(
+        params,
+        fauxResponse,
+        context,
+        function captured(err, result) {
+          if (err) {
+            ee.emit('error', err.message || err.code);
+            return callback(err, context);
+          }
+
+          const { captures = {}, matches = {} } = result
+
+          debug('captures and matches:');
+          debug(matches);
+          debug(captures);
+
+          // match and capture are strict by default:
+          const haveFailedMatches = _.some(result.matches, function (v, k) {
+            return !v.success && v.strict !== false;
+          });
+
+          const haveFailedCaptures = _.some(result.captures, function (v, k) {
+            return v.failed;
+          });
+
+          if (haveFailedMatches || haveFailedCaptures) {
+            // TODO: Emit the details of each failed capture/match
+            return callback(new Error('Failed capture or match'), context);
+          }
+
+          _.each(result.matches, function (v, k) {
+            ee.emit('match', v.success, {
+              expected: v.expected,
+              got: v.got,
+              expression: v.expression,
+              strict: v.strict
+            });
+          });
+
+          _.each(result.captures, function (v, k) {
+            _.set(context.vars, k, v.value);
+          });
+
+          return callback(null, context);
+        }
+      )
+    }
+
+    // only process response if we're capturing
+    if (params.capture) {
+      context.ws.onmessage = messageHandler
+    }
+
     context.ws.send(payload, function(err) {
       if (err) {
         debug(err);
         ee.emit('error', err);
+        return callback(err, null);
       }
-      return callback(err, context);
+
+      // End step if we're not capturing
+      if (!params.capture) {
+          return callback(null, context);
+      }
     });
   };
 
