@@ -12,6 +12,8 @@ node $DIR/targets/express_socketio.js &
 express_pid=$!
 node $DIR/targets/ws_tls.js &
 ws_tls_pid=$!
+node $DIR/targets/ws_json.js &
+ws_json_pid=$!
 
 
 if [ $# -eq 1 ] ; then

@@ -174,3 +174,20 @@ test('Capture - RegExp', (t) => {
     ee.run();
   });
 });
+
+test('Capture WS - JSON', (t) => {
+  const fn = path.resolve(__dirname, './scripts/captures_ws.json');
+  const script = require(fn);
+  let ee = runner(script).then(function(ee) {
+    ee.on('done', (report) => {
+      if (report.errors) {
+        const errors = Object.keys(report.errors);
+
+        t.assert(errors.length === 0, "There should be no WS errors")
+      }
+      t.end();
+    });
+
+    ee.run();
+  });
+});
