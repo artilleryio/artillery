@@ -4,7 +4,9 @@
 <p align="center">
   Artillery is a modern, powerful & easy-to-use <strong>load testing</strong> and <strong>functional testing</strong> toolkit. Use it to ship <strong>scalable</strong> backends, APIs & services that stay <strong>performant</strong> & <strong>resilient</strong> under high load.<br /><br />
   Artillery has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy.<br><br>
-  <a href="https://spectrum.chat/artillery-io"><img src="https://withspectrum.github.io/badge/badge.svg"></a>
+</p>
+<p align="center">
+Got a question? Want to share how you use Artillery? ➡️ <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
 </p>
 
 
@@ -29,12 +31,12 @@
 
 ---
 
-- **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery) - `master` build status: [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
-- **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
-- **Community**: [https://spectrum.chat/artillery-io](https://spectrum.chat/artillery-io)
 - **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
+- **Q&A and discussions**: [https://github.com/artilleryio/artillery/discussions](https://github.com/artilleryio/artillery/discussions)
 - **Website**: [https://artillery.io](https://artillery.io)
 - **Twitter**: [@artilleryio](https://twitter.com/artilleryio)
+- **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery) - `master` build status: [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
+- **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
 
 ---
 
@@ -49,9 +51,11 @@
 
 Add your team to the [Artillery users list on the wiki](https://github.com/shoreditch-ops/artillery/wiki/Companies-using-Artillery).
 
-# Help Us Plant 100,000 New Trees
+# Plant Some Trees!
 
-We're hoping to plant 100,000 new trees with [Offset.earth](https://offset.earth) with the help of the Artillery community. If you enjoy using Artillery and would like to help us out, add your tree to the [Artillery.io forest](https://offset.earth/artilleryio). 🌲🌳🌴
+We have planted [over 1,500 new trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
+
+If you've enjoyed using Artillery and would like to help us out, add your tree to the [Artillery.io forest](https://ecologi.com/artilleryio). 🌲🌳🌴 Feel free to drop us a line to let us know too! 💚
 
 # License
 
