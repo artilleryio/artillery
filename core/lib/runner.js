@@ -11,7 +11,8 @@ const debug = require('debug')('runner');
 const debugPerf = require('debug')('perf');
 const uuidv4 = require('uuid').v4;
 const A = require('async');
-const Stats = require('./stats2');
+//const Stats = require('./stats2');
+const { SSMS } = require('./ssms');
 const JSCK = require('jsck');
 const tryResolve = require('try-require').resolve;
 const createPhaser = require('./phases');
@@ -32,7 +33,7 @@ const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 module.exports = {
   runner: runner,
   validate: validate,
-  stats: Stats,
+  //stats: Stats,
   contextFuncs: {
     $randomString,
     $randomNumber
@@ -263,15 +264,15 @@ async function runner(script, payload, options, callback) {
 }
 
 function run(script, ee, options, runState, contextVars) {
-  let intermediate = Stats.create();
-  let aggregate = [];
+  const metrics = new SSMS();
+  const intermediates = [];
 
   let phaser = createPhaser(script.config.phases);
   phaser.on('arrival', function (spec) {
     if (runState.pendingScenarios >= spec.maxVusers) {
-      intermediate.counter('core.scenarios.skipped', 1);
+      metrics.counter('core.vusers.skipped', 1);
     } else {
-      runScenario(script, intermediate, runState, contextVars);
+      runScenario(script, metrics, runState, contextVars);
     }
   });
   phaser.on('phaseStarted', function(spec) {
@@ -285,37 +286,25 @@ function run(script, ee, options, runState, contextVars) {
 
     const doneYet = setInterval(function checkIfDone() {
       if (runState.pendingScenarios === 0) {
-
         clearInterval(doneYet);
-        clearInterval(periodicStatsTimer);
-
-        sendStats();
-
-        intermediate.free();
-
-        let aggregateReport = Stats.combine(aggregate).report();
-        return ee.emit('done', aggregateReport);
+        metrics.aggregate(true);
+        const totals = SSMS.zoomOut(intermediates);
+        ee.emit('done', totals);
       } else {
         debug('Pending scenarios: %s', runState.pendingScenarios);
       }
     }, 500);
   });
 
-  const periodicStatsTimer = setInterval(sendStats, options.periodicStats * 1000);
-
-  function sendStats() {
-    intermediate._concurrency = runState.pendingScenarios;
-    // intermediate._pendingRequests = runState.pendingRequests;
-    ee.emit('stats', intermediate.clone());
-    delete intermediate._entries;
-    aggregate.push(intermediate.clone());
-    intermediate.reset();
-  }
+  metrics.on('metricData', (ts, periodData) => {
+    intermediates.push(periodData);
+    ee.emit('stats', periodData);
+  });
 
   phaser.run();
 }
 
-function runScenario(script, intermediate, runState, contextVars) {
+function runScenario(script, metrics, runState, contextVars) {
   const start = process.hrtime();
 
   //
@@ -344,27 +333,27 @@ function runScenario(script, intermediate, runState, contextVars) {
 
     runState.scenarioEvents = new EventEmitter();
     runState.scenarioEvents.on('counter', function(name, value) {
-      intermediate.counter(name, value);
+      metrics.counter(name, value);
     });
     // TODO: Deprecate
     runState.scenarioEvents.on('customStat', function(stat) {
-      intermediate.summary(stat.stat, stat.value);
+      metrics.summary(stat.stat, stat.value);
     });
     runState.scenarioEvents.on('summary', function(name, value) {
-      intermediate.summary(name, value);
+      metrics.summary(name, value);
     });
     runState.scenarioEvents.on('histogram', function(name, value) {
-      intermediate.summary(name, value);
+      metrics.summary(name, value);
     });
     runState.scenarioEvents.on('rate', function(name) {
-      intermediate.rate(name);
+      metrics.rate(name);
     });
     runState.scenarioEvents.on('started', function() {
       runState.pendingScenarios++;
     });
     // TODO: Take an object so that it can have code, description etc
     runState.scenarioEvents.on('error', function(errCode) {
-      intermediate.counter(`errors.${errCode}`, 1);
+      metrics.counter(`errors.${errCode}`, 1);
     });
 
     runState.compiledScenarios = _.map(
@@ -384,9 +373,8 @@ function runScenario(script, intermediate, runState, contextVars) {
         script.scenarios[i].name,
         script.scenarios[i].weight);
 
-  intermediate.counter(`core.scenarios.created.${script.scenarios[i].name || i}`, 1);
-  intermediate.counter('core.scenarios.created.total', 1);
-  // intermediate.newScenario(script.scenarios[i].name || i);
+  metrics.counter(`core.vusers.created.${script.scenarios[i].name || i}`, 1);
+  metrics.counter('core.vusers.created.total', 1);
 
   const scenarioStartedAt = process.hrtime();
   const scenarioContext = createContext(script, contextVars);
@@ -398,12 +386,12 @@ function runScenario(script, intermediate, runState, contextVars) {
     runState.pendingScenarios--;
     if (err) {
       debug(err);
-      intermediate.counter('core.scenarios.failed', 1);
+      metrics.counter('core.vusers.failed', 1);
     } else {
-      intermediate.counter('core.scenarios.completed', 1);
+      metrics.counter('core.vusers.completed', 1);
       const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
       const delta = (scenarioFinishedAt[0] * 1e9) + scenarioFinishedAt[1];
-      intermediate.histogram('core.scenarios.duration', delta/1e6);
+      metrics.summary('core.vusers.session_length', delta/1e6);
     }
   });
 }
