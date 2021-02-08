@@ -1,0 +1,16 @@
+config:
+  target: https://artillery.io
+  phases:
+    - arrivalCount: 300
+      duration: 300
+  payload:
+    - path: "./csv/urls.csv"
+      fields:
+        - url
+scenarios:
+  - flow:
+      - loop:
+        - get:
+            url: "{{ url }}"
+        - think: 1
+        count: 100
