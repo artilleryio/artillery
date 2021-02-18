@@ -1,5 +1,5 @@
 <p align="center">
-<a href="https://artillery.io"><img src="https://artillery.io/img/artillery-square.jpg" height="120" /></a>
+<a href="https://artillery.io"><img src="https://artillery.io/images/artillery-logo-square.png" height="120" /></a>
 </p>
 <p align="center">
   Artillery is a modern, powerful & easy-to-use <strong>load testing</strong> and <strong>functional testing</strong> toolkit. Use it to ship <strong>scalable</strong> backends, APIs & services that stay <strong>performant</strong> & <strong>resilient</strong> under high load.<br /><br />
