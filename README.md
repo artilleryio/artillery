@@ -41,11 +41,11 @@ Got a question? Want to share how you use Artillery? ➡️ <a href="https://git
 ---
 
 - **Artillery Pro** for teams: [Artillery Pro](https://artillery.io/pro/) is a self-hosted self-service load & functional testing solution for your team. Run large-scale distributed tests from your own AWS account with ECS or Fargate; use in CI/CD pipelines; integrate with existing AWS security & compliance controls (IAM, VPC, cost allocation).
-- For **training**, **custom integrations**, and **performance consulting services** see our [professional services page](https://artillery.io/services-support.html).
+- For **training**, **custom integrations**, and **performance consulting services** see our [professional services page](https://artillery.io/services/).
 
 # Getting Started With Artillery
 
-👉&nbsp;&nbsp;[Artillery Getting Started Guide](https://artillery.io/docs/getting-started/)
+👉&nbsp;&nbsp;[Artillery Getting Started Guide](https://artillery.io/docs/guides/getting-started/installing-artillery.html)
 
 # Using Artillery?
 
