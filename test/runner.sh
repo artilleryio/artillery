@@ -8,6 +8,11 @@ target_pid=$!
 &>/dev/null node ./test/gh_215_target.js &
 target2_pid=$!
 
+until $(curl --output /dev/null --silent --fail http://localhost:3003); do
+  printf '.'
+  sleep 1
+done
+
 echo "# running tests"
 echo
 
