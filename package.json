@@ -9,7 +9,6 @@
   "scripts": {
     "test": "bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
-    "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary",
     "commitlint-since-last-mr": "commitlint --from $(git show :/^Merge  | grep commit | awk '{print $2}')"
   },
   "keywords": [
@@ -88,7 +87,6 @@
     "hapi": "^17.5.4",
     "hapi-auth-basic": "^5.0.0",
     "husky": "^1.2.0",
-    "istanbul": "^0.4.5",
     "nock": "^9.2.5",
     "prettier": "^1.5.2",
     "sinon": "^4.5.0",
