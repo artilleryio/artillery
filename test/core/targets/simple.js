@@ -1,6 +1,6 @@
 'use strict';
 
-const Hapi = require('hapi');
+const Hapi = require('@hapi/hapi');
 const uuid = require('uuid');
 const Basic = require('hapi-auth-basic');
 
@@ -68,7 +68,25 @@ const main = async () => {
     isHttpOnly: true,
     encoding: 'base64json',
     clearInvalid: false,
-    strictHeader: true
+    strictHeader: true,
+  });
+  server.state('cookieSameSiteNone', {
+    ttl: null,
+    isSecure: false, // TODO: set to true + run server on HTTPS
+    isHttpOnly: true,
+    encoding: 'base64json',
+    clearInvalid: false,
+    strictHeader: true,
+    isSameSite: 'None',
+  });
+  server.state('cookieSameSiteLax', {
+    ttl: null,
+    isSecure: false,
+    isHttpOnly: true,
+    encoding: 'base64json',
+    clearInvalid: false,
+    strictHeader: true,
+    isSameSite: 'Lax'
   });
 
   await server.start();
@@ -254,13 +272,15 @@ function setsCookie(req, h) {
   var newuid = uuid.v4();
   // console.log('setting testCookie.uid to %j', newuid);
   h.state('testCookie', {uid: newuid});
+  h.state('cookieSameSiteLax', {uid: newuid});
+  h.state('cookieSameSiteNone', {uid: newuid});
   return h.continue;
 }
 
 function expectsCookie(req, h) {
   console.log('req.state = %j', req.state);
   //console.log('req.state.testCookie = %j', req.state.testCookie);
-  if (req.state.testCookie) {
+  if (req.state.testCookie && req.state.cookieSameSiteNone && req.state.cookieSameSiteLax) {
     if (COOKIES[req.state.testCookie.uid]) {
       COOKIES[req.state.testCookie.uid]++;
     } else {
