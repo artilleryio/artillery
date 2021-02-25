@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Flexible and powerful toolkit for load and functional testing",
   "main": "./lib",
   "engines": {
@@ -29,7 +29,7 @@
   "preferGlobal": true,
   "man": "./man/artillery.1",
   "bin": {
-    "artillery": "./bin/artillery"
+    "artillery": "bin/artillery"
   },
   "repository": {
     "type": "git",
