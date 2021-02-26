@@ -10,9 +10,17 @@ const { createGlobalObject } = require('../lib/artillery-global');
 const updateNotifier = require('update-notifier');
 const pkg = require('../package.json');
 
+const chalk = require('chalk');
+
 const { rainbow } = require('../util');
 
 async function main() {
+  console.error(chalk.magenta(`
+ARTILLERY DEV PREVIEW 🚀
+Please report bugs on https://github.com/artilleryio/artillery/issues
+`));
+
+
   if (!process.argv.slice(2).length) {
     const banner = `
         ___         __  _ ____                  _
