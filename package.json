@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "2.0.0",
+  "version": "2.0.0-dev0",
   "description": "Modern performance testing toolkit",
   "main": "./lib",
   "engines": {
@@ -41,7 +41,7 @@
   "preferGlobal": true,
   "man": "./man/artillery.1",
   "bin": {
-    "artillery": "./bin/artillery"
+    "artillery": "bin/artillery"
   },
   "repository": {
     "type": "git",
