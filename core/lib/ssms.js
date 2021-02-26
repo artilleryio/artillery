@@ -32,6 +32,59 @@ class SSMS extends EventEmitter {
     this._aggregatedRates = {};
   }
 
+  static report(pds) {
+    return pds;
+  }
+
+  // Take metric data for a period and return a summary object with 1.6.x-compatible format
+  static legacyReport(pd) {
+    const result = {
+      // any histograms or counters which aren't core.*, or engine.*
+      customStats: {}, // TODO
+      counters: {}, // TODO
+
+      scenariosAvoided: pd.counters['core.vusers.skipped'] || 0,
+      timestamp: new Date(pd.period),
+      scenariosCreated: pd.counters['core.vusers.created.total'] || 0,
+      scenariosCompleted: pd.counters['core.vusers.completed'] || 0,
+      
+      requestsCompleted: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || 0,
+      latency: {},
+      rps: {
+        mean: pd.rates['engine.http.response_rate'] || pd.rates['engine.socketio.emit_rate'] || 0,
+        count: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || 0,
+      },
+      scenarioDuration: {},
+      scenarioCounts: {},
+
+      // TODO:
+      errors: {},
+      codes: {}
+    };
+
+    if (typeof pd.histograms['core.vusers.session_length'] !== 'undefined') {
+      result.scenarioDuration = summarizeHistogram(pd.histograms['core.vusers.session_length']._raw);
+    }
+
+    // scenarioCounts
+    const names = Object.keys(pd.counters).filter(k => k.startsWith('core.vusers.created_by_name.'));
+    for(const n of names) {
+      result.scenarioCounts[n.split('')[1]] = pd.counters[n];
+    }
+
+    // latency
+    const latencyh = pd.histograms['engine.http.response_time'] || pd.histograms['engine.socketio.response_time'];
+    if(latencyh) {
+      result.latency = summarizeHistogram(latencyh._raw);
+    }
+
+    return {
+      report: function() {
+        return result;
+      }
+    };
+  }
+
   static mergePeriods(periodData) {
     debug(`mergePeriods // timeslices: ${periodData.map(pd => pd.period)}`);
 

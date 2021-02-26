@@ -373,7 +373,7 @@ function runScenario(script, metrics, runState, contextVars) {
         script.scenarios[i].name,
         script.scenarios[i].weight);
 
-  metrics.counter(`core.vusers.created.${script.scenarios[i].name || i}`, 1);
+  metrics.counter(`core.vusers.created_by_name.${script.scenarios[i].name || i}`, 1);
   metrics.counter('core.vusers.created.total', 1);
 
   const scenarioStartedAt = process.hrtime();
