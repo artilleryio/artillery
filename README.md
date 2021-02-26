@@ -12,21 +12,24 @@ Got a question? Want to share how you use Artillery? ➡️ <a href="https://git
 
 # Use Cases
 
-- **Peak traffic testing** - ensure your API, e-commerce backend, IoT service can handle max traffic
-- **Pre-launch load testing** - building a new API or service? test it before launch
-- **Continuous performance testing** - run load tests in CI/CD to stop performance regressions being shipped to prod
-- **Profile & debug performance issues** - run load tests to profile & fix high CPU usage, extensive GC pauses, memory leaks, and misconfigured resource pools
-- **Semantic monitoring** - run realistic user scenarios against production APIs continuously and alert on wrong responses or errors
+- Prepare for traffic peaks - run load tests to help prepare your API or service for upcoming traffic surges
+- Run load tests in CI/CD to catch and prevent performance regressions before they cause issues for users
+- Profile and debug performance issues such as memory leaks, high tail latency caused by GC pauses or high CPU usage, or misconfigured resource pools
+- Run smoke tests continuously against production to catch issues (also known as production scripted testing or synthetic monitoring)
+- Designed for modern web APIs, headless CMS and e-commerce systems, IoT backends, real-time services, and microservice architectures
+- Test internal microservices and components as well as external endpoints
+- Scale out and run your tests from your own AWS account with ease
 
 # Features
 
 - **Multiple protocols**:  Load test HTTP, WebSocket, Socket.io, Kinesis, HLS and more.
 - **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc).
-- **Load testing & Functional testing**: reuse the same scenario definitions to run performance tests or functional tests on your API or backend.
+- **Load testing & smoke testing**: reuse the same scenario definitions to run performance tests or functional tests on your API or backend.
 - **Performance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput).
 - **Scriptable**: write custom logic in JS, using any of the thousands of useful `npm` modules.
 - **Integrations**: `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc).
 - **Extensible**: write custom reporters, custom plugins, custom protocol engines etc.
+- **Cloud-native**: go from running a test locally to running it in your own AWS account, distributed across geographical regions in minutes with [Artillery Pro](https://artillery.io/pro)
 - **and more!** HTML reports, nice CLI, parameterization with CSV files.
 
 ---
