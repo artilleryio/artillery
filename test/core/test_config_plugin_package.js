@@ -5,7 +5,7 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
 const path = require('path');
 
 test('Plugin package name inside plugin config', function(t) {

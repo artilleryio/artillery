@@ -1,14 +1,16 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
 const L = require('lodash');
+const { SSMS } = require('../../core/lib/ssms');
 
 test('ifTrue', (t) => {
   const script = require('./scripts/iftrue.json');
 
   runner(script).then(function(ee) {
-    ee.on('done', (report) => {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       let requests = report.codes[201];
       let expected = 10;
       t.assert(

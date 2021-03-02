@@ -1,13 +1,15 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
+const { SSMS } = require('../../core/lib/ssms');
 
 test('HTTP basic auth', (t) => {
   const script = require('./scripts/hello_basic_auth.json');
 
   runner(script).then(function(ee) {
-    ee.on('done', (report) => {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       let requests = report.requestsCompleted;
       let code200 = report.codes[200];
       let code401 = report.codes[401];

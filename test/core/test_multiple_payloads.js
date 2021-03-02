@@ -1,13 +1,14 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
 const l = require('lodash');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parse');
 const async = require('async');
+const { SSMS } = require('../../core/lib/ssms');
 
 test('single payload', function(t) {
   const fn = path.resolve(__dirname, './scripts/single_payload.json');
@@ -33,7 +34,9 @@ test('single payload', function(t) {
         t.ok(stats, 'intermediate stats event emitted');
       });
 
-      ee.on('done', function(report) {
+      ee.on('done', function(nr) {
+        const report = SSMS.legacyReport(nr).report();
+
         let requests = report.requestsCompleted;
         let scenarios = report.scenariosCompleted;
         t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
@@ -84,7 +87,8 @@ test('multiple_payloads', function(t) {
           t.ok(stats, 'intermediate stats event emitted');
         });
 
-        ee.on('done', function(report) {
+        ee.on('done', function(nr) {
+          const report = SSMS.legacyReport(nr).report();
           let requests = report.requestsCompleted;
           let scenarios = report.scenariosCompleted;
           t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');

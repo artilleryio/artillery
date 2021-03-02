@@ -1,7 +1,9 @@
 'use strict';
 
 const test = require('tape');
-const vuserLauncher = require('../../../core/lib/runner').runner;
+const core = require('../../../core');
+const vuserLauncher = core.runner;
+const { SSMS } = require('../../../core/lib/ssms');
 
 //
 // If config.ws.rejectUnauthorized is not set, we will have an error.
@@ -11,14 +13,16 @@ const vuserLauncher = require('../../../core/lib/runner').runner;
 test('TLS options for WebSocket', function(t) {
   const script = require('./scripts/extra_options.json');
   vuserLauncher(script).then(function(sessions) {
-    sessions.on('done', function(report) {
+    sessions.on('done', function(nr) {
+      const report = SSMS.legacyReport(nr).report();        
       t.assert(Object.keys(report.errors).length === 0,
                'Test ran without errors');
 
       // Now remove TLS options and rerun - should have an error
       delete script.config.ws;
       vuserLauncher(script).then(function(sessions2) {
-        sessions2.on('done', function(report2) {
+        sessions2.on('done', function(nr2) {
+          const report2 = SSMS.legacyReport(nr2).report();        
           t.assert(Object.keys(report2.errors).length === 1,
                    'Test ran with one error: ' +
                    (Object.keys(report2.errors)[0]));
@@ -34,7 +38,8 @@ test('TLS options for WebSocket', function(t) {
 test('Subprotocols - using a known subprotocol', function(t) {
   const script = require('./scripts/subprotocols.json');
   vuserLauncher(script).then((sessions) => {
-    sessions.on('done', (report) => {
+    sessions.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       t.assert(
         Object.keys(report.errors).length === 0,
         'Test with a subprotocol set completed with no errors');
@@ -51,7 +56,8 @@ test('Subprotocols - no subprotocol', function(t) {
   delete script.config.ws;
 
   vuserLauncher(script).then((sessions) => {
-    sessions.on('done', (report) => {
+    sessions.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       t.assert(
         Object.keys(report.errors).length === 0,
         'Test with no subprotocol set completed with no errors');
@@ -70,7 +76,8 @@ test('Subprotocols - unknown subprotocol', function(t) {
   };
 
   vuserLauncher(script).then((sessions) => {
-    sessions.on('done', (report) => {
+    sessions.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       t.assert(
         Object.keys(report.errors).length === 1,
         'Should have one error');
