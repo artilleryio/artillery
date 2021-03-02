@@ -96,6 +96,32 @@ async function runner(script, payload, options, callback) {
 
   let ee = new EventEmitter();
 
+  // Wrap metrics objects in a 1.6.x-compatible interface for backwards
+  // compatibility:
+  let pluginEvents = new EventEmitter();
+  ee.on('stats', function(stats) {
+    if(artillery.runtimeOptions.legacyReporting) {
+      let wrapped = SSMS.legacyReport(stats);
+      pluginEvents.emit('stats', wrapped);
+    } else {
+      pluginEvents.emit('stats', stats);
+    }
+  });
+  ee.on('done', function(stats) {
+    if(artillery.runtimeOptions.legacyReporting) {
+      let wrapped = SSMS.legacyReport(stats);
+      pluginEvents.emit('done', wrapped);
+    } else {
+      pluginEvents.emit('done', stats);
+    }
+  });
+  ee.on('phaseStarted', function(spec) {
+    pluginEvents.emit('phaseStarted', spec);
+  });
+  ee.on('phaseCompleted', function(spec) {
+    pluginEvents.emit('phaseCompleted', spec);
+  });
+
   //
   // load engines:
   //
@@ -180,11 +206,11 @@ async function runner(script, payload, options, callback) {
         Plugin = require(path.join(rp, requireString));
         if (typeof Plugin === 'function') {
           // Plugin interface v1
-          plugin = new Plugin(runnableScript.config, ee);
+          plugin = new Plugin(runnableScript.config, pluginEvents);
           plugin.__name = pluginName;
         } else if (typeof Plugin === 'object' && typeof Plugin.Plugin === 'function') {
           // Plugin interface 2+
-          plugin = new Plugin.Plugin(runnableScript, ee, options);
+          plugin = new Plugin.Plugin(runnableScript, pluginEvents, options);
           plugin.__name = pluginName;
         }
       } catch (err) {
