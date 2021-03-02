@@ -16,7 +16,7 @@
 
     REPORT=single-external-file-report.json
 
-    ./bin/artillery run --target "http://localhost:1986" -e "single-cli" ./test/scripts/test-calc-server.yml -p ./test/data/calc-test-data-1.csv -o $REPORT
+    ARTILLERY_USE_LEGACY_REPORT_FORMAT=1 ./bin/artillery run --target "http://localhost:1986" -e "single-cli" ./test/scripts/test-calc-server.yml -p ./test/data/calc-test-data-1.csv -o $REPORT
 
     kill $target_pid
 
