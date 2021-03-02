@@ -28,6 +28,9 @@ function SocketIoEngine(script) {
 
 SocketIoEngine.prototype.createScenario = function(scenarioSpec, ee) {
   var self = this;
+  // Adds scenario overridden configuration into the static config
+  this.socketioOpts = {...this.socketioOpts, ...scenarioSpec.socketio}
+
   let tasks = _.map(scenarioSpec.flow, function(rs) {
     if (rs.think) {
       return engineUtil.createThink(rs, _.get(self.config, 'defaults.think', {}));
