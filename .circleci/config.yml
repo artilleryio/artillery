@@ -41,7 +41,7 @@ jobs:
       - run:
           name: auth with npm
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
-      - run: sh .circleci/npm-publish.sh
+      - run: bash .circleci/npm-publish.sh
 
   maybe_build_docker_image:
     working_directory: ~/repo
