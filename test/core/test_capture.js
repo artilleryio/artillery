@@ -1,11 +1,12 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
 const L = require('lodash');
 const csv = require('csv-parse');
 const fs = require('fs');
 const path = require('path');
+const { SSMS } = require('../../core/lib/ssms');
 
 let xmlCapture = null;
 try {
@@ -18,11 +19,15 @@ test('Capture - headers', (t) => {
   const fn = path.resolve(__dirname, './scripts/captures-header.json');
   const script = require(fn);
   runner(script).then(function(ee) {
-    ee.on('done', function(report) {
+    ee.on('done', function(nr) {
+      const report = SSMS.legacyReport(nr).report();
       // This will fail if header capture isn't working
       t.assert(!report.codes[403], 'No unauthorized responses');
       t.assert(report.codes[200] > 0, 'Successful responses');
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
     ee.run();
   });
@@ -40,7 +45,8 @@ test('Capture - JSON', (t) => {
 
     runner(script, parsedData, {}).then(function(ee) {
 
-      ee.on('done', function(report) {
+      ee.on('done', function(nr) {
+        const report = SSMS.legacyReport(nr).report();
         let c200 = report.codes[200];
         let c201 = report.codes[201];
 
@@ -52,7 +58,10 @@ test('Capture - JSON', (t) => {
           console.log(report);
           console.log('200: %s; 201: %s', c200, c201);
         }
-        t.end();
+        ee.stop(() => {
+          t.end();
+        });
+
       });
 
       ee.run();
@@ -72,7 +81,8 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
 
     runner(script, parsedData, {}).then(function(ee) {
 
-      ee.on('done', function(report) {
+      ee.on('done', function(nr) {
+        const report = SSMS.legacyReport(nr).report();
         let c200 = report.codes[200];
         let c201 = report.codes[201];
 
@@ -83,7 +93,10 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
         if (!cond) {
           console.log('200: %s; 201: %s', c200, c201);
         }
-        t.end();
+        ee.stop(() => {
+          t.end();
+        });
+
       });
 
       ee.run();
@@ -95,7 +108,8 @@ test('Capture before test - JSON', (t) => {
   const fn = path.resolve(__dirname, './scripts/before_test.json');
   const script = require(fn);
   runner(script).then(function(ee) {
-    ee.on('done', function(report) {
+    ee.on('done', function(nr) {
+      const report = SSMS.legacyReport(nr).report();
       let c200 = report.codes[200];
       let expectedAmountRequests = script.config.phases[0].duration * script.config.phases[0].arrivalRate;
       t.assert(c200 === expectedAmountRequests,
@@ -104,7 +118,10 @@ test('Capture before test - JSON', (t) => {
       let c201 = report.codes[201];
       t.assert(c201 === undefined, 'There should be no 201 response codes');
 
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
 
     ee.run();
@@ -128,10 +145,14 @@ test('Capture - XML', (t) => {
 
     runner(script, parsedData, {}).then(function(ee) {
 
-      ee.on('done', function(report) {
+      ee.on('done', function(nr) {
+        const report = SSMS.legacyReport(nr).report();
         t.assert(report.codes[200] > 0, 'Should have a few 200s');
         t.assert(report.codes[404] === undefined, 'Should have no 404s');
-        t.end();
+        ee.stop(() => {
+          t.end();
+        });
+
       });
 
       ee.run();
@@ -144,10 +165,14 @@ test('Capture - Random value from array', (t) => {
   const script = require(fn);
   runner(script).then(function(ee) {
 
-    ee.on('done', (report) => {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       t.assert(report.codes[200] > 0, 'Should have a few 200s');
       t.assert(report.codes[404] === undefined, 'Should have no 404s');
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
 
     ee.run();
@@ -158,7 +183,8 @@ test('Capture - RegExp', (t) => {
   const fn = path.resolve(__dirname, './scripts/captures-regexp.json');
   const script = require(fn);
   let ee = runner(script).then(function(ee) {
-    ee.on('done', (report) => {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       let c200 = report.codes[200];
       let c201 = report.codes[201];
       let cond = c201 === c200;
@@ -168,7 +194,10 @@ test('Capture - RegExp', (t) => {
       if (!cond) {
         console.log('200: %s; 201: %s;', c200, c201);
       }
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
 
     ee.run();
@@ -179,13 +208,17 @@ test('Capture WS - JSON', (t) => {
   const fn = path.resolve(__dirname, './scripts/captures_ws.json');
   const script = require(fn);
   let ee = runner(script).then(function(ee) {
-    ee.on('done', (report) => {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
       if (report.errors) {
         const errors = Object.keys(report.errors);
 
         t.assert(errors.length === 0, "There should be no WS errors")
       }
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
 
     ee.run();

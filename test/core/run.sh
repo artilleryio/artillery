@@ -18,7 +18,7 @@ ws_json_pid=$!
 
 if [ $# -eq 1 ] ; then
     echo Running Single Test: $1
-     $1
+    node $DIR/$1
 else
     echo Running All Available Tests
     node $DIR/index.js
@@ -32,5 +32,6 @@ kill $ws_pid
 kill $io_pid
 kill $express_pid
 kill $ws_tls_pid
+kill $ws_json_pid
 
 exit $test_status

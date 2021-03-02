@@ -5,7 +5,6 @@ require('./test_loop');
 require('./test_capture');
 require('./test_arrivals');
 require('./test_reuse');
-require('./test_loop');
 require('./test_parallel');
 require('./test_probability');
 require('./test_if');

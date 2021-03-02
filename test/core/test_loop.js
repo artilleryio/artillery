@@ -1,14 +1,18 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
 const L = require('lodash');
+
+const { SSMS } = require('../../core/lib/ssms');
 
 test('simple loop', (t) => {
   const script = require('./scripts/loop.json');
 
   runner(script).then(function(ee) {
-    ee.on('done', (report) => {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
+
       let scenarios = report.scenariosCompleted;
       let requests = report.requestsCompleted;
       let loopCount = script.scenarios[0].flow[0].count;
@@ -16,7 +20,10 @@ test('simple loop', (t) => {
       t.assert(
         requests === expected,
         'Should have ' + expected + ' requests for each completed scenario');
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
     ee.run();
   });
@@ -26,7 +33,9 @@ test('loop with range', (t) => {
   const script = require('./scripts/loop_range.json');
 
   runner(script).then(function(ee) {
-    ee.on('done', (report) => {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
+
       let scenarios = report.scenariosCompleted;
       let requests = report.requestsCompleted;
       let expected = scenarios * 3 * 2;
@@ -42,7 +51,10 @@ test('loop with range', (t) => {
       // If $loopCount breaks, we'll see 404s here.
       t.assert(!code404,
                'There should be no 404s');
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
     ee.run();
   });

@@ -1,7 +1,7 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
 
 test('arrival phases', function(t) {
   var script = require('./scripts/arrival_phases.json');
@@ -15,7 +15,9 @@ test('arrival phases', function(t) {
     });
 
     ee.on('done', function(stats) {
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
     });
     ee.run();
   });

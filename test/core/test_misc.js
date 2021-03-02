@@ -1,9 +1,10 @@
 'use strict';
 
 var test = require('tape');
-var runner = require('../../core/lib/runner').runner;
+var runner = require('../../core').runner;
 var l = require('lodash');
 var url = require('url');
+const { SSMS } = require('../../core/lib/ssms');
 
 var SCRIPTS = [
   'hello.json',
@@ -34,7 +35,8 @@ l.each(SCRIPTS, function(fn) {
       ee.on('stats', function(stats) {
         t.ok(stats, 'intermediate stats event emitted');
       });
-      ee.on('done', function(report) {
+      ee.on('done', function(nr) {
+        const report = SSMS.legacyReport(nr).report();
         var requests = report.requestsCompleted;
         var scenarios = report.scenariosCompleted;
         console.log('# requests = %s, scenarios = %s', requests, scenarios);
@@ -57,7 +59,10 @@ l.each(SCRIPTS, function(fn) {
         }
         t.assert(Object.keys(report.errors).length === 0, 'Should have no errors');
 
-        t.end();
+        ee.stop(() => {
+          t.end();
+        });
+
       });
 
       ee.run();

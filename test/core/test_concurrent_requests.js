@@ -1,7 +1,8 @@
 'use strict';
 
 const test = require('tape');
-const runner = require('../../core/lib/runner').runner;
+const runner = require('../../core').runner;
+const { SSMS } = require('../../core/lib/ssms');
 
 test('scenarios avoided - arrival rate', function(t) {
     var script = require('./scripts/concurrent_requests_arrival_rate.json');
@@ -13,10 +14,14 @@ test('scenarios avoided - arrival rate', function(t) {
             console.log('Phase completed - %s', new Date());
         });
 
-        ee.on('done', function(stats) {
+        ee.on('done', function(nr) {
+            const stats = SSMS.legacyReport(nr).report();
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-            t.end();
+            ee.stop(() => {
+                t.end();
+              });
+
         });
         ee.run();
     });
@@ -32,10 +37,14 @@ test('scenarios avoided - arrival count', function(t) {
             console.log('Phase completed - %s', new Date());
         });
 
-        ee.on('done', function(stats) {
+        ee.on('done', function(nr) {
+            const stats = SSMS.legacyReport(nr).report();
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-            t.end();
+            ee.stop(() => {
+                t.end();
+              });
+
         });
         ee.run();
     });
@@ -51,10 +60,14 @@ test('scenarios avoided - ramp to', function(t) {
             console.log('Phase completed - %s', new Date());
         });
 
-        ee.on('done', function(stats) {
+        ee.on('done', function(nr) {
+            const stats = SSMS.legacyReport(nr).report();
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-            t.end();
+            ee.stop(() => {
+                t.end();
+              });
+
         });
         ee.run();
     });
@@ -70,11 +83,15 @@ test('scenarios avoided - multiple phases', function(t) {
             console.log('Phase completed - %s', new Date());
         });
 
-        ee.on('done', function(stats) {
+        ee.on('done', function(nr) {
+            const stats = SSMS.legacyReport(nr).report();
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
             t.assert(stats.scenariosAvoided < 1000, 'should avoid less than 1000');
-            t.end();
+            ee.stop(() => {
+                t.end();
+              });
+
         });
         ee.run();
     });
