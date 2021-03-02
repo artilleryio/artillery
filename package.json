@@ -8,7 +8,11 @@
   },
   "files": [
     "/bin",
-    "/lib"
+    "/lib",
+    "/core",
+    "console-reporter.js",
+    "util.js",
+    ".artilleryrc"
   ],
   "oclif": {
     "commands": "./lib/cmds",
