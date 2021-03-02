@@ -47,34 +47,47 @@ class SSMS extends EventEmitter {
       scenariosCreated: pd.counters['core.vusers.created.total'] || 0,
       scenariosCompleted: pd.counters['core.vusers.completed'] || 0,
       
-      requestsCompleted: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || 0,
+      requestsCompleted: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || pd.counters['engine.websocket.messages_sent'] || 0,
       latency: {},
       rps: {
-        mean: pd.rates['engine.http.response_rate'] || pd.rates['engine.socketio.emit_rate'] || 0,
+        mean: pd.rates ? (pd.rates['engine.http.response_rate'] || pd.rates['engine.socketio.emit_rate'] || 0) : 0,
         count: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || 0,
       },
       scenarioDuration: {},
       scenarioCounts: {},
 
-      // TODO:
       errors: {},
       codes: {}
     };
 
-    if (typeof pd.histograms['core.vusers.session_length'] !== 'undefined') {
+    if (pd.histograms && typeof pd.histograms['core.vusers.session_length'] !== 'undefined') {
       result.scenarioDuration = summarizeHistogram(pd.histograms['core.vusers.session_length']._raw);
     }
 
     // scenarioCounts
     const names = Object.keys(pd.counters).filter(k => k.startsWith('core.vusers.created_by_name.'));
     for(const n of names) {
-      result.scenarioCounts[n.split('')[1]] = pd.counters[n];
+      result.scenarioCounts[n.split('core.vusers.created_by_name.')[1]] = pd.counters[n];
     }
 
     // latency
-    const latencyh = pd.histograms['engine.http.response_time'] || pd.histograms['engine.socketio.response_time'];
+    const latencyh = pd.histograms ? pd.histograms['engine.http.response_time'] || pd.histograms['engine.socketio.response_time'] : null;
     if(latencyh) {
       result.latency = summarizeHistogram(latencyh._raw);
+    }
+
+    // HTTP codes
+    const codeNames = Object.keys(pd.counters).filter(k => k.match(/^engine\.(http|socketio)\.codes.*/))
+    for (const n of codeNames) {
+      const code = parseInt(n.split('.codes.')[1]);
+      result.codes[code] = pd.counters[n];
+    }
+
+    // errors
+    const errNames = Object.keys(pd.counters).filter(k => k.startsWith('errors.'));
+    for (const n of errNames) {
+      const errName = n.split('errors.')[1];
+      result.errors[errName] = pd.counters[n];
     }
 
     return {
