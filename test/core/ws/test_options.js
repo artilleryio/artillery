@@ -14,7 +14,7 @@ test('TLS options for WebSocket', function(t) {
   const script = require('./scripts/extra_options.json');
   vuserLauncher(script).then(function(sessions) {
     sessions.on('done', function(nr) {
-      const report = SSMS.legacyReport(nr).report();        
+      const report = SSMS.legacyReport(nr).report();
       t.assert(Object.keys(report.errors).length === 0,
                'Test ran without errors');
 
@@ -22,11 +22,15 @@ test('TLS options for WebSocket', function(t) {
       delete script.config.ws;
       vuserLauncher(script).then(function(sessions2) {
         sessions2.on('done', function(nr2) {
-          const report2 = SSMS.legacyReport(nr2).report();        
+          const report2 = SSMS.legacyReport(nr2).report();
           t.assert(Object.keys(report2.errors).length === 1,
                    'Test ran with one error: ' +
                    (Object.keys(report2.errors)[0]));
-          t.end();
+          sessions.stop(() => {
+            sessions2.stop(() => {
+              t.end();
+            });
+          });
         });
         sessions2.run();
       });
@@ -43,7 +47,9 @@ test('Subprotocols - using a known subprotocol', function(t) {
       t.assert(
         Object.keys(report.errors).length === 0,
         'Test with a subprotocol set completed with no errors');
-      t.end();
+      sessions.stop(() => {
+          t.end();
+      });
     });
 
     sessions.run();
@@ -61,7 +67,9 @@ test('Subprotocols - no subprotocol', function(t) {
       t.assert(
         Object.keys(report.errors).length === 0,
         'Test with no subprotocol set completed with no errors');
-      t.end();
+      sessions.stop(() => {
+          t.end();
+      });
     });
 
     sessions.run();
@@ -88,7 +96,9 @@ test('Subprotocols - unknown subprotocol', function(t) {
         'The error should be of "no subprotocol" type'
       );
 
-      t.end();
+      sessions.stop(() => {
+        t.end();
+      });
     });
 
     sessions.run();

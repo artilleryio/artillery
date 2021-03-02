@@ -20,7 +20,10 @@ test('ifTrue', (t) => {
                'Should have ' + expected + '404s');
       t.assert(!report.codes[200],
                'Should not have 200s');
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
     ee.run();
   });

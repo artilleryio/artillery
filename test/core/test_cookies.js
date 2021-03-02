@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var runner = require('../../core/lib/runner').runner;
+var runner = require('../../core').runner;
 var l = require('lodash');
 var request = require('got');
 const { SSMS } = require('../../core/lib/ssms');
@@ -19,7 +19,10 @@ test('cookie jar http', function(t) {
             console.log(res.body);
             console.log(report);
           }
-          t.end();
+          ee.stop(() => {
+            t.end();
+          });
+
         })
         .catch((err) => {
           t.fail(err);
@@ -42,7 +45,10 @@ test('cookie jar socketio', function(t) {
           console.log(res.body);
           console.log(report);
         }
-        t.end();
+        ee.stop(() => {
+          t.end();
+        });
+
       })
       .catch((err) => {
         t.fail(err);
@@ -61,7 +67,10 @@ test('default cookies', function(t) {
                'There should be some 200s');
       t.assert(report.codes[403] === undefined,
                'There should be no 403s');
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
     ee.run();
   });
@@ -77,7 +86,10 @@ test('no default cookie', function(t) {
                'There should be some 403s');
       t.assert(report.codes[200] === undefined,
                'There should be no 200s');
-      t.end();
+      ee.stop(() => {
+        t.end();
+      });
+
     });
     ee.run();
   });

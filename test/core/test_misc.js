@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape');
-var runner = require('../../core/lib/runner').runner;
+var runner = require('../../core').runner;
 var l = require('lodash');
 var url = require('url');
 const { SSMS } = require('../../core/lib/ssms');
@@ -59,7 +59,10 @@ l.each(SCRIPTS, function(fn) {
         }
         t.assert(Object.keys(report.errors).length === 0, 'Should have no errors');
 
-        t.end();
+        ee.stop(() => {
+          t.end();
+        });
+
       });
 
       ee.run();

@@ -32,5 +32,6 @@ kill $ws_pid
 kill $io_pid
 kill $express_pid
 kill $ws_tls_pid
+kill $ws_json_pid
 
 exit $test_status
