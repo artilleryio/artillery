@@ -2,7 +2,7 @@
 
 const {DDSketch} = require('@datadog/sketches-js');
 const EventEmitter = require('events');
-const {setDriftlessInterval} = require('driftless');
+const {setDriftlessInterval, clearDriftless} = require('driftless');
 const debug = require('debug')('ssms');
 
 class SSMS extends EventEmitter {
@@ -26,9 +26,18 @@ class SSMS extends EventEmitter {
     this._histograms = [];
     this._rates = [];
 
+    this._active = true;
+
     this._aggregatedCounters = {};
     this._aggregatedHistograms = {};
     this._aggregatedRates = {};
+  }
+
+  stop() {
+    this._active = false;
+    clearDriftless(this._aggregateInterval);
+    clearDriftless(this._emitInterval);
+    return this;
   }
 
   static report(pds) {
@@ -46,7 +55,7 @@ class SSMS extends EventEmitter {
       timestamp: new Date(pd.period),
       scenariosCreated: pd.counters['core.vusers.created.total'] || 0,
       scenariosCompleted: pd.counters['core.vusers.completed'] || 0,
-      
+
       requestsCompleted: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || pd.counters['engine.websocket.messages_sent'] || 0,
       latency: {},
       rps: {

@@ -52,6 +52,8 @@ async function runner(script, payload, options, callback) {
   },
   options);
 
+  const metrics = new SSMS();
+
   let warnings = {
     plugins: {
       // someplugin: {
@@ -248,13 +250,16 @@ async function runner(script, payload, options, callback) {
         scenarioEvents: null,
         picker: undefined,
         plugins: runnerPlugins,
-        engines: runnerEngines
+        engines: runnerEngines,
+        metrics: metrics
       };
       debug('run() with: %j', runnableScript);
       run(runnableScript, ee, opts, runState, contextVars);
     };
 
-    ee.stop = function (done) {
+    ee.stop = async function (done) {
+      metrics.stop();
+
       // allow plugins to cleanup
       A.eachSeries(
         runnerPlugins,
@@ -290,7 +295,7 @@ async function runner(script, payload, options, callback) {
 }
 
 function run(script, ee, options, runState, contextVars) {
-  const metrics = new SSMS();
+  const metrics = runState.metrics;
   const intermediates = [];
 
   let phaser = createPhaser(script.config.phases);
