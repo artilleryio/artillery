@@ -1,10 +1,20 @@
 <p align="center">
-<a href="https://artillery.io"><img src="https://artillery.io/img/artillery-square.jpg" height="120" /></a>
+<a href="https://artillery.io"><img src="https://artillery.io/images/artillery-logo-square.png" height="120" /></a>
 </p>
-<p align="center">
-  Artillery is a modern, powerful & easy-to-use <strong>load testing</strong> and <strong>functional testing</strong> toolkit. Use it to ship <strong>scalable</strong> backends, APIs & services that stay <strong>performant</strong> & <strong>resilient</strong> under high load.<br /><br />
-  Artillery has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy.<br><br>
-</p>
+
+<h2 align="center">
+  keep <code>production</code> fast & reliable,<br />
+  customers happy,</br>
+  and pagers silent
+</h2>
+
+<h3 align="center">
+  <br/><br/>
+  Artillery is a <strong>load testing</strong> and <strong>smoke testing</strong> tool.</br>
+  Artillery helps developers ship <strong>scalable</strong> backends, APIs & services that stay <strong>performant</strong> & <strong>resilient</strong> under high load.<br />
+  It has a strong focus on developer happiness &amp; ease of use, and a batteries-included philosophy.<br><br>
+</h3>
+
 <p align="center">
 Got a question? Want to share how you use Artillery? ➡️ <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
 </p>
@@ -12,20 +22,20 @@ Got a question? Want to share how you use Artillery? ➡️ <a href="https://git
 
 # Use Cases
 
-- **Peak traffic testing** - ensure your API, e-commerce backend, IoT service can handle max traffic
+- **High traffic testing** - ensure your API, e-commerce backend, IoT service can handle high traffic
 - **Pre-launch load testing** - building a new API or service? test it before launch
 - **Continuous performance testing** - run load tests in CI/CD to stop performance regressions being shipped to prod
 - **Profile & debug performance issues** - run load tests to profile & fix high CPU usage, extensive GC pauses, memory leaks, and misconfigured resource pools
-- **Semantic monitoring** - run realistic user scenarios against production APIs continuously and alert on wrong responses or errors
+- **Run smoke tests** - verify key API functionality on every deploy from CI/CD. Monitor production continuosly and alert when an API is unavailable or returns errors.
 
 # Features
 
-- **Multiple protocols**:  Load test HTTP, WebSocket, Socket.io, Kinesis, HLS and more.
+- **Multiple protocols**:  Load test HTTP, WebSocket, Socket.io, Kinesis, HLS and [more](https://www.npmjs.com/search?q=artillery-engine).
 - **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc).
-- **Load testing & Functional testing**: reuse the same scenario definitions to run performance tests or functional tests on your API or backend.
+- **Load testing & functional testing**: reuse the same scenario definitions to run performance tests or functional tests on your API
 - **Performance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput).
 - **Scriptable**: write custom logic in JS, using any of the thousands of useful `npm` modules.
-- **Integrations**: `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc).
+- **Integrations**: send metrics to monitoring systems such as Datadog, Librato, and InfluxDB
 - **Extensible**: write custom reporters, custom plugins, custom protocol engines etc.
 - **and more!** HTML reports, nice CLI, parameterization with CSV files.
 
