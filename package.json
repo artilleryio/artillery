@@ -90,7 +90,7 @@
     "hapi": "^17.5.4",
     "hapi-auth-basic": "^5.0.0",
     "husky": "^1.2.0",
-    "nock": "^9.2.5",
+    "nock": "^11.9.1",
     "prettier": "^1.5.2",
     "sinon": "^4.5.0",
     "socket.io": "^2.4.1",
