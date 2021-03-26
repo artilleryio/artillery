@@ -7,9 +7,10 @@
 const async = require('async');
 const _ = require('lodash');
 
-const request = require('request');
 const io = require('socket.io-client');
 const wildcardPatch = require('socketio-wildcard')(io.Manager);
+
+const tough = require('tough-cookie');
 
 const deepEqual = require('deep-equal');
 const debug = require('debug')('socketio');
@@ -27,6 +28,9 @@ function SocketIoEngine(script) {
 
 SocketIoEngine.prototype.createScenario = function(scenarioSpec, ee) {
   var self = this;
+  // Adds scenario overridden configuration into the static config
+  this.socketioOpts = {...this.socketioOpts, ...scenarioSpec.socketio};
+
   let tasks = _.map(scenarioSpec.flow, function(rs) {
     if (rs.think) {
       return engineUtil.createThink(rs, _.get(self.config, 'defaults.think', {}));
@@ -54,7 +58,10 @@ function isAcknowledgeRequired(spec) {
 function processResponse(ee, data, response, context, callback) {
   // Do we have supplied data to validate?
   if (response.data && !deepEqual(data, response.data)) {
+    debug('data is not valid:');
     debug(data);
+    debug(response);
+
     let err = 'data is not valid';
     ee.emit('error', err);
     return callback(err, context);
@@ -77,31 +84,33 @@ function processResponse(ee, data, response, context, callback) {
       return callback(err, context);
     }
 
-    // Do we have any failed matches?
-    let failedMatches = _.filter(result.matches, (v, k) => {
-      return !v.success;
-    });
+    if (result !== null) {
+      // Do we have any failed matches?
+      let failedMatches = _.filter(result.matches, (v, k) => {
+        return !v.success;
+      });
 
-    // How to handle failed matches?
-    if (failedMatches.length > 0) {
-      debug(failedMatches);
-      // TODO: Should log the details of the match somewhere
-      ee.emit('error', 'Failed match');
-      return callback(new Error('Failed match'), context);
-    } else {
-      // Emit match events...
-      _.each(result.matches, function(v, k) {
-        ee.emit('match', v.success, {
-          expected: v.expected,
-          got: v.got,
-          expression: v.expression
+      // How to handle failed matches?
+      if (failedMatches.length > 0) {
+        debug(failedMatches);
+        // TODO: Should log the details of the match somewhere
+        ee.emit('error', 'Failed match');
+        return callback(new Error('Failed match'), context);
+      } else {
+        // Emit match events...
+        // _.each(result.matches, function(v, k) {
+        //   ee.emit('match', v.success, {
+        //     expected: v.expected,
+        //     got: v.got,
+        //     expression: v.expression
+        //   });
+        // });
+
+        // Populate the context with captured values
+        _.each(result.captures, function(v, k) {
+          context.vars[k] = v.value;
         });
-      });
-
-      // Populate the context with captured values
-      _.each(result.captures, function(v, k) {
-        context.vars[k] = v;
-      });
+      }
 
       // Replace the base object context
       // Question: Should this be JSON object or String?
@@ -153,7 +162,10 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     let socketio = context.sockets[requestSpec.emit.namespace] || null;
 
     if (!(requestSpec.emit && requestSpec.emit.channel && socketio)) {
-      return ee.emit('error', 'invalid arguments');
+      debug('invalid arguments');
+      ee.emit('error', 'invalid arguments');
+      // TODO: Provide a more helpful message
+      callback(new Error('socketio: invalid arguments'));
     }
 
     let outgoing = {
@@ -202,7 +214,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
         markEndTime(ee, context, startedAt);
         return callback(null, context);
       }
-    };
+    }; // endCallback
 
     if (isResponseRequired(requestSpec)) {
       let response = {
@@ -245,7 +257,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     // Set default namespace in emit action
     requestSpec.emit.namespace = template(requestSpec.emit.namespace, context) || "";
 
-    self.loadContextSocket(requestSpec.emit.namespace, context, function(err, socket){
+    self.loadContextSocket(requestSpec.emit.namespace, context, function(err, socket) {
       if(err) {
         debug(err);
         ee.emit('error', err.message);
@@ -327,8 +339,8 @@ SocketIoEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
   }
 
   return function scenario(initialContext, callback) {
-    initialContext._successCount = 0;
-    initialContext._jar = request.jar();
+    initialContext = self.httpDelegate.setInitialContext(initialContext);
+
     initialContext._pendingRequests = _.size(
         _.reject(scenarioSpec, function(rs) {
           return (typeof rs.think === 'number');

@@ -3,30 +3,24 @@
 var test = require('tape');
 var runner = require('../../core/lib/runner').runner;
 var l = require('lodash');
-var request = require('request');
+var request = require('got');
 
 test('cookie jar http', function(t) {
   var script = require('./scripts/cookies.json');
   runner(script).then(function(ee) {
     ee.on('done', function(report) {
-      request(
-        {
-          method: 'GET',
-          url: 'http://127.0.0.1:3003/_stats',
-          json: true
-        },
-        function(err, res, body) {
-          if (err) {
-            return t.fail();
-          }
-
-          var ok = report.scenariosCompleted && l.size(body.cookies) === report.scenariosCompleted;
+      request('http://127.0.0.1:3003/_stats', { responseType: 'json' })
+        .then((res) => {
+          var ok = report.scenariosCompleted && l.size(res.body.cookies) === report.scenariosCompleted;
           t.assert(ok, 'Each scenario had a unique cookie');
           if (!ok) {
-            console.log(body);
+            console.log(res.body);
             console.log(report);
           }
           t.end();
+        })
+        .catch((err) => {
+          t.fail(err);
         });
     });
     ee.run();
@@ -37,25 +31,19 @@ test('cookie jar socketio', function(t) {
   var script = require('./scripts/cookies_socketio.json');
   runner(script).then(function(ee) {
     ee.on('done', function(report) {
-      request(
-        {
-          method: 'GET',
-          url: 'http://127.0.0.1:9092/_stats',
-          json: true
-        },
-        function(err, res, body) {
-          if (err) {
-            return t.fail();
-          }
-
-          var ok = report.scenariosCompleted && l.size(body.cookies) === report.scenariosCompleted;
-          t.assert(ok, 'Each scenario had a unique cookie');
-          if (!ok) {
-            console.log(body);
-            console.log(report);
-          }
-          t.end();
-        });
+      request('http://127.0.0.1:9092/_stats', {responseType: 'json'})
+      .then((res) => {
+        var ok = report.scenariosCompleted && l.size(res.body.cookies) === report.scenariosCompleted;
+        t.assert(ok, 'Each scenario had a unique cookie');
+        if (!ok) {
+          console.log(res.body);
+          console.log(report);
+        }
+        t.end();
+      })
+      .catch((err) => {
+        t.fail(err);
+      });
     });
     ee.run();
   });

@@ -115,7 +115,7 @@ test('rendering variables', function(t) {
   );
 
   t.assert(
-    render('{{favoriteThings.dayOfTheWeek}}', vars) === '',
+    render('{{favoriteThings.dayOfTheWeek}}', vars) === undefined,
     'Non-existent property lookup returns an empty string'
   );
 
