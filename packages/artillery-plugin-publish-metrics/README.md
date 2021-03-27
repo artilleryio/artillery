@@ -4,7 +4,15 @@
 
 ## Purpose
 
-Use this plugin to send metrics tracked by Artillery (e.g. response latency, network errors, HTTP response codes) to an external monitoring system such as Datadog or InfluxDB.
+Use this plugin to send metrics tracked by Artillery (e.g. response latency, network errors, HTTP response codes) to an external monitoring/observability system.
+
+**Supported targets:**
+
+- Datadog :dog: (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
+- [Honeycomb](https://honeycomb.io) :bee:
+- InfluxDB with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
+- StatsD
+
 
 ## Install
 
@@ -17,29 +25,14 @@ npm install -g artillery-plugin-publish-metrics
 ```
 
 If `artillery` is installed as a project-specific dependency (i.e. in a directory with `package.json` in it), install it with:
-
+t
 ```sh
 npm install artillery-plugin-publish-metrics
 ```
 
-**Supported targets:**
-
-- Datadog (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
-- StatsD
-- InfluxDB with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
-
-**To be implemented:**
-
-- InfluxDB (HTTP API)
-- Splunk
-- Prometheus
-- ELK
-
-(Want to help add your favorite monitoring system? Drop us a line.)
-
 ----
 | ![Datadog example](./doc/datadog.png) |
-|:--:| 
+|:--:|
 | *Track, graph and visualize Artillery metrics alongside metrics from your applications and infrastructure* |
 
 ## Published metrics
@@ -93,6 +86,35 @@ The plugin supports sending metrics to an already running Datadog [agent](https:
   - `alertType` -- `error`, `warning`, `info` or `success`; defaults to `info`
   - `send` -- set to `false` to turn off the event. By default, if an `event` is configured, it will be sent. This option makes it possible to turn event creation on/off on the fly (e.g. via an environment variable)
 
+### Honeycomb Configuration
+
+- To send events to Honeycomb, set `type` to `honeycomb`
+- Set `apiKey` to API/write key
+- Set `dataset` to the name of a dataset you want to send events to
+- Optional: set `enabled` to `false` to disable the integration
+- Optional: set `sampleRate` to sample rate (default: `1` i.e. send all events) ([Honeycomb docs](https://doc.esdoc.org/github.com/honeycombio/libhoney-js/class/src/libhoney.js~Libhoney.html#instance-set-sampleRate))
+
+Honeycomb integration sends an event for every HTTP response (rather than pre-aggregated metrics).
+
+The following properties are set on every event:
+
+- `url` - full URL of the request
+- `host` - hostname + port
+- `method` - HTTP method, e.g. `GET`
+- `statusCode` - status code, e.g. `200`
+- `responseTimeMs` - time-to-first-byte of the response in milliseconds
+
+#### Example configuration
+
+```
+config:
+  plugins:
+    publish-metrics:
+      - type: honeycomb
+        apiKey: "{{ $processEnvironment.HONEYCOMB_API_KEY" }}
+        dataset: load-testing
+```
+
 ### StatsD Configuration
 
 - To send metrics to StatsD, set `type` to `statsd`
@@ -111,3 +133,13 @@ MPL 2.0
 ## Bugs & Feature Suggestions
 
 Please create an [issue](https://github.com/artilleryio/artillery/issues) to report a bug or suggest an improvement.
+
+**To be implemented:**
+
+- InfluxDB (HTTP API)
+- Splunk
+- Prometheus
+- ELK
+- CloudWatch
+
+(Want to help add your favorite monitoring system? Drop us a line.)

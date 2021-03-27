@@ -14,11 +14,12 @@
     "datadog-metrics": "^0.8.1",
     "debug": "^4.1.1",
     "dogapi": "^2.8.3",
-    "hot-shots": "^6.0.1"
+    "hot-shots": "^6.0.1",
+    "libhoney": "^2.2.1"
   },
   "devDependencies": {
     "artillery": "^1.6.0-26",
     "ava": "^1.0.1",
-    "shelljs": "^0.8.3"
+    "shelljs": "^0.8.4"
   }
 }

@@ -6,6 +6,9 @@ const NS = 'plugin:publish-metrics';
 const debug = require('debug')(NS);
 const A = require('async');
 
+const { createDatadogReporter } = require('./lib/datadog');
+const { createHoneycombReporter } = require('./lib/honeycomb');
+
 module.exports = {
   Plugin
 };
@@ -18,8 +21,9 @@ function Plugin(script, events) {
 
   script.config.plugins['publish-metrics'].forEach((config) => {
     if (config.type === 'datadog' || config.type === 'statsd' || config.type === 'influxdb-statsd') {
-      const { createDatadogReporter } = require('./lib/datadog');
       this.reporters.push(createDatadogReporter(config, events, script));
+    } else if (config.type === 'honeycomb') {
+      this.reporters.push(createHoneycombReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',
