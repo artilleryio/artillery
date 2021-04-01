@@ -154,7 +154,7 @@ function testRamp(t, phaseSpec) {
       _.filter(['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration'], function(k) {
         return !_.isUndefined(spec[k]) && typeof spec[k] != 'number'
       }).length === 0,
-      'spec integer keys are correctly typed');
+      'spec numeric values are correctly typed');
   });
   phaser.on('phaseCompleted', function(spec) {
     t.assert(
