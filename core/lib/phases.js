@@ -19,6 +19,13 @@ function phaser(phaseSpecs) {
   let ee = new EventEmitter();
 
   let tasks = _.map(phaseSpecs, function(spec, i) {
+    // Cast defined but non-number (eg: from ENV) values
+    ['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration'].forEach(function(k) {
+      if (!isUndefined(spec[k]) && typeof spec[k] !== 'number') {
+        spec[k] = _.toNumber(spec[k]);
+      }
+    });
+
     if (isUndefined(spec.index)) {
       spec.index = i;
     }
