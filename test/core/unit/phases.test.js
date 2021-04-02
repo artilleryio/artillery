@@ -119,6 +119,14 @@ test('rampDown', function(t) {
   });
 });
 
+test.only('ramp with string inputs', function(t) {
+  testRamp(t, {
+    duration: "15",
+    arrivalRate: "20",
+    rampTo: "1.0"
+  });
+});
+
 function testRamp(t, phaseSpec) {
   let phaser = createPhaser([phaseSpec]);
 
@@ -132,7 +140,7 @@ function testRamp(t, phaseSpec) {
   }
   expected = Math.floor(expected);
 
-  t.plan(5);
+  t.plan(6);
 
   let startedAt;
   let phaseStartedTimestamp;
@@ -142,6 +150,11 @@ function testRamp(t, phaseSpec) {
     t.assert(
       _.isEqual(spec, phaseSpec),
       'phaseStarted event emitted with correct spec');
+    t.assert(
+      _.filter(['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration'], function(k) {
+        return !_.isUndefined(spec[k]) && typeof spec[k] != 'number'
+      }).length === 0,
+      'spec numeric values are correctly typed');
   });
   phaser.on('phaseCompleted', function(spec) {
     t.assert(
