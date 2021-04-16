@@ -4,6 +4,7 @@ This repo contains examples of Artillery scripts.
 
 - [using-data-from-csv](./using-data-from-csv) - using data from an external CSV file in vuser scenarios
 - [http-set-custom-header](./http-set-custom-header) - set an HTTP header in a `beforeRequest` hook
+- [starter-kit](./starter-kit) - @cfryerdev's Artillery starter kit - an example of how a few different bits fit together
 
 # Contributing
 
