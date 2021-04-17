@@ -1,2 +1,12 @@
-node_modules
-test
+# Exclude everything by default.
+*
+
+# Explicitly include only the necessary files we want in the Docker image.
+!bin
+!core
+!lib
+!LICENSE.txt
+!README.md
+!console-reporter.js
+!util.js
+!package*.json
