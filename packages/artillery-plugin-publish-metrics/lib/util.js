@@ -1,6 +1,18 @@
 module.exports = {
-  attachScenarioHooks
+  attachScenarioHooks,
+  versionCheck
 };
+
+const semver = require('semver');
+
+// TODO: Extract into a utility function in Artillery itself
+function versionCheck(range) {
+    if (!global.artillery || !global.artillery.version) {
+      return  false;
+    } else {
+      return semver.satisfies(global.artillery.version, range);
+    }
+}
 
 function attachScenarioHooks(script, specs) {
   const scenarios = script.scenarios;
