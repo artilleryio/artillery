@@ -15,14 +15,14 @@
     "debug": "^4.1.1",
     "dogapi": "^2.8.3",
     "hot-shots": "^6.0.1",
-    "libhoney": "^2.2.1",
+    "libhoney": "^2.2.3",
     "lightstep-tracer": "^0.31.0",
     "opentracing": "^0.14.5",
     "semver": "^7.3.5"
   },
   "devDependencies": {
-    "artillery": "^1.6.0-26",
-    "ava": "^1.0.1",
+    "artillery": "^1.7.0",
+    "ava": "^3.15.0",
     "shelljs": "^0.8.4"
   }
 }
