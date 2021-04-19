@@ -12,13 +12,16 @@ function DatadogReporter(config, events, script) {
   this.dogapi = dogapi;
   this.reportingType = ''; // api | agent (DogStatsD, StatsD, Telegraf/StatsD)
 
-  config = Object.assign({
-    host: '127.0.0.1',
-    port: 8125,
-    prefix: 'artillery.',
-    event: { send: true },
-    tags: []
-  }, config);
+  config = Object.assign(
+    {
+      host: '127.0.0.1',
+      port: 8125,
+      prefix: 'artillery.',
+      event: { send: true },
+      tags: [],
+    },
+    config,
+  );
 
   config.event = Object.assign(
     {
@@ -26,14 +29,17 @@ function DatadogReporter(config, events, script) {
       text: `Target: ${script.config.target}`,
       priority: 'low',
       alertType: 'info',
-      tags: []
+      tags: [],
     },
-    config.event);
+    config.event,
+  );
 
   debug('creating DatadogReporter with config');
-  debug(config.apiKey ?
-        Object.assign({ apiKey: sanitize(config.apiKey) }, config) :
-        config);
+  debug(
+    config.apiKey
+      ? Object.assign({ apiKey: sanitize(config.apiKey) }, config)
+      : config,
+  );
 
   this.config = config;
   if (config.apiKey) {
@@ -44,7 +50,7 @@ function DatadogReporter(config, events, script) {
       apiHost: config.apiHost,
       prefix: config.prefix,
       defaultTags: config.tags,
-      flushIntervalSeconds: 5
+      flushIntervalSeconds: 5,
     });
 
     this.reportingType = 'api';
@@ -56,7 +62,7 @@ function DatadogReporter(config, events, script) {
       port: config.port,
       prefix: config.prefix,
       globalTags: config.tags,
-      bufferFlushInterval: 1000
+      bufferFlushInterval: 1000,
     };
 
     if (config.type === 'influxdb-statsd') {
@@ -68,15 +74,15 @@ function DatadogReporter(config, events, script) {
   }
 
   this.startedEventSent = false;
-  if (config.event && String(config.event.send) !== "false") {
+  if (config.event && String(config.event.send) !== 'false') {
     if (this.reportingType === 'api') {
       this.dogapi.initialize({
-        api_key: config.apiKey
+        api_key: config.apiKey,
       });
     }
 
     events.on('phaseStarted', () => {
-      if(!this.startedEventSent) {
+      if (!this.startedEventSent) {
         debug('sending start event');
         this.event({
           title: `Started: ${config.event.title}`,
@@ -85,7 +91,7 @@ function DatadogReporter(config, events, script) {
           sourceTypeName: config.event.sourceTypeName,
           priority: config.event.priority,
           tags: config.event.tags,
-          alertType: config.event.alertType
+          alertType: config.event.alertType,
         });
         this.startedEventSent = true;
       }
@@ -93,13 +99,40 @@ function DatadogReporter(config, events, script) {
   }
 
   events.on('stats', (stats) => {
-    for(const [name, value] of Object.entries(stats.counters || {})) {
+    for (const [name, value] of Object.entries(stats.counters || {})) {
       this.metrics.increment(name, value);
     }
 
+    if (report.customStats) {
+      Object.entries(report.customStats).forEach(([groupName, group]) => {
+        Object.entries(group).forEach(([statName, value]) => {
+          const key = `custom.${groupName}.${statName}`;
+          debug({ key, value }, 'custom stat');
+          metrics.gauge(key, value);
+        });
+      });
+    }
+
+    if (report.counters) {
+      Object.entries(report.counters).forEach(([name, value]) => {
+        const key = `counters.${name}`;
+        debug({ key, value }, 'counter');
+        metrics.gauge(key, value);
+      });
+    }
+
+    let errorCount = 0;
+    if (report.errors) {
+      Object.keys(report.errors).forEach((errCode) => {
+        const metricName = errCode.replace(/[^a-zA-Z0-9_]/g, '_');
+        errorCount += report.errors[errCode];
+        metrics.increment(`errors.${metricName}`, report.errors[errCode]);
+      });
+    }
+    metrics.increment(`error_count`, errorCount);
+
     /*
       An entry looks like this:
-
       "http.response_time": {
         "min": 16,
         "max": 438,
@@ -115,7 +148,7 @@ function DatadogReporter(config, events, script) {
 
       so we create gauges such as: http.response_time.p50 = 19.9
      */
-    for(const [name, values] of Object.entries(stats.summaries || {})) {
+    for (const [name, values] of Object.entries(stats.summaries || {})) {
       for (const [aggregation, value] of Object.entries(values)) {
         this.metrics.gauge(`${name}.${aggregation}`, value);
       }
@@ -129,14 +162,14 @@ function DatadogReporter(config, events, script) {
   return this;
 }
 
-DatadogReporter.prototype.event = function(opts) {
+DatadogReporter.prototype.event = function (opts) {
   debug(`sending event ${opts.text || opts.title}`);
 
   const eventOpts = {
     aggregation_key: opts.aggregationKey,
     priority: opts.priority,
     source_type_name: opts.sourceTypeName,
-    alert_type: opts.alertType
+    alert_type: opts.alertType,
   };
 
   if (this.reportingType === 'api') {
@@ -153,7 +186,8 @@ DatadogReporter.prototype.event = function(opts) {
           // See https://github.com/DataDog/datadogpy/issues/169
           debug(res);
         }
-      });
+      },
+    );
   } else {
     this.metrics.event(
       opts.title,
@@ -165,12 +199,12 @@ DatadogReporter.prototype.event = function(opts) {
           debug('hotshots event callback');
           debug(err);
         }
-      }
+      },
     );
   }
 };
 
-DatadogReporter.prototype.cleanup = function(done) {
+DatadogReporter.prototype.cleanup = function (done) {
   if (this.startedEventSent) {
     const config = this.config;
     this.event({
@@ -180,7 +214,7 @@ DatadogReporter.prototype.cleanup = function(done) {
       sourceTypeName: config.event.sourceTypeName,
       priority: config.event.priority,
       tags: config.event.tags,
-      alertType: config.event.alertType
+      alertType: config.event.alertType,
     });
   }
 
@@ -198,19 +232,22 @@ DatadogReporter.prototype.cleanup = function(done) {
       },
       // see bufferFlushInterval above, needs to be higher; close()
       // doesn't flush (yet)
-      1500);
+      1500,
+    );
   }
 };
-
 
 function createDatadogReporter(config, events, script) {
   return new DatadogReporter(config, events, script);
 }
 
 function sanitize(str) {
-  return `${str.substring(0, 3)}********************${str.substring(str.length - 3, str.length)}`;
+  return `${str.substring(0, 3)}********************${str.substring(
+    str.length - 3,
+    str.length,
+  )}`;
 }
 
 module.exports = {
-  createDatadogReporter
+  createDatadogReporter,
 };
