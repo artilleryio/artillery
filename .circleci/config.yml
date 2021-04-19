@@ -32,7 +32,7 @@ jobs:
       - run: npm run commitlint-last-commit
       - run: npm test
 
-  maybe_npm_publish:
+  npm_publish:
     working_directory: ~/repo
     docker:
       - image: circleci/node:12
@@ -43,7 +43,7 @@ jobs:
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
       - run: bash .circleci/npm-publish.sh
 
-  maybe_build_docker_image:
+  build_docker_image:
     working_directory: ~/repo
     docker:
       - image: docker:18
@@ -51,14 +51,21 @@ jobs:
       - checkout
       - setup_remote_docker
       - run: sh .circleci/docker-build.sh
+
 workflows:
   version: 2
   test:
     jobs:
       - run_tests
-      - maybe_build_docker_image:
+      - build_docker_image:
           requires:
             - run_tests
-      - maybe_npm_publish:
+          filters:
+            tags:
+              only: /^v.*/
+      - npm_publish:
           requires:
             - run_tests
+          filters:
+            tags:
+              only: /^v.*/
