@@ -1,0 +1,12 @@
+config:
+  target: "https://artillery.io"
+  phases:
+    - arrivalRate: 1
+      duration: 10
+  plugins:
+    hello-world:
+      greeting: "Hello world! 👋"
+scenarios:
+  - flow:
+      - get:
+          url: "/"
