@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const Libhoney = require('libhoney');
-const { attachScenarioHooks } = require('./util');
+const { attachScenarioHooks, versionCheck } = require('./util');
 const debug = require('debug')('plugin:publish-metrics:honeycomb');
 
 const { URL } = require('url');
@@ -17,6 +17,10 @@ class HoneycombReporter {
       batchTimeTrigger: 0,
       sampleRate: config.sampleRate || 1
     };
+
+    if (!versionCheck('>=1.7.0')) {
+      console.error(`[publish-metrics][honeycomb] Honeycomb support requires Artillery >= v1.7.0 (current version: ${global.artillery ? global.artillery.version || 'unknown' : 'unknown' })`);
+    }
 
     this.hny = new Libhoney(this.hnyOpts);
 
