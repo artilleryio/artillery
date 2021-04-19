@@ -108,8 +108,8 @@ The following properties are set on every event:
 
 ### Lightstep Configuration
 
-- To send events to Honeycomb, set `type` to `honeycomb`
-- Set `apiKey` to API/write key
+- To send events to Honeycomb, set `type` to `lightstep`
+- Set `apiKey` to API key/access token
 - Set `componentName` to the name of a component for which the spans will be sent
 - Optional: set `enabled` to `false` to disable the integration
 
@@ -129,9 +129,9 @@ The following tags are set on every span:
 config:
   plugins:
     publish-metrics:
-      - type: honeycomb
-        apiKey: "{{ $processEnvironment.HONEYCOMB_API_KEY" }}
-        dataset: load-testing
+      - type: lightstep
+        apiKey: "{{ $processEnvironment.LIGHSTEP_API_KEY" }}
+        component: artillery-tests
 ```
 
 ### StatsD Configuration
