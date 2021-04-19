@@ -2,6 +2,11 @@
 
 set -eu -o pipefail
 
+if [ -z ${CIRCLE_TAG:-""} ] ; then
+    echo "No tag, not doing anything"
+    exit 0
+fi
+
 echo "Building Docker image for tag $CIRCLE_TAG"
 
 docker build -t artilleryio/artillery:$CIRCLE_TAG .
