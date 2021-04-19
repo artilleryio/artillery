@@ -16,7 +16,7 @@ function DatadogReporter(config, events, script) {
     host: '127.0.0.1',
     port: 8125,
     prefix: 'artillery.',
-    event: { send: false },
+    event: { send: true },
     tags: []
   }, config);
 
