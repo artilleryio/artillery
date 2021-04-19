@@ -10,6 +10,7 @@ Use this plugin to send metrics tracked by Artillery (e.g. response latency, net
 
 - Datadog :dog: (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
 - [Honeycomb](https://honeycomb.io) :bee:
+- [Lightstep](https://lightstep.com) 🔦
 - InfluxDB with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
 - StatsD
 
@@ -35,7 +36,7 @@ npm install artillery-plugin-publish-metrics
 |:--:|
 | *Track, graph and visualize Artillery metrics alongside metrics from your applications and infrastructure* |
 
-## Published metrics
+## Published metrics (Datadog, Statsd, InfluxDB)
 
 - Virtual user metrics: `scenarios.created`, `scenarios.completed` - number of sessions created and successfully completed
 - HTTP-specific metrics:
@@ -46,6 +47,7 @@ npm install artillery-plugin-publish-metrics
 - Errors:
   - `error_count` - total number of errors encountered (useful for setting alerts that don't enumerating specific error codes)
   - `errors.ETIMEOUT / ENOTFOUND / EMFILE` - count of specific error codes
+
 
 ## Usage
 
@@ -103,6 +105,23 @@ The following properties are set on every event:
 - `method` - HTTP method, e.g. `GET`
 - `statusCode` - status code, e.g. `200`
 - `responseTimeMs` - time-to-first-byte of the response in milliseconds
+
+### Lightstep Configuration
+
+- To send events to Honeycomb, set `type` to `honeycomb`
+- Set `apiKey` to API/write key
+- Set `componentName` to the name of a component for which the spans will be sent
+- Optional: set `enabled` to `false` to disable the integration
+
+The following tags are set on every span:
+
+- `url` - full URL of the request
+- `host` - hostname + port
+- `method` - HTTP method, e.g. `GET`
+- `statusCode` - status code, e.g. `200`
+- `responseTimeMs` - time-to-first-byte of the response in milliseconds
+
+
 
 #### Example configuration
 
