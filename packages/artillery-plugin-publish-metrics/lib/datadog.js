@@ -117,7 +117,7 @@ function DatadogReporter(config, events, script) {
       Object.entries(report.counters).forEach(([name, value]) => {
         const key = `counters.${name}`;
         debug({ key, value }, 'counter');
-        metrics.gauge(key, value);
+        metrics.increment(key, value);
       });
     }
 
