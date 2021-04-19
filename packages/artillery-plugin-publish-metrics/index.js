@@ -8,6 +8,7 @@ const A = require('async');
 
 const { createDatadogReporter } = require('./lib/datadog');
 const { createHoneycombReporter } = require('./lib/honeycomb');
+const { createLightstepReporter } = require('./lib/lightstep');
 
 module.exports = {
   Plugin
@@ -24,6 +25,8 @@ function Plugin(script, events) {
       this.reporters.push(createDatadogReporter(config, events, script));
     } else if (config.type === 'honeycomb') {
       this.reporters.push(createHoneycombReporter(config, events, script));
+    } else if (config.type === 'lightstep') {
+      this.reporters.push(createLightstepReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',

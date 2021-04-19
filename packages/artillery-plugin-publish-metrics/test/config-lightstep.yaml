@@ -1,0 +1,10 @@
+config:
+  target: https://artillery.io
+  phases:
+    - duration: 32
+      arrivalRate: 1
+  plugins:
+    publish-metrics:
+      - type: lightstep
+        apiKey: "{{ $processEnvironment.LIGHTSTEP_API_KEY }}"
+        componentName: "artillery-test"
