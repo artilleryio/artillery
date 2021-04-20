@@ -14,7 +14,7 @@ const { URL } = require('url');
 class LightstepReporter {
   constructor(config, events, script) {
     this.lightstepOpts = {
-      accessToken: config.apiKey || config.accessToken,
+      accessToken: config.accessToken,
       componentName: config.componentName,
       disabled: config.enabled === false,
     };

@@ -109,7 +109,7 @@ The following properties are set on every event:
 ### Lightstep Configuration
 
 - To send events to Honeycomb, set `type` to `lightstep`
-- Set `apiKey` to API key/access token
+- Set `accessToken` to an [access token](https://docs.lightstep.com/docs/create-and-manage-access-tokens)
 - Set `componentName` to the name of a component for which the spans will be sent
 - Optional: set `enabled` to `false` to disable the integration
 
