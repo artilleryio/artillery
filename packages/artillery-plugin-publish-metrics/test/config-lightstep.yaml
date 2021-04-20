@@ -6,5 +6,5 @@ config:
   plugins:
     publish-metrics:
       - type: lightstep
-        apiKey: "{{ $processEnvironment.LIGHTSTEP_API_KEY }}"
+        accessToken: "{{ $processEnvironment.LIGHTSTEP_API_KEY }}"
         componentName: "artillery-test"
