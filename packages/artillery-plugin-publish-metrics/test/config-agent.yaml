@@ -3,16 +3,17 @@ config:
   phases:
     - duration: 11
       arrivalRate: 1
+    - duration: 11
+      arrivalRate: 2
   plugins:
     publish-metrics:
+      # apiKey not set, so the plugin will assume that the agent is running:
       - type: datadog
-        apiKey: "{{ $processEnvironment.DD_API_KEY }}"
         prefix: 'artillery.publish_metrics_plugin.'
         tags:
           - "testId:{{ $processEnvironment.TEST_ID }}"
-          - "reporterType:datadog-api"
+          - "reporterType:datadog-agent"
         event:
-          title: "Plugin integration test"
-          priority: high
+          priority: low
           tags:
             - "testId:{{ $processEnvironment.TEST_ID }}"

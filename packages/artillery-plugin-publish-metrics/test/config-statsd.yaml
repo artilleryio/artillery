@@ -1,0 +1,9 @@
+config:
+  target: https://artillery.io
+  phases:
+    - duration: 7
+      arrivalRate: 1
+  plugins:
+    publish-metrics:
+      - type: statsd
+        prefix: 'artillery.publish_metrics_plugin.'

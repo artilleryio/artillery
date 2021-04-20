@@ -5,14 +5,12 @@ config:
       arrivalRate: 1
   plugins:
     publish-metrics:
-      - type: datadog
-        apiKey: "{{ $processEnvironment.DD_API_KEY }}"
+      - type: influxdb-statsd
         prefix: 'artillery.publish_metrics_plugin.'
         tags:
           - "testId:{{ $processEnvironment.TEST_ID }}"
-          - "reporterType:datadog-api"
+          - "reporterType:influxdb-statsd"
         event:
-          title: "Plugin integration test"
-          priority: high
+          priority: low
           tags:
             - "testId:{{ $processEnvironment.TEST_ID }}"
