@@ -4,16 +4,15 @@
 
 ## Purpose
 
-Use this plugin to send metrics tracked by Artillery (e.g. response latency, network errors, HTTP response codes) to an external monitoring/observability system.
+Send metrics and events from Artillery to externnal monitoring and observability systems.
 
 **Supported targets:**
 
-- Datadog :dog: (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
-- [Honeycomb](https://honeycomb.io) :bee:
-- [Lightstep](https://lightstep.com) 🔦
-- InfluxDB with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
-- StatsD
-
+- Datadog metrics :dog: (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
+- [Honeycomb](https://honeycomb.io) events :bee:
+- [Lightstep](https://lightstep.com) spans 🔦
+- InfluxDB metrics with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
+- StatsD metrics
 
 ## Install
 
@@ -31,10 +30,11 @@ t
 npm install artillery-plugin-publish-metrics
 ```
 
-----
+<!--
 | ![Datadog example](./doc/datadog.png) |
 |:--:|
 | *Track, graph and visualize Artillery metrics alongside metrics from your applications and infrastructure* |
+-->
 
 ## Published metrics (Datadog, Statsd, InfluxDB)
 
@@ -49,27 +49,7 @@ npm install artillery-plugin-publish-metrics
   - `errors.ETIMEOUT / ENOTFOUND / EMFILE` - count of specific error codes
 
 
-## Usage
-
-An example configuration to publish metrics to Datadog via its HTTP API:
-
-```yaml
-config:
-  plugins:
-    publish-metrics:
-      - type: datadog
-        apiKey: "{{ $processEnvironment.DD_API_KEY }}"
-        prefix: artillery.
-        tags:
-          - team:sre
-          - component:eu-payments-backend
-          - region:eu-west-1
-        event:
-          tags:
-            - team:sre
-```
-
-### Datadog Configuration
+## Datadog Configuration
 
 The plugin supports sending metrics to an already running Datadog [agent](https://docs.datadoghq.com/agent/) or directly to [Datadog API](https://docs.datadoghq.com/api/). If Datadog agents have already been set up on your infrastructure, then publishing via the agent is probably preferable. Publishing via the HTTP API is useful when running in environments which do not have the agent (e.g. when running Artillery on AWS Lambda or AWS Fargate).
 
@@ -88,7 +68,25 @@ The plugin supports sending metrics to an already running Datadog [agent](https:
   - `alertType` -- `error`, `warning`, `info` or `success`; defaults to `info`
   - `send` -- set to `false` to turn off the event. By default, if an `event` is configured, it will be sent. This option makes it possible to turn event creation on/off on the fly (e.g. via an environment variable)
 
-### Honeycomb Configuration
+### Example Configuration
+
+```yaml
+config:
+  plugins:
+    publish-metrics:
+      - type: datadog
+        apiKey: "{{ $processEnvironment.DD_API_KEY }}"
+        prefix: artillery.
+        tags:
+          - team:sre
+          - component:eu-payments-backend
+          - region:eu-west-1
+        event:
+          tags:
+            - team:sre
+```
+
+## Honeycomb Configuration
 
 - To send events to Honeycomb, set `type` to `honeycomb`
 - Set `apiKey` to API/write key
@@ -106,7 +104,7 @@ The following properties are set on every event:
 - `statusCode` - status code, e.g. `200`
 - `responseTimeMs` - time-to-first-byte of the response in milliseconds
 
-### Lightstep Configuration
+## Lightstep Configuration
 
 - To send events to Honeycomb, set `type` to `lightstep`
 - Set `accessToken` to an [access token](https://docs.lightstep.com/docs/create-and-manage-access-tokens)
@@ -123,33 +121,33 @@ The following tags are set on every span:
 
 
 
-#### Example configuration
+### Example configuration
 
 ```
 config:
   plugins:
     publish-metrics:
       - type: lightstep
-        apiKey: "{{ $processEnvironment.LIGHSTEP_API_KEY" }}
+        accessToken: "{{ $processEnvironment.LIGHSTEP_ACCESS_TOKEN }}"
         component: artillery-tests
 ```
 
-### StatsD Configuration
+## StatsD Configuration
 
 - To send metrics to StatsD, set `type` to `statsd`
 - Set `host` and `port` to hostname/IP and port of the agent (if different from the default `127.0.0.1:8125`)
 - Set `prefix` to use a custom prefix for metric names created by Artillery; defaults to `artillery.`
 
-### InfluxDB/Telegraf Configuration
+## InfluxDB/Telegraf Configuration
 
 - To send metrics to Telegraf (with Telegraf's [statsd Service Plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)), set `type` to `influxdb-statsd`
 - All other options are the same as for Datadog (other than `apiKey` which is not relevant).
 
-## License
+# License
 
 MPL 2.0
 
-## Bugs & Feature Suggestions
+# Bugs & Feature Suggestions
 
 Please create an [issue](https://github.com/artilleryio/artillery/issues) to report a bug or suggest an improvement.
 
