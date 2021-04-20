@@ -7,17 +7,19 @@ if [ -z ${CIRCLE_TAG:-""} ] ; then
     exit 0
 fi
 
-echo "Building Docker image for tag $CIRCLE_TAG"
+DOCKER_TAG=${CIRCLE_TAG#v}
 
-docker build -t artilleryio/artillery:$CIRCLE_TAG .
+echo "Building Docker image for tag $DOCKER_TAG"
 
-docker run --rm -it artilleryio/artillery:$CIRCLE_TAG dino
+docker build -t artilleryio/artillery:$DOCKER_TAG .
+
+docker run --rm -it artilleryio/artillery:$DOCKER_TAG dino
 
 echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
 # If the tagged release is not a dev release, tag it as the latest.
-if [[ ${CIRCLE_TAG} != *"-dev"* ]] ; then
-    docker tag artilleryio/artillery:$CIRCLE_TAG artilleryio/artillery:latest
+if [[ ${DOCKER_TAG} != *"-dev"* ]] ; then
+    docker tag artilleryio/artillery:$DOCKER_TAG artilleryio/artillery:latest
 fi
 
 docker push artilleryio/artillery --all-tags
