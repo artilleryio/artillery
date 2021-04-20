@@ -88,13 +88,13 @@ config:
 
 ## Honeycomb Configuration
 
+Honeycomb integration sends an event for every HTTP response (rather than pre-aggregated metrics).
+
 - To send events to Honeycomb, set `type` to `honeycomb`
 - Set `apiKey` to API/write key
 - Set `dataset` to the name of a dataset you want to send events to
 - Optional: set `enabled` to `false` to disable the integration
 - Optional: set `sampleRate` to sample rate (default: `1` i.e. send all events) ([Honeycomb docs](https://doc.esdoc.org/github.com/honeycombio/libhoney-js/class/src/libhoney.js~Libhoney.html#instance-set-sampleRate))
-
-Honeycomb integration sends an event for every HTTP response (rather than pre-aggregated metrics).
 
 The following properties are set on every event:
 
@@ -106,7 +106,9 @@ The following properties are set on every event:
 
 ## Lightstep Configuration
 
-- To send events to Honeycomb, set `type` to `lightstep`
+Lighstep integration sends a span for every HTTP response (rather than pre-aggregated metrics).
+
+- To send events to Lighstep, set `type` to `lightstep`
 - Set `accessToken` to an [access token](https://docs.lightstep.com/docs/create-and-manage-access-tokens)
 - Set `componentName` to the name of a component for which the spans will be sent
 - Optional: set `enabled` to `false` to disable the integration
@@ -118,8 +120,6 @@ The following tags are set on every span:
 - `method` - HTTP method, e.g. `GET`
 - `statusCode` - status code, e.g. `200`
 - `responseTimeMs` - time-to-first-byte of the response in milliseconds
-
-
 
 ### Example configuration
 
