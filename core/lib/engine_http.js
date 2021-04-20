@@ -261,7 +261,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     if (context._enableCookieJar) {
       requestParams.cookieJar = context._jar;
     }
-    requestParams = _.extend(requestParams, tls);
+
+    if(tls) {
+      requestParams.https = requestParams.https || {};
+      requestParams.https = _.extend(requestParams.https, tls);
+    }
 
     let functionNames = _.concat(opts.beforeRequest || [], params.beforeRequest || []);
 
