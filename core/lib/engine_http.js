@@ -26,6 +26,7 @@ const FormData = require('form-data');
 const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
+const decompressResponse = require('decompress-response');
 
 module.exports = HttpEngine;
 
@@ -610,6 +611,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 };
 
 HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCallback, startedAt, callback) {
+  res = decompressResponse(res);
+
   if (!context._enableCookieJar) {
     const rawCookies = res.headers['set-cookie'];
     if (rawCookies) {
@@ -621,7 +624,6 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
   }
 
   ee.emit('response', res.timings.phases.firstByte * 1e6, res.statusCode, context._uid);
-
   let body = '';
   if (maybeCallback) {
     res.on('data', (d) => {
