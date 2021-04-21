@@ -26,6 +26,7 @@ const FormData = require('form-data');
 const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
+const decompressResponse = require('decompress-response');
 
 module.exports = HttpEngine;
 
@@ -611,6 +612,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 };
 
 HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCallback, startedAt, callback) {
+  res = decompressResponse(res);
+
   let code = res.statusCode;
   const endedAt = process.hrtime(startedAt);
 
@@ -629,7 +632,6 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
   ee.emit('counter', 'engine.http.responses', 1);
   ee.emit('rate', 'engine.http.response_rate');
   ee.emit('histogram', 'engine.http.response_time', delta/1e6); // ms
-
   let body = '';
   if (maybeCallback) {
     res.on('data', (d) => {

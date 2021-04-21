@@ -70,6 +70,7 @@
     "commander": "2.9.0",
     "csv-parse": "^4.4.6",
     "debug": "^2.2.0",
+    "decompress-response": "^6.0.0",
     "deep-equal": "^1.0.1",
     "deep-for-each": "^3.0.0",
     "driftless": "^2.0.3",
