@@ -15,40 +15,49 @@ class CloudWatchReporter {
       region: config.region || 'eu-west-1',
       namespace: config.namespace || 'artillery',
       name: config.name || 'loadtest',
+      allowedStats: config.allowedStats || ['customStats']
     };
 
     this.cw = new CloudWatchClient(this.options);
     this.promises = [];
+    this.metrics = [];
 
-    events.on('stats', async (stats) => {
-      const report = stats.report();
-      debug({report}, 'stats event');
+    events.on('stats', async (stats, b) => {
+      const statsReport = stats.report();
+      const report = this.options.allowedStats
+          .map((stat) => ({name: stat, value: statsReport[stat]}))
+          .reduce((p, c) => {
+            p[c.name] = c.value;
+            return p;
+          }, {});
 
-      this.putMetric('scenarios.created', report.scenariosCreated);
-      this.putMetric('scenarios.completed', report.scenariosCompleted);
-      this.putMetric('requests.completed', report.requestsCompleted);
+      this.addMetric('scenarios.created', report.scenariosCreated);
+      this.addMetric('scenarios.completed', report.scenariosCompleted);
+      this.addMetric('requests.completed', report.requestsCompleted);
 
       if (report.latency) {
-        this.putMetric('latency.min', report.latency.min);
-        this.putMetric('latency.max', report.latency.max);
-        this.putMetric('latency.median', report.latency.median);
-        this.putMetric('latency.p95', report.latency.p95);
-        this.putMetric('latency.p99', report.latency.p99);
+        this.addMetric('latency.min', report.latency.min);
+        this.addMetric('latency.max', report.latency.max);
+        this.addMetric('latency.median', report.latency.median);
+        this.addMetric('latency.p95', report.latency.p95);
+        this.addMetric('latency.p99', report.latency.p99);
       }
 
       if (report.customStats) {
         Object.entries(report.customStats).forEach(([groupName, group]) => {
-          Object.entries(group).forEach(([statName, value]) => {
-            const key = `custom.${groupName}.${statName}`;
-            this.putMetric(key, value);
-          })
+          Object.entries(group)
+              .filter(([statName, value]) => ['min', 'max', 'median'].includes(statName))
+              .forEach(([statName, value]) => {
+                const key = `custom.${groupName}.${statName}`;
+                // this.addMetric(key, value);
+              })
         });
       }
 
       if (report.counters) {
         Object.entries(report.counters).forEach(([name, value]) => {
           const key = `counters.${name}`;
-          this.putMetric(key, value);
+          this.addMetric(key, value);
         })
       }
       let errorCount = 0;
@@ -57,10 +66,10 @@ class CloudWatchReporter {
           const metricName = errCode
               .replace(/[^a-zA-Z0-9_]/g, '_');
           errorCount += report.errors[errCode];
-          this.putMetric(`errors.${metricName}`, report.errors[errCode]);
+          this.addMetric(`errors.${metricName}`, report.errors[errCode]);
         });
+        this.addMetric(`error_count`, errorCount);
       }
-      this.putMetric(`error_count`, errorCount);
 
       const codeCounts = {
         '1xx': 0,
@@ -78,17 +87,19 @@ class CloudWatchReporter {
           }
           codeCounts[codeFamily] += report.codes[code];
         });
+        Object.keys(codeCounts).forEach((codeFamily) => {
+          this.addMetric(`response.${codeFamily}`, codeCounts[codeFamily]);
+        });
       }
-
-      Object.keys(codeCounts).forEach((codeFamily) => {
-        this.putMetric(`response.${codeFamily}`, codeCounts[codeFamily]);
-      });
 
       if (report.rps) {
-        this.putMetric('rps.mean', report.rps.mean);
-        this.putMetric('rps.count', report.count);
+        this.addMetric('rps.mean', report.rps.mean);
+        this.addMetric('rps.count', report.count);
       }
+
+      this.putMetric();
     });
+
 
     debug('init done');
   }
@@ -102,23 +113,36 @@ class CloudWatchReporter {
     });
   }
 
-  putMetric(name, value) {
-    debug({name, value}, 'putMetric');
+  addMetric(name, value) {
+
+    // ignore undefined values
+    if (value === undefined) {
+      return;
+    }
+    debug({name, value, pid: process.pid, isMaster: require('cluster').isMaster}, 'addMetric');
+
+    this.metrics.push({
+      MetricName: name,
+      Unit: "None",
+      Value: isNaN(value) ? 0 : value,
+      Dimensions: [
+        {
+          Name: 'Name',
+          Value: this.options.name
+        }
+      ],
+    });
+  }
+
+  putMetric() {
+
+    const metrics = this.metrics;
+    this.metrics = [];
+
+    debug(metrics,'putMetric')
 
     const promise = this.cw.send(new PutMetricDataCommand({
-      MetricData: [
-        {
-          MetricName: name,
-          Unit: "None",
-          Value: isNaN(value) ? 0 : value,
-          Dimensions: [
-            {
-              Name: 'Name',
-              Value: this.options.name
-            }
-          ],
-        },
-      ],
+      MetricData: metrics,
       Namespace: this.options.namespace,
     }));
 
