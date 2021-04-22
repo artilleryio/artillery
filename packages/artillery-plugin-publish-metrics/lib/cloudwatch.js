@@ -15,7 +15,7 @@ class CloudWatchReporter {
       region: config.region || 'eu-west-1',
       namespace: config.namespace || 'artillery',
       name: config.name || 'loadtest',
-      allowedStats: config.allowedStats || ['customStats']
+      allowedStats: config.allowedStats || ['scenariosCreated', 'scenariosCompleted', 'requestsCompleted', 'customStats' ]
     };
 
     this.cw = new CloudWatchClient(this.options);
