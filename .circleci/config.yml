@@ -57,15 +57,17 @@ workflows:
   test:
     jobs:
       - run_tests
+  publish:
+    jobs:
+      - run_tests:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
       - build_docker_image:
           requires:
             - run_tests
-          filters:
-            tags:
-              only: /^v.*/
       - npm_publish:
           requires:
             - run_tests
-          filters:
-            tags:
-              only: /^v.*/
