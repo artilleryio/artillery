@@ -19,6 +19,19 @@ class LightstepReporter {
       disabled: config.enabled === false,
     };
 
+    this.defaultTags = {};
+    if(typeof config.tags !== 'undefined') {
+      if(Array.isArray(config.tags)) {
+        (config.tags || []).forEach((s) => {
+          this.defaultTags[s.split(':')[0]] = s.split(':')[1];
+        });
+      } else if (typeof config.tags === 'object') {
+        this.defaultTags = config.tags;
+      } else {
+        // TODO: Warning
+      }
+    }
+
     if (!versionCheck('>=1.7.0')) {
       console.error(`[publish-metrics][lightstep] Lightstep support requires Artillery >= v1.7.0 (current version: ${global.artillery ? global.artillery.version || 'unknown' : 'unknown'})`);
     }
@@ -27,7 +40,7 @@ class LightstepReporter {
     this.tracer = new lightstep.Tracer({
       component_name: this.lightstepOpts.componentName,
       access_token: this.lightstepOpts.accessToken
-    })
+    });
     opentracing.initGlobalTracer(this.tracer);
 
     attachScenarioHooks(script, [{
@@ -70,6 +83,10 @@ class LightstepReporter {
     span.setTag('host', url.host);
     span.setTag('method', req.method);
     span.setTag('statusCode', res.statusCode);
+
+    for (const [name, value] of Object.entries(this.defaultTags)) {
+      span.setTag(name, value);
+    }
 
     if (res.timings && res.timings.phases) {
       span.setTag('responseTimeMs', res.timings.phases.firstByte);
