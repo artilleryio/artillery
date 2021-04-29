@@ -5,7 +5,8 @@ config:
       arrivalRate: 5
 
 scenarios:
-  - engine: socketio
+  - name: "Emit and validate response"
+    engine: socketio
     flow:
       - emit:
           channel: "echo"
@@ -14,3 +15,12 @@ scenarios:
             channel: "echoResponse"
             data: "Hello from Artillery"
 
+  - name: "Emit and validate acknowledgement"
+    engine: socketio
+    flow:
+      - emit:
+          channel: "userDetails"
+          acknowledge:
+            match:
+              json: "$.0.name"
+              value: "Artillery"
