@@ -1,8 +1,8 @@
 config:
   target: "http://127.0.0.1:3000/"
   phases:
-    - duration: 10
-      arrivalRate: 5
+    - duration: 60
+      arrivalRate: 25
 
 scenarios:
   - name: "Emit and validate response"
