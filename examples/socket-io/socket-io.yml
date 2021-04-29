@@ -1,0 +1,16 @@
+config:
+  target: "http://127.0.0.1:3000/"
+  phases:
+    - duration: 10
+      arrivalRate: 5
+
+scenarios:
+  - engine: socketio
+    flow:
+      - emit:
+          channel: "echo"
+          data: "Hello from Artillery"
+          response:
+            channel: "echoResponse"
+            data: "Hello from Artillery"
+
