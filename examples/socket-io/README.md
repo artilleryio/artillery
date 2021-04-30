@@ -18,7 +18,7 @@ After installing the dependencies, start the Socket.IO server:
 node app.js
 ```
 
-This command will start a Socket.IO server listening at http://localhost:3000/.
+This command will start a Socket.IO server listening at http://localhost:8080/.
 
 ## Running Artillery test
 

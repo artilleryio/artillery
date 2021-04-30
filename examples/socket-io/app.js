@@ -1,9 +1,9 @@
-const io = require("socket.io")(3000, {
+const io = require("socket.io")(8080, {
   path: "/",
   serveClient: false
 });
 
-io.on("connection", socket => {
+io.on("connection", (socket) => {
   socket.on("echo", (msg) => {
     socket.emit("echoResponse", msg);
   })
@@ -15,4 +15,4 @@ io.on("connection", socket => {
   })
 });
 
-console.log("Socket.IO server listening at http://localhost:3000/");
+console.log("Socket.IO server listening at http://localhost:8080/");
