@@ -258,7 +258,13 @@ function templateObjectOrArray(o, context) {
       newValue = template(value, context, true);
     }
 
-    L.set(o, newPath, newValue);
+    if (newPath.endsWith(key)) {
+      const keyIndex = newPath.indexOf(key);
+      const prefix = newPath.substr(0, keyIndex - 1);
+      L.set(o, `${prefix}["${key}"]`, newValue)
+    } else {
+      L.set(o, newPath, newValue);
+    }
   });
 }
 
