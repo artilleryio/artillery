@@ -6,7 +6,7 @@ This repo contains examples of Artillery scripts.
 
 - [using-data-from-csv](./using-data-from-csv) - using data from an external CSV file in vuser scenarios
 - [http-set-custom-header](./http-set-custom-header) - set an HTTP header in a `beforeRequest` hook
-- [socket-io](./socket.io) - testing a Socket.io service
+- [socket-io](./socket-io) - testing a Socket.io service
 - [websockets](./websockets) - testing a WebSocket service
 
 ## Plugins and extensions
