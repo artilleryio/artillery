@@ -17,7 +17,7 @@ var bigObject = require('./large-json-payload-7.2mb.json');
 
 var emptyContext = { vars: {} };
 
-test('strings - templating a plain string should return the same string', function(t) {
+test.test('strings - templating a plain string should return the same string', function(t) {
   t.assert(template('string', emptyContext) === 'string', '');
   t.assert(template('string {}', emptyContext) === 'string {}', '');
   t.end();
@@ -29,7 +29,7 @@ test.test('strings - variables can be substituted', function(t) {
   t.end();
 });
 
-test('strings - huge strings are OK', function(t) {
+test.test('strings - huge strings are OK', function(t) {
   const s1 = JSON.stringify(bigObject);
   const start = Date.now();
   const s2 = template(s1, { vars: {} });
@@ -118,6 +118,14 @@ test.test('template functions', (t) => {
   t.assert(
     template('{{ greeting}} {{ $randomString(5) }}! {{ foo }}', context).length === 16,
     'functions and variable substitutions may be mixed'
+  );
+
+  t.end();
+});
+
+test.test('keys with periods retain their structure', (t) => {
+  t.assert(
+    template({ 'hello.world': true }, {})['hello.world'] === true, 'keys with periods are preserved'
   );
 
   t.end();
