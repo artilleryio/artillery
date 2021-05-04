@@ -133,5 +133,10 @@ test.test('keys with periods retain their structure', (t) => {
     template({ 'hello.world': true }, {})['hello.world'] === true, 'keys with periods are preserved'
   );
 
+  const nestedTemplate = template({ hello: { world: { 'hello.world': true } } }, {});
+
+  t.assert(nestedTemplate.hello.world['hello.world'] === true && nestedTemplate['hello.world'] === undefined,
+    'the template only creates it at the end');
+
   t.end();
 });
