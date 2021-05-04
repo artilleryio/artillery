@@ -259,7 +259,7 @@ function templateObjectOrArray(o, context) {
     }
 
     if (newPath.endsWith(key)) {
-      const keyIndex = newPath.indexOf(key);
+      const keyIndex = newPath.lastIndexOf(key);
       const prefix = newPath.substr(0, keyIndex - 1);
       L.set(o, `${prefix}["${key}"]`, newValue)
     } else {
