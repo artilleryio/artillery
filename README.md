@@ -10,12 +10,10 @@
 
 <br/>
 
-----
-
-<br/>
-
-<p>
-Artillery is a load testing and smoke testing tool for developers, testers, and SREs. Teams use Artillery to ship scalable APIs & services that stay fast & reliable under high load. Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy.
+<p align="center">
+  Artillery is a <strong>load testing</strong> and <strong>smoke testing</strong> tool for developers, testers, and SREs.<br><br>
+  Use Artillery to ship scalable APIs &amp; services that stay fast & reliable under high load.<br><br>
+  Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy.
 </p>
 
 <p align="center">
@@ -71,7 +69,7 @@ Add your team to the [Artillery users list on the wiki](https://github.com/shore
 
 # Plant Some Trees!
 
-We have planted [over 1,700 new trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
+We have planted [over 1,900 new trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
 
 If you've enjoyed using Artillery and would like to help us out, add your tree to the [Artillery.io forest](https://ecologi.com/artilleryio). 🌲🌳🌴 Feel free to drop us a line to let us know too! 💚
 

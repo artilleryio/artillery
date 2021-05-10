@@ -7,11 +7,11 @@ if [ -z ${CIRCLE_TAG:-""} ] ; then
     exit 0
 fi
 
-if [ $CIRCLE_BRANCH != "master" ] ; then
-    echo "Not on main branch, not doing anything"
-    exit 0
+echo "Publishing package on npm for $CIRCLE_TAG"
+
+if [[ ${CIRCLE_TAG} == *"-dev"* ]] ; then
+    npm publish --tag dev
+else
+    echo "npm publish"
+    npm publish
 fi
-
-echo "Publishing package on npm for $CIRCLE_TAG on $CIRCLE_BRANCH"
-
-npm publish
