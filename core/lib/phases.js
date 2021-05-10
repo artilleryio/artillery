@@ -20,7 +20,7 @@ function phaser(phaseSpecs) {
 
   let tasks = _.map(phaseSpecs, function(spec, i) {
     // Cast defined but non-number (eg: from ENV) values
-    ['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration'].forEach(function(k) {
+    ['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration', 'maxVusers'].forEach(function(k) {
       if (!isUndefined(spec[k]) && typeof spec[k] !== 'number') {
         spec[k] = _.toNumber(spec[k]);
       }

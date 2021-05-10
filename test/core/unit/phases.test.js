@@ -123,7 +123,8 @@ test.only('ramp with string inputs', function(t) {
   testRamp(t, {
     duration: "15",
     arrivalRate: "20",
-    rampTo: "1.0"
+    rampTo: "1.0",
+    maxVusers: "40"
   });
 });
 
@@ -151,7 +152,7 @@ function testRamp(t, phaseSpec) {
       _.isEqual(spec, phaseSpec),
       'phaseStarted event emitted with correct spec');
     t.assert(
-      _.filter(['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration'], function(k) {
+      _.filter(['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration', 'maxVusers'], function(k) {
         return !_.isUndefined(spec[k]) && typeof spec[k] != 'number'
       }).length === 0,
       'spec numeric values are correctly typed');
