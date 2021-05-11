@@ -23,6 +23,7 @@ WSEngine.prototype.createScenario = function(scenarioSpec, ee) {
     if (rs.think) {
       return engineUtil.createThink(rs, _.get(self.config, 'defaults.think', {}));
     }
+
     return self.step(rs, ee);
   });
 
@@ -61,6 +62,13 @@ WSEngine.prototype.step = function (requestSpec, ee) {
         });
       }
     }
+  }
+
+  if(requestSpec.log) {
+    return function(context, callback) {
+      console.log(template(requestSpec.log, context));
+      return process.nextTick(function() { callback(null, context); });
+    };
   }
 
   let f = function(context, callback) {
