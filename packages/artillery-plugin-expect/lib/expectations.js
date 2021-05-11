@@ -140,7 +140,12 @@ function expectStatusCode(expectation, body, req, res, userContext) {
     type: 'statusCode'
   };
 
-  result.ok = Number(res.statusCode) === Number(expectedStatusCode);
+  if (Array.isArray(expectedStatusCode)) {
+    result.ok = expectedStatusCode.filter(x => Number(res.statusCode) === Number(x)).length > 0;
+  } else {
+    result.ok = Number(res.statusCode) === Number(expectedStatusCode);
+  }
+
   result.got = res.statusCode;
   return result;
 }
