@@ -8,6 +8,7 @@ This repo contains examples of Artillery scripts.
 - [http-set-custom-header](./http-set-custom-header) - set an HTTP header in a `beforeRequest` hook
 - [socket-io](./socket-io) - testing a Socket.io service
 - [websockets](./websockets) - testing a WebSocket service
+- [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
 
 ## Plugins and extensions
 
