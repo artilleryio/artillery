@@ -29,7 +29,9 @@ scenarios:
             name: Tiki
             species: pony
           expect:
-            statusCode: 202
+            statusCode:
+              - 301
+              - 202
       - get:
           name: "Get a pet"
           url: "/pets/1"
