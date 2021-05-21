@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 // Super simple metric store
 
 const {DDSketch} = require('@datadog/sketches-js');
@@ -9,6 +13,8 @@ class SSMS extends EventEmitter {
   constructor(_options) {
     super();
 
+    this.opts = _options || {};
+
     this._counterEarliestMeasurementByPeriod = {};
     this._counterLastMeasurementByPeriod = {};
     this._histogramEarliestMeasurementByPeriod = {};
@@ -18,9 +24,14 @@ class SSMS extends EventEmitter {
     this._aggregateInterval = setDriftlessInterval(this.aggregate.bind(this), this._aggregationIntervalSec * 1000);
 
     this._lastPeriod = null;
-    this._emitInterval = setDriftlessInterval(
-      this._maybeEmitMostRecentPeriod.bind(this),
-      Math.max(this._aggregationIntervalSec * 1000 / 2, 1000));
+
+    this.isPullOnly = this.opts.pullOnly;
+
+    if (!this.isPullOnly) {
+      this._emitInterval = setDriftlessInterval(
+        this._maybeEmitMostRecentPeriod.bind(this),
+        Math.max(this._aggregationIntervalSec * 1000 / 2, 1000));
+    }
 
     this._counters = [];
     this._histograms = [];
@@ -36,7 +47,11 @@ class SSMS extends EventEmitter {
   stop() {
     this._active = false;
     clearDriftless(this._aggregateInterval);
-    clearDriftless(this._emitInterval);
+
+    if(!this.isPullOnly) {
+      clearDriftless(this._emitInterval);
+    }
+
     return this;
   }
 
@@ -106,8 +121,8 @@ class SSMS extends EventEmitter {
     };
   }
 
-  static mergePeriods(periodData) {
-    debug(`mergePeriods // timeslices: ${periodData.map(pd => pd.period)}`);
+  static mergeBuckets(periodData) {
+    debug(`mergeBuckets // timeslices: ${periodData.map(pd => pd.period)}`);
 
     // Returns result[timestamp] = {histograms:{},counters:{},rates:{}}
     // ie. the result is indexed by timeslice
@@ -240,7 +255,7 @@ class SSMS extends EventEmitter {
       result.rates[name] = round(result.rates[name] / periods.length, 0);
     }
 
-    result.firstCounterAt = min(periods.map(p => p.firxstCounterAt));
+    result.firstCounterAt = min(periods.map(p => p.firstCounterAt));
     result.firstHistogramAt = min(periods.map(p => p.firstHistogramAt));
     result.lastCounterAt = max(periods.map(p => p.firstCounterAt));
     result.lastHistogramAt = max(periods.map(p => p.firstHistogramAt));
@@ -253,7 +268,7 @@ class SSMS extends EventEmitter {
     return result;
   }
 
-  static serializePeriodJSON(pd) {
+  static serializeMetrics(pd) {
     // TODO: Add ability to include arbitrary metadata e.g. worker IDs
     const serializedHistograms = {};
     const ph = pd.histograms;
@@ -271,7 +286,7 @@ class SSMS extends EventEmitter {
     return stringify(result);
   }
 
-  static deserializePeriodJSON(pd) {
+  static deserializeMetrics(pd) {
     const object = parse(pd);
     for (const [name, buf] of Object.entries(object.histograms)) {
       // FIXME: currently summary stats are lost, see:
@@ -284,8 +299,8 @@ class SSMS extends EventEmitter {
     return object;
   }
 
-  getPeriods() {
-    return [...new Set(Object.keys(this._aggregatedCounters).concat(Object.keys(this._aggregatedHistograms)).sort())].map(x => Number(x)).reverse();
+  getBucketIds() {
+    return [...new Set(Object.keys(this._aggregatedCounters).concat(Object.keys(this._aggregatedHistograms)).sort())].reverse();
   }
 
   // TODO: Deprecate
@@ -449,7 +464,6 @@ class SSMS extends EventEmitter {
       a[timeslice][name].count++;
     }
 
-    // This needs to run when we're exiting early too!!!
     for (const [ts, rs] of Object.entries(a)) {
       for (const [name, _] of Object.entries(rs)) {
         const {first, last, count} = a[ts][name];
@@ -457,7 +471,7 @@ class SSMS extends EventEmitter {
           this._aggregatedRates[ts] = {};
         }
 
-        this._aggregatedRates[ts][name] = round(count / ((last - first) / 1000), 0);
+        this._aggregatedRates[ts][name] = round(count / (Math.max(last - first, 1000) / 1000), 0);
       }
     }
 
@@ -465,7 +479,7 @@ class SSMS extends EventEmitter {
   }
 
   aggregate(forceAll) {
-    const currentTimeslice = normalizeTs(Date.now()) + (forceAll ? 100 * 1000 : 0);
+    const currentTimeslice = normalizeTs(Date.now()) + (forceAll ? 30 * 1000 : 0);
 
     this._aggregateCounters(currentTimeslice);
     this._aggregateHistograms(currentTimeslice);
@@ -475,7 +489,7 @@ class SSMS extends EventEmitter {
   }
 
   _maybeEmitMostRecentPeriod() {
-    const p = this.getPeriods()[0];
+    const p = this.getBucketIds()[0];
     if (p && p !== this._lastPeriod) {
       this.emit('metricData', p, this.getMetrics(p)); // Measurements in period p have been aggregated
       this._lastPeriod = p;
@@ -584,12 +598,12 @@ function isObject(x) {
 // undefined's rather than returning NaN when a value is undefined.
 // Returns undefined if all arguments are undefined.
 function min(values) {
-  const m = Math.min(...(values.map(x => x)));
+  const m = Math.min(...(values.filter(x => x)));
   return m === Number.POSITIVE_INFINITY ? undefined : m;
 }
 
 function max(values) {
-  const m = Math.max(...(values.map(x => x)));
+  const m = Math.max(...(values.filter(x => x)));
   return m === Number.NEGATIVE_INFINITY ? undefined : m;
 }
 
