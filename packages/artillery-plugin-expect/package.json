@@ -10,12 +10,12 @@
   "license": "SEE LICENSE IN LICENSE.txt",
   "dependencies": {
     "chalk": "^2.4.2",
-    "datadog-metrics": "^0.8.1",
+    "datadog-metrics": "^0.9.3",
     "debug": "^3.2.6",
     "lodash": "^4.17.15"
   },
   "devDependencies": {
-    "@commitlint/cli": "^8.3.5",
+    "@commitlint/cli": "^12.1.4",
     "@commitlint/config-conventional": "^7.6.0",
     "artillery": "^1.6.0-29",
     "ava": "^3.8.1",
