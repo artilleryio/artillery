@@ -134,6 +134,9 @@ function expectationsPluginCheckExpectations(
   const failedExpectations = results.filter(res => !res.ok).length > 0;
 
   if (failedExpectations) {
+    if (global.artillery) {
+      global.artillery.suggestedExitCode = 1;
+    }
     return done(new Error(`Failed expectations for request ${req.url}`));
   } else {
     return done();
