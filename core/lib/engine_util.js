@@ -420,7 +420,7 @@ function captureOrMatch(params, response, context, done) {
 
         let extractedValue = extractor(doc, template(expr, context), spec);
 
-        if (spec.value) {
+        if (spec.value !== undefined) {
           // this is a match spec
           let expected = template(spec.value, context);
           debug('match: %s, expected: %s, got: %s', expr, expected, extractedValue);
