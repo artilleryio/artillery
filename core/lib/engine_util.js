@@ -342,7 +342,7 @@ function parseLoopCount(countSpec) {
 }
 
 function isCaptureFailed(v, defaultStrict) {
-  const noValue = ((!v.value || v.value === '') || typeof v.error !== 'undefined');
+  const noValue = ((typeof v.value === 'undefined' || v.value === '') || typeof v.error !== 'undefined');
 
   if (!noValue) {
     return false;
