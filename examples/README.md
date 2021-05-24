@@ -1,6 +1,10 @@
+<p align="center">
+<img src="https://user-images.githubusercontent.com/1490/119319975-f8b77b80-bc72-11eb-8633-ed338f88f67a.png" alt="" width="600" />
+</p>
+
 # Artillery Examples
 
-This repo contains examples of Artillery scripts.
+This repo contains examples of how to use various features in Artillery. Every examples is self-contained and can be run as-is without external dependencies (other than those in `package.json`).
 
 ## Example test definitions
 
@@ -17,8 +21,6 @@ This repo contains examples of Artillery scripts.
 ## Starter kits
 
 - [starter-kit](./starter-kit) - @cfryerdev's Artillery starter kit - an example of how a few different bits fit together
-
-
 
 
 # Contributing
