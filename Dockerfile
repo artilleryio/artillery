@@ -7,5 +7,6 @@ COPY package*.json ./
 RUN npm --ignore-scripts --production install
 
 COPY . ./
+ENV PATH="/home/node/artillery/bin:${PATH}"
 
 ENTRYPOINT ["/home/node/artillery/bin/artillery"]
