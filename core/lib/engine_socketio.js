@@ -17,6 +17,7 @@ const debug = require('debug')('socketio');
 const engineUtil = require('./engine_util');
 const EngineHttp = require('./engine_http');
 const template = engineUtil.template;
+const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 module.exports = SocketIoEngine;
 
 function SocketIoEngine(script) {
