@@ -17,6 +17,7 @@
     "hot-shots": "^6.0.1",
     "libhoney": "^2.2.3",
     "lightstep-tracer": "^0.31.0",
+    "mixpanel": "^0.13.0",
     "opentracing": "^0.14.5",
     "semver": "^7.3.5"
   },
