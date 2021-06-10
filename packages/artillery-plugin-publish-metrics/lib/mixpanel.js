@@ -1,6 +1,6 @@
-const Mixpanel = require("mixpanel");
-const { versionCheck } = require("./util");
-const debug = require("debug")("plugin:publish-metrics:mixpanel");
+const Mixpanel = require('mixpanel');
+const { versionCheck } = require('./util');
+const debug = require('debug')('plugin:publish-metrics:mixpanel');
 
 class MixPanelReporter {
   constructor(config, events, script) {
@@ -11,7 +11,7 @@ class MixPanelReporter {
     if (!versionCheck(">=1.7.0")) {
       console.error(
         `[publish-metrics][mixpanel] Mixpanel support requires Artillery >= v1.7.0 (current version: ${
-          global.artillery ? global.artillery.version || "unknown" : "unknown"
+          global.artillery ? global.artillery.version || 'unknown' : 'unknown'
         })`
       );
     }
@@ -20,18 +20,16 @@ class MixPanelReporter {
     }
     this.mixpanel = Mixpanel.init(this.mixPanelOpts.projectId);
     this.sendToMixPanel(config, events, script);
-    debug("init done");
+    debug('init done');
   }
 
   sendToMixPanel(config, events, script) {
-    events.on("stats", (stats) => {
+    events.on('stats', (stats) => {
       const report = stats.report();
       let env = script._environment
         ? script._environment.toUpperCase()
         : script.config.target;
 
-      console.log(env);
-      console.log(script);
       this.mixpanel.track(`${env}-${script.scenarios[0].name}`, {
         ...report,
       });
@@ -39,7 +37,7 @@ class MixPanelReporter {
   }
 
   cleanup(done) {
-    debug("cleaning up");
+    debug('cleaning up');
     return done();
   }
 }
