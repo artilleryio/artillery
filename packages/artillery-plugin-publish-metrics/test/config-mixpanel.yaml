@@ -6,4 +6,4 @@ config:
   plugins:
     publish-metrics:
       - type: mixpanel
-        projectId: "{{ $processEnvironment.MIXPANEL_PROJECTID }}"
+        projectToken: "{{ $processEnvironment.MIXPANEL_PROJECTTOKEN }}"

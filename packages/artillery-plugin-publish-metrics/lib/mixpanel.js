@@ -5,7 +5,7 @@ const debug = require('debug')('plugin:publish-metrics:mixpanel');
 class MixPanelReporter {
   constructor(config, events, script) {
     this.mixPanelOpts = {
-      projectId: config.projectId,
+      projectToken: config.projectToken,
     };
 
     if (!versionCheck(">=1.7.0")) {
@@ -15,10 +15,10 @@ class MixPanelReporter {
         })`
       );
     }
-    if (!this.mixPanelOpts.projectId) {
-      console.error(`mix panel projectId not specified`);
+    if (!this.mixPanelOpts.projectToken) {
+      console.error(`mix panel project token not specified`);
     }
-    this.mixpanel = Mixpanel.init(this.mixPanelOpts.projectId);
+    this.mixpanel = Mixpanel.init(this.mixPanelOpts.projectToken);
     this.sendToMixPanel(config, events, script);
     debug('init done');
   }
