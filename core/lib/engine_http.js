@@ -254,8 +254,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     requestParams = _.extend(requestParams, {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
-      headers: {
-      },
       timeout: timeout * 1000,
     });
 
