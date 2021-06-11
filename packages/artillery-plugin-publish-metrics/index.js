@@ -9,9 +9,10 @@ const A = require('async');
 const { createDatadogReporter } = require('./lib/datadog');
 const { createHoneycombReporter } = require('./lib/honeycomb');
 const { createLightstepReporter } = require('./lib/lightstep');
+const { createMixPanelReporter } = require('./lib/mixpanel');
 
 module.exports = {
-  Plugin
+  Plugin,
 };
 
 function Plugin(script, events) {
@@ -21,33 +22,43 @@ function Plugin(script, events) {
   this.reporters = [];
 
   script.config.plugins['publish-metrics'].forEach((config) => {
-    if (config.type === 'datadog' || config.type === 'statsd' || config.type === 'influxdb-statsd') {
+    if (
+      config.type === 'datadog' ||
+      config.type === 'statsd' ||
+      config.type === 'influxdb-statsd'
+    ) {
       this.reporters.push(createDatadogReporter(config, events, script));
     } else if (config.type === 'honeycomb') {
       this.reporters.push(createHoneycombReporter(config, events, script));
     } else if (config.type === 'lightstep') {
       this.reporters.push(createLightstepReporter(config, events, script));
+    } else if (config.type === 'mixpanel') {
+      this.reporters.push(createMixPanelReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',
         `Reporting type "${config.type}" is not recognized.`,
         {
           type: 'plugin',
-          id: NS
-        });
+          id: NS,
+        }
+      );
     }
   });
 
   return this;
-};
+}
 
-Plugin.prototype.cleanup = function(done) {
+Plugin.prototype.cleanup = function (done) {
   A.eachSeries(
     this.reporters,
     (reporter, next) => {
-      reporter.cleanup(() => { next(); });
+      reporter.cleanup(() => {
+        next();
+      });
     },
     () => {
       return done();
-    });
+    }
+  );
 };
