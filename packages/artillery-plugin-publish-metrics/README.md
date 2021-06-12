@@ -8,9 +8,10 @@ Send metrics and events from Artillery to external monitoring and observability 
 
 **Supported targets:**
 
-- Datadog metrics :dog: (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
-- [Honeycomb](https://honeycomb.io) events :bee:
-- [Lightstep](https://lightstep.com) spans 🔦
+- Datadog metrics (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
+- [Honeycomb](https://honeycomb.io) events
+- [Lightstep](https://lightstep.com) spans
+- [Mixpanel](https://mixpanel.com) events
 - InfluxDB metrics with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
 - StatsD metrics
 
