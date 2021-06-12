@@ -41,6 +41,7 @@ function DatadogReporter(config, events, script) {
 
     this.metrics = new datadogMetrics.BufferedMetricsLogger({
       apiKey: config.apiKey,
+      apiHost: config.apiHost,
       prefix: config.prefix,
       defaultTags: config.tags,
       flushIntervalSeconds: 5
