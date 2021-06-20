@@ -128,6 +128,30 @@ test('Capture before test - JSON', (t) => {
   });
 });
 
+test('Capture after test - JSON', (t) => {
+  const fn = path.resolve(__dirname, './scripts/after_test.json');
+  const script = require(fn);
+  runner(script).then(function(ee) {
+    ee.on('done', function(nr) {
+      const report = SSMS.legacyReport(nr).report();
+      let c200 = report.codes[200];
+      let expectedAmountRequests = script.config.phases[0].duration * script.config.phases[0].arrivalRate;
+      t.assert(c200 === expectedAmountRequests,
+        'There should be ' + expectedAmountRequests + ' responses with status code 200; got ' + c200);
+
+      let c201 = report.codes[201];
+      t.assert(c201 === undefined, 'There should be no 201 response codes');
+
+      ee.stop(() => {
+        t.end();
+      });
+
+    });
+
+    ee.run();
+  });
+});
+
 test('Capture - XML', (t) => {
   if (!xmlCapture) {
     console.log('artillery-xml-capture does not seem to be installed, skipping XML capture test.');

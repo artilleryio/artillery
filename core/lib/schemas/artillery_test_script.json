@@ -37,7 +37,19 @@
         "flow": {
           "type": "array",
           "items": {
-            "type": "object"            
+            "type": "object"
+          }
+        }
+      },
+      "required": ["flow"]
+    },
+    "after": {
+      "type": "object",
+      "properties": {
+        "flow": {
+          "type": "array",
+          "items": {
+            "type": "object"
           }
         }
       },

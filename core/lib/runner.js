@@ -158,7 +158,7 @@ async function runner(script, payload, options, callback) {
   //
   let contextVars;
   if (script.before) {
-    contextVars = await handleBeforeRequests(script, runnableScript, runnerEngines, ee);
+    contextVars = await handleScriptHook('before', runnableScript, runnerEngines, ee, contextVars);
   }
 
   //
@@ -320,7 +320,16 @@ function run(script, ee, options, runState, contextVars) {
         clearInterval(doneYet);
         metrics.aggregate(true);
         const totals = SSMS.zoomOut(intermediates);
-        ee.emit('done', totals);
+
+        (async () => {
+          if (script.after) {
+            //
+            // compile and run after script
+            //
+            await handleScriptHook('after', script, runState.engines, ee, contextVars);
+          }
+          ee.emit('done', totals);
+        })();
       } else {
         debug('Pending scenarios: %s', runState.pendingScenarios);
       }
@@ -503,21 +512,21 @@ function $randomString(length) {
   return Math.random().toString(36).substr(2, length);
 }
 
-function handleBeforeRequests(script, runnableScript, runnerEngines, testEvents) {
+function handleScriptHook(hook, script, engines, hookEvents, contextVars) {
   let ee = new EventEmitter();
   return new Promise(function(resolve, reject){
     ee.on('request', function() {
-      testEvents.emit('beforeTestRequest');
+      hookEvents.emit(`${hook}ScriptHookRequest`);
     });
     ee.on('error', function(error) {
-      testEvents.emit('beforeTestError', error);
+      hookEvents.emit(`${hook}ScriptHookError`, error);
     });
 
-    let name = runnableScript.before.engine || 'http';
-    let engine = runnerEngines.find((e) => e.__name === name);
-    let beforeTestScenario = engine.createScenario(runnableScript.before, ee);
-    let beforeTestContext = createContext(script);
-    beforeTestScenario(beforeTestContext, function(err, context) {
+    let name = script[hook].engine || 'http';
+    let engine = engines.find((e) => e.__name === name);
+    let hookScenario = engine.createScenario(script[hook], ee);
+    let hookContext = createContext(script, contextVars);
+    hookScenario(hookContext, function(err, context) {
       if (err) {
         debug(err);
         return reject(err);
