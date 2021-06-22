@@ -516,10 +516,10 @@ function handleScriptHook(hook, script, engines, hookEvents, contextVars) {
   let ee = new EventEmitter();
   return new Promise(function(resolve, reject){
     ee.on('request', function() {
-      hookEvents.emit(`${hook}ScriptHookRequest`);
+      hookEvents.emit(`${hook}TestRequest`);
     });
     ee.on('error', function(error) {
-      hookEvents.emit(`${hook}ScriptHookError`, error);
+      hookEvents.emit(`${hook}TestError`, error);
     });
 
     let name = script[hook].engine || 'http';
