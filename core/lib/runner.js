@@ -299,11 +299,13 @@ function run(script, ee, options, runState, contextVars) {
   const intermediates = [];
 
   let phaser = createPhaser(script.config.phases);
+  let scenarioContext
+
   phaser.on('arrival', function (spec) {
     if (runState.pendingScenarios >= spec.maxVusers) {
       metrics.counter('core.vusers.skipped', 1);
     } else {
-      runScenario(script, metrics, runState, contextVars);
+      scenarioContext = runScenario(script, metrics, runState, contextVars);
     }
   });
   phaser.on('phaseStarted', function(spec) {
@@ -326,7 +328,7 @@ function run(script, ee, options, runState, contextVars) {
             //
             // compile and run after script
             //
-            await handleScriptHook('after', script, runState.engines, ee, contextVars);
+            await handleScriptHook('after', script, runState.engines, ee, (scenarioContext || {}).vars || contextVars);
           }
           ee.emit('done', totals);
         })();
@@ -434,6 +436,8 @@ function runScenario(script, metrics, runState, contextVars) {
       metrics.summary('core.vusers.session_length', delta/1e6);
     }
   });
+
+  return scenarioContext
 }
 
 function datafileVariables(script) {
