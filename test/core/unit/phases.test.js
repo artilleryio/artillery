@@ -119,7 +119,7 @@ test('rampDown', function(t) {
   });
 });
 
-test.only('ramp with string inputs', function(t) {
+test('ramp with string inputs', function(t) {
   testRamp(t, {
     duration: "15",
     arrivalRate: "20",
