@@ -97,7 +97,7 @@ function expectHeaderEquals(expectation, body, req, res, userContext) {
 function expectContentType(expectation, body, req, res, userContext) {
   debug('check contentType');
   debug('expectation:', expectation);
-  debug('body:', body === null ? body : typeof body);
+  debug('body:', body === null ? 'null' : typeof body);
 
   const expectedContentType = template(expectation.contentType, userContext);
   let result = {
