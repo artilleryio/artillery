@@ -351,7 +351,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         if (params.formData) {
           const f = new FormData();
           requestParams.body = _.reduce(
-            params.formData,
+            requestParams.formData,
             function(acc, v, k) {
               // acc[k] = template(v, context);
               acc.append(k, template(v, context));
