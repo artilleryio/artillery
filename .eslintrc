@@ -6,6 +6,9 @@
   "globals": {
     "expect": true
   },
+  "parserOptions": {
+    "ecmaVersion": 9
+  },
   "rules": {
     // Ignore Rules
     "strict": 0,
@@ -28,7 +31,7 @@
     // Errors
     "no-undef": 2,
     "no-dupe-keys": 2,
-    "no-empty-class": 2,
+    "no-empty-character-class": 2,
     "no-self-compare": 2,
     "valid-typeof": 2,
     "handle-callback-err": 2,
@@ -40,7 +43,7 @@
     // stylistic errors
     "new-cap": 2,
     "no-spaced-func": 2,
-    "no-space-before-semi": 2,
+    "semi-spacing": 2,
     "quotes": [1, "single"]
   }
 }
