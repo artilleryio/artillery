@@ -21,10 +21,10 @@ ARTILLERY DEV PREVIEW 🚀
 Please report bugs on https://github.com/artilleryio/artillery/issues
 `));
 
-  // print telemetry notification message
-  telemetry.notice()
-
   if (!process.argv.slice(2).length) {
+    // print telemetry notification message
+    telemetry.notice();
+
     const banner = `
         ___         __  _ ____                  _
   _____/   |  _____/ /_(_) / /__  _______  __  (_)___  _____
