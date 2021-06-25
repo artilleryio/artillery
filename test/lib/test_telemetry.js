@@ -88,7 +88,7 @@ test('Telemetry - debug through environment variable', function(t) {
       $ip: null,
     },
   };
-  const expectedDebugOutput = `Telemetry data: ${JSON.stringify(eventPayload)}`;
+  const expectedDebugOutput = '\x1b[33mTelemetry data: {"event":"test event","distinctId":"artillery-core","properties":{"version":"2.0.0-dev3","os":"linux","isCi":false,"$ip":null}}\x1b[39m'
 
   process.env.ARTILLERY_TELEMETRY_DEBUG = 'true';
 
