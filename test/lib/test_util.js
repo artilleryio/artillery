@@ -1,8 +1,19 @@
 'use strict';
 
 const test = require('tape');
+const sinon = require('sinon');
+
+const fs = require('fs');
+const os = require('os');
 
 const util = require('../../lib/util');
+
+let sandbox;
+test('util - setup', (t) => {
+  sandbox = sinon.sandbox.create();
+
+  t.end();
+})
 
 test('formatting durations', function(t) {
   t.equal(
@@ -55,3 +66,48 @@ test('formatting durations', function(t) {
 
   t.end();
 });
+
+test('readArtilleryConfig', function(t) {
+  const readFileSyncStub = sandbox.stub(fs, 'readFileSync')
+    .withArgs(`${os.homedir()}/.artilleryrc`)
+
+  readFileSyncStub.throws();
+  t.deepEqual(util.readArtilleryConfig(), {}, 'Returns an empty object if .artilleryrc is not present');
+
+  const expectedConf = { property: 'value' };
+
+  readFileSyncStub.returns(JSON.stringify(expectedConf))
+  t.deepEqual(util.readArtilleryConfig(), expectedConf, 'Returns the configuration as a JSON object');
+
+  t.end();
+});
+
+test('updateArtilleryConfig', function(t) {
+  const existingConf = {
+    property: 'value'
+  };
+  const addedConf = { newProperty: 'value2' };
+  const fsWriteFileSyncSpy = sandbox.spy(fs, 'writeFileSync');
+
+  sandbox.stub(util, 'readArtilleryConfig').returns(existingConf);
+
+  util.updateArtilleryConfig(addedConf);
+
+  const newConfiguration = fsWriteFileSyncSpy.args[0][1];
+  const configPath = fsWriteFileSyncSpy.args[0][0];
+
+  t.deepEqual(newConfiguration, JSON.stringify({
+    ...existingConf,
+    ...addedConf
+  }), 'Updates the existing configuration');
+
+  t.equal(configPath, `${os.homedir()}/.artilleryrc`)
+
+  t.end();
+})
+
+test('util - tear down', (t) => {
+  sandbox.restore();
+
+  t.end();
+})
