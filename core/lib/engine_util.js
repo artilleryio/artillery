@@ -371,7 +371,7 @@ function ensurePropertyIsAList(obj, prop) {
 
 function captureOrMatch(params, response, context, done) {
   if ((!params.capture || params.capture.length === 0) &&
-      (!params.match || params.match.lenth === 0)) {
+      (!params.match || params.match.length === 0)) {
     return done(null, null);
   }
 
