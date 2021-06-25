@@ -43,6 +43,7 @@ test('Telemetry', function(t) {
       distinctId: 'artillery-core',
       properties: {
         version: artilleryVersion,
+        os: process.platform,
         $ip: null,
       },
     },
@@ -80,6 +81,7 @@ test('Telemetry - debug through environment variable', function(t) {
     distinctId: 'artillery-core',
     properties: {
       version: artilleryVersion,
+      os: process.platform,
       $ip: null,
     },
   };
