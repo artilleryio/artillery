@@ -4,6 +4,7 @@ const test = require('tape');
 const rewiremock = require('rewiremock/node');
 const telemetry = require('../../lib/telemetry');
 const { version: artilleryVersion } = require('../../package.json');
+const isCi = require('is-ci');
 const sinon = require('sinon');
 
 let sandbox;
@@ -44,6 +45,7 @@ test('Telemetry', function(t) {
       properties: {
         version: artilleryVersion,
         os: process.platform,
+        isCi,
         $ip: null,
       },
     },
@@ -82,6 +84,7 @@ test('Telemetry - debug through environment variable', function(t) {
     properties: {
       version: artilleryVersion,
       os: process.platform,
+      isCi,
       $ip: null,
     },
   };
