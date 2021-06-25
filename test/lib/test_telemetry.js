@@ -78,17 +78,7 @@ test('Telemetry - debug through environment variable', function(t) {
 
   const consoleSpy = sandbox.spy(console, 'log');
 
-  const eventPayload = {
-    event: 'test event',
-    distinctId: 'artillery-core',
-    properties: {
-      version: artilleryVersion,
-      os: process.platform,
-      isCi,
-      $ip: null,
-    },
-  };
-  const expectedDebugOutput = /Telemetry data: {"event":"test event","distinctId":"artillery-core","properties":{"version":"2.0.0-dev3","os":"linux","isCi":false,"\$ip":null}}/;
+  const expectedDebugOutput = new RegExp(`Telemetry data: {"event":"test event","distinctId":"artillery-core","properties":{"version":"${artilleryVersion}","os":"linux","isCi":false,"\\$ip":null}}`, 'm')
 
   process.env.ARTILLERY_TELEMETRY_DEBUG = 'true';
 
