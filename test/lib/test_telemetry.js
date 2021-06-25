@@ -31,7 +31,7 @@ test('Telemetry - setup', (t) => {
 test('Telemetry', function(t) {
   captureSpy.resetHistory();
 
-  const telemetryClient = telemetry();
+  const telemetryClient = telemetry.init();
 
   telemetryClient.capture('test event');
 
@@ -60,7 +60,7 @@ test('Telemetry - disable through environment variable', function(t) {
 
   process.env.ARTILLERY_DISABLE_TELEMETRY = 'true';
 
-  const telemetryClient = telemetry();
+  const telemetryClient = telemetry.init();
 
   telemetryClient.capture('test event');
 
@@ -92,7 +92,7 @@ test('Telemetry - debug through environment variable', function(t) {
 
   process.env.ARTILLERY_TELEMETRY_DEBUG = 'true';
 
-  const telemetryClient = telemetry();
+  const telemetryClient = telemetry.init();
 
   telemetryClient.capture('test event');
 
