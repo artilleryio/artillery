@@ -1,0 +1,19 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:3003",
+    "phases": [
+      { "duration": 1, "arrivalRate": 1 }
+    ],
+    "processor": "./processors.js"
+  },
+  "scenarios": [
+    {
+      "name": "Execute an existent custom function",
+      "flow": [
+        {
+          "function": "errorMessageFunction"
+        }
+      ]
+    }
+  ]
+}
