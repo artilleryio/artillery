@@ -203,6 +203,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           return callback(hookErr, context);
         });
       } else {
+        debug(`Function "${requestSpec.function}" not defined`);
+        debug('processor: %o', self.config.processor);
+        ee.emit('error', `Undefined function "${requestSpec.function}"`);
         return process.nextTick(function () { callback(null, context); });
       }
     };
