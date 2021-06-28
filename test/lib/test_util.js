@@ -87,14 +87,14 @@ test('updateArtilleryConfig', function(t) {
     property: 'value'
   };
   const addedConf = { newProperty: 'value2' };
-  const fsWriteFileSyncSpy = sandbox.spy(fs, 'writeFileSync');
+  const fsWriteFileSyncStub = sandbox.stub(fs, 'writeFileSync');
 
   sandbox.stub(util, 'readArtilleryConfig').returns(existingConf);
 
   util.updateArtilleryConfig(addedConf);
 
-  const newConfiguration = fsWriteFileSyncSpy.args[0][1];
-  const configPath = fsWriteFileSyncSpy.args[0][0];
+  const newConfiguration = fsWriteFileSyncStub.args[0][1];
+  const configPath = fsWriteFileSyncStub.args[0][0];
 
   t.deepEqual(newConfiguration, JSON.stringify({
     ...existingConf,
