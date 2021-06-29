@@ -16,6 +16,7 @@ const tryResolve = require('try-require').resolve;
 const { rainbow } = require('../util');
 
 const commands = require('../lib/commands');
+const telemetry = require('../lib/telemetry');
 
 const notifier = updateNotifier({ pkg, updateCheckInterval: 1000 * 60 * 60 * 24 });
 
@@ -76,6 +77,10 @@ program.parse(process.argv);
 
 if (!process.argv.slice(2).length) {
   console.log(Math.random() * 100 > 34 ? banner : rainbow(banner));
+
+  // print telemetry notification message
+  telemetry.notice();
+
   program.help();
 } else {
   const knownCommands = program.args.filter((a) => typeof a === 'object');
