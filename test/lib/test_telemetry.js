@@ -20,6 +20,9 @@ test('Telemetry - setup', (t) => {
   captureSpy = sandbox.spy();
   shutdownSpy = sandbox.spy();
 
+  // make sure telemetry is enabled
+  delete process.env.ARTILLERY_DISABLE_TELEMETRY;
+
   PostHogMock.prototype.capture = captureSpy;
   PostHogMock.prototype.shutdown = shutdownSpy;
 
@@ -48,14 +51,10 @@ test('Telemetry', function(t) {
   };
 
   if (ci.isCI) {
-    expectedEvent.properties.ciName = ci.name
+    expectedEvent.properties.ciName = ci.name;
   }
 
-  t.deepEquals(
-    callArg,
-    expectedEvent,
-    'Sends telemetry data'
-  );
+  t.deepEquals(callArg, expectedEvent, 'Sends telemetry data');
 
   t.end();
 });
