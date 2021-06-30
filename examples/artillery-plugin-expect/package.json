@@ -1,0 +1,16 @@
+{
+  "name": "load-and-functional-tests",
+  "version": "1.0.0",
+  "description": "Running load and functional tests from a single Artillery test script",
+  "main": "app.js",
+  "scripts": {
+    "test:load": "artillery run --environment load functional-load-tests.yml",
+    "test:functional": "artillery run --environment functional functional-load-tests.yml"
+  },
+  "author": "Dennis Martinez",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "sqlite3": "^5.0.2"
+  }
+}

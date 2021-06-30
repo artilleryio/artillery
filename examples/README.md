@@ -4,7 +4,7 @@
 
 # Artillery Examples
 
-This repo contains examples of how to use various features in Artillery. Every examples is self-contained and can be run as-is without external dependencies (other than those in `package.json`).
+This repo contains examples of how to use various features in Artillery. Every example is self-contained and can be run as-is without external dependencies (other than those in `package.json`).
 
 ## Example test definitions
 
@@ -17,11 +17,11 @@ This repo contains examples of how to use various features in Artillery. Every e
 ## Plugins and extensions
 
 - [artillery-plugin-hello-world](./artillery-plugin-hello-world) - a "hello world" plugin
+- [artillery-plugin-expect](./artillery-plugin-expect) - use `artillery-plugin-expect` to run both load and functional tests
 
 ## Starter kits
 
 - [starter-kit](./starter-kit) - @cfryerdev's Artillery starter kit - an example of how a few different bits fit together
-
 
 # Contributing
 

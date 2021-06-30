@@ -1,0 +1,43 @@
+config:
+  target: "http://localhost:3000"
+  environments:
+    load:
+      phases:
+        - duration: 600
+          arrivalRate: 25
+    functional:
+      phases:
+        - duration: 1
+          arrivalCount: 1
+      plugins:
+        expect: {}
+
+scenarios:
+  - flow:
+    - post:
+        url: "/users"
+        json:
+          username: "new-user"
+        capture:
+          - json: "$.id"
+            as: id
+        expect:
+          - statusCode: 201
+          - contentType: json
+          - hasProperty: username
+          - equals:
+            - "new-user"
+
+    - get:
+        url: "/users/{{ id }}"
+        expect:
+          - statusCode: 200
+          - contentType: json
+          - hasProperty: username
+          - equals:
+            - "new-user"
+
+    - delete:
+        url: "/users/{{ id }}"
+        expect:
+          - statusCode: 204
