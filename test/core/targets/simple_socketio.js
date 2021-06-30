@@ -60,7 +60,7 @@ function createServer() {
       MESSAGE_COUNT++;
 
       if (message === 'ping') {
-        cb("pong", {answer: 42});
+        cb('pong', {answer: 42});
       }
       if (message === 'count:inc') {
         loopCounter++;
@@ -95,6 +95,5 @@ function createServer() {
     res.end('No http pages here');
   }
 
-
-  return server;
+  return io;
 }
