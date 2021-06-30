@@ -4,7 +4,7 @@ const test = require('tape');
 const rewiremock = require('rewiremock/node');
 const telemetry = require('../../lib/telemetry');
 const { version: artilleryVersion } = require('../../package.json');
-const isCi = require('is-ci');
+const ci = require('ci-info');
 const sinon = require('sinon');
 
 let sandbox;
@@ -36,19 +36,24 @@ test('Telemetry', function(t) {
   telemetryClient.capture('test event');
 
   const callArg = captureSpy.args[0][0];
+  const expectedEvent = {
+    event: 'test event',
+    distinctId: 'artillery-core',
+    properties: {
+      version: artilleryVersion,
+      os: process.platform,
+      isCi: ci.isCI,
+      $ip: null,
+    },
+  };
+
+  if (ci.isCI) {
+    expectedEvent.properties.ciName = ci.name
+  }
 
   t.deepEquals(
     callArg,
-    {
-      event: 'test event',
-      distinctId: 'artillery-core',
-      properties: {
-        version: artilleryVersion,
-        os: process.platform,
-        isCi,
-        $ip: null,
-      },
-    },
+    expectedEvent,
     'Sends telemetry data'
   );
 
@@ -77,7 +82,7 @@ test('Telemetry - debug through environment variable', function(t) {
   captureSpy.resetHistory();
 
   const consoleSpy = sandbox.spy(console, 'log');
-  const expectedDebugOutput = `Telemetry data: {"event":"test event","distinctId":"artillery-core","properties":{"version":"${artilleryVersion}"`
+  const expectedDebugOutput = `Telemetry data: {"event":"test event","distinctId":"artillery-core","properties":{"version":"${artilleryVersion}"`;
 
   process.env.ARTILLERY_TELEMETRY_DEBUG = 'true';
 
