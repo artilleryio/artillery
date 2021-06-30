@@ -60,7 +60,7 @@ workflows:
   publish:
     jobs:
       - run_tests:
-          filters:
+          filters: &filters-publish
             branches:
               ignore: /.*/
             tags:
@@ -68,6 +68,10 @@ workflows:
       - build_docker_image:
           requires:
             - run_tests
+          filters:
+            <<: *filters-publish
       - npm_publish:
           requires:
             - run_tests
+          filters:
+            <<: *filters-publish
