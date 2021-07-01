@@ -39,6 +39,7 @@
     "radix": 2,
     "no-new-require": 2,
     "no-mixed-spaces-and-tabs": 2,
+    "no-const-assign": "error",
 
     // stylistic errors
     "new-cap": 2,
