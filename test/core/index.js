@@ -13,6 +13,7 @@ require('./test_think');
 require('./test_basic_auth');
 require('./test_cookies');
 require('./test_concurrent_requests');
+require('./http');
 
 //require('./test_worker_http');
 //require('./test_environments.js');
