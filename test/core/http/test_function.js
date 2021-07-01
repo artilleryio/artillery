@@ -8,7 +8,7 @@ test('Should execute a simple function', (t) => {
   startRunner('simple_function.json', {}, t, (stats) => {
     t.deepEquals(
       Object.keys(stats.counters).filter((counter) =>
-        counter.startsWith('error.')
+        counter.startsWith('errors.')
       ),
       [],
       'No errors'
@@ -25,7 +25,7 @@ test('Should await async function', (t) => {
   startRunner('async_function.json', {}, t, (stats) => {
     t.deepEquals(
       Object.keys(stats.counters).filter((counter) =>
-        counter.startsWith('error.')
+        counter.startsWith('errors.')
       ),
       [],
       'No errors'
