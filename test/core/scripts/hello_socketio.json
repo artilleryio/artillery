@@ -153,6 +153,18 @@
             "data": "count:reset"
           },
           "acknowledge": { "match": { "json": "$.1.answer", "value": 0 } }
+        },
+        {
+          "emit": ["message", "hello socket io"],
+          "acknowledge": { "match": { "value": "hello!" } }
+        },
+        {
+          "emit": ["message", "hello", "socket", "io"],
+          "acknowledge": { "match": { "value": "hi" } }
+        },
+        {
+          "emit": ["message", "hello", "socket", "io"],
+          "response": { "channel": "echoed", "data": "hello,socket,io" }
         }
       ]
     }
