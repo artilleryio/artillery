@@ -17,6 +17,7 @@ const debug = require('debug')('socketio');
 const engineUtil = require('./engine_util');
 const EngineHttp = require('./engine_http');
 const template = engineUtil.template;
+const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 module.exports = SocketIoEngine;
 
 function SocketIoEngine(script) {
@@ -30,6 +31,33 @@ SocketIoEngine.prototype.createScenario = function(scenarioSpec, ee) {
   var self = this;
   // Adds scenario overridden configuration into the static config
   this.socketioOpts = {...this.socketioOpts, ...scenarioSpec.socketio}
+
+  ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
+  ensurePropertyIsAList(scenarioSpec, 'afterResponse');
+  ensurePropertyIsAList(scenarioSpec, 'beforeScenario');
+  ensurePropertyIsAList(scenarioSpec, 'afterScenario');
+  ensurePropertyIsAList(scenarioSpec, 'onError');
+
+  // Add scenario-level hooks if needed:
+  // For now, just turn them into function steps and insert them
+  // directly into the flow array.
+  // TODO: Scenario-level hooks will probably want access to the
+  // entire scenario spec rather than just the userContext.
+  const beforeScenarioFns = _.map(
+    scenarioSpec.beforeScenario,
+    function(hookFunctionName) {
+      return {'function': hookFunctionName};
+    });
+  const afterScenarioFns = _.map(
+    scenarioSpec.afterScenario,
+    function(hookFunctionName) {
+      return {'function': hookFunctionName};
+    });
+
+  const newFlow = beforeScenarioFns.concat(
+    scenarioSpec.flow.concat(afterScenarioFns));
+
+  scenarioSpec.flow = newFlow;
 
   let tasks = _.map(scenarioSpec.flow, function(rs) {
     if (rs.think) {
