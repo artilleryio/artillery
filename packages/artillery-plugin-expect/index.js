@@ -164,7 +164,10 @@ function maybeParseBody(res) {
   if (
     typeof res.body === 'string' &&
     res.headers['content-type'] &&
-    res.headers['content-type'].indexOf('application/json') !== -1
+    (
+      res.headers['content-type'].indexOf('application/json') !== -1 ||
+      res.headers['content-type'].indexOf('application/problem+json') !== -1
+    )
   ) {
     try {
       body = JSON.parse(res.body);
