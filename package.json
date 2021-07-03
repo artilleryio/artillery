@@ -95,7 +95,7 @@
     "try-require": "^1.2.1",
     "update-notifier": "^4.1.0",
     "uuid": "^8.0.0",
-    "ws": "^7.4.6"
+    "ws": "^7.5.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
