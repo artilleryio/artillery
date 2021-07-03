@@ -19,6 +19,8 @@ function prettyPrint(requestExpectations, req, res, userContext) {
     req.name ? '- ' + req.name : ''
   );
 
+  let hasFailedExpectations = false;
+
   requestExpectations.results.forEach(result => {
     console.log(
       `  ${result.ok ? chalk.green('ok') : chalk.red('not ok')} ${
@@ -30,22 +32,29 @@ function prettyPrint(requestExpectations, req, res, userContext) {
       console.log('  expected:', result.expected);
       console.log('       got:', result.got);
 
-      console.log(chalk.yellow('  Request params:'));
-      console.log(prepend(req.url, '    '));
-      console.log(prepend(JSON.stringify(req.json || '', null, 2), '    '));
-      console.log(chalk.yellow('  Headers:'));
-      Object.keys(res.headers).forEach(function(h) {
-        console.log('  ', h, ':', res.headers[h]);
-      });
-      console.log(chalk.yellow('  Body:'));
-      console.log(prepend(String(JSON.stringify(res.body, null, 2)), '    '));
-
-      console.log(chalk.yellow('  User variables:'));
-      Object.keys(userContext.vars).filter(varName => varName !== '$processEnvironment').forEach(function(varName) {
-        console.log('    ', varName, ':', userContext.vars[varName]);
-      });
-    } else {
+      hasFailedExpectations = true;
     }
+  });
+
+  if (hasFailedExpectations) {
+    printExchangeContext(req, res, userContext);
+  }
+}
+
+function printExchangeContext(req, res, userContext) {
+  console.log(chalk.yellow('  Request params:'));
+  console.log(prepend(req.url, '    '));
+  console.log(prepend(JSON.stringify(req.json || '', null, 2), '    '));
+  console.log(chalk.yellow('  Headers:'));
+  Object.keys(res.headers).forEach(function(h) {
+    console.log('  ', h, ':', res.headers[h]);
+  });
+  console.log(chalk.yellow('  Body:'));
+  console.log(prepend(String(JSON.stringify(res.body, null, 2)), '    '));
+
+  console.log(chalk.yellow('  User variables:'));
+  Object.keys(userContext.vars).filter(varName => varName !== '$processEnvironment').forEach(function(varName) {
+    console.log('    ', varName, ':', userContext.vars[varName]);
   });
 }
 
