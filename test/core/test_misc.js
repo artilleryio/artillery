@@ -1,9 +1,8 @@
 'use strict';
 
-var test = require('tape');
-var runner = require('../../core').runner;
-var l = require('lodash');
-var url = require('url');
+const test = require('tape');
+const runner = require('../../core').runner;
+const l = require('lodash');
 const { SSMS } = require('../../core/lib/ssms');
 
 var SCRIPTS = [
@@ -12,7 +11,8 @@ var SCRIPTS = [
   'hello_socketio.json',
   'express_socketio.json',
   'multiple_phases.json',
-  'large_payload.json'
+  'large_payload.json',
+  'ws_proxy.json'
   ];
 
 l.each(SCRIPTS, function(fn) {

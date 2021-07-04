@@ -8,4 +8,5 @@ require('./readers.test');
 require('./util.test');
 require('./engine_http.test');
 require('./engine_socketio.test');
+require('./engine_ws.test');
 require('./interpolation.test');
