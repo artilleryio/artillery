@@ -7,7 +7,9 @@
 const async = require('async');
 const _ = require('lodash');
 const WebSocket = require('ws');
+const HttpsProxyAgent = require('https-proxy-agent');
 const debug = require('debug')('ws');
+const url = require('url');
 const engineUtil = require('./engine_util');
 const template = engineUtil.template;
 
@@ -181,8 +183,7 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
 
   return function scenario(initialContext, callback) {
     function zero(callback) {
-      let tls = config.tls || {};
-      let options = _.extend(tls, config.ws);
+      const options = parseWsOptions(config);
 
       let subprotocols = _.get(config, 'ws.subprotocols', []);
       const headers = _.get(config, 'ws.headers', {});
@@ -232,3 +233,23 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
       });
   };
 };
+
+function parseWsOptions(config) {
+  const tls = config.tls || {};
+  const {proxy, ...options} = (config.ws || {});
+
+  if (proxy) {
+    const {url: proxyUrl, ...proxyOptions} = proxy;
+
+    debug('Set proxy: %s, options: %s', proxyUrl, proxyOptions);
+
+    const agent = new HttpsProxyAgent({
+      ...url.parse(proxyUrl),
+      ...proxyOptions
+    })
+
+    options.agent = agent;
+  }
+
+  return _.extend(tls, options);
+}
