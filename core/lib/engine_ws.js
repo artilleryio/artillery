@@ -197,7 +197,17 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
 
       ee.emit('started');
 
-      let ws = new WebSocket(config.target, subprotocols, options);
+      debug('Creating new WebSocket', config.target)
+
+      let ws;
+
+      if (config.ws.connect && typeof config.processor[config.ws.connect] === 'function') {
+        const fn = config.processor[config.ws.connect]
+
+        ws = new WebSocket(...Object.values(fn({ target: config.target, subprotocols, options })));
+      } else {
+        ws = new WebSocket(config.target, subprotocols, options);
+      }
 
       ws.on('open', function() {
         initialContext.ws = ws;
