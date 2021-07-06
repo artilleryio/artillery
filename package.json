@@ -7,7 +7,7 @@
     "node": ">=12.0.0"
   },
   "scripts": {
-    "test": "bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
+    "test": "export ARTILLERY_DISABLE_TELEMETRY=true && bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
     "is_linted": "find . -name '*.js' | grep -v node_modules | grep -v coverage | xargs eslint",
     "coverage": "npm_config_coverage=y npm test && istanbul report html text-summary",
     "commitlint-last-commit": "commitlint --from $(git show HEAD~1 | grep commit | awk '{print $2}')"
@@ -47,6 +47,7 @@
     "async": "^1.5.2",
     "chalk": "1.1.3",
     "cheerio": "^1.0.0-rc.2",
+    "ci-info": "^2.0.0",
     "commander": "2.9.0",
     "csv-parse": "^4.4.6",
     "debug": "^2.2.0",
@@ -59,7 +60,6 @@
     "form-data": "^2.3.3",
     "got": "^11.8.2",
     "hpagent": "^0.1.1",
-    "is-ci": "^2.0.0",
     "js-yaml": "^3.13.1",
     "jsck": "^0.3.2",
     "jsonpath": "^1.0.2",
