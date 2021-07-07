@@ -97,7 +97,7 @@ function expectHeaderEquals(expectation, body, req, res, userContext) {
 function expectContentType(expectation, body, req, res, userContext) {
   debug('check contentType');
   debug('expectation:', expectation);
-  debug('body:', typeof body);
+  debug('body:', body === null ? 'null' : typeof body);
 
   const expectedContentType = template(expectation.contentType, userContext);
   let result = {
@@ -108,6 +108,7 @@ function expectContentType(expectation, body, req, res, userContext) {
 
   if (expectedContentType === 'json') {
     if (
+      body !== null && 
       typeof body === 'object' &&
       res.headers['content-type'].indexOf('application/json') !== -1
     ) {
