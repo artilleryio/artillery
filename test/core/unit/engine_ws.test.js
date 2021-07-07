@@ -10,18 +10,13 @@ const rewiremock = require('rewiremock/node');
 
 const HttpsProxyAgent = require('https-proxy-agent');
 const EventEmitter = require('events');
-let WebSocketEngine;
+const _ = require('lodash');
 
-const script = {
+const baseScript = {
   config: {
     target: 'ws://localhost:9093',
     phases: [{ duration: 1, arrivalCount: 1 }],
-    ws: {
-      proxy: {
-        url: 'http://localhost:9095',
-        localAddress: '127.0.0.2',
-      },
-    },
+    ws: {},
   },
   scenarios: [
     {
@@ -34,6 +29,7 @@ const script = {
 let sandbox;
 let WebsocketMock;
 let wsMockInstance;
+let WebSocketEngine;
 
 test('WebSocket engine - setup', (t) => {
   sandbox = sinon.sandbox.create();
@@ -60,13 +56,26 @@ test('WebSocket engine - setup', (t) => {
 });
 
 test('WebSocket engine - proxy', (t) => {
+  const script = _.cloneDeep(baseScript);
+
+  WebsocketMock.resetHistory();
+
+  script.config.ws = {
+    proxy: {
+      url: 'http://localhost:9095',
+      localAddress: '127.0.0.2',
+    },
+  };
+
   const engine = new WebSocketEngine(script);
   const ee = new EventEmitter();
 
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
   ee.on('started', () => {
-    process.nextTick(() => wsMockInstance.emit('open'));
+    setImmediate(() => {
+      wsMockInstance.emit('open');
+    });
   });
 
   runScenario({}, (err) => {
@@ -88,6 +97,106 @@ test('WebSocket engine - proxy', (t) => {
     );
 
     t.end();
+  });
+});
+
+test('WebSocket engine - connect action (string)', (t) => {
+  const script = _.cloneDeep(baseScript);
+
+  WebsocketMock.resetHistory();
+
+  script.scenarios[0].flow = [
+    { connect: '{{ target }}/endpoint' },
+    ...script.scenarios[0].flow,
+  ];
+
+  const expectedTarget = `${script.config.target}/endpoint`;
+
+  const engine = new WebSocketEngine(script);
+  const ee = new EventEmitter();
+
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  ee.on('started', () => {
+    setImmediate(() => {
+      wsMockInstance.emit('open');
+    });
+  });
+
+  runScenario(
+    {
+      vars: {
+        target: script.config.target,
+      },
+    },
+    (err) => {
+      const [target] = WebsocketMock.args[0];
+
+      t.assert(!err, 'Virtual user finished successfully');
+      t.equal(target, expectedTarget, 'Templates connection target');
+
+      t.end();
+    }
+  );
+});
+
+test('WebSocket engine - connect action (function)', (t) => {
+  t.plan(4);
+  const script = _.cloneDeep(baseScript);
+
+  WebsocketMock.resetHistory();
+
+  const context = {
+    vars: {
+      target: script.config.target,
+    },
+  };
+  const expectedSubProtocol = 'wamp';
+
+  script.config.processor = {
+    connectionHook: (params, userContext) => {
+      t.equals(
+        params.target,
+        script.config.target,
+        'Processor fn receives global config target'
+      );
+      t.deepEqual(
+        userContext,
+        context,
+        'Processor fn receives user\'s vars'
+      );
+
+      params.subprotocols = [expectedSubProtocol];
+
+      return params;
+    },
+  };
+
+  script.scenarios[0].flow = [
+    { connect: { function: 'connectionHook' } },
+    ...script.scenarios[0].flow,
+  ];
+
+  const engine = new WebSocketEngine(script);
+  const ee = new EventEmitter();
+
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  ee.on('started', () => {
+    setImmediate(() => {
+      wsMockInstance.emit('open');
+    });
+  });
+
+  runScenario(context, (err) => {
+    const [, subprotocols] = WebsocketMock.args[0];
+
+    t.assert(!err, 'Virtual user finished successfully');
+    t.deepEqual(
+      subprotocols,
+      [expectedSubProtocol],
+      'Processor fn can set WS constructor parameters'
+    );
   });
 });
 
