@@ -19,7 +19,7 @@
 <p align="center">
   Got a question? Want to share how you use Artillery? ➡️  <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
   <br/>
-  Or come chat on Discord - <a href="https://discord.gg/37vGhH3NMB">https://discord.gg/37vGhH3NMB</a> 💬
+  Or come chat on Discord - <a href="https://discord.com/invite/QthdcAAPRK">https://discord.com/invite/QthdcAAPRK</a> 💬
 </p>
 
 
