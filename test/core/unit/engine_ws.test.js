@@ -73,9 +73,10 @@ test('WebSocket engine - proxy', (t) => {
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
   ee.on('started', () => {
-    setImmediate(() => {
+    // simulate connection
+    setTimeout(() => {
       wsMockInstance.emit('open');
-    });
+    }, 200);
   });
 
   runScenario({}, (err) => {
@@ -118,9 +119,9 @@ test('WebSocket engine - connect action (string)', (t) => {
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
   ee.on('started', () => {
-    setImmediate(() => {
+    setTimeout(() => {
       wsMockInstance.emit('open');
-    });
+    }, 200);
   });
 
   runScenario(
@@ -154,21 +155,17 @@ test('WebSocket engine - connect action (function)', (t) => {
   const expectedSubProtocol = 'wamp';
 
   script.config.processor = {
-    connectionHook: (params, userContext) => {
+    connectionHook: (params, userContext, callback) => {
       t.equals(
         params.target,
         script.config.target,
         'Processor fn receives global config target'
       );
-      t.deepEqual(
-        userContext,
-        context,
-        'Processor fn receives user\'s vars'
-      );
+      t.deepEqual(userContext, context, 'Processor fn receives user\'s context');
 
       params.subprotocols = [expectedSubProtocol];
 
-      return params;
+      callback();
     },
   };
 
@@ -183,9 +180,9 @@ test('WebSocket engine - connect action (function)', (t) => {
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
   ee.on('started', () => {
-    setImmediate(() => {
+    setTimeout(() => {
       wsMockInstance.emit('open');
-    });
+    }, 200);
   });
 
   runScenario(context, (err) => {
@@ -197,6 +194,71 @@ test('WebSocket engine - connect action (function)', (t) => {
       [expectedSubProtocol],
       'Processor fn can set WS constructor parameters'
     );
+  });
+});
+
+test('WebSocket engine - connect action (object)', (t) => {
+  const script = _.cloneDeep(baseScript);
+
+  WebsocketMock.resetHistory();
+
+  const context = {
+    vars: {},
+  };
+  const expectedSubProtocol = 'wamp';
+
+  const connectHook = {
+    target: 'ws://target1',
+    subprotocols: [expectedSubProtocol],
+    headers: {
+      'Sec-WebSocket-Key': 'abcde',
+    },
+    proxy: {
+      url: 'http://proxy1',
+    },
+  };
+
+  script.scenarios[0].flow = [
+    { connect: connectHook },
+    ...script.scenarios[0].flow,
+  ];
+
+  const engine = new WebSocketEngine(script);
+  const ee = new EventEmitter();
+
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  ee.on('started', () => {
+    setTimeout(() => {
+      wsMockInstance.emit('open');
+    }, 200);
+  });
+
+  runScenario(context, (err) => {
+    const [target, subprotocols, wsOptions] = WebsocketMock.args[0];
+
+    t.assert(!err, 'Virtual user finished successfully');
+    t.equals(target, connectHook.target, 'Overrides connection target');
+    t.ok(
+      wsOptions.agent.proxy.href.startsWith(connectHook.proxy.url),
+      'Gets the proxy url from the connect object'
+    );
+
+    t.deepEqual(
+      subprotocols,
+      connectHook.subprotocols,
+      'Gets suprotocols from the connect object'
+    );
+
+    t.deepEqual(
+      wsOptions.headers,
+      {
+        'Sec-WebSocket-Key': 'abcde',
+      },
+      'Gets headers from the connect object'
+    );
+
+    t.end();
   });
 });
 

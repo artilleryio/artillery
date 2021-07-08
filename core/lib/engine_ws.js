@@ -202,13 +202,13 @@ function getWsOptions(config) {
 
   if (typeof subprotocolHeader !== 'undefined') {
     // NOTE: subprotocols defined via config.ws.subprotocols take precedence:
-    subprotocols.push(subprotocolHeader.split(',').map((s) => s.trim()));
+    subprotocols.push(...subprotocolHeader.split(',').map((s) => s.trim()));
   }
 
   return { options, subprotocols };
 }
 
-function getWsInstance(config, scenarioSpec, context) {
+function getWsInstance(config, scenarioSpec, context, cb) {
   let wsArgs = {
     ...getWsOptions(config),
     target: config.target,
@@ -219,7 +219,33 @@ function getWsInstance(config, scenarioSpec, context) {
     if (connect.function && config.processor[connect.function]) {
       const processFn = config.processor[connect.function];
 
-      wsArgs = processFn(wsArgs, context);
+      return processFn(wsArgs, context, (err) => {
+        if (err) {
+          debug('connect.function', err);
+          return cb(err, null);
+        }
+
+        context.wsArgs = wsArgs;
+
+        return cb(null, context);
+      });
+    } else if (_.isPlainObject(connect)) {
+      const {
+        target = config.target,
+        headers = _.get(config, 'ws.headers', {}),
+        subprotocols = _.get(config, 'ws.subprotocols', []),
+        ...instanceConfig
+      } = connect;
+
+      const opt = getWsOptions({
+        tls: config.tls,
+        ws: { subprotocols, headers, ...instanceConfig },
+      });
+
+      wsArgs = {
+        target: template(target, context),
+        ...opt,
+      };
     } else {
       wsArgs.target = template(connect, context);
     }
@@ -227,7 +253,9 @@ function getWsInstance(config, scenarioSpec, context) {
 
   debug('new WebSocket instance:', wsArgs);
 
-  return new WebSocket(wsArgs.target, wsArgs.subprotocols, wsArgs.options);
+  context.wsArgs = wsArgs;
+
+  return cb(null, context);
 }
 
 WSEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
@@ -237,12 +265,21 @@ WSEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
     function zero(cb) {
       ee.emit('started');
 
-      const ws = getWsInstance(config, scenarioSpec, initialContext);
+      getWsInstance(config, scenarioSpec, initialContext, cb);
+    }
+
+    function one(context, cb) {
+      const { wsArgs, ...contextWithoutWsArgs } = context;
+      const ws = new WebSocket(
+        wsArgs.target,
+        wsArgs.subprotocols,
+        wsArgs.options
+      );
 
       ws.on('open', function() {
-        initialContext.ws = ws;
+        contextWithoutWsArgs.ws = ws;
 
-        return cb(null, initialContext);
+        return cb(null, contextWithoutWsArgs);
       });
 
       ws.once('error', function(err) {
@@ -255,7 +292,7 @@ WSEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
 
     initialContext._successCount = 0;
 
-    const steps = _.flatten([zero, tasks]);
+    const steps = _.flatten([zero, one, tasks]);
 
     async.waterfall(steps, function scenarioWaterfallCb(err, context) {
       if (err) {
