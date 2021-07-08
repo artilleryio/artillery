@@ -134,6 +134,9 @@ test('Expectation: contentType', async (t) => {
     [ '{{ expectedContentType }}', {}, 'application/json', { expectedContentType: 'json' }, true ],
     [ 'json', {}, 'application/json; charset=utf-8', {}, true ],
     [ 'json', {}, 'charset=utf-8; application/json', {}, true ],
+    [ 'json', {}, 'application/problem+json; charset=utf-8', {}, true ],
+    [ 'json', {}, 'charset=utf-8; application/problem+json', {}, true ],
+    
     [ 'text/plain', 'string', 'text/plain', {}, true ],
     [ 'TEXT/PLAIN', 'string', 'text/plain', {}, true ],
     [ 'text/plain', 'string', 'TEXT/PLAIN', {}, true ],
@@ -168,7 +171,7 @@ test('Integration with Artillery', async (t) => {
 
   const output = result.stdout;
 
-  const EXPECTED_EXPECTATION_COUNT = 11;
+  const EXPECTED_EXPECTATION_COUNT = 16;
   const actualCount = output.split('\n').filter((s) => {
     return s.startsWith('  ok') || s.startsWith('  not ok');
   }).length;

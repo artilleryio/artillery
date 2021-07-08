@@ -110,7 +110,10 @@ function expectContentType(expectation, body, req, res, userContext) {
     if (
       body !== null && 
       typeof body === 'object' &&
-      res.headers['content-type'].indexOf('application/json') !== -1
+      (
+        res.headers['content-type'].indexOf('application/json') !== -1 ||
+        res.headers['content-type'].indexOf('application/problem+json') !== -1
+      )
     ) {
       result.ok = true;
       result.got = 'json';
