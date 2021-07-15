@@ -53,6 +53,8 @@ function ExpectationsPlugin(script, events) {
       // Datadog-only right now
       userContext.expectationsPlugin.reporter = 'datadog';
       const reportingConfig = script.config.plugins.expect.externalReporting;
+
+      // TODO fix this - metrics is undefined since the beginning
       userContext.expectationsPlugin.datadog = metrics.init({
         host: reportingConfig.host || 'artillery-expectations',
         prefix: reportingConfig.prefix,
