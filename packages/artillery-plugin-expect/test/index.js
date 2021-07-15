@@ -184,5 +184,6 @@ test('Integration with Artillery', async (t) => {
 
   t.true(output.indexOf('ok contentType json') > -1);
   t.true(output.indexOf('ok statusCode 404') > -1);
+  t.true(output.indexOf('Errors:') === -1);
   t.true(result.code === 0);
 });
