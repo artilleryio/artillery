@@ -164,9 +164,9 @@ test('Integration with Artillery', async (t) => {
   shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
   shelljs.env["PATH"] = process.env.PATH;
   const result = shelljs.exec(
-    `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
+    `${__dirname}/../node_modules/.bin/artillery run ${__dirname}/pets-test.yaml`,
   {
-    silent: true
+    silent: false
   });
 
   const output = result.stdout;
