@@ -39,6 +39,7 @@ function ExpectationsPlugin(script, events) {
 
   script.config.processor.expectationsPluginCheckExpectations = expectationsPluginCheckExpectations;
   script.config.processor.expectationsPluginOnError = expectationsPluginOnError;
+  script.config.processor.expectationsPluginMaybeFlushDatadog = expectationsPluginMaybeFlushDatadog;
 
   script.config.processor.expectationsPluginSetExpectOptions = function(
     userContext,
@@ -156,6 +157,8 @@ function expectationsPluginMaybeFlushDatadog(userContext, events, done) {
         return done();
       }
     );
+  } else {
+    return done();
   }
 }
 
