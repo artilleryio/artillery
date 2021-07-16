@@ -39,6 +39,7 @@ function ExpectationsPlugin(script, events) {
 
   script.config.processor.expectationsPluginCheckExpectations = expectationsPluginCheckExpectations;
   script.config.processor.expectationsPluginOnError = expectationsPluginOnError;
+  script.config.processor.expectationsPluginMaybeFlushDatadog = expectationsPluginMaybeFlushDatadog;
 
   script.config.processor.expectationsPluginSetExpectOptions = function(
     userContext,
@@ -52,6 +53,8 @@ function ExpectationsPlugin(script, events) {
       // Datadog-only right now
       userContext.expectationsPlugin.reporter = 'datadog';
       const reportingConfig = script.config.plugins.expect.externalReporting;
+
+      // TODO fix this - metrics is undefined since the beginning
       userContext.expectationsPlugin.datadog = metrics.init({
         host: reportingConfig.host || 'artillery-expectations',
         prefix: reportingConfig.prefix,
@@ -156,6 +159,8 @@ function expectationsPluginMaybeFlushDatadog(userContext, events, done) {
         return done();
       }
     );
+  } else {
+    return done();
   }
 }
 
