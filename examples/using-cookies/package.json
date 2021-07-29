@@ -1,0 +1,16 @@
+{
+  "name": "using-cookies",
+  "version": "1.0.0",
+  "description": "Using cookies when testing HTTP services with Artillery",
+  "main": "app.js",
+  "scripts": {
+    "test": "artillery run cookies.yml",
+    "app:start": "node app.js"
+  },
+  "author": "Dennis Martinez",
+  "license": "ISC",
+  "dependencies": {
+    "cookie-parser": "^1.4.5",
+    "express": "^4.17.1"
+  }
+}
