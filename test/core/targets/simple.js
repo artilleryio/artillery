@@ -2,7 +2,6 @@
 
 const Hapi = require('@hapi/hapi');
 const uuid = require('uuid');
-const Basic = require('hapi-auth-basic');
 
 const PORT = process.env.PORT || 3003;
 
@@ -43,8 +42,9 @@ const validate = async (request, username, password, h) => {
 
 const main = async () => {
   const server = Hapi.server({ port: PORT });
-  await server.register(require('hapi-auth-basic'));
+  await server.register(require('@hapi/basic'));
   server.auth.strategy('simple', 'basic', { validate });
+  // server.auth.default('simple');
 
   //
   // routes
@@ -134,7 +134,12 @@ function route(server) {
   server.route({
     method: 'POST',
     path: '/',
-    handler: postIndex
+    handler: postIndex,
+    options: {
+      payload: {
+        maxBytes: 100 * 1024 * 1024
+      }
+    }
   });
 
   server.route({
@@ -217,7 +222,7 @@ function index(req, h) {
 }
 
 function postIndex(req, h) {
-  reply('ok');
+  return h.response('ok').code(200);
 }
 
 function create(req, h) {
@@ -361,7 +366,7 @@ function getDevices(req, h) {
 }
 
 function putDevice(req, h) {
-  if (req.params.id === "4dcb754442b1285785b81833c77f4a46" || req.params.id === "e87c45241a484a3db9730ae4b98678d4") {
+  if (req.params.id === '4dcb754442b1285785b81833c77f4a46' || req.params.id === 'e87c45241a484a3db9730ae4b98678d4') {
     return h.response('{"status": "ok"}')
       .type('application/json')
       .code(200);
