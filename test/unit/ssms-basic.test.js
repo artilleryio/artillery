@@ -1,8 +1,8 @@
 const tap = require('tap');
 const { SSMS } = require('../../core/lib/ssms');
-const { sleep } = require('../cli/_helpers');
+const sleep = require('../helpers/sleep');
 
-tap.test(`Basic metric collection`, async t => {
+tap.test('Basic metric collection', async t => {
   const mdb = new SSMS({ pullOnly: true });
 
   // Write a fixed number of metrics over a fixed small period.
@@ -23,7 +23,7 @@ tap.test(`Basic metric collection`, async t => {
   mdb.aggregate(true);
   mdb.stop();
 
-  const buckets = mdb.getBuckets();
+  const buckets = mdb.getBucketIds();
   t.ok(buckets.length > 0 && buckets.length <= 2, 'Should have no more than two buckets of metric data');
 
   const metrics = mdb.getMetrics(buckets[0]);
