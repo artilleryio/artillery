@@ -4,7 +4,7 @@
 
 const tap = require('tap');
 const { SSMS } = require('../../core/lib/ssms');
-const { sleep } = require('../cli/_helpers');
+const sleep = require('../helpers/sleep');
 const data = require('../data/geometric.json');
 const path = require('path');
 const _ = require('lodash');

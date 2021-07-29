@@ -10,12 +10,12 @@ const {
   isMainThread, parentPort, threadId
 } = require('worker_threads');
 
-const { sleep } = require('../cli/_helpers');
+const sleep = require('../helpers/sleep');
 
 const { SSMS } = require('../../core/lib/ssms');
 
 if(isMainThread) {
-  console.log(`# This script should be run as a worker thread, exiting`);
+  console.log('# This script should be run as a worker thread, exiting');
   process.exit(1);
 }
 

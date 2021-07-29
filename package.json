@@ -23,9 +23,12 @@
     ]
   },
   "scripts": {
-    "test": "export ARTILLERY_DISABLE_TELEMETRY=true && bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
+    "test": "export ARTILLERY_DISABLE_TELEMETRY=true && tap --timeout=120 --no-coverage test/unit/*test*.js && bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
     "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint",
     "commitlint-last-commit": "commitlint --from $(git show HEAD~1 | grep commit | awk '{print $2}')"
+  },
+  "tap": {
+    "check-coverage": false
   },
   "keywords": [
     "load testing",
@@ -56,7 +59,6 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
-    "@datadog/sketches-js": "^1.0.2",
     "@oclif/command": "^1.8.0",
     "@oclif/config": "^1.17.0",
     "@oclif/plugin-help": "^3.2.0",
@@ -70,7 +72,7 @@
     "cli-table3": "^0.5.1",
     "commander": "2.9.0",
     "csv-parse": "^4.4.6",
-    "debug": "^2.2.0",
+    "debug": "^4.3.1",
     "decompress-response": "^6.0.0",
     "deep-equal": "^1.0.1",
     "deep-for-each": "^3.0.0",
@@ -84,34 +86,35 @@
     "https-proxy-agent": "^5.0.0",
     "js-yaml": "^3.13.1",
     "jsck": "^0.3.2",
-    "jsonpath": "^1.0.2",
+    "jsonpath": "^1.1.1",
     "lodash": "^4.17.19",
     "moment": "^2.22.1",
     "nanotimer": "^0.3.15",
     "ora": "^4.0.4",
     "posthog-node": "^1.1.3",
     "socket.io-client": "^4.1.2",
+    "piscina": "^3.1.0",
+    "sketches-js-hassy": "^1.0.2-hassy",
+    "socketio-wildcard": "^2.0.0",
     "tmp": "0.0.28",
     "tough-cookie": "^4.0.0",
     "try-require": "^1.2.1",
     "update-notifier": "^4.1.0",
     "uuid": "^8.0.0",
-    "ws": "^7.5.1"
+    "ws": "^7.5.1",
+    "zx": "^1.6.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^7.1.2",
-    "@hapi/hapi": "^20.0.1",
+    "@hapi/basic": "^6.0.0",
+    "@hapi/hapi": "^20.1.3",
     "@oclif/dev-cli": "^1.22.2",
-    "bats": "^0.4.2",
     "cookie-parser": "^1.4.3",
     "eslint": "^5.14.1",
+    "execa": "^0.10.0",
     "express": "^4.16.3",
-    "globby": "^11.0.0",
-    "good": "^8.1.1",
-    "good-console": "^7.1.0",
-    "hapi-auth-basic": "^5.0.0",
-    "hpagent": "0.1.1",
+    "get-bin-path": "^5.1.0",
     "husky": "^4.2.5",
     "nock": "^11.8.2",
     "prettier": "^1.5.2",
@@ -119,7 +122,9 @@
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
     "socket.io": "^3.1.2",
-    "tape": "^4.9.0"
+    "tap": "^15.0.9",
+    "tape": "^4.9.0",
+    "temp": "^0.9.4"
   },
   "husky": {
     "hooks": {
