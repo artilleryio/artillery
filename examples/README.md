@@ -13,6 +13,7 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [socket-io](./socket-io) - testing a Socket.io service
 - [websockets](./websockets) - testing a WebSocket service
 - [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
+- [using-cookies](./using-cookies) - using cookies with HTTP services
 
 ## Plugins and extensions
 
