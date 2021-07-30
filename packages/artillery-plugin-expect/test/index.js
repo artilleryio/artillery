@@ -126,18 +126,52 @@ test('Expectation: notHasProperty', t => {
   });
 });
 
+test('Expectation: contentType', async (t) => {
+  const expectations = require('../lib/expectations');
+
+  const data = [
+    // expectation - body received - res.headers.content-type - user context - expected result
+    [ '{{ expectedContentType }}', {}, 'application/json', { expectedContentType: 'json' }, true ],
+    [ 'json', {}, 'application/json; charset=utf-8', {}, true ],
+    [ 'json', {}, 'charset=utf-8; application/json', {}, true ],
+    [ 'json', {}, 'application/problem+json; charset=utf-8', {}, true ],
+    [ 'json', {}, 'charset=utf-8; application/problem+json', {}, true ],
+    
+    [ 'text/plain', 'string', 'text/plain', {}, true ],
+    [ 'TEXT/PLAIN', 'string', 'text/plain', {}, true ],
+    [ 'text/plain', 'string', 'TEXT/PLAIN', {}, true ],
+    [ 'text/plain', {}, 'text/plain', {}, true ],
+
+    [ 'text/plain', 'string', 'application/json', {}, false ],
+    [ 'json', null, 'application/json', {}, false ],
+    [ 'json', 'string', 'application/json', {}, false ],
+  ];
+
+  data.forEach((e) => {
+    const result = expectations.contentType(
+      { contentType: e[0] }, // expectation
+      e[1], // body
+      {}, // req
+      { headers: { 'content-type': e[2] }}, // res
+      { vars: e[3] } // userContext
+    );
+
+    t.true(result.ok === e[4]);
+  });
+});
+
 test('Integration with Artillery', async (t) => {
   shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
   shelljs.env["PATH"] = process.env.PATH;
   const result = shelljs.exec(
-    `${__dirname}/../node_modules/.bin/artillery run --quiet ${__dirname}/pets-test.yaml`,
+    `${__dirname}/../node_modules/.bin/artillery run ${__dirname}/pets-test.yaml`,
   {
-    silent: true
+    silent: false
   });
 
   const output = result.stdout;
 
-  const EXPECTED_EXPECTATION_COUNT = 11;
+  const EXPECTED_EXPECTATION_COUNT = 16;
   const actualCount = output.split('\n').filter((s) => {
     return s.startsWith('  ok') || s.startsWith('  not ok');
   }).length;
@@ -150,5 +184,6 @@ test('Integration with Artillery', async (t) => {
 
   t.true(output.indexOf('ok contentType json') > -1);
   t.true(output.indexOf('ok statusCode 404') > -1);
+  t.true(output.indexOf('Errors:') === -1);
   t.true(result.code === 0);
 });

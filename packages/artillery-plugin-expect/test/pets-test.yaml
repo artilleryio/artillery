@@ -29,7 +29,9 @@ scenarios:
             name: Tiki
             species: pony
           expect:
-            statusCode: 202
+            statusCode:
+              - 301
+              - 202
       - get:
           name: "Get a pet"
           url: "/pets/1"
@@ -46,7 +48,12 @@ scenarios:
           name: "Get a non-existent pet"
           url: "/pets/2"
           expect:
-            statusCode: 404
+            - statusCode: 404
+            - contentType: json
+            - hasProperty: status
+            - hasProperty: type
+            - hasProperty: title
+            - hasProperty: detail
       - get:
           name: "CSV-driven expectation"
           url: "{{ url }}"

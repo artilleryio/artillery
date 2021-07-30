@@ -24,6 +24,15 @@
     headers:
       content-type: application/json
 - request:
+    uri: /pets/2
+    method: GET
+  response:
+    code: 404
+    body: '{"type": "/pets/2", "title": "Pet not found", "detail": "Pet with id 1 not found", "status": 404}'
+    headers:
+      content-type: application/problem+json; charset=utf-8
+
+- request:
     uri: /users/1
     method: GET
   response:

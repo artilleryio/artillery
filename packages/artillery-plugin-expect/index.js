@@ -39,6 +39,7 @@ function ExpectationsPlugin(script, events) {
 
   script.config.processor.expectationsPluginCheckExpectations = expectationsPluginCheckExpectations;
   script.config.processor.expectationsPluginOnError = expectationsPluginOnError;
+  script.config.processor.expectationsPluginMaybeFlushDatadog = expectationsPluginMaybeFlushDatadog;
 
   script.config.processor.expectationsPluginSetExpectOptions = function(
     userContext,
@@ -52,6 +53,8 @@ function ExpectationsPlugin(script, events) {
       // Datadog-only right now
       userContext.expectationsPlugin.reporter = 'datadog';
       const reportingConfig = script.config.plugins.expect.externalReporting;
+
+      // TODO fix this - metrics is undefined since the beginning
       userContext.expectationsPlugin.datadog = metrics.init({
         host: reportingConfig.host || 'artillery-expectations',
         prefix: reportingConfig.prefix,
@@ -134,6 +137,9 @@ function expectationsPluginCheckExpectations(
   const failedExpectations = results.filter(res => !res.ok).length > 0;
 
   if (failedExpectations) {
+    if (global.artillery) {
+      global.artillery.suggestedExitCode = 1;
+    }
     return done(new Error(`Failed expectations for request ${req.url}`));
   } else {
     return done();
@@ -153,6 +159,8 @@ function expectationsPluginMaybeFlushDatadog(userContext, events, done) {
         return done();
       }
     );
+  } else {
+    return done();
   }
 }
 
@@ -161,7 +169,10 @@ function maybeParseBody(res) {
   if (
     typeof res.body === 'string' &&
     res.headers['content-type'] &&
-    res.headers['content-type'].indexOf('application/json') !== -1
+    (
+      res.headers['content-type'].indexOf('application/json') !== -1 ||
+      res.headers['content-type'].indexOf('application/problem+json') !== -1
+    )
   ) {
     try {
       body = JSON.parse(res.body);
