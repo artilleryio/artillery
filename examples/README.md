@@ -14,6 +14,7 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [websockets](./websockets) - testing a WebSocket service
 - [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
 - [using-cookies](./using-cookies) - using cookies with HTTP services
+- [file-uploads](./file-uploads) - HTTP file uploads with Artillery Pro
 
 ## Plugins and extensions
 
