@@ -15,11 +15,12 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
 - [using-cookies](./using-cookies) - using cookies with HTTP services
 - [file-uploads](./file-uploads) - HTTP file uploads with Artillery Pro
-
+- [functional testing](./artillery-plugin-expect) - use `artillery-plugin-expect` to run both load and functional tests
+- 
 ## Plugins and extensions
 
 - [artillery-plugin-hello-world](./artillery-plugin-hello-world) - a "hello world" plugin
-- [artillery-plugin-expect](./artillery-plugin-expect) - use `artillery-plugin-expect` to run both load and functional tests
+
 
 ## Starter kits
 
