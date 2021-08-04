@@ -1,0 +1,20 @@
+{
+  "name": "test-endpoints",
+  "version": "1.0.0",
+  "description": "Artillery.io - HTTP and Socket.IO test server",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "eslint": "^7.31.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.4",
+    "express": "^4.17.1",
+    "socket.io": "^2.4.1"
+  }
+}
