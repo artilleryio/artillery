@@ -1,0 +1,1353 @@
+[
+  {
+    "id": 1,
+    "releaseDate": "Dec 18 1985",
+    "director": "Terry Gilliam",
+    "title": "Brazil",
+    "genre": "Black Comedy",
+    "imdbRating": 8,
+    "runningTimeMin": 136
+  },
+  {
+    "id": 2,
+    "releaseDate": "Feb 16 1996",
+    "director": "Harold Becker",
+    "title": "City Hall",
+    "genre": "Drama",
+    "imdbRating": 6.1,
+    "runningTimeMin": 111
+  },
+  {
+    "id": 3,
+    "releaseDate": "Jul 12 1996",
+    "director": "Edward Zwick",
+    "title": "Courage Under Fire",
+    "genre": "Drama",
+    "imdbRating": 6.6,
+    "runningTimeMin": 115
+  },
+  {
+    "id": 4,
+    "releaseDate": "May 31 1996",
+    "director": "Rob Cohen",
+    "title": "Dragonheart",
+    "genre": "Adventure",
+    "imdbRating": 6.2,
+    "runningTimeMin": 108
+  },
+  {
+    "id": 5,
+    "releaseDate": "Jan 19 1996",
+    "director": "Robert Rodriguez",
+    "title": "From Dusk Till Dawn",
+    "genre": "Horror",
+    "imdbRating": 7.1,
+    "runningTimeMin": 107
+  },
+  {
+    "id": 6,
+    "releaseDate": "Mar 08 1996",
+    "director": "Joel Coen",
+    "title": "Fargo",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 8.3,
+    "runningTimeMin": 87
+  },
+  {
+    "id": 7,
+    "releaseDate": "Oct 11 1996",
+    "director": "Stephen Hopkins",
+    "title": "The Ghost and the Darkness",
+    "genre": "Action",
+    "imdbRating": 6.6,
+    "runningTimeMin": 109
+  },
+  {
+    "id": 8,
+    "releaseDate": "Feb 16 1996",
+    "director": "Dennis Dugan",
+    "title": "Happy Gilmore",
+    "genre": "Comedy",
+    "imdbRating": 6.9,
+    "runningTimeMin": 92
+  },
+  {
+    "id": 9,
+    "releaseDate": "Jul 02 1996",
+    "director": "Roland Emmerich",
+    "title": "Independence Day",
+    "genre": "Adventure",
+    "imdbRating": 6.5,
+    "runningTimeMin": 145
+  },
+  {
+    "id": 10,
+    "releaseDate": "Jun 13 1980",
+    "director": "Michael Ritchie",
+    "title": "The Island",
+    "genre": "Adventure",
+    "imdbRating": 6.9,
+    "runningTimeMin": 138
+  },
+  {
+    "id": 11,
+    "releaseDate": "Jul 26 1996",
+    "director": "Bobby Farrelly",
+    "title": "Kingpin",
+    "genre": "Comedy",
+    "imdbRating": 6.7,
+    "runningTimeMin": 113
+  },
+  {
+    "id": 12,
+    "releaseDate": "Oct 11 1996",
+    "director": "Renny Harlin",
+    "title": "The Long Kiss Goodnight",
+    "genre": "Action",
+    "imdbRating": 6.6,
+    "runningTimeMin": 120
+  },
+  {
+    "id": 13,
+    "releaseDate": "Jul 18 1986",
+    "director": "James Cameron",
+    "title": "Aliens",
+    "genre": "Action",
+    "imdbRating": 7.5,
+    "runningTimeMin": 137
+  },
+  {
+    "id": 14,
+    "releaseDate": "Dec 13 1996",
+    "director": "Tim Burton",
+    "title": "Mars Attacks!",
+    "genre": "Comedy",
+    "imdbRating": 6.3,
+    "runningTimeMin": 110
+  },
+  {
+    "id": 15,
+    "releaseDate": "Nov 15 1996",
+    "director": "Barbra Streisand",
+    "title": "The Mirror Has Two Faces",
+    "genre": "Romantic Comedy",
+    "imdbRating": 6,
+    "runningTimeMin": 127
+  },
+  {
+    "id": 16,
+    "releaseDate": "May 21 1996",
+    "director": "Brian De Palma",
+    "title": "Mission: Impossible",
+    "genre": "Action",
+    "imdbRating": 6.9,
+    "runningTimeMin": 110
+  },
+  {
+    "id": 17,
+    "releaseDate": "Nov 15 1996",
+    "director": "Anthony Minghella",
+    "title": "The English Patient",
+    "genre": "Drama",
+    "imdbRating": 7.3,
+    "runningTimeMin": 160
+  },
+  {
+    "id": 18,
+    "releaseDate": "Jul 05 1996",
+    "director": "Jon Turteltaub",
+    "title": "Phenomenon",
+    "genre": "Drama",
+    "imdbRating": 6.3,
+    "runningTimeMin": 124
+  },
+  {
+    "id": 19,
+    "releaseDate": "Nov 08 1996",
+    "director": "Ron Howard",
+    "title": "Ransom",
+    "genre": "Action",
+    "imdbRating": 6.6,
+    "runningTimeMin": 121
+  },
+  {
+    "id": 20,
+    "releaseDate": "Nov 01 1996",
+    "director": "Baz Luhrmann",
+    "title": "Romeo+Juliet",
+    "genre": "Drama",
+    "imdbRating": 6.5,
+    "runningTimeMin": 120
+  },
+  {
+    "id": 21,
+    "releaseDate": "Jun 07 1996",
+    "director": "Michael Bay",
+    "title": "The Rock",
+    "genre": "Action",
+    "imdbRating": 7.2,
+    "runningTimeMin": 136
+  },
+  {
+    "id": 22,
+    "releaseDate": "Nov 22 1996",
+    "director": "Scott Hicks",
+    "title": "Shine",
+    "genre": "Drama",
+    "imdbRating": 7.6,
+    "runningTimeMin": 105
+  },
+  {
+    "id": 23,
+    "releaseDate": "Nov 06 1996",
+    "director": "F. Gary Gray",
+    "title": "Set It Off",
+    "genre": "Drama",
+    "imdbRating": 6.3,
+    "runningTimeMin": 120
+  },
+  {
+    "id": 24,
+    "releaseDate": "Oct 18 1996",
+    "director": "Barry Levinson",
+    "title": "Sleepers",
+    "genre": "Drama",
+    "imdbRating": 7.3,
+    "runningTimeMin": 105
+  },
+  {
+    "id": 25,
+    "releaseDate": "Aug 06 2004",
+    "director": "Ryan Little",
+    "title": "Saints and Soldiers",
+    "genre": "Drama",
+    "imdbRating": 7,
+    "runningTimeMin": 90
+  },
+  {
+    "id": 26,
+    "releaseDate": "Aug 16 1996",
+    "director": "Ron Shelton",
+    "title": "Tin Cup",
+    "genre": "Romantic Comedy",
+    "imdbRating": 6.1,
+    "runningTimeMin": 105
+  },
+  {
+    "id": 27,
+    "releaseDate": "Jul 19 1996",
+    "director": "Danny Boyle",
+    "title": "Trainspotting",
+    "genre": "Drama",
+    "imdbRating": 8.2,
+    "runningTimeMin": 94
+  },
+  {
+    "id": 28,
+    "releaseDate": "Jul 24 1996",
+    "director": "Joel Schumacher",
+    "title": "A Time to Kill",
+    "genre": "Drama",
+    "imdbRating": 7.1,
+    "runningTimeMin": 150
+  },
+  {
+    "id": 29,
+    "releaseDate": "Oct 04 1996",
+    "director": "Tom Hanks",
+    "title": "That Thing You Do!",
+    "genre": "Drama",
+    "imdbRating": 6.7,
+    "runningTimeMin": 110
+  },
+  {
+    "id": 30,
+    "releaseDate": "May 10 1996",
+    "director": "Jan De Bont",
+    "title": "Twister",
+    "genre": "Action",
+    "imdbRating": 6,
+    "runningTimeMin": 117
+  },
+  {
+    "id": 31,
+    "releaseDate": "Apr 23 2004",
+    "director": "Gary Winick",
+    "title": "13 Going On 30",
+    "genre": "Comedy",
+    "imdbRating": 6.1,
+    "runningTimeMin": 98
+  },
+  {
+    "id": 32,
+    "releaseDate": "Nov 13 2009",
+    "director": "Roland Emmerich",
+    "title": 2012,
+    "genre": "Action",
+    "imdbRating": 6.2,
+    "runningTimeMin": 158
+  },
+  {
+    "id": 33,
+    "releaseDate": "Jun 27 2003",
+    "director": "Danny Boyle",
+    "title": "28 Days Later...",
+    "genre": "Horror",
+    "imdbRating": 7.6,
+    "runningTimeMin": 113
+  },
+  {
+    "id": 34,
+    "releaseDate": "Mar 09 2007",
+    "director": "Zack Snyder",
+    "title": 300,
+    "genre": "Action",
+    "imdbRating": 7.8,
+    "runningTimeMin": 117
+  },
+  {
+    "id": 35,
+    "releaseDate": "Oct 01 1999",
+    "director": "David O. Russell",
+    "title": "Three Kings",
+    "genre": "Action",
+    "imdbRating": 7.3,
+    "runningTimeMin": 115
+  },
+  {
+    "id": 36,
+    "releaseDate": "Sep 02 2007",
+    "director": "James Mangold",
+    "title": "3:10 to Yuma",
+    "genre": "Western",
+    "imdbRating": 7.9,
+    "runningTimeMin": 117
+  },
+  {
+    "id": 37,
+    "releaseDate": "Aug 19 2005",
+    "director": "Judd Apatow",
+    "title": "The 40 Year-old Virgin",
+    "genre": "Comedy",
+    "imdbRating": 7.5,
+    "runningTimeMin": 111
+  },
+  {
+    "id": 38,
+    "releaseDate": "Aug 12 2005",
+    "director": "John Singleton",
+    "title": "Four Brothers",
+    "genre": "Drama",
+    "imdbRating": 6.8,
+    "runningTimeMin": 109
+  },
+  {
+    "id": 39,
+    "releaseDate": "Feb 13 2004",
+    "director": "Peter Segal",
+    "title": "50 First Dates",
+    "genre": "Romantic Comedy",
+    "imdbRating": 6.8,
+    "runningTimeMin": 99
+  },
+  {
+    "id": 40,
+    "releaseDate": "Nov 08 2002",
+    "director": "Curtis Hanson",
+    "title": "8 Mile",
+    "genre": "Drama",
+    "imdbRating": 6.7,
+    "runningTimeMin": 110
+  },
+  {
+    "id": 41,
+    "releaseDate": "May 17 2002",
+    "director": "Paul Weitz",
+    "title": "About a Boy",
+    "genre": "Romantic Comedy",
+    "imdbRating": 7.4,
+    "runningTimeMin": 101
+  },
+  {
+    "id": 42,
+    "releaseDate": "Nov 20 1998",
+    "director": "John Lasseter",
+    "title": "A Bug's Life",
+    "genre": "Adventure",
+    "imdbRating": 7.3,
+    "runningTimeMin": 96
+  },
+  {
+    "id": 43,
+    "releaseDate": "Feb 14 1997",
+    "director": "Clint Eastwood",
+    "title": "Absolute Power",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.5,
+    "runningTimeMin": 120
+  },
+  {
+    "id": 44,
+    "releaseDate": "Nov 12 2004",
+    "director": "Brett Ratner",
+    "title": "After the Sunset",
+    "genre": "Action",
+    "imdbRating": 6.2,
+    "runningTimeMin": 97
+  },
+  {
+    "id": 45,
+    "releaseDate": "Nov 10 2006",
+    "director": "Ridley Scott",
+    "title": "A Good Year",
+    "genre": "Drama",
+    "imdbRating": 6.8,
+    "runningTimeMin": 118
+  },
+  {
+    "id": 46,
+    "releaseDate": "Jul 25 1997",
+    "director": "Wolfgang Petersen",
+    "title": "Air Force One",
+    "genre": "Action",
+    "imdbRating": 6.3,
+    "runningTimeMin": 124
+  },
+  {
+    "id": 47,
+    "releaseDate": "Sep 22 2006",
+    "director": "Steven Zaillian",
+    "title": "All the King's Men",
+    "genre": "Drama",
+    "imdbRating": 6,
+    "runningTimeMin": 128
+  },
+  {
+    "id": 48,
+    "releaseDate": "Dec 25 2001",
+    "director": "Michael Mann",
+    "title": "Ali",
+    "genre": "Drama",
+    "imdbRating": 6.6,
+    "runningTimeMin": 159
+  },
+  {
+    "id": 49,
+    "releaseDate": "Nov 26 1997",
+    "director": "Jean-Pierre Jeunet",
+    "title": "Alien: Resurrection",
+    "genre": "Action",
+    "imdbRating": 6.2,
+    "runningTimeMin": 108
+  },
+  {
+    "id": 50,
+    "releaseDate": "Sep 15 2000",
+    "director": "Cameron Crowe",
+    "title": "Almost Famous",
+    "genre": "Comedy",
+    "imdbRating": 8,
+    "runningTimeMin": 123
+  },
+  {
+    "id": 51,
+    "releaseDate": "May 23 2003",
+    "director": "Tom Shadyac",
+    "title": "Bruce Almighty",
+    "genre": "Comedy",
+    "imdbRating": 6.6,
+    "runningTimeMin": 101
+  },
+  {
+    "id": 52,
+    "releaseDate": "Apr 06 2001",
+    "director": "Lee Tamahori",
+    "title": "Along Came a Spider",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.1,
+    "runningTimeMin": 103
+  },
+  {
+    "id": 53,
+    "releaseDate": "Sep 15 1999",
+    "director": "Sam Mendes",
+    "title": "American Beauty",
+    "genre": "Drama",
+    "imdbRating": 8.6,
+    "runningTimeMin": 118
+  },
+  {
+    "id": 54,
+    "releaseDate": "Nov 02 2001",
+    "director": "Jean-Pierre Jeunet",
+    "title": "Le Fabuleux destin d'AmÈlie Poulain",
+    "genre": "Comedy",
+    "imdbRating": 8.5,
+    "runningTimeMin": 122
+  },
+  {
+    "id": 55,
+    "releaseDate": "Nov 02 2007",
+    "director": "Ridley Scott",
+    "title": "American Gangster",
+    "genre": "Drama",
+    "imdbRating": 7.9,
+    "runningTimeMin": 157
+  },
+  {
+    "id": 56,
+    "releaseDate": "Dec 12 1997",
+    "director": "Steven Spielberg",
+    "title": "Amistad",
+    "genre": "Drama",
+    "imdbRating": 7.1,
+    "runningTimeMin": 152
+  },
+  {
+    "id": 57,
+    "releaseDate": "Jul 09 1999",
+    "director": "Paul Weitz",
+    "title": "American Pie",
+    "genre": "Comedy",
+    "imdbRating": 6.9,
+    "runningTimeMin": 95
+  },
+  {
+    "id": 58,
+    "releaseDate": "Nov 14 1997",
+    "director": "Don Bluth",
+    "title": "Anastasia",
+    "genre": "Musical",
+    "imdbRating": 6.6,
+    "runningTimeMin": 94
+  },
+  {
+    "id": 59,
+    "releaseDate": "Jul 09 2004",
+    "director": "Adam McKay",
+    "title": "Anchorman: The Legend of Ron Burgundy",
+    "genre": "Comedy",
+    "imdbRating": 7,
+    "runningTimeMin": 104
+  },
+  {
+    "id": 60,
+    "releaseDate": "Apr 11 2003",
+    "director": "Peter Segal",
+    "title": "Anger Management",
+    "genre": "Comedy",
+    "imdbRating": 6.1,
+    "runningTimeMin": 106
+  },
+  {
+    "id": 61,
+    "releaseDate": "Dec 17 1999",
+    "director": "Andy Tennant",
+    "title": "Anna and the King",
+    "genre": "Drama",
+    "imdbRating": 6.5,
+    "runningTimeMin": 147
+  },
+  {
+    "id": 62,
+    "releaseDate": "Mar 05 1999",
+    "director": "Harold Ramis",
+    "title": "Analyze This",
+    "genre": "Comedy",
+    "imdbRating": 6.6,
+    "runningTimeMin": 103
+  },
+  {
+    "id": 63,
+    "releaseDate": "Oct 02 1998",
+    "director": "Tim Johnson",
+    "title": "Antz",
+    "genre": "Adventure",
+    "imdbRating": 6.8,
+    "runningTimeMin": 83
+  },
+  {
+    "id": 64,
+    "releaseDate": "Dec 08 2006",
+    "director": "Mel Gibson",
+    "title": "Apocalypto",
+    "genre": "Adventure",
+    "imdbRating": 7.9,
+    "runningTimeMin": 136
+  },
+  {
+    "id": 65,
+    "releaseDate": "Dec 17 1997",
+    "director": "Robert Duvall",
+    "title": "The Apostle",
+    "genre": "Drama",
+    "imdbRating": 7.1,
+    "runningTimeMin": 148
+  },
+  {
+    "id": 66,
+    "releaseDate": "Jul 01 1998",
+    "director": "Michael Bay",
+    "title": "Armageddon",
+    "genre": "Adventure",
+    "imdbRating": 6.1,
+    "runningTimeMin": 150
+  },
+  {
+    "id": 67,
+    "releaseDate": "Jul 07 2004",
+    "director": "Antoine Fuqua",
+    "title": "King Arthur",
+    "genre": "Adventure",
+    "imdbRating": 6.2,
+    "runningTimeMin": 126
+  },
+  {
+    "id": 68,
+    "releaseDate": "Jun 29 2001",
+    "director": "Steven Spielberg",
+    "title": "Artificial Intelligence: AI",
+    "genre": "Drama",
+    "imdbRating": 6.9,
+    "runningTimeMin": 146
+  },
+  {
+    "id": 69,
+    "releaseDate": "Oct 23 2009",
+    "director": "David Bowers",
+    "title": "Astro Boy",
+    "genre": "Adventure",
+    "imdbRating": 6.4,
+    "runningTimeMin": 94
+  },
+  {
+    "id": 70,
+    "releaseDate": "Feb 23 2007",
+    "director": "Michael Polish",
+    "title": "The Astronaut Farmer",
+    "genre": "Drama",
+    "imdbRating": 6.4,
+    "runningTimeMin": 109
+  },
+  {
+    "id": 71,
+    "releaseDate": "Dec 24 1997",
+    "director": "James L. Brooks",
+    "title": "As Good as it Gets",
+    "genre": "Romantic Comedy",
+    "imdbRating": 7.8,
+    "runningTimeMin": 138
+  },
+  {
+    "id": 72,
+    "releaseDate": "Dec 11 1998",
+    "director": "Sam Raimi",
+    "title": "A Simple Plan",
+    "genre": "Drama",
+    "imdbRating": 7.6,
+    "runningTimeMin": 121
+  },
+  {
+    "id": 73,
+    "releaseDate": "Jun 11 2010",
+    "director": "Joe Carnahan",
+    "title": "The A-Team",
+    "genre": "Action",
+    "imdbRating": 7.2,
+    "runningTimeMin": 119
+  },
+  {
+    "id": 74,
+    "releaseDate": "Jun 08 2001",
+    "director": "Gary Trousdale",
+    "title": "Atlantis: The Lost Empire",
+    "genre": "Adventure",
+    "imdbRating": 6.4,
+    "runningTimeMin": 96
+  },
+  {
+    "id": 75,
+    "releaseDate": "Dec 07 2007",
+    "director": "Joe Wright",
+    "title": "Atonement",
+    "genre": "Drama",
+    "imdbRating": 7.9,
+    "runningTimeMin": 130
+  },
+  {
+    "id": 76,
+    "releaseDate": "Jun 10 1999",
+    "director": "Jay Roach",
+    "title": "Austin Powers: The Spy Who Shagged Me",
+    "genre": "Comedy",
+    "imdbRating": 6.6,
+    "runningTimeMin": 95
+  },
+  {
+    "id": 77,
+    "releaseDate": "Jul 25 2002",
+    "director": "Jay Roach",
+    "title": "Austin Powers in Goldmember",
+    "genre": "Comedy",
+    "imdbRating": 6.2,
+    "runningTimeMin": 94
+  },
+  {
+    "id": 78,
+    "releaseDate": "May 02 1997",
+    "director": "Jay Roach",
+    "title": "Austin Powers: International Man of Mystery",
+    "genre": "Comedy",
+    "imdbRating": 7.1,
+    "runningTimeMin": 89
+  },
+  {
+    "id": 79,
+    "releaseDate": "Dec 17 2004",
+    "director": "Martin Scorsese",
+    "title": "The Aviator",
+    "genre": "Drama",
+    "imdbRating": 7.6,
+    "runningTimeMin": 170
+  },
+  {
+    "id": 80,
+    "releaseDate": "Jun 05 2009",
+    "director": "Sam Mendes",
+    "title": "Away We Go",
+    "genre": "Comedy",
+    "imdbRating": 7.3,
+    "runningTimeMin": 98
+  },
+  {
+    "id": 81,
+    "releaseDate": "Nov 25 1998",
+    "director": "George Miller",
+    "title": "Babe: Pig in the City",
+    "genre": "Adventure",
+    "imdbRating": 6.1,
+    "runningTimeMin": 75
+  },
+  {
+    "id": 82,
+    "releaseDate": "Jul 18 2003",
+    "director": "Michael Bay",
+    "title": "Bad Boys II",
+    "genre": "Action",
+    "imdbRating": 6.2,
+    "runningTimeMin": 147
+  },
+  {
+    "id": 83,
+    "releaseDate": "Mar 28 2003",
+    "director": "John McTiernan",
+    "title": "Basic",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.3,
+    "runningTimeMin": 98
+  },
+  {
+    "id": 84,
+    "releaseDate": "Jun 15 2005",
+    "director": "Christopher Nolan",
+    "title": "Batman Begins",
+    "genre": "Action",
+    "imdbRating": 8.3,
+    "runningTimeMin": 140
+  },
+  {
+    "id": 85,
+    "releaseDate": "Jul 18 2008",
+    "director": "Christopher Nolan",
+    "title": "The Dark Knight",
+    "genre": "Action",
+    "imdbRating": 8.9,
+    "runningTimeMin": 152
+  },
+  {
+    "id": 86,
+    "releaseDate": "Jun 27 2001",
+    "director": "John Singleton",
+    "title": "Baby Boy",
+    "genre": "Drama",
+    "imdbRating": 6.1,
+    "runningTimeMin": 130
+  },
+  {
+    "id": 87,
+    "releaseDate": "Dec 25 2008",
+    "director": "David Fincher",
+    "title": "The Curious Case of Benjamin Button",
+    "genre": "Drama",
+    "imdbRating": 8,
+    "runningTimeMin": 167
+  },
+  {
+    "id": 88,
+    "releaseDate": "Oct 10 2008",
+    "director": "Ridley Scott",
+    "title": "Body of Lies",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 7.2,
+    "runningTimeMin": 129
+  },
+  {
+    "id": 89,
+    "releaseDate": "Dec 08 2006",
+    "director": "Edward Zwick",
+    "title": "Blood Diamond",
+    "genre": "Action",
+    "imdbRating": 8,
+    "runningTimeMin": 143
+  },
+  {
+    "id": 90,
+    "releaseDate": "Dec 20 1996",
+    "director": "Mike Judge",
+    "title": "Beavis and Butt-head Do America",
+    "genre": "Comedy",
+    "imdbRating": 6.6,
+    "runningTimeMin": 80
+  },
+  {
+    "id": 91,
+    "releaseDate": "Mar 12 2003",
+    "director": "Gurinder Chadha",
+    "title": "Bend it Like Beckham",
+    "genre": "Drama",
+    "imdbRating": 6.9,
+    "runningTimeMin": 112
+  },
+  {
+    "id": 92,
+    "releaseDate": "Nov 23 2001",
+    "director": "Todd Field",
+    "title": "In the Bedroom",
+    "genre": "Drama",
+    "imdbRating": 7.5,
+    "runningTimeMin": 130
+  },
+  {
+    "id": 93,
+    "releaseDate": "Nov 02 2007",
+    "director": "Steve Hickner",
+    "title": "Bee Movie",
+    "genre": "Comedy",
+    "imdbRating": 6.3,
+    "runningTimeMin": 90
+  },
+  {
+    "id": 94,
+    "releaseDate": "Oct 29 1999",
+    "director": "Spike Jonze",
+    "title": "Being John Malkovich",
+    "genre": "Black Comedy",
+    "imdbRating": 7.9,
+    "runningTimeMin": 112
+  },
+  {
+    "id": 95,
+    "releaseDate": "Nov 16 2007",
+    "director": "Robert Zemeckis",
+    "title": "Beowulf",
+    "genre": "Adventure",
+    "imdbRating": 6.6,
+    "runningTimeMin": 115
+  },
+  {
+    "id": 96,
+    "releaseDate": "Dec 10 2003",
+    "director": "Tim Burton",
+    "title": "Big Fish",
+    "genre": "Drama",
+    "imdbRating": 8.1,
+    "runningTimeMin": 125
+  },
+  {
+    "id": 97,
+    "releaseDate": "Mar 06 1998",
+    "director": "Joel Coen",
+    "title": "The Big Lebowski",
+    "genre": "Comedy",
+    "imdbRating": 8.2,
+    "runningTimeMin": 127
+  },
+  {
+    "id": 98,
+    "releaseDate": "Dec 28 2001",
+    "director": "Ridley Scott",
+    "title": "Black Hawk Down",
+    "genre": "Action",
+    "imdbRating": 7.7,
+    "runningTimeMin": 144
+  },
+  {
+    "id": 99,
+    "releaseDate": "Oct 13 2000",
+    "director": "Stephen Daldry",
+    "title": "Billy Elliot",
+    "genre": "Drama",
+    "imdbRating": 7.7,
+    "runningTimeMin": 110
+  },
+  {
+    "id": 100,
+    "releaseDate": "Dec 17 1999",
+    "director": "Chris Columbus",
+    "title": "Bicentennial Man",
+    "genre": "Drama",
+    "imdbRating": 6.4,
+    "runningTimeMin": 132
+  },
+  {
+    "id": 101,
+    "releaseDate": "Aug 21 1998",
+    "director": "Stephen Norrington",
+    "title": "Blade",
+    "genre": "Action",
+    "imdbRating": 7,
+    "runningTimeMin": 121
+  },
+  {
+    "id": 102,
+    "releaseDate": "Feb 12 1999",
+    "director": "Hugh Wilson",
+    "title": "Blast from the Past",
+    "genre": "Comedy",
+    "imdbRating": 6.4,
+    "runningTimeMin": 111
+  },
+  {
+    "id": 103,
+    "releaseDate": "Aug 09 2002",
+    "director": "Clint Eastwood",
+    "title": "Blood Work",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.3,
+    "runningTimeMin": 110
+  },
+  {
+    "id": 104,
+    "releaseDate": "Jul 13 2001",
+    "director": "Robert Luketic",
+    "title": "Legally Blonde",
+    "genre": "Comedy",
+    "imdbRating": 6.2,
+    "runningTimeMin": 97
+  },
+  {
+    "id": 105,
+    "releaseDate": "Apr 06 2001",
+    "director": "Ted Demme",
+    "title": "Blow",
+    "genre": "Drama",
+    "imdbRating": 7.4,
+    "runningTimeMin": 123
+  },
+  {
+    "id": 106,
+    "releaseDate": "Dec 21 2001",
+    "director": "Ron Howard",
+    "title": "A Beautiful Mind",
+    "genre": "Drama",
+    "imdbRating": 8,
+    "runningTimeMin": 135
+  },
+  {
+    "id": 107,
+    "releaseDate": "Oct 12 2001",
+    "director": "Barry Levinson",
+    "title": "Bandits",
+    "genre": "Comedy",
+    "imdbRating": 6.5,
+    "runningTimeMin": 123
+  },
+  {
+    "id": 108,
+    "releaseDate": "Nov 17 2006",
+    "director": "Emilio Estevez",
+    "title": "Bobby",
+    "genre": "Drama",
+    "imdbRating": 7.1,
+    "runningTimeMin": 120
+  },
+  {
+    "id": 109,
+    "releaseDate": "Nov 05 1999",
+    "director": "Phillip Noyce",
+    "title": "The Bone Collector",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.3,
+    "runningTimeMin": 118
+  },
+  {
+    "id": 110,
+    "releaseDate": "Oct 10 1997",
+    "director": "Paul Thomas Anderson",
+    "title": "Boogie Nights",
+    "genre": "Drama",
+    "imdbRating": 7.9,
+    "runningTimeMin": 152
+  },
+  {
+    "id": 111,
+    "releaseDate": "Nov 03 2006",
+    "director": "Larry Charles",
+    "title": "Borat",
+    "genre": "Comedy",
+    "imdbRating": 7.7,
+    "runningTimeMin": 83
+  },
+  {
+    "id": 112,
+    "releaseDate": "Jun 14 2002",
+    "director": "Doug Liman",
+    "title": "The Bourne Identity",
+    "genre": "Action",
+    "imdbRating": 7.7,
+    "runningTimeMin": 110
+  },
+  {
+    "id": 113,
+    "releaseDate": "Jul 23 2004",
+    "director": "Paul Greengrass",
+    "title": "The Bourne Supremacy",
+    "genre": "Action",
+    "imdbRating": 7.6,
+    "runningTimeMin": 108
+  },
+  {
+    "id": 114,
+    "releaseDate": "Aug 03 2007",
+    "director": "Paul Greengrass",
+    "title": "The Bourne Ultimatum",
+    "genre": "Action",
+    "imdbRating": 8.2,
+    "runningTimeMin": 114
+  },
+  {
+    "id": 115,
+    "releaseDate": "Oct 22 1999",
+    "director": "Martin Scorsese",
+    "title": "Bringing Out The Dead",
+    "genre": "Black Comedy",
+    "imdbRating": 6.8,
+    "runningTimeMin": 120
+  },
+  {
+    "id": 116,
+    "releaseDate": "Dec 09 2005",
+    "director": "Ang Lee",
+    "title": "Brokeback Mountain",
+    "genre": "Drama",
+    "imdbRating": 7.8,
+    "runningTimeMin": 134
+  },
+  {
+    "id": 117,
+    "releaseDate": "Sep 13 2002",
+    "director": "Tim Story",
+    "title": "Barbershop",
+    "genre": "Comedy",
+    "imdbRating": 6.2,
+    "runningTimeMin": 103
+  },
+  {
+    "id": 118,
+    "releaseDate": "Sep 27 2000",
+    "director": "Christopher Guest",
+    "title": "Best in Show",
+    "genre": "Comedy",
+    "imdbRating": 7.4,
+    "runningTimeMin": 90
+  },
+  {
+    "id": 119,
+    "releaseDate": "Nov 26 2003",
+    "director": "Terry Zwigoff",
+    "title": "Bad Santa",
+    "genre": "Comedy",
+    "imdbRating": 7.3,
+    "runningTimeMin": 91
+  },
+  {
+    "id": 120,
+    "releaseDate": "Aug 21 2009",
+    "director": "Quentin Tarantino",
+    "title": "Inglourious Basterds",
+    "genre": "Action",
+    "imdbRating": 8.4,
+    "runningTimeMin": 152
+  },
+  {
+    "id": 121,
+    "releaseDate": "May 15 1998",
+    "director": "Warren Beatty",
+    "title": "Bulworth",
+    "genre": "Comedy",
+    "imdbRating": 6.8,
+    "runningTimeMin": 107
+  },
+  {
+    "id": 122,
+    "releaseDate": "Aug 13 1999",
+    "director": "Frank Oz",
+    "title": "Bowfinger",
+    "genre": "Comedy",
+    "imdbRating": 6.4,
+    "runningTimeMin": 96
+  },
+  {
+    "id": 123,
+    "releaseDate": "Dec 22 2000",
+    "director": "Robert Zemeckis",
+    "title": "Cast Away",
+    "genre": "Drama",
+    "imdbRating": 7.5,
+    "runningTimeMin": 144
+  },
+  {
+    "id": 124,
+    "releaseDate": "Sep 10 2004",
+    "director": "David R. Ellis",
+    "title": "Cellular",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.5,
+    "runningTimeMin": 94
+  },
+  {
+    "id": 125,
+    "releaseDate": "Oct 10 2008",
+    "director": "Gil Kenan",
+    "title": "City of Ember",
+    "genre": "Adventure",
+    "imdbRating": 6.4,
+    "runningTimeMin": 94
+  },
+  {
+    "id": 126,
+    "releaseDate": "Jul 15 2005",
+    "director": "Tim Burton",
+    "title": "Charlie and the Chocolate Factory",
+    "genre": "Comedy",
+    "imdbRating": 7.1,
+    "runningTimeMin": 115
+  },
+  {
+    "id": 127,
+    "releaseDate": "Oct 27 2006",
+    "director": "Phillip Noyce",
+    "title": "Catch a Fire",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.8,
+    "runningTimeMin": 101
+  },
+  {
+    "id": 128,
+    "releaseDate": "Dec 27 2002",
+    "director": "Rob Marshall",
+    "title": "Chicago",
+    "genre": "Musical",
+    "imdbRating": 7.2,
+    "runningTimeMin": 113
+  },
+  {
+    "id": 129,
+    "releaseDate": "Jun 21 2000",
+    "director": "Nick Park",
+    "title": "Chicken Run",
+    "genre": "Adventure",
+    "imdbRating": 7.3,
+    "runningTimeMin": 84
+  },
+  {
+    "id": 130,
+    "releaseDate": "Dec 25 2006",
+    "director": "Alfonso Cuaron",
+    "title": "Children of Men",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 8.1,
+    "runningTimeMin": 114
+  },
+  {
+    "id": 131,
+    "releaseDate": "Nov 16 2007",
+    "director": "Mike Newell",
+    "title": "Love in the Time of Cholera",
+    "genre": "Drama",
+    "imdbRating": 6.2,
+    "runningTimeMin": 139
+  },
+  {
+    "id": 132,
+    "releaseDate": "Dec 15 2000",
+    "director": "Lasse Hallstrom",
+    "title": "Chocolat",
+    "genre": "Drama",
+    "imdbRating": 7.3,
+    "runningTimeMin": 122
+  },
+  {
+    "id": 133,
+    "releaseDate": "Dec 15 2006",
+    "director": "Gary Winick",
+    "title": "Charlotte's Web",
+    "genre": "Drama",
+    "imdbRating": 6.7,
+    "runningTimeMin": 98
+  },
+  {
+    "id": 134,
+    "releaseDate": "Jun 03 2005",
+    "director": "Ron Howard",
+    "title": "Cinderella Man",
+    "genre": "Drama",
+    "imdbRating": 8,
+    "runningTimeMin": 144
+  },
+  {
+    "id": 135,
+    "releaseDate": "Apr 10 1998",
+    "director": "Brad Silberling",
+    "title": "City of Angels",
+    "genre": "Drama",
+    "imdbRating": 6.4,
+    "runningTimeMin": 117
+  },
+  {
+    "id": 136,
+    "releaseDate": "Dec 25 1998",
+    "director": "Steven Zaillian",
+    "title": "A Civil Action",
+    "genre": "Drama",
+    "imdbRating": 6.4,
+    "runningTimeMin": 112
+  },
+  {
+    "id": 137,
+    "releaseDate": "Dec 25 2003",
+    "director": "Anthony Minghella",
+    "title": "Cold Mountain",
+    "genre": "Drama",
+    "imdbRating": 7.3,
+    "runningTimeMin": 152
+  },
+  {
+    "id": 138,
+    "releaseDate": "Feb 18 2005",
+    "director": "Francis Lawrence",
+    "title": "Constantine",
+    "genre": "Action",
+    "imdbRating": 6.7,
+    "runningTimeMin": 122
+  },
+  {
+    "id": 139,
+    "releaseDate": "Aug 06 2004",
+    "director": "Michael Mann",
+    "title": "Collateral",
+    "genre": "Action",
+    "imdbRating": 7.8,
+    "runningTimeMin": 120
+  },
+  {
+    "id": 140,
+    "releaseDate": "Jun 06 1997",
+    "director": "Simon West",
+    "title": "Con Air",
+    "genre": "Action",
+    "imdbRating": 6.6,
+    "runningTimeMin": 115
+  },
+  {
+    "id": 141,
+    "releaseDate": "Aug 08 1997",
+    "director": "Richard Donner",
+    "title": "Conspiracy Theory",
+    "genre": "Thriller/Suspense",
+    "imdbRating": 6.5,
+    "runningTimeMin": 135
+  },
+  {
+    "id": 142,
+    "releaseDate": "Jul 11 1997",
+    "director": "Robert Zemeckis",
+    "title": "Contact",
+    "genre": "Drama",
+    "imdbRating": 7.3,
+    "runningTimeMin": 150
+  },
+  {
+    "id": 143,
+    "releaseDate": "Aug 15 1997",
+    "director": "James Mangold",
+    "title": "Cop Land",
+    "genre": "Drama",
+    "imdbRating": 6.9,
+    "runningTimeMin": 105
+  },
+  {
+    "id": 144,
+    "releaseDate": "Dec 21 2006",
+    "director": "Yimou Zhang",
+    "title": "Man cheng jin dai huang jin jia",
+    "genre": "Action",
+    "imdbRating": 7,
+    "runningTimeMin": 113
+  },
+  {
+    "id": 145,
+    "releaseDate": "May 06 2005",
+    "director": "Paul Haggis",
+    "title": "Crash",
+    "genre": "Drama",
+    "imdbRating": 6.1,
+    "runningTimeMin": 107
+  },
+  {
+    "id": 146,
+    "releaseDate": "Jan 25 2002",
+    "director": "Kevin Reynolds",
+    "title": "The Count of Monte Cristo",
+    "genre": "Drama",
+    "imdbRating": 7.6,
+    "runningTimeMin": 131
+  },
+  {
+    "id": 147,
+    "releaseDate": "Mar 05 1999",
+    "director": "Roger Kumble",
+    "title": "Cruel Intentions",
+    "genre": "Drama",
+    "imdbRating": 6.7,
+    "runningTimeMin": 95
+  },
+  {
+    "id": 148,
+    "releaseDate": "Apr 16 2010",
+    "director": "James Ivory",
+    "title": "The City of Your Final Destination",
+    "genre": "Drama",
+    "imdbRating": 6.6,
+    "runningTimeMin": 114
+  },
+  {
+    "id": 149,
+    "releaseDate": "Sep 18 2009",
+    "director": "Phil Lord",
+    "title": "Cloudy with a Chance of Meatballs",
+    "genre": "Comedy",
+    "imdbRating": 7.2,
+    "runningTimeMin": 90
+  },
+  {
+    "id": 150,
+    "releaseDate": "Mar 19 2004",
+    "director": "Zack Snyder",
+    "title": "Dawn of the Dead",
+    "genre": "Horror",
+    "imdbRating": 7.4,
+    "runningTimeMin": 100
+  }
+]
+
