@@ -11,11 +11,11 @@ const debug = require('debug')('runner');
 const debugPerf = require('debug')('perf');
 const uuidv4 = require('uuid').v4;
 const A = require('async');
-//const Stats = require('./stats2');
 const { SSMS } = require('./ssms');
 const JSCK = require('jsck');
 const tryResolve = require('try-require').resolve;
 const createPhaser = require('./phases');
+const isIdlePhase = require('./is-idle-phase');
 const createReader = require('./readers');
 const engineUtil = require('./engine_util');
 const wl = require('./weighted-pick');
@@ -33,7 +33,6 @@ const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 module.exports = {
   runner: runner,
   validate: validate,
-  //stats: Stats,
   contextFuncs: {
     $randomString,
     $randomNumber
@@ -55,14 +54,7 @@ async function runner(script, payload, options, callback) {
   const metrics = new SSMS();
 
   let warnings = {
-    plugins: {
-      // someplugin: {
-      //   message: 'Plugin not found',
-      //   error: new Error()
-      // }
-    },
     engines: {
-      // see plugins
     }
   };
 
@@ -97,32 +89,6 @@ async function runner(script, payload, options, callback) {
   });
 
   let ee = new EventEmitter();
-
-  // Wrap metrics objects in a 1.6.x-compatible interface for backwards
-  // compatibility:
-  let pluginEvents = new EventEmitter();
-  ee.on('stats', function(stats) {
-    if(artillery.runtimeOptions.legacyReporting) {
-      let wrapped = SSMS.legacyReport(stats);
-      pluginEvents.emit('stats', wrapped);
-    } else {
-      pluginEvents.emit('stats', stats);
-    }
-  });
-  ee.on('done', function(stats) {
-    if(artillery.runtimeOptions.legacyReporting) {
-      let wrapped = SSMS.legacyReport(stats);
-      pluginEvents.emit('done', wrapped);
-    } else {
-      pluginEvents.emit('done', stats);
-    }
-  });
-  ee.on('phaseStarted', function(spec) {
-    pluginEvents.emit('phaseStarted', spec);
-  });
-  ee.on('phaseCompleted', function(spec) {
-    pluginEvents.emit('phaseCompleted', spec);
-  });
 
   //
   // load engines:
@@ -161,86 +127,6 @@ async function runner(script, payload, options, callback) {
     contextVars = await handleScriptHook('before', runnableScript, runnerEngines, ee, contextVars);
   }
 
-  //
-  // load plugins:
-  //
-  let runnerPlugins = [];
-  let requirePaths = [];
-
-  let pro = null;
-  if (tryResolve('artillery-pro')) {
-    pro = require('artillery-pro');
-    requirePaths = requirePaths.concat(pro.getPluginPath());
-  } else {
-    debug('Artillery Pro is not installed.');
-  }
-
-  requirePaths.push('');
-
-  if (process.env.ARTILLERY_PLUGIN_PATH) {
-    requirePaths = requirePaths.concat(process.env.ARTILLERY_PLUGIN_PATH.split(':'));
-  }
-
-  debug('require paths: ', requirePaths);
-
-  runnableScript.config.plugins = runnableScript.config.plugins || {};
-
-  if (process.env.ARTILLERY_PLUGINS) {
-    let additionalPlugins = {};
-    try {
-      additionalPlugins = JSON.parse(process.env.ARTILLERY_PLUGINS);
-    } catch (ignoreErr) {
-      debug(ignoreErr);
-    }
-    runnableScript.config.plugins = Object.assign(
-      runnableScript.config.plugins,
-      additionalPlugins);
-  }
-
-  _.each(runnableScript.config.plugins, function tryToLoadPlugin(pluginConfig, pluginName) {
-    let pluginConfigScope = pluginConfig.scope || runnableScript.config.pluginsScope;
-    let pluginPrefix = pluginConfigScope ? pluginConfigScope : 'artillery-plugin-';
-    let requireString = pluginPrefix + pluginName;
-    let Plugin, plugin, pluginErr;
-
-    requirePaths.forEach(function(rp) {
-      try {
-        Plugin = require(path.join(rp, requireString));
-        if (typeof Plugin === 'function') {
-          // Plugin interface v1
-          plugin = new Plugin(runnableScript.config, pluginEvents);
-          plugin.__name = pluginName;
-        } else if (typeof Plugin === 'object' && typeof Plugin.Plugin === 'function') {
-          // Plugin interface 2+
-          plugin = new Plugin.Plugin(runnableScript, pluginEvents, options);
-          plugin.__name = pluginName;
-        }
-      } catch (err) {
-        debug(err);
-        pluginErr = err;
-      }
-    });
-
-    if (!Plugin || !plugin) {
-      let msg;
-
-      if (pluginErr.code === 'MODULE_NOT_FOUND') {
-        msg = `WARNING: Plugin ${pluginName} specified but module ${requireString} could not be found (${pluginErr.code})`;
-      } else {
-        msg = `WARNING: Could not initialize plugin ${pluginName} (${pluginErr.message})`;
-      }
-
-      console.log(msg);
-
-      warnings.plugins[pluginName] = {
-        message: 'Could not load'
-      };
-    } else {
-      debug('Plugin %s loaded from %s', pluginName, requireString);
-      runnerPlugins.push(plugin);
-    }
-  });
-
   const promise = new Promise(function(resolve, reject) {
     ee.run = function() {
       let runState = {
@@ -249,7 +135,6 @@ async function runner(script, payload, options, callback) {
         compiledScenarios: null,
         scenarioEvents: null,
         picker: undefined,
-        plugins: runnerPlugins,
         engines: runnerEngines,
         metrics: metrics
       };
@@ -259,25 +144,6 @@ async function runner(script, payload, options, callback) {
 
     ee.stop = async function (done) {
       metrics.stop();
-
-      // allow plugins to cleanup
-      A.eachSeries(
-        runnerPlugins,
-        function(plugin, next) {
-          if (plugin.cleanup) {
-            plugin.cleanup(function(err) {
-              if (err) {
-                debug(err);
-              }
-              return next();
-            });
-          } else {
-            return next();
-          }
-        },
-        function(err) {
-          return done(err);
-        });
     };
 
     // FIXME: Warnings should be returned from this function instead along with
@@ -310,8 +176,14 @@ function run(script, ee, options, runState, contextVars) {
   });
   phaser.on('phaseStarted', function(spec) {
     ee.emit('phaseStarted', spec);
+    // if (isIdlePhase(spec)) {
+    //   ee.emit('stats', SSMS.empty());
+    // }
   });
   phaser.on('phaseCompleted', function(spec) {
+    // if (isIdlePhase(spec)) {
+    //   ee.emit('stats', SSMS.empty());
+    // }
     ee.emit('phaseCompleted', spec);
   });
   phaser.on('done', function() {
@@ -320,8 +192,10 @@ function run(script, ee, options, runState, contextVars) {
     const doneYet = setInterval(function checkIfDone() {
       if (runState.pendingScenarios === 0) {
         clearInterval(doneYet);
+
         metrics.aggregate(true);
-        const totals = SSMS.zoomOut(intermediates);
+
+        const totals = SSMS.pack(intermediates);
 
         (async () => {
           if (script.after) {
@@ -335,12 +209,13 @@ function run(script, ee, options, runState, contextVars) {
       } else {
         debug('Pending scenarios: %s', runState.pendingScenarios);
       }
-    }, 500);
+    }, 1000);
   });
 
   metrics.on('metricData', (ts, periodData) => {
+    const cloned = SSMS.deserializeMetrics(SSMS.serializeMetrics(periodData));
     intermediates.push(periodData);
-    ee.emit('stats', periodData);
+    ee.emit('stats', cloned);
   });
 
   phaser.run();
