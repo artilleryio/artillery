@@ -1,11 +1,32 @@
 const express = require('express');
-const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 
 const app = express();
 
 const response = require('./data/movies.json');
 
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(cookieParser());
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (username && password) {
+    res.cookie('username', username);
+    res.json({ success: true });
+  } else {
+    res.status(422).json({ error: 'Username and password are required' });
+  }
+});
+
+app.delete('/logout', (_, res) => {
+  res.clearCookie('username');
+  res.sendStatus(204);
+});
+
+app.get('/account', (req, res) => {
+  res.json({ user: req.cookies });
+});
 
 app.get('/movies', (_, res) => {
   res.json(response);
