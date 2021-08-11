@@ -10,7 +10,7 @@ test('think', function(t) {
     ee.on('done', function(nr) {
       const report = SSMS.legacyReport(nr).report();
       t.assert('stats should be empty', report.codes === {});
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
 

@@ -18,9 +18,9 @@ test('scenarios avoided - arrival rate', function(t) {
             const stats = SSMS.legacyReport(nr).report();
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-            ee.stop(() => {
-                t.end();
-              });
+          ee.stop().then(() => {
+            t.end();
+          });
 
         });
         ee.run();
@@ -41,9 +41,9 @@ test('scenarios avoided - arrival count', function(t) {
             const stats = SSMS.legacyReport(nr).report();
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-            ee.stop(() => {
-                t.end();
-              });
+          ee.stop().then(() => {
+            t.end();
+          });
 
         });
         ee.run();
@@ -64,9 +64,9 @@ test('scenarios avoided - ramp to', function(t) {
             const stats = SSMS.legacyReport(nr).report();
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-            ee.stop(() => {
-                t.end();
-              });
+          ee.stop().then(() => {
+            t.end();
+          });
 
         });
         ee.run();
@@ -88,9 +88,9 @@ test('scenarios avoided - multiple phases', function(t) {
             t.assert(stats.codes['200'] > 0, 'should receive some 200s');
             t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
             t.assert(stats.scenariosAvoided < 1000, 'should avoid less than 1000');
-            ee.stop(() => {
-                t.end();
-              });
+          ee.stop().then(() => {
+            t.end();
+          });
 
         });
         ee.run();

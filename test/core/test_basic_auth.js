@@ -16,7 +16,7 @@ test('HTTP basic auth', (t) => {
       t.assert(
         requests > 0 && (code200 === code401 * 2),
         `Expected twice as many 200s as 401s, got ${code200} 200s and ${code401} 401s`);
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
 

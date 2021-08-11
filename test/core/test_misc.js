@@ -59,10 +59,9 @@ l.each(SCRIPTS, function(fn) {
         }
         t.assert(Object.keys(report.errors).length === 0, 'Should have no errors');
 
-        ee.stop(() => {
+        ee.stop().then(() => {
           t.end();
         });
-
       });
 
       ee.run();

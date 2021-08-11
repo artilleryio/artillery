@@ -17,8 +17,8 @@ test('concurrent runners', function(t) {
                  'Stats from the other runner don\'t get merged in');
         done++;
         if (done === 2) {
-          ee1.stop(() => {
-            ee2.stop(() => {
+          ee1.stop().then(() => {
+            ee2.stop().then(() => {
               t.end();
             });
           });
@@ -31,8 +31,8 @@ test('concurrent runners', function(t) {
                  'Stats from the other runner don\'t get merged in');
         done++;
         if (done === 2) {
-          ee2.stop(() => {
-            ee1.stop(() => {
+          ee2.stop().then(() => {
+            ee1.stop().then(() => {
               t.end();
             });
           });
