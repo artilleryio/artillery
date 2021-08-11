@@ -27,6 +27,8 @@ tap.test('Basic metric collection', async t => {
   t.ok(buckets.length > 0 && buckets.length <= 2, 'Should have no more than two buckets of metric data');
 
   const metrics = mdb.getMetrics(buckets[0]);
+
+  t.ok(typeof metrics.histograms['sprint_duration'].max === 'number', 'Histograms should be objects with readable fields');
   t.ok(metrics.histograms['sprint_duration'], 'Should have a summary for sprint_duration histogram');
   t.ok(metrics.counters['num_sprints'], 'Should have num_sprints counter');
   t.ok(metrics.rates['sprints'], 'Should have sprints rate measurement');

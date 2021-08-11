@@ -62,6 +62,27 @@ class SSMS extends EventEmitter {
     return pds;
   }
 
+  // TODO: first/last metric timestamps should not = period
+  static empty(ts) {
+    const period = normalizeTs(ts || Date.now());
+    return {
+      counters: {},
+      histograms: {},
+      rates: {},
+      firstCounterAt: 0,
+      firstHistogramAt: 0,
+      lastCounterAt: 0,
+      lastHistogramAt: 0,
+      firstMetricAt: 0,
+      lastMetricAt: 0,
+      period
+    };
+  }
+
+  static summarizeHistogram(h) {
+    return summarizeHistogram(h);
+  }
+
   // Take metric data for a period and return a summary object with 1.6.x-compatible format
   static legacyReport(pd) {
     const result = {
@@ -88,7 +109,7 @@ class SSMS extends EventEmitter {
     };
 
     if (pd.histograms && typeof pd.histograms['core.vusers.session_length'] !== 'undefined') {
-      result.scenarioDuration = summarizeHistogram(pd.histograms['core.vusers.session_length']._raw);
+      result.scenarioDuration = summarizeHistogram(pd.histograms['core.vusers.session_length']);
     }
 
     // scenarioCounts
@@ -100,7 +121,7 @@ class SSMS extends EventEmitter {
     // latency
     const latencyh = pd.histograms ? pd.histograms['engine.http.response_time'] || pd.histograms['engine.socketio.response_time'] : null;
     if(latencyh) {
-      result.latency = summarizeHistogram(latencyh._raw);
+      result.latency = summarizeHistogram(latencyh);
     }
 
     // HTTP codes
@@ -124,6 +145,7 @@ class SSMS extends EventEmitter {
     };
   }
 
+  // Return object indexed by period (as string):
   static mergeBuckets(periodData) {
     debug(`mergeBuckets // timeslices: ${periodData.map(pd => pd.period)}`);
 
@@ -162,18 +184,12 @@ class SSMS extends EventEmitter {
       //
       for (const [name, value] of Object.entries(pd.histograms)) {
         if (typeof result[ts].histograms[name] === 'undefined') {
-          result[ts].histograms[name] = {_raw: value._raw};
+          result[ts].histograms[name] = value;
         } else {
           // NOTE: this will throw if gamma (accuracy) parameters are different
           // in those two sketches
-          result[ts].histograms[name]._raw.merge(value._raw);
+          result[ts].histograms[name].merge(value);
         }
-      }
-
-      for (const name of Object.keys(result[ts].histograms)) {
-        const value = result[ts].histograms[name];
-        result[ts].histograms[name] = summarizeHistogram(value._raw);
-        result[ts].histograms[name]._raw = value._raw;
       }
 
       //
@@ -204,9 +220,9 @@ class SSMS extends EventEmitter {
     return result;
   }
 
-  // Aggregate at lower resolution, i.e. combine three periods of 10s into one of 30s
-  // Note: does not check that periods are contiguous, everything is simply merged together.
-  static zoomOut(periods) {
+  // Aggregate at lower resolution, i.e. combine three distinct periods of 10s into one of 30s
+  // Note: does not check that periods are contiguous, everything is simply merged together
+  static pack(periods) {
     const result = {
       counters: {},
       histograms: {},
@@ -214,9 +230,9 @@ class SSMS extends EventEmitter {
     };
 
     for (const pd of periods) {
-      pd.counters = pd.counters || {};
-      pd.histograms = pd.histograms || {};
-      pd.rates = pd.rates || {};
+      pd.counters = Object.assign({}, pd.counters || {});
+      pd.histograms = Object.assign({}, pd.histograms || {});
+      pd.rates = Object.assign({}, pd.rates || {});
 
       for (const [name, value] of Object.entries(pd.counters)) {
         if (!result.counters[name]) {
@@ -226,13 +242,14 @@ class SSMS extends EventEmitter {
         result.counters[name] += value;
       }
 
-      for (const [name, value] of Object.entries(pd.histograms)) {
+      for (const [name, origValue] of Object.entries(pd.histograms)) {
+        const value = SSMS.cloneHistogram(origValue);
         if (typeof result.histograms[name] === 'undefined') {
-          result.histograms[name] = value._raw;
+          result.histograms[name] = value;
         } else {
           // NOTE: this will throw if gamma (accuracy) parameters are different
           // in those two sketches
-          result.histograms[name].merge(value._raw);
+          result.histograms[name].merge(value);
         }
       }
 
@@ -248,12 +265,6 @@ class SSMS extends EventEmitter {
       }
     }
 
-    // Summarize histograms:
-    for (const [name, value] of Object.entries(result.histograms)) {
-      result.histograms[name] = summarizeHistogram(value);
-      result.histograms[name]._raw = value;
-    }
-
     for (const [name, _value] of Object.entries(result.rates)) {
       result.rates[name] = round(result.rates[name] / periods.length, 0);
     }
@@ -267,8 +278,11 @@ class SSMS extends EventEmitter {
     result.lastMetricAt = max([result.lastHistogramAt, result.lastCounterAt]);
 
     result.period = max(periods.map(p => p.period));
-
     return result;
+  }
+
+  static cloneHistogram(h) {
+    return DDSketch.fromProto(h.toProto());
   }
 
   static serializeMetrics(pd) {
@@ -278,26 +292,25 @@ class SSMS extends EventEmitter {
     if (ph) {
       for (const n of Object.keys(ph)) {
         const h = ph[n];
-        const buf = h._raw.toProto();
+        const buf = h.toProto();
         serializedHistograms[n] = buf;
       }
     }
 
     // TODO: Mark as serialized, otherwise to check whether we have a serialized object or not
     // is to check if .histograms is a Buffer
-    const result = Object.assign(pd, {histograms: serializedHistograms});
+    const result = Object.assign({}, pd, {histograms: serializedHistograms});
     return stringify(result);
   }
 
   static deserializeMetrics(pd) {
     const object = parse(pd);
     for (const [name, buf] of Object.entries(object.histograms)) {
-      // FIXME: currently summary stats are lost, see:
-      // https://github.com/DataDog/sketches-js/blob/master/src/ddsketch/DDSketch.ts#L200
       const h = DDSketch.fromProto(buf);
-      object.histograms[name] = summarizeHistogram(h);
-      object.histograms[name]._raw = h;
+      object.histograms[name] = h;
     }
+
+    object.period = object.period;
 
     return object;
   }
@@ -340,15 +353,7 @@ class SSMS extends EventEmitter {
     }
 
     if (histograms) {
-      // eslint-disable no-array-reduce
-      result.histograms = Object.keys(histograms).reduce(
-        (acc, k) => {
-          const h = histograms[k];
-          acc[k] = summarizeHistogram(h);
-          acc[k]._raw = h;
-          return acc;
-        },
-        {});
+      result.histograms = histograms;
     }
 
     if (rates) {
@@ -523,6 +528,7 @@ function round(number, decimals) {
   return Math.round(number * m) / m;
 }
 
+// h is an instance of DDSketch
 function summarizeHistogram(h) {
   return {
     min: round(h.min, 1),
@@ -610,4 +616,8 @@ function max(values) {
   return m === Number.NEGATIVE_INFINITY ? undefined : m;
 }
 
-module.exports = {SSMS};
+module.exports = {
+  SSMS,
+  summarizeHistogram,
+  normalizeTs,
+};
