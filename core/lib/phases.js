@@ -163,16 +163,21 @@ function createArrivalCount(spec, ee) {
   const task = function(callback) {
     ee.emit('phaseStarted', spec);
     const duration = spec.duration * 1000;
-    const interval = duration / spec.arrivalCount;
-    const p = arrivals.uniform.process(interval, duration);
-    p.on('arrival', function() {
-      ee.emit('arrival', spec);
-    });
-    p.on('finished', function() {
-      ee.emit('phaseCompleted', spec);
+
+    if(spec.arrivalCount > 0) {
+      const interval = duration / spec.arrivalCount;
+      const p = arrivals.uniform.process(interval, duration);
+      p.on('arrival', function() {
+        ee.emit('arrival', spec);
+      });
+      p.on('finished', function() {
+        ee.emit('phaseCompleted', spec);
+        return callback(null);
+      });
+      p.start();
+    } else {
       return callback(null);
-    });
-    p.start();
+    }
   };
 
   return task;
