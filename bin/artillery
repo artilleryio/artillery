@@ -16,6 +16,8 @@ const { rainbow } = require('../util');
 const telemetry = require('../lib/telemetry');
 
 async function main() {
+  await createGlobalObject();
+
   console.error(chalk.magenta(`
 ARTILLERY DEV PREVIEW 🚀
 Please report bugs on https://github.com/artilleryio/artillery/issues
@@ -62,5 +64,4 @@ if (notifier.update) {
   notifier.notify();
 }
 
-createGlobalObject();
 main();

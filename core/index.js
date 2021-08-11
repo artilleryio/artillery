@@ -1,5 +1,9 @@
 const { createGlobalObject } = require('../lib/artillery-global');
 
-createGlobalObject();
+async function main() {
+  await createGlobalObject();
+}
+
+main();
 
 module.exports = require('./lib/runner');
