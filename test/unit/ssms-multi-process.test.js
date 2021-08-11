@@ -88,7 +88,7 @@ tap.test('Metric aggregation', async t => {
     // we also record the same measurement in our control instance:
     control.histogram(hname, dp, ts);
     control.incr(cname, 1, ts);
-    await sleep(_.random(1, 50));
+    await sleep(_.random(1, 2));
   }
 
   await sleep(1000);
@@ -124,6 +124,8 @@ tap.test('Metric aggregation', async t => {
     combined[Object.keys(merged)[0]] = merged[Object.keys(merged)[0]]; // we only expect merged object to have one key
   }
 
+  const packed = SSMS.pack(metricData[Object.keys(metricData)[0]]);
+
   //
   // Compare aggregated metrics with those recorded in the "control" SSMS instance
   //
@@ -136,17 +138,24 @@ tap.test('Metric aggregation', async t => {
     for(const [hname, h] of Object.entries(summary.histograms)) {
       t.comment(`histogram: ${hname}`);
       t.ok(h.min === controlSummary.histograms[hname].min, 'min values should be equal');
-      t.ok(h.p99 === controlSummary.histograms[hname].p99, 'p99 values should be equal');
+      console.log('h p99 =====>', round(h.getValueAtQuantile(0.99), 1));
+      console.log('control p99 ======>', round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1));
+      t.ok(round(h.getValueAtQuantile(0.99), 1) === round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1), 'p99 values should be equal');
       t.ok(h.count === controlSummary.histograms[hname].count, 'count values should be equal');
     }
 
     // TODO: Add rates
 
     // Metadata:
-    t.comment('period comparison', summary.period, typeof summary.period, controlSummary.period, typeof controlSummary.period);
+    t.comment('period comparison: summary ->', summary.period, typeof summary.period, 'controlSummary ->', controlSummary.period, typeof controlSummary.period);
     t.ok(summary.period === controlSummary.period, 'bucket id should be the same');
     t.ok(summary.lastMetricAt === controlSummary.lastMetricAt, 'lastMetricAt should be equal');
     t.ok(summary.lastCounterAt === controlSummary.lastCounterAt, 'lastCounterAt should be equal');
     t.ok(summary.firstHistogramAt === controlSummary.firstHistogramAt, 'firstHistogramAt should be equal');
   }
 });
+
+function round(number, decimals) {
+  const m = 10 ** decimals;
+  return Math.round(number * m) / m;
+}
