@@ -19,7 +19,7 @@ test('cookie jar http', function(t) {
             console.log(res.body);
             console.log(report);
           }
-          ee.stop(() => {
+          ee.stop().then(() => {
             t.end();
           });
 
@@ -45,7 +45,7 @@ test('cookie jar socketio', function(t) {
           console.log(res.body);
           console.log(report);
         }
-        ee.stop(() => {
+        ee.stop().then(() => {
           t.end();
         });
 
@@ -67,7 +67,7 @@ test('default cookies', function(t) {
                'There should be some 200s');
       t.assert(report.codes[403] === undefined,
                'There should be no 403s');
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
 
@@ -86,7 +86,7 @@ test('no default cookie', function(t) {
                'There should be some 403s');
       t.assert(report.codes[200] === undefined,
                'There should be no 200s');
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
 

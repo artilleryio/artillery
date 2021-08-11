@@ -15,7 +15,7 @@ test('arrival phases', function(t) {
     });
 
     ee.on('done', function(stats) {
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
     });

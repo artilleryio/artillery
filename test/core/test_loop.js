@@ -20,7 +20,7 @@ test('simple loop', (t) => {
       t.assert(
         requests === expected,
         'Should have ' + expected + ' requests for each completed scenario');
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
 
@@ -51,10 +51,9 @@ test('loop with range', (t) => {
       // If $loopCount breaks, we'll see 404s here.
       t.assert(!code404,
                'There should be no 404s');
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
-
     });
     ee.run();
   });

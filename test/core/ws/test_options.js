@@ -26,8 +26,8 @@ test('TLS options for WebSocket', function(t) {
           t.assert(Object.keys(report2.errors).length === 1,
                    'Test ran with one error: ' +
                    (Object.keys(report2.errors)[0]));
-          sessions.stop(() => {
-            sessions2.stop(() => {
+          sessions.stop().then(() => {
+            sessions2.stop().then(() => {
               t.end();
             });
           });
@@ -47,7 +47,7 @@ test('Subprotocols - using a known subprotocol', function(t) {
       t.assert(
         Object.keys(report.errors).length === 0,
         'Test with a subprotocol set completed with no errors');
-      sessions.stop(() => {
+      sessions.stop().then(() => {
           t.end();
       });
     });
@@ -67,7 +67,7 @@ test('Subprotocols - no subprotocol', function(t) {
       t.assert(
         Object.keys(report.errors).length === 0,
         'Test with no subprotocol set completed with no errors');
-      sessions.stop(() => {
+      sessions.stop().then(() => {
           t.end();
       });
     });
@@ -96,7 +96,7 @@ test('Subprotocols - unknown subprotocol', function(t) {
         'The error should be of "no subprotocol" type'
       );
 
-      sessions.stop(() => {
+      sessions.stop().then(() => {
         t.end();
       });
     });

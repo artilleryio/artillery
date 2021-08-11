@@ -41,7 +41,7 @@ test('single payload', function(t) {
         let scenarios = report.scenariosCompleted;
         t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
         t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
-        ee.stop(() => {
+        ee.stop().then(() => {
           t.end();
         });
       });
@@ -96,7 +96,7 @@ test('multiple_payloads', function(t) {
           t.assert(report.codes[404] > 0, 'There are some 404s (URLs constructed from pets.csv)');
           t.assert(report.codes[200] > 0, 'There are some 200s (URLs constructed from urls.csv)');
           t.assert(report.codes[201] > 0, 'There are some 201s (POST with valid data from pets.csv)');
-          ee.stop(() => {
+          ee.stop().then(() => {
             t.end();
           });
         });

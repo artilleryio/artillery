@@ -14,7 +14,7 @@ test('request probability', (t) => {
       let requests = report.requestsCompleted;
       t.assert(requests < 130,
                'Should have completed ~10% = ~100 requests in total, actually completed ' + requests);
-      ee.stop(() => {
+      ee.stop().then(() => {
         t.end();
       });
 
