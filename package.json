@@ -22,8 +22,11 @@
       "@oclif/plugin-help"
     ],
     "topics": {
-      "run": {
-        "description": "Run a test script"
+      "aws": {
+        "description": "run tests on AWS"
+      },
+      "pro": {
+        "description": "deploy and manage Artillery Pro"
       }
     }
   },
