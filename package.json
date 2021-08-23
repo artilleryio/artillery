@@ -20,7 +20,12 @@
     "_helpClass": "./bin/help",
     "plugins": [
       "@oclif/plugin-help"
-    ]
+    ],
+    "topics": {
+      "run": {
+        "description": "Run a test script"
+      }
+    }
   },
   "scripts": {
     "test": "export ARTILLERY_DISABLE_TELEMETRY=true && tap --timeout=120 --no-coverage test/unit/*test*.js && bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh",
