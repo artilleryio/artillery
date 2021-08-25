@@ -15,7 +15,7 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
 - [using-cookies](./using-cookies) - using cookies with HTTP services
 - [file-uploads](./file-uploads) - HTTP file uploads with Artillery Pro
-- [functional testing](./artillery-plugin-expect) - use `artillery-plugin-expect` to run both load and functional tests
+- [functional testing](./functional-testing-with-expect-plugin) - use `artillery-plugin-expect` to run both load and functional tests
 - [scenario-weights](./scenario-weights) - set weights to change how often Artillery runs a scenario
 - [CSV-driven functional testing](./table-driven-functional-tests) - define functional tests with a CSV file
 
