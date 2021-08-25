@@ -106,6 +106,16 @@ test('updateArtilleryConfig', function(t) {
   t.end();
 })
 
+test('padded', (t) => {
+  t.equal(
+    util.padded('name', 'result', 10, x => x),
+    'name ...... result',
+    'pads the space between the name and the result according to the length',
+  );
+
+  t.end();
+});
+
 test('util - tear down', (t) => {
   sandbox.restore();
 
