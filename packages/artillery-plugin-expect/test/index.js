@@ -16,7 +16,8 @@ const path = require('path');
 global.artillery = {
   util: {
     template: require('artillery/util').template
-  }
+  },
+  log: console.log.bind(console)
 };
 
 test('Basic interface checks', async t => {
@@ -136,7 +137,7 @@ test('Expectation: contentType', async (t) => {
     [ 'json', {}, 'charset=utf-8; application/json', {}, true ],
     [ 'json', {}, 'application/problem+json; charset=utf-8', {}, true ],
     [ 'json', {}, 'charset=utf-8; application/problem+json', {}, true ],
-    
+
     [ 'text/plain', 'string', 'text/plain', {}, true ],
     [ 'TEXT/PLAIN', 'string', 'text/plain', {}, true ],
     [ 'text/plain', 'string', 'TEXT/PLAIN', {}, true ],
@@ -164,7 +165,7 @@ test('Integration with Artillery', async (t) => {
   shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
   shelljs.env["PATH"] = process.env.PATH;
   const result = shelljs.exec(
-    `${__dirname}/../node_modules/.bin/artillery run ${__dirname}/pets-test.yaml`,
+    `${__dirname}/../node_modules/.bin/artillery run --solo -q ${__dirname}/pets-test.yaml`,
   {
     silent: false
   });
