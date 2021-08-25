@@ -404,7 +404,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         requestParams.throwHttpErrors = false;
 
-        if (!requestParams.url.startsWith('http')) {
+        if (!requestParams.url || !requestParams.url.startsWith('http')) {
           let err = new Error(`Invalid URL - ${requestParams.url}`);
           ee.emit('error', err.message);
           return callback(err, context);
