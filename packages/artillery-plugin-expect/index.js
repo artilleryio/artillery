@@ -16,6 +16,16 @@ const REPORTERS = require('./lib/reporters');
 module.exports.Plugin = ExpectationsPlugin;
 
 function ExpectationsPlugin(script, events) {
+  if(!global.artillery && !global.artillery.log) {
+    console.error('This plugin requires Artillery v2');
+    return;
+  }
+
+  if (typeof process.env.WORKER_ID === 'undefined') {
+    debug('Not running in a worker, exiting');
+    return;
+  }
+
   this.script = script;
   this.events = events;
 
@@ -70,9 +80,9 @@ function ExpectationsPlugin(script, events) {
 
 function expectationsPluginOnError(scenarioErr, requestParams, userContext, events, done) {
   if (userContext.expectationsPlugin.outputFormat === 'json') {
-    console.log(JSON.stringify({ ok: false, error: scenarioErr.message }));
+    artillery.log(JSON.stringify({ ok: false, error: scenarioErr.message }));
   } else {
-    console.log(chalk.red('Error:'), scenarioErr.message);
+    artillery.log(`${chalk.red('Error:')} ${scenarioErr.message}`);
   }
   return done();
 }
