@@ -1,0 +1,21 @@
+config:
+  target: https://artillery.io
+  processor: ./helpers.js
+  plugins:
+    expect: {}
+scenarios:
+  - flow:
+    # Call our custom function which will create a "data" variable
+    # containing URLs + assertions we want to run:
+    - function: loadRequestData
+    # Loop over each element in the data variable, with loop-over
+    # Each element in the "data" array can be accessed via the special
+    # $loopElement variable.
+    # https://artillery.io/docs/guides/guides/http-reference.html#Looping-through-an-array
+    - loop:
+        - get:
+            url: "{{ $loopElement.url }}"
+            followRedirect: false
+            expect:
+              statusCode: "{{ $loopElement.code }}"
+      over: "data"
