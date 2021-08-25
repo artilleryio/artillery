@@ -113,6 +113,18 @@ test('padded', (t) => {
     'pads the space between the name and the result according to the length',
   );
 
+  t.equal(
+    util.padded('longer name', 'result', 9, x => x),
+    'longer...  result',
+    'truncates the name when longer than the allowed length',
+  );
+
+  t.equal(
+    util.padded('exact length', 'result', 12, x => x),
+    'exact length  result',
+    'no truncating when the string length exactly matches the allowed length',
+  );
+
   t.end();
 });
 
