@@ -22,4 +22,4 @@ jobs:
           path-to-document: 'https://github.com/artilleryio/artillery/blob/master/doc/CLA.md'
           # branch should not be protected
           branch: 'master'
-          allowlist: []
+          allowlist: ''
