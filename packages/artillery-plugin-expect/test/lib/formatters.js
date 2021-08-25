@@ -10,14 +10,18 @@ const req = {
     url: 'http://localhost/api/a_path'
 };
 
+global.artillery = {
+  log: console.log.bind(console)
+};
+
 test.beforeEach(() => {
     loggedMessages = [];
-    origConsole = console.log;
-    console.log = (message) => loggedMessages.push(message);
+    origConsole = artillery.log;
+    artillery.log = (message) => loggedMessages.push(message);
 });
 
 test.afterEach(() => {
-    console.log = origConsole;
+    artillery.log = origConsole;
 });
 
 test('does not log ok status', async t => {
