@@ -17,9 +17,10 @@ docker run --rm -it artilleryio/artillery:$DOCKER_TAG dino
 
 echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
+docker push artilleryio/artillery:$DOCKER_TAG
+
 # If the tagged release is not a dev release, tag it as the latest.
 if [[ ${DOCKER_TAG} != *"-dev"* ]] ; then
     docker tag artilleryio/artillery:$DOCKER_TAG artilleryio/artillery:latest
+    docker push artilleryio/artillery:latest
 fi
-
-docker push artilleryio/artillery --all-tags
