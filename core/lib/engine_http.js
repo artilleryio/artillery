@@ -631,7 +631,7 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
   let delta = (endedAt[0] * 1e9) + endedAt[1];
   ee.emit('counter', 'engine.http.codes.' + code, 1);
   ee.emit('counter', 'engine.http.responses', 1);
-  ee.emit('rate', 'engine.http.response_rate');
+  // ee.emit('rate', 'engine.http.response_rate');
   ee.emit('histogram', 'engine.http.response_time', delta/1e6); // ms
   let body = '';
   if (maybeCallback) {
