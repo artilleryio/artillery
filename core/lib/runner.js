@@ -169,12 +169,13 @@ async function runner(script, payload, options, callback) {
   }
 
   _.each(runnableScript.config.plugins, function tryToLoadPlugin(pluginConfig, pluginName) {
+
     let pluginConfigScope = pluginConfig.scope || runnableScript.config.pluginsScope;
     let pluginPrefix = pluginConfigScope ? pluginConfigScope : 'artillery-plugin-';
     let requireString = pluginPrefix + pluginName;
     let Plugin, plugin, pluginErr;
 
-    requirePaths.forEach(function(rp) {
+    for(const rp of requirePaths) {
       try {
         Plugin = require(path.join(rp, requireString));
         if (typeof Plugin === 'function') {
@@ -186,11 +187,12 @@ async function runner(script, payload, options, callback) {
           plugin = new Plugin.Plugin(runnableScript, ee, options);
           plugin.__name = pluginName;
         }
+        break; // stop looking for plugin
       } catch (err) {
         debug(err);
         pluginErr = err;
       }
-    });
+    }
 
     if (!Plugin || !plugin) {
       let msg;
