@@ -2,6 +2,8 @@
 
 This repo contains an example for running [Artillery](https://artillery.io/) load tests on GitHub Actions.
 
+For more details, read the ["Integrating Artillery with GitHub Actions"](https://artillery.io/docs/guides/integration-guides/github-actions.html) section in the Artillery documentation.
+
 ## Artillery test script
 
 The [example Artillery script](tests/performance/socket-io.yml) will test a running Socket.IO server. You can run the test script and see it in action: https://repl.artillery.io/?s=4ae41a53-1fa7-4256-9d1c-2a80202c1ca2&hR=true
