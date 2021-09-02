@@ -614,10 +614,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 };
 
 HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCallback, startedAt, callback) {
-  res = decompressResponse(res);
+  const decompressedRes = decompressResponse(res);
 
+  let code = decompressedRes.statusCode;
+  const endedAt = process.hrtime(startedAt);
   if (!context._enableCookieJar) {
-    const rawCookies = res.headers['set-cookie'];
+    const rawCookies = decompressedRes.headers['set-cookie'];
     if (rawCookies) {
       context._enableCookieJar = true;
       rawCookies.forEach(function(cookieString) {
@@ -629,7 +631,7 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
   ee.emit('response', res.timings.phases.firstByte * 1e6, res.statusCode, context._uid);
   let body = '';
   if (maybeCallback) {
-    res.on('data', (d) => {
+    decompressedRes.on('data', (d) => {
       body += d;
     });
   }
