@@ -6,6 +6,7 @@ This repo contains examples of how to integrate [Artillery](https://artillery.io
 
 - [github-actions](./github-actions) - a GitHub Actions workflow for running Artillery load tests
 - [azure-devops](./azure-devops) - an Azure Pipelines setup for running Artillery load tests
+- [circleci](./circleci) - a CircleCI workflow for running Artillery load tests
 
 # Contributing
 
