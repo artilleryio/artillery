@@ -11,8 +11,13 @@ const urlparse = require('url').parse;
 module.exports = {
   pretty: prettyPrint,
   json: jsonPrint,
-  prettyError: prettyError
+  prettyError: prettyError,
+  silent: silent
 };
+
+function silent(requestExpectation, req, res, userContext) {
+  return;
+}
 
 function prettyPrint(requestExpectations, req, res, userContext) {
   artillery.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}`, {});
