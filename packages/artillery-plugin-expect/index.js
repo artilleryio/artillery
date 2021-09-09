@@ -57,8 +57,9 @@ function ExpectationsPlugin(script, events) {
     done
   ) {
     userContext.expectationsPlugin = {};
-    userContext.expectationsPlugin.outputFormat =
-      script.config.plugins.expect.outputFormat || 'pretty';
+    userContext.expectationsPlugin.formatter = script.config.plugins.expect.formatter ||
+      script.config.plugins.expect.outputFormat ||
+      'pretty';
     if (script.config.plugins.expect.externalReporting) {
       // Datadog-only right now
       userContext.expectationsPlugin.reporter = 'datadog';
@@ -126,7 +127,8 @@ function expectationsPluginCheckExpectations(
   };
   userContext.expectations.push(requestExpectations);
 
-  FORMATTERS[userContext.expectationsPlugin.outputFormat].call(
+  const formatterName = userContext.expectationsPlugin.formatter;
+  FORMATTERS[formatterName].call(
     this,
     requestExpectations,
     req,
