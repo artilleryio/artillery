@@ -11,7 +11,6 @@ const _ = require('lodash');
 
 const EXPECTATIONS = require('./lib/expectations');
 const FORMATTERS = require('./lib/formatters');
-const REPORTERS = require('./lib/reporters');
 
 module.exports.Plugin = ExpectationsPlugin;
 
@@ -60,19 +59,6 @@ function ExpectationsPlugin(script, events) {
     userContext.expectationsPlugin.formatter = script.config.plugins.expect.formatter ||
       script.config.plugins.expect.outputFormat ||
       'pretty';
-    if (script.config.plugins.expect.externalReporting) {
-      // Datadog-only right now
-      userContext.expectationsPlugin.reporter = 'datadog';
-      const reportingConfig = script.config.plugins.expect.externalReporting;
-
-      // TODO fix this - metrics is undefined since the beginning
-      userContext.expectationsPlugin.datadog = metrics.init({
-        host: reportingConfig.host || 'artillery-expectations',
-        prefix: reportingConfig.prefix,
-        flushIntervalSeconds: 5,
-        defaultTags: reportingConfig.tags
-      });
-    }
     return done();
   };
 
@@ -145,16 +131,6 @@ function expectationsPluginCheckExpectations(
     res,
     userContext
   );
-
-  if (userContext.expectationsPlugin.reporter) {
-    REPORTERS[userContext.expectationsPlugin.reporter].call(
-      this,
-      requestExpectations,
-      req,
-      res,
-      userContext
-    );
-  }
 
   const failedExpectations = results.filter(res => !res.ok).length > 0;
 

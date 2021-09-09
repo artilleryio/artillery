@@ -10,7 +10,6 @@
   "license": "SEE LICENSE IN LICENSE.txt",
   "dependencies": {
     "chalk": "^2.4.2",
-    "datadog-metrics": "^0.9.3",
     "debug": "^3.2.6",
     "lodash": "^4.17.15"
   },
