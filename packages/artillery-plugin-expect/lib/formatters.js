@@ -20,7 +20,9 @@ function silent(requestExpectation, req, res, userContext) {
 }
 
 function prettyPrint(requestExpectations, req, res, userContext) {
-  artillery.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}`, {});
+  if (requestExpectations.results.length > 0) {
+    artillery.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}`, {});
+  }
 
   let hasFailedExpectations = false;
 
