@@ -16,7 +16,7 @@ module.exports.Plugin = ExpectationsPlugin;
 
 function ExpectationsPlugin(script, events) {
   if(!global.artillery && !global.artillery.log) {
-    console.error('This plugin requires Artillery v2');
+    console.error('artillery-plugin-expect requires Artillery v2');
     return;
   }
 
