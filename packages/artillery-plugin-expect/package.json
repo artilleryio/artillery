@@ -3,6 +3,9 @@
   "version": "2.0.0-dev1",
   "description": "Expectations and assertions for HTTP",
   "main": "index.js",
+  "engines": {
+    "node": ">= 14.17.6"
+  },
   "scripts": {
     "test": "bash test/run.sh"
   },
