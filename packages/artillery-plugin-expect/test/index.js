@@ -188,3 +188,19 @@ test('Integration with Artillery', async (t) => {
   t.true(output.indexOf('Errors:') === -1);
   t.true(result.code === 0);
 });
+
+test('Produce metrics', async(t) => {
+  shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
+  shelljs.env["PATH"] = process.env.PATH;
+  const result = shelljs.exec(
+    `${__dirname}/../node_modules/.bin/artillery run --solo ${__dirname}/pets-test.yaml`,
+  {
+    silent: false
+  });
+
+  const output = result.stdout;
+  console.log(output);
+
+  t.true(output.indexOf('plugins.expect') > -1);
+  t.true(result.code === 0);
+});
