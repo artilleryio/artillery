@@ -15,7 +15,7 @@ const FORMATTERS = require('./lib/formatters');
 module.exports.Plugin = ExpectationsPlugin;
 
 function ExpectationsPlugin(script, events) {
-  if(!global.artillery && !global.artillery.log) {
+  if(!global.artillery || !global.artillery.log) {
     console.error('artillery-plugin-expect requires Artillery v2');
     return;
   }
