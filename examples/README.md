@@ -6,7 +6,7 @@
 
 This repo contains examples of how to use various features in Artillery. Every example is self-contained and can be run as-is without external dependencies (other than those in `package.json`).
 
-## Example test definitions
+## Test scripts
 
 - [using-data-from-csv](./using-data-from-csv) - using data from an external CSV file in vuser scenarios
 - [http-set-custom-header](./http-set-custom-header) - set an HTTP header in a `beforeRequest` hook
@@ -23,6 +23,9 @@ This repo contains examples of how to use various features in Artillery. Every e
 
 - [artillery-plugin-hello-world](./artillery-plugin-hello-world) - a "hello world" plugin
 
+## CI/CD
+
+- [artillery-example-cicd](https://github.com/artilleryio/artillery-examples-cicd) - using Artillery with Github Actions, Gitlab CI, Azure DevOps, CircleCI and more
 
 ## Starter kits
 
