@@ -6,15 +6,27 @@ const url = require('url');
 
 module.exports = { Plugin: MetricsByEndpoint };
 
+const debug = require('debug')('plugin:metrics-by-endpoint');
+
 let useOnlyRequestNames;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
 function MetricsByEndpoint(script, events) {
+  if(!global.artillery || !global.artillery.log) {
+    console.error('artillery-plugin-metrics-endpoint requires Artillery v2');
+    return;
+  }
+
+  if (typeof process.env.WORKER_ID === 'undefined') {
+    debug('Not running in a worker, exiting');
+    return;
+  }
+
   if (!script.config.processor) {
     script.config.processor = {};
   }
 
-  useOnlyRequestNames = script.config.plugins["metrics-by-endpoint"].useOnlyRequestNames || false;
+  useOnlyRequestNames = script.config.plugins['metrics-by-endpoint'].useOnlyRequestNames || false;
 
   script.config.processor.metricsByEndpoint_beforeRequest = metricsByEndpoint_beforeRequest;
 script.config.processor.metricsByEndpoint_afterResponse = metricsByEndpoint_afterResponse;
