@@ -28,48 +28,36 @@ function MetricsByEndpoint(script, events) {
 
   useOnlyRequestNames = script.config.plugins['metrics-by-endpoint'].useOnlyRequestNames || false;
 
-  script.config.processor.metricsByEndpoint_beforeRequest = metricsByEndpoint_beforeRequest;
-script.config.processor.metricsByEndpoint_afterResponse = metricsByEndpoint_afterResponse;
+  script.config.processor.metricsByEndpoint_afterResponse = metricsByEndpoint_afterResponse;
 
   script.scenarios.forEach(function(scenario) {
-    scenario.beforeRequest = [].concat(scenario.beforeRequest || []);
-    scenario.beforeRequest.push('metricsByEndpoint_beforeRequest');
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('metricsByEndpoint_afterResponse');
   });
 }
 
-function metricsByEndpoint_beforeRequest(req, userContext, events, done) {
-  userContext.vars._metricsByEndpointStartedAt = Date.now();
-  return done();
-}
-
 function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  let delta = 0;
   // TODO: If hostname is not target, keep it.
   const baseUrl = url.parse(req.url).path;
 
-  let histoName;
-  
+  let reqName = '';
   if (useOnlyRequestNames && req.name) {
-    histoName = req.name;
+    reqName += req.name;
   } else if (req.name) {
-    histoName = `${baseUrl} (${req.name})`;
+    reqName += `${baseUrl} (${req.name})`;
   } else {
-    histoName = baseUrl;
+    reqName += baseUrl;
   }
 
-  let counterName = histoName;
+  const histoName = `plugins.metrics-by-endpont.response_time.${reqName}`;
 
   if (res.headers['server-timing']) {
-    delta = getServerTimingTotal(res.headers['server-timing']);
-    histoName = `Server-Timing ${histoName}`;
-  } else {
-    delta = Date.now() - userContext.vars._metricsByEndpointStartedAt;
+    const timing = getServerTimingTotal(res.headers['server-timing']);
+    events.emit('histogram', `plugins.metrics-by-endpoint.server-timing.${reqName}`, timing);
   }
 
-  events.emit('counter', `code ${res.statusCode} on ${counterName}`, 1);
-  events.emit('histogram', histoName, delta);
+  events.emit('counter', `plugins.metrics-by-endpoint.${reqName}.codes.${res.statusCode}`, 1);
+  events.emit('histogram', histoName, res.timings.phases.firstByte);
   return done();
 }
 
@@ -77,9 +65,7 @@ function getServerTimingTotal(s) {
   const matches = s.match(/total;dur=[0-9.]+/ig);
   if(matches !== null && matches.length > 0) {
     // we always grab the first instance of "total" if there's more than one
-    // TODO: Use Number and round to 2 digits
-    return parseInt(matches[0]
-                    .split('=')[1]);
+    return Number(matches[0].split('=')[1] || 0);
   } else {
     // no match
     return -1;
