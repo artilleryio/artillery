@@ -12,12 +12,15 @@ let useOnlyRequestNames;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
 function MetricsByEndpoint(script, events) {
-  if(!global.artillery || !global.artillery.log) {
-    console.error('artillery-plugin-metrics-endpoint requires Artillery v2');
-    return;
-  }
+  // if(!global.artillery || !global.artillery.log) {
+  //   console.error('artillery-plugin-metrics-endpoint requires Artillery v2');
+  //   return;
+  // }
 
-  if (typeof process.env.WORKER_ID === 'undefined') {
+  // If running in Artillery v2, the plugin should only load in workers
+  if (global.artillery &&
+      Number(global.artillery.version.slice(0, 1)) > 1 &&
+      typeof process.env.LOCAL_WORKER_ID === 'undefined') {
     debug('Not running in a worker, exiting');
     return;
   }
