@@ -52,7 +52,7 @@ function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
     reqName += baseUrl;
   }
 
-  const histoName = `plugins.metrics-by-endpont.response_time.${reqName}`;
+  const histoName = `plugins.metrics-by-endpoint.response_time.${reqName}`;
 
   if (res.headers['server-timing']) {
     const timing = getServerTimingTotal(res.headers['server-timing']);
