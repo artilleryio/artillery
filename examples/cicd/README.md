@@ -8,6 +8,7 @@ This repo contains examples of how to integrate [Artillery](https://artillery.io
 - [azure-devops](./azure-devops) - an Azure Pipelines setup for running Artillery load tests
 - [circleci](./circleci) - a CircleCI workflow for running Artillery load tests
 - [gitlab-ci-cd](./gitlab-ci-cd) - a GitLab CI/CD setup for running Artillery load tests
+- [jenkins](./jenkins) - a Jenkins Pipeline for running Artillery load tests
 
 # Contributing
 
