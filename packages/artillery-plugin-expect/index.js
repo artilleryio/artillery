@@ -43,12 +43,10 @@ function ExpectationsPlugin(script, events) {
     scenario.beforeScenario.push('expectationsPluginSetExpectOptions');
 
     scenario.afterScenario = [].concat(scenario.afterScenario || []);
-    scenario.afterScenario.push('expectationsPluginMaybeFlushDatadog');
   });
 
   script.config.processor.expectationsPluginCheckExpectations = expectationsPluginCheckExpectations;
   script.config.processor.expectationsPluginOnError = expectationsPluginOnError;
-  script.config.processor.expectationsPluginMaybeFlushDatadog = expectationsPluginMaybeFlushDatadog;
 
   script.config.processor.expectationsPluginSetExpectOptions = function(
     userContext,
@@ -139,24 +137,6 @@ function expectationsPluginCheckExpectations(
       global.artillery.suggestedExitCode = 1;
     }
     return done(new Error(`Failed expectations for request ${req.url}`));
-  } else {
-    return done();
-  }
-}
-
-function expectationsPluginMaybeFlushDatadog(userContext, events, done) {
-  if (
-    userContext.expectationsPlugin &&
-      userContext.expectationsPlugin.datadog
-  ) {
-    userContext.expectationsPlugin.datadog.flush(
-      () => {
-        return done();
-      },
-      () => {
-        return done();
-      }
-    );
   } else {
     return done();
   }
