@@ -102,6 +102,10 @@ function HttpEngine(script) {
 
   this._httpAgent = agents.httpAgent;
   this._httpsAgent = agents.httpsAgent;
+
+  if ((script.config.http && script.config.http.extendedMetrics === true) || global.artillery.runtimeOptions.extendedHTTPMetrics) {
+    this.extendedHTTPMetrics = true;
+  }
 }
 
 HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
@@ -578,7 +582,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         requestParams.retry = 0; // disable retries - ignored when using streams
-        const startedAt = process.hrtime(); // TODO: use built-in timing API
 
         request(requestParams)
           .on('request', function(req) {
@@ -586,7 +589,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             ee.emit('counter', 'engine.http.requests', 1);
             ee.emit('rate', 'engine.http.request_rate');
             req.on('response', function(res) {
-              self._handleResponse(requestParams.url, res, ee, context, maybeCallback, startedAt, callback);
+              self._handleResponse(requestParams.url, res, ee, context, maybeCallback, callback);
             });
           }).on('error', function(err, body, res) {
             if (err.name === 'HTTPError') {
@@ -612,12 +615,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   return f;
 };
 
-HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCallback, startedAt, callback) {
+HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCallback, callback) {
   const decompressedRes = decompressResponse(res);
-
   let code = decompressedRes.statusCode;
-  const endedAt = process.hrtime(startedAt);
-
   if (!context._enableCookieJar) {
     const rawCookies = decompressedRes.headers['set-cookie'];
     if (rawCookies) {
@@ -628,11 +628,15 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
     }
   }
 
-  let delta = (endedAt[0] * 1e9) + endedAt[1];
   ee.emit('counter', 'engine.http.codes.' + code, 1);
   ee.emit('counter', 'engine.http.responses', 1);
   // ee.emit('rate', 'engine.http.response_rate');
-  ee.emit('histogram', 'engine.http.response_time', delta/1e6); // ms
+  ee.emit('histogram', 'engine.http.response_time', res.timings.phases.firstByte);
+  if(this.extendedHTTPMetrics) {
+    ee.emit('histogram', 'engine.http.dns', res.timings.phases.dns);
+    ee.emit('histogram', 'engine.http.tcp', res.timings.phases.tcp);
+    ee.emit('histogram', 'engine.http.tls', res.timings.phases.tls);
+  }
   let body = '';
   if (maybeCallback) {
     decompressedRes.on('data', (d) => {
@@ -641,6 +645,10 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
   }
 
   res.on('end', () => {
+    if(this.extendedHTTPMetrics) {
+      ee.emit('histogram', 'engine.http.total', res.timings.phases.total);
+    }
+
     context._successCount++;
     if (!maybeCallback) {
       callback(null, context);
