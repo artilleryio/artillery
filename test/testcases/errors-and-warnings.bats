@@ -29,11 +29,6 @@
   [[ true ]]
 }
 
-@test "Warns when CPU usage exceeds a threshold" {
-    CPU_HOT_BEFORE_WARN=1 ARTILLERY_CPU_THRESHOLD=-1 ./bin/artillery quick -d 10 -c 10 http://localhost:3003/ | grep 'CPU usage'
-    [[ $? -eq 0  ]]
-}
-
 @test "Exits with non zero when an unknown command is used" {
     run ./bin/artillery makemeasandwich --with cheese
     [[ $status -eq 1 ]]
