@@ -20,7 +20,7 @@ function ExpectationsPlugin(script, events) {
     return;
   }
 
-  if (typeof process.env.WORKER_ID === 'undefined') {
+  if (typeof process.env.LOCAL_WORKER_ID === 'undefined') {
     debug('Not running in a worker, exiting');
     return;
   }
