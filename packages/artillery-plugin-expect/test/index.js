@@ -199,8 +199,7 @@ test('Produce metrics', async(t) => {
   });
 
   const output = result.stdout;
-  console.log(output);
 
-  t.true(output.indexOf('plugins.expect') > -1);
+  t.true(output.indexOf('expect.ok') > -1);
   t.true(result.code === 0);
 });
