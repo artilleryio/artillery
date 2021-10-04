@@ -6,11 +6,12 @@
 
 Ever wished you could run load tests with *real browsers*? Well, now you can. This engine lets you combine Playwright with Artillery to be able to launch a whole lot of browsers to do full browser load testing.
 
+## Use cases ✨
 - Re-use existing Playwright scripts for load testing
 - Use [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code) to create scripts for load testing *ridicuolously quickly*
 - Use your own AWS account to launch thousands of browsers, with **zero** infrastructure setup needed with [Artillery Pro](https://artillery.io/pro)
 
-## Usage
+## Usage ⌨️
 
 Install Artillery and this engine:
 
@@ -100,6 +101,6 @@ browser.page_domcontentloaded.dominteractive.https://artillery.io/pro/:
   p99: ...................................................... 1380.5
 ```
 
-## License
+## License 📃
 
 MPL 2.0
