@@ -41,10 +41,10 @@ class PlaywrightEngine {
 ;
           const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart;
 
-          events.emit('counter', 'engine.playwright.page_domcontentloaded', 1);
-          events.emit('counter', `engine.playwright.page_domcontentloaded.${page.url()}`)
-          events.emit('histogram', 'engine.playwright.page_domcontentloaded.dominteractive', startToInteractive);
-          events.emit('histogram', `engine.playwright.page_domcontentloaded.dominteractive.${page.url()}`, startToInteractive);
+          events.emit('counter', 'engine.browser.page.domcontentloaded', 1);
+          events.emit('counter', `engine.browser.page.domcontentloaded.${page.url()}`)
+          events.emit('histogram', 'engine.browser.page.dominteractive', startToInteractive);
+          events.emit('histogram', `engine.browser.page.dominteractive.${page.url()}`, startToInteractive);
         });
         page.on('load', (page) => {
           debug('load:', page.url());
@@ -54,7 +54,7 @@ class PlaywrightEngine {
         });
         page.on('requestfinished', (request) => {
           const timing = request.timing();
-          events.emit('histogram', 'engine.playwright.response_time',timing.responseEnd - timing.responseStart);
+          events.emit('histogram', 'engine.browser.http_response_time',timing.responseEnd - timing.responseStart);
         });
         page.on('response', (response) => {
         });
