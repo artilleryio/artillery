@@ -19,7 +19,7 @@
   "devDependencies": {
     "@commitlint/cli": "^13.1.0",
     "@commitlint/config-conventional": "^13.1.0",
-    "artillery": "^2.0.0-dev10",
+    "artillery": "^2.0.0-2",
     "ava": "^3.15.0",
     "husky": "^7.0.2",
     "shelljs": "^0.8.4"
