@@ -19,6 +19,7 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [scenario-weights](./scenario-weights) - set weights to change how often Artillery runs a scenario
 - [CSV-driven functional testing](./table-driven-functional-tests) - define functional tests with a CSV file
 - [graphql-api-server](./graphql-api-server) - testing a GraphQL API server
+- [browser-load-testing-playwright](./browser-load-testing-playwright) - load testing with real browsers
 
 ## Plugins and extensions
 
