@@ -165,8 +165,9 @@ function createArrivalCount(spec, ee) {
     const duration = spec.duration * 1000;
 
     if(spec.arrivalCount > 0) {
+      debug('creating a %s process for arrivalCount', spec.mode);
       const interval = duration / spec.arrivalCount;
-      const p = arrivals.uniform.process(interval, duration);
+      const p = arrivals[spec.mode].process(interval, duration);
       p.on('arrival', function() {
         ee.emit('arrival', spec);
       });
