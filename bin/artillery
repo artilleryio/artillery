@@ -18,11 +18,6 @@ const telemetry = require('../lib/telemetry');
 async function main() {
   await createGlobalObject();
 
-  console.error(chalk.magenta(`
-ARTILLERY DEV PREVIEW 🚀
-Please report bugs on https://github.com/artilleryio/artillery/issues
-`));
-
   if (!process.argv.slice(2).length) {
     // print telemetry notification message
     telemetry.notice();
