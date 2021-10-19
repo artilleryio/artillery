@@ -38,12 +38,12 @@
 - **Test ANY stack**:  Load test HTTP, WebSocket, Socket.io, Kinesis, HLS, and more
 - **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc).
 - **Load testing & smoke testing**: reuse the same scenario definitions to run performance tests or functional tests on your API or backend.
-- **Performance metrics**: get detailed performance metrics (latency, requests per second, concurrency, throughput). Track custom metrics with high precision (histograms, counters and rates)
-- **Scriptable**: write custom logic in JS, using any of the thousands of useful `npm` modules.
-- **Integrations**: `statsd` support out of the box for real-time reporting (integrate with [Datadog](http://docs.datadoghq.com/guides/dogstatsd/), [Librato](https://www.librato.com/docs/kb/collect/collection_agents/stastd.html), [InfluxDB](https://influxdata.com/blog/getting-started-with-sending-statsd-metrics-to-telegraf-influxdb/) etc).
-- **Extensible**: write custom reporters, custom plugins, and custom engines, or just customize VU behavior
-- **Cloud-native**: go from running a test locally to running it in your own AWS account, distributed across geographical regions in minutes with [Artillery Pro](https://artillery.io/pro)
-- **and more!** HTML reports, nice CLI, parameterization with CSV files.
+- **Detailed performance metrics**: get detailed performance metrics (response time, TTFB, transactions per second, concurrency, throughput). Track [**custom metrics**](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) with high precision (histograms, counters and rates)
+- **Scirptable**: write custom logic in JS, using any of the thousands of useful `npm` modules.
+- **Batteries-included**: out-of-the-box integrations with external monitoring systems (Datadog, InfluxDB, Honeygcomb, Lightstep [and more](https://artillery.io/docs/guides/plugins/plugin-publish-metrics.html)), [per-URL metrics](https://artillery.io/docs/guides/plugins/plugin-metrics-by-endpoint.html), file uploads, SSL auth, [fuzz testing](https://artillery.io/docs/guides/plugins/plugin-fuzzer.html), and more!
+- **Extensible**: write custom reporters, custom plugins, and custom engines, or customize VU scenarios and behavior
+- **Cloud-native**: built for the cloud from day one - run [distributed load tests](https://artillery.io/pro/) from your own AWS account with ease
+- **and more!** HTML reports, nice CLI, parameterization with CSV files, CICD integrations
 
 ---
 
@@ -56,9 +56,6 @@
 
 ---
 
-- **[Artillery Pro](https://artillery.io/pro/)**: if you want to **scale out** your tests and run them from hundreds of nodes, multiple geographic regions, and **your own AWS account** you're going to love [Artillery Pro](https://artillery.io/pro/). Get going in minutes (for real), and avoid reinventing the wheel or building a DIY in-house solution for load testing. Self-hosted and self-service, with support for Fargate and ECS, and ability to plug into existing AWS security, compliance and governance controls in your organization. [Drop us a line](mailto:sales@artillery.io?subject=Artillery%20Pro%20Sounds%20Interesting) if that sounds interesting.
-- For **training**, **custom integrations**, and **performance consulting services** see our [professional services page](https://artillery.io/services/).
-
 # Getting Started With Artillery
 
 👉&nbsp;&nbsp;[Artillery Getting Started Guide](https://artillery.io/docs/guides/getting-started/installing-artillery.html)
@@ -69,7 +66,7 @@ Add your team to the [Artillery users list on the wiki](https://github.com/shore
 
 # Plant Some Trees!
 
-We have planted [over 1,900 new trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
+We have planted [over 2400 new trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
 
 If you've enjoyed using Artillery and would like to help us out, add your tree to the [Artillery.io forest](https://ecologi.com/artilleryio). 🌲🌳🌴 Feel free to drop us a line to let us know too! 💚
 
