@@ -4,6 +4,14 @@
   <img src="./header.png" alt="Full browser load testing with Artillery + Playwright">
 </p>
 
+<p align="center">
+  Questions, comments, feedback? ➡️&nbsp;&nbsp;&nbsp;<a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
+  <br/>
+  Or chat to us on Discord - <a href="https://discord.com/invite/QthdcAAPRK">https://discord.com/invite/QthdcAAPRK</a> 💬
+</p>
+
+----
+
 Ever wished you could run load tests with *real browsers*? Well, now you can.
 
 This Artillery engine lets you combine Playwright with Artillery to be able to launch *a whole lot of real browsers* to do *full browser load testing*.
@@ -15,7 +23,6 @@ This Artillery engine lets you combine Playwright with Artillery to be able to l
 * ♻️&nbsp;&nbsp;&nbsp;Reuse existing Playwright scripts for load testing
 * 🏎&nbsp;&nbsp;&nbsp;Create new load testing scripts 10x faster with [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code)
 * 🌐&nbsp;&nbsp;&nbsp;Launch thousands of browsers, with **zero** infrastructure setup with [Artillery Pro](https://artillery.io/pro)
-
 
 ✨ *Perfect for testing complex web apps* ✨
 
@@ -147,8 +154,18 @@ browser.page.LCP.https://artillery.io/pro/:
   max: ...................................................... 205.3
   median: ................................................... 206.5
   p95: ...................................................... 206.5
-  p99: ...................................................... 206.5```
+  p99: ...................................................... 206.5
 ```
+
+## Questions, comments, feedback?
+
+➡️&nbsp;&nbsp;&nbsp;Let us know via <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion board</a>
+
+Or chat to us on Discord - <a href="https://discord.com/invite/QthdcAAPRK">https://discord.com/invite/QthdcAAPRK</a> 💬
+
+
+----
+
 
 ## License 📃
 
