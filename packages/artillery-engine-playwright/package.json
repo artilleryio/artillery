@@ -1,0 +1,19 @@
+{
+  "name": "artillery-engine-playwright",
+  "version": "0.0.2",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "debug": "^4.3.2",
+    "playwright": "^1.15.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.15.0"
+  }
+}
