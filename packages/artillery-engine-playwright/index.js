@@ -42,7 +42,7 @@ class PlaywrightEngine {
           const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart;
 
           events.emit('counter', 'engine.browser.page.domcontentloaded', 1);
-          events.emit('counter', `engine.browser.page.domcontentloaded.${page.url()}`)
+          events.emit('counter', `engine.browser.page.domcontentloaded.${page.url()}`, 1)
           events.emit('histogram', 'engine.browser.page.dominteractive', startToInteractive);
           events.emit('histogram', `engine.browser.page.dominteractive.${page.url()}`, startToInteractive);
         });
