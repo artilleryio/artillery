@@ -17,7 +17,7 @@ class PlaywrightEngine {
     return async function scenario(initialContext, cb) {
       events.emit('started');
       const browser = await chromium.launch({
-          headless: self.config.engines.playwright.headless || true
+          headless: self.config.engines.playwright.headless === false ? false : true
         });
       debug('browser created');
       const context = await browser.newContext();
