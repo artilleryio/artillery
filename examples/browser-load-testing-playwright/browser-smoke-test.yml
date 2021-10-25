@@ -1,12 +1,12 @@
 config:
   target: "https://artillery.io"
-  phases:
-    - arrivalRate: 1
-      duration: 10
+  payload:
+    - path: ./pages.csv
+      fields: ["url"]
   engines:
     playwright: {}
   processor: ./flows.js
 scenarios:
-  - name: "Dev account signup"
+  - name: Check page
     engine: playwright
-    flowFunction: "devAccountSignupFlow"
+    flowFunction: checkPage

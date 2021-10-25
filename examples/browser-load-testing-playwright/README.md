@@ -1,30 +1,39 @@
-# Load testing with real browsers
+# Load testing and smoke testing with real browsers
 
 <p align="center">
-  <img src="./header.png" alt="Full browser load testing with Artillery + Playwright">
+  <img src="./header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">
 </p>
 
-Ever wished you could run load tests with *real browsers*? Well, now you can! You can combine Artillery with Playwright to run full browser tests, and this example shows you how.
+Ever wished you could run load tests with *real browsers*? Well, now you can! You can combine Artillery with Playwright to run full browser tests, and this example shows you how. We can run both load tests, and smoke tests with headless browsers.
 
 **Note**: this feature is in alpha stage. We'd love your feedback! -> [discord chatroom](https://discord.com/invite/QthdcAAPRK)
 
-## Steps
+## Pre-requisites
 
-1. Install Artillery + [`artillery-engine-playwright`](https://github.com/artilleryio/artillery-engine-playwright)
-
-**Note**: a `dev` release of Artillery needs to be used.
+Before running the examples, install Artillery + [`artillery-engine-playwright`](https://github.com/artilleryio/artillery-engine-playwright):
 
 ```sh
 npm install
 ```
 
-2. Run a test locally:
+## Example 1: A simple load test
+
+Run a simple load test using a plain Playwright script (recorded with `playwright codegen` - no Artillery-specific changes required):
 
 ```sh
 $(npm bin)/artillery run browser-load-test.yml
 ```
 
 That's it! Artillery will create headless Chrome browsers that will run Playwright scenarios you provide.
+
+## Example 2: A smoke test
+
+This example shows how we can implement a smoke test (or a synthetic check) using a headless browser. We make use of Artillery's [CSV payload](https://artillery.io/docs/guides/guides/test-script-reference.html#Payload-files) feature to specify the URLs we want to check, and [custom metric API](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) to track custom metrics.
+
+```sh
+$(npm bin)/artillery run browser-smoke-test.yml
+```
+
 
 ## Creating Playwright scripts
 
