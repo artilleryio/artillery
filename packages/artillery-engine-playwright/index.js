@@ -88,7 +88,7 @@ class PlaywrightEngine {
         });
 
         const fn = self.config.processor[spec.flowFunction];
-        await fn(page);
+        await fn(page, initialContext, events);
 
         await page.close({ runBeforeUnload:true });
         await page.waitForTimeout(1000);
