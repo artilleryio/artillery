@@ -1,7 +1,7 @@
 # artillery-engine-playwright
 
 <p align="center">
-  <img src="./header.png" alt="Full browser load testing with Artillery + Playwright">
+  <img src="./header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@ This Artillery engine lets you combine Playwright with Artillery to be able to l
 
 * 🤖&nbsp;&nbsp;&nbsp;Run load tests with real headless browsers (Chrome)
 * 📊&nbsp;&nbsp;&nbsp;See most important front-end metrics ([Largest Contentful Paint (LCP)](https://web.dev/lcp/), [First Contentful Paint (FCP)](https://web.dev/fcp/) etc) and how they are affected by high load
-* ♻️&nbsp;&nbsp;&nbsp;Reuse existing Playwright scripts for load testing
+* ♻️&nbsp;&nbsp;&nbsp;Reuse existing Playwright scripts for load testing (full access to [`page` API](https://playwright.dev/docs/api/class-page/))
 * 🏎&nbsp;&nbsp;&nbsp;Create new load testing scripts 10x faster with [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code)
 * 🌐&nbsp;&nbsp;&nbsp;Launch thousands of browsers, with **zero** infrastructure setup with [Artillery Pro](https://artillery.io/pro)
 
@@ -67,7 +67,7 @@ scenarios:
 
 Use a Playwright script to describe virtual user scenario:
 
-(Note: this script was generated with [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code))
+(Note: this script was generated with [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code). `page` is an instance of [Playwright page](https://playwright.dev/docs/api/class-page/).)
 
 `flow.js`:
 
@@ -156,6 +156,36 @@ browser.page.LCP.https://artillery.io/pro/:
   p95: ...................................................... 206.5
   p99: ...................................................... 206.5
 ```
+
+## Flow function API
+
+By default, only the `page` argument (see Playwright's [`page` API](https://playwright.dev/docs/api/class-page/)) is required for functions that implement Playwright scenarios, e.g.:
+
+```js
+module.exports = { helloFlow };
+
+function helloFlow(page) {
+  // Go to https://artillery.io/
+  await page.goto('https://artillery.io/');
+}
+```
+
+The functions also have access to virtual user context and events arguments, which can be used to access scenario variables for different virtual users, or to [track custom metrics](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics).
+
+```js
+module.exports = { helloFlow };
+
+function helloFlow(page, vuContext, events) {
+  // Increment custom counter:
+  events.emit('counter', 'user.page_loads', 1);
+  // Go to https://artillery.io/
+  await page.goto('https://artillery.io/');
+}
+```
+
+## More examples
+
+See [Artillery + Playwright examples](https://github.com/artilleryio/artillery-examples/tree/main/browser-load-testing-playwright) in `artillery-examples` repo.
 
 ## Questions, comments, feedback?
 
