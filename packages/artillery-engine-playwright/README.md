@@ -1,7 +1,7 @@
 # artillery-engine-playwright
 
 <p align="center">
-  <img src="./header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">>
+  <img src="./header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">
 </p>
 
 <p align="center">
@@ -28,15 +28,16 @@ This Artillery engine lets you combine Playwright with Artillery to be able to l
 
 ## Why load test with browsers?
 
-Load testing complex web apps can be time consuming, cumbersome, and brittle comparied to load testing pure APIs and backend services. The main reason is that testing web apps requires a different level of abstraction: whereas APIs work at **endpoint** level, when testing web apps a **page** is a much more useful abstraction.
+Load testing complex web apps can be time consuming, cumbersome, and brittle compared to load testing pure APIs and backend services. The main reason is that testing web apps requires a different level of abstraction: whereas APIs work at **endpoint** level, when testing web apps a **page** is a much more useful abstraction.
 
 Summarized in the table below:
 
 |    | APIs & microservices      | Web apps |
  --- | ----------- | ----------- |
-**Abstraction level**    | Endpoint      | Page       |
+**Abstraction level**    | HTTP endpoint      | Whole page       |
 **Surface area**   | Small, a handful of endpoints        | Large, calls many APIs. Different APIs may be called depending on in-page actions by the user
-**Formal spec** | Usually available (e.g. as an OpenAPI spec) | No formal specs for APIs used and their dependencies
+**Formal spec** | Usually available (e.g. as an OpenAPI spec) | No formal specs for APIs used and their dependencies. You have to spend time in Dev Tools to track down all API calls
+**In-page JS** | Ignored. Calls made by in-page JS have to be accounted for manually and emulated | Runs as expected, e.g. making calls to more HTTP endpoints |
 
 All of those factors combined make load testing web apps with traditional approaches very frustrating and time consuming. 😞
 
