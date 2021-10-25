@@ -1,7 +1,7 @@
 # Load testing and smoke testing with real browsers
 
 <p align="center">
-  <img src="./header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">
+  <img src="./repo-header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">
 </p>
 
 Ever wished you could run load tests with *real browsers*? Well, now you can! You can combine Artillery with Playwright to run full browser tests, and this example shows you how. We can run both load tests, and smoke tests with headless browsers.
