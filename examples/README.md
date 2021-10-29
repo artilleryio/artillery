@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://user-images.githubusercontent.com/1490/119319975-f8b77b80-bc72-11eb-8633-ed338f88f67a.png" alt="" width="600" />
+<img width="1012" alt="artillery-examples" src="https://user-images.githubusercontent.com/1490/139437758-7093853a-2f19-40fd-b827-29d3584cf438.png">
 </p>
 
 # Artillery Examples
