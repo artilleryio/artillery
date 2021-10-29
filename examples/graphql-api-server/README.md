@@ -1,6 +1,10 @@
 # Load testing an GraphQL service with Artillery
 
+<img width="1012" alt="graphql-load-testing-gh" src="https://user-images.githubusercontent.com/1490/139409040-40f77144-24d0-4fba-b7f3-1a441148f69a.png">
+
 This example shows you how to run load tests on a GraphQL API using Artillery.
+
+📖 See the companion blog post: [Using Artillery to load test GraphQL APIs](https://artillery.io/blog/using-artillery-to-load-test-graphql-apis/).
 
 ## Running the GraphQL server
 
