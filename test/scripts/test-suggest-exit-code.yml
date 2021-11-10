@@ -1,0 +1,11 @@
+config:
+  processor: ./test-suggest-exit-code.js
+  target: https://artillery.io
+  phases:
+    - arrivalRate: 10
+      duration: 10
+scenarios:
+  - flow:
+      - get:
+          url: "/"
+          afterResponse: maybeSetNonZeroCode

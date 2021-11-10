@@ -107,8 +107,7 @@
     "try-require": "1.2.1",
     "update-notifier": "^5.1.0",
     "uuid": "^8.0.0",
-    "ws": "^7.5.1",
-    "zx": "^1.6.0"
+    "ws": "^7.5.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
@@ -130,7 +129,8 @@
     "socket.io": "^3.1.2",
     "tap": "^15.0.9",
     "tape": "^4.9.0",
-    "temp": "^0.9.4"
+    "temp": "^0.9.4",
+    "zx": "^4.2.0"
   },
   "husky": {
     "hooks": {
