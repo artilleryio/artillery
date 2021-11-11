@@ -25,7 +25,7 @@ tap.test('Metric aggregation', async t => {
   const control = new SSMS({ pullOnly: true });
   const metricData = {}; // indexed by timestamp (as string) -> [summaries]
 
-  const NUM_WORKERS = 4;
+  const NUM_WORKERS = 7;
   const workers = [];
   let workersRunning = 0;
 
@@ -75,7 +75,10 @@ tap.test('Metric aggregation', async t => {
     'plugin.my_custom_plugin.op_rate'
   ];
 
-  const dataPoints = data[0];
+  let dataPoints = [];
+  for (let i = 0; i < 100; i++) {
+    dataPoints = dataPoints.concat(data[i]);
+  }
   t.comment(`writing ${dataPoints.length} measurements`);
   for (const dp of dataPoints) {
     const ts = Date.now();
@@ -88,7 +91,10 @@ tap.test('Metric aggregation', async t => {
     // we also record the same measurement in our control instance:
     control.histogram(hname, dp, ts);
     control.incr(cname, 1, ts);
-    await sleep(_.random(1, 2));
+
+    if (Math.random() > 0.7) {
+      await sleep(_.random(1, 2));
+    }
   }
 
   await sleep(1000);
@@ -142,6 +148,14 @@ tap.test('Metric aggregation', async t => {
       console.log('control p99 ======>', round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1));
       t.ok(round(h.getValueAtQuantile(0.99), 1) === round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1), 'p99 values should be equal');
       t.ok(h.count === controlSummary.histograms[hname].count, 'count values should be equal');
+      t.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
+      t.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
+      t.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'All aggregations are > 0');
+    }
+
+    for (const [hname, h] of Object.entries(packed.histograms)) {
+      t.ok(h.max > h.getValueAtQuantile(0.99), 'summary max is > p99');
+      t.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'summary aggregations are > 0');
     }
 
     // TODO: Add rates
