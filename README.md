@@ -39,7 +39,7 @@
 - **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc).
 - **Load testing & smoke testing**: reuse the same scenario definitions to run performance tests or functional tests on your API or backend.
 - **Detailed performance metrics**: get detailed performance metrics (response time, TTFB, transactions per second, concurrency, throughput). Track [**custom metrics**](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) with high precision (histograms, counters and rates)
-- **Scirptable**: write custom logic in JS, using any of the thousands of useful `npm` modules.
+- **Scriptable**: write custom logic in JS, using any of the thousands of useful `npm` modules.
 - **Batteries-included**: out-of-the-box integrations with external monitoring systems (Datadog, InfluxDB, Honeygcomb, Lightstep [and more](https://artillery.io/docs/guides/plugins/plugin-publish-metrics.html)), [per-URL metrics](https://artillery.io/docs/guides/plugins/plugin-metrics-by-endpoint.html), file uploads, SSL auth, [fuzz testing](https://artillery.io/docs/guides/plugins/plugin-fuzzer.html), and more!
 - **Extensible**: write custom reporters, custom plugins, and custom engines, or customize VU scenarios and behavior
 - **Cloud-native**: built for the cloud from day one - run [distributed load tests](https://artillery.io/pro/) from your own AWS account with ease
