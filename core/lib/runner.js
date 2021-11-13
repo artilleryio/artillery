@@ -38,7 +38,6 @@ module.exports = {
     $randomNumber,
   },
   runnerFuncs: {
-    loadEngines,
     handleScriptHook,
     prepareScript,
   },
