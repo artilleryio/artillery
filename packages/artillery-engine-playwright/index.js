@@ -55,7 +55,7 @@ class PlaywrightEngine {
           const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart;
 
           events.emit('counter', 'engine.browser.page.domcontentloaded', 1);
-          events.emit('counter', `engine.browser.page.domcontentloaded.${page.url()}`, 1)
+          events.emit('counter', `engine.browser.page.domcontentloaded.${page.url()}`, 1);
           events.emit('histogram', 'engine.browser.page.dominteractive', startToInteractive);
           events.emit('histogram', `engine.browser.page.dominteractive.${page.url()}`, startToInteractive);
         });
@@ -82,7 +82,7 @@ class PlaywrightEngine {
         });
         page.on('requestfinished', (request) => {
           // const timing = request.timing();
-          // events.emit('histogram', 'engine.browser.http_response_time',timing.responseEnd - timing.responseStart);
+          events.emit('counter', 'engine.browser.http_requests', 1);
         });
         page.on('response', (response) => {
         });
