@@ -8,21 +8,30 @@ This repo contains examples of how to use various features in Artillery. Every e
 
 ## Test scripts
 
+### Core features
+
 - [using-data-from-csv](./using-data-from-csv) - using data from an external CSV file in vuser scenarios
-- [http-set-custom-header](./http-set-custom-header) - set an HTTP header in a `beforeRequest` hook
+- [scenario-weights](./scenario-weights) - set weights to change how often Artillery runs a scenario
+- [script-overrides](./script-overrides) - override parts of the script such as load phases dynamically at runtime
+
+### End-to-end examples
+
 - [socket-io](./socket-io) - testing a Socket.io service
 - [websockets](./websockets) - testing a WebSocket service
-- [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
-- [using-cookies](./using-cookies) - using cookies with HTTP services
-- [file-uploads](./file-uploads) - HTTP file uploads with Artillery Pro
-- [functional testing](./functional-testing-with-expect-plugin) - use `artillery-plugin-expect` to run both load and functional tests
-- [scenario-weights](./scenario-weights) - set weights to change how often Artillery runs a scenario
-- [CSV-driven functional testing](./table-driven-functional-tests) - define functional tests with a CSV file
 - [graphql-api-server](./graphql-api-server) - testing a GraphQL API server
 - [browser-load-testing-playwright](./browser-load-testing-playwright) - load testing with real browsers
+- [functional testing](./functional-testing-with-expect-plugin) - use `artillery-plugin-expect` to run both load and functional tests
+- [CSV-driven functional testing](./table-driven-functional-tests) - define functional tests with a CSV file
 
-## Plugins and extensions
+### HTTP-specific examples
 
+- [http-set-custom-header](./http-set-custom-header) - set an HTTP header in a `beforeRequest` hook
+- [using-cookies](./using-cookies) - using cookies with HTTP services
+- [file-uploads](./file-uploads) - HTTP file uploads with Artillery Pro
+
+### Plugins and extensions
+
+- [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
 - [artillery-plugin-hello-world](./artillery-plugin-hello-world) - a "hello world" plugin
 
 ## CI/CD
