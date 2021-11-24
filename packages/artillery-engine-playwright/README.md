@@ -6,8 +6,6 @@
 
 <p align="center">
   Questions, comments, feedback? ➡️&nbsp;&nbsp;&nbsp;<a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
-  <br/>
-  Or chat to us on Discord - <a href="https://discord.com/invite/QthdcAAPRK">https://discord.com/invite/QthdcAAPRK</a> 💬
 </p>
 
 ----
@@ -191,8 +189,6 @@ See [Artillery + Playwright examples](https://github.com/artilleryio/artillery-e
 ## Questions, comments, feedback?
 
 ➡️&nbsp;&nbsp;&nbsp;Let us know via <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion board</a>
-
-Or chat to us on Discord - <a href="https://discord.com/invite/QthdcAAPRK">https://discord.com/invite/QthdcAAPRK</a> 💬
 
 
 ----
