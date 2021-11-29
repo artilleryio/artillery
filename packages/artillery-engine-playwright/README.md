@@ -16,7 +16,8 @@ This Artillery engine lets you combine Playwright with Artillery to be able to l
 
 ## At a glance
 
-* 🤖&nbsp;&nbsp;&nbsp;Run load tests with real headless browsers (Chrome)
+* 🤖&nbsp;&nbsp;&nbsp;Run load tests with real (headless) Chrome instances
+* 🛰&nbsp;&nbsp;&nbsp;Run synthetic checks in CICD with the same Artillery + Playwright scripts
 * 📊&nbsp;&nbsp;&nbsp;See most important front-end metrics ([Largest Contentful Paint (LCP)](https://web.dev/lcp/), [First Contentful Paint (FCP)](https://web.dev/fcp/) etc) and how they are affected by high load
 * ♻️&nbsp;&nbsp;&nbsp;Reuse existing Playwright scripts for load testing (full access to [`page` API](https://playwright.dev/docs/api/class-page/))
 * 🏎&nbsp;&nbsp;&nbsp;Create new load testing scripts 10x faster with [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code)
@@ -41,11 +42,17 @@ All of those factors combined make load testing web apps with traditional approa
 
 ## Usage ⌨️
 
+### Installation
+
 Install Artillery and this engine:
 
 ```sh
-npm install artillery@dev artillery-engine-playwright
+npm install -g artillery@dev artillery-engine-playwright
 ```
+
+(See [Use in Docker/CI](#use-in-docker-ci) if running tests in Docker/CI)
+
+### Running a test
 
 Create an Artillery script:
 
@@ -185,6 +192,12 @@ function helloFlow(page, vuContext, events) {
 ## More examples
 
 See [Artillery + Playwright examples](https://github.com/artilleryio/artillery-examples/tree/main/browser-load-testing-playwright) in `artillery-examples` repo.
+
+## Use in Docker/CI
+
+Use the [`Dockerfile`](./Dockerfile) which bundles Chrome, Playwright and Artillery to run your tests in CI.
+
+**Note:** To keep the Docker image small, browsers other than Chromium are removed (the saving is ~500MB)
 
 ## Questions, comments, feedback?
 
