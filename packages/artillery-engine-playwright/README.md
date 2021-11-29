@@ -50,7 +50,7 @@ Install Artillery and this engine:
 npm install -g artillery@dev artillery-engine-playwright
 ```
 
-(See [Use in Docker/CI](#use-in-docker-ci) if running tests in Docker/CI)
+(See [Use in Docker/CI](#use-in-dockerci) if running tests in Docker/CI)
 
 ### Running a test
 
