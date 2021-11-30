@@ -182,7 +182,8 @@ class SSMS extends EventEmitter {
       //
       // histograms
       //
-      for (const [name, value] of Object.entries(pd.histograms)) {
+      for (const [name, origValue] of Object.entries(pd.histograms)) {
+        const value = SSMS.cloneHistogram(origValue);
         if (typeof result[ts].histograms[name] === 'undefined') {
           result[ts].histograms[name] = value;
         } else {
@@ -210,7 +211,7 @@ class SSMS extends EventEmitter {
       result[ts].firstCounterAt = min([result[ts].firstCounterAt, pd.firstCounterAt]);
       result[ts].firstHistogramAt = min([result[ts].firstHistogramAt, pd.firstHistogramAt]);
       result[ts].lastCounterAt = max([result[ts].lastCounterAt, pd.lastCounterAt]);
-      result[ts].lastHistogramAt = max([result[ts].firstHistogramAt, pd.lastHistogramAt]);
+      result[ts].lastHistogramAt = max([result[ts].lastHistogramAt, pd.lastHistogramAt]);
 
       result[ts].firstMetricAt = min([result[ts].firstHistogramAt, result[ts].firstCounterAt]);
       result[ts].lastMetricAt = max([result[ts].lastHistogramAt, result[ts].lastCounterAt]);
@@ -271,8 +272,8 @@ class SSMS extends EventEmitter {
 
     result.firstCounterAt = min(periods.map(p => p.firstCounterAt));
     result.firstHistogramAt = min(periods.map(p => p.firstHistogramAt));
-    result.lastCounterAt = max(periods.map(p => p.firstCounterAt));
-    result.lastHistogramAt = max(periods.map(p => p.firstHistogramAt));
+    result.lastCounterAt = max(periods.map(p => p.lastCounterAt));
+    result.lastHistogramAt = max(periods.map(p => p.lastHistogramAt));
 
     result.firstMetricAt = min([result.firstHistogramAt, result.firstCounterAt]);
     result.lastMetricAt = max([result.lastHistogramAt, result.lastCounterAt]);
