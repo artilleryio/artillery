@@ -182,7 +182,8 @@ class SSMS extends EventEmitter {
       //
       // histograms
       //
-      for (const [name, value] of Object.entries(pd.histograms)) {
+      for (const [name, origValue] of Object.entries(pd.histograms)) {
+        const value = SSMS.cloneHistogram(origValue);
         if (typeof result[ts].histograms[name] === 'undefined') {
           result[ts].histograms[name] = value;
         } else {
