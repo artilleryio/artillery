@@ -91,7 +91,7 @@ function createPause(spec, ee) {
 
 function createRamp(spec, ee) {
   const tick = 1000 / Math.max(spec.arrivalRate, spec.rampTo); // smallest tick
-  const r0 = spec.arrivalRate; // initial arrival rate
+  const r0 = parseInt(spec.arrivalRate, 10); // initial arrival rate
   const difference = spec.rampTo - spec.arrivalRate;
   const offset = difference < 0 ? -1 : 1;
   const periods = Math.abs(difference) + 1;
