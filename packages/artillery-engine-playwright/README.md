@@ -14,6 +14,11 @@ Ever wished you could run load tests with *real browsers*? Well, now you can.
 
 This Artillery engine lets you combine Playwright with Artillery to be able to launch *a whole lot of real browsers* to do *full browser load testing*.
 
+<p align="center">
+  <img src="https://www.artillery.io/img/blog/artillery-playwright-load-testing-browsers.gif" alt="demo" width="500">
+</p>
+
+
 ## At a glance
 
 * 🤖&nbsp;&nbsp;&nbsp;Run load tests with real (headless) Chrome instances
