@@ -90,13 +90,17 @@ function createPause(spec, ee) {
 }
 
 function createRamp(spec, ee) {
-  const tick = 1000 / Math.max(spec.arrivalRate, spec.rampTo); // smallest tick
-  const r0 = spec.arrivalRate; // initial arrival rate
-  const difference = spec.rampTo - spec.arrivalRate;
+  const duration = spec.duration || 1;
+  const arrivalRate = spec.arrivalRate || 1;
+  const rampTo = spec.rampTo || arrivalRate + 1;
+
+  const tick = 1000 / Math.max(arrivalRate, rampTo); // smallest tick
+  const r0 = arrivalRate; // initial arrival rate
+  const difference = rampTo - arrivalRate;
   const offset = difference < 0 ? -1 : 1;
   const periods = Math.abs(difference) + 1;
-  const ticksPerPeriod = (spec.duration / periods) * 1000 / tick;
-  const periodLenSec = spec.duration / periods;
+  const ticksPerPeriod = (duration / periods) * 1000 / tick;
+  const periodLenSec = duration / periods;
 
   let expected = 0;
   for(let i = 1; i <= periods; i++) {
@@ -107,7 +111,7 @@ function createRamp(spec, ee) {
 
   // console.log(`expecting ${expected} total arrivals`);
 
-  let probabilities = crypto.randomBytes(Math.ceil(spec.duration * 1000 / tick * 1.25));
+  let probabilities = crypto.randomBytes(Math.ceil(duration * 1000 / tick * 1.25));
 
   debug(`rampTo: tick = ${tick}ms; r0 = ${r0}; periods = ${periods}; ticksPerPeriod = ${ticksPerPeriod}; period length = ${periodLenSec}s`);
 
@@ -122,7 +126,7 @@ function createRamp(spec, ee) {
       let startedAt = Date.now();
       if(++ticksElapsed > ticksPerPeriod) {
         debug(`ticksElapsed: ${ticksElapsed}; upping probability or stopping`);
-        if (offset === -1 ? currentRate > spec.rampTo : currentRate < spec.rampTo) {
+        if (offset === -1 ? currentRate > rampTo : currentRate < rampTo) {
           currentRate += offset;
           ticksElapsed = 0;
 
@@ -131,7 +135,7 @@ function createRamp(spec, ee) {
           debug(`update: currentRate = ${currentRate} - p = ${p}`);
           debug(`\texpecting ~${periodLenSec * currentRate} arrivals before updating again`);
         } else {
-          debug(`done: ticksElapsed = ${ticksElapsed}; currentRate = ${currentRate}; spec.rampTo = ${spec.rampTo} `);
+          debug(`done: ticksElapsed = ${ticksElapsed}; currentRate = ${currentRate}; rampTo = ${rampTo} `);
 
           driftless.clearDriftless(timer);
           ee.emit('phaseCompleted', spec);
