@@ -11,15 +11,21 @@
 <br/>
 
 <p align="center">
-  Artillery is a <strong>load testing</strong> and <strong>smoke testing</strong> tool for developers, testers, and SREs.<br><br>
-  Use Artillery to ship scalable APIs &amp; services that stay fast & reliable under high load.<br><br>
-  Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy.
+  Artillery is a modern testing tool for DevOps and SRE
+  <br/><br/>
+  Developers, QA engineers and SREs use Artillery to ship scalable APIs &amp; services that stay fast & reliable under high load
+  <br><br>
+  Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy
 </p>
+
+----
 
 <p align="center">
   Got a question? Want to share how you use Artillery? ➡️  <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
-  <br/>
-  Or come chat on Discord - <a href="https://discord.com/invite/QthdcAAPRK">https://discord.com/invite/QthdcAAPRK</a> 💬
+</p>
+
+<p align="center">
+  Enjoying using Artillery? Give us a star for good karma 🌟
 </p>
 
 
