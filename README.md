@@ -1,6 +1,5 @@
-<p align="center">
-<a href="https://artillery.io"><img src="https://artillery.io/images/artillery-logo-square.png" height="120" /></a>
-</p>
+<img width="1012" alt="GitHub - Artillery README header" src="https://user-images.githubusercontent.com/1490/145245341-340bde06-c6f8-41d9-98e7-8c1a227826f3.png">
+
 
 <h2 align="center">
   keep <code>production</code> fast & reliable,<br />
@@ -8,24 +7,13 @@
   and pagers silent
 </h2>
 
-<br/>
-
 <p align="center">
-  Artillery is a modern testing tool for DevOps and SRE
-  <br/><br/>
-  Developers, QA engineers and SREs use Artillery to ship scalable APIs &amp; services that stay fast & reliable under high load
-  <br><br>
-  Artillery has a strong focus on developer happiness & ease of use, and a batteries-included philosophy
-</p>
-
-----
-
-<p align="center">
-  Got a question? Want to share how you use Artillery? ➡️  <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
+  Got a question? Want to share how you use Artillery? <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a> &nbsp;💬
 </p>
 
 <p align="center">
   Enjoying using Artillery? Give us a star for good karma 🌟
+  (We <a href="#artillery-forest">plant a tree</a> for every Github star we get)
 </p>
 
 
@@ -70,11 +58,14 @@
 
 Add your team to the [Artillery users list on the wiki](https://github.com/shoreditch-ops/artillery/wiki/Companies-using-Artillery).
 
-# Plant Some Trees!
+# Artillery Forest
 
-We have planted [over 2400 new trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
+We have planted [close to 5000 trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
 
-If you've enjoyed using Artillery and would like to help us out, add your tree to the [Artillery.io forest](https://ecologi.com/artilleryio). 🌲🌳🌴 Feel free to drop us a line to let us know too! 💚
+Want to help us grow the forest?
+- Just star this repo! We plant a tree for every star we get on Github. 🌟 ➡️ 🌳
+- Plant some extra trees through Ecologi → https://ecologi.com/artilleryio (use your name or the name of your company for credit)
+
 
 # License
 
