@@ -6,7 +6,7 @@
 
 // Use our own fork of DDSketch until this PR is merged into main:
 // https://github.com/DataDog/sketches-js/pull/13
-const {DDSketch} = require('sketches-js-hassy');
+const {DDSketch} = require('@artilleryio/sketches-js');
 // const {DDSketch} = require('@datadog/sketches-js');
 const EventEmitter = require('events');
 const {setDriftlessInterval, clearDriftless} = require('driftless');
