@@ -3,14 +3,20 @@
 const test = require('tape');
 const assert = require('assert');
 const http = require('http');
+const { cloneDeep } = require('lodash');
 const createRunner = require('../../../lib/launch-local');
+const {
+  beforeHookBeforeRequest,
+  afterHookBeforeRequest,
+} = require('./processor');
+const path = require('path');
 
-const stats = {};
-const targetServer = runServer().listen(0);
+let stats = {};
 const beforeEndpoint = '/auth';
 const afterEndpoint = '/logout';
 const scenarioEndpoint = '/data';
 
+const targetServer = runServer().listen(0);
 const script = {
   config: {
     target: `http://127.0.0.1:${targetServer.address().port}`,
@@ -57,8 +63,9 @@ const script = {
 
 const authToken = 'abcdefg';
 
-test('Before/After hooks', async (t) => {
-  const runner = await createRunner(script, {}, { scriptPath: '.' });
+test('before/after hooks', async (t) => {
+  const s = cloneDeep(script);
+  const runner = await createRunner(s, {}, { scriptPath: '.' });
 
   runner.events.once('done', async () => {
     await runner.shutdown();
@@ -80,10 +87,63 @@ test('Before/After hooks', async (t) => {
       'should call the endpoint in the scenario section'
     );
 
-    targetServer.close(t.end);
+    // reset stats
+    stats = {};
+    t.end();
   });
 
   runner.run();
+});
+
+test('before/after hooks - processor', async (t) => {
+  const s = cloneDeep(script);
+
+  beforeHookBeforeRequest.resetHistory();
+  afterHookBeforeRequest.resetHistory();
+
+  s.config.processor = path.resolve(`${__dirname}/processor.js`);
+
+  s.before.flow[0] = {
+    ...s.before.flow[0],
+    post: {
+      ...s.before.flow[0].post,
+      beforeRequest: 'beforeHookBeforeRequest',
+    },
+  };
+
+  s.after.flow[0] = {
+    ...s.after.flow[0],
+    post: {
+      ...s.after.flow[0].post,
+      beforeRequest: 'afterHookBeforeRequest',
+    },
+  };
+
+  const runner = await createRunner(s, {}, { scriptPath: '.' });
+
+  runner.events.once('done', async () => {
+    await runner.shutdown();
+
+    t.ok(
+      beforeHookBeforeRequest.calledOnce,
+      'should call processor functions in before hook'
+    );
+    t.ok(
+      afterHookBeforeRequest.calledOnce,
+      'should call processor functions in after hook'
+    );
+
+    // reset stats
+    stats = {};
+
+    t.end();
+  });
+
+  runner.run();
+});
+
+test('before/after hooks - teardown', async (t) => {
+  targetServer.close(t.end);
 });
 
 function runServer() {
