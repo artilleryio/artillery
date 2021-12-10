@@ -1,14 +1,18 @@
-<img width="1012" alt="GitHub - Artillery README header" src="https://user-images.githubusercontent.com/1490/145245341-340bde06-c6f8-41d9-98e7-8c1a227826f3.png">
+
+<img width="1012" alt="Modern testing for DevOps and SRE" src="https://user-images.githubusercontent.com/1490/145614295-12af8edc-4e17-4c76-af16-fa31faa12e54.png">
 
 
-<h2 align="center">
-  keep <code>production</code> fast & reliable,<br />
-  customers happy,</br>
-  and pagers silent
-</h2>
+
+<h3 align="center">
+  keep <code>production</code> fast & reliable, customers happy, and pagers silent
+</h3>
 
 <p align="center">
-  Got a question? Want to share how you use Artillery? <a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a> &nbsp;💬
+  <a href="https://www.artillery.io/docs">Docs</a> | <a href="https://github.com/artilleryio/artillery/discussions">Discussions</a> | <a href="https://twitter.com/artilleryio">@artilleryio</a>
+</p>
+
+<p align="center">
+  <img alt="npm" src="https://img.shields.io/npm/dm/artillery?style=flat-square">
 </p>
 
 <p align="center">
@@ -16,15 +20,14 @@
   (We <a href="#artillery-forest">plant a tree</a> for every Github star we get)
 </p>
 
+----
 
 # Use Cases
 
 - Prepare for traffic surges - run load tests to help prepare your API or service for upcoming peak traffic
-- Run load tests in CI/CD to catch and prevent performance regressions before they cause issues for users
+- Run continuous smoke tests to catch issues before they reach production
+- Run Artillery in CI/CD to prevent performance regressions
 - Profile and debug performance issues such as memory leaks, high tail latency caused by GC pauses or high CPU usage, or misconfigured resource pools
-- Run smoke tests continuously against production to catch issues (also known as production scripted testing or synthetic monitoring)
-- Designed for modern web APIs, headless CMS and e-commerce systems, IoT backends, real-time services, and microservice architectures
-- Test internal microservices and components as well as external endpoints
 - Scale out and run your tests from your own AWS account with ease
 
 # Features
