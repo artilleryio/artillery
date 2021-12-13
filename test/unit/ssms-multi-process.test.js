@@ -93,9 +93,12 @@ tap.test('Metric aggregation', async t => {
   t.comment(`writing ${dataPoints.length} measurements`);
 
   if (!process.env.FROM_DATA_FILE) {
+    const startTime = Date.now();
     // Main test:
     for (const dp of dataPoints) {
-      const ts = Date.now();
+      // force data into different buckets
+      const ts = startTime + _.random(1,11) * 1000
+
       // pick a histogram name, a counter name, and a worker which will record these measurements
       const hname = _.sample(histogramNames);
       const cname = _.sample(counterNames);
