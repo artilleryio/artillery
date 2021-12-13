@@ -6,6 +6,7 @@ const tap = require('tap');
 const { SSMS } = require('../../core/lib/ssms');
 const sleep = require('../helpers/sleep');
 const data = require('../data/geometric.json');
+const responseTimeHistogramsData = require('../data/response-times-histograms.json');
 const path = require('path');
 const _ = require('lodash');
 const fs = require('fs');
@@ -233,6 +234,139 @@ tap.test('Metric aggregation', async t => {
     t.ok(summary.lastMetricAt === controlSummary.lastMetricAt, 'lastMetricAt should be equal');
     t.ok(summary.lastCounterAt === controlSummary.lastCounterAt, 'lastCounterAt should be equal');
     t.ok(summary.firstHistogramAt === controlSummary.firstHistogramAt, 'firstHistogramAt should be equal');
+  }
+});
+
+tap.test('Metric aggregation - merged histograms', async t => {
+  const control = new SSMS({ pullOnly: true });
+  const metricData = {}; // indexed by timestamp (as string) -> [summaries]
+
+  const NUM_WORKERS = 7;
+  const workers = [];
+  let workersRunning = 0;
+
+  for (let i = 0; i < NUM_WORKERS; i++) {
+    const worker = new Worker(path.resolve(__dirname, 'ssms-worker.js'));
+
+    workers.push(worker);
+    workersRunning++;
+
+    worker.on('message', (message) => {
+      if (message.event === 'metricData') {
+        const md = SSMS.deserializeMetrics(message.metricData);
+        md.metadata = {workerId: message.workerId};
+        if (!metricData[md.period]) {
+          metricData[md.period] = [];
+        }
+        metricData[md.period].push(md);
+      }
+    });
+
+    worker.on('error', (err) => {
+      console.log(err);
+    });
+
+    worker.on('exit', (code) => {
+      if (code !== 0) {
+        console.log(new Error(`Worker stopped with exit code ${code}`));
+      }
+      workersRunning--;
+    });
+  }
+
+  t.comment('worker count:', workers.length);
+
+  for (const inputData of responseTimeHistogramsData) {
+    const [workerIndex, , metricName, metricValue, ts] = inputData;
+    const [dest] = workers.filter((w, idx) => idx === workerIndex);
+
+    dest.postMessage({cmd: 'histogram', name: metricName, value: metricValue, ts: ts});
+    control.histogram(metricName, metricValue, ts);
+  }
+
+  await sleep(1000);
+
+  for(const worker of workers) {
+    worker.postMessage({ cmd: 'exit' });
+  }
+
+  // Wait for all workers to exit
+  while(true) {
+    await sleep(500);
+    if (workersRunning === 0) {
+      break;
+    }
+  }
+
+  control.aggregate(true);
+  control.stop();
+
+  // Now we can compare:
+
+  // t.ok(_.isEqual(Object.keys(metricData).sort(), control.getBucketIds().sort()), 'Should have the same set of buckets');
+  // console.log(Object.keys(metricData).sort(), control.getBucketIds().sort());
+
+  const combined = {};
+  for (const [bucket, summaries] of Object.entries(metricData)) {
+    // summaries = list of metrics objects for a period/bucket from every worker
+    // these are histogram names tracked in this period (across all workers):
+    const histogramNames = [...new Set(
+      summaries.reduce((acc, m) => {
+        acc = acc.concat(Object.keys(m.histograms));
+        return acc;
+      }, [])
+    )];
+    const histogramMax = {};
+    for(const hn of histogramNames) {
+
+      for(const m of summaries) {
+        if (m.histograms[hn]) {
+          if (m.histograms[hn].max > (histogramMax[hn] || 0)) {
+            histogramMax[hn] = m.histograms[hn].max;
+          }
+        }
+      }
+    }
+
+    const merged = SSMS.mergeBuckets(summaries);
+
+    combined[Object.keys(merged)[0]] = merged[Object.keys(merged)[0]]; // we only expect merged object to have one key
+  }
+
+  // This is only one bucket - the very first one:
+  const packed = SSMS.pack(metricData[Object.keys(metricData)[0]]);
+
+  //
+  // Compare aggregated metrics with those recorded in the "control" SSMS instance
+  //
+  for(const [bucketId, summary] of Object.entries(combined)) {
+    t.comment(`bucketId: ${bucketId}, typeof = ${typeof bucketId}`);
+    const controlSummary = control.getMetrics(bucketId);
+
+    // TODO fix
+    // t.ok(_.isEqual(summary.counters, controlSummary.counters), 'Aggregated counter values should be the same');
+
+    for(const [hname, h] of Object.entries(summary.histograms)) {
+      t.comment(`histogram: ${hname}`);
+      console.log('h p99 =====>', round(h.getValueAtQuantile(0.99), 1));
+      console.log('control p99 ======>', round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1));
+      t.ok(round(h.getValueAtQuantile(0.99), 1) === round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1), 'p99 values should be equal');
+      t.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
+      t.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
+      // TODO fix
+      // t.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'All aggregations are > 0');
+    }
+
+    for (const [hname, h] of Object.entries(packed.histograms)) {
+      t.ok(h.max > h.getValueAtQuantile(0.99), `${hname} summary max is > p99 (${h.max} > ${h.getValueAtQuantile(0.99)})`);
+      // TODO fix
+      // t.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, `summary aggregations are > 0 (${hname} - ${h.min}, ${h.max}, ${h.getValueAtQuantile(0.99)})`);
+    }
+
+    // Metadata:
+    t.comment('period comparison: summary ->', summary.period, typeof summary.period, 'controlSummary ->', controlSummary.period, typeof controlSummary.period);
+    // TODO fix
+    // t.ok(summary.firstHistogramAt === controlSummary.firstHistogramAt, 'firstHistogramAt should be equal');
   }
 });
 
