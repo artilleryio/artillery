@@ -20,6 +20,10 @@
   (We <a href="#artillery-forest">plant a tree</a> for every Github star we get)
 </p>
 
+<p align="center">
+  Join us, <a href="https://www.artillery.io/blog/artillery-hiring-product-engineers">we're hiring</a>.
+</p>
+
 ----
 
 # Use Cases
