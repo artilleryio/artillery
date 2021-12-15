@@ -4,7 +4,7 @@ const test = require('tape');
 const assert = require('assert');
 const http = require('http');
 const { cloneDeep } = require('lodash');
-const createRunner = require('../../../lib/launch-local');
+const createLauncher = require('../../../lib/launch-local');
 const {
   beforeHookBeforeRequest,
   afterHookBeforeRequest
@@ -65,7 +65,7 @@ const authToken = 'abcdefg';
 
 test('before/after hooks', async (t) => {
   const s = cloneDeep(script);
-  const runner = await createRunner(s, {}, { scriptPath: '.' });
+  const runner = await createLauncher(s, {}, { scriptPath: '.' });
 
   runner.events.once('done', async () => {
     await runner.shutdown();
@@ -89,6 +89,7 @@ test('before/after hooks', async (t) => {
 
     // reset stats
     stats = {};
+
     t.end();
   });
 
@@ -119,7 +120,7 @@ test('before/after hooks - processor', async (t) => {
     }
   };
 
-  const runner = await createRunner(s, {}, { scriptPath: '.' });
+  const runner = await createLauncher(s, {}, { scriptPath: '.' });
 
   runner.events.once('done', async () => {
     await runner.shutdown();
@@ -131,6 +132,52 @@ test('before/after hooks - processor', async (t) => {
     t.ok(
       afterHookBeforeRequest.calledOnce,
       'should call processor functions in after hook'
+    );
+
+    // reset stats
+    stats = {};
+
+    t.end();
+  });
+
+  runner.run();
+});
+
+test('before/after hooks - payload', async (t) => {
+  const s = cloneDeep(script);
+  const payloadValue = 'value';
+
+  s.config.payload = [
+    {
+      path: '.',
+      fields: ['field1'],
+      data: [[payloadValue]],
+    },
+  ];
+
+  s.before.flow[0] = {
+    ...s.before.flow[0],
+    post: {
+      ...s.before.flow[0].post,
+      url: `${beforeEndpoint}/{{ field1 }}`,
+    },
+  };
+
+  const runner = await createLauncher(s, s.config.payload, { scriptPath: '.' });
+
+  runner.events.once('done', async () => {
+    await runner.shutdown();
+
+    t.equal(
+      stats[`${beforeEndpoint}/${payloadValue}`],
+      1,
+      'should be able to use payload values in the "before" hook'
+    );
+
+    t.equal(
+      stats[scenarioEndpoint],
+      script.config.phases[0].duration * script.config.phases[0].arrivalRate,
+      'should call the endpoint in the scenario section'
     );
 
     // reset stats
@@ -157,7 +204,7 @@ function runServer() {
   };
 
   const handlePostReqs = (req, res) => {
-    if (req.url === beforeEndpoint) {
+    if (req.url.startsWith(beforeEndpoint)) {
       res.setHeader('Content-Type', 'application/json');
 
       return res.end(
