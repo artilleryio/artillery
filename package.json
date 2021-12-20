@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "2.0.0-7",
+  "version": "2.0.0-8",
   "description": "Modern performance testing toolkit",
   "main": "./lib",
   "engines": {
