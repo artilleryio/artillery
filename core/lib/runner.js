@@ -85,20 +85,12 @@ function loadEngines(
   return { loadedEngines, warnings };
 }
 
-function prepareScript(script, payload, options) {
+function prepareScript(script, payload) {
   const runnableScript = _.cloneDeep(script);
 
   _.each(runnableScript.config.phases, function(phaseSpec) {
     phaseSpec.mode = phaseSpec.mode || runnableScript.config.mode;
   });
-
-  // load processor if needed:
-  if (runnableScript.config.processor) {
-    const absoluteScriptPath = path.resolve(process.cwd(), options.scriptPath);
-    const processorPath = path.resolve(path.dirname(absoluteScriptPath), runnableScript.config.processor);
-    const processor = require(processorPath);
-    runnableScript.config.processor = processor;
-  }
 
   if (payload) {
     if (_.isArray(payload[0])) {
@@ -142,7 +134,7 @@ async function runner(script, payload, options, callback) {
     engines: {},
   };
 
-  const runnableScript = prepareScript(script, payload, opts);
+  const runnableScript = prepareScript(script, payload);
 
   let ee = new EventEmitter();
 
