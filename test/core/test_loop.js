@@ -58,3 +58,33 @@ test('loop with range', (t) => {
     ee.run();
   });
 });
+
+test('loop with nested range', (t) => {
+  const script = require('./scripts/loop_nested_range.json');
+
+  runner(script).then(function(ee) {
+    ee.on('done', (nr) => {
+      const report = SSMS.legacyReport(nr).report();
+
+      let scenarios = report.scenariosCompleted;
+      let requests = report.requestsCompleted;
+      let expected = scenarios * 3 * 2;
+      let code200 = report.codes[200];
+      let code404 = report.codes[404];
+
+      t.assert(
+        requests === expected,
+        'Should have ' + expected + ' requests for each completed scenario');
+      t.assert(code200 > 0,
+               'There should be a non-zero number of 200s');
+
+      // If $loopCount breaks, we'll see 404s here.
+      t.assert(!code404,
+               'There should be no 404s');
+      ee.stop().then(() => {
+        t.end();
+      });
+    });
+    ee.run();
+  });
+});

@@ -80,7 +80,7 @@ function createLoopWithCount(count, steps, opts) {
         overValues = opts.overValues;
         loopValue = overValues[i];
       } else if (opts.overValues && typeof opts.overValues === 'string') {
-        overValues = context.vars[opts.overValues];
+        overValues = L.get(context.vars, opts.overValues);
         if (L.isArray(overValues)) {
           loopValue = overValues[i];
         } else {

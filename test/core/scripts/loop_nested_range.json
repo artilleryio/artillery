@@ -1,0 +1,28 @@
+{
+    "config": {
+      "target": "http://localhost:3003",
+      "phases": [
+        {"duration": 10, "arrivalRate": 1}
+      ],
+      "statsInterval": 1,
+      "variables": {
+          "outer": {
+              "items": [9, 10, 11]
+          }
+      }
+    },
+    "scenarios": [
+      {
+        "flow": [
+          {
+            "loop": [
+              {"get": {"url": "/"}},
+              {"get": {"url": "/loop/{{ $loopElement }}"}}
+            ],
+            "over": "outer.items"
+          }
+        ]
+      }
+    ]
+  }
+  
