@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  Questions, comments, feedback? ➡️&nbsp;&nbsp;&nbsp;<a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
+  Questions, comments, feedback? ➡️&nbsp;&nbsp;<a href="https://github.com/artilleryio/artillery/discussions">Artillery Discussion Board</a>
 </p>
 
 ----
@@ -29,6 +29,8 @@ This Artillery engine lets you combine Playwright with Artillery to be able to l
 * 🌐&nbsp;&nbsp;&nbsp;Launch thousands of browsers, with **zero** infrastructure setup with [Artillery Pro](https://artillery.io/pro)
 
 ✨ *Perfect for testing complex web apps* ✨
+
+Read the official launch blog post here: [Launching 10,000 browsers for fun and profit](https://www.artillery.io/blog/load-testing-with-real-browsers)
 
 ## Why load test with browsers?
 
@@ -203,6 +205,19 @@ See [Artillery + Playwright examples](https://github.com/artilleryio/artillery-e
 Use the [`Dockerfile`](./Dockerfile) which bundles Chrome, Playwright and Artillery to run your tests in CI.
 
 **Note:** To keep the Docker image small, browsers other than Chromium are removed (the saving is ~500MB)
+
+## Performance (Does it scale?)
+
+When you run load tests with browsers your **main bottleneck** is going to be memory. Memory usage is what will limit how many Chrome instances can **run in parallel** in each VM/container. (Remember that every virtual user (VUs) will run its own copy of Chrome - just like in the real world.)
+
+Two factors will determine how many VUs will be able to run in parallel:
+
+1. Memory usage of the pages that the VU navigates to and uses. Lightweight pages will mean each VU uses less memory while it's running.
+1. How long each VU runs for - the longer each session, the more VUs will be running at the same time, the higher memory usage will be.
+
+The engine tracks a `browser.memory_used_mb` metric which shows the distribution of memory usage across all pages in each scenario (in megabytes). The value is read from [`window.performance.memory.usedJSHeapSize`](https://developer.mozilla.org/en-US/docs/Web/API/Performance/memory) API. The metric is recorded for every [`load` event](https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event).
+
+Ultimately, there is no formula to determine how many VUs can be supported on a given amount of memory unfortunately as it will depend on the application and VU scenario. The rule of thumb is to scale out horizontally and run with as much memory as possible and track VU session length and memory usage of Chrome to be able to tweak the number of containers/VMs running your tests.
 
 ## Questions, comments, feedback?
 
