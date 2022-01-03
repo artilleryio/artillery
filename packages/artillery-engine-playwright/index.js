@@ -17,7 +17,10 @@ class PlaywrightEngine {
     return async function scenario(initialContext, cb) {
       events.emit('started');
       const browser = await chromium.launch({
-          headless: self.config.engines.playwright.headless === false ? false : true
+        headless: self.config.engines.playwright.headless === false ? false : true,
+        args: [
+          '--enable-precise-memory-info',
+        ],
         });
       debug('browser created');
       const context = await browser.newContext();
@@ -76,6 +79,9 @@ class PlaywrightEngine {
 
         page.on('load', async (page) => {
           debug('load:', page.url());
+
+          const { usedJSHeapSize } = JSON.parse(await page.evaluate(() => JSON.stringify({usedJSHeapSize: window.performance.memory.usedJSHeapSize})));
+          events.emit('histogram', 'engine.browser.memory_used_mb', usedJSHeapSize / 1000 / 1000);
         });
         page.on('pageerror', (error) => {
           debug('pageerror:', page.url());
