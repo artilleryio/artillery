@@ -39,7 +39,8 @@ module.exports = {
   },
   runnerFuncs: {
     handleScriptHook,
-    prepareScript
+    prepareScript,
+    loadProcessor
   }
 };
 
@@ -83,6 +84,20 @@ function loadEngines(
   );
 
   return { loadedEngines, warnings };
+}
+
+function loadProcessor(script, options) {
+  if (script.config.processor) {
+    const absoluteScriptPath = path.resolve(process.cwd(), options.scriptPath);
+    const processorPath = path.resolve(
+      path.dirname(absoluteScriptPath),
+      script.config.processor
+    );
+    const processor = require(processorPath);
+    script.config.processor = processor;
+  }
+
+  return script;
 }
 
 function prepareScript(script, payload) {
