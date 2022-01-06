@@ -10,7 +10,7 @@
     "expect": true
   },
   "parserOptions": {
-    "ecmaVersion": 2018,
+    "ecmaVersion": "latest",
     "sourceType": "module" // Allows for the use of imports
   },
   "rules": {
