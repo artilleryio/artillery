@@ -44,8 +44,14 @@ function createThink(requestSpec, opts) {
     if (requestSpec.jitter || opts.jitter) {
       thinktime = jitter(`${thinktime}:${requestSpec.jitter || opts.jitter}`);
     }
-    debug('think %s, %s, %s -> %s', requestSpec.think, requestSpec.jitter, opts.jitter, thinktime);
-    setTimeout(function() {
+    debug(
+      'think %s, %s, %s -> %s',
+      requestSpec.think,
+      requestSpec.jitter,
+      opts.jitter,
+      thinktime
+    );
+    setTimeout(function () {
       callback(null, context);
     }, thinktime);
   };
@@ -57,7 +63,6 @@ function createThink(requestSpec, opts) {
 // like "1-15"
 function createLoopWithCount(count, steps, opts) {
   return function aLoop(context, callback) {
-
     let count2 = count;
     if (typeof count === 'string') {
       count2 = template(count, context);
@@ -109,12 +114,12 @@ function createLoopWithCount(count, steps, opts) {
         }
       },
       function repeated(cb) {
-        let zero = function(cb2) {
+        let zero = function (cb2) {
           return cb2(null, newContext);
         };
         let steps2 = L.flatten([zero, steps]);
 
-        A.waterfall(steps2, function(err, context2) {
+        A.waterfall(steps2, function (err, context2) {
           if (err) {
             return cb(err, context2);
           }
@@ -136,7 +141,7 @@ function createLoopWithCount(count, steps, opts) {
           }
         });
       },
-      function(err, finalContext) {
+      function (err, finalContext) {
         if (typeof finalContext === 'undefined') {
           // this happens if test() returns false immediately, e.g. with
           // nested loops where one of the inner loops goes over an
@@ -144,12 +149,12 @@ function createLoopWithCount(count, steps, opts) {
           return callback(err, newContext);
         }
         return callback(err, finalContext);
-      });
+      }
+    );
   };
 }
 
 function createParallel(steps, opts) {
-
   let limit = (opts && opts.limitValue) || 100;
 
   return function aParallel(context, callback) {
@@ -157,23 +162,19 @@ function createParallel(steps, opts) {
     let newCallback = callback;
 
     // Remap the steps array to pass the context into each step.
-    let newSteps = L.map(steps, function(step) {
-      return function(callback){
+    let newSteps = L.map(steps, function (step) {
+      return function (callback) {
         step(newContext, callback);
       };
     });
 
     // Run each of the steps in parallel.
-    A.parallelLimit(
-      newSteps,
-      limit,
-      function(err, finalContext) {
-        // We don't need to do anything with the array of contexts returned from each step at the moment.
-        return newCallback(err, newContext);
-      });
+    A.parallelLimit(newSteps, limit, function (err, finalContext) {
+      // We don't need to do anything with the array of contexts returned from each step at the moment.
+      return newCallback(err, newContext);
+    });
   };
 }
-
 
 function isProbableEnough(obj) {
   if (typeof obj.probability === 'undefined') {
@@ -207,20 +208,27 @@ function template(o, context, inPlace) {
     if (!/{{/.test(o)) {
       return o;
     }
-    const funcCallRegex = /{{\s*(\$[A-Za-z0-9_]+\s*\(\s*[A-Za-z0-9_,\s]*\s*\))\s*}}/;
+    const funcCallRegex =
+      /{{\s*(\$[A-Za-z0-9_]+\s*\(\s*[A-Za-z0-9_,\s]*\s*\))\s*}}/;
     let match = o.match(funcCallRegex);
     if (match) {
       // This looks like it could be a function call:
       const syntax = esprima.parse(match[1]);
       // TODO: Use a proper schema for what we expect here
-      if (syntax.body && syntax.body.length === 1 &&
-          syntax.body[0].type === 'ExpressionStatement') {
+      if (
+        syntax.body &&
+        syntax.body.length === 1 &&
+        syntax.body[0].type === 'ExpressionStatement'
+      ) {
         let funcName = syntax.body[0].expression.callee.name;
-        let args = L.map(syntax.body[0].expression.arguments, function(arg) {
+        let args = L.map(syntax.body[0].expression.arguments, function (arg) {
           return arg.value;
         });
         if (funcName in context.funcs) {
-          return template(o.replace(funcCallRegex, context.funcs[funcName].apply(null, args)), context);
+          return template(
+            o.replace(funcCallRegex, context.funcs[funcName].apply(null, args)),
+            context
+          );
         }
       }
     } else {
@@ -243,13 +251,19 @@ function templateObjectOrArray(o, context) {
     const newPath = template(path, context, true);
 
     let newValue;
-    if (value && (value.constructor !== Object && value.constructor !== Array)) {
+    if (value && value.constructor !== Object && value.constructor !== Array) {
       newValue = template(value, context, true);
     } else {
       newValue = value;
     }
 
-    debug(`path = ${path} ; value = ${JSON.stringify(value)} (${typeof value}) ; (subj type: ${subj.length ? 'list':'hash'}) ; newValue = ${JSON.stringify(newValue)} ; newPath = ${newPath}`);
+    debug(
+      `path = ${path} ; value = ${JSON.stringify(
+        value
+      )} (${typeof value}) ; (subj type: ${
+        subj.length ? 'list' : 'hash'
+      }) ; newValue = ${JSON.stringify(newValue)} ; newPath = ${newPath}`
+    );
 
     // If path has changed, we need to unset the original path and
     // explicitly walk down the new subtree from this path:
@@ -261,18 +275,17 @@ function templateObjectOrArray(o, context) {
     if (newPath.endsWith(key)) {
       const keyIndex = newPath.lastIndexOf(key);
       const prefix = newPath.substr(0, keyIndex - 1);
-      L.set(o, `${prefix}["${key}"]`, newValue)
+      L.set(o, `${prefix}["${key}"]`, newValue);
     } else {
       L.set(o, newPath, newValue);
     }
   });
 }
 
-function renderVariables (str, vars) {
+function renderVariables(str, vars) {
   const RX = /{{{?[\s$\w\.\[\]\'\"-]+}}}?/g;
   let rxmatch;
   let result = str.substring(0, str.length);
-
 
   // Special case for handling integer/boolean/object substitution:
   //
@@ -309,12 +322,10 @@ function evil(sandbox, code) {
   let script = new vm.Script(code);
   try {
     return script.runInContext(context);
-  }
-  catch(e) {
+  } catch (e) {
     return null;
   }
 }
-
 
 function parseLoopCount(countSpec) {
   let from = 0;
@@ -342,7 +353,10 @@ function parseLoopCount(countSpec) {
 }
 
 function isCaptureFailed(v, defaultStrict) {
-  const noValue = ((typeof v.value === 'undefined' || v.value === '') || typeof v.error !== 'undefined');
+  const noValue =
+    typeof v.value === 'undefined' ||
+    v.value === '' ||
+    typeof v.error !== 'undefined';
 
   if (!noValue) {
     return false;
@@ -350,9 +364,9 @@ function isCaptureFailed(v, defaultStrict) {
 
   return !(
     (typeof defaultStrict === 'undefined' && v.strict === false) ||
-      (defaultStrict === true && v.strict === false) ||
-      (defaultStrict === false && typeof v.strict === 'undefined') ||
-      (defaultStrict === false && v.strict === false)
+    (defaultStrict === true && v.strict === false) ||
+    (defaultStrict === false && typeof v.strict === 'undefined') ||
+    (defaultStrict === false && v.strict === false)
   );
 }
 
@@ -363,22 +377,22 @@ function ensurePropertyIsAList(obj, prop) {
     return obj;
   }
 
-  obj[prop] = [].concat(
-    typeof obj[prop] === 'undefined' ?
-      [] : obj[prop]);
+  obj[prop] = [].concat(typeof obj[prop] === 'undefined' ? [] : obj[prop]);
   return obj;
 }
 
 function captureOrMatch(params, response, context, done) {
-  if ((!params.capture || params.capture.length === 0) &&
-      (!params.match || params.match.length === 0)) {
+  if (
+    (!params.capture || params.capture.length === 0) &&
+    (!params.match || params.match.length === 0)
+  ) {
     return done(null, null);
   }
 
   let result = {
     captures: {},
     matches: {},
-    failedCaptures: false,
+    failedCaptures: false
   };
 
   // Objects updated in place the first time this runs:
@@ -389,7 +403,7 @@ function captureOrMatch(params, response, context, done) {
 
   async.eachSeries(
     specs,
-    function(spec, next) {
+    function (spec, next) {
       let parsedSpec = parseSpec(spec, response);
       let parser = parsedSpec.parser;
       let extractor = parsedSpec.extractor;
@@ -401,14 +415,17 @@ function captureOrMatch(params, response, context, done) {
         content = response.headers;
       }
 
-      parser(content, function(err, doc) {
+      parser(content, function (err, doc) {
         if (err) {
           if (spec.as) {
             result.captures[spec.as] = {
               error: err,
               strict: spec.strict
             };
-            result.captures[spec.as].failed = isCaptureFailed(result.captures[spec.as], context._defaultStrictCapture);
+            result.captures[spec.as].failed = isCaptureFailed(
+              result.captures[spec.as],
+              context._defaultStrictCapture
+            );
           } else {
             result.matches[spec.expr] = {
               error: err,
@@ -423,7 +440,12 @@ function captureOrMatch(params, response, context, done) {
         if (spec.value !== undefined) {
           // this is a match spec
           let expected = template(spec.value, context);
-          debug('match: %s, expected: %s, got: %s', expr, expected, extractedValue);
+          debug(
+            'match: %s, expected: %s, got: %s',
+            expr,
+            expected,
+            extractedValue
+          );
           if (extractedValue !== expected) {
             result.matches[expr] = {
               success: false,
@@ -442,7 +464,6 @@ function captureOrMatch(params, response, context, done) {
           return next(null);
         }
 
-
         if (spec.as) {
           // this is a capture
           debug('capture: %s = %s', spec.as, extractedValue);
@@ -452,9 +473,7 @@ function captureOrMatch(params, response, context, done) {
           };
 
           if (spec.transform) {
-            let transformedValue = evil(
-              result.captures,
-              spec.transform);
+            let transformedValue = evil(result.captures, spec.transform);
 
             debug('transform: %s = %s', spec.as, result.captures[spec.as]);
             if (transformedValue !== null) {
@@ -462,20 +481,23 @@ function captureOrMatch(params, response, context, done) {
             }
           }
 
-          result.captures[spec.as].failed = isCaptureFailed(result.captures[spec.as], context._defaultStrictCapture);
+          result.captures[spec.as].failed = isCaptureFailed(
+            result.captures[spec.as],
+            context._defaultStrictCapture
+          );
         }
 
         return next(null);
       });
     },
-    function(err) {
+    function (err) {
       if (err) {
         return done(err, null);
       } else {
-
         return done(null, result);
       }
-    });
+    }
+  );
 }
 
 function parseSpec(spec, response) {
@@ -536,7 +558,7 @@ function parseJSON(body, callback) {
     } else {
       r = body;
     }
-  } catch(e) {
+  } catch (e) {
     err = e;
   }
 
@@ -585,15 +607,15 @@ function extractRegExp(doc, expr, opts) {
   }
   let rx;
   if (flags) {
-      rx = new RegExp(expr, flags);
+    rx = new RegExp(expr, flags);
   } else {
-      rx = new RegExp(expr);
+    rx = new RegExp(expr);
   }
   let match = rx.exec(str);
   if (!match) {
     return '';
   }
-  if(group && match[group]) {
+  if (group && match[group]) {
     return match[group];
   } else if (match[0]) {
     return match[0];
@@ -631,25 +653,29 @@ function dummyExtractor() {
  */
 function isJSON(res) {
   debug('isJSON: content-type = %s', res.headers['content-type']);
-  return (res.headers['content-type'] &&
-          /^application\/json/.test(res.headers['content-type']));
+  return (
+    res.headers['content-type'] &&
+    /^application\/json/.test(res.headers['content-type'])
+  );
 }
 
 /*
  * Given a response object determine if it's some kind of XML
  */
 function isXML(res) {
-  return (res.headers['content-type'] &&
-          (/^[a-zA-Z]+\/xml/.test(res.headers['content-type']) ||
-           /^[a-zA-Z]+\/[a-zA-Z]+\+xml/.test(res.headers['content-type'])));
-
+  return (
+    res.headers['content-type'] &&
+    (/^[a-zA-Z]+\/xml/.test(res.headers['content-type']) ||
+      /^[a-zA-Z]+\/[a-zA-Z]+\+xml/.test(res.headers['content-type']))
+  );
 }
 
-function randomInt (low, high) {
+function randomInt(low, high) {
   return Math.floor(Math.random() * (high - low + 1) + low);
 }
 
-function sanitiseValue (value) {
-  if (value === 0 || value === false || value === null || value === undefined) return value;
+function sanitiseValue(value) {
+  if (value === 0 || value === false || value === null || value === undefined)
+    return value;
   return value ? value : '';
 }

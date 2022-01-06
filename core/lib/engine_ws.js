@@ -19,9 +19,9 @@ function WSEngine(script) {
   this.config = script.config;
 }
 
-WSEngine.prototype.createScenario = function(scenarioSpec, ee) {
+WSEngine.prototype.createScenario = function (scenarioSpec, ee) {
   const self = this;
-  const tasks = _.map(scenarioSpec.flow, function(rs) {
+  const tasks = _.map(scenarioSpec.flow, function (rs) {
     if (rs.think) {
       return engineUtil.createThink(
         rs,
@@ -52,58 +52,60 @@ function getMessageHandler(context, params, ee, callback) {
       fauxResponse = { body: event.data };
     }
 
-    engineUtil.captureOrMatch(params, fauxResponse, context, function captured(
-      err,
-      result
-    ) {
-      if (err) {
-        ee.emit('error', err.message || err.code);
-        return callback(err, context);
-      }
+    engineUtil.captureOrMatch(
+      params,
+      fauxResponse,
+      context,
+      function captured(err, result) {
+        if (err) {
+          ee.emit('error', err.message || err.code);
+          return callback(err, context);
+        }
 
-      const { captures = {}, matches = {} } = result;
+        const { captures = {}, matches = {} } = result;
 
-      debug('captures and matches:');
-      debug(matches);
-      debug(captures);
+        debug('captures and matches:');
+        debug(matches);
+        debug(captures);
 
-      // match and capture are strict by default:
-      const haveFailedMatches = _.some(result.matches, function(v) {
-        return !v.success && v.strict !== false;
-      });
-
-      const haveFailedCaptures = _.some(result.captures, function(v) {
-        return v.failed;
-      });
-
-      if (haveFailedMatches || haveFailedCaptures) {
-        // TODO: Emit the details of each failed capture/match
-        return callback(new Error('Failed capture or match'), context);
-      }
-
-      _.each(result.matches, function(v) {
-        ee.emit('match', v.success, {
-          expected: v.expected,
-          got: v.got,
-          expression: v.expression,
-          strict: v.strict,
+        // match and capture are strict by default:
+        const haveFailedMatches = _.some(result.matches, function (v) {
+          return !v.success && v.strict !== false;
         });
-      });
 
-      _.each(result.captures, function(v, k) {
-        _.set(context.vars, k, v.value);
-      });
+        const haveFailedCaptures = _.some(result.captures, function (v) {
+          return v.failed;
+        });
 
-      return callback(null, context);
-    });
+        if (haveFailedMatches || haveFailedCaptures) {
+          // TODO: Emit the details of each failed capture/match
+          return callback(new Error('Failed capture or match'), context);
+        }
+
+        _.each(result.matches, function (v) {
+          ee.emit('match', v.success, {
+            expected: v.expected,
+            got: v.got,
+            expression: v.expression,
+            strict: v.strict
+          });
+        });
+
+        _.each(result.captures, function (v, k) {
+          _.set(context.vars, k, v.value);
+        });
+
+        return callback(null, context);
+      }
+    );
   };
 }
 
-WSEngine.prototype.step = function(requestSpec, ee) {
+WSEngine.prototype.step = function (requestSpec, ee) {
   const self = this;
 
   if (requestSpec.loop) {
-    const steps = _.map(requestSpec.loop, function(rs) {
+    const steps = _.map(requestSpec.loop, function (rs) {
       return self.step(rs, ee);
     });
 
@@ -112,7 +114,7 @@ WSEngine.prototype.step = function(requestSpec, ee) {
       overValues: requestSpec.over,
       whileTrue: self.config.processor
         ? self.config.processor[requestSpec.whileTrue]
-        : undefined,
+        : undefined
     });
   }
 
@@ -124,10 +126,10 @@ WSEngine.prototype.step = function(requestSpec, ee) {
   }
 
   if (requestSpec.function) {
-    return function(context, callback) {
+    return function (context, callback) {
       const processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
-        processFunc(context, ee, function() {
+        processFunc(context, ee, function () {
           return callback(null, context);
         });
       }
@@ -135,23 +137,23 @@ WSEngine.prototype.step = function(requestSpec, ee) {
   }
 
   if (requestSpec.log) {
-    return function(context, callback) {
+    return function (context, callback) {
       console.log(template(requestSpec.log, context));
-      return process.nextTick(function() {
+      return process.nextTick(function () {
         callback(null, context);
       });
     };
   }
 
   if (requestSpec.connect) {
-    return function(context, callback) {
-      return process.nextTick(function() {
+    return function (context, callback) {
+      return process.nextTick(function () {
         callback(null, context);
       });
     };
   }
 
-  const f = function(context, callback) {
+  const f = function (context, callback) {
     ee.emit('counter', 'engine.websocket.messages_sent', 1);
     ee.emit('rate', 'engine.websocket.send_rate');
     const params = requestSpec.send;
@@ -174,7 +176,7 @@ WSEngine.prototype.step = function(requestSpec, ee) {
       context.ws.onmessage = getMessageHandler(context, params, ee, callback);
     }
 
-    context.ws.send(payload, function(err) {
+    context.ws.send(payload, function (err) {
       if (err) {
         debug(err);
         ee.emit('error', err);
@@ -211,7 +213,7 @@ function getWsOptions(config) {
 function getWsInstance(config, scenarioSpec, context, cb) {
   let wsArgs = {
     ...getWsOptions(config),
-    target: config.target,
+    target: config.target
   };
   const [{ connect }] = scenarioSpec;
 
@@ -239,12 +241,12 @@ function getWsInstance(config, scenarioSpec, context, cb) {
 
       const opt = getWsOptions({
         tls: config.tls,
-        ws: { subprotocols, headers, ...instanceConfig },
+        ws: { subprotocols, headers, ...instanceConfig }
       });
 
       wsArgs = {
         target: template(target, context),
-        ...opt,
+        ...opt
       };
     } else {
       wsArgs.target = template(connect, context);
@@ -258,7 +260,7 @@ function getWsInstance(config, scenarioSpec, context, cb) {
   return cb(null, context);
 }
 
-WSEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
+WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
   const config = this.config;
 
   return function scenario(initialContext, callback) {
@@ -276,13 +278,13 @@ WSEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
         wsArgs.options
       );
 
-      ws.on('open', function() {
+      ws.on('open', function () {
         contextWithoutWsArgs.ws = ws;
 
         return cb(null, contextWithoutWsArgs);
       });
 
-      ws.once('error', function(err) {
+      ws.once('error', function (err) {
         debug(err);
         ee.emit('error', err.message || err.code);
 
@@ -319,7 +321,7 @@ function getWsConfig(config) {
 
     const agent = new HttpsProxyAgent({
       ...url.parse(proxyUrl),
-      ...proxyOptions,
+      ...proxyOptions
     });
 
     options.agent = agent;

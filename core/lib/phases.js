@@ -18,9 +18,16 @@ module.exports = phaser;
 function phaser(phaseSpecs) {
   let ee = new EventEmitter();
 
-  let tasks = _.map(phaseSpecs, function(spec, i) {
+  let tasks = _.map(phaseSpecs, function (spec, i) {
     // Cast defined but non-number (eg: from ENV) values
-    ['arrivalRate', 'arrivalCount', 'pause', 'rampTo', 'duration', 'maxVusers'].forEach(function(k) {
+    [
+      'arrivalRate',
+      'arrivalCount',
+      'pause',
+      'rampTo',
+      'duration',
+      'maxVusers'
+    ].forEach(function (k) {
       if (!isUndefined(spec[k]) && typeof spec[k] !== 'number') {
         spec[k] = _.toNumber(spec[k]);
       }
@@ -43,13 +50,9 @@ function phaser(phaseSpecs) {
     }
 
     if (!isUndefined(spec.arrivalRate)) {
-
       // If arrivalRate is zero and it's not a ramp, it's the same as a pause:
       if (spec.arrivalRate === 0 && isUndefined(spec.rampTo)) {
-        return createPause(
-          Object.assign(
-            spec, { pause: spec.duration }),
-          ee);
+        return createPause(Object.assign(spec, { pause: spec.duration }), ee);
       }
 
       // If it's a ramp, create that:
@@ -64,8 +67,8 @@ function phaser(phaseSpecs) {
     console.log('Unknown phase spec\n%j\nThis should not happen', spec);
   });
 
-  ee.run = function() {
-    async.series(tasks, function(err) {
+  ee.run = function () {
+    async.series(tasks, function (err) {
       if (err) {
         debug(err);
       }
@@ -79,9 +82,9 @@ function phaser(phaseSpecs) {
 
 function createPause(spec, ee) {
   const duration = spec.pause * 1000;
-  const task = function(callback) {
+  const task = function (callback) {
     ee.emit('phaseStarted', spec);
-    setTimeout(function() {
+    setTimeout(function () {
       ee.emit('phaseCompleted', spec);
       return callback(null);
     }, duration);
@@ -99,11 +102,11 @@ function createRamp(spec, ee) {
   const difference = rampTo - arrivalRate;
   const offset = difference < 0 ? -1 : 1;
   const periods = Math.abs(difference) + 1;
-  const ticksPerPeriod = (duration / periods) * 1000 / tick;
+  const ticksPerPeriod = ((duration / periods) * 1000) / tick;
   const periodLenSec = duration / periods;
 
   let expected = 0;
-  for(let i = 1; i <= periods; i++) {
+  for (let i = 1; i <= periods; i++) {
     let expectedInPeriod = periodLenSec * i;
     expected += expectedInPeriod;
   }
@@ -111,9 +114,13 @@ function createRamp(spec, ee) {
 
   // console.log(`expecting ${expected} total arrivals`);
 
-  let probabilities = crypto.randomBytes(Math.ceil(duration * 1000 / tick * 1.25));
+  let probabilities = crypto.randomBytes(
+    Math.ceil(((duration * 1000) / tick) * 1.25)
+  );
 
-  debug(`rampTo: tick = ${tick}ms; r0 = ${r0}; periods = ${periods}; ticksPerPeriod = ${ticksPerPeriod}; period length = ${periodLenSec}s`);
+  debug(
+    `rampTo: tick = ${tick}ms; r0 = ${r0}; periods = ${periods}; ticksPerPeriod = ${ticksPerPeriod}; period length = ${periodLenSec}s`
+  );
 
   return function rampTask(callback) {
     ee.emit('phaseStarted', spec);
@@ -124,7 +131,7 @@ function createRamp(spec, ee) {
     let i = 0;
     const timer = driftless.setDriftlessInterval(function maybeArrival() {
       let startedAt = Date.now();
-      if(++ticksElapsed > ticksPerPeriod) {
+      if (++ticksElapsed > ticksPerPeriod) {
         debug(`ticksElapsed: ${ticksElapsed}; upping probability or stopping`);
         if (offset === -1 ? currentRate > rampTo : currentRate < rampTo) {
           currentRate += offset;
@@ -133,9 +140,15 @@ function createRamp(spec, ee) {
           p = (periodLenSec * currentRate) / ticksPerPeriod;
 
           debug(`update: currentRate = ${currentRate} - p = ${p}`);
-          debug(`\texpecting ~${periodLenSec * currentRate} arrivals before updating again`);
+          debug(
+            `\texpecting ~${
+              periodLenSec * currentRate
+            } arrivals before updating again`
+          );
         } else {
-          debug(`done: ticksElapsed = ${ticksElapsed}; currentRate = ${currentRate}; rampTo = ${rampTo} `);
+          debug(
+            `done: ticksElapsed = ${ticksElapsed}; currentRate = ${currentRate}; rampTo = ${rampTo} `
+          );
 
           driftless.clearDriftless(timer);
           ee.emit('phaseCompleted', spec);
@@ -164,17 +177,17 @@ function createRamp(spec, ee) {
 }
 
 function createArrivalCount(spec, ee) {
-  const task = function(callback) {
+  const task = function (callback) {
     ee.emit('phaseStarted', spec);
     const duration = spec.duration * 1000;
 
-    if(spec.arrivalCount > 0) {
+    if (spec.arrivalCount > 0) {
       const interval = duration / spec.arrivalCount;
       const p = arrivals.uniform.process(interval, duration);
-      p.on('arrival', function() {
+      p.on('arrival', function () {
         ee.emit('arrival', spec);
       });
-      p.on('finished', function() {
+      p.on('finished', function () {
         ee.emit('phaseCompleted', spec);
         return callback(null);
       });
@@ -188,16 +201,16 @@ function createArrivalCount(spec, ee) {
 }
 
 function createArrivalRate(spec, ee) {
-  const task = function(callback) {
+  const task = function (callback) {
     ee.emit('phaseStarted', spec);
     const ar = 1000 / spec.arrivalRate;
     const duration = spec.duration * 1000;
     debug('creating a %s process for arrivalRate', spec.mode);
     const p = arrivals[spec.mode].process(ar, duration);
-    p.on('arrival', function() {
+    p.on('arrival', function () {
       ee.emit('arrival', spec);
     });
-    p.on('finished', function() {
+    p.on('finished', function () {
       ee.emit('phaseCompleted', spec);
       return callback(null);
     });

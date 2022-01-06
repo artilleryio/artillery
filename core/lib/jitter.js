@@ -27,7 +27,7 @@ function jitter(sApprox) {
 
   let approx = approxPercent;
   if (inputs[1].indexOf('%') >= 0) {
-    approx = nb * approxPercent / 100;
+    approx = (nb * approxPercent) / 100;
   }
 
   return Math.max(0, nb - approx + Math.random() * 2 * approx);

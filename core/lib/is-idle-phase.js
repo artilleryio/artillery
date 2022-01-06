@@ -3,9 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function isIdlePhase(phase) {
-  return phase.arrivalRate === 0 ||
-    phase.arrivalCount === 0 ||
-    phase.maxVusers === 0;
+  return (
+    phase.arrivalRate === 0 || phase.arrivalCount === 0 || phase.maxVusers === 0
+  );
 }
 
 module.exports = isIdlePhase;

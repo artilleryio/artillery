@@ -6,10 +6,10 @@
 
 // Use our own fork of DDSketch until this PR is merged into main:
 // https://github.com/DataDog/sketches-js/pull/13
-const {DDSketch} = require('@artilleryio/sketches-js');
+const { DDSketch } = require('@artilleryio/sketches-js');
 // const {DDSketch} = require('@datadog/sketches-js');
 const EventEmitter = require('events');
-const {setDriftlessInterval, clearDriftless} = require('driftless');
+const { setDriftlessInterval, clearDriftless } = require('driftless');
 const debug = require('debug')('ssms');
 
 class SSMS extends EventEmitter {
@@ -24,7 +24,10 @@ class SSMS extends EventEmitter {
     this._histogramLastMeasurementByPeriod = {};
 
     this._aggregationIntervalSec = 5;
-    this._aggregateInterval = setDriftlessInterval(this.aggregate.bind(this), this._aggregationIntervalSec * 1000);
+    this._aggregateInterval = setDriftlessInterval(
+      this.aggregate.bind(this),
+      this._aggregationIntervalSec * 1000
+    );
 
     this._lastPeriod = null;
 
@@ -33,7 +36,8 @@ class SSMS extends EventEmitter {
     if (!this.isPullOnly) {
       this._emitInterval = setDriftlessInterval(
         this._maybeEmitMostRecentPeriod.bind(this),
-        Math.max(this._aggregationIntervalSec * 1000 / 2, 1000));
+        Math.max((this._aggregationIntervalSec * 1000) / 2, 1000)
+      );
     }
 
     this._counters = [];
@@ -51,7 +55,7 @@ class SSMS extends EventEmitter {
     this._active = false;
     clearDriftless(this._aggregateInterval);
 
-    if(!this.isPullOnly) {
+    if (!this.isPullOnly) {
       clearDriftless(this._emitInterval);
     }
 
@@ -95,11 +99,22 @@ class SSMS extends EventEmitter {
       scenariosCreated: pd.counters['core.vusers.created.total'] || 0,
       scenariosCompleted: pd.counters['core.vusers.completed'] || 0,
 
-      requestsCompleted: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || pd.counters['engine.websocket.messages_sent'] || 0,
+      requestsCompleted:
+        pd.counters['engine.http.responses'] ||
+        pd.counters['engine.socketio.emit'] ||
+        pd.counters['engine.websocket.messages_sent'] ||
+        0,
       latency: {},
       rps: {
-        mean: pd.rates ? (pd.rates['engine.http.response_rate'] || pd.rates['engine.socketio.emit_rate'] || 0) : 0,
-        count: pd.counters['engine.http.responses'] || pd.counters['engine.socketio.emit'] || 0,
+        mean: pd.rates
+          ? pd.rates['engine.http.response_rate'] ||
+            pd.rates['engine.socketio.emit_rate'] ||
+            0
+          : 0,
+        count:
+          pd.counters['engine.http.responses'] ||
+          pd.counters['engine.socketio.emit'] ||
+          0
       },
       scenarioDuration: {},
       scenarioCounts: {},
@@ -108,38 +123,53 @@ class SSMS extends EventEmitter {
       codes: {}
     };
 
-    if (pd.histograms && typeof pd.histograms['core.vusers.session_length'] !== 'undefined') {
-      result.scenarioDuration = summarizeHistogram(pd.histograms['core.vusers.session_length']);
+    if (
+      pd.histograms &&
+      typeof pd.histograms['core.vusers.session_length'] !== 'undefined'
+    ) {
+      result.scenarioDuration = summarizeHistogram(
+        pd.histograms['core.vusers.session_length']
+      );
     }
 
     // scenarioCounts
-    const names = Object.keys(pd.counters).filter(k => k.startsWith('core.vusers.created_by_name.'));
-    for(const n of names) {
-      result.scenarioCounts[n.split('core.vusers.created_by_name.')[1]] = pd.counters[n];
+    const names = Object.keys(pd.counters).filter((k) =>
+      k.startsWith('core.vusers.created_by_name.')
+    );
+    for (const n of names) {
+      result.scenarioCounts[n.split('core.vusers.created_by_name.')[1]] =
+        pd.counters[n];
     }
 
     // latency
-    const latencyh = pd.histograms ? pd.histograms['engine.http.response_time'] || pd.histograms['engine.socketio.response_time'] : null;
-    if(latencyh) {
+    const latencyh = pd.histograms
+      ? pd.histograms['engine.http.response_time'] ||
+        pd.histograms['engine.socketio.response_time']
+      : null;
+    if (latencyh) {
       result.latency = summarizeHistogram(latencyh);
     }
 
     // HTTP codes
-    const codeNames = Object.keys(pd.counters).filter(k => k.match(/^engine\.(http|socketio)\.codes.*/))
+    const codeNames = Object.keys(pd.counters).filter((k) =>
+      k.match(/^engine\.(http|socketio)\.codes.*/)
+    );
     for (const n of codeNames) {
       const code = parseInt(n.split('.codes.')[1]);
       result.codes[code] = pd.counters[n];
     }
 
     // errors
-    const errNames = Object.keys(pd.counters).filter(k => k.startsWith('errors.'));
+    const errNames = Object.keys(pd.counters).filter((k) =>
+      k.startsWith('errors.')
+    );
     for (const n of errNames) {
       const errName = n.split('errors.')[1];
       result.errors[errName] = pd.counters[n];
     }
 
     return {
-      report: function() {
+      report: function () {
         return result;
       }
     };
@@ -147,7 +177,7 @@ class SSMS extends EventEmitter {
 
   // Return object indexed by period (as string):
   static mergeBuckets(periodData) {
-    debug(`mergeBuckets // timeslices: ${periodData.map(pd => pd.period)}`);
+    debug(`mergeBuckets // timeslices: ${periodData.map((pd) => pd.period)}`);
 
     // Returns result[timestamp] = {histograms:{},counters:{},rates:{}}
     // ie. the result is indexed by timeslice
@@ -208,13 +238,31 @@ class SSMS extends EventEmitter {
         result[ts][name] = round(result[ts][name] / periodData.length, 1);
       }
 
-      result[ts].firstCounterAt = min([result[ts].firstCounterAt, pd.firstCounterAt]);
-      result[ts].firstHistogramAt = min([result[ts].firstHistogramAt, pd.firstHistogramAt]);
-      result[ts].lastCounterAt = max([result[ts].lastCounterAt, pd.lastCounterAt]);
-      result[ts].lastHistogramAt = max([result[ts].lastHistogramAt, pd.lastHistogramAt]);
+      result[ts].firstCounterAt = min([
+        result[ts].firstCounterAt,
+        pd.firstCounterAt
+      ]);
+      result[ts].firstHistogramAt = min([
+        result[ts].firstHistogramAt,
+        pd.firstHistogramAt
+      ]);
+      result[ts].lastCounterAt = max([
+        result[ts].lastCounterAt,
+        pd.lastCounterAt
+      ]);
+      result[ts].lastHistogramAt = max([
+        result[ts].lastHistogramAt,
+        pd.lastHistogramAt
+      ]);
 
-      result[ts].firstMetricAt = min([result[ts].firstHistogramAt, result[ts].firstCounterAt]);
-      result[ts].lastMetricAt = max([result[ts].lastHistogramAt, result[ts].lastCounterAt]);
+      result[ts].firstMetricAt = min([
+        result[ts].firstHistogramAt,
+        result[ts].firstCounterAt
+      ]);
+      result[ts].lastMetricAt = max([
+        result[ts].lastHistogramAt,
+        result[ts].lastCounterAt
+      ]);
       result[ts].period = ts;
     }
 
@@ -270,15 +318,18 @@ class SSMS extends EventEmitter {
       result.rates[name] = round(result.rates[name] / periods.length, 0);
     }
 
-    result.firstCounterAt = min(periods.map(p => p.firstCounterAt));
-    result.firstHistogramAt = min(periods.map(p => p.firstHistogramAt));
-    result.lastCounterAt = max(periods.map(p => p.lastCounterAt));
-    result.lastHistogramAt = max(periods.map(p => p.lastHistogramAt));
+    result.firstCounterAt = min(periods.map((p) => p.firstCounterAt));
+    result.firstHistogramAt = min(periods.map((p) => p.firstHistogramAt));
+    result.lastCounterAt = max(periods.map((p) => p.lastCounterAt));
+    result.lastHistogramAt = max(periods.map((p) => p.lastHistogramAt));
 
-    result.firstMetricAt = min([result.firstHistogramAt, result.firstCounterAt]);
+    result.firstMetricAt = min([
+      result.firstHistogramAt,
+      result.firstCounterAt
+    ]);
     result.lastMetricAt = max([result.lastHistogramAt, result.lastCounterAt]);
 
-    result.period = max(periods.map(p => p.period));
+    result.period = max(periods.map((p) => p.period));
     return result;
   }
 
@@ -300,7 +351,7 @@ class SSMS extends EventEmitter {
 
     // TODO: Mark as serialized, otherwise to check whether we have a serialized object or not
     // is to check if .histograms is a Buffer
-    const result = Object.assign({}, pd, {histograms: serializedHistograms});
+    const result = Object.assign({}, pd, { histograms: serializedHistograms });
     return stringify(result);
   }
 
@@ -317,7 +368,13 @@ class SSMS extends EventEmitter {
   }
 
   getBucketIds() {
-    return [...new Set(Object.keys(this._aggregatedCounters).concat(Object.keys(this._aggregatedHistograms)).sort())].reverse();
+    return [
+      ...new Set(
+        Object.keys(this._aggregatedCounters)
+          .concat(Object.keys(this._aggregatedHistograms))
+          .sort()
+      )
+    ].reverse();
   }
 
   // TODO: Deprecate
@@ -363,12 +420,16 @@ class SSMS extends EventEmitter {
 
     result.period = period;
     result.firstCounterAt = this._counterEarliestMeasurementByPeriod[period];
-    result.firstHistogramAt = this._histogramEarliestMeasurementByPeriod[period];
+    result.firstHistogramAt =
+      this._histogramEarliestMeasurementByPeriod[period];
 
     result.lastCounterAt = this._counterLastMeasurementByPeriod[period];
     result.lastHistogramAt = this._histogramLastMeasurementByPeriod[period];
 
-    result.firstMetricAt = min([result.firstHistogramAt, result.firstCounterAt]);
+    result.firstMetricAt = min([
+      result.firstHistogramAt,
+      result.firstCounterAt
+    ]);
     result.lastMetricAt = max([result.lastHistogramAt, result.lastCounterAt]);
 
     // TODO: Include size of the window, for cases when it's not 10s
@@ -454,7 +515,13 @@ class SSMS extends EventEmitter {
       const timeslice = normalizeTs(ts);
 
       if (timeslice >= upToTimeslice) {
-        debug('_aggregateRates early return // i=', i, 'timeslice=', timeslice, new Date(timeslice));
+        debug(
+          '_aggregateRates early return // i=',
+          i,
+          'timeslice=',
+          timeslice,
+          new Date(timeslice)
+        );
         spliceTo = i;
         break;
       }
@@ -465,7 +532,11 @@ class SSMS extends EventEmitter {
       }
 
       if (!a[timeslice][name]) {
-        a[timeslice][name] = {first: Number.POSITIVE_INFINITY, last: 0, count: 0};
+        a[timeslice][name] = {
+          first: Number.POSITIVE_INFINITY,
+          last: 0,
+          count: 0
+        };
       }
 
       a[timeslice][name].first = Math.min(a[timeslice][name].first, ts);
@@ -475,12 +546,15 @@ class SSMS extends EventEmitter {
 
     for (const [ts, rs] of Object.entries(a)) {
       for (const [name, _] of Object.entries(rs)) {
-        const {first, last, count} = a[ts][name];
+        const { first, last, count } = a[ts][name];
         if (!this._aggregatedRates[ts]) {
           this._aggregatedRates[ts] = {};
         }
 
-        this._aggregatedRates[ts][name] = round(count / (Math.max(last - first, 1000) / 1000), 0);
+        this._aggregatedRates[ts][name] = round(
+          count / (Math.max(last - first, 1000) / 1000),
+          0
+        );
       }
     }
 
@@ -488,7 +562,8 @@ class SSMS extends EventEmitter {
   }
 
   aggregate(forceAll) {
-    const currentTimeslice = normalizeTs(Date.now()) + (forceAll ? 30 * 1000 : 0);
+    const currentTimeslice =
+      normalizeTs(Date.now()) + (forceAll ? 30 * 1000 : 0);
 
     this._aggregateCounters(currentTimeslice);
     this._aggregateHistograms(currentTimeslice);
@@ -510,10 +585,10 @@ function normalizeTs(epochMs, windowSize = 10) {
   // Reset down to minute
   const m = Math.floor((epochMs - (epochMs % 1000)) / 1000 / 60) * 60 * 1000;
   // Number of seconds past the minute
-  const s = (epochMs - (epochMs % 1000)) / 1000 % 60;
+  const s = ((epochMs - (epochMs % 1000)) / 1000) % 60;
   // Number of seconds to take off
   const d = s % windowSize;
-  return m + ((s - d) * 1000);
+  return m + (s - d) * 1000;
 }
 
 // Function hms(epochMs) {
@@ -608,17 +683,17 @@ function isObject(x) {
 // undefined's rather than returning NaN when a value is undefined.
 // Returns undefined if all arguments are undefined.
 function min(values) {
-  const m = Math.min(...(values.filter(x => x)));
+  const m = Math.min(...values.filter((x) => x));
   return m === Number.POSITIVE_INFINITY ? undefined : m;
 }
 
 function max(values) {
-  const m = Math.max(...(values.filter(x => x)));
+  const m = Math.max(...values.filter((x) => x));
   return m === Number.NEGATIVE_INFINITY ? undefined : m;
 }
 
 module.exports = {
   SSMS,
   summarizeHistogram,
-  normalizeTs,
+  normalizeTs
 };

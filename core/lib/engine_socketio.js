@@ -24,12 +24,12 @@ function SocketIoEngine(script) {
   this.httpDelegate = new EngineHttp(script);
 }
 
-SocketIoEngine.prototype.createScenario = function(scenarioSpec, ee) {
+SocketIoEngine.prototype.createScenario = function (scenarioSpec, ee) {
   const self = this;
   // Adds scenario overridden configuration into the static config
   this.socketioOpts = { ...this.socketioOpts, ...scenarioSpec.socketio };
 
-  const tasks = _.map(scenarioSpec.flow, function(rs) {
+  const tasks = _.map(scenarioSpec.flow, function (rs) {
     if (rs.think) {
       return engineUtil.createThink(
         rs,
@@ -80,54 +80,56 @@ function processResponse(ee, data, response, context, callback) {
   const fauxResponse = { body: JSON.stringify(data) };
 
   // Handle the capture or match clauses...
-  engineUtil.captureOrMatch(response, fauxResponse, context, function(
-    err,
-    result
-  ) {
-    // Were we unable to invoke captureOrMatch?
-    if (err) {
-      debug(data);
-      ee.emit('error', err);
+  engineUtil.captureOrMatch(
+    response,
+    fauxResponse,
+    context,
+    function (err, result) {
+      // Were we unable to invoke captureOrMatch?
+      if (err) {
+        debug(data);
+        ee.emit('error', err);
 
-      return callback(err, context);
-    }
-
-    if (result !== null) {
-      // Do we have any failed matches?
-      const failedMatches = _.filter(result.matches, (v) => {
-        return !v.success;
-      });
-
-      // How to handle failed matches?
-      if (failedMatches.length > 0) {
-        debug(failedMatches);
-        // TODO: Should log the details of the match somewhere
-        ee.emit('error', 'Failed match');
-        return callback(new Error('Failed match'), context);
-      } else {
-        // Populate the context with captured values
-        _.each(result.captures, function(v, k) {
-          context.vars[k] = v.value;
-        });
+        return callback(err, context);
       }
 
-      // Replace the base object context
-      // Question: Should this be JSON object or String?
-      context.vars.$ = fauxResponse.body;
+      if (result !== null) {
+        // Do we have any failed matches?
+        const failedMatches = _.filter(result.matches, (v) => {
+          return !v.success;
+        });
 
-      // Increment the success count...
-      context._successCount++;
+        // How to handle failed matches?
+        if (failedMatches.length > 0) {
+          debug(failedMatches);
+          // TODO: Should log the details of the match somewhere
+          ee.emit('error', 'Failed match');
+          return callback(new Error('Failed match'), context);
+        } else {
+          // Populate the context with captured values
+          _.each(result.captures, function (v, k) {
+            context.vars[k] = v.value;
+          });
+        }
 
-      return callback(null, context);
+        // Replace the base object context
+        // Question: Should this be JSON object or String?
+        context.vars.$ = fauxResponse.body;
+
+        // Increment the success count...
+        context._successCount++;
+
+        return callback(null, context);
+      }
     }
-  });
+  );
 }
 
-SocketIoEngine.prototype.step = function(requestSpec, ee) {
+SocketIoEngine.prototype.step = function (requestSpec, ee) {
   const self = this;
 
   if (requestSpec.loop) {
-    const steps = _.map(requestSpec.loop, function(rs) {
+    const steps = _.map(requestSpec.loop, function (rs) {
       if (!rs.emit && !rs.loop) {
         return self.httpDelegate.step(rs, ee);
       }
@@ -140,11 +142,11 @@ SocketIoEngine.prototype.step = function(requestSpec, ee) {
       overValues: requestSpec.over,
       whileTrue: self.config.processor
         ? self.config.processor[requestSpec.whileTrue]
-        : undefined,
+        : undefined
     });
   }
 
-  const f = function(context, callback) {
+  const f = function (context, callback) {
     // Only process emit requests; delegate the rest to the HTTP engine (or think utility)
     if (requestSpec.think) {
       return engineUtil.createThink(
@@ -173,30 +175,30 @@ SocketIoEngine.prototype.step = function(requestSpec, ee) {
     const outgoing = requestSpec.emit.channel
       ? [
           template(requestSpec.emit.channel, context),
-          template(requestSpec.emit.data, context),
+          template(requestSpec.emit.data, context)
         ]
       : Array.from(requestSpec.emit).map((arg) => template(arg, context));
 
-    const endCallback = function(err, context, needEmit) {
+    const endCallback = function (err, context, needEmit) {
       if (err) {
         debug(err);
       }
 
       if (isAcknowledgeRequired(requestSpec)) {
-        const ackCallback = function() {
+        const ackCallback = function () {
           const response = {
             data: template(requestSpec.acknowledge.data, context),
             capture: template(requestSpec.acknowledge.capture, context),
-            match: template(requestSpec.acknowledge.match, context),
+            match: template(requestSpec.acknowledge.match, context)
           };
           // Make sure data, capture or match has a default json spec for parsing socketio responses
-          _.each(response, function(r) {
+          _.each(response, function (r) {
             if (_.isPlainObject(r) && !('json' in r)) {
               r.json = '$.0'; // Default to the first callback argument
             }
           });
           // Acknowledge data can take up multiple arguments of the emit callback
-          processResponse(ee, arguments, response, context, function(err) {
+          processResponse(ee, arguments, response, context, function (err) {
             if (!err) {
               markEndTime(ee, context, startedAt);
             }
@@ -225,7 +227,7 @@ SocketIoEngine.prototype.step = function(requestSpec, ee) {
         channel: template(requestSpec.response.channel, context),
         data: template(requestSpec.response.data, context),
         capture: template(requestSpec.response.capture, context),
-        match: template(requestSpec.response.match, context),
+        match: template(requestSpec.response.match, context)
       };
 
       // Listen for the socket.io response on the specified channel
@@ -233,7 +235,7 @@ SocketIoEngine.prototype.step = function(requestSpec, ee) {
 
       socketio.on(response.channel, function receive(data) {
         done = true;
-        processResponse(ee, data, response, context, function(err) {
+        processResponse(ee, data, response, context, function (err) {
           if (!err) {
             markEndTime(ee, context, startedAt);
           }
@@ -265,8 +267,7 @@ SocketIoEngine.prototype.step = function(requestSpec, ee) {
     // Set default namespace in emit action
     requestSpec.namespace = template(requestSpec.namespace, context) || '';
 
-    self.loadContextSocket(requestSpec.namespace, context, function(err) {
-
+    self.loadContextSocket(requestSpec.namespace, context, function (err) {
       if (err) {
         debug(err);
         ee.emit('error', err.message);
@@ -284,7 +285,7 @@ SocketIoEngine.prototype.step = function(requestSpec, ee) {
   }
 };
 
-SocketIoEngine.prototype.loadContextSocket = function(namespace, context, cb) {
+SocketIoEngine.prototype.loadContextSocket = function (namespace, context, cb) {
   context.sockets = context.sockets || {};
 
   if (!context.sockets[namespace]) {
@@ -305,10 +306,10 @@ SocketIoEngine.prototype.loadContextSocket = function(namespace, context, cb) {
       context.__receivedMessageCount++;
     });
 
-    socket.once('connect', function() {
+    socket.once('connect', function () {
       cb(null, socket);
     });
-    socket.once('connect_error', function(err) {
+    socket.once('connect_error', function (err) {
       cb(err, null);
     });
   } else {
@@ -316,17 +317,17 @@ SocketIoEngine.prototype.loadContextSocket = function(namespace, context, cb) {
   }
 };
 
-SocketIoEngine.prototype.closeContextSockets = function(context) {
+SocketIoEngine.prototype.closeContextSockets = function (context) {
   if (context.sockets && Object.keys(context.sockets).length > 0) {
     const namespaces = Object.keys(context.sockets);
 
-    namespaces.forEach(function(namespace) {
+    namespaces.forEach(function (namespace) {
       context.sockets[namespace].disconnect();
     });
   }
 };
 
-SocketIoEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
+SocketIoEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
   const self = this;
 
   function zero(callback, context) {
@@ -348,7 +349,7 @@ SocketIoEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
     initialContext = self.httpDelegate.setInitialContext(initialContext);
 
     initialContext._pendingRequests = _.size(
-      _.reject(scenarioSpec, function(rs) {
+      _.reject(scenarioSpec, function (rs) {
         return typeof rs.think === 'number';
       })
     );
@@ -357,11 +358,10 @@ SocketIoEngine.prototype.compile = function(tasks, scenarioSpec, ee) {
       function z(cb) {
         return zero(cb, initialContext);
       },
-      tasks,
+      tasks
     ]);
 
     async.waterfall(steps, function scenarioWaterfallCb(err, context) {
-
       if (err) {
         debug(err);
       }
