@@ -1,0 +1,10 @@
+{
+  "name": "artillery-plugin-httphooks",
+  "version": "1.0.0",
+  "description": "A plugin that attach functions to http hooks",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "MPL-2.0"
+}
