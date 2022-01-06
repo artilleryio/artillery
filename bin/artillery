@@ -10,8 +10,6 @@ const { createGlobalObject } = require('../lib/artillery-global');
 const updateNotifier = require('update-notifier');
 const pkg = require('../package.json');
 
-const chalk = require('chalk');
-
 const { rainbow } = require('../util');
 const telemetry = require('../lib/telemetry');
 
