@@ -17,7 +17,8 @@
   "prettier": {
     "semi": true,
     "singleQuote": true,
-    "useTabs": false
+    "useTabs": false,
+    "trailingComma": "none"
   },
   "oclif": {
     "commands": "./lib/cmds",
