@@ -31,7 +31,7 @@ test('Telemetry - setup', (t) => {
   t.end();
 });
 
-test('Telemetry', function(t) {
+test('Telemetry', function (t) {
   captureSpy.resetHistory();
 
   const telemetryClient = telemetry.init();
@@ -46,8 +46,8 @@ test('Telemetry', function(t) {
       version: artilleryVersion,
       os: process.platform,
       isCi: ci.isCI,
-      $ip: null,
-    },
+      $ip: null
+    }
   };
 
   if (ci.isCI) {
@@ -59,7 +59,7 @@ test('Telemetry', function(t) {
   t.end();
 });
 
-test('Telemetry - disable through environment variable', function(t) {
+test('Telemetry - disable through environment variable', function (t) {
   captureSpy.resetHistory();
 
   process.env.ARTILLERY_DISABLE_TELEMETRY = 'true';
@@ -77,7 +77,7 @@ test('Telemetry - disable through environment variable', function(t) {
   t.end();
 });
 
-test('Telemetry - debug through environment variable', function(t) {
+test('Telemetry - debug through environment variable', function (t) {
   captureSpy.resetHistory();
 
   const consoleSpy = sandbox.spy(console, 'log');

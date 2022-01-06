@@ -16,7 +16,7 @@ wss.on('connection', function connection(ws) {
     MESSAGE_COUNT++;
     console.log('received: %s', message);
 
-    ws.send(JSON.stringify({foo: "bar", baz: "foo"}));
+    ws.send(JSON.stringify({ foo: 'bar', baz: 'foo' }));
   });
 });
 

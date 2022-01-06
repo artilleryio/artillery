@@ -13,23 +13,26 @@ var options = {
   cert: fs.readFileSync(path.resolve(__dirname, '../certs/public-cert.pem'))
 };
 
-var app = https.createServer(
-  {
-    key: options.key,
-    cert: options.cert
-  },
-  function(req, res) {
-    res.writeHead(200);
-    res.end();
-  }).listen(options.port, function() {
+var app = https
+  .createServer(
+    {
+      key: options.key,
+      cert: options.cert
+    },
+    function (req, res) {
+      res.writeHead(200);
+      res.end();
+    }
+  )
+  .listen(options.port, function () {
     debug('Listening on :9443');
   });
 
 const wss = new WebSocketServer({ server: app });
 
-wss.on('connection', function(client) {
+wss.on('connection', function (client) {
   debug('+ client');
-  client.on('message', function(message) {
+  client.on('message', function (message) {
     debug(message);
   });
 });

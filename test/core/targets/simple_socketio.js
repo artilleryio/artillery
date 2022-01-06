@@ -6,7 +6,7 @@ module.exports = createServer;
 if (require.main === module) {
   const server = createServer();
   var PORT = 9091;
-  server.listen(PORT, function() {
+  server.listen(PORT, function () {
     console.log('Socket.io listening on %s', PORT);
   });
 }
@@ -17,7 +17,7 @@ function createServer() {
 
   var CONNECTIONS = {
     nsp1: { connections: 0, messages: 0 },
-    nsp2: { connections: 0, messages: 0 },
+    nsp2: { connections: 0, messages: 0 }
   };
 
   io.of('/nsp1').on('connect', function connection(ws) {
@@ -43,7 +43,7 @@ function createServer() {
   io.on('connect', function connection(ws) {
     debug('+ Socket.io connection');
 
-    setTimeout(function() {
+    setTimeout(function () {
       ws.emit('hello', 'whatever');
     }, 500);
 

@@ -8,7 +8,7 @@ var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 var PORT = 9092;
 
-http.listen(PORT, function() {
+http.listen(PORT, function () {
   console.log('Express Socket.io listening on %s', PORT);
 });
 
@@ -23,8 +23,6 @@ io.on('connection', function connection(ws) {
     console.log('Express echoing message: %s', message);
     ws.emit('echoed', message);
   });
-
-
 });
 
 // setInterval(function() {
@@ -51,7 +49,7 @@ app.get('/_stats', stats);
 function setsCookie(req, res) {
   var newuid = uuid.v4();
   console.log('setting testCookie.uid to %j', newuid);
-  res.cookie('testCookie', {uid: newuid}).send('ok');
+  res.cookie('testCookie', { uid: newuid }).send('ok');
 }
 
 function expectsCookie(req, res) {

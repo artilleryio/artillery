@@ -2,7 +2,7 @@
 
 const Hapi = require('@hapi/hapi');
 
-const main = async() => {
+const main = async () => {
   const server = Hapi.server({ port: 3004, host: 'localhost' });
   server.route({
     path: '/api/v1/register',
@@ -21,5 +21,5 @@ main()
   });
 
 function register(req, h) {
-  return {status: 'success'};
+  return { status: 'success' };
 }

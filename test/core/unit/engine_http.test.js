@@ -17,22 +17,22 @@ const script = {
   config: {
     target: 'http://localhost:8888',
     processor: {
-      f: function(context, ee, next) {
+      f: function (context, ee, next) {
         context.vars.newVar = 1234;
         return next();
       },
 
-      inc: function(context, ee, next) {
+      inc: function (context, ee, next) {
         context.vars.inc = context.vars.$loopCount;
         return next();
       },
 
-      processLoopElement: function(context, ee, next) {
+      processLoopElement: function (context, ee, next) {
         context.vars.loopElement = context.vars.$loopElement;
         return next();
       },
 
-      loopChecker: function(context, next) {
+      loopChecker: function (context, next) {
         if (context.vars.someCounter === undefined) {
           context.vars.someCounter = 1;
         }
@@ -52,19 +52,11 @@ const script = {
         { think: THINKTIME_SEC },
         { function: 'f' },
         { log: '# This is printed from the script with "log": {{ newVar }}' },
-        { loop: [
-          { function: 'inc' },
-          { think: 1 }
-        ], count: 3 },
-        { loop: [
-          { log: '# {{ $loopElement }}' }
-        ], over: [0, 1, 2]},
-        { loop: [
-          { function: 'processLoopElement'}
-        ], over: 'aCapturedList'},
-        { loop: [
-          { log: '# whileTrue loop' }
-        ],
+        { loop: [{ function: 'inc' }, { think: 1 }], count: 3 },
+        { loop: [{ log: '# {{ $loopElement }}' }], over: [0, 1, 2] },
+        { loop: [{ function: 'processLoopElement' }], over: 'aCapturedList' },
+        {
+          loop: [{ log: '# whileTrue loop' }],
           whileTrue: 'loopChecker',
           count: 10 // whileTrue takes precedence, checked in an assert
         }
@@ -73,17 +65,20 @@ const script = {
   ]
 };
 
-test('HTTP engine interface', function(t) {
+test('HTTP engine interface', function (t) {
   const engine = new HttpEngine(script);
   const ee = new EventEmitter();
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
   t.assert(engine, 'Can construct an engine');
-  t.assert(typeof runScenario === 'function', 'Can use the engine to create virtual user functions');
+  t.assert(
+    typeof runScenario === 'function',
+    'Can use the engine to create virtual user functions'
+  );
   t.end();
 });
 
-test('HTTP virtual user', function(t) {
+test('HTTP virtual user', function (t) {
   const engine = new HttpEngine(script);
   const ee = new EventEmitter();
   const spy = sinon.spy(console, 'log');
@@ -104,11 +99,14 @@ test('HTTP virtual user', function(t) {
     const finishedAt = Date.now();
     t.assert(!err, 'Virtual user finished successfully');
     t.assert(finalContext.vars.newVar === 1234, 'Function spec was executed');
-    t.assert(finishedAt - startedAt >= THINKTIME_SEC * 1000, 'User spent some time thinking');
+    t.assert(
+      finishedAt - startedAt >= THINKTIME_SEC * 1000,
+      'User spent some time thinking'
+    );
 
     const expectedLog = '# This is printed from the script with "log": 1234';
     let seen = false;
-    spy.args.forEach(function(args) {
+    spy.args.forEach(function (args) {
       if (args[0] === expectedLog) {
         t.comment(`string: "${args[0]}" found`);
         seen = true;
@@ -118,7 +116,10 @@ test('HTTP virtual user', function(t) {
     console.log.restore(); // unwrap the spy
     // loop count starts at 0, hence 2 rather than 3 here:
     t.assert(finalContext.vars.inc === 2, 'Function called in a loop');
-    t.assert(finalContext.vars.loopElement === 'world', 'loopElement set by custom function');
+    t.assert(
+      finalContext.vars.loopElement === 'world',
+      'loopElement set by custom function'
+    );
 
     // someCounter is set by a whileTrue hook function:
     t.assert(finalContext.vars.someCounter === 3, 'whileTrue aborted the loop');
@@ -140,11 +141,11 @@ test('url and uri parameters', function (t) {
     config: {
       target: 'http://localhost:8888',
       processor: {
-        rewriteUrl: function(req, context, ee, next) {
+        rewriteUrl: function (req, context, ee, next) {
           req.uri = '/hello';
           return next();
         },
-        printHello: function(req, context, ee, next) {
+        printHello: function (req, context, ee, next) {
           console.log('# hello from printHello hook!');
           return next();
         }
@@ -188,7 +189,7 @@ test('url and uri parameters', function (t) {
 
     const expectedLog = '# hello from printHello hook!';
     let seen = false;
-    spy.args.forEach(function(args) {
+    spy.args.forEach(function (args) {
       if (args[0] === expectedLog) {
         t.comment(`string: "${args[0]}" found`);
         seen = true;
@@ -205,14 +206,14 @@ test('hooks - afterResponse', (t) => {
   const answer = 'the answer is 42';
 
   const target = nock('http://localhost:8888')
-        .get('/answer')
-        .reply(200, answer);
+    .get('/answer')
+    .reply(200, answer);
 
   const script = {
     config: {
       target: 'http://localhost:8888',
       processor: {
-        extractAnswer: function(req, res, vuContext, events, next) {
+        extractAnswer: function (req, res, vuContext, events, next) {
           vuContext.answer = res.body;
           return next();
         }
@@ -254,12 +255,12 @@ test('hooks - afterResponse', (t) => {
 
 test('Redirects', (t) => {
   const target = nock('http://localhost:8888')
-        .get('/foo')
-        .reply(302, undefined, {
-          Location: '/bar'
-        })
-        .get('/bar')
-        .reply(200, {foo: 'bar'});
+    .get('/foo')
+    .reply(302, undefined, {
+      Location: '/bar'
+    })
+    .get('/bar')
+    .reply(200, { foo: 'bar' });
 
   const script = {
     config: {
@@ -267,9 +268,7 @@ test('Redirects', (t) => {
     },
     scenarios: [
       {
-        flow: [
-          {get: {url: '/foo'}}
-        ]
+        flow: [{ get: { url: '/foo' } }]
       }
     ]
   };
@@ -292,17 +291,25 @@ test('Redirects', (t) => {
     vars: {}
   };
 
-  runScenario(initialContext, function(err, finalContext) {
+  runScenario(initialContext, function (err, finalContext) {
     if (err) {
       t.fail();
     }
 
     t.assert(
-      Object.keys(counters).filter(s => s.indexOf('.codes.') > -1).length === 2,
-      'Should have seen 2 unique response codes');
+      Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1).length ===
+        2,
+      'Should have seen 2 unique response codes'
+    );
 
-    t.assert(counters['engine.http.codes.302'] === 1, 'Should have 1 302 response');
-    t.assert(counters['engine.http.codes.200'] === 1, 'Should have 1 200 response');
+    t.assert(
+      counters['engine.http.codes.302'] === 1,
+      'Should have 1 302 response'
+    );
+    t.assert(
+      counters['engine.http.codes.200'] === 1,
+      'Should have 1 200 response'
+    );
 
     t.end();
   });
@@ -310,9 +317,12 @@ test('Redirects', (t) => {
 
 test('Forms - formData multipart', (t) => {
   const target = nock('http://localhost:8888')
-        // .log(console.log)
-        .post('/submit', /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi)
-        .reply(200, 'ok');
+    // .log(console.log)
+    .post(
+      '/submit',
+      /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi
+    )
+    .reply(200, 'ok');
 
   const script = {
     config: {
@@ -358,14 +368,16 @@ test('Forms - formData multipart', (t) => {
     }
   };
 
-  runScenario(initialContext, function(err, finalContext) {
+  runScenario(initialContext, function (err, finalContext) {
     if (err) {
       t.fail();
     }
 
-    t.assert(counters['engine.http.codes.200'] === 1, 'Should have a 200 response');
+    t.assert(
+      counters['engine.http.codes.200'] === 1,
+      'Should have a 200 response'
+    );
 
     t.end();
   });
-
 });

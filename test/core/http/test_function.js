@@ -70,7 +70,6 @@ test('Should emit error with "message" argument if function calls next({ message
   });
 });
 
-
 async function runOnDone(scriptName, payload, fn) {
   const scriptPath = path.join(__dirname, 'scripts', scriptName);
   const script = require(scriptPath);
@@ -85,5 +84,7 @@ async function runOnDone(scriptName, payload, fn) {
     done = true;
   });
   runner.run();
-  while(!done) { await sleep(1000); }
+  while (!done) {
+    await sleep(1000);
+  }
 }

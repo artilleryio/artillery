@@ -16,14 +16,14 @@ const baseScript = {
   config: {
     target: 'ws://localhost:9093',
     phases: [{ duration: 1, arrivalCount: 1 }],
-    ws: {},
+    ws: {}
   },
   scenarios: [
     {
       engine: 'ws',
-      flow: [{ send: 'hello' }],
-    },
-  ],
+      flow: [{ send: 'hello' }]
+    }
+  ]
 };
 
 let sandbox;
@@ -63,8 +63,8 @@ test('WebSocket engine - proxy', (t) => {
   script.config.ws = {
     proxy: {
       url: 'http://localhost:9095',
-      localAddress: '127.0.0.2',
-    },
+      localAddress: '127.0.0.2'
+    }
   };
 
   const engine = new WebSocketEngine(script);
@@ -108,7 +108,7 @@ test('WebSocket engine - connect action (string)', (t) => {
 
   script.scenarios[0].flow = [
     { connect: '{{ target }}/endpoint' },
-    ...script.scenarios[0].flow,
+    ...script.scenarios[0].flow
   ];
 
   const expectedTarget = `${script.config.target}/endpoint`;
@@ -127,8 +127,8 @@ test('WebSocket engine - connect action (string)', (t) => {
   runScenario(
     {
       vars: {
-        target: script.config.target,
-      },
+        target: script.config.target
+      }
     },
     (err) => {
       const [target] = WebsocketMock.args[0];
@@ -149,8 +149,8 @@ test('WebSocket engine - connect action (function)', (t) => {
 
   const context = {
     vars: {
-      target: script.config.target,
-    },
+      target: script.config.target
+    }
   };
   const expectedSubProtocol = 'wamp';
 
@@ -166,12 +166,12 @@ test('WebSocket engine - connect action (function)', (t) => {
       params.subprotocols = [expectedSubProtocol];
 
       callback();
-    },
+    }
   };
 
   script.scenarios[0].flow = [
     { connect: { function: 'connectionHook' } },
-    ...script.scenarios[0].flow,
+    ...script.scenarios[0].flow
   ];
 
   const engine = new WebSocketEngine(script);
@@ -203,7 +203,7 @@ test('WebSocket engine - connect action (object)', (t) => {
   WebsocketMock.resetHistory();
 
   const context = {
-    vars: {},
+    vars: {}
   };
   const expectedSubProtocol = 'wamp';
 
@@ -211,16 +211,16 @@ test('WebSocket engine - connect action (object)', (t) => {
     target: 'ws://target1',
     subprotocols: [expectedSubProtocol],
     headers: {
-      'Sec-WebSocket-Key': 'abcde',
+      'Sec-WebSocket-Key': 'abcde'
     },
     proxy: {
-      url: 'http://proxy1',
-    },
+      url: 'http://proxy1'
+    }
   };
 
   script.scenarios[0].flow = [
     { connect: connectHook },
-    ...script.scenarios[0].flow,
+    ...script.scenarios[0].flow
   ];
 
   const engine = new WebSocketEngine(script);
@@ -253,7 +253,7 @@ test('WebSocket engine - connect action (object)', (t) => {
     t.deepEqual(
       wsOptions.headers,
       {
-        'Sec-WebSocket-Key': 'abcde',
+        'Sec-WebSocket-Key': 'abcde'
       },
       'Gets headers from the connect object'
     );

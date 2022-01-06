@@ -12,7 +12,7 @@ const createServer = require('../targets/simple_socketio');
 
 const script = {
   config: {
-    target: 'http://localhost:10333',
+    target: 'http://localhost:10333'
   },
   scenarios: [
     {
@@ -20,29 +20,29 @@ const script = {
       flow: [
         {
           emit: ['testEvent', 'hello', 'Socket.io'],
-          acknowledge: true,
-        },
-      ],
-    },
-  ],
+          acknowledge: true
+        }
+      ]
+    }
+  ]
 };
 
 const scriptWithoutEmits = {
   config: {
-    target: 'http://localhost:10334',
+    target: 'http://localhost:10334'
   },
   scenarios: [
     {
-      flow: [{ think: 1 }],
-    },
-  ],
+      flow: [{ think: 1 }]
+    }
+  ]
 };
 
-test('SocketIo engine interface', function(t) {
+test('SocketIo engine interface', function (t) {
   const server = createServer();
   const target = server.httpServer;
 
-  target.listen(10333, function() {
+  target.listen(10333, function () {
     const engine = new SocketIoEngine(script);
     const ee = new EventEmitter();
 
@@ -59,11 +59,11 @@ test('SocketIo engine interface', function(t) {
   });
 });
 
-test('Passive listening', function(t) {
+test('Passive listening', function (t) {
   const server = createServer();
   const target = server.httpServer;
 
-  target.listen(10334, function() {
+  target.listen(10334, function () {
     const engine = new SocketIoEngine(scriptWithoutEmits);
     const ee = new EventEmitter();
 
@@ -72,7 +72,7 @@ test('Passive listening', function(t) {
       ee
     );
     const initialContext = {
-      vars: {},
+      vars: {}
     };
 
     runScenario(initialContext, function userDone(err, finalContext) {
@@ -88,36 +88,36 @@ test('Passive listening', function(t) {
   });
 });
 
-test('Sends event', function(t) {
+test('Sends event', function (t) {
   t.plan(2);
 
   const server = createServer();
   const target = server.httpServer;
   const PORT = 10334;
 
-  target.listen(PORT, function() {
+  target.listen(PORT, function () {
     const testScript = {
       ...script,
       config: {
-        target: `http://localhost:${PORT}`,
-      },
+        target: `http://localhost:${PORT}`
+      }
     };
     const engine = new SocketIoEngine(testScript);
     const ee = new EventEmitter();
     const [scenario] = testScript.scenarios;
     const {
-      flow: [{ emit: emittedData }],
+      flow: [{ emit: emittedData }]
     } = scenario;
 
     const runScenario = engine.createScenario(scenario, ee);
     const initialContext = {
-      vars: {},
+      vars: {}
     };
     const [channel, ...messages] = emittedData;
 
     server.of('/').on('connection', (ws) => {
       ws.on(channel, (msg1, msg2, cb) => {
-        t.deepEqual([msg1, msg2], messages, 'Emits messages')
+        t.deepEqual([msg1, msg2], messages, 'Emits messages');
 
         cb();
       });
