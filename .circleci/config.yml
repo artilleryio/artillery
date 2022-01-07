@@ -3,7 +3,7 @@ version: 2
 jobs:
   run_tests:
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:lts
 
     working_directory: ~/repo
 
@@ -35,7 +35,7 @@ jobs:
   npm_publish:
     working_directory: ~/repo
     docker:
-      - image: circleci/node:12
+      - image: circleci/node:lts
     steps:
       - checkout
       - run:
