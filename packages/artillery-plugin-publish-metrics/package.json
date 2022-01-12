@@ -19,7 +19,9 @@
     "lightstep-tracer": "^0.31.0",
     "mixpanel": "^0.13.0",
     "opentracing": "^0.14.5",
-    "semver": "^7.3.5"
+    "prom-client": "^14.0.1",
+    "semver": "^7.3.5",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "artillery": "^1.7.3",
