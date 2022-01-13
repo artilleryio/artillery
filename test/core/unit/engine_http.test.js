@@ -4,11 +4,12 @@
 
 'use strict';
 
-const test = require('tape');
+const { test, before } = require('tap');
 const sinon = require('sinon');
 
 const HttpEngine = require('../../../core/lib/engine_http');
 const EventEmitter = require('events');
+const { createGlobalObject } = require('../../../lib/artillery-global');
 const nock = require('nock');
 
 const THINKTIME_SEC = 1;
@@ -17,17 +18,17 @@ const script = {
   config: {
     target: 'http://localhost:8888',
     processor: {
-      f: function (context, ee, next) {
+      f: function (context, _ee, next) {
         context.vars.newVar = 1234;
         return next();
       },
 
-      inc: function (context, ee, next) {
+      inc: function (context, _ee, next) {
         context.vars.inc = context.vars.$loopCount;
         return next();
       },
 
-      processLoopElement: function (context, ee, next) {
+      processLoopElement: function (context, _ee, next) {
         context.vars.loopElement = context.vars.$loopElement;
         return next();
       },
@@ -65,13 +66,15 @@ const script = {
   ]
 };
 
+before(async () => await createGlobalObject());
+
 test('HTTP engine interface', function (t) {
   const engine = new HttpEngine(script);
   const ee = new EventEmitter();
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-  t.assert(engine, 'Can construct an engine');
-  t.assert(
+  t.ok(engine, 'Can construct an engine');
+  t.ok(
     typeof runScenario === 'function',
     'Can use the engine to create virtual user functions'
   );
@@ -97,9 +100,9 @@ test('HTTP virtual user', function (t) {
   const startedAt = Date.now();
   runScenario(initialContext, function userDone(err, finalContext) {
     const finishedAt = Date.now();
-    t.assert(!err, 'Virtual user finished successfully');
-    t.assert(finalContext.vars.newVar === 1234, 'Function spec was executed');
-    t.assert(
+    t.ok(!err, 'Virtual user finished successfully');
+    t.ok(finalContext.vars.newVar === 1234, 'Function spec was executed');
+    t.ok(
       finishedAt - startedAt >= THINKTIME_SEC * 1000,
       'User spent some time thinking'
     );
@@ -112,24 +115,118 @@ test('HTTP virtual user', function (t) {
         seen = true;
       }
     });
-    t.assert(seen, 'log worked');
+    t.ok(seen, 'log worked');
     console.log.restore(); // unwrap the spy
     // loop count starts at 0, hence 2 rather than 3 here:
-    t.assert(finalContext.vars.inc === 2, 'Function called in a loop');
-    t.assert(
+    t.ok(finalContext.vars.inc === 2, 'Function called in a loop');
+    t.ok(
       finalContext.vars.loopElement === 'world',
       'loopElement set by custom function'
     );
 
     // someCounter is set by a whileTrue hook function:
-    t.assert(finalContext.vars.someCounter === 3, 'whileTrue aborted the loop');
+    t.ok(finalContext.vars.someCounter === 3, 'whileTrue aborted the loop');
 
     t.end();
   });
 
   function onStarted() {
-    t.assert(true, 'started event emitted');
+    t.ok(true, 'started event emitted');
   }
+});
+
+test('compressed response (gzip)', function (t) {
+  const target = nock('http://localhost:8888')
+    .post('/')
+    .reply(200, function () {
+      t.ok(
+        'accept-encoding' in this.req.headers,
+        'sets the accept-encoding header if gzip is true'
+      );
+
+      return 'ok';
+    });
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            post: {
+              url: '/',
+              json: { foo: 'bar' },
+              gzip: true
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  runScenario({ vars: {} }, function userDone(err) {
+    if (err) {
+      t.fail();
+    }
+
+    t.ok(target.isDone(), 'Should have made a request to /');
+
+    t.end();
+  });
+});
+
+test('custom headers', function (t) {
+  const customHeader = 'x-artillery-header';
+  const customHeaderValue = 'abcde';
+  const target = nock('http://localhost:8888')
+    .get('/')
+    .reply(200, function () {
+      t.equal(
+        this.req.headers[customHeader],
+        customHeaderValue,
+        'Can set custom request headers'
+      );
+
+      return 'ok';
+    });
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/',
+              headers: { [customHeader]: customHeaderValue }
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  runScenario({ vars: {} }, function userDone(err) {
+    if (err) {
+      t.fail();
+    }
+
+    t.ok(target.isDone(), 'Should have made a request to /');
+
+    t.end();
+  });
 });
 
 test('url and uri parameters', function (t) {
@@ -141,11 +238,11 @@ test('url and uri parameters', function (t) {
     config: {
       target: 'http://localhost:8888',
       processor: {
-        rewriteUrl: function (req, context, ee, next) {
+        rewriteUrl: function (req, _context, _ee, next) {
           req.uri = '/hello';
           return next();
         },
-        printHello: function (req, context, ee, next) {
+        printHello: function (_req, _context, _ee, next) {
           console.log('# hello from printHello hook!');
           return next();
         }
@@ -185,7 +282,7 @@ test('url and uri parameters', function (t) {
       t.fail();
     }
 
-    t.assert(target.isDone(), 'Should have made a request to /hello');
+    t.ok(target.isDone(), 'Should have made a request to /hello');
 
     const expectedLog = '# hello from printHello hook!';
     let seen = false;
@@ -195,7 +292,7 @@ test('url and uri parameters', function (t) {
         seen = true;
       }
     });
-    t.assert(seen, 'scenario-level beforeRequest worked');
+    t.ok(seen, 'scenario-level beforeRequest worked');
     console.log.restore(); // unwrap the spy
 
     t.end();
@@ -205,9 +302,7 @@ test('url and uri parameters', function (t) {
 test('hooks - afterResponse', (t) => {
   const answer = 'the answer is 42';
 
-  const target = nock('http://localhost:8888')
-    .get('/answer')
-    .reply(200, answer);
+  nock('http://localhost:8888').get('/answer').reply(200, answer);
 
   const script = {
     config: {
@@ -247,7 +342,7 @@ test('hooks - afterResponse', (t) => {
       t.fail();
     }
 
-    t.assert(finalContext.answer === answer);
+    t.ok(finalContext.answer === answer);
 
     t.end();
   });
@@ -296,20 +391,14 @@ test('Redirects', (t) => {
       t.fail();
     }
 
-    t.assert(
+    t.ok(
       Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1).length ===
         2,
       'Should have seen 2 unique response codes'
     );
 
-    t.assert(
-      counters['http.codes.302'] === 1,
-      'Should have 1 302 response'
-    );
-    t.assert(
-      counters['http.codes.200'] === 1,
-      'Should have 1 200 response'
-    );
+    t.ok(counters['engine.http.codes.302'] === 1, 'Should have 1 302 response');
+    t.ok(counters['engine.http.codes.200'] === 1, 'Should have 1 200 response');
 
     t.end();
   });
@@ -373,10 +462,7 @@ test('Forms - formData multipart', (t) => {
       t.fail();
     }
 
-    t.assert(
-      counters['http.codes.200'] === 1,
-      'Should have a 200 response'
-    );
+    t.ok(counters['engine.http.codes.200'] === 1, 'Should have a 200 response');
 
     t.end();
   });

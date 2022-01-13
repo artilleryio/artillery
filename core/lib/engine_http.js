@@ -11,14 +11,10 @@ const tough = require('tough-cookie');
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
 const debugResponse = require('debug')('http:response');
-const debugFullBody = require('debug')('http:full_body');
 const USER_AGENT = 'Artillery (https://artillery.io)';
 const engineUtil = require('./engine_util');
 const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 const template = engineUtil.template;
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
 const qs = require('querystring');
 const filtrex = require('filtrex');
 const urlparse = require('url').parse;
@@ -266,8 +262,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     // Run beforeRequest processors (scenario-level ones too)
-    let requestParams = _.cloneDeep(params);
-    requestParams = _.extend(requestParams, {
+    const requestParams = _.extend(_.clone(params), {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
       timeout: timeout * 1000
