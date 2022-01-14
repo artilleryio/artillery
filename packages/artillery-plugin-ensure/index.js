@@ -35,8 +35,6 @@ class EnsurePlugin {
     this.script = script;
     this.events = events;
 
-    const LEGACY_CONDITIONS = ['min', 'max', 'median', 'p95', 'p99'];
-
     global.artillery.ext(
       {
         ext: 'beforeExit',
@@ -47,90 +45,9 @@ class EnsurePlugin {
           }
 
           const checks = this.script.config.ensure;
-          const checkTests = [];
-
-          if (Array.isArray(checks.thresholds)) {
-            checks.thresholds.forEach((o) => {
-              if (typeof o === 'object') {
-                const metricName = Object.keys(o)[0]; // only one metric check per array entry
-                const maxValue = o[metricName];
-                const expr = `${metricName} < ${maxValue}`;
-                let f = () => {};
-                try {
-                  f = filtrex(expr);
-                } catch (err) {
-                  global.artillery.log(err);
-                }
-
-                // all threshold checks are strict:
-                checkTests.push({ f, strict: true, original: expr });
-              }
-            });
-          }
-
-          if (Array.isArray(checks.conditions)) {
-            checks.conditions.forEach((o) => {
-              if (typeof o === 'object') {
-                const expression = o.expression;
-                const strict = typeof o.strict === 'boolean' ? o.strict : true;
-
-                let f = () => {};
-                try {
-                  f = filtrex(expression);
-                } catch (err) {
-                  global.artillery.log(err);
-                }
-
-                checkTests.push({ f, strict, original: expression });
-              }
-            });
-          }
-
-          Object.keys(checks)
-            .filter(k => LEGACY_CONDITIONS.indexOf(k) > -1)
-            .forEach(k => {
-              const metricName = `engine.http.response_time.${k}`;
-              const maxValue = parseInt(checks[k]);
-              let f = () => {};
-              try {
-                f = filtrex(`${metricName} < ${maxValue}`);
-              } catch (err) {
-                global.artillery.log(err);
-              }
-
-              // all legacy threshold checks are strict:
-              checkTests.push({ f, strict: true, original: `${k} < ${maxValue}` });
-            });
-
-          if(typeof checks.maxErrorRate !== 'undefined') {
-            const maxValue = Number(checks.maxErrorRate);
-            const expression = `((core.vusers.created.total - core.vusers.failed)/core.vusers.created.total * 100) < ${maxValue}`;
-            let f = () => {};
-            try {
-              f = filtrex(expression);
-            } catch (err) {
-              global.artillery.log(err);
-            }
-
-            checkTests.push({ f, strict: true, original: `maxErrorRate < ${maxValue}` });
-          }
-
-          if(checkTests.length > 0) {
-            global.artillery.log('\nChecks:');
-          }
-
-          const vars = Object.assign({}, data.report.counters, data.report.rates);
-          for(const [name, values] of Object.entries(data.report.summaries || {})) {
-            for(const [aggregation, value] of Object.entries(values)) {
-              vars[`${name}.${aggregation}`] = value;
-            }
-          }
-          debug({vars});
-
+          const checkTests = this.runChecks(checks, data);
           checkTests.forEach(check => {
-            const result = check.f(vars);
-            debug(`check ${check.original} -> ${result}`);
-            if(result !== 1) {
+            if(check.result !== 1) {
               global.artillery.log(`fail: ${check.original}${check.strict ? '': ' (optional)'}`);
               if(check.strict) {
                 global.artillery.suggestedExitCode = 1;
@@ -143,8 +60,98 @@ class EnsurePlugin {
       }
     );
   }
+
+  runChecks(checks, data) {
+    const LEGACY_CONDITIONS = ['min', 'max', 'median', 'p95', 'p99'];
+    const checkTests = [];
+
+    if (Array.isArray(checks.thresholds)) {
+      checks.thresholds.forEach((o) => {
+        if (typeof o === 'object') {
+          const metricName = Object.keys(o)[0]; // only one metric check per array entry
+          const maxValue = o[metricName];
+          const expr = `${metricName} < ${maxValue}`;
+          let f = () => {};
+          try {
+            f = filtrex(expr);
+          } catch (err) {
+            global.artillery.log(err);
+          }
+
+          // all threshold checks are strict:
+          checkTests.push({ f, strict: true, original: expr });
+        }
+      });
+    }
+
+    if (Array.isArray(checks.conditions)) {
+      checks.conditions.forEach((o) => {
+        if (typeof o === 'object') {
+          const expression = o.expression;
+          const strict = typeof o.strict === 'boolean' ? o.strict : true;
+
+          let f = () => {};
+          try {
+            f = filtrex(expression);
+          } catch (err) {
+            global.artillery.log(err);
+          }
+
+          checkTests.push({ f, strict, original: expression });
+        }
+      });
+    }
+
+    Object.keys(checks)
+      .filter(k => LEGACY_CONDITIONS.indexOf(k) > -1)
+      .forEach(k => {
+        const metricName = `engine.http.response_time.${k}`;
+        const maxValue = parseInt(checks[k]);
+        let f = () => {};
+        try {
+          f = filtrex(`${metricName} < ${maxValue}`);
+        } catch (err) {
+          global.artillery.log(err);
+        }
+
+        // all legacy threshold checks are strict:
+        checkTests.push({ f, strict: true, original: `${k} < ${maxValue}` });
+      });
+
+    if(typeof checks.maxErrorRate !== 'undefined') {
+      const maxValue = Number(checks.maxErrorRate);
+      const expression = `((core.vusers.created.total - core.vusers.completed)/core.vusers.created.total * 100) <= ${maxValue}`;
+      let f = () => {};
+      try {
+        f = filtrex(expression);
+      } catch (err) {
+        global.artillery.log(err);
+      }
+
+      checkTests.push({ f, strict: true, original: `maxErrorRate < ${maxValue}` });
+    }
+
+    if(checkTests.length > 0) {
+      global.artillery.log('\nChecks:');
+    }
+
+    const vars = Object.assign({}, data.report.counters, data.report.rates);
+    for(const [name, values] of Object.entries(data.report.summaries || {})) {
+      for(const [aggregation, value] of Object.entries(values)) {
+        vars[`${name}.${aggregation}`] = value;
+      }
+    }
+    debug({vars});
+
+    checkTests.forEach(check => {
+      const result = check.f(vars);
+      check.result = result;
+      debug(`check ${check.original} -> ${result}`);
+    });
+    return checkTests;
+  }
 }
 
 module.exports = {
-  Plugin: EnsurePlugin
+  Plugin: EnsurePlugin,
 };
