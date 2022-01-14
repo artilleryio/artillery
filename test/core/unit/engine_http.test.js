@@ -11,6 +11,7 @@ const HttpEngine = require('../../../core/lib/engine_http');
 const EventEmitter = require('events');
 const { createGlobalObject } = require('../../../lib/artillery-global');
 const nock = require('nock');
+const zlib = require('zlib');
 
 const THINKTIME_SEC = 1;
 
@@ -135,10 +136,10 @@ test('HTTP virtual user', function (t) {
   }
 });
 
-test('compressed response (gzip)', function (t) {
+test('gzip - request headers', (t) => {
   const target = nock('http://localhost:8888')
     .post('/')
-    .reply(200, function () {
+    .reply(201, function () {
       t.ok(
         'accept-encoding' in this.req.headers,
         'sets the accept-encoding header if gzip is true'
@@ -176,7 +177,44 @@ test('compressed response (gzip)', function (t) {
     }
 
     t.ok(target.isDone(), 'Should have made a request to /');
+    t.end();
+  });
+});
 
+test('gzip - compressed responses', (t) => {
+  const target = nock('http://localhost:8888')
+    .get('/')
+    .reply(201, zlib.gzipSync('ok'), { 'content-encoding': 'gzip' });
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/',
+              gzip: true
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  runScenario({ vars: {} }, function userDone(err, context) {
+    if (err) {
+      t.fail();
+    }
+
+    t.equal(context._successCount, 1, 'it should handle compressed responses');
+    t.ok(target.isDone(), 'Should have made a request to /');
     t.end();
   });
 });
