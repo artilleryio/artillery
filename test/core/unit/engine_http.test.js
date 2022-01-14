@@ -136,6 +136,59 @@ test('HTTP virtual user', function (t) {
   }
 });
 
+test('extendedMetrics', (t) => {
+  const histograms = new Set();
+  const additionalMetrics = [
+    'engine.http.dns',
+    'engine.http.tcp',
+    'engine.http.tls',
+    'engine.http.total'
+  ];
+  const target = nock('http://localhost:8888').get('/').reply(200, 'ok');
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888',
+      http: { extendedMetrics: true }
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  ee.on('histogram', (name) => {
+    histograms.add(name);
+  });
+
+  runScenario({ vars: {} }, function userDone(err, context) {
+    if (err) {
+      t.fail();
+    }
+
+    additionalMetrics.forEach((metric) => {
+      t.ok(
+        histograms.has(metric),
+        `it should track additional metric ${metric}`
+      );
+    });
+
+    t.ok(target.isDone(), 'Should have made a request to /');
+    t.end();
+  });
+});
+
 test('gzip - request headers', (t) => {
   const target = nock('http://localhost:8888')
     .post('/')
