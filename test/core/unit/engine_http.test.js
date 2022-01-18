@@ -495,6 +495,64 @@ test('Redirects', (t) => {
   });
 });
 
+test('followRedirect', function (t) {
+  const target = nock('http://localhost:8888')
+    .get('/')
+    .reply(302, undefined, {
+      Location: '/do-not-follow'
+    })
+    .get('/do-not-follow')
+    .reply(200, 'ok');
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/',
+              followRedirect: false
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const counters = {};
+
+  ee.on('counter', (name, val) => {
+    counters[name] = (counters[name] || 0) + val;
+  });
+
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  runScenario({ vars: {} }, function userDone(err) {
+    if (err) {
+      t.fail();
+    }
+
+    t.equal(counters['engine.http.codes.302'], 1);
+    t.equal(
+      counters['engine.http.codes.200'],
+      undefined,
+      'it should not follow redirects if followRedirect is false (1)'
+    );
+    t.ok(
+      target.pendingMocks().length === 1 &&
+        target.pendingMocks()[0].endsWith('/do-not-follow'),
+      'it should not follow redirects if followRedirect is false (2)'
+    );
+
+    t.end();
+  });
+});
+
 test('Forms - formData multipart', (t) => {
   const target = nock('http://localhost:8888')
     // .log(console.log)
