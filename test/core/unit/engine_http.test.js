@@ -4,7 +4,7 @@
 
 'use strict';
 
-const { test, before } = require('tap');
+const { test, before, beforeEach } = require('tap');
 const sinon = require('sinon');
 
 const HttpEngine = require('../../../core/lib/engine_http');
@@ -68,6 +68,8 @@ const script = {
 };
 
 before(async () => await createGlobalObject());
+
+beforeEach(() => nock.cleanAll());
 
 test('HTTP engine interface', function (t) {
   const engine = new HttpEngine(script);
@@ -440,14 +442,6 @@ test('hooks - afterResponse', (t) => {
 });
 
 test('Redirects', (t) => {
-  nock('http://localhost:8888')
-    .get('/foo')
-    .reply(302, undefined, {
-      Location: '/bar'
-    })
-    .get('/bar')
-    .reply(200, { foo: 'bar' });
-
   const script = {
     config: {
       target: 'http://localhost:8888'
@@ -458,11 +452,19 @@ test('Redirects', (t) => {
       }
     ]
   };
-
   const engine = new HttpEngine(script);
   const ee = new EventEmitter();
 
   const counters = {};
+
+  const target = nock(script.config.target)
+    .get('/foo')
+    .reply(302, undefined, {
+      Location: '/bar'
+    })
+    .get('/bar')
+    .reply(200, { foo: 'bar' });
+
   ee.on('counter', (name, val) => {
     if (counters[name]) {
       counters[name] += val;
@@ -481,6 +483,8 @@ test('Redirects', (t) => {
     if (err) {
       t.fail();
     }
+
+    t.ok(target.isDone(), 'Should have made a request to both endpoints');
 
     t.ok(
       Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1).length ===

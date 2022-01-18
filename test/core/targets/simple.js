@@ -211,46 +211,6 @@ function route(server) {
       handler: ok
     }
   ]);
-
-  // used by test_capture.js
-  const productLinks = Array(20)
-    .fill()
-    .map((_, idx) => `/product/${idx}`);
-  server.route([
-    {
-      method: 'GET',
-      path: '/product/{link}',
-      handler: function (req, h) {
-        if (productLinks.includes(req.path)) {
-          return 'ok';
-        }
-
-        return h.response().code(404);
-      }
-    },
-    {
-      method: 'GET',
-      path: '/productLinks',
-      handler: function (_req, h) {
-        const response = `
-        <!DOCTYPE html>
-          <html>
-          <body>
-
-          ${productLinks
-            .map(
-              (link) =>
-                `<div><a class="productLink" href="${link}">${link}</a></div>`
-            )
-            .join('')}
-
-          </body>
-        </html>`;
-
-        return h.response(response).type('text/html');
-      }
-    }
-  ]);
 }
 
 function ok(req, h) {
