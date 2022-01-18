@@ -172,7 +172,7 @@ test('extendedMetrics', (t) => {
     histograms.add(name);
   });
 
-  runScenario({ vars: {} }, function userDone(err, context) {
+  runScenario({ vars: {} }, function userDone(err) {
     if (err) {
       t.fail();
     }
@@ -368,7 +368,7 @@ test('url and uri parameters', function (t) {
     vars: {}
   };
 
-  runScenario(initialContext, function userDone(err, finalContext) {
+  runScenario(initialContext, function userDone(err) {
     if (err) {
       t.fail();
     }
@@ -399,7 +399,7 @@ test('hooks - afterResponse', (t) => {
     config: {
       target: 'http://localhost:8888',
       processor: {
-        extractAnswer: function (req, res, vuContext, events, next) {
+        extractAnswer: function (_req, res, vuContext, _events, next) {
           vuContext.answer = res.body;
           return next();
         }
@@ -440,7 +440,7 @@ test('hooks - afterResponse', (t) => {
 });
 
 test('Redirects', (t) => {
-  const target = nock('http://localhost:8888')
+  nock('http://localhost:8888')
     .get('/foo')
     .reply(302, undefined, {
       Location: '/bar'
@@ -477,7 +477,7 @@ test('Redirects', (t) => {
     vars: {}
   };
 
-  runScenario(initialContext, function (err, finalContext) {
+  runScenario(initialContext, function (err) {
     if (err) {
       t.fail();
     }
@@ -553,9 +553,69 @@ test('followRedirect', function (t) {
   });
 });
 
-test('Forms - formData multipart', (t) => {
+test('Forms - urlencoded', (t) => {
+  const initialContext = {
+    vars: {
+      location: 'Lahinch',
+      type: 'beach',
+      activity: 'surfing'
+    }
+  };
+
   const target = nock('http://localhost:8888')
-    // .log(console.log)
+    .post(
+      '/submit',
+      `activity=${initialContext.vars.activity}&type=${initialContext.vars.type}&location=${initialContext.vars.location}`
+    )
+    .reply(200, function () {
+      t.equal(
+        this.req.headers['content-type'],
+        'application/x-www-form-urlencoded',
+        'should send an url-encoded form'
+      );
+
+      return 'ok';
+    });
+
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            post: {
+              url: '/submit',
+              form: {
+                activity: '{{ activity }}',
+                type: '{{ type }}',
+                location: '{{ location }}'
+              }
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  runScenario(initialContext, function (err) {
+    if (err) {
+      t.fail();
+    }
+
+    t.ok(target.isDone(), 'Should have made a request to /submit');
+
+    t.end();
+  });
+});
+
+test('Forms - formData multipart', (t) => {
+  nock('http://localhost:8888')
     .post(
       '/submit',
       /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi
@@ -606,7 +666,7 @@ test('Forms - formData multipart', (t) => {
     }
   };
 
-  runScenario(initialContext, function (err, finalContext) {
+  runScenario(initialContext, function (err) {
     if (err) {
       t.fail();
     }
