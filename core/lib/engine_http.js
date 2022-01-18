@@ -244,15 +244,15 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     if (!_.isUndefined(params.ifTrue)) {
-      let cond;
       let result;
       try {
-        cond = _.has(config.processor, params.ifTrue)
+        const cond = _.has(config.processor, params.ifTrue)
           ? config.processor[params.ifTrue]
           : filtrex(params.ifTrue);
         result = cond(context.vars);
-      } catch (e) {
-        result = 1; // if the expression is incorrect, just proceed // TODO: debug message
+      } catch (err) {
+        debug('ifTrue error:', err);
+        result = 1; // if the expression is incorrect, just proceed
       }
       if (!result) {
         return process.nextTick(function () {

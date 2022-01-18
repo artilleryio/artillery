@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const runner = require('../../core').runner;
 const L = require('lodash');
 const csv = require('csv-parse');
@@ -20,8 +20,8 @@ test('Capture - headers', (t) => {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
       // This will fail if header capture isn't working
-      t.assert(!report.codes[403], 'No unauthorized responses');
-      t.assert(report.codes[200] > 0, 'Successful responses');
+      t.ok(!report.codes[403], 'No unauthorized responses');
+      t.ok(report.codes[200] > 0, 'Successful responses');
       ee.stop().then(() => {
         t.end();
       });
@@ -47,7 +47,7 @@ test('Capture - JSON', (t) => {
 
         let cond = c201 === c200;
 
-        t.assert(cond, 'There should be a 200 for every 201');
+        t.ok(cond, 'There should be a 200 for every 201');
         if (!cond) {
           console.log(report);
           console.log('200: %s; 201: %s', c200, c201);
@@ -79,7 +79,7 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
 
         let cond = c201 === c200;
 
-        t.assert(cond, 'There should be a 200 for every 201');
+        t.ok(cond, 'There should be a 200 for every 201');
         if (!cond) {
           console.log('200: %s; 201: %s', c200, c201);
         }
@@ -102,7 +102,7 @@ test('Capture before test - JSON', (t) => {
       let c200 = report.codes[200];
       let expectedAmountRequests =
         script.config.phases[0].duration * script.config.phases[0].arrivalRate;
-      t.assert(
+      t.ok(
         c200 === expectedAmountRequests,
         'There should be ' +
           expectedAmountRequests +
@@ -111,7 +111,7 @@ test('Capture before test - JSON', (t) => {
       );
 
       let c201 = report.codes[201];
-      t.assert(c201 === undefined, 'There should be no 201 response codes');
+      t.ok(c201 === undefined, 'There should be no 201 response codes');
 
       ee.stop().then(() => {
         t.end();
@@ -132,7 +132,7 @@ test('Capture after test - JSON', (t) => {
         script.config.phases[0].duration * script.config.phases[0].arrivalRate;
 
       let c201 = report.codes[201];
-      t.assert(
+      t.ok(
         c201 === expectedAmountRequests,
         `There should be ${expectedAmountRequests} response with status code 201; got ${c201}`
       );
@@ -151,7 +151,7 @@ test('Capture - XML', (t) => {
     console.log(
       'artillery-xml-capture does not seem to be installed, skipping XML capture test.'
     );
-    t.assert(true);
+    t.ok(true);
     return t.end();
   }
 
@@ -166,8 +166,8 @@ test('Capture - XML', (t) => {
     runner(script, parsedData, {}).then(function (ee) {
       ee.on('done', function (nr) {
         const report = SSMS.legacyReport(nr).report();
-        t.assert(report.codes[200] > 0, 'Should have a few 200s');
-        t.assert(report.codes[404] === undefined, 'Should have no 404s');
+        t.ok(report.codes[200] > 0, 'Should have a few 200s');
+        t.ok(report.codes[404] === undefined, 'Should have no 404s');
         ee.stop().then(() => {
           t.end();
         });
@@ -184,8 +184,8 @@ test('Capture - Random value from array', (t) => {
   runner(script).then(function (ee) {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.assert(report.codes[200] > 0, 'Should have a few 200s');
-      t.assert(report.codes[404] === undefined, 'Should have no 404s');
+      t.ok(report.codes[200] > 0, 'Should have a few 200s');
+      t.ok(report.codes[404] === undefined, 'Should have no 404s');
       ee.stop().then(() => {
         t.end();
       });
@@ -205,7 +205,7 @@ test('Capture - RegExp', (t) => {
       let c201 = report.codes[201];
       let cond = c201 === c200;
 
-      t.assert(cond, 'There should be a 200 for every 201');
+      t.ok(cond, 'There should be a 200 for every 201');
       if (!cond) {
         console.log('200: %s; 201: %s;', c200, c201);
       }
@@ -227,7 +227,7 @@ test('Capture WS - JSON', (t) => {
       if (report.errors) {
         const errors = Object.keys(report.errors);
 
-        t.assert(errors.length === 0, 'There should be no WS errors');
+        t.ok(errors.length === 0, 'There should be no WS errors');
       }
       ee.stop().then(() => {
         t.end();
