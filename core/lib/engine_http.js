@@ -86,7 +86,7 @@ function HttpEngine(script) {
   if (script.config.http && script.config.http.pool) {
     this.maxSockets = Number(script.config.http.pool);
   }
-  let agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+  const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
     maxSockets: this.maxSockets,
     maxFreeSockets: this.maxSockets
   });

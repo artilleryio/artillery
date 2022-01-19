@@ -638,6 +638,83 @@ test('Redirects', (t) => {
   });
 });
 
+test('proxies', function (t) {
+  t.plan(4);
+  const script = {
+    config: {
+      target: 'http://localhost:8888'
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const engine = new HttpEngine(script);
+  t.ok(
+    engine._httpAgent.proxy === undefined,
+    'by default nothing is proxied (http)'
+  );
+  t.ok(
+    engine._httpsAgent.proxy === undefined,
+    'by default nothing is proxied (https)'
+  );
+
+  const httpProxy = 'http://proxy.url';
+  const httpsProxy = 'https://proxy.url';
+
+  t.test('HTTP_PROXY', (t) => {
+    const httpProxy = 'http://proxy.url';
+
+    process.env.HTTP_PROXY = httpProxy;
+    const engine = new HttpEngine(script);
+
+    t.equal(
+      engine._httpAgent.proxy.origin,
+      httpProxy,
+      'it should get the HTTP proxy url from the HTTP_PROXY environment variable'
+    );
+
+    t.equal(
+      engine._httpsAgent.proxy.origin,
+      httpProxy,
+      'it should get the HTTPS proxy url from HTTP_PROXY environment variable'
+    );
+
+    t.end();
+  });
+
+  t.test('HTTP_PROXY and HTTPS_PROXY', (t) => {
+    process.env.HTTP_PROXY = httpProxy;
+    process.env.HTTPS_PROXY = httpsProxy;
+    const engine = new HttpEngine(script);
+
+    t.equal(
+      engine._httpAgent.proxy.origin,
+      httpProxy,
+      'it should get the HTTP proxy url from the HTTP_PROXY environment variable'
+    );
+
+    t.equal(
+      engine._httpsAgent.proxy.origin,
+      httpsProxy,
+      'it should get the HTTPS proxy url from HTTPS_PROXY environment variable'
+    );
+
+    t.end();
+  });
+
+  delete process.env.HTTP_PROXY;
+  delete process.env.HTTPS_PROXY;
+});
+
 test('followRedirect', function (t) {
   const target = nock('http://localhost:8888')
     .get('/')
