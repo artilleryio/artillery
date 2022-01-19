@@ -2,8 +2,9 @@ const PromClient = require('prom-client');
 const uuid = require("uuid");
 const debug = require('debug')('plugin:publish-metrics:prometheus');
 
-const COUNTERS_STATS = 'counters', // counter based stats incl.: requests.completed, scenarios.created, scenarios.completed, response code counts
-  RATES_STATES = 'rates', // mean per/second rate of successful responses
+const COUNTERS_STATS = 'counters', // counters stats
+  RATES_STATES = 'rates', // rates stats
+  SUMMARIES_STATES = 'summaries', // summaries stats
   ERRORS = 'errors_across_requests';
 
 
@@ -60,6 +61,13 @@ class PrometheusReporter {
         help: 'rates based stats e.g.: engine_http_request_rate',
         labelNames: ['metric'],
       });
+
+    this.summariesStats = PromClient.register.getSingleMetric(`${prefix}_${SUMMARIES_STATES}`) ||
+      new PromClient.Gauge({
+        name: `${prefix}_${SUMMARIES_STATES}`,
+        help: 'summaries based stats e.g.: engine_http_response_time_min, engine_http_response_time_p999',
+        labelNames: ['metric'],
+      });
     //
     // this.errorsCounter = promClient.register.getSingleMetric(ERRORS) ||
     //   new promClient.Counter({
@@ -84,20 +92,29 @@ class PrometheusReporter {
     events.on('stats', (stats) => {
       debug('On stats event: %O', stats);
 
-      if (stats.counters) {
-        for (const cKey in stats.counters) {
+      if (stats[COUNTERS_STATS]) {
+        for (const cKey in stats[COUNTERS_STATS]) {
           const transformed = toPrometheusKey(cKey)
-          this.countersStats.inc({metric: transformed}, stats.counters[cKey])
+          this.countersStats.inc({metric: transformed}, stats[COUNTERS_STATS][cKey])
         }
       }
 
-      if (stats.rates){
-        for (const cKey in stats.rates) {
-          const transformed = toPrometheusKey(cKey)
-          this.ratesStats.set({metric: transformed}, stats.rates[cKey])
+      if (stats[RATES_STATES]){
+        for (const rKey in stats[RATES_STATES]) {
+          const transformed = toPrometheusKey(rKey)
+          this.ratesStats.set({metric: transformed}, stats[RATES_STATES][rKey])
         }
       }
 
+      if (stats[SUMMARIES_STATES]){
+        for (const sKey in stats[SUMMARIES_STATES]) {
+          let readings = stats[SUMMARIES_STATES][sKey];
+          for (const readingKey in readings) {
+            const transformed = `${toPrometheusKey(sKey)}_${readingKey}`
+            this.summariesStats.set({metric: transformed}, readings[readingKey])
+          }
+        }
+      }
 
       this.pushgateway.pushAdd({jobName: this.jobUUID.toString()}, function (err) {
         if (err) {
