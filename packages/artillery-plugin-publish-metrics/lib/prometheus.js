@@ -3,7 +3,7 @@ const uuid = require("uuid");
 const debug = require('debug')('plugin:publish-metrics:prometheus');
 
 const COUNTERS_STATS = 'counters', // counter based stats incl.: requests.completed, scenarios.created, scenarios.completed, response code counts
-  RPS_MEAN = 'rps_mean', // mean per/second rate of successful responses
+  RATES_STATES = 'rates', // mean per/second rate of successful responses
   ERRORS = 'errors_across_requests';
 
 
@@ -19,7 +19,8 @@ class PrometheusReporter {
   constructor(config, events, script) {
     this.jobUUID = uuid.v4();
     this.config = Object.assign({
-      tags: []
+      tags: [],
+      prefix: 'artillery'
     }, config)
 
     this.prometheusOpts = {
@@ -28,13 +29,13 @@ class PrometheusReporter {
 
     debug('ensuring pushgatewayUrl is configured');
     if (!this.prometheusOpts.pushgatewayUrl) {
-      console.error(`prometheus pushgateway url not specified`);
+      console.error(`the prometheus [pushgateway] url was not specified`);
     }
 
     debug('setting default labels');
     PromClient.register.setDefaultLabels(this.tagsToLabels(this.config.tags));
 
-    this.registerMetrics()
+    this.registerMetrics(this.config.prefix)
 
     debug('creating pushgateway client using url: %s', this.prometheusOpts.pushgatewayUrl);
     this.pushgateway = new PromClient.Pushgateway(this.prometheusOpts.pushgatewayUrl);
@@ -45,19 +46,20 @@ class PrometheusReporter {
     debug('init done');
   }
 
-  registerMetrics() {
-    this.countersStats = PromClient.register.getSingleMetric(COUNTERS_STATS) ||
+  registerMetrics(prefix) {
+    this.countersStats = PromClient.register.getSingleMetric(`${prefix}_${COUNTERS_STATS}`) ||
       new PromClient.Counter({
-        name: COUNTERS_STATS,
-        help: 'counter based stats incl.: core.vusers.created.total, core.vusers.completed, engine.http.requests, etc..',
+        name: `${prefix}_${COUNTERS_STATS}`,
+        help: 'counter based stats e.g.: core_vusers_created_total, engine.http.requests',
         labelNames: ['metric']
       });
 
-    // this.rpsGauge = promClient.register.getSingleMetric(RPS_MEAN) ||
-    //   new promClient.Gauge({
-    //     name: RPS_MEAN,
-    //     help: 'mean per/second rate of successful responses'
-    //   });
+    this.ratesStats = PromClient.register.getSingleMetric(`${prefix}_${RATES_STATES}`) ||
+      new PromClient.Gauge({
+        name: `${prefix}_${RATES_STATES}`,
+        help: 'rates based stats e.g.: engine_http_request_rate',
+        labelNames: ['metric'],
+      });
     //
     // this.errorsCounter = promClient.register.getSingleMetric(ERRORS) ||
     //   new promClient.Counter({
@@ -87,13 +89,21 @@ class PrometheusReporter {
           const transformed = toPrometheusKey(cKey)
           this.countersStats.inc({metric: transformed}, stats.counters[cKey])
         }
-
-        this.pushgateway.pushAdd({jobName: this.jobUUID.toString()}, function (err) {
-          if (err) {
-            console.log('Error pushing metrics to push gateway', err);
-          }
-        });
       }
+
+      if (stats.rates){
+        for (const cKey in stats.rates) {
+          const transformed = toPrometheusKey(cKey)
+          this.ratesStats.set({metric: transformed}, stats.rates[cKey])
+        }
+      }
+
+
+      this.pushgateway.pushAdd({jobName: this.jobUUID.toString()}, function (err) {
+        if (err) {
+          console.log('Error pushing metrics to push gateway', err);
+        }
+      });
     });
   }
 
