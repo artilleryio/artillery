@@ -14,6 +14,7 @@ Send metrics and events from Artillery to external monitoring and observability 
 - [Mixpanel](https://mixpanel.com) events
 - InfluxDB metrics with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
 - StatsD metrics
+- [Prometheus metrics](https://prometheus.io/docs/concepts/metric_types/) using the [Pushgateway](https://prometheus.io/docs/instrumenting/pushing/)
 
 ## Docs
 
@@ -30,7 +31,6 @@ Please create an [issue](https://github.com/artilleryio/artillery/issues) to rep
 ## Wishlist
 
 - CloudWatch
-- Prometheus
 - InfluxDB (HTTP API)
 - Splunk
 - ELK
