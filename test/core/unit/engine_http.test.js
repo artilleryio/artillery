@@ -441,6 +441,145 @@ test('hooks - afterResponse', (t) => {
   });
 });
 
+test('hooks - beforeScenario', (t) => {
+  const endpoint = '/products';
+  const script = {
+    config: {
+      target: 'http://localhost:8888',
+      processor: {
+        setEndpoint: function (context, ee, next) {
+          context.vars.endpoint = endpoint;
+
+          t.ok(
+            ee instanceof EventEmitter,
+            'processor function should receive an event emitter'
+          );
+
+          return next();
+        }
+      }
+    },
+    scenarios: [
+      {
+        beforeScenario: 'setEndpoint',
+        flow: [
+          {
+            get: {
+              uri: '{{ endpoint }}'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const target = nock(script.config.target).get(endpoint).reply(200, 'ok');
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  const initialContext = {
+    vars: {}
+  };
+
+  runScenario(initialContext, function userDone(err, finalContext) {
+    if (err) {
+      t.fail();
+    }
+
+    t.equal(
+      finalContext.vars.endpoint,
+      endpoint,
+      'it should set context vars before running the scenario'
+    );
+
+    t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
+
+    t.end();
+  });
+});
+
+test('hooks - afterScenario', (t) => {
+  const endpoint = '/products';
+  const productsCount = 123;
+  const script = {
+    config: {
+      target: 'http://localhost:8888',
+      processor: {
+        checkProductsCount: function (context, ee, next) {
+          t.ok(
+            ee instanceof EventEmitter,
+            'processor function should receive an event emitter'
+          );
+
+          t.equal(
+            context.vars.count,
+            productsCount,
+            'it can access variables set by the scenario'
+          );
+
+          t.ok(
+            context.vars.date === undefined,
+            'it cannot access variables set by other scenarios'
+          );
+
+          return next();
+        }
+      }
+    },
+    scenarios: [
+      {
+        afterScenario: 'checkProductsCount',
+        flow: [
+          {
+            get: {
+              uri: endpoint,
+              capture: [{ json: '$.count', as: 'count' }]
+            }
+          }
+        ]
+      },
+      {
+        flow: [
+          {
+            get: {
+              uri: endpoint,
+              capture: [{ json: '$.date', as: 'date' }]
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const target = nock(script.config.target)
+    .get(endpoint)
+    .reply(
+      200,
+      { count: productsCount, date: new Date().toISOString() },
+      { 'content-type': 'application/json' }
+    );
+
+  const engine = new HttpEngine(script);
+  const ee = new EventEmitter();
+  const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+  const initialContext = {
+    vars: {}
+  };
+
+  runScenario(initialContext, function userDone(err) {
+    if (err) {
+      t.fail();
+    }
+
+    t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
+
+    t.end();
+  });
+});
+
 test('Redirects', (t) => {
   const script = {
     config: {
