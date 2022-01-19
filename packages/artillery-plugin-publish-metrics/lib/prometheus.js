@@ -4,20 +4,11 @@ const debug = require('debug')('plugin:publish-metrics:prometheus');
 
 const COUNTERS_STATS = 'counters', // counters stats
   RATES_STATES = 'rates', // rates stats
-  SUMMARIES_STATES = 'summaries', // summaries stats
-  ERRORS = 'errors_across_requests';
-
-
-function toPrometheusKey(candidate) {
-  return candidate.
-    replaceAll('.', '_').
-    replaceAll(/\s/g, '_').
-    toLowerCase();
-}
+  SUMMARIES_STATES = 'summaries'; // summaries stats includes errors
 
 class PrometheusReporter {
 
-  constructor(config, events, script) {
+  constructor(config, events) {
     this.jobUUID = uuid.v4();
     this.config = Object.assign({
       tags: [],
@@ -42,7 +33,7 @@ class PrometheusReporter {
     this.pushgateway = new PromClient.Pushgateway(this.prometheusOpts.pushgatewayUrl);
 
     debug('configure sending metrics to pushgateway');
-    this.sendMetrics(config, events, script)
+    this.sendMetrics(config, events)
 
     debug('init done');
   }
@@ -68,13 +59,6 @@ class PrometheusReporter {
         help: 'summaries based stats e.g.: engine_http_response_time_min, engine_http_response_time_p999',
         labelNames: ['metric'],
       });
-    //
-    // this.errorsCounter = promClient.register.getSingleMetric(ERRORS) ||
-    //   new promClient.Counter({
-    //     name: VUSER_STATS,
-    //     help: 'any errors encountered',
-    //     labelNames: ['error_code']
-    //   });
 
     debug('setupMeasurements');
   }
@@ -88,20 +72,29 @@ class PrometheusReporter {
     return labels;
   }
 
-  sendMetrics(config, events, script) {
+  toPrometheusKey(candidate) {
+    return candidate.
+    replaceAll('.', '_').
+    replaceAll(/\s/g, '_').
+    toLowerCase();
+  }
+
+  sendMetrics(config, events) {
+    let that = this;
+
     events.on('stats', (stats) => {
       debug('On stats event: %O', stats);
 
       if (stats[COUNTERS_STATS]) {
         for (const cKey in stats[COUNTERS_STATS]) {
-          const transformed = toPrometheusKey(cKey)
+          const transformed = that.toPrometheusKey(cKey)
           this.countersStats.inc({metric: transformed}, stats[COUNTERS_STATS][cKey])
         }
       }
 
       if (stats[RATES_STATES]){
         for (const rKey in stats[RATES_STATES]) {
-          const transformed = toPrometheusKey(rKey)
+          const transformed = that.toPrometheusKey(rKey)
           this.ratesStats.set({metric: transformed}, stats[RATES_STATES][rKey])
         }
       }
@@ -110,16 +103,19 @@ class PrometheusReporter {
         for (const sKey in stats[SUMMARIES_STATES]) {
           let readings = stats[SUMMARIES_STATES][sKey];
           for (const readingKey in readings) {
-            const transformed = `${toPrometheusKey(sKey)}_${readingKey}`
+            const transformed = `${that.toPrometheusKey(sKey)}_${readingKey}`
             this.summariesStats.set({metric: transformed}, readings[readingKey])
           }
         }
       }
 
-      this.pushgateway.pushAdd({jobName: this.jobUUID.toString()}, function (err) {
+      // noinspection JSCheckFunctionSignatures
+      this.pushgateway.pushAdd({ jobName: this.jobUUID.toString() }, err => {
         if (err) {
           console.log('Error pushing metrics to push gateway', err);
         }
+      }).then(() => {
+        debug("metrics pushed successfully")
       });
     });
   }
