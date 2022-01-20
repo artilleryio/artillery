@@ -22,6 +22,11 @@
   },
   "oclif": {
     "commands": "./lib/cmds",
+    "hooks": {
+      "init": [
+        "./lib/cli/hooks/version"
+      ]
+    },
     "bin": "artillery",
     "_helpClass": "./bin/help",
     "plugins": [
