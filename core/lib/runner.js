@@ -343,6 +343,7 @@ function runScenario(script, metrics, runState, contextVars) {
       debug(err);
       metrics.counter('core.vusers.failed', 1);
     } else {
+      metrics.counter('core.vusers.failed', 0);
       metrics.counter('core.vusers.completed', 1);
       const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
       const delta = scenarioFinishedAt[0] * 1e9 + scenarioFinishedAt[1];
