@@ -1,5 +1,6 @@
+const http = require('http');
 const PromClient = require('prom-client');
-const uuid = require("uuid");
+const uuid = require('uuid');
 const debug = require('debug')('plugin:publish-metrics:prometheus');
 
 const COUNTERS_STATS = 'counters', // counters stats
@@ -9,7 +10,7 @@ const COUNTERS_STATS = 'counters', // counters stats
 class PrometheusReporter {
 
   constructor(config, events) {
-    this.jobUUID = uuid.v4();
+    this.workerID = process.env.WORKER_ID || uuid.v4();
     this.config = Object.assign({
       tags: [],
       prefix: 'artillery'
@@ -30,7 +31,14 @@ class PrometheusReporter {
     this.registerMetrics(this.config.prefix)
 
     debug('creating pushgateway client using url: %s', this.prometheusOpts.pushgatewayUrl);
-    this.pushgateway = new PromClient.Pushgateway(this.prometheusOpts.pushgatewayUrl);
+    this.pushgateway = new PromClient.Pushgateway(this.prometheusOpts.pushgatewayUrl,{
+      timeout: 5000, //Set the request timeout to 5000ms
+      agent: new http.Agent({
+        keepAlive: true,
+        keepAliveMsec: 10000,
+        maxSockets: 10,
+      }),
+    });
 
     debug('configure sending metrics to pushgateway');
     this.sendMetrics(config, events)
@@ -109,13 +117,13 @@ class PrometheusReporter {
       }
 
       // noinspection JSCheckFunctionSignatures
-      this.pushgateway.pushAdd({ jobName: this.jobUUID.toString() }, err => {
-        if (err) {
+      this.pushgateway.pushAdd({ jobName: this.workerID.toString()})
+        .then(() => {
+          debug("metrics pushed successfully")
+        })
+        .catch(err => {
           console.log('Error pushing metrics to push gateway', err);
-        }
-      }).then(() => {
-        debug("metrics pushed successfully")
-      });
+        });
     });
   }
 
