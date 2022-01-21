@@ -73,11 +73,9 @@ class PrometheusReporter {
   }
 
   toPrometheusKey(candidate) {
-    debug('toPrometheusKey candidate: %O', candidate)
     return candidate.
-    replaceAll('.', '_').
-    replaceAll(/\s/g, '_').
-    toLowerCase();
+      replace(/\s|\./g, '_').
+      toLowerCase();
   }
 
   sendMetrics(config, events) {
@@ -88,7 +86,6 @@ class PrometheusReporter {
 
       if (stats[COUNTERS_STATS]) {
         for (const cKey in stats[COUNTERS_STATS]) {
-          debug('counters key: %s', cKey)
           const transformed = that.toPrometheusKey(cKey)
           this.countersStats.inc({metric: transformed}, stats[COUNTERS_STATS][cKey])
         }
@@ -96,7 +93,6 @@ class PrometheusReporter {
 
       if (stats[RATES_STATS]){
         for (const rKey in stats[RATES_STATS]) {
-          debug('rates key: %s', rKey)
           const transformed = that.toPrometheusKey(rKey)
           this.ratesStats.set({metric: transformed}, stats[RATES_STATS][rKey])
         }
@@ -105,9 +101,7 @@ class PrometheusReporter {
       if (stats[SUMMARIES_STATS]){
         for (const sKey in stats[SUMMARIES_STATS]) {
           let readings = stats[SUMMARIES_STATS][sKey];
-          debug('summaries key: %s', sKey)
           for (const readingKey in readings) {
-            debug('summaries readingKey: %s', readingKey)
             const transformed = `${that.toPrometheusKey(sKey)}_${readingKey}`
             this.summariesStats.set({metric: transformed}, readings[readingKey])
           }
