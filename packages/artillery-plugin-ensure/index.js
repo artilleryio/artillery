@@ -44,8 +44,13 @@ class EnsurePlugin {
             return;
           }
 
+          debug(JSON.stringify(data));
+          const vars = EnsurePlugin.statsToVars(data);
+          debug({vars});
+
           const checks = this.script.config.ensure;
-          const checkTests = this.runChecks(checks, data);
+          const checkTests = EnsurePlugin.runChecks(checks, vars);
+
           checkTests.forEach(check => {
             if(check.result !== 1) {
               global.artillery.log(`fail: ${check.original}${check.strict ? '': ' (optional)'}`);
@@ -61,7 +66,19 @@ class EnsurePlugin {
     );
   }
 
-  runChecks(checks, data) {
+  // Combine counters/rates/summaries into a flat key->value object for filtrex
+  static statsToVars(data) {
+    const vars = Object.assign({}, data.report.counters, data.report.rates);
+    for(const [name, values] of Object.entries(data.report.summaries || {})) {
+      for(const [aggregation, value] of Object.entries(values)) {
+        vars[`${name}.${aggregation}`] = value;
+      }
+    }
+
+    return vars;
+  }
+
+  static runChecks(checks, vars) {
     const LEGACY_CONDITIONS = ['min', 'max', 'median', 'p95', 'p99'];
     const checkTests = [];
 
@@ -134,14 +151,6 @@ class EnsurePlugin {
     if(checkTests.length > 0) {
       global.artillery.log('\nChecks:');
     }
-
-    const vars = Object.assign({}, data.report.counters, data.report.rates);
-    for(const [name, values] of Object.entries(data.report.summaries || {})) {
-      for(const [aggregation, value] of Object.entries(values)) {
-        vars[`${name}.${aggregation}`] = value;
-      }
-    }
-    debug({vars});
 
     checkTests.forEach(check => {
       const result = check.f(vars);
