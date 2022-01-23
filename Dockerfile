@@ -1,4 +1,4 @@
-FROM node:12-alpine
+FROM node:14-alpine
 LABEL maintainer="team@artillery.io"
 
 WORKDIR /home/node/artillery
