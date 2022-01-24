@@ -47,7 +47,7 @@ function markEndTime(ee, _, startedAt) {
   const endedAt = process.hrtime(startedAt);
   const delta = endedAt[0] * 1e9 + endedAt[1];
 
-  ee.emit('histogram', 'engine.socketio.response_time', delta / 1e6);
+  ee.emit('histogram', 'socketio.response_time', delta / 1e6);
 }
 
 function isResponseRequired(spec) {
@@ -159,8 +159,8 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
       return delegateFunc(context, callback);
     }
 
-    ee.emit('counter', 'engine.socketio.emit', 1);
-    ee.emit('rate', 'engine.socketio.emit_rate');
+    ee.emit('counter', 'socketio.emit', 1);
+    ee.emit('rate', 'socketio.emit_rate');
 
     const startedAt = process.hrtime();
     const socketio = context.sockets[requestSpec.namespace] || null;

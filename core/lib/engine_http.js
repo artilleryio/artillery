@@ -663,8 +663,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         request(requestParams)
           .on('request', function (req) {
             debugRequests('request start: %s', req.path);
-            ee.emit('counter', 'engine.http.requests', 1);
-            ee.emit('rate', 'engine.http.request_rate');
+            ee.emit('counter', 'http.requests', 1);
+            ee.emit('rate', 'http.request_rate');
             req.on('response', function (res) {
               self._handleResponse(
                 requestParams.url,
@@ -729,18 +729,18 @@ HttpEngine.prototype._handleResponse = function (
     }
   }
 
-  ee.emit('counter', 'engine.http.codes.' + code, 1);
-  ee.emit('counter', 'engine.http.responses', 1);
-  // ee.emit('rate', 'engine.http.response_rate');
+  ee.emit('counter', 'http.codes.' + code, 1);
+  ee.emit('counter', 'http.responses', 1);
+  // ee.emit('rate', 'http.response_rate');
   ee.emit(
     'histogram',
-    'engine.http.response_time',
+    'http.response_time',
     res.timings.phases.firstByte
   );
   if (this.extendedHTTPMetrics) {
-    ee.emit('histogram', 'engine.http.dns', res.timings.phases.dns);
-    ee.emit('histogram', 'engine.http.tcp', res.timings.phases.tcp);
-    ee.emit('histogram', 'engine.http.tls', res.timings.phases.tls);
+    ee.emit('histogram', 'http.dns', res.timings.phases.dns);
+    ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
+    ee.emit('histogram', 'http.tls', res.timings.phases.tls);
   }
   let body = '';
   if (maybeCallback) {
@@ -751,7 +751,7 @@ HttpEngine.prototype._handleResponse = function (
 
   res.on('end', () => {
     if (this.extendedHTTPMetrics) {
-      ee.emit('histogram', 'engine.http.total', res.timings.phases.total);
+      ee.emit('histogram', 'http.total', res.timings.phases.total);
     }
 
     context._successCount++;

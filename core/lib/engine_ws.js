@@ -154,8 +154,8 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   }
 
   const f = function (context, callback) {
-    ee.emit('counter', 'engine.websocket.messages_sent', 1);
-    ee.emit('rate', 'engine.websocket.send_rate');
+    ee.emit('counter', 'websocket.messages_sent', 1);
+    ee.emit('rate', 'websocket.send_rate');
     const params = requestSpec.send;
 
     // Reset onmessage to stop steps interfering with each other

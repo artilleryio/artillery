@@ -204,7 +204,7 @@ function run(script, ee, options, runState, contextVars) {
 
   phaser.on('arrival', function (spec) {
     if (runState.pendingScenarios >= spec.maxVusers) {
-      metrics.counter('core.vusers.skipped', 1);
+      metrics.counter('vusers.skipped', 1);
     } else {
       scenarioContext = runScenario(script, metrics, runState, contextVars);
     }
@@ -323,10 +323,10 @@ function runScenario(script, metrics, runState, contextVars) {
   );
 
   metrics.counter(
-    `core.vusers.created_by_name.${script.scenarios[i].name || i}`,
+    `vusers.created_by_name.${script.scenarios[i].name || i}`,
     1
   );
-  metrics.counter('core.vusers.created.total', 1);
+  metrics.counter('vusers.created', 1);
 
   const scenarioStartedAt = process.hrtime();
   const scenarioContext = createContext(script, contextVars);
@@ -341,13 +341,13 @@ function runScenario(script, metrics, runState, contextVars) {
     runState.pendingScenarios--;
     if (err) {
       debug(err);
-      metrics.counter('core.vusers.failed', 1);
+      metrics.counter('vusers.failed', 1);
     } else {
-      metrics.counter('core.vusers.failed', 0);
-      metrics.counter('core.vusers.completed', 1);
+      metrics.counter('vusers.failed', 0);
+      metrics.counter('vusers.completed', 1);
       const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
       const delta = scenarioFinishedAt[0] * 1e9 + scenarioFinishedAt[1];
-      metrics.summary('core.vusers.session_length', delta / 1e6);
+      metrics.summary('vusers.session_length', delta / 1e6);
     }
   });
 
