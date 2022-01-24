@@ -90,30 +90,30 @@ class SSMS extends EventEmitter {
   // Take metric data for a period and return a summary object with 1.6.x-compatible format
   static legacyReport(pd) {
     const result = {
-      // any histograms or counters which aren't core.*, or engine.*
-      customStats: {}, // TODO
-      counters: {}, // TODO
+      // Custom field compatibility not supported:
+      customStats: {},
+      counters: {},
 
-      scenariosAvoided: pd.counters['core.vusers.skipped'] || 0,
+      scenariosAvoided: pd.counters['vusers.skipped'] || 0,
       timestamp: new Date(pd.period),
-      scenariosCreated: pd.counters['core.vusers.created.total'] || 0,
-      scenariosCompleted: pd.counters['core.vusers.completed'] || 0,
+      scenariosCreated: pd.counters['vusers.created'] || 0,
+      scenariosCompleted: pd.counters['vusers.completed'] || 0,
 
       requestsCompleted:
-        pd.counters['engine.http.responses'] ||
-        pd.counters['engine.socketio.emit'] ||
-        pd.counters['engine.websocket.messages_sent'] ||
+        pd.counters['http.responses'] ||
+        pd.counters['socketio.emit'] ||
+        pd.counters['websocket.messages_sent'] ||
         0,
       latency: {},
       rps: {
         mean: pd.rates
-          ? pd.rates['engine.http.response_rate'] ||
-            pd.rates['engine.socketio.emit_rate'] ||
+          ? pd.rates['http.response_rate'] ||
+            pd.rates['socketio.emit_rate'] ||
             0
           : 0,
         count:
-          pd.counters['engine.http.responses'] ||
-          pd.counters['engine.socketio.emit'] ||
+          pd.counters['http.responses'] ||
+          pd.counters['socketio.emit'] ||
           0
       },
       scenarioDuration: {},
@@ -125,26 +125,26 @@ class SSMS extends EventEmitter {
 
     if (
       pd.histograms &&
-      typeof pd.histograms['core.vusers.session_length'] !== 'undefined'
+      typeof pd.histograms['vusers.session_length'] !== 'undefined'
     ) {
       result.scenarioDuration = summarizeHistogram(
-        pd.histograms['core.vusers.session_length']
+        pd.histograms['vusers.session_length']
       );
     }
 
     // scenarioCounts
     const names = Object.keys(pd.counters).filter((k) =>
-      k.startsWith('core.vusers.created_by_name.')
+      k.startsWith('vusers.created_by_name.')
     );
     for (const n of names) {
-      result.scenarioCounts[n.split('core.vusers.created_by_name.')[1]] =
+      result.scenarioCounts[n.split('vusers.created_by_name.')[1]] =
         pd.counters[n];
     }
 
     // latency
     const latencyh = pd.histograms
-      ? pd.histograms['engine.http.response_time'] ||
-        pd.histograms['engine.socketio.response_time']
+      ? pd.histograms['http.response_time'] ||
+        pd.histograms['socketio.response_time']
       : null;
     if (latencyh) {
       result.latency = summarizeHistogram(latencyh);
@@ -152,7 +152,7 @@ class SSMS extends EventEmitter {
 
     // HTTP codes
     const codeNames = Object.keys(pd.counters).filter((k) =>
-      k.match(/^engine\.(http|socketio)\.codes.*/)
+      k.match(/^(http|socketio)\.codes.*/)
     );
     for (const n of codeNames) {
       const code = parseInt(n.split('.codes.')[1]);
