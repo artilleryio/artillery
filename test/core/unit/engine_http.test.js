@@ -303,11 +303,11 @@ test('Redirects', (t) => {
     );
 
     t.assert(
-      counters['engine.http.codes.302'] === 1,
+      counters['http.codes.302'] === 1,
       'Should have 1 302 response'
     );
     t.assert(
-      counters['engine.http.codes.200'] === 1,
+      counters['http.codes.200'] === 1,
       'Should have 1 200 response'
     );
 
@@ -374,7 +374,7 @@ test('Forms - formData multipart', (t) => {
     }
 
     t.assert(
-      counters['engine.http.codes.200'] === 1,
+      counters['http.codes.200'] === 1,
       'Should have a 200 response'
     );
 

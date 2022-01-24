@@ -71,19 +71,19 @@ tap.test('Metric aggregation', async (t) => {
   t.comment('worker count:', workers.length);
 
   const histogramNames = [
-    'core.engines.http.response_time',
+    'engines.http.response_time',
     'plugin.my_custom_plugin.important_histogram',
-    'core.vusers.session_duration'
+    'vusers.session_duration'
   ];
 
   const counterNames = [
-    'core.vusers.created',
+    'vusers.created',
     'plugin.my_custom_plugin.important_counter'
   ];
 
   const rateNames = [
-    'core.vusers.launch_rate',
-    'engines.mqtt.message_rate',
+    'vusers.launch_rate',
+    'mqtt.message_rate',
     'plugin.my_custom_plugin.op_rate'
   ];
 

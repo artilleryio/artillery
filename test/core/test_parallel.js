@@ -9,8 +9,8 @@ test('parallel requests', (t) => {
 
   runner(script).then(function (ee) {
     ee.on('done', (report) => {
-      let scenarios = report.counters['core.vusers.completed'];
-      let requests = report.counters['engine.http.responses'];
+      let scenarios = report.counters['vusers.completed'];
+      let requests = report.counters['http.responses'];
       let stepCount = script.scenarios[0].flow[0].parallel.length;
       let expected = scenarios * stepCount;
 
