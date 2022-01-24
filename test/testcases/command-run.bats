@@ -57,7 +57,7 @@
 @test "Hook functions - can rewrite the URL" {
   # Ref: https://github.com/shoreditch-ops/artillery/issues/185
   ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello.json -o report.json
-  node -e 'var fs = require("fs"); var j = JSON.parse(fs.readFileSync("report.json", "utf8"));process.exit(j.aggregate.counters["engine.http.codes.404"] ? -1 : 0);'
+  node -e 'var fs = require("fs"); var j = JSON.parse(fs.readFileSync("report.json", "utf8"));process.exit(j.aggregate.counters["http.codes.404"] ? -1 : 0);'
   [[ $? -eq 0 ]]
 }
 
