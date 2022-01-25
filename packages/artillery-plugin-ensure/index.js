@@ -122,7 +122,7 @@ class EnsurePlugin {
     Object.keys(checks)
       .filter(k => LEGACY_CONDITIONS.indexOf(k) > -1)
       .forEach(k => {
-        const metricName = `engine.http.response_time.${k}`;
+        const metricName = `http.response_time.${k}`;
         const maxValue = parseInt(checks[k]);
         let f = () => {};
         try {
@@ -137,7 +137,7 @@ class EnsurePlugin {
 
     if(typeof checks.maxErrorRate !== 'undefined') {
       const maxValue = Number(checks.maxErrorRate);
-      const expression = `((core.vusers.created.total - core.vusers.completed)/core.vusers.created.total * 100) <= ${maxValue}`;
+      const expression = `((vusers.created - vusers.completed)/vusers.created * 100) <= ${maxValue}`;
       let f = () => {};
       try {
         f = filtrex(expression);
