@@ -191,55 +191,29 @@ test('extendedMetrics', (t) => {
   });
 });
 
-test('gzip - request headers', (t) => {
+test('gzip - compressed responses', (t) => {
+  const responseStatus = 'ok';
   const target = nock('http://localhost:8888')
-    .post('/')
-    .reply(201, function () {
+    .get('/')
+    .reply(function () {
       t.ok(
         'accept-encoding' in this.req.headers,
         'sets the accept-encoding header if gzip is true'
       );
 
-      return 'ok';
+      return [
+        201,
+        zlib.gzipSync(
+          JSON.stringify({
+            status: responseStatus
+          })
+        ),
+        {
+          'content-encoding': 'gzip',
+          'content-type': 'application/json'
+        }
+      ];
     });
-
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [
-          {
-            post: {
-              url: '/',
-              json: { foo: 'bar' },
-              gzip: true
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  runScenario({ vars: {} }, function userDone(err) {
-    if (err) {
-      t.fail();
-    }
-
-    t.ok(target.isDone(), 'Should have made a request to /');
-    t.end();
-  });
-});
-
-test('gzip - compressed responses', (t) => {
-  const target = nock('http://localhost:8888')
-    .get('/')
-    .reply(201, zlib.gzipSync('ok'), { 'content-encoding': 'gzip' });
 
   const script = {
     config: {
@@ -251,6 +225,7 @@ test('gzip - compressed responses', (t) => {
           {
             get: {
               url: '/',
+              capture: [{ json: '$.status', as: 'status', strict: false }],
               gzip: true
             }
           }
@@ -268,7 +243,11 @@ test('gzip - compressed responses', (t) => {
       t.fail();
     }
 
-    t.equal(context._successCount, 1, 'it should handle compressed responses');
+    t.equal(
+      context.vars.status,
+      responseStatus,
+      'it should decompress the response'
+    );
     t.ok(target.isDone(), 'Should have made a request to /');
     t.end();
   });

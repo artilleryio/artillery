@@ -264,9 +264,6 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
       payload: {
         fields: ['species', 'name']
       },
-      ensure: {
-        p95: 300
-      },
       variables: {
         jsonPathExpr: ['$.id']
       }
