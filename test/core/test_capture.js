@@ -187,7 +187,6 @@ test('Capture - JSON', (t) => {
                 },
                 {
                   json: '$.doesnotexist',
-                  transform: 'this.doesnotexist.toUpperCase()',
                   as: 'doesnotexist',
                   strict: false
                 },
@@ -287,7 +286,6 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
                 },
                 {
                   json: '$.doesnotexist',
-                  transform: 'this.doesnotexist.toUpperCase()',
                   as: 'doesnotexist',
                   strict: false
                 },
@@ -382,7 +380,6 @@ test('Capture - XML', (t) => {
               url: '/journeys',
               capture: {
                 xpath: '(//Journey)[1]/JourneyId/text()',
-                transform: 'this.JourneyId.toUpperCase()',
                 as: 'JourneyId'
               }
             }
