@@ -140,12 +140,7 @@ test('HTTP virtual user', function (t) {
 
 test('extendedMetrics', (t) => {
   const histograms = new Set();
-  const additionalMetrics = [
-    'engine.http.dns',
-    'engine.http.tcp',
-    'engine.http.tls',
-    'engine.http.total'
-  ];
+  const additionalMetrics = ['http.dns', 'http.tcp', 'http.tls', 'http.total'];
   const target = nock('http://localhost:8888').get('/').reply(200, 'ok');
 
   const script = {
@@ -427,12 +422,14 @@ test('hooks - beforeScenario', (t) => {
       target: 'http://localhost:8888',
       processor: {
         setEndpoint: function (context, ee, next) {
-          context.vars.endpoint = endpoint;
-
+          t.same(context.vars, {}, 'it receives the context object');
           t.ok(
             ee instanceof EventEmitter,
             'processor function should receive an event emitter'
           );
+          t.ok(typeof next === 'function', 'it receives a callback function');
+
+          context.vars.endpoint = endpoint;
 
           return next();
         }
@@ -486,21 +483,11 @@ test('hooks - afterScenario', (t) => {
     config: {
       target: 'http://localhost:8888',
       processor: {
-        checkProductsCount: function (context, ee, next) {
-          t.ok(
-            ee instanceof EventEmitter,
-            'processor function should receive an event emitter'
-          );
-
+        checkProductsCount: function (context, _ee, next) {
           t.equal(
             context.vars.count,
             productsCount,
             'it can access variables set by the scenario'
-          );
-
-          t.ok(
-            context.vars.date === undefined,
-            'it cannot access variables set by other scenarios'
           );
 
           return next();
@@ -610,8 +597,8 @@ test('Redirects', (t) => {
       'Should have seen 2 unique response codes'
     );
 
-    t.ok(counters['engine.http.codes.302'] === 1, 'Should have 1 302 response');
-    t.ok(counters['engine.http.codes.200'] === 1, 'Should have 1 200 response');
+    t.ok(counters['http.codes.302'] === 1, 'Should have 1 302 response');
+    t.ok(counters['http.codes.200'] === 1, 'Should have 1 200 response');
 
     t.end();
   });
@@ -736,9 +723,9 @@ test('followRedirect', function (t) {
       t.fail();
     }
 
-    t.equal(counters['engine.http.codes.302'], 1);
+    t.equal(counters['http.codes.302'], 1);
     t.equal(
-      counters['engine.http.codes.200'],
+      counters['http.codes.200'],
       undefined,
       'it should not follow redirects if followRedirect is false (1)'
     );
@@ -870,7 +857,7 @@ test('Forms - formData multipart', (t) => {
       t.fail();
     }
 
-    t.ok(counters['engine.http.codes.200'] === 1, 'Should have a 200 response');
+    t.ok(counters['http.codes.200'] === 1, 'Should have a 200 response');
 
     t.end();
   });
