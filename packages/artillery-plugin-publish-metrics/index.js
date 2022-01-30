@@ -22,10 +22,7 @@ function Plugin(script, events) {
   this.events = events;
 
   this.reporters = [];
-  
-  debug("configuring")
-  console.log("configuring")
-  script.config.plugins['publish-metrics'].forEach((config) => {
+  (script.config.plugins['publish-metrics'] || []).forEach((config) => {
     if (
       config.type === 'datadog' ||
       config.type === 'statsd' ||
@@ -51,8 +48,6 @@ function Plugin(script, events) {
       );
     }
   });
-  
-  console.log("configured")
   return this;
 }
 
