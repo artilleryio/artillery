@@ -4,17 +4,17 @@
 
 ## Purpose
 
-Send metrics and events from Artillery to external monitoring and observability systems. Observe all the things!
+Send metrics and events from Artillery to external monitoring and observability systems. Chart, analyze and compare performance data from Artillery alongside that of your applications and infrastructure.
 
-**Supported targets:**
+### Supported destinations
 
-- Datadog metrics (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
-- [Honeycomb](https://honeycomb.io) events
-- [Lightstep](https://lightstep.com) spans
-- [Mixpanel](https://mixpanel.com) events
-- InfluxDB metrics with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
-- StatsD metrics
-- [Prometheus metrics](https://prometheus.io/docs/concepts/metric_types/) using the [Pushgateway](https://prometheus.io/docs/instrumenting/pushing/)
+- Datadog - (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
+- [Prometheus](https://prometheus.io/docs/concepts/metric_types/) via [Pushgateway](https://prometheus.io/docs/instrumenting/pushing/)
+- [Honeycomb](https://honeycomb.io)
+- [Lightstep](https://lightstep.com)
+- [Mixpanel](https://mixpanel.com)
+- InfluxDB with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
+- StatsD
 
 ## Docs
 
