@@ -10,9 +10,11 @@ const { createDatadogReporter } = require('./lib/datadog');
 const { createHoneycombReporter } = require('./lib/honeycomb');
 const { createLightstepReporter } = require('./lib/lightstep');
 const { createMixPanelReporter } = require('./lib/mixpanel');
+const { createPrometheusReporter } = require("./lib/prometheus");
 
 module.exports = {
   Plugin,
+  LEGACY_METRICS_FORMAT: false,
 };
 
 function Plugin(script, events) {
@@ -20,7 +22,9 @@ function Plugin(script, events) {
   this.events = events;
 
   this.reporters = [];
-
+  
+  debug("configuring")
+  console.log("configuring")
   script.config.plugins['publish-metrics'].forEach((config) => {
     if (
       config.type === 'datadog' ||
@@ -34,6 +38,8 @@ function Plugin(script, events) {
       this.reporters.push(createLightstepReporter(config, events, script));
     } else if (config.type === 'mixpanel') {
       this.reporters.push(createMixPanelReporter(config, events, script));
+    } else if (config.type === 'prometheus') {
+      this.reporters.push(createPrometheusReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',
@@ -45,7 +51,8 @@ function Plugin(script, events) {
       );
     }
   });
-
+  
+  console.log("configured")
   return this;
 }
 
