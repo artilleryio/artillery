@@ -28,7 +28,6 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "artillery": "^1.7.3",
     "ava": "^3.15.0",
     "shelljs": "^0.8.4"
   }
