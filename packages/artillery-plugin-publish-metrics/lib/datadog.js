@@ -93,56 +93,36 @@ function DatadogReporter(config, events, script) {
   }
 
   events.on('stats', (stats) => {
-    const report = stats.report();
-
-    let metrics = this.metrics;
-
-    metrics.increment('scenarios.created', report.scenariosCreated);
-    metrics.increment('scenarios.completed', report.scenariosCompleted);
-    metrics.increment('requests.completed', report.requestsCompleted);
-
-    if (report.latency) {
-      metrics.gauge('latency.min', report.latency.min);
-      metrics.gauge('latency.max', report.latency.max);
-      metrics.gauge('latency.median', report.latency.median);
-      metrics.gauge('latency.p95', report.latency.p95);
-      metrics.gauge('latency.p99', report.latency.p99);
+    for(const [name, value] of Object.entries(stats.counters || {})) {
+      this.metrics.increment(name, value);
     }
 
-    let errorCount = 0;
-    if (report.errors) {
-      Object.keys(report.errors).forEach((errCode) => {
-        const metricName = errCode
-              .replace(/[^a-zA-Z0-9_]/g, '_');
-        errorCount += report.errors[errCode];
-        metrics.increment(`errors.${metricName}`, report.errors[errCode]);
-      });
-    }
-    metrics.increment(`error_count`, errorCount);
+    /*
+      An entry looks like this:
 
-    let codeCounts = {
-      '1xx': 0,
-      '2xx': 0,
-      '3xx': 0,
-      '4xx': 0,
-      '5xx': 0
-    };
-    if (report.codes) {
-      Object.keys(report.codes).forEach((code) => {
-        const codeFamily = `${String(code)[0]}xx`;
-        if (!codeCounts[codeFamily]) {
-          codeCounts[codeFamily] = 0; // 6xx etc
-        }
-        codeCounts[codeFamily] += report.codes[code];
-      });
-    }
-    Object.keys(codeCounts).forEach((codeFamily) => {
-      metrics.increment(`response.${codeFamily}`, codeCounts[codeFamily]);
-    });
+      "http.response_time": {
+        "min": 16,
+        "max": 438,
+        "count": 150,
+        "p50": 19.9,
+        "median": 19.9,
+        "p75": 22.9,
+        "p90": 26.8,
+        "p95": 44.3,
+        "p99": 333.7,
+        "p999": 383.8
+      }
 
-    if (report.rps) {
-      metrics.gauge('rps.mean', report.rps.mean);
-      metrics.increment('rps.count', report.count);
+      so we create gauges such as: http.response_time.p50 = 19.9
+     */
+    for(const [name, values] of Object.entries(stats.summaries || {})) {
+      for (const [aggregation, value] of Object.entries(values)) {
+        this.metrics.gauge(`${name}.${aggregation}`, value);
+      }
+    }
+
+    for (const [name, value] of Object.entries(stats.rates || {})) {
+      this.metrics.gauge(name, value);
     }
   });
 
