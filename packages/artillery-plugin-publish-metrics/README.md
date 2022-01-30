@@ -31,8 +31,7 @@ Please create an [issue](https://github.com/artilleryio/artillery/issues) to rep
 ## Wishlist
 
 - CloudWatch
+- NewRelic
 - InfluxDB (HTTP API)
 - Splunk
 - ELK
-
-Want to help add your favorite monitoring system? Let us know via Issues or on Discord: https://discord.com/invite/37vGhH3NMB
