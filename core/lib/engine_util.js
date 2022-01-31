@@ -472,15 +472,6 @@ function captureOrMatch(params, response, context, done) {
             strict: spec.strict
           };
 
-          if (spec.transform) {
-            let transformedValue = evil(result.captures, spec.transform);
-
-            debug('transform: %s = %s', spec.as, result.captures[spec.as]);
-            if (transformedValue !== null) {
-              result.captures[spec.as].value = transformedValue;
-            }
-          }
-
           result.captures[spec.as].failed = isCaptureFailed(
             result.captures[spec.as],
             context._defaultStrictCapture
