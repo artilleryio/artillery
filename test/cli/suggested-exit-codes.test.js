@@ -7,7 +7,7 @@ async function main() {
     try {
       const result = await $`${path.join(
         __dirname,
-        '../../bin/artillery'
+        '../../bin/run'
       )} run ${path.join(
         __dirname,
         '../scripts/test-suggest-exit-code.yml'
