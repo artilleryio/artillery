@@ -3,7 +3,7 @@ const http = require('http');
 const { $ } = require('zx');
 const path = require('path');
 
-const A9 = process.env.A9 || path.join(__dirname, '../../../bin/artillery');
+const A9 = process.env.A9 || path.join(__dirname, '../../../bin/run');
 
 function createServer() {
   return http.createServer((req, res) => {

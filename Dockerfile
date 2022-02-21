@@ -13,4 +13,4 @@ RUN npm install artillery-plugin-publish-metrics \
 COPY . ./
 ENV PATH="/home/node/artillery/bin:${PATH}"
 
-ENTRYPOINT ["/home/node/artillery/bin/artillery"]
+ENTRYPOINT ["/home/node/artillery/bin/run"]
