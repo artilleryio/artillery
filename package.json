@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "2.0.0-11",
+  "version": "2.0.0-12",
   "description": "Modern performance testing toolkit for DevOps and SRE",
   "main": "./lib",
   "engines": {
