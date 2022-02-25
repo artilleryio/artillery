@@ -88,7 +88,7 @@
     "@artilleryio/sketches-js": "^1.0.4",
     "@oclif/command": "^1.8.0",
     "@oclif/config": "^1.17.0",
-    "@oclif/plugin-help": "^3.2.0",
+    "@oclif/plugin-help": "^3.3.1",
     "agentkeepalive": "^4.1.0",
     "arrivals": "^2.1.2",
     "async": "^1.5.2",
