@@ -161,6 +161,80 @@ test('Expectation: contentType', async (t) => {
   });
 });
 
+test('Expectation: headerEquals', t => {
+  const expectations = require('../lib/expectations');
+
+  // expectation - response object - user context - expected result
+  const data = [
+    [
+      [
+        'set-cookie',
+        [
+          'cookie1-name={{ cookie1value }};Path=/',
+          'cookie2-name={{ cookie2value }};Path=/',
+        ],
+      ],
+      {
+        headers: {
+          'set-cookie': [
+            'cookie1-name=value1;Path=/',
+            'cookie2-name=value2;Path=/',
+          ],
+        },
+      },
+      {
+        vars: {
+          cookie1value: 'value1',
+          cookie2value: 'value2',
+        },
+      },
+      true
+    ],
+    [
+      [
+        'content-encoding',
+        'deflate, gzip',
+      ],
+      {
+        headers: {
+          'content-enconding': 'gzip',
+        },
+      },
+      {
+        vars: {},
+      },
+      false
+    ],
+    [
+      [
+        'x-request-id',
+        '{{ reqId }}',
+      ],
+      {
+        headers: {
+          'x-request-id': 'abcdef',
+        },
+      },
+      {
+        vars: {
+          reqId: 'abcdef'
+        },
+      },
+      true
+    ]
+  ];
+
+  data.forEach((e) => {
+    const result = expectations.headerEquals(
+      { headerEquals: e[0] },
+      {}, // body
+      {}, // req
+      e[1], // res
+      e[2]); // userContext
+    t.true(result.ok === e[3]);
+  });
+});
+
 test('Integration with Artillery', async (t) => {
   shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
   shelljs.env["PATH"] = process.env.PATH;

@@ -79,11 +79,11 @@ function expectHeaderEquals(expectation, body, req, res, userContext) {
   if (res.headers[expected[0]]) {
     result.expected = expected[1];
 
-    const valueToCheck = res.headers[expected[0]];
+    const valueToCheck = res.headers[expected[0]].toString();
     debug('valueToCheck = ' + valueToCheck);
     result.got = valueToCheck;
 
-    if (valueToCheck === expected[1]) {
+    if (valueToCheck === (expected[1] || '').toString()) {
       result.ok = true;
     }
   } else {
