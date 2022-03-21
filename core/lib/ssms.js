@@ -112,9 +112,7 @@ class SSMS extends EventEmitter {
             0
           : 0,
         count:
-          pd.counters['http.responses'] ||
-          pd.counters['socketio.emit'] ||
-          0
+          pd.counters['http.responses'] || pd.counters['socketio.emit'] || 0
       },
       scenarioDuration: {},
       scenarioCounts: {},
@@ -569,11 +567,29 @@ class SSMS extends EventEmitter {
     this._aggregateHistograms(currentTimeslice);
     this._aggregateRates(currentTimeslice);
 
-    this._maybeEmitMostRecentPeriod();
+    if (forceAll) {
+      this._emitPeriods();
+    } else {
+      this._maybeEmitMostRecentPeriod();
+    }
+  }
+
+  _emitPeriods() {
+    const bucketIds = this.getBucketIds();
+    const lastPeriod = parseInt(this._lastPeriod, 10);
+
+    for (let i = 0; i < bucketIds.length; i++) {
+      const period = bucketIds[i];
+
+      if (!this._lastPeriod || parseInt(period, 10) > lastPeriod) {
+        this.emit('metricData', period, this.getMetrics(period));
+      }
+    }
   }
 
   _maybeEmitMostRecentPeriod() {
     const p = this.getBucketIds()[0];
+
     if (p && p !== this._lastPeriod) {
       this.emit('metricData', p, this.getMetrics(p)); // Measurements in period p have been aggregated
       this._lastPeriod = p;
