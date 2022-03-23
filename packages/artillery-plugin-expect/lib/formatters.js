@@ -21,7 +21,7 @@ function silent(requestExpectation, req, res, userContext) {
 
 function prettyPrint(requestExpectations, req, res, userContext) {
   if (requestExpectations.results.length > 0) {
-    artillery.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}`, {});
+    artillery.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}`);
   }
 
   let hasFailedExpectations = false;
@@ -30,7 +30,7 @@ function prettyPrint(requestExpectations, req, res, userContext) {
     artillery.log(
       `  ${result.ok ? chalk.green('ok') : chalk.red('not ok')} ${
         result.type
-      } ${result.got} `, {}
+      } ${result.got} `
     );
 
     if (!result.ok) {
