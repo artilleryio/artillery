@@ -17,7 +17,7 @@
 ## Feedback, Bugs, Issues
 
 🐞 Please report bugs over at [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
-💬 Ask for help or propose a new features via [Github Discussions](https://github.com/artilleryio/artillery/discussions) our our [Discord server](https://discord.gg/37vGhH3NMB)
+💬 Ask for help or propose a new features via [Github Discussions](https://github.com/artilleryio/artillery/discussions)
 🐦 Follow [@artilleryio](https://twitter.com/intent/follow?original_referer=https%3A%2F%2Fartillery.io%2F&ref_src=twsrc%5Etfw&region=follow_link&screen_name=artilleryio&tw_p=followbutton) on Twitter for updates
 
 ## License
