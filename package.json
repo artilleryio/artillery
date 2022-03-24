@@ -99,7 +99,7 @@
     "cheerio": "^1.0.0-rc.2",
     "ci-info": "^2.0.0",
     "cli-table3": "^0.6.0",
-    "csv-parse": "^4.4.6",
+    "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
     "decompress-response": "^6.0.0",
     "deep-equal": "^1.0.1",
