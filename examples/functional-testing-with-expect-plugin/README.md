@@ -20,22 +20,14 @@ node app.js
 
 This command will start a server listening at http://localhost:3000/.
 
-## Installing the `artillery-plugin-expect` plugin
-
-To run functional tests, you'll need to install the `artillery-plugin-expect` plugin globally, which adds expectations and assertions to your test scenarios:
-
-```shell
-npm install -g artillery-plugin-expect@latest
-```
-
 ## Running Artillery tests
 
 This directory contains a test script (`functional-load-tests.yml`) which defines two environments:
 
-- `load`: Contains a load phase that generates 25 virtual users per second for 10 minutes.
-- `functional`: Contains a load phase that generates a single virtual user, and enables the `artillery-plugin-expect` plugin.
+- `load` - this defines a load phase that generates 25 virtual users per second for 10 minutes.
+- `functional` - this enables the `artillery-plugin-expect` plugin. We don't want to enable it in the `load` phase as it would generate a lot of console output
 
-Once the plugin is installed and API server is up and running, you can run either load tests or functional tests using the same test script, using the `--environment` flag.
+Once the API server is up and running, you can run either load tests or functional tests using the same test script, using the `--environment` flag.
 
 To run load tests:
 

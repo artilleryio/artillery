@@ -6,9 +6,8 @@ config:
         - duration: 600
           arrivalRate: 25
     functional:
-      phases:
-        - duration: 1
-          arrivalCount: 1
+      # We don't need to specify a phase here. Artillery will
+      # launch a single VU when there is no phase definition.
       plugins:
         expect: {}
 
