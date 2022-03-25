@@ -378,8 +378,10 @@ tap.test('Metric aggregation - merged histograms', async (t) => {
 
   // Now we can compare:
 
-  // t.ok(_.isEqual(Object.keys(metricData).sort(), control.getBucketIds().sort()), 'Should have the same set of buckets');
-  // console.log(Object.keys(metricData).sort(), control.getBucketIds().sort());
+  t.ok(
+    _.isEqual(Object.keys(metricData).sort(), control.getBucketIds().sort()),
+    'Should have the same set of buckets'
+  );
 
   const combined = {};
   for (const [bucket, summaries] of Object.entries(metricData)) {
