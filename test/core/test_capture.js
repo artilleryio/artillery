@@ -65,7 +65,7 @@ test('Capture - headers', (t) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
-      t.ok(report.codes[200] > 0, 'Successful responses');
+      t.ok(report.codes[200] === 2, 'Expected number of requests made');
       ee.stop().then(() => {
         t.end();
       });
