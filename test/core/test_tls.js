@@ -1,6 +1,6 @@
 'use strict';
 
-var test = require('tape');
+var { test } = require('tap');
 var runner = require('../../core/lib/runner').runner;
 var tls = require('tls');
 var fs = require('fs');
@@ -22,7 +22,7 @@ test('tls strict', function (t) {
   runner(script).then(function (ee) {
     ee.on('done', function (report) {
       var rejected = report.errors.DEPTH_ZERO_SELF_SIGNED_CERT;
-      t.assert(rejected, 'requests to self-signed tls certs fail by default');
+      t.ok(rejected, 'requests to self-signed tls certs fail by default');
 
       t.end();
     });
@@ -39,7 +39,7 @@ test('tls lax', function (t) {
         'requests to self-signed tls certs pass ' +
         'when `rejectUnauthorized` is false';
 
-      t.assert(rejected == null, reason);
+      t.ok(rejected == null, reason);
 
       t.end();
       server.close();

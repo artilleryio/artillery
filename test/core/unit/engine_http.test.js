@@ -4,7 +4,7 @@
 
 'use strict';
 
-const { test, before, beforeEach } = require('tap');
+const { test } = require('tap');
 const sinon = require('sinon');
 
 const HttpEngine = require('../../../core/lib/engine_http');
@@ -67,798 +67,807 @@ const script = {
   ]
 };
 
-before(async () => await createGlobalObject());
+test('HTTP engine', function (tap) {
+  tap.before(async () => await createGlobalObject());
 
-beforeEach(() => nock.cleanAll());
+  tap.beforeEach(() => nock.cleanAll());
 
-test('HTTP engine interface', function (t) {
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
+  tap.test('HTTP engine interface', function (t) {
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-  t.ok(engine, 'Can construct an engine');
-  t.ok(
-    typeof runScenario === 'function',
-    'Can use the engine to create virtual user functions'
-  );
-  t.end();
-});
-
-test('HTTP virtual user', function (t) {
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const spy = sinon.spy(console, 'log');
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  ee.once('started', onStarted);
-
-  const initialContext = {
-    vars: {
-      aCapturedList: ['hello', 'world']
-    }
-  };
-
-  t.plan(8);
-
-  const startedAt = Date.now();
-  runScenario(initialContext, function userDone(err, finalContext) {
-    const finishedAt = Date.now();
-    t.ok(!err, 'Virtual user finished successfully');
-    t.ok(finalContext.vars.newVar === 1234, 'Function spec was executed');
+    t.ok(engine, 'Can construct an engine');
     t.ok(
-      finishedAt - startedAt >= THINKTIME_SEC * 1000,
-      'User spent some time thinking'
+      typeof runScenario === 'function',
+      'Can use the engine to create virtual user functions'
     );
-
-    const expectedLog = '# This is printed from the script with "log": 1234';
-    let seen = false;
-    spy.args.forEach(function (args) {
-      if (args[0] === expectedLog) {
-        t.comment(`string: "${args[0]}" found`);
-        seen = true;
-      }
-    });
-    t.ok(seen, 'log worked');
-    console.log.restore(); // unwrap the spy
-    // loop count starts at 0, hence 2 rather than 3 here:
-    t.ok(finalContext.vars.inc === 2, 'Function called in a loop');
-    t.ok(
-      finalContext.vars.loopElement === 'world',
-      'loopElement set by custom function'
-    );
-
-    // someCounter is set by a whileTrue hook function:
-    t.ok(finalContext.vars.someCounter === 3, 'whileTrue aborted the loop');
-
     t.end();
   });
 
-  function onStarted() {
-    t.ok(true, 'started event emitted');
-  }
-});
+  tap.test('HTTP virtual user', function (t) {
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const spy = sinon.spy(console, 'log');
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-test('extendedMetrics', (t) => {
-  const histograms = new Set();
-  const additionalMetrics = ['http.dns', 'http.tcp', 'http.tls', 'http.total'];
-  const target = nock('http://localhost:8888').get('/').reply(200, 'ok');
+    ee.once('started', onStarted);
 
-  const script = {
-    config: {
-      target: 'http://localhost:8888',
-      http: { extendedMetrics: true }
-    },
-    scenarios: [
-      {
-        flow: [
-          {
-            get: {
-              url: '/'
-            }
-          }
-        ]
+    const initialContext = {
+      vars: {
+        aCapturedList: ['hello', 'world']
       }
-    ]
-  };
+    };
 
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
+    t.plan(8);
 
-  ee.on('histogram', (name) => {
-    histograms.add(name);
-  });
-
-  runScenario({ vars: {} }, function userDone(err) {
-    if (err) {
-      t.fail();
-    }
-
-    additionalMetrics.forEach((metric) => {
+    const startedAt = Date.now();
+    runScenario(initialContext, function userDone(err, finalContext) {
+      const finishedAt = Date.now();
+      t.ok(!err, 'Virtual user finished successfully');
+      t.ok(finalContext.vars.newVar === 1234, 'Function spec was executed');
       t.ok(
-        histograms.has(metric),
-        `it should track additional metric ${metric}`
+        finishedAt - startedAt >= THINKTIME_SEC * 1000,
+        'User spent some time thinking'
       );
-    });
 
-    t.ok(target.isDone(), 'Should have made a request to /');
-    t.end();
-  });
-});
-
-test('gzip - compressed responses', (t) => {
-  const responseStatus = 'ok';
-  const target = nock('http://localhost:8888')
-    .get('/')
-    .reply(function () {
+      const expectedLog = '# This is printed from the script with "log": 1234';
+      let seen = false;
+      spy.args.forEach(function (args) {
+        if (args[0] === expectedLog) {
+          t.comment(`string: "${args[0]}" found`);
+          seen = true;
+        }
+      });
+      t.ok(seen, 'log worked');
+      console.log.restore(); // unwrap the spy
+      // loop count starts at 0, hence 2 rather than 3 here:
+      t.ok(finalContext.vars.inc === 2, 'Function called in a loop');
       t.ok(
-        'accept-encoding' in this.req.headers,
-        'sets the accept-encoding header if gzip is true'
+        finalContext.vars.loopElement === 'world',
+        'loopElement set by custom function'
       );
 
-      return [
-        201,
-        zlib.gzipSync(
-          JSON.stringify({
-            status: responseStatus
-          })
-        ),
-        {
-          'content-encoding': 'gzip',
-          'content-type': 'application/json'
-        }
-      ];
+      // someCounter is set by a whileTrue hook function:
+      t.ok(finalContext.vars.someCounter === 3, 'whileTrue aborted the loop');
+
+      t.end();
     });
 
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [
-          {
-            get: {
-              url: '/',
-              capture: [{ json: '$.status', as: 'status', strict: false }],
-              gzip: true
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  runScenario({ vars: {} }, function userDone(err, context) {
-    if (err) {
-      t.fail();
+    function onStarted() {
+      t.ok(true, 'started event emitted');
     }
-
-    t.equal(
-      context.vars.status,
-      responseStatus,
-      'it should decompress the response'
-    );
-    t.ok(target.isDone(), 'Should have made a request to /');
-    t.end();
   });
-});
 
-test('custom headers', function (t) {
-  const customHeader = 'x-artillery-header';
-  const customHeaderValue = 'abcde';
-  const target = nock('http://localhost:8888')
-    .get('/')
-    .reply(200, function () {
-      t.equal(
-        this.req.headers[customHeader],
-        customHeaderValue,
-        'Can set custom request headers'
-      );
+  tap.test('extendedMetrics', (t) => {
+    const histograms = new Set();
+    const additionalMetrics = [
+      'http.dns',
+      'http.tcp',
+      'http.tls',
+      'http.total'
+    ];
+    const target = nock('http://localhost:8888').get('/').reply(200, 'ok');
 
-      return 'ok';
-    });
-
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [
-          {
-            get: {
-              url: '/',
-              headers: { [customHeader]: customHeaderValue }
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  runScenario({ vars: {} }, function userDone(err) {
-    if (err) {
-      t.fail();
-    }
-
-    t.ok(target.isDone(), 'Should have made a request to /');
-
-    t.end();
-  });
-});
-
-test('url and uri parameters', function (t) {
-  const target = nock('http://localhost:8888')
-    .get('/hello?hello=world')
-    .reply(200, 'ok');
-
-  const script = {
-    config: {
-      target: 'http://localhost:8888',
-      processor: {
-        rewriteUrl: function (req, _context, _ee, next) {
-          req.uri = '/hello';
-          return next();
-        },
-        printHello: function (_req, _context, _ee, next) {
-          console.log('# hello from printHello hook!');
-          return next();
-        }
-      }
-    },
-    scenarios: [
-      {
-        // test for https://github.com/shoreditch-ops/artillery/issues/184:
-        beforeRequest: 'printHello',
-        name: 'Whatever',
-        flow: [
-          {
-            get: {
-              uri: '/will/404',
-              beforeRequest: 'rewriteUrl',
-              qs: {
-                hello: 'world'
-              }
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const spy = sinon.spy(console, 'log');
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  const initialContext = {
-    vars: {}
-  };
-
-  runScenario(initialContext, function userDone(err) {
-    if (err) {
-      t.fail();
-    }
-
-    t.ok(target.isDone(), 'Should have made a request to /hello');
-
-    const expectedLog = '# hello from printHello hook!';
-    let seen = false;
-    spy.args.forEach(function (args) {
-      if (args[0] === expectedLog) {
-        t.comment(`string: "${args[0]}" found`);
-        seen = true;
-      }
-    });
-    t.ok(seen, 'scenario-level beforeRequest worked');
-    console.log.restore(); // unwrap the spy
-
-    t.end();
-  });
-});
-
-test('hooks - afterResponse', (t) => {
-  const answer = 'the answer is 42';
-
-  nock('http://localhost:8888').get('/answer').reply(200, answer);
-
-  const script = {
-    config: {
-      target: 'http://localhost:8888',
-      processor: {
-        extractAnswer: function (_req, res, vuContext, _events, next) {
-          vuContext.answer = res.body;
-          return next();
-        }
-      }
-    },
-    scenarios: [
-      {
-        name: 'Get answer',
-        flow: [
-          {
-            get: {
-              uri: '/answer',
-              afterResponse: 'extractAnswer'
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  const initialContext = {
-    vars: {}
-  };
-
-  runScenario(initialContext, function userDone(err, finalContext) {
-    if (err) {
-      t.fail();
-    }
-
-    t.ok(finalContext.answer === answer);
-
-    t.end();
-  });
-});
-
-test('hooks - beforeScenario', (t) => {
-  const endpoint = '/products';
-  const script = {
-    config: {
-      target: 'http://localhost:8888',
-      processor: {
-        setEndpoint: function (context, ee, next) {
-          t.same(context.vars, {}, 'it receives the context object');
-          t.ok(
-            ee instanceof EventEmitter,
-            'processor function should receive an event emitter'
-          );
-          t.ok(typeof next === 'function', 'it receives a callback function');
-
-          context.vars.endpoint = endpoint;
-
-          return next();
-        }
-      }
-    },
-    scenarios: [
-      {
-        beforeScenario: 'setEndpoint',
-        flow: [
-          {
-            get: {
-              uri: '{{ endpoint }}'
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const target = nock(script.config.target).get(endpoint).reply(200, 'ok');
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  const initialContext = {
-    vars: {}
-  };
-
-  runScenario(initialContext, function userDone(err, finalContext) {
-    if (err) {
-      t.fail();
-    }
-
-    t.equal(
-      finalContext.vars.endpoint,
-      endpoint,
-      'it should set context vars before running the scenario'
-    );
-
-    t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
-
-    t.end();
-  });
-});
-
-test('hooks - afterScenario', (t) => {
-  const endpoint = '/products';
-  const productsCount = 123;
-  const script = {
-    config: {
-      target: 'http://localhost:8888',
-      processor: {
-        checkProductsCount: function (context, _ee, next) {
-          t.equal(
-            context.vars.count,
-            productsCount,
-            'it can access variables set by the scenario'
-          );
-
-          return next();
-        }
-      }
-    },
-    scenarios: [
-      {
-        afterScenario: 'checkProductsCount',
-        flow: [
-          {
-            get: {
-              uri: endpoint,
-              capture: [{ json: '$.count', as: 'count' }]
-            }
-          }
-        ]
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        http: { extendedMetrics: true }
       },
-      {
-        flow: [
-          {
-            get: {
-              uri: endpoint,
-              capture: [{ json: '$.date', as: 'date' }]
+      scenarios: [
+        {
+          flow: [
+            {
+              get: {
+                url: '/'
+              }
             }
-          }
-        ]
-      }
-    ]
-  };
+          ]
+        }
+      ]
+    };
 
-  const target = nock(script.config.target)
-    .get(endpoint)
-    .reply(
-      200,
-      { count: productsCount, date: new Date().toISOString() },
-      { 'content-type': 'application/json' }
-    );
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  const initialContext = {
-    vars: {}
-  };
-
-  runScenario(initialContext, function userDone(err) {
-    if (err) {
-      t.fail();
-    }
-
-    t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
-
-    t.end();
-  });
-});
-
-test('Redirects', (t) => {
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [{ get: { url: '/foo' } }]
-      }
-    ]
-  };
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-
-  const counters = {};
-
-  const target = nock(script.config.target)
-    .get('/foo')
-    .reply(302, undefined, {
-      Location: '/bar'
-    })
-    .get('/bar')
-    .reply(200, { foo: 'bar' });
-
-  ee.on('counter', (name, val) => {
-    if (counters[name]) {
-      counters[name] += val;
-    } else {
-      counters[name] = val;
-    }
-  });
-
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  const initialContext = {
-    vars: {}
-  };
-
-  runScenario(initialContext, function (err) {
-    if (err) {
-      t.fail();
-    }
-
-    t.ok(target.isDone(), 'Should have made a request to both endpoints');
-
-    t.ok(
-      Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1).length ===
-        2,
-      'Should have seen 2 unique response codes'
-    );
-
-    t.ok(counters['http.codes.302'] === 1, 'Should have 1 302 response');
-    t.ok(counters['http.codes.200'] === 1, 'Should have 1 200 response');
-
-    t.end();
-  });
-});
-
-test('proxies', function (t) {
-  t.plan(4);
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [
-          {
-            get: {
-              url: '/'
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  t.ok(
-    engine._httpAgent.proxy === undefined,
-    'by default nothing is proxied (http)'
-  );
-  t.ok(
-    engine._httpsAgent.proxy === undefined,
-    'by default nothing is proxied (https)'
-  );
-
-  const httpProxy = 'http://proxy.url';
-  const httpsProxy = 'https://proxy.url';
-
-  t.test('HTTP_PROXY', (t) => {
-    const httpProxy = 'http://proxy.url';
-
-    process.env.HTTP_PROXY = httpProxy;
     const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    t.equal(
-      engine._httpAgent.proxy.origin,
-      httpProxy,
-      'it should get the HTTP proxy url from the HTTP_PROXY environment variable'
-    );
-
-    t.equal(
-      engine._httpsAgent.proxy.origin,
-      httpProxy,
-      'it should get the HTTPS proxy url from HTTP_PROXY environment variable'
-    );
-
-    t.end();
-  });
-
-  t.test('HTTP_PROXY and HTTPS_PROXY', (t) => {
-    process.env.HTTP_PROXY = httpProxy;
-    process.env.HTTPS_PROXY = httpsProxy;
-    const engine = new HttpEngine(script);
-
-    t.equal(
-      engine._httpAgent.proxy.origin,
-      httpProxy,
-      'it should get the HTTP proxy url from the HTTP_PROXY environment variable'
-    );
-
-    t.equal(
-      engine._httpsAgent.proxy.origin,
-      httpsProxy,
-      'it should get the HTTPS proxy url from HTTPS_PROXY environment variable'
-    );
-
-    t.end();
-  });
-
-  delete process.env.HTTP_PROXY;
-  delete process.env.HTTPS_PROXY;
-});
-
-test('followRedirect', function (t) {
-  const target = nock('http://localhost:8888')
-    .get('/')
-    .reply(302, undefined, {
-      Location: '/do-not-follow'
-    })
-    .get('/do-not-follow')
-    .reply(200, 'ok');
-
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [
-          {
-            get: {
-              url: '/',
-              followRedirect: false
-            }
-          }
-        ]
-      }
-    ]
-  };
-
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const counters = {};
-
-  ee.on('counter', (name, val) => {
-    counters[name] = (counters[name] || 0) + val;
-  });
-
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  runScenario({ vars: {} }, function userDone(err) {
-    if (err) {
-      t.fail();
-    }
-
-    t.equal(counters['http.codes.302'], 1);
-    t.equal(
-      counters['http.codes.200'],
-      undefined,
-      'it should not follow redirects if followRedirect is false (1)'
-    );
-    t.ok(
-      target.pendingMocks().length === 1 &&
-        target.pendingMocks()[0].endsWith('/do-not-follow'),
-      'it should not follow redirects if followRedirect is false (2)'
-    );
-
-    t.end();
-  });
-});
-
-test('Forms - urlencoded', (t) => {
-  const initialContext = {
-    vars: {
-      location: 'Lahinch',
-      type: 'beach',
-      activity: 'surfing'
-    }
-  };
-
-  const target = nock('http://localhost:8888')
-    .post(
-      '/submit',
-      `activity=${initialContext.vars.activity}&type=${initialContext.vars.type}&location=${initialContext.vars.location}`
-    )
-    .reply(200, function () {
-      t.equal(
-        this.req.headers['content-type'],
-        'application/x-www-form-urlencoded',
-        'should send an url-encoded form'
-      );
-
-      return 'ok';
+    ee.on('histogram', (name) => {
+      histograms.add(name);
     });
 
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [
+    runScenario({ vars: {} }, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      additionalMetrics.forEach((metric) => {
+        t.ok(
+          histograms.has(metric),
+          `it should track additional metric ${metric}`
+        );
+      });
+
+      t.ok(target.isDone(), 'Should have made a request to /');
+      t.end();
+    });
+  });
+
+  tap.test('gzip - compressed responses', (t) => {
+    const responseStatus = 'ok';
+    const target = nock('http://localhost:8888')
+      .get('/')
+      .reply(function () {
+        t.ok(
+          'accept-encoding' in this.req.headers,
+          'sets the accept-encoding header if gzip is true'
+        );
+
+        return [
+          201,
+          zlib.gzipSync(
+            JSON.stringify({
+              status: responseStatus
+            })
+          ),
           {
-            post: {
-              url: '/submit',
-              form: {
-                activity: '{{ activity }}',
-                type: '{{ type }}',
-                location: '{{ location }}'
+            'content-encoding': 'gzip',
+            'content-type': 'application/json'
+          }
+        ];
+      });
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              get: {
+                url: '/',
+                capture: [{ json: '$.status', as: 'status', strict: false }],
+                gzip: true
               }
             }
-          }
-        ]
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    runScenario({ vars: {} }, function userDone(err, context) {
+      if (err) {
+        t.fail();
       }
-    ]
-  };
 
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
-
-  runScenario(initialContext, function (err) {
-    if (err) {
-      t.fail();
-    }
-
-    t.ok(target.isDone(), 'Should have made a request to /submit');
-
-    t.end();
+      t.equal(
+        context.vars.status,
+        responseStatus,
+        'it should decompress the response'
+      );
+      t.ok(target.isDone(), 'Should have made a request to /');
+      t.end();
+    });
   });
-});
 
-test('Forms - formData multipart', (t) => {
-  nock('http://localhost:8888')
-    .post(
-      '/submit',
-      /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi
-    )
-    .reply(200, 'ok');
+  tap.test('custom headers', function (t) {
+    const customHeader = 'x-artillery-header';
+    const customHeaderValue = 'abcde';
+    const target = nock('http://localhost:8888')
+      .get('/')
+      .reply(200, function () {
+        t.equal(
+          this.req.headers[customHeader],
+          customHeaderValue,
+          'Can set custom request headers'
+        );
 
-  const script = {
-    config: {
-      target: 'http://localhost:8888'
-    },
-    scenarios: [
-      {
-        flow: [
-          {
-            post: {
-              url: '/submit',
-              formData: {
-                activity: '{{ activity }}',
-                type: '{{ type }}',
-                location: '{{ location }}'
+        return 'ok';
+      });
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              get: {
+                url: '/',
+                headers: { [customHeader]: customHeaderValue }
               }
             }
-          }
-        ]
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    runScenario({ vars: {} }, function userDone(err) {
+      if (err) {
+        t.fail();
       }
-    ]
-  };
 
-  const engine = new HttpEngine(script);
-  const ee = new EventEmitter();
+      t.ok(target.isDone(), 'Should have made a request to /');
 
-  const counters = {};
-  ee.on('counter', (name, val) => {
-    if (counters[name]) {
-      counters[name] += val;
-    } else {
-      counters[name] = val;
-    }
+      t.end();
+    });
   });
 
-  const runScenario = engine.createScenario(script.scenarios[0], ee);
+  tap.test('url and uri parameters', function (t) {
+    const target = nock('http://localhost:8888')
+      .get('/hello?hello=world')
+      .reply(200, 'ok');
 
-  const initialContext = {
-    vars: {
-      location: 'Lahinch',
-      type: 'beach',
-      activity: 'surfing'
-    }
-  };
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        processor: {
+          rewriteUrl: function (req, _context, _ee, next) {
+            req.uri = '/hello';
+            return next();
+          },
+          printHello: function (_req, _context, _ee, next) {
+            console.log('# hello from printHello hook!');
+            return next();
+          }
+        }
+      },
+      scenarios: [
+        {
+          // test for https://github.com/shoreditch-ops/artillery/issues/184:
+          beforeRequest: 'printHello',
+          name: 'Whatever',
+          flow: [
+            {
+              get: {
+                uri: '/will/404',
+                beforeRequest: 'rewriteUrl',
+                qs: {
+                  hello: 'world'
+                }
+              }
+            }
+          ]
+        }
+      ]
+    };
 
-  runScenario(initialContext, function (err) {
-    if (err) {
-      t.fail();
-    }
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const spy = sinon.spy(console, 'log');
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    t.ok(counters['http.codes.200'] === 1, 'Should have a 200 response');
+    const initialContext = {
+      vars: {}
+    };
 
-    t.end();
+    runScenario(initialContext, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), 'Should have made a request to /hello');
+
+      const expectedLog = '# hello from printHello hook!';
+      let seen = false;
+      spy.args.forEach(function (args) {
+        if (args[0] === expectedLog) {
+          t.comment(`string: "${args[0]}" found`);
+          seen = true;
+        }
+      });
+      t.ok(seen, 'scenario-level beforeRequest worked');
+      console.log.restore(); // unwrap the spy
+
+      t.end();
+    });
   });
+
+  tap.test('hooks - afterResponse', (t) => {
+    const answer = 'the answer is 42';
+
+    nock('http://localhost:8888').get('/answer').reply(200, answer);
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        processor: {
+          extractAnswer: function (_req, res, vuContext, _events, next) {
+            vuContext.answer = res.body;
+            return next();
+          }
+        }
+      },
+      scenarios: [
+        {
+          name: 'Get answer',
+          flow: [
+            {
+              get: {
+                uri: '/answer',
+                afterResponse: 'extractAnswer'
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    const initialContext = {
+      vars: {}
+    };
+
+    runScenario(initialContext, function userDone(err, finalContext) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(finalContext.answer === answer);
+
+      t.end();
+    });
+  });
+
+  tap.test('hooks - beforeScenario', (t) => {
+    const endpoint = '/products';
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        processor: {
+          setEndpoint: function (context, ee, next) {
+            t.same(context.vars, {}, 'it receives the context object');
+            t.ok(
+              ee instanceof EventEmitter,
+              'processor function should receive an event emitter'
+            );
+            t.ok(typeof next === 'function', 'it receives a callback function');
+
+            context.vars.endpoint = endpoint;
+
+            return next();
+          }
+        }
+      },
+      scenarios: [
+        {
+          beforeScenario: 'setEndpoint',
+          flow: [
+            {
+              get: {
+                uri: '{{ endpoint }}'
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const target = nock(script.config.target).get(endpoint).reply(200, 'ok');
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    const initialContext = {
+      vars: {}
+    };
+
+    runScenario(initialContext, function userDone(err, finalContext) {
+      if (err) {
+        t.fail();
+      }
+
+      t.equal(
+        finalContext.vars.endpoint,
+        endpoint,
+        'it should set context vars before running the scenario'
+      );
+
+      t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
+
+      t.end();
+    });
+  });
+
+  tap.test('hooks - afterScenario', (t) => {
+    const endpoint = '/products';
+    const productsCount = 123;
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        processor: {
+          checkProductsCount: function (context, _ee, next) {
+            t.equal(
+              context.vars.count,
+              productsCount,
+              'it can access variables set by the scenario'
+            );
+
+            return next();
+          }
+        }
+      },
+      scenarios: [
+        {
+          afterScenario: 'checkProductsCount',
+          flow: [
+            {
+              get: {
+                uri: endpoint,
+                capture: [{ json: '$.count', as: 'count' }]
+              }
+            }
+          ]
+        },
+        {
+          flow: [
+            {
+              get: {
+                uri: endpoint,
+                capture: [{ json: '$.date', as: 'date' }]
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const target = nock(script.config.target)
+      .get(endpoint)
+      .reply(
+        200,
+        { count: productsCount, date: new Date().toISOString() },
+        { 'content-type': 'application/json' }
+      );
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    const initialContext = {
+      vars: {}
+    };
+
+    runScenario(initialContext, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
+
+      t.end();
+    });
+  });
+
+  tap.test('Redirects', (t) => {
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/foo' } }]
+        }
+      ]
+    };
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+
+    const counters = {};
+
+    const target = nock(script.config.target)
+      .get('/foo')
+      .reply(302, undefined, {
+        Location: '/bar'
+      })
+      .get('/bar')
+      .reply(200, { foo: 'bar' });
+
+    ee.on('counter', (name, val) => {
+      if (counters[name]) {
+        counters[name] += val;
+      } else {
+        counters[name] = val;
+      }
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    const initialContext = {
+      vars: {}
+    };
+
+    runScenario(initialContext, function (err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), 'Should have made a request to both endpoints');
+
+      t.ok(
+        Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1)
+          .length === 2,
+        'Should have seen 2 unique response codes'
+      );
+
+      t.ok(counters['http.codes.302'] === 1, 'Should have 1 302 response');
+      t.ok(counters['http.codes.200'] === 1, 'Should have 1 200 response');
+
+      t.end();
+    });
+  });
+
+  test('proxies', function (t) {
+    t.plan(4);
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              get: {
+                url: '/'
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    t.ok(
+      engine._httpAgent.proxy === undefined,
+      'by default nothing is proxied (http)'
+    );
+    t.ok(
+      engine._httpsAgent.proxy === undefined,
+      'by default nothing is proxied (https)'
+    );
+
+    const httpProxy = 'http://proxy.url';
+    const httpsProxy = 'https://proxy.url';
+
+    t.test('HTTP_PROXY', (t) => {
+      const httpProxy = 'http://proxy.url';
+
+      process.env.HTTP_PROXY = httpProxy;
+      const engine = new HttpEngine(script);
+
+      t.equal(
+        engine._httpAgent.proxy.origin,
+        httpProxy,
+        'it should get the HTTP proxy url from the HTTP_PROXY environment variable'
+      );
+
+      t.equal(
+        engine._httpsAgent.proxy.origin,
+        httpProxy,
+        'it should get the HTTPS proxy url from HTTP_PROXY environment variable'
+      );
+
+      t.end();
+    });
+
+    t.test('HTTP_PROXY and HTTPS_PROXY', (t) => {
+      process.env.HTTP_PROXY = httpProxy;
+      process.env.HTTPS_PROXY = httpsProxy;
+      const engine = new HttpEngine(script);
+
+      t.equal(
+        engine._httpAgent.proxy.origin,
+        httpProxy,
+        'it should get the HTTP proxy url from the HTTP_PROXY environment variable'
+      );
+
+      t.equal(
+        engine._httpsAgent.proxy.origin,
+        httpsProxy,
+        'it should get the HTTPS proxy url from HTTPS_PROXY environment variable'
+      );
+
+      t.end();
+    });
+
+    delete process.env.HTTP_PROXY;
+    delete process.env.HTTPS_PROXY;
+  });
+
+  tap.test('followRedirect', function (t) {
+    const target = nock('http://localhost:8888')
+      .get('/')
+      .reply(302, undefined, {
+        Location: '/do-not-follow'
+      })
+      .get('/do-not-follow')
+      .reply(200, 'ok');
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              get: {
+                url: '/',
+                followRedirect: false
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const counters = {};
+
+    ee.on('counter', (name, val) => {
+      counters[name] = (counters[name] || 0) + val;
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    runScenario({ vars: {} }, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.equal(counters['http.codes.302'], 1);
+      t.equal(
+        counters['http.codes.200'],
+        undefined,
+        'it should not follow redirects if followRedirect is false (1)'
+      );
+      t.ok(
+        target.pendingMocks().length === 1 &&
+          target.pendingMocks()[0].endsWith('/do-not-follow'),
+        'it should not follow redirects if followRedirect is false (2)'
+      );
+
+      t.end();
+    });
+  });
+
+  tap.test('Forms - urlencoded', (t) => {
+    const initialContext = {
+      vars: {
+        location: 'Lahinch',
+        type: 'beach',
+        activity: 'surfing'
+      }
+    };
+
+    const target = nock('http://localhost:8888')
+      .post(
+        '/submit',
+        `activity=${initialContext.vars.activity}&type=${initialContext.vars.type}&location=${initialContext.vars.location}`
+      )
+      .reply(200, function () {
+        t.equal(
+          this.req.headers['content-type'],
+          'application/x-www-form-urlencoded',
+          'should send an url-encoded form'
+        );
+
+        return 'ok';
+      });
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              post: {
+                url: '/submit',
+                form: {
+                  activity: '{{ activity }}',
+                  type: '{{ type }}',
+                  location: '{{ location }}'
+                }
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    runScenario(initialContext, function (err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), 'Should have made a request to /submit');
+
+      t.end();
+    });
+  });
+
+  tap.test('Forms - formData multipart', (t) => {
+    nock('http://localhost:8888')
+      .post(
+        '/submit',
+        /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi
+      )
+      .reply(200, 'ok');
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              post: {
+                url: '/submit',
+                formData: {
+                  activity: '{{ activity }}',
+                  type: '{{ type }}',
+                  location: '{{ location }}'
+                }
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+
+    const counters = {};
+    ee.on('counter', (name, val) => {
+      if (counters[name]) {
+        counters[name] += val;
+      } else {
+        counters[name] = val;
+      }
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    const initialContext = {
+      vars: {
+        location: 'Lahinch',
+        type: 'beach',
+        activity: 'surfing'
+      }
+    };
+
+    runScenario(initialContext, function (err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(counters['http.codes.200'] === 1, 'Should have a 200 response');
+
+      t.end();
+    });
+  });
+
+  tap.end();
 });
