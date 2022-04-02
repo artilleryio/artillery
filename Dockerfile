@@ -7,6 +7,9 @@ COPY package*.json ./
 RUN npm --ignore-scripts --production install
 
 COPY . ./
+RUN npm link
+
+# keep for backwards compatibility
 ENV PATH="/home/node/artillery/bin:${PATH}"
 
-ENTRYPOINT ["/home/node/artillery/bin/run"]
+ENTRYPOINT ["/usr/local/bin/artillery"]
