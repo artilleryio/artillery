@@ -11,14 +11,10 @@ const tough = require('tough-cookie');
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
 const debugResponse = require('debug')('http:response');
-const debugFullBody = require('debug')('http:full_body');
 const USER_AGENT = 'Artillery (https://artillery.io)';
 const engineUtil = require('./engine_util');
 const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 const template = engineUtil.template;
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
 const qs = require('querystring');
 const filtrex = require('filtrex');
 const urlparse = require('url').parse;
@@ -61,9 +57,9 @@ function createAgents(proxies, opts) {
   // but not for HTTP requests:
   if (proxies.https) {
     result.httpAgent = new HttpAgent(agentOpts);
-    result.httpsAgent = new HttpsProxyAgent(Object.assign(
-      { proxy: proxies.https },
-      agentOpts));
+    result.httpsAgent = new HttpsProxyAgent(
+      Object.assign({ proxy: proxies.https }, agentOpts)
+    );
 
     return result;
   }
@@ -90,25 +86,31 @@ function HttpEngine(script) {
   if (script.config.http && script.config.http.pool) {
     this.maxSockets = Number(script.config.http.pool);
   }
-  let agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+  const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
     maxSockets: this.maxSockets,
     maxFreeSockets: this.maxSockets
   });
 
-  const agents = createAgents({
-    http: process.env.HTTP_PROXY,
-    https: process.env.HTTPS_PROXY
-  }, agentOpts);
+  const agents = createAgents(
+    {
+      http: process.env.HTTP_PROXY,
+      https: process.env.HTTPS_PROXY
+    },
+    agentOpts
+  );
 
   this._httpAgent = agents.httpAgent;
   this._httpsAgent = agents.httpsAgent;
 
-  if ((script.config.http && script.config.http.extendedMetrics === true) || global.artillery.runtimeOptions.extendedHTTPMetrics) {
+  if (
+    (script.config.http && script.config.http.extendedMetrics === true) ||
+    global.artillery.runtimeOptions.extendedHTTPMetrics
+  ) {
     this.extendedHTTPMetrics = true;
   }
 }
 
-HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
+HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
   var self = this;
 
   ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
@@ -124,21 +126,24 @@ HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
   // entire scenario spec rather than just the userContext.
   const beforeScenarioFns = _.map(
     scenarioSpec.beforeScenario,
-    function(hookFunctionName) {
-      return {'function': hookFunctionName};
-    });
+    function (hookFunctionName) {
+      return { function: hookFunctionName };
+    }
+  );
   const afterScenarioFns = _.map(
     scenarioSpec.afterScenario,
-    function(hookFunctionName) {
-      return {'function': hookFunctionName};
-    });
+    function (hookFunctionName) {
+      return { function: hookFunctionName };
+    }
+  );
 
   const newFlow = beforeScenarioFns.concat(
-    scenarioSpec.flow.concat(afterScenarioFns));
+    scenarioSpec.flow.concat(afterScenarioFns)
+  );
 
   scenarioSpec.flow = newFlow;
 
-  let tasks = _.map(scenarioSpec.flow, function(rs) {
+  let tasks = _.map(scenarioSpec.flow, function (rs) {
     return self.step(rs, ee, {
       beforeRequest: scenarioSpec.beforeRequest,
       afterResponse: scenarioSpec.afterResponse,
@@ -150,39 +155,33 @@ HttpEngine.prototype.createScenario = function(scenarioSpec, ee) {
 };
 
 HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
-
   opts = opts || {};
   let self = this;
   let config = this.config;
 
   if (requestSpec.loop) {
-    let steps = _.map(requestSpec.loop, function(rs) {
+    let steps = _.map(requestSpec.loop, function (rs) {
       return self.step(rs, ee, opts);
     });
 
-    return engineUtil.createLoopWithCount(
-      requestSpec.count || -1,
-      steps,
-      {
-        loopValue: requestSpec.loopValue || '$loopCount',
-        loopElement: requestSpec.loopElement || '$loopElement',
-        overValues: requestSpec.over,
-        whileTrue: self.config.processor ?
-          self.config.processor[requestSpec.whileTrue] : undefined
-      });
+    return engineUtil.createLoopWithCount(requestSpec.count || -1, steps, {
+      loopValue: requestSpec.loopValue || '$loopCount',
+      loopElement: requestSpec.loopElement || '$loopElement',
+      overValues: requestSpec.over,
+      whileTrue: self.config.processor
+        ? self.config.processor[requestSpec.whileTrue]
+        : undefined
+    });
   }
 
   if (requestSpec.parallel) {
-    let steps = _.map(requestSpec.parallel, function(rs) {
-        return self.step(rs, ee, opts);
+    let steps = _.map(requestSpec.parallel, function (rs) {
+      return self.step(rs, ee, opts);
     });
 
-    return engineUtil.createParallel(
-        steps,
-        {
-          limitValue: requestSpec.limit
-        }
-      );
+    return engineUtil.createParallel(steps, {
+      limitValue: requestSpec.limit
+    });
   }
 
   if (requestSpec.think) {
@@ -190,17 +189,19 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   if (requestSpec.log) {
-    return function(context, callback) {
+    return function (context, callback) {
       console.log(template(requestSpec.log, context));
-      return process.nextTick(function() { callback(null, context); });
+      return process.nextTick(function () {
+        callback(null, context);
+      });
     };
   }
 
   if (requestSpec.function) {
-    return function(context, callback) {
+    return function (context, callback) {
       let processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
-        return processFunc(context, ee, function(hookErr) {
+        return processFunc(context, ee, function (hookErr) {
           if (hookErr) {
             ee.emit('error', hookErr.code || hookErr.message);
           }
@@ -210,12 +211,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         debug(`Function "${requestSpec.function}" not defined`);
         debug('processor: %o', self.config.processor);
         ee.emit('error', `Undefined function "${requestSpec.function}"`);
-        return process.nextTick(function () { callback(null, context); });
+        return process.nextTick(function () {
+          callback(null, context);
+        });
       }
     };
   }
 
-  let f = function(context, callback) {
+  let f = function (context, callback) {
     let method = _.keys(requestSpec)[0].toUpperCase();
     let params = requestSpec[method.toLowerCase()];
 
@@ -232,22 +235,24 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     let tls = config.tls || {};
-    let timeout = (config.timeout || _.get(config, 'http.timeout') || 10);
+    let timeout = config.timeout || _.get(config, 'http.timeout') || 10;
 
     if (!engineUtil.isProbableEnough(params)) {
-      return process.nextTick(function() {
+      return process.nextTick(function () {
         callback(null, context);
       });
     }
 
     if (!_.isUndefined(params.ifTrue)) {
-      let cond;
       let result;
       try {
-        cond = _.has(config.processor, params.ifTrue) ?  config.processor[params.ifTrue]  : filtrex(params.ifTrue);
+        const cond = _.has(config.processor, params.ifTrue)
+          ? config.processor[params.ifTrue]
+          : filtrex(params.ifTrue);
         result = cond(context.vars);
-      } catch (e) {
-        result = 1; // if the expression is incorrect, just proceed // TODO: debug message
+      } catch (err) {
+        debug('ifTrue error:', err);
+        result = 1; // if the expression is incorrect, just proceed
       }
       if (!result) {
         return process.nextTick(function () {
@@ -257,23 +262,25 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     // Run beforeRequest processors (scenario-level ones too)
-    let requestParams = _.cloneDeep(params);
-    requestParams = _.extend(requestParams, {
+    const requestParams = _.extend(_.clone(params), {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
-      timeout: timeout * 1000,
+      timeout: timeout * 1000
     });
 
     if (context._enableCookieJar) {
       requestParams.cookieJar = context._jar;
     }
 
-    if(tls) {
+    if (tls) {
       requestParams.https = requestParams.https || {};
       requestParams.https = _.extend(requestParams.https, tls);
     }
 
-    let functionNames = _.concat(opts.beforeRequest || [], params.beforeRequest || []);
+    let functionNames = _.concat(
+      opts.beforeRequest || [],
+      params.beforeRequest || []
+    );
 
     async.eachSeries(
       functionNames,
@@ -281,11 +288,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         let fn = template(functionName, context);
         let processFunc = config.processor[fn];
         if (!processFunc) {
-          processFunc = function(r, c, e, cb) { return cb(null); };
+          processFunc = function (r, c, e, cb) {
+            return cb(null);
+          };
           console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
         }
 
-        processFunc(requestParams, context, ee, function(err) {
+        processFunc(requestParams, context, ee, function (err) {
           if (err) {
             return next(err);
           }
@@ -310,10 +319,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           // TODO: Warn if body is not a string or a buffer
         }
 
-
         // add loop, name & uri elements to be interpolated
         if (context.vars.$loopElement) {
-          context.vars.$loopElement = template(context.vars.$loopElement, context);
+          context.vars.$loopElement = template(
+            context.vars.$loopElement,
+            context
+          );
         }
         if (requestParams.name) {
           requestParams.name = template(requestParams.name, context);
@@ -352,35 +363,54 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               acc[k] = template(v, context);
               return acc;
             },
-            {});
+            {}
+          );
         }
 
         if (params.formData) {
           const f = new FormData();
           requestParams.body = _.reduce(
             requestParams.formData,
-            function(acc, v, k) {
+            function (acc, v, k) {
               // acc[k] = template(v, context);
               acc.append(k, template(v, context));
               return acc;
             },
-            f);
+            f
+          );
         }
 
         // Assign default headers then overwrite as needed
-        let defaultHeaders = lowcaseKeys(config.defaults.headers || {'user-agent': USER_AGENT});
-        const combinedHeaders = _.extend(defaultHeaders, lowcaseKeys(params.headers), lowcaseKeys(requestParams.headers));
-        const templatedHeaders = _.mapValues(combinedHeaders, function(v, k, obj) {
-          return template(v, context);
-        });
+        let defaultHeaders = lowcaseKeys(
+          config.defaults.headers || { 'user-agent': USER_AGENT }
+        );
+        const combinedHeaders = _.extend(
+          defaultHeaders,
+          lowcaseKeys(params.headers),
+          lowcaseKeys(requestParams.headers)
+        );
+        const templatedHeaders = _.mapValues(
+          combinedHeaders,
+          function (v, k, obj) {
+            return template(v, context);
+          }
+        );
         requestParams.headers = templatedHeaders;
 
-        if (typeof params.cookie === 'object' || typeof context._defaultCookie === 'object') {
-          const cookie = Object.assign({},
-                                       context._defaultCookie,
-                                       params.cookie);
-          Object.keys(cookie).forEach(function(k) {
-            context._jar.setCookieSync(k+'='+template(cookie[k], context), requestParams.url);
+        if (
+          typeof params.cookie === 'object' ||
+          typeof context._defaultCookie === 'object'
+        ) {
+          const cookie = Object.assign(
+            {},
+            context._defaultCookie,
+            params.cookie
+          );
+          Object.keys(cookie).forEach(function (k) {
+            context._jar.setCookieSync(
+              k + '=' + template(cookie[k], context),
+              requestParams.url
+            );
           });
         }
 
@@ -390,7 +420,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           delete requestParams.auth;
         }
 
-        let url = maybePrependBase(template(requestParams.uri || requestParams.url, context), config);
+        let url = maybePrependBase(
+          template(requestParams.uri || requestParams.url, context),
+          config
+        );
 
         if (requestParams.uri) {
           // If a hook function sets requestParams.uri to something, request.js
@@ -426,7 +459,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               headers: requestParams.headers
             };
 
-            if (context._jar._jar && typeof context._jar._jar.getCookieStringSync === 'function') {
+            if (
+              context._jar._jar &&
+              typeof context._jar._jar.getCookieStringSync === 'function'
+            ) {
               requestInfo = Object.assign(requestInfo, {
                 cookie: context._jar._jar.getCookieStringSync(requestParams.url)
               });
@@ -448,7 +484,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   if (requestParams.body.length > 512) {
                     requestInfo.body += ' ...';
                   }
-                } else if (typeof requestParams.body === 'object')  {
+                } else if (typeof requestParams.body === 'object') {
                   requestInfo.body = `< ${requestParams.body.constructor.name} >`;
                 } else {
                   requestInfo.body = String(requestInfo.body);
@@ -459,7 +495,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             if (requestParams.qs) {
               requestInfo.qs = qs.encode(
                 Object.assign(
-                  qs.parse(urlparse(requestParams.url).query), requestParams.qs));
+                  qs.parse(urlparse(requestParams.url).query),
+                  requestParams.qs
+                )
+              );
             }
 
             debug('request: %s', JSON.stringify(requestInfo, null, 2));
@@ -476,37 +515,46 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             function captured(err, result) {
               if (err) {
                 // Run onError hooks and end the scenario:
-                runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
-                  ee.emit('error', err.message);
-                  return callback(err, context);
-                });
+                runOnErrorHooks(
+                  onErrorHandlers,
+                  config.processor,
+                  err,
+                  requestParams,
+                  context,
+                  ee,
+                  function (asyncErr) {
+                    ee.emit('error', err.message);
+                    return callback(err, context);
+                  }
+                );
               }
 
               let haveFailedMatches = false;
               let haveFailedCaptures = false;
 
               if (result !== null) {
-                if (Object.keys(result.matches).length > 0 ||
-                    Object.keys(result.captures).length > 0) {
-
+                if (
+                  Object.keys(result.matches).length > 0 ||
+                  Object.keys(result.captures).length > 0
+                ) {
                   debug('captures and matches:');
                   debug(result.matches);
                   debug(result.captures);
                 }
 
                 // match and capture are strict by default:
-                haveFailedMatches = _.some(result.matches, function(v, k) {
+                haveFailedMatches = _.some(result.matches, function (v, k) {
                   return !v.success && v.strict !== false;
                 });
 
-                haveFailedCaptures = _.some(result.captures, function(v, k) {
+                haveFailedCaptures = _.some(result.captures, function (v, k) {
                   return v.failed;
                 });
 
                 if (haveFailedMatches || haveFailedCaptures) {
                   // TODO: Emit the details of each failed capture/match
                 } else {
-                  _.each(result.matches, function(v, k) {
+                  _.each(result.matches, function (v, k) {
                     ee.emit('match', v.success, {
                       expected: v.expected,
                       got: v.got,
@@ -515,14 +563,17 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                     });
                   });
 
-                  _.each(result.captures, function(v, k) {
+                  _.each(result.captures, function (v, k) {
                     _.set(context.vars, k, v.value);
                   });
                 }
               }
 
               // Now run afterResponse processors
-              let functionNames = _.concat(opts.afterResponse || [], params.afterResponse || []);
+              let functionNames = _.concat(
+                opts.afterResponse || [],
+                params.afterResponse || []
+              );
               async.eachSeries(
                 functionNames,
                 function iteratee(functionName, next) {
@@ -530,20 +581,25 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   let processFunc = config.processor[fn];
                   if (!processFunc) {
                     // TODO: DRY - #223
-                    processFunc = function(r, c, e, cb) { return cb(null); };
-                    console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
+                    processFunc = function (r, c, e, cb) {
+                      return cb(null);
+                    };
+                    console.log(
+                      `WARNING: custom function ${fn} could not be found`
+                    ); // TODO: a 'warning' event
                   }
 
                   // Got does not have res.body which Request.js used to have, so we attach it here:
                   res.body = body;
 
-                  processFunc(requestParams, res, context, ee, function(err) {
+                  processFunc(requestParams, res, context, ee, function (err) {
                     if (err) {
                       return next(err);
                     }
                     return next(null);
                   });
-                }, function(err) {
+                },
+                function (err) {
                   if (err) {
                     debug(err);
                     ee.emit('error', err.code || err.message);
@@ -552,90 +608,134 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
                   if (haveFailedMatches || haveFailedCaptures) {
                     // FIXME: This means only one error in the report even if multiple captures failed for the same request.
-                    return callback(new Error('Failed capture or match'), context);
+                    return callback(
+                      new Error('Failed capture or match'),
+                      context
+                    );
                   }
 
                   return callback(null, context);
-                });
-            });
+                }
+              );
+            }
+          );
         }
 
         // If we aren't processing the full response, we don't need the
         // callback:
         let maybeCallback;
-        if (typeof requestParams.capture === 'object' ||
-            typeof requestParams.match === 'object' ||
-            requestParams.afterResponse ||
-            (typeof opts.afterResponse === 'object' && opts.afterResponse.length > 0) ||
-            process.env.DEBUG) {
+        if (
+          typeof requestParams.capture === 'object' ||
+          typeof requestParams.match === 'object' ||
+          requestParams.afterResponse ||
+          (typeof opts.afterResponse === 'object' &&
+            opts.afterResponse.length > 0) ||
+          process.env.DEBUG
+        ) {
           maybeCallback = requestCallback;
         }
 
-        if(!requestParams.url) {
+        if (!requestParams.url) {
           let err = new Error('an URL must be specified');
 
           // Run onError hooks and end the scenario
-          runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
-            ee.emit('error', err.message);
-            return callback(err, context);
-          });
+          runOnErrorHooks(
+            onErrorHandlers,
+            config.processor,
+            err,
+            requestParams,
+            context,
+            ee,
+            function (asyncErr) {
+              ee.emit('error', err.message);
+              return callback(err, context);
+            }
+          );
         }
 
         requestParams.retry = 0; // disable retries - ignored when using streams
 
         request(requestParams)
-          .on('request', function(req) {
+          .on('request', function (req) {
             debugRequests('request start: %s', req.path);
-            ee.emit('counter', 'engine.http.requests', 1);
-            ee.emit('rate', 'engine.http.request_rate');
-            req.on('response', function(res) {
-              self._handleResponse(requestParams.url, res, ee, context, maybeCallback, callback);
+            ee.emit('counter', 'http.requests', 1);
+            ee.emit('rate', 'http.request_rate');
+            req.on('response', function (res) {
+              self._handleResponse(
+                requestParams.url,
+                res,
+                ee,
+                context,
+                maybeCallback,
+                callback
+              );
             });
-          }).on('error', function(err, body, res) {
+          })
+          .on('error', function (err, body, res) {
             if (err.name === 'HTTPError') {
               return;
             }
             // this is an ENOTFOUND, ECONNRESET etc
             debug(err);
             // Run onError hooks and end the scenario:
-            runOnErrorHooks(onErrorHandlers, config.processor, err, requestParams, context, ee, function(asyncErr) {
-              let errCode = err.code || err.message;
-              ee.emit('error', errCode);
-              return callback(err, context);
-            });
+            runOnErrorHooks(
+              onErrorHandlers,
+              config.processor,
+              err,
+              requestParams,
+              context,
+              ee,
+              function (asyncErr) {
+                let errCode = err.code || err.message;
+                ee.emit('error', errCode);
+                return callback(err, context);
+              }
+            );
           })
-        .catch((gotErr) => {
-          // TODO: Handle the error properly with run hooks
-          ee.emit('error', gotErr.code || gotErr.message);
-          return callback(gotErr, context);
-        });
-      }); // eachSeries
+          .catch((gotErr) => {
+            // TODO: Handle the error properly with run hooks
+            ee.emit('error', gotErr.code || gotErr.message);
+            return callback(gotErr, context);
+          });
+      }
+    ); // eachSeries
   };
 
   return f;
 };
 
-HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCallback, callback) {
+HttpEngine.prototype._handleResponse = function (
+  url,
+  res,
+  ee,
+  context,
+  maybeCallback,
+  callback
+) {
   const decompressedRes = decompressResponse(res);
   let code = decompressedRes.statusCode;
   if (!context._enableCookieJar) {
     const rawCookies = decompressedRes.headers['set-cookie'];
     if (rawCookies) {
       context._enableCookieJar = true;
-      rawCookies.forEach(function(cookieString) {
+      rawCookies.forEach(function (cookieString) {
         context._jar.setCookieSync(cookieString, url);
       });
     }
   }
 
-  ee.emit('counter', 'engine.http.codes.' + code, 1);
-  ee.emit('counter', 'engine.http.responses', 1);
-  // ee.emit('rate', 'engine.http.response_rate');
-  ee.emit('histogram', 'engine.http.response_time', res.timings.phases.firstByte);
-  if(this.extendedHTTPMetrics) {
-    ee.emit('histogram', 'engine.http.dns', res.timings.phases.dns);
-    ee.emit('histogram', 'engine.http.tcp', res.timings.phases.tcp);
-    ee.emit('histogram', 'engine.http.tls', res.timings.phases.tls);
+  ee.emit('counter', 'http.codes.' + code, 1);
+  ee.emit('counter', 'http.responses', 1);
+  // ee.emit('rate', 'http.response_rate');
+  ee.emit(
+    'histogram',
+    'http.response_time',
+    res.timings.phases.firstByte
+  );
+  if (this.extendedHTTPMetrics) {
+    ee.emit('histogram', 'http.dns', res.timings.phases.dns);
+    ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
+    ee.emit('histogram', 'http.tls', res.timings.phases.tls);
   }
   let body = '';
   if (maybeCallback) {
@@ -645,8 +745,8 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
   }
 
   res.on('end', () => {
-    if(this.extendedHTTPMetrics) {
-      ee.emit('histogram', 'engine.http.total', res.timings.phases.total);
+    if (this.extendedHTTPMetrics) {
+      ee.emit('histogram', 'http.total', res.timings.phases.total);
     }
 
     context._successCount++;
@@ -656,10 +756,9 @@ HttpEngine.prototype._handleResponse = function(url, res, ee, context, maybeCall
       maybeCallback(null, res, body);
     }
   });
+};
 
-}
-
-HttpEngine.prototype.setInitialContext = function(initialContext) {
+HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
 
   initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
@@ -683,10 +782,13 @@ HttpEngine.prototype.setInitialContext = function(initialContext) {
       maxFreeSockets: 1
     });
 
-    const agents = createAgents({
-      http: process.env.HTTP_PROXY,
-      https: process.env.HTTPS_PROXY
-    }, agentOpts);
+    const agents = createAgents(
+      {
+        http: process.env.HTTP_PROXY,
+        https: process.env.HTTPS_PROXY
+      },
+      agentOpts
+    );
 
     initialContext._httpAgent = agents.httpAgent;
     initialContext._httpsAgent = agents.httpsAgent;
@@ -707,16 +809,14 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
       tasks
     ]);
 
-    async.waterfall(
-      steps,
-      function scenarioWaterfallCb(err, context) {
-        if (err) {
-          //ee.emit('error', err.message);
-          return callback(err, context);
-        } else {
-          return callback(null, context);
-        }
-      });
+    async.waterfall(steps, function scenarioWaterfallCb(err, context) {
+      if (err) {
+        //ee.emit('error', err.message);
+        return callback(err, context);
+      } else {
+        return callback(null, context);
+      }
+    });
   };
 };
 
@@ -732,21 +832,33 @@ function maybePrependBase(uri, config) {
  * Given a dictionary, return a dictionary with all keys lowercased.
  */
 function lowcaseKeys(h) {
-  return _.transform(h, function(result, v, k) {
+  return _.transform(h, function (result, v, k) {
     result[k.toLowerCase()] = v;
   });
 }
 
-function runOnErrorHooks(functionNames, functions, err, requestParams, context, ee, callback) {
-  async.eachSeries(functionNames, function iteratee(functionName, next) {
-    let processFunc = functions[functionName];
-    processFunc(err, requestParams, context, ee, function(asyncErr) {
-      if (asyncErr) {
-        return next(asyncErr);
-      }
-      return next(null);
-    });
-  }, function done(asyncErr) {
-    return callback(asyncErr);
-  });
+function runOnErrorHooks(
+  functionNames,
+  functions,
+  err,
+  requestParams,
+  context,
+  ee,
+  callback
+) {
+  async.eachSeries(
+    functionNames,
+    function iteratee(functionName, next) {
+      let processFunc = functions[functionName];
+      processFunc(err, requestParams, context, ee, function (asyncErr) {
+        if (asyncErr) {
+          return next(asyncErr);
+        }
+        return next(null);
+      });
+    },
+    function done(asyncErr) {
+      return callback(asyncErr);
+    }
+  );
 }

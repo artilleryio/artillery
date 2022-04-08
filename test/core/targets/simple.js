@@ -54,8 +54,13 @@ const main = async () => {
     path: '/protected',
     config: {
       auth: 'simple',
-      handler: function(req, h) {
-        return 'secret timestamp for ' + req.auth.credentials.name + ': ' + Date.now();
+      handler: function (req, h) {
+        return (
+          'secret timestamp for ' +
+          req.auth.credentials.name +
+          ': ' +
+          Date.now()
+        );
       }
     }
   });
@@ -145,7 +150,7 @@ function route(server) {
   server.route({
     method: 'GET',
     path: '/header',
-    handler: function(request, h) {
+    handler: function (request, h) {
       return h.response().header('x-auth', 'secret');
     }
   });
@@ -153,21 +158,20 @@ function route(server) {
   server.route({
     method: 'GET',
     path: '/expectsHeader',
-    handler: function(request, h) {
+    handler: function (request, h) {
       if (request.headers['x-auth'] && request.headers['x-auth'] === 'secret') {
-        return {success: true};
+        return { success: true };
       } else {
         return h.response().code(403);
       }
     }
   });
 
-  server.route(
-    {
-      method: 'GET',
-      path: '/journeys',
-      handler: getJourneys
-    });
+  server.route({
+    method: 'GET',
+    path: '/journeys',
+    handler: getJourneys
+  });
 
   server.route({
     method: 'GET',
@@ -230,7 +234,7 @@ function create(req, h) {
   DB[id] = req.payload;
   DB[id].id = id;
   REQUEST_COUNT++;
-  return h.response({id: id}).code(201);
+  return h.response({ id: id }).code(201);
 }
 
 function read(req, h) {
@@ -258,7 +262,7 @@ function stats(req, h) {
 function setsCookie(req, h) {
   var newuid = uuid.v4();
   // console.log('setting testCookie.uid to %j', newuid);
-  h.state('testCookie', {uid: newuid});
+  h.state('testCookie', { uid: newuid });
   return h.continue;
 }
 
@@ -301,8 +305,7 @@ function getJourneys(req, h) {
     </tns1:GetJourneys>
   </soap:Body>
 </soap:Envelope>`;
-  return h.response(response)
-    .type('application/xml');
+  return h.response(response).type('application/xml');
 }
 
 function getJourney(req, h) {
@@ -360,19 +363,17 @@ function getDevices(req, h) {
   }
 ]
 `;
-  return h.response(response)
-    .type('application/json')
-    .code(200);
+  return h.response(response).type('application/json').code(200);
 }
 
 function putDevice(req, h) {
-  if (req.params.id === '4dcb754442b1285785b81833c77f4a46' || req.params.id === 'e87c45241a484a3db9730ae4b98678d4') {
-    return h.response('{"status": "ok"}')
-      .type('application/json')
-      .code(200);
+  if (
+    req.params.id === '4dcb754442b1285785b81833c77f4a46' ||
+    req.params.id === 'e87c45241a484a3db9730ae4b98678d4'
+  ) {
+    return h.response('{"status": "ok"}').type('application/json').code(200);
   } else {
-    return h.response('')
-      .code(404);
+    return h.response('').code(404);
   }
 }
 

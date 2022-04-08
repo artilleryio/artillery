@@ -13,9 +13,9 @@ test('util - setup', (t) => {
   sandbox = sinon.sandbox.create();
 
   t.end();
-})
+});
 
-test('formatting durations', function(t) {
+test('formatting durations', function (t) {
   t.equal(
     util.formatDuration(1000),
     '1 second',
@@ -67,22 +67,31 @@ test('formatting durations', function(t) {
   t.end();
 });
 
-test('readArtilleryConfig', function(t) {
-  const readFileSyncStub = sandbox.stub(fs, 'readFileSync')
-    .withArgs(`${os.homedir()}/.artilleryrc`)
+test('readArtilleryConfig', function (t) {
+  const readFileSyncStub = sandbox
+    .stub(fs, 'readFileSync')
+    .withArgs(`${os.homedir()}/.artilleryrc`);
 
   readFileSyncStub.throws();
-  t.deepEqual(util.readArtilleryConfig(), {}, 'Returns an empty object if .artilleryrc is not present');
+  t.deepEqual(
+    util.readArtilleryConfig(),
+    {},
+    'Returns an empty object if .artilleryrc is not present'
+  );
 
   const expectedConf = { property: 'value' };
 
-  readFileSyncStub.returns(JSON.stringify(expectedConf))
-  t.deepEqual(util.readArtilleryConfig(), expectedConf, 'Returns the configuration as a JSON object');
+  readFileSyncStub.returns(JSON.stringify(expectedConf));
+  t.deepEqual(
+    util.readArtilleryConfig(),
+    expectedConf,
+    'Returns the configuration as a JSON object'
+  );
 
   t.end();
 });
 
-test('updateArtilleryConfig', function(t) {
+test('updateArtilleryConfig', function (t) {
   const existingConf = {
     property: 'value'
   };
@@ -96,33 +105,37 @@ test('updateArtilleryConfig', function(t) {
   const newConfiguration = fsWriteFileSyncStub.args[0][1];
   const configPath = fsWriteFileSyncStub.args[0][0];
 
-  t.deepEqual(newConfiguration, JSON.stringify({
-    ...existingConf,
-    ...addedConf
-  }), 'Updates the existing configuration');
+  t.deepEqual(
+    newConfiguration,
+    JSON.stringify({
+      ...existingConf,
+      ...addedConf
+    }),
+    'Updates the existing configuration'
+  );
 
-  t.equal(configPath, `${os.homedir()}/.artilleryrc`)
+  t.equal(configPath, `${os.homedir()}/.artilleryrc`);
 
   t.end();
-})
+});
 
 test('padded', (t) => {
   t.equal(
-    util.padded('name', 'result', 10, x => x),
+    util.padded('name', 'result', 10, (x) => x),
     'name ...... result',
-    'pads the space between the name and the result according to the length',
+    'pads the space between the name and the result according to the length'
   );
 
   t.equal(
-    util.padded('longer name', 'result', 9, x => x),
+    util.padded('longer name', 'result', 9, (x) => x),
     'longer...  result',
-    'truncates the name when longer than the allowed length',
+    'truncates the name when longer than the allowed length'
   );
 
   t.equal(
-    util.padded('exact length', 'result', 12, x => x),
+    util.padded('exact length', 'result', 12, (x) => x),
     'exact length  result',
-    'no truncating when the string length exactly matches the allowed length',
+    'no truncating when the string length exactly matches the allowed length'
   );
 
   t.end();
@@ -132,4 +145,4 @@ test('util - tear down', (t) => {
   sandbox.restore();
 
   t.end();
-})
+});

@@ -10,7 +10,7 @@ const PROXY_PORT = 9095;
 
 const wss = new WebSocketServer({
   host: '127.0.0.1',
-  port: WS_PORT,
+  port: WS_PORT
 });
 
 wss.on('connection', function connection(ws) {
@@ -25,7 +25,7 @@ wss.on('connection', function connection(ws) {
 
 server.on('connect', (_, socket) => {
   debug(`+ proxy connection ${socket.remoteAddress}`);
-})
+});
 
 server.on('listening', () => {
   console.log(`Proxy server listening on ${PROXY_PORT}`);

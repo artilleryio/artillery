@@ -8,11 +8,11 @@ var options = {
   path: '/'
 };
 
-var server = https.createServer(options, function(req, res) {
+var server = https.createServer(options, function (req, res) {
   console.log('+');
   res.writeHead(200);
   res.end('hello\n');
 });
-server.listen(3002, function() {
+server.listen(3002, function () {
   console.log('simple_tls server running on 3002');
 });

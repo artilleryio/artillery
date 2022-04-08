@@ -1,17 +1,17 @@
 'use strict';
 
 function simpleFunction(_context, ee, next) {
-  ee.emit('counter', 'simpleFunction', 1);  
+  ee.emit('counter', 'simpleFunction', 1);
   next();
 }
 
 let executionOrder = 1;
 
 async function asyncFunction(_context, ee, next) {
-  await new Promise(resolve => {
+  await new Promise((resolve) => {
     setTimeout(() => {
       ee.emit('counter', 'asyncFunctionOrder', executionOrder++);
-      resolve()
+      resolve();
     }, 1000);
   });
 
@@ -36,5 +36,5 @@ module.exports = {
   asyncFunction,
   otherFunction,
   errorCodeFunction,
-  errorMessageFunction,
-}
+  errorMessageFunction
+};

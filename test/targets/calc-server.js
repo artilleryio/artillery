@@ -6,7 +6,6 @@
 
 const create = require('./targetServer').createCalcServer;
 
-
 const main = async () => {
   const server = create('127.0.0.1', process.env.PORT);
   await server.start();

@@ -10,10 +10,9 @@ const { createGlobalObject } = require('../lib/artillery-global');
 const updateNotifier = require('update-notifier');
 const pkg = require('../package.json');
 
-const chalk = require('chalk');
-
 const { rainbow } = require('../util');
 const telemetry = require('../lib/telemetry');
+const banner = require('../lib/cli/banner');
 
 async function main() {
   await createGlobalObject();
@@ -21,15 +20,6 @@ async function main() {
   if (!process.argv.slice(2).length) {
     // print telemetry notification message
     telemetry.notice();
-
-    const banner = `
-        ___         __  _ ____                  _
-  _____/   |  _____/ /_(_) / /__  _______  __  (_)___  _____
- /____/ /| | / ___/ __/ / / / _ \\/ ___/ / / / / / __ \\/____/
-/____/ ___ |/ /  / /_/ / / /  __/ /  / /_/ / / / /_/ /____/
-    /_/  |_/_/   \\__/_/_/_/\\___/_/   \\__, (_)_/\\____/
-                                    /____/
-`;
 
     console.log(Math.random() * 100 > 34 ?
                 banner :

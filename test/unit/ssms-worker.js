@@ -6,26 +6,28 @@
 // to record, and posts back metric summaries for buckets as they
 // become available.
 
-const {
-  isMainThread, parentPort, threadId
-} = require('worker_threads');
+const { isMainThread, parentPort, threadId } = require('worker_threads');
 
 const sleep = require('../helpers/sleep');
 
 const { SSMS } = require('../../core/lib/ssms');
 
-if(isMainThread) {
+if (isMainThread) {
   console.log('# This script should be run as a worker thread, exiting');
   process.exit(1);
 }
 
-console.log(`# [${threadId}] ssms-worker started`)
+console.log(`# [${threadId}] ssms-worker started`);
 
 async function main() {
   const mdb = new SSMS();
 
   mdb.on('metricData', (bucket, metricData) => {
-    parentPort.postMessage({event: 'metricData', bucket: bucket, metricData: SSMS.serializeMetrics(metricData)});
+    parentPort.postMessage({
+      event: 'metricData',
+      bucket: bucket,
+      metricData: SSMS.serializeMetrics(metricData)
+    });
   });
 
   parentPort.on('message', async (message) => {
@@ -33,11 +35,9 @@ async function main() {
       mdb.incr(message.name, message.value, message.ts);
     } else if (message.cmd === 'histogram') {
       mdb.histogram(message.name, message.value, message.ts);
-    }
-    else if (message.cmd === 'rate') {
+    } else if (message.cmd === 'rate') {
       mdb.rate(message.name, message.ts);
-    }
-    else if (message.cmd === 'exit') {
+    } else if (message.cmd === 'exit') {
       mdb.aggregate(true);
       mdb.stop();
 
@@ -46,7 +46,6 @@ async function main() {
       process.nextTick(() => {
         process.exit(0);
       });
-
     } else {
       console.log(`# [${threadId}] worker got unknown command: ${cmd}`);
     }

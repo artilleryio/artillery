@@ -2,7 +2,7 @@ const tap = require('tap');
 const { SSMS } = require('../../core/lib/ssms');
 const sleep = require('../helpers/sleep');
 
-tap.test('Basic metric collection', async t => {
+tap.test('Basic metric collection', async (t) => {
   const mdb = new SSMS({ pullOnly: true });
 
   // Write a fixed number of metrics over a fixed small period.
@@ -13,7 +13,7 @@ tap.test('Basic metric collection', async t => {
   const numWrites = 300;
   const tick = Math.floor(durationMs / numWrites);
 
-  for(let i = 0; i < numWrites; i++) {
+  for (let i = 0; i < numWrites; i++) {
     mdb.counter('num_sprints', 1);
     mdb.histogram('sprint_duration', Math.floor(Math.random() * 1000));
     mdb.rate('sprints');
@@ -24,12 +24,21 @@ tap.test('Basic metric collection', async t => {
   mdb.stop();
 
   const buckets = mdb.getBucketIds();
-  t.ok(buckets.length > 0 && buckets.length <= 2, 'Should have no more than two buckets of metric data');
+  t.ok(
+    buckets.length > 0 && buckets.length <= 2,
+    'Should have no more than two buckets of metric data'
+  );
 
   const metrics = mdb.getMetrics(buckets[0]);
 
-  t.ok(typeof metrics.histograms['sprint_duration'].max === 'number', 'Histograms should be objects with readable fields');
-  t.ok(metrics.histograms['sprint_duration'], 'Should have a summary for sprint_duration histogram');
+  t.ok(
+    typeof metrics.histograms['sprint_duration'].max === 'number',
+    'Histograms should be objects with readable fields'
+  );
+  t.ok(
+    metrics.histograms['sprint_duration'],
+    'Should have a summary for sprint_duration histogram'
+  );
   t.ok(metrics.counters['num_sprints'], 'Should have num_sprints counter');
   t.ok(metrics.rates['sprints'], 'Should have sprints rate measurement');
 });

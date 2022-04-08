@@ -19,17 +19,18 @@ var scripts = [
   ['multiple_phases', require('./scripts/multiple_phases.json')]
 ];
 
-l.each(scripts, function(script) {
-  test(script[0], function(t) {
+l.each(scripts, function (script) {
+  test(script[0], function (t) {
     var server = nockify(script[1].scenarios[0].flow, script[1].config, t);
     var scenario = httpWorker.create(
       script[1].scenarios[0].flow,
       script[1].config,
-      {});
-    scenario.on('error', function(err) {
+      {}
+    );
+    scenario.on('error', function (err) {
       t.fail(err);
     });
-    scenario.launch(function(err, context) {
+    scenario.launch(function (err, context) {
       if (!server.isDone()) {
         console.error('pending mocks: %j', server.pendingMocks());
         t.fail(new Error());

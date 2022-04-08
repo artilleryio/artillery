@@ -7,7 +7,7 @@ const { cloneDeep } = require('lodash');
 const createLauncher = require('../../../lib/launch-local');
 const {
   beforeHookBeforeRequest,
-  afterHookBeforeRequest,
+  afterHookBeforeRequest
 } = require('./processor');
 const path = require('path');
 
@@ -20,7 +20,7 @@ const targetServer = runServer().listen(0);
 const script = {
   config: {
     target: `http://127.0.0.1:${targetServer.address().port}`,
-    phases: [{ duration: 3, arrivalRate: 2 }],
+    phases: [{ duration: 3, arrivalRate: 2 }]
   },
   before: {
     flow: [
@@ -29,21 +29,21 @@ const script = {
           url: beforeEndpoint,
           capture: {
             json: '$.token',
-            as: 'token',
-          },
-        },
-      },
-    ],
+            as: 'token'
+          }
+        }
+      }
+    ]
   },
   after: {
     flow: [
       {
         post: {
           url: afterEndpoint,
-          json: { token: '{{ token }}' },
-        },
-      },
-    ],
+          json: { token: '{{ token }}' }
+        }
+      }
+    ]
   },
   scenarios: [
     {
@@ -52,13 +52,13 @@ const script = {
           get: {
             url: scenarioEndpoint,
             headers: {
-              authorization: 'Bearer {{ token }}',
-            },
-          },
-        },
-      ],
-    },
-  ],
+              authorization: 'Bearer {{ token }}'
+            }
+          }
+        }
+      ]
+    }
+  ]
 };
 
 const authToken = 'abcdefg';
@@ -108,16 +108,16 @@ test('before/after hooks - processor', async (t) => {
     ...s.before.flow[0],
     post: {
       ...s.before.flow[0].post,
-      beforeRequest: 'beforeHookBeforeRequest',
-    },
+      beforeRequest: 'beforeHookBeforeRequest'
+    }
   };
 
   s.after.flow[0] = {
     ...s.after.flow[0],
     post: {
       ...s.after.flow[0].post,
-      beforeRequest: 'afterHookBeforeRequest',
-    },
+      beforeRequest: 'afterHookBeforeRequest'
+    }
   };
 
   const runner = await createLauncher(s, {}, { scriptPath: '.' });
@@ -209,7 +209,7 @@ function runServer() {
 
       return res.end(
         JSON.stringify({
-          token: authToken,
+          token: authToken
         })
       );
     }

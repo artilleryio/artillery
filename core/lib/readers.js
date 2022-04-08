@@ -17,7 +17,7 @@ function createReader(order) {
 
 function createSequencedReader() {
   let i = 0;
-  return function(data) {
+  return function (data) {
     let result = data[i];
     if (i < data.length - 1) {
       i++;
@@ -29,7 +29,7 @@ function createSequencedReader() {
 }
 
 function createRandomReader() {
-  return function(data) {
+  return function (data) {
     return data[Math.max(0, _.random(0, data.length - 1))];
   };
 }

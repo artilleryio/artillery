@@ -12,9 +12,7 @@ const EventEmitter = require('events');
 const nock = require('nock');
 
 test('url and uri parameters', function (t) {
-  const target = nock('http://localhost:8888')
-    .get('/hello')
-    .reply(200, 'ok');
+  const target = nock('http://localhost:8888').get('/hello').reply(200, 'ok');
 
   const target2 = nock('http://localhost:8888')
     .get('/goodbye')
@@ -27,17 +25,17 @@ test('url and uri parameters', function (t) {
         printHello: function (req, context, ee, next) {
           console.log('# output from printHello hook!');
           context.vars.name = 'whatever';
-          context.vars.uriList = [{ 'dev': 'hello', 'test': 'goodbye' }];
+          context.vars.uriList = [{ dev: 'hello', test: 'goodbye' }];
           return next();
         },
         logDetails: function (res, req, ctx, ee, done) {
-          console.log('# output from logDetails hook!')
-          console.log(`# ${res.name}`)
+          console.log('# output from logDetails hook!');
+          console.log(`# ${res.name}`);
           return done();
         },
         logDetailsAgain: function (res, req, ctx, ee, done) {
-          console.log('# output from logDetailsAgain hook!')
-          console.log(`# ${res.name}`)
+          console.log('# output from logDetailsAgain hook!');
+          console.log(`# ${res.name}`);
           return done();
         }
       }
@@ -99,16 +97,16 @@ test('url and uri parameters', function (t) {
       '# output from logDetails hook!',
       '# goodbye whatever Has',
       '# output from logDetailsAgain hook!'
-    ].forEach(expectedOutput => {
+    ].forEach((expectedOutput) => {
       let seen = false;
-      spy.args.forEach(args => {
+      spy.args.forEach((args) => {
         if (args[0] === expectedOutput) {
           t.comment(`string: "${args[0]}" found`);
           seen = true;
         }
       });
       t.assert(seen);
-    })
+    });
     console.log.restore(); // unwrap the spy
 
     t.end();

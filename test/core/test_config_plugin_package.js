@@ -8,27 +8,32 @@ const test = require('tape');
 const runner = require('../../core').runner;
 const path = require('path');
 
-test('Plugin package name inside plugin config', function(t) {
-    runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_inner.json'));
+test('Plugin package name inside plugin config', function (t) {
+  runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_inner.json'));
 });
 
-test('Plugin package name outside plugin config', function(t) {
-    runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_outer.json'));
+test('Plugin package name outside plugin config', function (t) {
+  runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_outer.json'));
 });
 
-test('Plugin package name inside plugin config overriding outter package name', function(t) {
-    runTest(t, path.resolve(__dirname, './scripts/plugin_packaged_inner_override_outter.json'));
+test('Plugin package name inside plugin config overriding outter package name', function (t) {
+  runTest(
+    t,
+    path.resolve(
+      __dirname,
+      './scripts/plugin_packaged_inner_override_outter.json'
+    )
+  );
 });
 
-test('Normal artillery-plugin-*', function(t) {
-    runTest(t, path.resolve(__dirname, './scripts/artillery_plugin.json'));
+test('Normal artillery-plugin-*', function (t) {
+  runTest(t, path.resolve(__dirname, './scripts/artillery_plugin.json'));
 });
 
-function runTest(t, scriptName){
+function runTest(t, scriptName) {
   const script = require(scriptName);
-  runner(script).then(function(ee) {
-
-    ee.on('plugin_loaded', function(stats){
+  runner(script).then(function (ee) {
+    ee.on('plugin_loaded', function (stats) {
       t.assert(true);
       t.end();
     });

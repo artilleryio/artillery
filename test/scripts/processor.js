@@ -38,4 +38,4 @@ function checkGlobal(ctx, events, done) {
     console.log(`[${process.pid}] artillery.version: ${artillery.version}`);
     return done();
   }
-};
+}

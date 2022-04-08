@@ -9,7 +9,7 @@ const fs = require('fs');
 module.exports = Plugin;
 
 function Plugin(config, ee) {
-  ee.on('stats', function(stats) {
+  ee.on('stats', function (stats) {
     const report = stats.report();
     fs.appendFileSync('plugin-data.csv', report.requestsCompleted + '\n');
   });
