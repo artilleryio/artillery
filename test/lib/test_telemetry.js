@@ -59,7 +59,44 @@ test('Telemetry', function(t) {
   t.end();
 });
 
-test('Telemetry - disable through environment variable', function(t) {
+test('Telemetry with defaults env var', function(t) {
+  captureSpy.resetHistory();
+  
+  process.env.ARTILLERY_TELEMETRY_DEFAULTS = JSON.stringify({
+    default1: 'value1',
+    default2: 2,
+  });
+
+  const telemetryClient = telemetry.init();
+
+  telemetryClient.capture('test event');
+
+  const callArg = captureSpy.args[0][0];
+  const expectedEvent = {
+    event: 'test event',
+    distinctId: 'artillery-core',
+    properties: {
+      version: artilleryVersion,
+      os: process.platform,
+      isCi: ci.isCI,
+      $ip: null,
+      default1: 'value1',
+      default2: 2,
+    },
+  };
+
+  if (ci.isCI) {
+    expectedEvent.properties.ciName = ci.name;
+  }
+
+  t.deepEquals(callArg, expectedEvent, 'Sends telemetry data');
+  
+  delete process.env.ARTILLERY_TELEMETRY_DEFAULTS;
+  
+  t.end();
+});
+
+test('Telemetry - disable through environment variable', function (t) {
   captureSpy.resetHistory();
 
   process.env.ARTILLERY_DISABLE_TELEMETRY = 'true';
