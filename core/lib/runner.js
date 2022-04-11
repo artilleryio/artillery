@@ -12,7 +12,6 @@ const debugPerf = require('debug')('perf');
 const uuidv4 = require('uuid').v4;
 const A = require('async');
 const { SSMS } = require('./ssms');
-const JSCK = require('jsck');
 const tryResolve = require('try-require').resolve;
 const createPhaser = require('./phases');
 const isIdlePhase = require('./is-idle-phase');
@@ -25,10 +24,6 @@ const Engines = {
   ws: {},
   socketio: {}
 };
-
-JSCK.Draft4 = JSCK.draft4;
-
-const schema = new JSCK.Draft4(require('./schemas/artillery_test_script.json'));
 
 module.exports = {
   runner: runner,
@@ -45,8 +40,8 @@ module.exports = {
 };
 
 function validate(script) {
-  let validation = schema.validate(script);
-  return validation;
+  // let validation = schema.validate(script);
+  // return validation;
 }
 
 function loadEngines(
