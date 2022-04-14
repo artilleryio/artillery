@@ -19,7 +19,7 @@ const baseScript = {
             url: '/'
           }
         },
-        { get: { url: '/protected' } }
+        { delete: { url: '/protected' } }
       ]
     }
   ]
@@ -127,6 +127,38 @@ test('validate script', (t) => {
     validateScript(scriptWithBeforeAfter),
     '"after" must be of type object',
     'it should fail if after.flow is not an object'
+  );
+
+  const scriptSocketio = lodash.cloneDeep(baseScript);
+  scriptSocketio.scenarios[0].engine = 'socketio';
+  scriptSocketio.scenarios[0].flow = [
+    {
+      emit: {
+        channel: 'channel',
+        data: 123
+      }
+    }
+  ];
+
+  t.equal(
+    validateScript(scriptSocketio),
+    undefined,
+    'it should validate a socketio flow'
+  );
+
+  scriptSocketio.scenarios[0].flow = [
+    {
+      emit: {
+        channel: [],
+        data: 123
+      }
+    }
+  ];
+
+  t.equal(
+    validateScript(scriptSocketio),
+    '"scenarios[0].flow[0].emit.channel" must be a string',
+    'it should fail validation if engine is socketio and emit.channel is not a string'
   );
 
   t.end();
