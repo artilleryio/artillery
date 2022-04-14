@@ -27,7 +27,6 @@ const Engines = {
 
 module.exports = {
   runner: runner,
-  validate: validate,
   contextFuncs: {
     $randomString,
     $randomNumber
@@ -38,11 +37,6 @@ module.exports = {
     loadProcessor
   }
 };
-
-function validate(script) {
-  // let validation = schema.validate(script);
-  // return validation;
-}
 
 function loadEngines(
   script,
