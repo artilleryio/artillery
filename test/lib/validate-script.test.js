@@ -95,5 +95,39 @@ test('validate script', (t) => {
     'it should return an error if capture.as is missing'
   );
 
+  const scriptWithBeforeAfter = lodash.cloneDeep(baseScript);
+  scriptWithBeforeAfter.before = { flow: [] };
+  t.equal(
+    validateScript(scriptWithBeforeAfter),
+    undefined,
+    'it should validate before sections'
+  );
+
+  scriptWithBeforeAfter.before = [
+    {
+      flow: []
+    }
+  ];
+
+  t.equal(
+    validateScript(scriptWithBeforeAfter),
+    '"before" must be of type object',
+    'it should fail if before.flow is not an object'
+  );
+
+  delete scriptWithBeforeAfter.before;
+
+  scriptWithBeforeAfter.after = [
+    {
+      flow: []
+    }
+  ];
+
+  t.equal(
+    validateScript(scriptWithBeforeAfter),
+    '"after" must be of type object',
+    'it should fail if after.flow is not an object'
+  );
+
   t.end();
 });
