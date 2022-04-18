@@ -18,8 +18,7 @@ const baseScript = {
           get: {
             url: '/'
           }
-        },
-        { delete: { url: '/protected' } }
+        }
       ]
     }
   ]
@@ -34,14 +33,30 @@ test('validate script', (t) => {
     'it should return undefined for a valid script'
   );
 
-  t.equal(
-    validateScript({
-      ...baseScript,
-      ...{ config: { ...baseScript.config, target: undefined } }
-    }),
-    '"config.target" is required',
-    'it should return an error if config.target is missing'
-  );
+  t.test('config.target', (t) => {
+    const scriptWithNoConfig = lodash.cloneDeep(baseScript);
+    delete scriptWithNoConfig.config.target;
+
+    t.equal(
+      validateScript(scriptWithNoConfig),
+      '"config.target" is required',
+      'config.target should be required if config.environments is not defined'
+    );
+
+    scriptWithNoConfig.config.environments = {
+      local: {
+        target: 'http://localhost:3003'
+      }
+    };
+
+    t.equal(
+      validateScript(scriptWithNoConfig),
+      undefined,
+      'it should validate the script if config.environments is defined but config.target is missing'
+    );
+
+    t.end();
+  });
 
   t.test('scenario flow', (t) => {
     const scriptWithNoFlow = lodash.cloneDeep(baseScript);
