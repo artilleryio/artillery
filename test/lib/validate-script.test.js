@@ -25,7 +25,7 @@ const baseScript = {
 };
 
 test('validate script', (t) => {
-  t.plan(9);
+  t.plan(10);
 
   t.equal(
     validateScript(baseScript),
@@ -79,6 +79,69 @@ test('validate script', (t) => {
       validateScript(scriptWithNoUrl),
       '"scenarios[0].flow[1].get.url" is required',
       'it should return an error if "url" property is missing'
+    );
+
+    t.end();
+  });
+
+  t.test('custom engines', (t) => {
+    const scriptWithCustomEngine = lodash.cloneDeep(baseScript);
+
+    scriptWithCustomEngine.scenarios[0] = {
+      engine: 'myengine',
+      flow: [
+        {
+          get: {
+            url: []
+          },
+          data: '123'
+        }
+      ]
+    };
+
+    t.equal(
+      validateScript(scriptWithCustomEngine),
+      undefined,
+      'it should not enforce validation for scenarios with custom engines'
+    );
+
+    scriptWithCustomEngine.config.engines = {
+      myengine: {}
+    };
+
+    scriptWithCustomEngine.before = {
+      flow: [
+        {
+          get: {
+            url: '/'
+          },
+          data: '123'
+        }
+      ]
+    };
+
+    t.equal(
+      validateScript(scriptWithCustomEngine),
+      undefined,
+      'it should not enforce validation for before sections when custom engines are configured'
+    );
+    delete scriptWithCustomEngine.before;
+
+    scriptWithCustomEngine.after = {
+      flow: [
+        {
+          get: {
+            url: '/'
+          },
+          data: '123'
+        }
+      ]
+    };
+
+    t.equal(
+      validateScript(scriptWithCustomEngine),
+      undefined,
+      'it should not enforce validation for after sections when custom engines are configured'
     );
 
     t.end();
@@ -224,11 +287,11 @@ test('validate script', (t) => {
       'it allows before/after request hooks as strings'
     );
 
-    beforeRequestAfterResponse.scenarios[0].flow[0].beforeRequest = [
+    beforeRequestAfterResponse.scenarios[0].flow[0].get.beforeRequest = [
       'beforeRequest1',
       'beforeRequest2'
     ];
-    beforeRequestAfterResponse.scenarios[0].flow[0].afterResponse = [
+    beforeRequestAfterResponse.scenarios[0].flow[0].get.afterResponse = [
       'afterResponse1',
       'afterResponse2'
     ];
