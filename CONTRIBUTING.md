@@ -27,12 +27,14 @@
 ## Prerequisites
 1. Install Node.js `>= 14.17.6` minimum, [latest LTS is recommended](https://nodejs.org/en/about/releases/)
 
+2. Install [`pnpm`](https://pnpm.io/installation) (for installing npm dependencies)
+
 ## Setup
 
 ```sh
 git clone https://github.com/artilleryio/artillery.git
-npm i
-npm run dev # Runs the CLI on every change
+pnpm i
+pnpm dev # Runs the CLI on every change
 ```
 
 ## Need to get in touch?
