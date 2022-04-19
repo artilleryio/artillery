@@ -48,6 +48,8 @@
     }
   },
   "scripts": {
+    "start": "node bin/run",
+    "dev": "nodemon --watch **/*.js --exec \"node bin/run\"",
     "test": "export ARTILLERY_DISABLE_TELEMETRY=true && tap --timeout=120 --no-coverage test/unit/*test*.js && bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
     "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
