@@ -35,7 +35,8 @@
     "bin": "artillery",
     "_helpClass": "./bin/help",
     "plugins": [
-      "@oclif/plugin-help"
+      "@oclif/plugin-help",
+      "@oclif/plugin-not-found"
     ],
     "topics": {
       "aws": {
@@ -90,6 +91,7 @@
     "@oclif/command": "^1.8.16",
     "@oclif/config": "^1.18.3",
     "@oclif/plugin-help": "^3.3.1",
+    "@oclif/plugin-not-found": "^2.3.1",
     "agentkeepalive": "^4.1.0",
     "archiver": "^5.3.1",
     "arrivals": "^2.1.2",
