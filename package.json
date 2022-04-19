@@ -18,8 +18,7 @@
     "semi": true,
     "singleQuote": true,
     "useTabs": false,
-    "trailingComma": "none",
-    "endOfLine": "auto"
+    "trailingComma": "none"
   },
   "oclif": {
     "update": {
@@ -149,7 +148,6 @@
     "get-bin-path": "^5.1.0",
     "husky": "^4.2.5",
     "nock": "^11.8.2",
-    "nodemon": "^2.0.15",
     "prettier": "^2.5.1",
     "proxy": "^1.0.2",
     "rewiremock": "^3.14.3",
