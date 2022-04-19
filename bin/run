@@ -36,9 +36,14 @@ async function main() {
   } catch(err) {
     await require('@oclif/errors/handle')(err);
 
-    console.log(err.stack);
-    console.log(err.code);
-    console.log(err.message);
+    let errInfo = ['stack', 'code', 'message'];
+
+    errInfo.forEach((e) => {
+      let info = err[e];
+      if (info) {
+        console.log(info);
+      }
+    });
   }
 }
 
