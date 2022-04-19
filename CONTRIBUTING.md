@@ -1,13 +1,5 @@
 # Artillery.io Contributors Guide
 
-## Need to get in touch?
-
-All project discussions should happen in the [issue tracker](https://github.com/artilleryio/artillery/issues) or on [Gitter](https://gitter.im/artilleryio/artillery).
-However if you are a first-time contributor and want some help getting started,
-feel free to get in touch over email:
-
-* Hassy Veldstra - [h@artillery.io](mailto:h@artillery.io?subject=Artillery Contribution Help)
-
 ## Guide for Contributions
 
 * We use the popular Fork+Pull model (more info here: [https://help.github.com/articles/using-pull-requests/](https://help.github.com/articles/using-pull-requests/)]
@@ -31,6 +23,25 @@ feel free to get in touch over email:
 
   Some reading on good commit messages: [http://chris.beams.io/posts/git-commit/](http://chris.beams.io/posts/git-commit/)
 * Once your first PR has been merged, please add yourself to `package.json` for the relevant module and open another PR.
+
+## Prerequisites
+1. Install Node.js `>= 14.17.6` minimum, [latest LTS is recommended](https://nodejs.org/en/about/releases/)
+
+## Setup
+
+```sh
+git clone https://github.com/artilleryio/artillery.git
+npm i
+npm run dev # Runs the CLI on every change
+```
+
+## Need to get in touch?
+
+All project discussions should happen in the [issue tracker](https://github.com/artilleryio/artillery/issues) or on [Gitter](https://gitter.im/artilleryio/artillery).
+However if you are a first-time contributor and want some help getting started,
+feel free to get in touch over email:
+
+* Hassy Veldstra - [h@artillery.io](mailto:h@artillery.io?subject=Artillery Contribution Help)
 
 ## Licensing
 
