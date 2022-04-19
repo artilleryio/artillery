@@ -21,17 +21,18 @@ async function main() {
     // print telemetry notification message
     telemetry.notice();
 
-    console.log(Math.random() * 100 > 34 ?
-                banner :
-                rainbow(banner));
-  } else if (process.argv.slice(2).length === 1 && process.argv.slice(2)[0] === '-V') {
+    console.log(Math.random() * 100 > 34 ? banner : rainbow(banner));
+  } else if (
+    process.argv.slice(2).length === 1 &&
+    process.argv.slice(2)[0] === '-V'
+  ) {
     process.argv[2] = 'version';
   }
 
   try {
     const r = await command.run();
     await require('@oclif/command/flush')(r);
-  } catch(err) {
+  } catch (err) {
     await require('@oclif/errors/handle')(err);
 
     console.log(err.stack);
