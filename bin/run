@@ -4,15 +4,39 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const semver = require('semver');
+const chalk = require('chalk');
 const command = require('@oclif/command');
-const { createGlobalObject } = require('../lib/artillery-global');
-
 const updateNotifier = require('update-notifier');
 const pkg = require('../package.json');
-
+// check node version before require other modules
+checkNodeVersion();
+const { createGlobalObject } = require('../lib/artillery-global');
 const { rainbow } = require('../util');
 const telemetry = require('../lib/telemetry');
 const banner = require('../lib/cli/banner');
+
+function checkNodeVersion() {
+  const current = process.version;
+  const supported = pkg.engines.node;
+  if (!semver.satisfies(current, supported)) {
+    console.log(
+      chalk.red(
+        '\n' +
+          'You are using node version ' +
+          semver.valid(current) +
+          '.\n\n' +
+          'Artillery supports node verion ' +
+          semver.valid(semver.minVersion(supported)) +
+          ' and newer.\n\n' +
+          'Please update your version of node\n\n' +
+          'We are sorry for the inconvenience.' +
+          '\n'
+      )
+    );
+    process.exit(1);
+  }
+}
 
 async function main() {
   await createGlobalObject();
@@ -21,17 +45,18 @@ async function main() {
     // print telemetry notification message
     telemetry.notice();
 
-    console.log(Math.random() * 100 > 34 ?
-                banner :
-                rainbow(banner));
-  } else if (process.argv.slice(2).length === 1 && process.argv.slice(2)[0] === '-V') {
+    console.log(Math.random() * 100 > 34 ? banner : rainbow(banner));
+  } else if (
+    process.argv.slice(2).length === 1 &&
+    process.argv.slice(2)[0] === '-V'
+  ) {
     process.argv[2] = 'version';
   }
 
   try {
     const r = await command.run();
     await require('@oclif/command/flush')(r);
-  } catch(err) {
+  } catch (err) {
     await require('@oclif/errors/handle')(err);
 
     console.log(err.stack);
