@@ -1,6 +1,6 @@
 'use strict';
 
-var test = require('tape');
+var { test } = require('tap');
 var runner = require('../../core').runner;
 const { SSMS } = require('../../core/lib/ssms');
 
@@ -9,7 +9,7 @@ test('think', function (t) {
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
-      t.assert('stats should be empty', report.codes === {});
+      t.ok('stats should be empty', report.codes === {});
       ee.stop().then(() => {
         t.end();
       });
