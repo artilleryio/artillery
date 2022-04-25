@@ -94,7 +94,7 @@
     "artillery-plugin-expect": "^2.0.0",
     "artillery-plugin-metrics-by-endpoint": "^1.0.2",
     "artillery-plugin-publish-metrics": "^2.0.0",
-    "async": "^1.5.2",
+    "async": "^2.6.4",
     "chalk": "1.1.3",
     "cheerio": "^1.0.0-rc.2",
     "ci-info": "^2.0.0",
