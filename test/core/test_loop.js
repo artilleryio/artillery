@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const runner = require('../../core').runner;
 const L = require('lodash');
 
@@ -17,7 +17,7 @@ test('simple loop', (t) => {
       let requests = report.requestsCompleted;
       let loopCount = script.scenarios[0].flow[0].count;
       let expected = scenarios * loopCount * 2;
-      t.assert(
+      t.ok(
         requests === expected,
         'Should have ' + expected + ' requests for each completed scenario'
       );
@@ -42,14 +42,14 @@ test('loop with range', (t) => {
       let code200 = report.codes[200];
       let code404 = report.codes[404];
 
-      t.assert(
+      t.ok(
         requests === expected,
         'Should have ' + expected + ' requests for each completed scenario'
       );
-      t.assert(code200 > 0, 'There should be a non-zero number of 200s');
+      t.ok(code200 > 0, 'There should be a non-zero number of 200s');
 
       // If $loopCount breaks, we'll see 404s here.
-      t.assert(!code404, 'There should be no 404s');
+      t.ok(!code404, 'There should be no 404s');
       ee.stop().then(() => {
         t.end();
       });
@@ -71,14 +71,14 @@ test('loop with nested range', (t) => {
       let code200 = report.codes[200];
       let code404 = report.codes[404];
 
-      t.assert(
+      t.ok(
         requests === expected,
         'Should have ' + expected + ' requests for each completed scenario'
       );
-      t.assert(code200 > 0, 'There should be a non-zero number of 200s');
+      t.ok(code200 > 0, 'There should be a non-zero number of 200s');
 
       // If $loopCount breaks, we'll see 404s here.
-      t.assert(!code404, 'There should be no 404s');
+      t.ok(!code404, 'There should be no 404s');
       ee.stop().then(() => {
         t.end();
       });

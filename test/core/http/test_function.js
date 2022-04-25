@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('tap').test;
+const { test } = require('tap');
 const createRunner = require('../../../lib/launch-local');
 const sleep = require('../../../lib/util/sleep');
 const path = require('path');

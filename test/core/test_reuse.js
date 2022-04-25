@@ -1,6 +1,6 @@
 'use strict';
 
-var test = require('tape');
+var { test } = require('tap');
 var runner = require('../../core').runner;
 const { SSMS } = require('../../core/lib/ssms');
 
@@ -13,9 +13,9 @@ test('concurrent runners', function (t) {
       ee1.on('done', function (nr) {
         const report = SSMS.legacyReport(nr).report();
         console.log('HTTP 200 count:', report.codes[200]);
-        t.assert(
+        t.ok(
           report.codes[200] <= 20,
-          'Stats from the other runner don\'t get merged in'
+          "Stats from the other runner don't get merged in"
         );
         done++;
         if (done === 2) {
@@ -29,9 +29,9 @@ test('concurrent runners', function (t) {
 
       ee2.on('done', function (nr) {
         const report = SSMS.legacyReport(nr).report();
-        t.assert(
+        t.ok(
           report.codes[200] <= 20,
-          'Stats from the other runner don\'t get merged in'
+          "Stats from the other runner don't get merged in"
         );
         done++;
         if (done === 2) {

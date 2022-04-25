@@ -5,8 +5,9 @@
 'use strict';
 
 const EventEmitter = require('events');
-const test = require('tape');
+const { test } = require('tap');
 const SocketIoEngine = require('../../../core/lib/engine_socketio');
+const { createGlobalObject } = require('../../../lib/artillery-global');
 
 const createServer = require('../targets/simple_socketio');
 
@@ -38,95 +39,101 @@ const scriptWithoutEmits = {
   ]
 };
 
-test('SocketIo engine interface', function (t) {
-  const server = createServer();
-  const target = server.httpServer;
+test('SocketIo Engine', function (tap) {
+  tap.before(async () => await createGlobalObject());
 
-  target.listen(10333, function () {
-    const engine = new SocketIoEngine(script);
-    const ee = new EventEmitter();
+  tap.test('SocketIo engine interface', function (t) {
+    const server = createServer();
+    const target = server.httpServer;
 
-    const runScenario = engine.createScenario(script.scenarios[0], ee);
+    target.listen(10333, function () {
+      const engine = new SocketIoEngine(script);
+      const ee = new EventEmitter();
 
-    t.assert(engine, 'Can init the engine');
-    t.assert(
-      typeof runScenario === 'function',
-      'Can create a virtual user function'
-    );
+      const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    target.close();
-    t.end();
-  });
-});
-
-test('Passive listening', function (t) {
-  const server = createServer();
-  const target = server.httpServer;
-
-  target.listen(10334, function () {
-    const engine = new SocketIoEngine(scriptWithoutEmits);
-    const ee = new EventEmitter();
-
-    const runScenario = engine.createScenario(
-      scriptWithoutEmits.scenarios[0],
-      ee
-    );
-    const initialContext = {
-      vars: {}
-    };
-
-    runScenario(initialContext, function userDone(err, finalContext) {
-      t.assert(!err, 'Scenario completed with no errors');
-      t.assert(
-        finalContext.__receivedMessageCount === 1,
-        'Received one message upon connecting'
+      t.ok(engine, 'Can init the engine');
+      t.ok(
+        typeof runScenario === 'function',
+        'Can create a virtual user function'
       );
 
-      t.end();
       target.close();
+      t.end();
     });
   });
-});
 
-test('Sends event', function (t) {
-  t.plan(2);
+  tap.test('Passive listening', function (t) {
+    const server = createServer();
+    const target = server.httpServer;
 
-  const server = createServer();
-  const target = server.httpServer;
-  const PORT = 10334;
+    target.listen(10334, function () {
+      const engine = new SocketIoEngine(scriptWithoutEmits);
+      const ee = new EventEmitter();
 
-  target.listen(PORT, function () {
-    const testScript = {
-      ...script,
-      config: {
-        target: `http://localhost:${PORT}`
-      }
-    };
-    const engine = new SocketIoEngine(testScript);
-    const ee = new EventEmitter();
-    const [scenario] = testScript.scenarios;
-    const {
-      flow: [{ emit: emittedData }]
-    } = scenario;
+      const runScenario = engine.createScenario(
+        scriptWithoutEmits.scenarios[0],
+        ee
+      );
+      const initialContext = {
+        vars: {}
+      };
 
-    const runScenario = engine.createScenario(scenario, ee);
-    const initialContext = {
-      vars: {}
-    };
-    const [channel, ...messages] = emittedData;
+      runScenario(initialContext, function userDone(err, finalContext) {
+        t.ok(!err, 'Scenario completed with no errors');
+        t.ok(
+          finalContext.__receivedMessageCount === 1,
+          'Received one message upon connecting'
+        );
 
-    server.of('/').on('connection', (ws) => {
-      ws.on(channel, (msg1, msg2, cb) => {
-        t.deepEqual([msg1, msg2], messages, 'Emits messages');
-
-        cb();
+        target.close();
+        t.end();
       });
     });
+  });
 
-    runScenario(initialContext, function userDone(err) {
-      t.assert(!err, 'Scenario completed with no errors');
+  tap.test('Sends event', function (t) {
+    t.plan(2);
 
-      target.close();
+    const server = createServer();
+    const target = server.httpServer;
+    const PORT = 10334;
+
+    target.listen(PORT, function () {
+      const testScript = {
+        ...script,
+        config: {
+          target: `http://localhost:${PORT}`
+        }
+      };
+      const engine = new SocketIoEngine(testScript);
+      const ee = new EventEmitter();
+      const [scenario] = testScript.scenarios;
+      const {
+        flow: [{ emit: emittedData }]
+      } = scenario;
+
+      const runScenario = engine.createScenario(scenario, ee);
+      const initialContext = {
+        vars: {}
+      };
+      const [channel, ...messages] = emittedData;
+
+      server.of('/').on('connection', (ws) => {
+        ws.on(channel, (msg1, msg2, cb) => {
+          t.same([msg1, msg2], messages, 'Emits messages');
+
+          cb();
+        });
+      });
+
+      runScenario(initialContext, function userDone(err) {
+        t.ok(!err, 'Scenario completed with no errors');
+
+        target.close();
+      });
     });
   });
+
+  tap.end();
 });
