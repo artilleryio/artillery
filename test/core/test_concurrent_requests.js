@@ -16,6 +16,7 @@ test('scenarios avoided - arrival rate', function (t) {
 
     ee.on('done', function (nr) {
       const stats = SSMS.legacyReport(nr).report();
+
       t.ok(stats.codes['200'] === 1, 'Expected number of requests made');
       t.ok(stats.scenariosAvoided === 999, 'Expected number of VUs skipped');
       ee.stop().then(() => {

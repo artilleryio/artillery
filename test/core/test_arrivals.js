@@ -18,7 +18,7 @@ test('arrival phases', function (t) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(report.codes[200] === 600, 'Got 600 status 200 responses');
+      t.ok(report.codes[200] === 60, 'Got 60 status 200 responses');
 
       ee.stop().then(() => {
         t.end();
