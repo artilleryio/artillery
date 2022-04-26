@@ -8,7 +8,7 @@
 // scenario just once.
 //
 
-var test = require('tape');
+var { test } = require('tap');
 var l = require('lodash');
 var nockify = require('./lib/nockify');
 
