@@ -64,9 +64,8 @@ function getMessageHandler(context, params, ee, callback) {
 
         const { captures = {}, matches = {} } = result;
 
-        debug('captures and matches:');
-        debug(matches);
-        debug(captures);
+        debug('matches: ', matches);
+        debug('captures: ', captures);
 
         // match and capture are strict by default:
         const haveFailedMatches = _.some(result.matches, function (v) {
@@ -156,38 +155,45 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   const f = function (context, callback) {
     ee.emit('counter', 'websocket.messages_sent', 1);
     ee.emit('rate', 'websocket.send_rate');
-    const params = requestSpec.send;
+    const params = requestSpec.send || requestSpec.wait;
 
-    // Reset onmessage to stop steps interfering with each other
-    context.ws.onmessage = undefined;
+    // match exists on a string, so check it's not one first
+    let captureOrMatch =
+      !_.isString(params) && (params.capture || params.match);
+
+    if (captureOrMatch) {
+      // only process response if we're capturing
+      context.ws.onmessage = getMessageHandler(context, params, ee, callback);
+    } else {
+      // Reset onmessage to stop steps interfering with each other
+      context.ws.onmessage = undefined;
+    }
 
     // Backwards compatible with previous version of `send` api
-    let payload = template(params.capture ? params.payload : params, context);
-    if (typeof payload === 'object') {
-      payload = JSON.stringify(payload);
-    } else {
-      payload = payload.toString();
-    }
+    let payload = template(captureOrMatch ? params.payload : params, context);
 
-    debug('WS send: %s', payload);
-
-    // only process response if we're capturing
-    if (params.capture) {
-      context.ws.onmessage = getMessageHandler(context, params, ee, callback);
-    }
-
-    context.ws.send(payload, function (err) {
-      if (err) {
-        debug(err);
-        ee.emit('error', err);
-        return callback(err, null);
+    if (payload) {
+      if (typeof payload === 'object') {
+        payload = JSON.stringify(payload);
+      } else {
+        payload = payload.toString();
       }
 
-      // End step if we're not capturing
-      if (!params.capture) {
-        return callback(null, context);
-      }
-    });
+      debug('WS send: %s', payload);
+
+      context.ws.send(payload, function (err) {
+        if (err) {
+          debug(err);
+          ee.emit('error', err);
+          return callback(err, null);
+        }
+
+        // End step if we're not capturing
+        if (!captureOrMatch) {
+          return callback(null, context);
+        }
+      });
+    }
   };
 
   return f;
