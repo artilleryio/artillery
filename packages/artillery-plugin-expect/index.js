@@ -13,6 +13,8 @@ const EXPECTATIONS = require('./lib/expectations');
 const FORMATTERS = require('./lib/formatters');
 
 module.exports.Plugin = ExpectationsPlugin;
+module.exports.expectations = EXPECTATIONS;
+module.exports.formatters = FORMATTERS;
 
 function ExpectationsPlugin(script, events) {
   if(!global.artillery || !global.artillery.log) {
