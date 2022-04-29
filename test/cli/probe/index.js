@@ -31,6 +31,11 @@ tap.test('Custom headers can be set', async (t) => {
   t.equal(true, stdout.indexOf('true') > -1, 'x-my-header set and reflected back');
 });
 
+tap.test('HTTP/2 is used by default', async (t) => {
+  const { stdout } = await a9(['http', 'https://www.cloudflare.com/']);
+  t.equal(true, stdout.indexOf('HTTP/2') > -1, 'Response is served over HTTP/2');
+});
+
 tap.test('Kitchen sink', async (t) => {
   const { stdout } = await a9([
     'http', 'post', 'http://lab.artillery.io/login',
