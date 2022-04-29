@@ -25,3 +25,23 @@ tap.test('HTTP POST with JSON body', async (t) => {
   const { stdout } = await a9(['http', 'post', 'http://lab.artillery.io/login', '--json', '{username: testuser, password: testpassword}']);
   t.equal(true, stdout.indexOf('200 OK') > -1, 'Passes JSON post body');
 });
+
+tap.test('Custom headers can be set', async (t) => {
+  const { stdout } = await a9(['http', 'https://httpbin.org/headers', '-b', '-H', 'x-my-header: pony', '-q', 'headers|keys(@)|contains(@,\'X-My-Header\')']);
+  t.equal(true, stdout.indexOf('true') > -1, 'x-my-header set and reflected back');
+});
+
+tap.test('Kitchen sink', async (t) => {
+  const { stdout } = await a9([
+    'http', 'post', 'http://lab.artillery.io/login',
+      '-H', '{x-my-header: something}', '-H', 'x-content-type: something',
+      '--json', '{username: testuser, password: testpassword}',
+      '-v',
+      '--qs', 'animal=pony',
+      '-e', '{statusCode: 200}', '-e', '{headerEquals: [x-powered-by, Express]}', '-e', '{hasHeader: etag}'
+  ]);
+  t.equal(true, stdout.indexOf('POST /login?animal=pony HTTP/1.1') > -1, 'request details are printed when using -v');
+  t.equal(true, stdout.indexOf('Response') > -1, 'Response section is marked when using -v');
+  t.equal(true, stdout.indexOf('Expectations:') > -1, 'Expectations section is marked when using -e');
+  t.equal(true, stdout.indexOf('not ok') === -1, 'All expectations pass');
+});
