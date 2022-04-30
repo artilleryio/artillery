@@ -35,8 +35,19 @@ WSEngine.prototype.createScenario = function (scenarioSpec, ee) {
   return self.compile(tasks, scenarioSpec.flow, ee);
 };
 
-function getMessageHandler(context, params, ee, callback) {
+function getMessageHandler(context, params, ee, timeout, callback) {
+  let done = false;
+
+  setTimeout(() => {
+    if (!done) {
+      const err = 'response timeout';
+      ee.emit('error', err);
+      return callback(err, context);
+    }
+  }, timeout * 1000);
+
   return function messageHandler(event) {
+    done = true;
     const { data } = event;
 
     debug('WS receive: %s', data);
@@ -163,7 +174,15 @@ WSEngine.prototype.step = function (requestSpec, ee) {
 
     if (captureOrMatch) {
       // only process response if we're capturing
-      context.ws.onmessage = getMessageHandler(context, params, ee, callback);
+      let timeout =
+        self.config.timeout || _.get(self.config, 'ws.timeout') || 10;
+      context.ws.onmessage = getMessageHandler(
+        context,
+        params,
+        ee,
+        timeout,
+        callback
+      );
     } else {
       // Reset onmessage to stop steps interfering with each other
       context.ws.onmessage = undefined;
@@ -193,6 +212,8 @@ WSEngine.prototype.step = function (requestSpec, ee) {
           return callback(null, context);
         }
       });
+    } else {
+      debug('WS wait: %j', params);
     }
   };
 

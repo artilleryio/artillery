@@ -28,7 +28,7 @@ test('should match a websocket response without capture', (t) => {
         flow: [
           {
             send: {
-              payload: 'hello',
+              payload: 'should match a websocket response without capture',
               match: { json: '$.foo', value: 'bar' }
             }
           }
@@ -38,13 +38,10 @@ test('should match a websocket response without capture', (t) => {
   };
 
   runner(script).then(function (ee) {
-    ee.on('done', (nr) => {
-      const report = SSMS.legacyReport(nr).report();
-
-      t.ok(
-        Object.keys(report.errors).length === 0,
-        'There should be no errors'
-      );
+    ee.on('done', (report) => {
+      let c = report.counters;
+      t.equal(c['vusers.failed'], 0, 'There should be no failures');
+      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
         targetServer.close(t.end);
@@ -62,8 +59,10 @@ test('should wait for a websocket response without send', (t) => {
 
   wss.on('connection', function (ws) {
     ws.on('message', function () {
-      ws.send(JSON.stringify({ foo: 'bar' }));
-      setTimeout(() => ws.send(JSON.stringify({ bar: 'baz' }), 100));
+      ws.send(JSON.stringify({ bar: 'foo' }));
+      setTimeout(() => {
+        ws.send(JSON.stringify({ bar: 'baz' }));
+      }, 100);
     });
   });
 
@@ -78,8 +77,8 @@ test('should wait for a websocket response without send', (t) => {
         flow: [
           {
             send: {
-              payload: 'hello',
-              match: { json: '$.foo', value: 'bar' }
+              payload: 'should wait for a websocket response without send',
+              match: { json: '$.bar', value: 'foo' }
             },
             wait: {
               match: { json: '$.bar', value: 'baz' }
@@ -91,10 +90,10 @@ test('should wait for a websocket response without send', (t) => {
   };
 
   runner(script).then(function (ee) {
-    ee.on('done', (nr) => {
-      const report = SSMS.legacyReport(nr).report();
-
-      t.ok(Object.keys(report.errors).length === 0, 'The wait should match');
+    ee.on('done', (report) => {
+      let c = report.counters;
+      t.equal(c['vusers.failed'], 0, 'There should be no failures');
+      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
         targetServer.close(t.end);
@@ -112,10 +111,7 @@ test('should wait for multiple websocket responses in a loop', (t) => {
 
   wss.on('connection', function (ws) {
     ws.on('message', function () {
-      ws.send(JSON.stringify({ foo: 'bar' }));
-      for (let i = 0; i < 5; i++) {
-        setTimeout(() => ws.send(JSON.stringify({ bar: 'baz' }), i * 100));
-      }
+      ws.send(JSON.stringify({ baz: 'foo' }));
     });
   });
 
@@ -128,9 +124,16 @@ test('should wait for multiple websocket responses in a loop', (t) => {
       {
         engine: 'ws',
         flow: [
-          { send: 'hello' },
           {
-            loop: [{ wait: { match: { json: '$.bar', value: 'baz' } } }],
+            loop: [
+              {
+                send: {
+                  payload:
+                    'should wait for multiple websocket responses in a loop',
+                  match: { json: '$.baz', value: 'foo' }
+                }
+              }
+            ],
             count: 5
           }
         ]
@@ -139,10 +142,107 @@ test('should wait for multiple websocket responses in a loop', (t) => {
   };
 
   runner(script).then(function (ee) {
-    ee.on('done', (nr) => {
-      const report = SSMS.legacyReport(nr).report();
+    ee.on('done', (report) => {
+      let c = report.counters;
+      t.equal(c['vusers.failed'], 0, 'There should be no failures');
+      t.equal(c['websocket.messages_sent'], 5, 'All messages should be sent');
 
-      t.ok(Object.keys(report.errors).length === 0, 'All waits should match');
+      ee.stop().then(() => {
+        targetServer.close(t.end);
+      });
+    });
+
+    ee.run();
+  });
+});
+
+test('should use config.ws.timeout on capture', (t) => {
+  const server = http.createServer();
+  const wss = new WebSocket.Server({ server: server });
+  const targetServer = server.listen(0);
+
+  wss.on('connection', function (ws) {
+    ws.on('message', function () {
+      setTimeout(() => {
+        ws.send(JSON.stringify({ foo: 'bar' }));
+      }, 2000);
+    });
+  });
+
+  const script = {
+    config: {
+      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      phases: [{ duration: 1, arrivalCount: 1 }],
+      ws: { timeout: 1 }
+    },
+    scenarios: [
+      {
+        engine: 'ws',
+        flow: [
+          {
+            send: {
+              payload: 'should timeout on capture',
+              capture: { json: '$.foo', as: 'bar' }
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  runner(script).then(function (ee) {
+    ee.on('done', (report) => {
+      let c = report.counters;
+      t.equal(c['vusers.failed'], 1, 'There should be one failure');
+      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      ee.stop().then(() => {
+        targetServer.close(t.end);
+      });
+    });
+
+    ee.run();
+  });
+});
+
+test('should use config.timeout on capture', (t) => {
+  const server = http.createServer();
+  const wss = new WebSocket.Server({ server: server });
+  const targetServer = server.listen(0);
+
+  wss.on('connection', function (ws) {
+    ws.on('message', function () {
+      setTimeout(() => {
+        ws.send(JSON.stringify({ foo: 'bar' }));
+      }, 2000);
+    });
+  });
+
+  const script = {
+    config: {
+      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      phases: [{ duration: 1, arrivalCount: 1 }],
+      timeout: 1
+    },
+    scenarios: [
+      {
+        engine: 'ws',
+        flow: [
+          {
+            send: {
+              payload: 'should timeout on capture',
+              capture: { json: '$.foo', as: 'bar' }
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  runner(script).then(function (ee) {
+    ee.on('done', (report) => {
+      let c = report.counters;
+      t.equal(c['vusers.failed'], 1, 'There should be one failure');
+      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
       ee.stop().then(() => {
         targetServer.close(t.end);
       });
