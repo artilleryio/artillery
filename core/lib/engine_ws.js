@@ -168,9 +168,8 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   const f = function (context, callback) {
     const params = requestSpec.wait || requestSpec.send;
 
-    // match exists on a string, so check it's not one first
-    let captureOrMatch =
-      !_.isString(params) && (params.capture || params.match);
+    // match exists on a string, so check match is not a prototype
+    let captureOrMatch = _.has(params, 'capture') || _.has(params, 'match');
 
     if (captureOrMatch) {
       // only process response if we're capturing
@@ -215,8 +214,14 @@ WSEngine.prototype.step = function (requestSpec, ee) {
           return callback(null, context);
         }
       });
-    } else {
+    } else if (captureOrMatch) {
       debug('WS wait: %j', params);
+    } else {
+      // in the end, we could not send anything, so report it and stop
+      let err = 'invalid_step';
+      debug(err, requestSpec);
+      ee.emit('error', err);
+      return callback(err, context);
     }
   };
 

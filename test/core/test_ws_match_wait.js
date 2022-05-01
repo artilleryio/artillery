@@ -4,7 +4,6 @@ const { test } = require('tap');
 const runner = require('../../core').runner;
 const http = require('http');
 const WebSocket = require('ws');
-const { SSMS } = require('../../core/lib/ssms');
 
 test('should match a websocket response without capture', (t) => {
   const server = http.createServer();
@@ -381,6 +380,40 @@ test('should match allow an undefined variable to be sent', (t) => {
       let c = report.counters;
       t.equal(c['vusers.failed'], 0, 'There should be no failures');
       t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+
+      ee.stop().then(() => {
+        targetServer.close(t.end);
+      });
+    });
+
+    ee.run();
+  });
+});
+
+test('should report an error if a step is not valid', (t) => {
+  const server = http.createServer();
+  const wss = new WebSocket.Server({ server: server });
+  const targetServer = server.listen(0);
+
+  wss.on('connection', function (ws) {
+    ws.on('message', function () {
+      ws.send(JSON.stringify({ baz: 'foo' }));
+    });
+  });
+
+  const script = {
+    config: {
+      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      phases: [{ duration: 1, arrivalCount: 1 }]
+    },
+    scenarios: [{ engine: 'ws', flow: [{ sedn: 'test' }] }]
+  };
+
+  runner(script).then(function (ee) {
+    ee.on('done', (report) => {
+      let c = report.counters;
+      t.equal(c['vusers.failed'], 1, 'There should be one failure');
+      t.equal(c['errors.invalid_step'], 1, 'There should be one error');
 
       ee.stop().then(() => {
         targetServer.close(t.end);
