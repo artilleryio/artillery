@@ -258,7 +258,7 @@ test('should use config.timeout on capture', (t) => {
   });
 });
 
-test('should match allow an empty payload to be sent', (t) => {
+test('should allow an empty string payload to be sent', (t) => {
   const server = http.createServer();
   const wss = new WebSocket.Server({ server: server });
   const targetServer = server.listen(0);
@@ -304,7 +304,7 @@ test('should match allow an empty payload to be sent', (t) => {
   });
 });
 
-test('should match allow a simple empty string to be sent', (t) => {
+test('should allow a simple empty string to be sent', (t) => {
   const server = http.createServer();
   const wss = new WebSocket.Server({ server: server });
   const targetServer = server.listen(0);
