@@ -47,6 +47,8 @@ function getMessageHandler(context, params, ee, timeout, callback) {
   }, timeout * 1000);
 
   return function messageHandler(event) {
+    ee.emit('counter', 'websocket.messages_received', 1);
+    ee.emit('rate', 'websocket.receive_rate');
     done = true;
     const { data } = event;
 
@@ -164,9 +166,7 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   }
 
   const f = function (context, callback) {
-    ee.emit('counter', 'websocket.messages_sent', 1);
-    ee.emit('rate', 'websocket.send_rate');
-    const params = requestSpec.send || requestSpec.wait;
+    const params = requestSpec.wait || requestSpec.send;
 
     // match exists on a string, so check it's not one first
     let captureOrMatch =
@@ -189,15 +189,18 @@ WSEngine.prototype.step = function (requestSpec, ee) {
     }
 
     // Backwards compatible with previous version of `send` api
-    let payload = template(captureOrMatch ? params.payload : params, context);
+    let payload = captureOrMatch ? params.payload : params;
 
-    if (payload) {
+    if (payload !== undefined) {
+      payload = template(payload, context);
       if (typeof payload === 'object') {
         payload = JSON.stringify(payload);
       } else {
-        payload = payload.toString();
+        payload = _.toString(payload);
       }
 
+      ee.emit('counter', 'websocket.messages_sent', 1);
+      ee.emit('rate', 'websocket.send_rate');
       debug('WS send: %s', payload);
 
       context.ws.send(payload, function (err) {
