@@ -128,11 +128,6 @@ test('Telemetry - debug through environment variable', function (t) {
 
   const logArg = consoleSpy.args[0][0];
 
-  t.false(
-    captureSpy.called,
-    'Does not send telemetry data if ARTILLERY_TELEMETRY_DEBUG environment variable is set to "true"'
-  );
-
   t.ok(logArg, expectedDebugOutput, 'Logs telemetry data');
 
   delete process.env.ARTILLERY_TELEMETRY_DEBUG;
