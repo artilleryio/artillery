@@ -42,6 +42,10 @@ This repo contains examples of how to use various features in Artillery. Every e
 
 - [starter-kit](./starter-kit) - @cfryerdev's Artillery starter kit - an example of how a few different bits fit together
 
+## Testing on Kubernetes
+
+- [k8s-testing-with-kubectl-artillery-](./k8s-testing-with-kubectl-artillery)
+
 # Contributing
 
 Would you like to share an example showing how to use a feature in Artillery with the community? Send us a PR 💜
