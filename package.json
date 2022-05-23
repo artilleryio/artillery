@@ -91,6 +91,7 @@
     "@oclif/plugin-help": "^3.3.1",
     "agentkeepalive": "^4.1.0",
     "arrivals": "^2.1.2",
+    "artillery-plugin-ensure": "^1.1.1",
     "artillery-plugin-expect": "^2.0.1",
     "artillery-plugin-metrics-by-endpoint": "^1.0.2",
     "artillery-plugin-publish-metrics": "^2.0.0",
