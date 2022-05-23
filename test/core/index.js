@@ -14,7 +14,7 @@ require('./test_basic_auth');
 require('./test_cookies');
 require('./test_concurrent_requests');
 require('./http');
-require('./test_ws_match_wait');
+require('./test_engine_ws');
 
 //require('./test_worker_http');
 //require('./test_environments.js');
