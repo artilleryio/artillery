@@ -3,25 +3,17 @@
 <head>
   <title>Artillery report</title>
   <script src='https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js"
-          integrity="sha384-scMuAXtFmPAlw0+pXLvnpHCt6VHh7AknTPdNrwiph5BA6MJWysg5WgSDl7r63txN"
-          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js"></script>
 
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
   <link href='https://fonts.googleapis.com/css?family=PT+Serif:400,700,400italic' rel='stylesheet' type='text/css'>
   <link href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' rel='stylesheet' type='text/css'>
   <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css' rel='stylesheet' type='text/css'>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"
-          integrity="sha384-v7eExOYhwaHa3+GhP+lHytJsMcidazNdjiaggRhdbvVTVTCjweLpa23t37ZKxaCf"
-          crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
-          integrity="sha384-H6KKS1H1WwuERMSm+54dYLzjg0fKqRK5ZRyASdbrI/lwrCc6bXEmtGYr5SwvP1pZ"
-          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.10.6/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js" charset="utf=8"
-          integrity="sha384-5wv3YDwWXIxqoY02AhdpzGtKzSx7IoLw86ObEolywSYRKXx9E4rqmrU2R29LNIjR"
-          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js" charset="utf-8"></script>
 
   <style>
   body, p, li {
@@ -54,14 +46,6 @@
   .chart-container {
     margin: 20px 0px;
   }
-  .summary-block { 
-    border: 1px solid #4A4A4A;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-    padding: 10px;
-  }
   </style>
 
   <style>
@@ -70,8 +54,7 @@
     }
 
     body {
-      background-color: #202020;
-      color: white;
+      background-color: #fcfcfc;
     }
 
     .container {
@@ -80,44 +63,76 @@
     }
   </style>
 </head>
-
-
-
 <body>
-  <% const summaryInfo = [
-  {icon: "&#128337;", name: "Duration", value: "testDuration"},
-  {icon: "&#128337;", name: "Users Created", value: "vuCreated"},
-  {icon: "&#128337;", name: "Users Completed", value: "vuCompleted"},
-  {icon: "&#128337;", name: "Scenario Counts", value: "scenarioCounts"},
-  {icon: "&#128337;", name: "Errors", value: "errors.length"},
-  
-  ] %>
 
 <div class="container">
 
 <div class="row" id="header">
-  <div style="padding: 1em;">
-    <h1>Report name</h1>
-    <label id="timestamp"></label>
+  <div class="col-lg-offset-4">
+    <pre style="font-family: monospace; font-size: 10pt; font-weight: 700; background-color: #fcfcfc; border: none;">
+        ___         __  _ ____                  _
+  _____/   |  _____/ /_(_) / /__  _______  __  (_)___  _____
+ /____/ /| | / ___/ __/ / / / _ \/ ___/ / / / / / __ \/____/
+/____/ ___ |/ /  / /_/ / / /  __/ /  / /_/ / / / /_/ /____/
+    /_/  |_/_/   \__/_/_/_/\___/_/   \__, (_)_/\____/
+                                    /____/
+    </pre>
   </div>
 </div>
 
-<div class="row" style="display: flex; justify-content: space-between;">
-  
-  <% for(var i=0; i < summaryInfo.length; i++){%>
-  <div class="summary-block col-lg-2">
-    <div>	
-      <%= summaryInfo[i].icon %>
-    </div>
+<div class="row">
+  <div class="col-lg-12">
+    <h1 class="text-center" id="page-title">Test run on <span id="timestamp"></span></h1>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-3">
+    <h4>
+      Summary
+    </h4>
+    <table class="table table-bordered table-hover table-condensed">
+      <tbody>
+        <tr>
+          <td>Test duration</td>
+          <td><span id="testDuration">0</span> sec</td>
+        </tr>
+        <tr>
+          <td>Virtual Users created</td>
+          <td><span id="vuCreated">0</span></td>
+        </tr>
+
+        <tr>
+          <td>Virtual Users completed</td>
+          <td><span id="vuCompleted">0</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="col-lg-5" id="scenarioCountsContainer">
     <div>
-      <%= summaryInfo[i].name %> <br/>
-      <label >
-        <span id="<%= summaryInfo[i].value %>">0</span> 
-      </label>
+      <h4>
+        Scenario counts
+      </h4>
+      <p></p>
+
+      <table class="table table-bordered table-hover table-condensed" id="scenarioCounts">
+      </table>
     </div>
   </div>
- <% } %>
 
+  <div class="col-lg-3">
+    <div id="errorsContainer">
+      <h4>
+        Errors
+      </h4>
+      <p></p>
+
+      <table class="table table-bordered table-hover table-condensed" id="errors">
+      </table>
+    </div>
+  </div>
 </div> <!-- /.row -->
 
 <div class="row">
@@ -179,7 +194,50 @@
 </div>
 
 <script charset="utf-8">
-const Report = <%= report %>;
+const Report = {
+  "aggregate": {
+    "counters": {
+      "vusers.created_by_name.0": 1,
+      "vusers.created": 1,
+      "http.requests": 1,
+      "errors.ECONNREFUSED": 1,
+      "vusers.failed": 1
+    },
+    "histograms": {},
+    "rates": {
+      "http.request_rate": 1
+    },
+    "http.request_rate": null,
+    "firstCounterAt": 1650388492691,
+    "lastCounterAt": 1650388492702,
+    "firstMetricAt": 1650388492691,
+    "lastMetricAt": 1650388492702,
+    "period": 1650388490000,
+    "summaries": {}
+  },
+  "intermediate": [
+    {
+      "counters": {
+        "vusers.created_by_name.0": 1,
+        "vusers.created": 1,
+        "http.requests": 1,
+        "errors.ECONNREFUSED": 1,
+        "vusers.failed": 1
+      },
+      "histograms": {},
+      "rates": {
+        "http.request_rate": 1
+      },
+      "http.request_rate": null,
+      "firstCounterAt": 1650388492691,
+      "lastCounterAt": 1650388492702,
+      "firstMetricAt": 1650388492691,
+      "lastMetricAt": 1650388492702,
+      "period": "1650388490000",
+      "summaries": {}
+    }
+  ]
+};
 const editor = ace.edit("editor");
 editor.getSession().setMode("ace/mode/javascript");
 editor.setValue(JSON.stringify(Report, null, 2));

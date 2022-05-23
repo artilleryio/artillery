@@ -84,14 +84,7 @@
 
 
 <body>
-  <% const summaryInfo = [
-  {icon: "&#128337;", name: "Duration", value: "testDuration"},
-  {icon: "&#128337;", name: "Users Created", value: "vuCreated"},
-  {icon: "&#128337;", name: "Users Completed", value: "vuCompleted"},
-  {icon: "&#128337;", name: "Scenario Counts", value: "scenarioCounts"},
-  {icon: "&#128337;", name: "Errors", value: "errors.length"},
   
-  ] %>
 
 <div class="container">
 
@@ -104,19 +97,67 @@
 
 <div class="row" style="display: flex; justify-content: space-between;">
   
-  <% for(var i=0; i < summaryInfo.length; i++){%>
+  
   <div class="summary-block col-lg-2">
     <div>	
-      <%= summaryInfo[i].icon %>
+      &#128337;
     </div>
     <div>
-      <%= summaryInfo[i].name %> <br/>
+      Duration <br/>
       <label >
-        <span id="<%= summaryInfo[i].value %>">0</span> 
+        <span id="testDuration">0</span> 
       </label>
     </div>
   </div>
- <% } %>
+ 
+  <div class="summary-block col-lg-2">
+    <div>	
+      &#128337;
+    </div>
+    <div>
+      Users Created <br/>
+      <label >
+        <span id="vuCreated">0</span> 
+      </label>
+    </div>
+  </div>
+ 
+  <div class="summary-block col-lg-2">
+    <div>	
+      &#128337;
+    </div>
+    <div>
+      Users Completed <br/>
+      <label >
+        <span id="vuCompleted">0</span> 
+      </label>
+    </div>
+  </div>
+ 
+  <div class="summary-block col-lg-2">
+    <div>	
+      &#128337;
+    </div>
+    <div>
+      Scenario Counts <br/>
+      <label >
+        <span id="scenarioCounts">0</span> 
+      </label>
+    </div>
+  </div>
+ 
+  <div class="summary-block col-lg-2">
+    <div>	
+      &#128337;
+    </div>
+    <div>
+      Errors <br/>
+      <label >
+        <span id="errors.length">0</span> 
+      </label>
+    </div>
+  </div>
+ 
 
 </div> <!-- /.row -->
 
@@ -179,7 +220,50 @@
 </div>
 
 <script charset="utf-8">
-const Report = <%= report %>;
+const Report = {
+  "aggregate": {
+    "counters": {
+      "vusers.created_by_name.0": 1,
+      "vusers.created": 1,
+      "http.requests": 1,
+      "errors.ECONNREFUSED": 1,
+      "vusers.failed": 1
+    },
+    "histograms": {},
+    "rates": {
+      "http.request_rate": 1
+    },
+    "http.request_rate": null,
+    "firstCounterAt": 1650388492691,
+    "lastCounterAt": 1650388492702,
+    "firstMetricAt": 1650388492691,
+    "lastMetricAt": 1650388492702,
+    "period": 1650388490000,
+    "summaries": {}
+  },
+  "intermediate": [
+    {
+      "counters": {
+        "vusers.created_by_name.0": 1,
+        "vusers.created": 1,
+        "http.requests": 1,
+        "errors.ECONNREFUSED": 1,
+        "vusers.failed": 1
+      },
+      "histograms": {},
+      "rates": {
+        "http.request_rate": 1
+      },
+      "http.request_rate": null,
+      "firstCounterAt": 1650388492691,
+      "lastCounterAt": 1650388492702,
+      "firstMetricAt": 1650388492691,
+      "lastMetricAt": 1650388492702,
+      "period": "1650388490000",
+      "summaries": {}
+    }
+  ]
+};
 const editor = ace.edit("editor");
 editor.getSession().setMode("ace/mode/javascript");
 editor.setValue(JSON.stringify(Report, null, 2));

@@ -727,11 +727,7 @@ HttpEngine.prototype._handleResponse = function (
   ee.emit('counter', 'http.codes.' + code, 1);
   ee.emit('counter', 'http.responses', 1);
   // ee.emit('rate', 'http.response_rate');
-  ee.emit(
-    'histogram',
-    'http.response_time',
-    res.timings.phases.firstByte
-  );
+  ee.emit('histogram', 'http.response_time', res.timings.phases.firstByte);
   if (this.extendedHTTPMetrics) {
     ee.emit('histogram', 'http.dns', res.timings.phases.dns);
     ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
