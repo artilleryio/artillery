@@ -4,7 +4,9 @@
 
 function isIdlePhase(phase) {
   return (
-    phase.arrivalRate === 0 || phase.arrivalCount === 0 || phase.maxVusers === 0
+    (phase.arrivalRate === 0 && !phase.rampTo) ||
+    phase.arrivalCount === 0 ||
+    phase.maxVusers === 0
   );
 }
 
