@@ -4,7 +4,7 @@
   "description": "Modern performance testing toolkit for DevOps and SRE",
   "main": "./lib",
   "engines": {
-    "node": ">= 14.17.6"
+    "node": ">= 16.15.0"
   },
   "files": [
     "/bin",
