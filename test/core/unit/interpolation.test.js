@@ -4,7 +4,7 @@
 
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const sinon = require('sinon');
 
 const HttpEngine = require('../../../core/lib/engine_http');
@@ -88,8 +88,8 @@ test('url and uri parameters', function (t) {
       t.fail();
     }
 
-    t.assert(target.isDone(), 'Should have made a request to /hello');
-    t.assert(target2.isDone(), 'Should have made a request to /goodbye');
+    t.ok(target.isDone(), 'Should have made a request to /hello');
+    t.ok(target2.isDone(), 'Should have made a request to /goodbye');
 
     [
       '# output from printHello hook!',
@@ -105,7 +105,7 @@ test('url and uri parameters', function (t) {
           seen = true;
         }
       });
-      t.assert(seen);
+      t.ok(seen);
     });
     console.log.restore(); // unwrap the spy
 

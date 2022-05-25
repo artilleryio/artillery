@@ -11,14 +11,10 @@ const tough = require('tough-cookie');
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
 const debugResponse = require('debug')('http:response');
-const debugFullBody = require('debug')('http:full_body');
 const USER_AGENT = 'Artillery (https://artillery.io)';
 const engineUtil = require('./engine_util');
 const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 const template = engineUtil.template;
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
 const qs = require('querystring');
 const filtrex = require('filtrex');
 const urlparse = require('url').parse;
@@ -90,7 +86,7 @@ function HttpEngine(script) {
   if (script.config.http && script.config.http.pool) {
     this.maxSockets = Number(script.config.http.pool);
   }
-  let agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+  const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
     maxSockets: this.maxSockets,
     maxFreeSockets: this.maxSockets
   });
@@ -248,15 +244,15 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     if (!_.isUndefined(params.ifTrue)) {
-      let cond;
       let result;
       try {
-        cond = _.has(config.processor, params.ifTrue)
+        const cond = _.has(config.processor, params.ifTrue)
           ? config.processor[params.ifTrue]
           : filtrex(params.ifTrue);
         result = cond(context.vars);
-      } catch (e) {
-        result = 1; // if the expression is incorrect, just proceed // TODO: debug message
+      } catch (err) {
+        debug('ifTrue error:', err);
+        result = 1; // if the expression is incorrect, just proceed
       }
       if (!result) {
         return process.nextTick(function () {
@@ -266,8 +262,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     // Run beforeRequest processors (scenario-level ones too)
-    let requestParams = _.cloneDeep(params);
-    requestParams = _.extend(requestParams, {
+    const requestParams = _.extend(_.clone(params), {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
       timeout: timeout * 1000

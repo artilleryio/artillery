@@ -4,7 +4,7 @@
 
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const createReader = require('../../../core/lib/readers');
 const _ = require('lodash');
 
@@ -19,7 +19,7 @@ test('sequence payload reader should read in sequence', function (t) {
   const readElements = readPayloadData(reader);
 
   _.each(readElements, function (el, index) {
-    t.assert(el === payloadData[index], 'read element matches payload element');
+    t.ok(el === payloadData[index], 'read element matches payload element');
   });
   t.end();
 });
@@ -29,7 +29,7 @@ test('random payload reader should pick at random', function (t) {
   const readElements = readPayloadData(reader);
 
   _.each(readElements, function (el) {
-    t.assert(
+    t.ok(
       _.includes(payloadData, el),
       'read element is one of payload elements'
     );
@@ -42,7 +42,7 @@ test('create reader should default to random', function (t) {
   const readElements = readPayloadData(reader);
 
   _.each(readElements, function (el) {
-    t.assert(
+    t.ok(
       _.includes(payloadData, el),
       'read element is one of payload elements'
     );

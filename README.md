@@ -28,11 +28,12 @@
 
 # Use Cases
 
-- Prepare for traffic surges - run load tests to help prepare your API or service for upcoming peak traffic
+- Prepare for traffic spikes - run load tests to help prepare your API or service for upcoming peak traffic
+- Run load tests to help ensure that SLOs are met under load as code and infrastructure config change
 - Run continuous smoke tests to catch issues before they reach production
 - Run Artillery in CI/CD to prevent performance regressions
 - Profile and debug performance issues such as memory leaks, high tail latency caused by GC pauses or high CPU usage, or misconfigured resource pools
-- Scale out and run your tests from your own AWS account with ease
+- Scale out and run distributed load tests from your own AWS account
 
 # Features
 
@@ -67,9 +68,10 @@ Add your team to the [Artillery users list on the wiki](https://github.com/shore
 
 # Artillery Forest
 
-We have planted [close to 5000 trees](https://ecologi.com/artilleryio) with the help of Artillery community. That's a small forest! We're aiming to grow that to a *large* forest - we're thinking 100,000 trees would be neat.
+We have planted [a lot of trees](https://ecologi.com/artilleryio) with the help of Artillery community.
 
 Want to help us grow the forest?
+
 - Just star this repo! We plant a tree for every star we get on Github. 🌟 ➡️ 🌳
 - Plant some extra trees through Ecologi → https://ecologi.com/artilleryio (use your name or the name of your company for credit)
 

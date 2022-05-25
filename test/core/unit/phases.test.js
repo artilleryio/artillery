@@ -4,7 +4,7 @@
 
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const createPhaser = require('../../../core/lib/phases');
 const util = require('util');
 const _ = require('lodash');
@@ -38,24 +38,24 @@ test('pause', function (t) {
   let phaseStartedTimestamp;
   phaser.on('phaseStarted', function (spec) {
     phaseStartedTimestamp = Date.now();
-    t.assert(
+    t.ok(
       _.isEqual(spec, phaseSpec),
       'phaseStarted event emitted with correct spec'
     );
   });
   phaser.on('phaseCompleted', function (spec) {
-    t.assert(
+    t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
-    t.assert(
+    t.ok(
       _.isEqual(spec, phaseSpec),
       'phaseCompleted event emitted with correct spec'
     );
   });
   phaser.on('done', function () {
     let delta = Date.now() - startedAt;
-    t.assert(
+    t.ok(
       delta >= phaseSpec.pause * 1000,
       util.format(
         'pause ran for at least %s ms (delta: %s)',
@@ -82,17 +82,17 @@ test('arrivalCount', function (t) {
   let arrivals = 0;
   phaser.on('phaseStarted', function (spec) {
     phaseStartedTimestamp = Date.now();
-    t.assert(
+    t.ok(
       _.isEqual(spec, phaseSpec),
       'phaseStarted event emitted with correct spec'
     );
   });
   phaser.on('phaseCompleted', function (spec) {
-    t.assert(
+    t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
-    t.assert(
+    t.ok(
       _.isEqual(spec, phaseSpec),
       'phaseCompleted event emitted with correct spec'
     );
@@ -102,7 +102,7 @@ test('arrivalCount', function (t) {
   });
   phaser.on('done', function () {
     let delta = Date.now() - startedAt;
-    t.assert(
+    t.ok(
       delta >= phaseSpec.duration * 1000,
       util.format(
         'arrivalCount ran for at least %s ms (delta: %s)',
@@ -111,7 +111,7 @@ test('arrivalCount', function (t) {
       )
     );
 
-    t.assert(
+    t.ok(
       arrivals === phaseSpec.arrivalCount,
       util.format(
         'saw the expected %s arrivals (expecting %s)',
@@ -168,11 +168,11 @@ function testRamp(t, phaseSpec) {
   let arrivals = 0;
   phaser.on('phaseStarted', function (spec) {
     phaseStartedTimestamp = Date.now();
-    t.assert(
+    t.ok(
       _.isEqual(spec, phaseSpec),
       'phaseStarted event emitted with correct spec'
     );
-    t.assert(
+    t.ok(
       _.filter(
         [
           'arrivalRate',
@@ -190,11 +190,11 @@ function testRamp(t, phaseSpec) {
     );
   });
   phaser.on('phaseCompleted', function (spec) {
-    t.assert(
+    t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
-    t.assert(
+    t.ok(
       _.isEqual(spec, phaseSpec),
       'phaseCompleted event emitted with correct spec'
     );
@@ -204,7 +204,7 @@ function testRamp(t, phaseSpec) {
   });
   phaser.on('done', function () {
     let delta = Date.now() - startedAt;
-    t.assert(
+    t.ok(
       delta >= phaseSpec.duration * 1000,
       util.format(
         'rampTo ran for at least %s ms (delta: %s)',
@@ -215,7 +215,7 @@ function testRamp(t, phaseSpec) {
 
     debug('expected: %s, arrived: %s', expected, arrivals);
 
-    t.assert(
+    t.ok(
       Math.abs(arrivals - expected) <= expected * 0.2, // large allowance
       'seen arrivals within expected bounds'
     );

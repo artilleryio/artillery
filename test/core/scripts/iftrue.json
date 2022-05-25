@@ -21,7 +21,6 @@
            "json": {"name": "{{ name }}", "species": "{{ species }}"},
            "capture": {
              "json": "$.id",
-             "transform": "this.id.toUpperCase()",
              "as": "id"
            }
          }

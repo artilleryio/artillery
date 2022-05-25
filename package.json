@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "2.0.0-11",
+  "version": "2.0.0-16",
   "description": "Modern performance testing toolkit for DevOps and SRE",
   "main": "./lib",
   "engines": {
@@ -21,6 +21,11 @@
     "trailingComma": "none"
   },
   "oclif": {
+    "update": {
+      "s3": {
+        "bucket": "artillery-cli-assets"
+      }
+    },
     "commands": "./lib/cmds",
     "hooks": {
       "init": [
@@ -42,7 +47,7 @@
     }
   },
   "scripts": {
-    "test": "export ARTILLERY_DISABLE_TELEMETRY=true && tap --timeout=120 --no-coverage test/unit/*test*.js && bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
+    "test": "export ARTILLERY_DISABLE_TELEMETRY=true && tap --timeout=120 --no-coverage test/unit/*test.js test/cli/probe/*.js && bash test/runner.sh && bash test/core/run.sh && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
     "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "npm run lint -- --fix",
@@ -69,7 +74,7 @@
   "preferGlobal": true,
   "man": "./man/artillery.1",
   "bin": {
-    "artillery": "bin/artillery"
+    "artillery": "bin/run"
   },
   "repository": {
     "type": "git",
@@ -83,15 +88,20 @@
     "@artilleryio/sketches-js": "^1.0.4",
     "@oclif/command": "^1.8.0",
     "@oclif/config": "^1.17.0",
-    "@oclif/plugin-help": "^3.2.0",
+    "@oclif/plugin-help": "^3.3.1",
     "agentkeepalive": "^4.1.0",
     "arrivals": "^2.1.2",
+    "artillery-plugin-ensure": "^1.1.1",
+    "artillery-plugin-expect": "^2.0.1",
+    "artillery-plugin-metrics-by-endpoint": "^1.0.2",
+    "artillery-plugin-publish-metrics": "^2.0.0",
     "async": "^1.5.2",
     "chalk": "^4.1.2",
-    "cheerio": "^1.0.0-rc.2",
+    "cheerio": "^1.0.0-rc.10",
     "ci-info": "^2.0.0",
+    "cli-highlight": "^2.1.11",
     "cli-table3": "^0.6.0",
-    "csv-parse": "^4.4.6",
+    "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
     "decompress-response": "^6.0.0",
     "deep-equal": "^1.0.1",
@@ -105,17 +115,22 @@
     "hpagent": "^0.1.1",
     "https-proxy-agent": "^5.0.0",
     "ip": "^1.1.5",
+    "jmespath": "^0.16.0",
+    "joi": "^17.6.0",
     "js-yaml": "^3.13.1",
-    "jsck": "^0.3.2",
     "jsonpath": "^1.1.1",
     "lodash": "^4.17.19",
+    "mime-types": "^2.1.35",
     "moment": "^2.22.1",
     "nanotimer": "^0.3.15",
+    "oclif": "^2.4.4",
     "ora": "^4.0.4",
-    "posthog-node": "^1.1.3",
+    "posthog-node": "^1.3.0",
     "socket.io-client": "^4.1.2",
     "socketio-wildcard": "^2.0.0",
-    "tmp": "0.0.28",
+    "sprintf-js": "^1.1.2",
+    "temp": "^0.9.4",
+    "tmp": "0.2.1",
     "tough-cookie": "^4.0.0",
     "try-require": "1.2.1",
     "update-notifier": "^5.1.0",
@@ -128,6 +143,7 @@
     "@hapi/basic": "^6.0.0",
     "@hapi/hapi": "^20.1.3",
     "@oclif/dev-cli": "^1.22.2",
+    "bats": "^1.6.0",
     "cookie-parser": "^1.4.3",
     "eslint": "^8.6.0",
     "eslint-config-prettier": "^8.3.0",
@@ -143,8 +159,6 @@
     "sinon": "^4.5.0",
     "socket.io": "^3.1.2",
     "tap": "^15.1.5",
-    "tape": "^4.9.0",
-    "temp": "^0.9.4",
     "zx": "^4.2.0"
   },
   "husky": {

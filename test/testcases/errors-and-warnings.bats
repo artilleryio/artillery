@@ -9,7 +9,7 @@
 #     if [[ ! -z `find . -name "artillery-xml-capture" -type d` ]]; then
 #       find . -name "artillery-xml-capture" -type d | xargs rm -r
 #     fi
-#     ./bin/artillery run --config ./test/scripts/hello_config.json ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
+#     ./bin/run run --config ./test/scripts/hello_config.json ./test/scripts/hello_with_xpath.json  | grep 'artillery-xml-capture'
 #     grep_status=$?
 #     npm install artillery-xml-capture || true
 #     [ $grep_status -eq 0 ]
@@ -17,7 +17,7 @@
 
 # TODO: Rewrite without quick
 # @test "Clean up when killed" {
-#   MULTICORE=1 ARTILLERY_WORKERS=4 ./bin/artillery quick -d 120 -r 1 http://localhost:3003/ &
+#   MULTICORE=1 ARTILLERY_WORKERS=4 ./bin/run quick -d 120 -r 1 http://localhost:3003/ &
 #   artillery_pid=$!
 #   sleep 5
 #   kill $artillery_pid
@@ -27,21 +27,21 @@
 
 # Ref: https://github.com/shoreditch-ops/artillery/issues/215
 @test "GH #215 regression" {
-  ./bin/artillery run test/scripts/gh_215_add_token.json
+  ./bin/run run test/scripts/gh_215_add_token.json
   [[ true ]]
 }
 
 @test "Exits with non zero when an unknown command is used" {
-    run ./bin/artillery makemeasandwich --with cheese
+    run ./bin/run makemeasandwich --with cheese
     [[ $status -ne 0 ]]
 }
 
 @test "Exits with non-zero when an unknown option is used" {
-    run ./bin/artillery run --sandwich ploughmans
+    run ./bin/run run --sandwich ploughmans
     [[ $status -ne 0 ]]
 }
 
 @test "Exits with 0 when a known flag used with no command" {
-    run ./bin/artillery -V
+    run ./bin/run -V
     [[ $status -eq 0 ]]
 }

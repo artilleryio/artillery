@@ -1,6 +1,6 @@
 'use strict';
 
-var test = require('tape');
+var { test } = require('tap');
 var runner = require('../../core').runner;
 var l = require('lodash');
 var request = require('got');
@@ -16,7 +16,7 @@ test('cookie jar http', function (t) {
           var ok =
             report.scenariosCompleted &&
             l.size(res.body.cookies) === report.scenariosCompleted;
-          t.assert(ok, 'Each scenario had a unique cookie');
+          t.ok(ok, 'Each scenario had a unique cookie');
           if (!ok) {
             console.log(res.body);
             console.log(report);
@@ -43,7 +43,7 @@ test('cookie jar socketio', function (t) {
           var ok =
             report.scenariosCompleted &&
             l.size(res.body.cookies) === report.scenariosCompleted;
-          t.assert(ok, 'Each scenario had a unique cookie');
+          t.ok(ok, 'Each scenario had a unique cookie');
           if (!ok) {
             console.log(res.body);
             console.log(report);
@@ -65,11 +65,11 @@ test('default cookies', function (t) {
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
-      t.assert(
+      t.ok(
         report.codes[200] && report.codes[200] > 0,
         'There should be some 200s'
       );
-      t.assert(report.codes[403] === undefined, 'There should be no 403s');
+      t.ok(report.codes[403] === undefined, 'There should be no 403s');
       ee.stop().then(() => {
         t.end();
       });
@@ -84,11 +84,11 @@ test('no default cookie', function (t) {
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
-      t.assert(
+      t.ok(
         report.codes[403] && report.codes[403] > 0,
         'There should be some 403s'
       );
-      t.assert(report.codes[200] === undefined, 'There should be no 200s');
+      t.ok(report.codes[200] === undefined, 'There should be no 200s');
       ee.stop().then(() => {
         t.end();
       });
