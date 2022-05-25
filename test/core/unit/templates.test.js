@@ -4,7 +4,7 @@
 
 'use strict';
 
-var test = require('tape');
+var { test } = require('tap');
 var template = require('../../../core/lib/engine_util').template;
 
 const { contextFuncs } = require('../../../core/lib/runner');
@@ -17,36 +17,33 @@ var bigObject = require('./large-json-payload-7.2mb.json');
 
 var emptyContext = { vars: {} };
 
-test.test(
-  'strings - templating a plain string should return the same string',
-  function (t) {
-    t.assert(template('string', emptyContext) === 'string', '');
-    t.assert(template('string {}', emptyContext) === 'string {}', '');
-    t.end();
-  }
-);
-
-test.test('strings - variables can be substituted', function (t) {
-  t.assert(
-    template('hello {{name}}', { vars: { name: 'Hassy' } }) === 'hello Hassy',
-    ''
-  );
-  t.assert(template('hello {{name}}', emptyContext) === 'hello undefined', '');
+test('strings - templating a plain string should return the same string', function (t) {
+  t.ok(template('string', emptyContext) === 'string', '');
+  t.ok(template('string {}', emptyContext) === 'string {}', '');
   t.end();
 });
 
-test.test('strings - huge strings are OK', function (t) {
+test('strings - variables can be substituted', function (t) {
+  t.ok(
+    template('hello {{name}}', { vars: { name: 'Hassy' } }) === 'hello Hassy',
+    ''
+  );
+  t.ok(template('hello {{name}}', emptyContext) === 'hello undefined', '');
+  t.end();
+});
+
+test('strings - huge strings are OK', function (t) {
   const s1 = JSON.stringify(bigObject);
   const start = Date.now();
   const s2 = template(s1, { vars: {} });
   const end = Date.now();
   t.same(s1, s2);
   console.log('# delta:', end - start);
-  t.assert(end - start < 10, 'templated in <10ms');
+  t.ok(end - start < 10, 'templated in <10ms');
   t.end();
 });
 
-test.test('arrays can be substituted', function (t) {
+test('arrays can be substituted', function (t) {
   t.same(
     [1, { foo: 'bar' }, null, { foo: null }],
     template([1, { '{{k}}': '{{v}}' }, null, { foo: null }], {
@@ -74,7 +71,7 @@ test.test('arrays can be substituted', function (t) {
   t.end();
 });
 
-test.test('buffers - returned as they are', function (t) {
+test('buffers - returned as they are', function (t) {
   t.same(
     template(Buffer.from('hello world'), { vars: {} }),
     Buffer.from('hello world')
@@ -82,19 +79,19 @@ test.test('buffers - returned as they are', function (t) {
   t.end();
 });
 
-test.test('buffers - huge buffers are OK', function (t) {
+test('buffers - huge buffers are OK', function (t) {
   const b1 = Buffer.from(JSON.stringify(bigObject));
   const start = Date.now();
   const b2 = template(b1, { vars: {} });
   const end = Date.now();
   t.same(b1, b2);
   console.log('# delta:', end - start);
-  t.assert(end - start < 10, 'templated in <10ms');
+  t.ok(end - start < 10, 'templated in <10ms');
 
   t.end();
 });
 
-test.test('objects can be substituted', function (t) {
+test('objects can be substituted', function (t) {
   t.same(
     template(
       { '{{ k1 }}': '{{ v1 }}', '{{ k2 }}': '{{ v2 }}', foo: null },
@@ -121,7 +118,7 @@ test.test('objects can be substituted', function (t) {
   t.end();
 });
 
-test.test('nested objects can be substituted', function (t) {
+test('nested objects can be substituted', function (t) {
   t.same(
     template(
       {
@@ -151,18 +148,18 @@ test.test('nested objects can be substituted', function (t) {
   t.end();
 });
 
-test.test('template functions', (t) => {
+test('template functions', (t) => {
   const context = {
     funcs: contextFuncs,
     vars: { greeting: 'hello', foo: 'bar' }
   };
 
-  t.assert(
+  t.ok(
     template('{{ $randomString( ) }}', context).length > 0,
     'template functions may be used'
   );
 
-  t.assert(
+  t.ok(
     template(
       '{{ $randomString(3) }} hello world {{ $randomString(10) }} {{ $randomNumber(   100, 900) }}',
       context
@@ -170,7 +167,7 @@ test.test('template functions', (t) => {
     'multiple template functions may be used'
   );
 
-  t.assert(
+  t.ok(
     template('{{ greeting}} {{ $randomString(5) }}! {{ foo }}', context)
       .length === 16,
     'functions and variable substitutions may be mixed'
@@ -179,8 +176,8 @@ test.test('template functions', (t) => {
   t.end();
 });
 
-test.test('keys with periods retain their structure', (t) => {
-  t.assert(
+test('keys with periods retain their structure', (t) => {
+  t.ok(
     template({ 'hello.world': true }, {})['hello.world'] === true,
     'keys with periods are preserved'
   );
@@ -190,7 +187,7 @@ test.test('keys with periods retain their structure', (t) => {
     {}
   );
 
-  t.assert(
+  t.ok(
     nestedTemplate.hello.world['hello.world'] === true &&
       nestedTemplate['hello.world'] === undefined,
     'the template only creates it at the end'

@@ -6,7 +6,7 @@
 
 @test "If we report specifying output, no browser is opened" {
   HTML_OUT="$(mktemp -d)/report.html"
-  ./bin/artillery report -o $HTML_OUT test/scripts/report.json | grep "Report generated: $HTML_OUT"
+  ./bin/run report -o $HTML_OUT test/scripts/report.json | grep "Report generated: $HTML_OUT"
   [ $? -eq 0 ]
   [ -f $HTML_OUT ]
 }

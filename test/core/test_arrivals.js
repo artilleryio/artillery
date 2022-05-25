@@ -1,7 +1,8 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const runner = require('../../core').runner;
+const { SSMS } = require('../../core/lib/ssms');
 
 test('arrival phases', function (t) {
   var script = require('./scripts/arrival_phases.json');
@@ -14,7 +15,11 @@ test('arrival phases', function (t) {
       console.log('Phase completed - %s', new Date());
     });
 
-    ee.on('done', function (stats) {
+    ee.on('done', function (nr) {
+      const report = SSMS.legacyReport(nr).report();
+
+      t.ok(report.codes[200] === 60, 'Got 60 status 200 responses');
+
       ee.stop().then(() => {
         t.end();
       });

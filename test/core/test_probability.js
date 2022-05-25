@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const runner = require('../../core').runner;
 const L = require('lodash');
 const { SSMS } = require('../../core/lib/ssms');
@@ -12,7 +12,7 @@ test('request probability', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       let requests = report.requestsCompleted;
-      t.assert(
+      t.ok(
         requests < 130,
         'Should have completed ~10% = ~100 requests in total, actually completed ' +
           requests

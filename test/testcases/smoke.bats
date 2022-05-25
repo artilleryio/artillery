@@ -5,12 +5,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 @test "Running with no arguments prints out usage information" {
-  ./bin/artillery | grep -i usage
+  ./bin/run | grep -i usage
   [[ $? -eq 0 ]]
 }
 
 @test "artillery -V prints version number" {
-  ./bin/artillery -V | grep -i 'artillery'
+  ./bin/run -V | grep -i 'artillery'
   [[ $? -eq 0 ]]
 }
 

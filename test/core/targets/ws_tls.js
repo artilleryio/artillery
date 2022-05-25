@@ -25,7 +25,7 @@ var app = https
     }
   )
   .listen(options.port, function () {
-    debug('Listening on :9443');
+    console.log('Listening on :9443');
   });
 
 const wss = new WebSocketServer({ server: app });

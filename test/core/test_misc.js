@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const runner = require('../../core').runner;
 const l = require('lodash');
 const { SSMS } = require('../../core/lib/ssms');
@@ -39,9 +39,9 @@ l.each(SCRIPTS, function (fn) {
         var scenarios = report.scenariosCompleted;
         console.log('# requests = %s, scenarios = %s', requests, scenarios);
 
-        t.assert(
+        t.ok(
           completedPhases === script.config.phases.length,
-          'Should\'ve completed all phases'
+          "Should've completed all phases"
         );
         var completedAt = process.hrtime(startedAt);
         var delta = (completedAt[0] * 1e9 + completedAt[1]) / 1e6;
@@ -52,21 +52,18 @@ l.each(SCRIPTS, function (fn) {
           },
           0
         );
-        t.assert(
+        t.ok(
           delta >= minDuration,
           'Should run for at least the total duration of phases'
         );
 
-        t.assert(requests > 0, 'Should have successful requests');
-        t.assert(scenarios > 0, 'Should have successful scenarios');
+        t.ok(requests > 0, 'Should have successful requests');
+        t.ok(scenarios > 0, 'Should have successful scenarios');
 
         if (report.errors) {
           console.log(`# errors: ${JSON.stringify(report.errors, null, 4)}`);
         }
-        t.assert(
-          Object.keys(report.errors).length === 0,
-          'Should have no errors'
-        );
+        t.ok(Object.keys(report.errors).length === 0, 'Should have no errors');
 
         ee.stop().then(() => {
           t.end();

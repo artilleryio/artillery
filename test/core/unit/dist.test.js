@@ -45,5 +45,16 @@ tap.test('divideWork', (t) => {
     'arrivalCount is replaced with a pause phase in all but one of the worker scripts'
   );
 
+  t.ok(
+    phases
+      .slice(1)
+      .every(
+        (phase) =>
+          'pause' in phase.config.phases[0] &&
+          phase.config.phases[0].name === script.config.phases[0].name
+      ),
+    'pause phases created to replace arrivalCounts keep the same name as the original arrivalCount phase'
+  );
+
   t.end();
 });

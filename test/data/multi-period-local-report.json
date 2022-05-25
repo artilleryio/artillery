@@ -1,0 +1,12 @@
+[{
+	"id": 1,
+	"ts": 1650656214040,
+	"event": "done",
+	"report": "{\"counters\":{\"vusers.created_by_name.0\":20,\"vusers.created\":20,\"http.requests\":20,\"http.codes.200\":20,\"http.responses\":20,\"vusers.failed\":0,\"vusers.completed\":20},\"histograms\":{},\"rates\":{\"http.request_rate\":4},\"firstCounterAt\":1650656208339,\"firstHistogramAt\":1650656208371,\"lastCounterAt\":1650656213020,\"lastHistogramAt\":1650656213020,\"firstMetricAt\":1650656208339,\"lastMetricAt\":1650656213020,\"period\":1650656210000}"
+},
+{
+	"id": 2,
+	"ts": 1650656224089,
+	"event": "done",
+	"report": "{\"counters\":{\"vusers.created_by_name.0\":20,\"vusers.created\":20,\"http.requests\":20,\"http.codes.200\":20,\"http.responses\":20,\"vusers.failed\":0,\"vusers.completed\":20},\"histograms\":{},\"rates\":{\"http.request_rate\":3},\"firstCounterAt\":1650656208260,\"firstHistogramAt\":1650656208570,\"lastCounterAt\":1650656223322,\"lastHistogramAt\":1650656223322,\"firstMetricAt\":1650656208260,\"lastMetricAt\":1650656223322,\"period\":1650656220000}"
+}]

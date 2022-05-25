@@ -13,6 +13,7 @@
   "scenarios": [
     {
       "flow": [
+        {"think": "2"},
         {"get": {"url": "/pets"}}
       ]
     }
