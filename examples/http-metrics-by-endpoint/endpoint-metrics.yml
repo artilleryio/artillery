@@ -1,0 +1,15 @@
+config:
+  target: https://artillery.io
+  phases:
+    - duration: 20
+      arrivalRate: 1
+  plugins:
+    metrics-by-endpoint: {}
+scenarios:
+  - flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/docs"
+      - get:
+          url: "/404"
