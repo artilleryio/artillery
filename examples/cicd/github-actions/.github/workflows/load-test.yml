@@ -21,10 +21,10 @@ jobs:
         run: mkdir reports
 
       - name: Execute load tests
-        run: /home/node/artillery/bin/artillery run --output reports/report.json tests/performance/socket-io.yml
+        run: /home/node/artillery/bin/run run --output reports/report.json tests/performance/socket-io.yml
 
       - name: Generate HTML report
-        run: /home/node/artillery/bin/artillery report --output reports/report.html reports/report.json
+        run: /home/node/artillery/bin/run report --output reports/report.html reports/report.json
 
       - name: Archive test report
         uses: actions/upload-artifact@v2
