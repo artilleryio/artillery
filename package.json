@@ -105,6 +105,7 @@
     "debug": "^4.3.1",
     "decompress-response": "^6.0.0",
     "deep-for-each": "^3.0.0",
+    "dotenv": "^16.0.1",
     "driftless": "^2.0.3",
     "esprima": "^4.0.0",
     "eventemitter3": "^4.0.4",

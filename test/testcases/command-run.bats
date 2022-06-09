@@ -61,6 +61,12 @@
   [[ $? -eq 0 ]]
 }
 
+@test "Environment variables can be loaded from dotenv files" {
+  ./bin/run run --dotenv ./test/scripts/with-dotenv/my-vars ./test/scripts/with-dotenv/with-dotenv.yml -o report-with-dotenv.json
+  node -e 'var fs = require("fs"); var j = JSON.parse(fs.readFileSync("report-with-dotenv.json", "utf8"));process.exit(j.aggregate.counters["http.codes.200"] === 1 ? 0 : 1);'
+  [[ $? -eq 0 ]]
+}
+
 @test "Script using a plugin" {
   ARTILLERY_USE_LEGACY_REPORT_FORMAT=1 ARTILLERY_WORKERS=3 ARTILLERY_PLUGIN_PATH="`pwd`/test/plugins/" ./bin/run run -o report.json ./test/scripts/hello_plugin.json
   requestCount1=$(awk '{ sum += $1 } END { print sum }' plugin-data.csv)
