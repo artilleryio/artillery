@@ -59,12 +59,12 @@ test('Telemetry', function (t) {
   t.end();
 });
 
-test('Telemetry with defaults env var', function(t) {
+test('Telemetry with defaults env var', function (t) {
   captureSpy.resetHistory();
-  
+
   process.env.ARTILLERY_TELEMETRY_DEFAULTS = JSON.stringify({
     default1: 'value1',
-    default2: 2,
+    default2: 2
   });
 
   const telemetryClient = telemetry.init();
@@ -81,8 +81,8 @@ test('Telemetry with defaults env var', function(t) {
       isCi: ci.isCI,
       $ip: null,
       default1: 'value1',
-      default2: 2,
-    },
+      default2: 2
+    }
   };
 
   if (ci.isCI) {
@@ -90,9 +90,9 @@ test('Telemetry with defaults env var', function(t) {
   }
 
   t.deepEquals(callArg, expectedEvent, 'Sends telemetry data');
-  
+
   delete process.env.ARTILLERY_TELEMETRY_DEFAULTS;
-  
+
   t.end();
 });
 
