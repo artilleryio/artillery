@@ -82,12 +82,12 @@ Use a Playwright script to describe virtual user scenario:
 
 (Note: this script was generated with [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code). `page` is an instance of [Playwright page](https://playwright.dev/docs/api/class-page/).)
 
-`flow.js`:
+`flows.js`:
 
 ```js
 module.exports = { helloFlow };
 
-function helloFlow(page) {
+async function helloFlow(page) {
   //
   // The code below is just a standard Playwright script:
   //
@@ -177,7 +177,7 @@ By default, only the `page` argument (see Playwright's [`page` API](https://play
 ```js
 module.exports = { helloFlow };
 
-function helloFlow(page) {
+async function helloFlow(page) {
   // Go to https://artillery.io/
   await page.goto('https://artillery.io/');
 }
@@ -188,7 +188,7 @@ The functions also have access to virtual user context and events arguments, whi
 ```js
 module.exports = { helloFlow };
 
-function helloFlow(page, vuContext, events) {
+async function helloFlow(page, vuContext, events) {
   // Increment custom counter:
   events.emit('counter', 'user.page_loads', 1);
   // Go to https://artillery.io/
