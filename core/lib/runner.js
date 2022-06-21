@@ -101,14 +101,14 @@ function prepareScript(script, payload) {
       runnableScript.config.payload = [
         {
           fields: runnableScript.config.payload.fields,
-          reader: createReader(runnableScript.config.payload.order),
+          reader: createReader(runnableScript.config.payload.order, runnableScript.config.payload),
           data: payload
         }
       ];
     } else {
       runnableScript.config.payload = payload;
       _.each(runnableScript.config.payload, function (el) {
-        el.reader = createReader(el.order);
+        el.reader = createReader(el.order, el);
       });
     }
   } else {
@@ -350,6 +350,10 @@ function datafileVariables(script) {
       _.each(el.fields, function (fieldName, j) {
         result[fieldName] = row[j];
       });
+      if (typeof el.name !== 'undefined') {
+        // Make the entire CSV available
+        result[el.name] = el.reader(el.data);
+      }
     });
   }
   return result;
