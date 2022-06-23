@@ -11,7 +11,7 @@ module.exports = createReader;
 function createReader(order, spec) {
   if (order === 'sequence') {
     return createSequencedReader();
-  } else if (typeof order === 'undefined' && (typeof spec?.name !== 'undefined')) {
+  } else if (typeof order === 'undefined' && (typeof spec?.name !== 'undefined') && spec?.loadAll === true) {
     return createEverythingReader(spec);
   } else { // random
     return createRandomReader();
