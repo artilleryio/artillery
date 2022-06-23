@@ -134,7 +134,7 @@
     "tmp": "0.2.1",
     "tough-cookie": "^4.0.0",
     "try-require": "1.2.1",
-    "update-notifier": "^5.1.0",
+    "update-notifier": "^6.0.0",
     "uuid": "^8.0.0",
     "ws": "^7.5.1"
   },
