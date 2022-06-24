@@ -90,11 +90,10 @@ function expectationsPluginCheckExpectations(
   const results = [];
 
   let body = maybeParseBody(res);
-
   _.each(expectations, ex => {
     const checker = Object.keys(ex)[0];
     debug(`checker: ${checker}`);
-    let result = EXPECTATIONS[checker].call(
+    let result = EXPECTATIONS[checker]?.call(
       this,
       ex,
       body,

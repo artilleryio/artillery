@@ -5,7 +5,6 @@
 'use strict';
 
 const debug = require('debug')('plugin:expect');
-const chalk = require('chalk');
 const template = global.artillery ? global.artillery.util.template : require('artillery/util').template;
 const _ = require('lodash');
 
@@ -17,8 +16,47 @@ module.exports = {
   hasProperty: expectHasProperty,
   equals: expectEquals,
   matchesRegexp: expectMatchesRegexp,
-  notHasProperty: expectNotHasProperty
+  notHasProperty: expectNotHasProperty,
+  cdnHit: expectCdnHit,
 };
+
+function expectCdnHit(expectation, body, req, res, userContext) {
+  debug('check cdn');
+  debug('expectation');
+
+  let result = {
+    ok: false,
+    type: 'cdnHit',
+    got: 'cache status header not found'
+  };
+
+  if(expectation.cdnHit) {
+    result.expected = 'a cache header indicating a cache hit';
+  } else {
+    result.expected = 'a cache header indicating a cache miss';
+  }
+
+  const cacheHeaderNames = [
+    'cf-cache-status', // CloudFlare
+    'x-cache',         // CloudFront, Fastly
+    'x-vercel-cache'   // Vercel
+  ];
+
+  const expectedHeaderValues = expectation.cdnHit ? ['hit', 'stale'] : ['miss'];
+
+  for(const h of cacheHeaderNames) {
+    if (res.headers[h]) {
+      for(const headerValue of expectedHeaderValues) {
+        if (res.headers[h].toLowerCase().startsWith(headerValue)) {
+          result.ok = true;
+          result.got = `${h} is ${res.headers[h]}`;
+        }
+      }
+    }
+  }
+
+  return result;
+}
 
 function expectEquals(expectation, body, req, res, userContext) {
   debug('check equals');
