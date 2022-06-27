@@ -1,13 +1,15 @@
 config:
-  target: https://artillery.io
-  processor: ./helpers.js
+  target: https://www.artillery.io
+  payload:
+    - path: ./request-response.csv
+      fields: [url, code]
+      # NOTE: loadAll requires Artillery v2.0.0-19 or later
+      loadAll: true
+      name: data
   plugins:
     expect: {}
 scenarios:
   - flow:
-    # Call our custom function which will create a "data" variable
-    # containing URLs + assertions we want to run:
-    - function: loadRequestData
     # Loop over each element in the data variable, with loop-over
     # Each element in the "data" array can be accessed via the special
     # $loopElement variable.
