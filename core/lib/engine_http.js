@@ -661,8 +661,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             ee.emit('counter', 'http.requests', 1);
             ee.emit('rate', 'http.request_rate');
             req.on('response', function (res) {
+
               self._handleResponse(
-                requestParams.url,
+                requestParams,
                 res,
                 ee,
                 context,
@@ -670,6 +671,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 callback
               );
             });
+
           })
           .on('error', function (err, body, res) {
             if (err.name === 'HTTPError') {
@@ -705,13 +707,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 };
 
 HttpEngine.prototype._handleResponse = function (
-  url,
+  requestParams,
   res,
   ee,
   context,
   maybeCallback,
   callback
 ) {
+  const url = requestParams.url;
   const decompressedRes = decompressResponse(res);
   let code = decompressedRes.statusCode;
   if (!context._enableCookieJar) {
@@ -747,7 +750,15 @@ HttpEngine.prototype._handleResponse = function (
 
     context._successCount++;
     if (!maybeCallback) {
-      callback(null, context);
+      // We're done when:
+      // - 3xx response and not following redirects
+      // - not a 3xx response
+      if ((res.statusCode >= 300 && res.statusCode < 400 && !requestParams.followRedirect) ||
+         (res.statusCode < 300 || res.statusCode >= 400)) {
+        callback(null, context);
+      } else {
+        // should not happen, will hang indefinitely
+      }
     } else {
       maybeCallback(null, res, body);
     }
