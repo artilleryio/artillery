@@ -756,16 +756,15 @@ HttpEngine.prototype._handleResponse = function (
 
 HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
-
   initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
 
   initialContext._jar = new tough.CookieJar();
-  initialContext._enableCookieJar = false;
+  initialContext._enableCookieJar = true;
   // If a default cookie is set, we will use the jar straightaway:
   if (typeof this.config.defaults.cookie === 'object') {
     initialContext._defaultCookie = this.config.defaults.cookie;
-    initialContext._enableCookieJar = true;
   }
+
 
   if (this.config.http && typeof this.config.http.pool !== 'undefined') {
     // Reuse common agents (created in the engine instance constructor)
