@@ -26,12 +26,12 @@ const baseScript = {
   ]
 };
 
-let sandbox;
-let WebsocketMock;
-let wsMockInstance;
-let WebSocketEngine;
+function setup() {
+  let sandbox;
+  let WebsocketMock;
+  let wsMockInstance;
+  let WebSocketEngine;
 
-test('WebSocket engine - setup', (t) => {
   sandbox = sinon.sandbox.create();
   rewiremock.enable();
 
@@ -52,10 +52,17 @@ test('WebSocket engine - setup', (t) => {
 
   WebSocketEngine = require('../../../core/lib/engine_ws');
 
-  t.end();
-});
+  return {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine};
+}
+
+function teardown(sandbox) {
+  sandbox.restore();
+  rewiremock.disable();
+}
+
 
 test('WebSocket engine - proxy', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -97,11 +104,14 @@ test('WebSocket engine - proxy', (t) => {
       'Passes additional configuration properties to the agent constructor'
     );
 
+    teardown(sandbox);
     t.end();
   });
 });
 
 test('WebSocket engine - connect action (string)', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
+
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -136,12 +146,14 @@ test('WebSocket engine - connect action (string)', (t) => {
       t.ok(!err, 'Virtual user finished successfully');
       t.equal(target, expectedTarget, 'Templates connection target');
 
+      teardown(sandbox);
       t.end();
     }
   );
 });
 
 test('WebSocket engine - connect action (function)', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
   t.plan(4);
   const script = _.cloneDeep(baseScript);
 
@@ -194,10 +206,14 @@ test('WebSocket engine - connect action (function)', (t) => {
       [expectedSubProtocol],
       'Processor fn can set WS constructor parameters'
     );
+
+    teardown(sandbox);
   });
 });
 
 test('WebSocket engine - connect action (object)', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
+
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -258,13 +274,7 @@ test('WebSocket engine - connect action (object)', (t) => {
       'Gets headers from the connect object'
     );
 
+    teardown(sandbox);
     t.end();
   });
-});
-
-test('WebSocket engine - teardown', (t) => {
-  sandbox.restore();
-  rewiremock.disable();
-
-  t.end();
 });
