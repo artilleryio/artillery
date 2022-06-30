@@ -12,6 +12,9 @@ const debug = require('debug')('ws');
 const url = require('url');
 const engineUtil = require('./engine_util');
 const template = engineUtil.template;
+const { promisify } = require('util');
+
+const sleep = require('../../lib/util/sleep');
 
 module.exports = WSEngine;
 
@@ -35,13 +38,66 @@ WSEngine.prototype.createScenario = function (scenarioSpec, ee) {
   return self.compile(tasks, scenarioSpec.flow, ee);
 };
 
-function getMessageHandler(context, params, ee, callback) {
-  return function messageHandler(event) {
-    const { data } = event;
+function emitMatches(results, ee) {
+  _.each(results.matches, function (v) {
+    ee.emit('match', v.success, {
+      expected: v.expected,
+      got: v.got,
+      expression: v.expression,
+      strict: v.strict
+    });
+  });
+}
 
+function applyCaptures(results, context) {
+  _.each(results.captures, function (v, k) {
+    _.set(context.vars, k, v.value);
+  });
+}
+
+async function checkMatch(params, data, context) {
+  // TODO: Only try to parse JSON if it's a JSONPath/JMESPath expression
+  let response;
+  try {
+    response = { body: JSON.parse(data) };
+  } catch (err) {
+    response = { body: event.data };
+  }
+
+  const captureOrMatch = promisify(engineUtil.captureOrMatch);
+  try {
+    const result = await captureOrMatch(params, response, context);
+    const { captures = {}, matches = {} } = result;
+
+    debug('matches: ', matches);
+    debug('captures: ', captures);
+
+    // match and capture are strict by default:
+    const haveFailedMatches = _.some(result.matches, function (v) {
+      return !v.success && v.strict !== false;
+    });
+
+    const haveFailedCaptures = _.some(result.captures, function (v) {
+      return v.failed;
+    });
+
+    if ((haveFailedMatches || haveFailedCaptures)) {
+      return [new Error('Failed matches or captures'), result];
+    } else {
+      return [null, result];
+    }
+  } catch (err) {
+    return [err, null];
+  }
+}
+
+function getMessageHandler(isWait, context, params, ee, callback) {
+  return function messageHandler(event) {
+    debug({isWait, params});
+    const { data } = event;
     debug('WS receive: %s', data);
 
-    if (!data) {
+    if (!data && !isWait) {
       return callback(new Error('Empty response from WS server'), context);
     }
 
@@ -57,7 +113,7 @@ function getMessageHandler(context, params, ee, callback) {
       fauxResponse,
       context,
       function captured(err, result) {
-        if (err) {
+        if (err && !isWait) {
           ee.emit('error', err.message || err.code);
           return callback(err, context);
         }
@@ -76,25 +132,28 @@ function getMessageHandler(context, params, ee, callback) {
           return v.failed;
         });
 
-        if (haveFailedMatches || haveFailedCaptures) {
-          // TODO: Emit the details of each failed capture/match
-          return callback(new Error('Failed capture or match'), context);
-        }
-
-        _.each(result.matches, function (v) {
-          ee.emit('match', v.success, {
-            expected: v.expected,
-            got: v.got,
-            expression: v.expression,
-            strict: v.strict
+        if ((haveFailedMatches || haveFailedCaptures)) {
+          if(!isWait) {
+            // TODO: Emit the details of each failed capture/match
+            return callback(new Error('Failed capture or match'), context);
+          } else {
+            debug('message not matched by wait, continue waiting');
+          }
+        } else {
+          _.each(result.matches, function (v) {
+            ee.emit('match', v.success, {
+              expected: v.expected,
+              got: v.got,
+              expression: v.expression,
+              strict: v.strict
+            });
           });
-        });
 
-        _.each(result.captures, function (v, k) {
-          _.set(context.vars, k, v.value);
-        });
-
-        return callback(null, context);
+          _.each(result.captures, function (v, k) {
+            _.set(context.vars, k, v.value);
+          });
+          return callback(null, context);
+        }
       }
     );
   };
@@ -153,24 +212,37 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   }
 
   const f = function (context, callback) {
-    ee.emit('counter', 'websocket.messages_sent', 1);
-    ee.emit('rate', 'websocket.send_rate');
     const params = requestSpec.send || requestSpec.wait;
+    const isWait = typeof requestSpec.wait !== 'undefined';
 
     // match exists on a string, so check it's not one first
-    let captureOrMatch =
-      !_.isString(params) && (params.capture || params.match);
+    const captureOrMatch = !_.isString(params) && (params.capture || params.match);
+
+    // Backwards compatible with previous version of `send` API
+    let payload = template(captureOrMatch ? params.payload : params, context);
+
+    // TODO: Make configurable
+    const DEFAULT_WAIT_TIMEOUT = 120;
 
     if (captureOrMatch) {
-      // only process response if we're capturing
-      context.ws.onmessage = getMessageHandler(context, params, ee, callback);
-    } else {
-      // Reset onmessage to stop steps interfering with each other
-      context.ws.onmessage = undefined;
-    }
+      if (isWait) {
+        context._deferredChecks.push({
+          deadline: Date.now() + parseInt(params.timeout || DEFAULT_WAIT_TIMEOUT, 10) * 1000,
+          processed: false,
+          spec: params,
+        });
+      } else {
 
-    // Backwards compatible with previous version of `send` api
-    let payload = template(captureOrMatch ? params.payload : params, context);
+        debug({captureOrMatch, params});
+
+        // TODO: Assert that this is null
+        context._immediateCheck = {
+          deadline: Date.now() + parseInt(params.timeout || DEFAULT_WAIT_TIMEOUT, 10) * 1000,
+          processed: false,
+          spec: params,
+        };
+      }
+    }
 
     if (payload) {
       if (typeof payload === 'object') {
@@ -182,17 +254,18 @@ WSEngine.prototype.step = function (requestSpec, ee) {
       debug('WS send: %s', payload);
 
       context.ws.send(payload, function (err) {
+        ee.emit('counter', 'websocket.messages_sent', 1);
+        ee.emit('rate', 'websocket.send_rate');
+
         if (err) {
           debug(err);
           ee.emit('error', err);
-          return callback(err, null);
+          return callback(err, context);
         }
-
-        // End step if we're not capturing
-        if (!captureOrMatch) {
-          return callback(null, context);
-        }
+        return callback (null, context);
       });
+    } else {
+      return callback(null, context);
     }
   };
 
@@ -287,7 +360,70 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
       ws.on('open', function () {
         contextWithoutWsArgs.ws = ws;
 
+        contextWithoutWsArgs._deferredChecks = []; // append only
+        /*
+          deadline -- timestamp, default is 120s
+          processed -- boolean (either matched or expired, not taken into account anymore)
+          spec -- object
+         */
+        contextWithoutWsArgs._immediateCheck = null;
+        contextWithoutWsArgs._processingImmediate = false;
+
+        setInterval(() => {
+          for(const checkSpec of contextWithoutWsArgs._deferredChecks) {
+            const now = Date.now();
+            if (!checkSpec.processed && (checkSpec.deadline < now)) {              
+              checkSpec.processed = true;
+              checkSpec.timedout = true;
+              ee.emit('error', 'wait_timeout');
+            }
+          }
+
+          if (contextWithoutWsArgs._immediateCheck && contextWithoutWsArgs._immediateCheck.deadline < Date.now()) {
+            contextWithoutWsArgs._immediateCheck = null;
+            contextWithoutWsArgs._immediateCheckTimedout = true;
+            ee.emit('error', 'wait_timeout');
+          }
+        }, 250).unref();
+
         return cb(null, contextWithoutWsArgs);
+      });
+
+      ws.on('message', async function (data) {
+        debug('WS receive: %s', data, Date.now());
+
+        ee.emit ('counter', 'websocket.message_received', 1);
+
+        if (contextWithoutWsArgs._immediateCheck && !contextWithoutWsArgs._processingImmediate) {
+          contextWithoutWsArgs._processingImmediate = true;
+          const [ err, results ] = await checkMatch(contextWithoutWsArgs._immediateCheck.spec, data, context);
+          if (err) {
+            ee.emit('error', 'failed_capture_or_match');
+          } else {
+            emitMatches(results, ee);
+            applyCaptures(results, contextWithoutWsArgs);
+          }
+
+          contextWithoutWsArgs._immediateCheck = null;
+          contextWithoutWsArgs._processingImmediate = false;
+        }
+
+        for(const checkSpec of contextWithoutWsArgs._deferredChecks) {
+          if (!checkSpec.processed) {
+            // A "wait" check is completed in two ways:
+            // - It exceeds its deadline -- checked at interval
+            // - It matches successfully
+
+            const [ err, results ] = await checkMatch(checkSpec.spec, data, contextWithoutWsArgs);
+            if (!err) {
+              emitMatches(results, ee);
+              applyCaptures(results, ee);
+              checkSpec.processed = true;
+            } else {
+              debug(err);
+            }
+          }
+        }
       });
 
       ws.once('error', function (err) {
@@ -302,17 +438,31 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
 
     const steps = _.flatten([zero, one, tasks]);
 
-    async.waterfall(steps, function scenarioWaterfallCb(err, context) {
-      if (err) {
-        debug(err);
-      }
+    async.waterfall(
+      steps,
+      async function scenarioWaterfallCb(err, context) {
+        if (err) {
+          debug(err);
+        }
 
-      if (context && context.ws) {
-        context.ws.close();
-      }
+        debug('waiting for outstanding checks');
+        // TODO: Emit errors for checks that timed out
+        while(true) {
+          const outstandingWaits = context._deferredChecks.filter(c => !c.processed && !c.timedout);
 
-      return callback(err, context);
-    });
+          if (!err && (outstandingWaits.length > 0 || context._immediateCheck)) {
+            await sleep(200);
+          } else {            
+            break;
+          }
+        }
+
+        if (context && context.ws) {
+          context.ws.close();
+        }
+
+        return callback(err, context);
+      });
   };
 };
 
