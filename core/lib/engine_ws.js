@@ -22,7 +22,7 @@ function WSEngine(script) {
 WSEngine.prototype.createScenario = function (scenarioSpec, ee) {
   const self = this;
   const tasks = _.map(scenarioSpec.flow, function (rs) {
-    if (rs.think) {
+    if (typeof rs.think !== 'undefined') {
       return engineUtil.createThink(
         rs,
         _.get(self.config, 'defaults.think', {})

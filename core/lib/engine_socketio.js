@@ -30,7 +30,7 @@ SocketIoEngine.prototype.createScenario = function (scenarioSpec, ee) {
   this.socketioOpts = { ...this.socketioOpts, ...scenarioSpec.socketio };
 
   const tasks = _.map(scenarioSpec.flow, function (rs) {
-    if (rs.think) {
+    if (typeof rs.think !== 'undefined') {
       return engineUtil.createThink(
         rs,
         _.get(self.config, 'defaults.think', {})

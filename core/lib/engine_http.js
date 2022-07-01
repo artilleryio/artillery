@@ -184,11 +184,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     });
   }
 
-  if (requestSpec.think) {
+  if (typeof requestSpec.think !== 'undefined') {
     return engineUtil.createThink(requestSpec, self.config.defaults.think);
   }
 
-  if (requestSpec.log) {
+  if (typeof requestSpec.log !== 'undefined') {
     return function (context, callback) {
       console.log(template(requestSpec.log, context));
       return process.nextTick(function () {
