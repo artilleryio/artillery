@@ -100,7 +100,7 @@
     "cheerio": "^1.0.0-rc.10",
     "ci-info": "^2.0.0",
     "cli-highlight": "^2.1.11",
-    "cli-table3": "^0.6.1",
+    "cli-table3": "^0.6.2",
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
     "decompress-response": "^6.0.0",
