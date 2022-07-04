@@ -90,6 +90,7 @@
     "@oclif/config": "^1.18.3",
     "@oclif/plugin-help": "^3.3.1",
     "agentkeepalive": "^4.1.0",
+    "archiver": "^5.3.1",
     "arrivals": "^2.1.2",
     "artillery-plugin-ensure": "^1.1.1",
     "artillery-plugin-expect": "^2.0.1",
