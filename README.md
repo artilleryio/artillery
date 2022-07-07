@@ -1,5 +1,5 @@
 
-<img width="1012" alt="Modern testing for DevOps and SRE" src="https://user-images.githubusercontent.com/1490/145614295-12af8edc-4e17-4c76-af16-fa31faa12e54.png">
+<img width="1012" alt="Modern testing for DevOps and SRE" src="https://user-images.githubusercontent.com/1490/177872672-2d2513bb-16f5-4637-b2d9-dab30a1fbad8.png">
 
 
 
