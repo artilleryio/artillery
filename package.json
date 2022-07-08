@@ -98,6 +98,7 @@
     "artillery-plugin-metrics-by-endpoint": "^1.0.2",
     "artillery-plugin-publish-metrics": "^2.0.0",
     "async": "^2.6.4",
+    "aws-sdk": "^2.1170.0",
     "chalk": "^2.4.2",
     "cheerio": "^1.0.0-rc.10",
     "ci-info": "^2.0.0",
