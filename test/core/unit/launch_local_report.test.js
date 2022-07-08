@@ -1,6 +1,6 @@
 'use strict';
 
-const createLauncher = require('../../../lib/launch-local');
+const createLauncher = require('../../../lib/launch-platform');
 const fs = require('fs');
 const path = require('path');
 const sinon = require('sinon');
