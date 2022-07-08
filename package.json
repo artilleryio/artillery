@@ -86,6 +86,7 @@
   },
   "dependencies": {
     "@artilleryio/sketches-js": "^1.0.4",
+    "@aws-sdk/credential-providers": "^3.121.0",
     "@oclif/command": "^1.8.16",
     "@oclif/config": "^1.18.3",
     "@oclif/plugin-help": "^3.3.1",
@@ -131,6 +132,7 @@
     "socket.io-client": "^4.5.1",
     "socketio-wildcard": "^2.0.0",
     "sprintf-js": "^1.1.2",
+    "sqs-consumer": "^5.7.0",
     "temp": "^0.9.4",
     "tmp": "0.2.1",
     "tough-cookie": "^4.0.0",
