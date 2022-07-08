@@ -1,0 +1,16 @@
+{
+  "name": "lambda-handler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "artillery": "^2.0.0-20",
+    "artillery-plugin-sqs-reporter": "^1.2.0"
+  }
+}
