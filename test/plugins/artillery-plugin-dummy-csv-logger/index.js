@@ -10,7 +10,11 @@ module.exports = Plugin;
 
 function Plugin(config, ee) {
   ee.on('stats', function (stats) {
+  });
+
+  ee.on('done', function(stats) {
     const report = stats.report();
+    console.log({report});
     fs.appendFileSync('plugin-data.csv', report.requestsCompleted + '\n');
   });
 
