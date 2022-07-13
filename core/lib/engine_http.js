@@ -766,7 +766,10 @@ HttpEngine.prototype.setInitialContext = function (initialContext, scenarioSpec)
   const usesCookies = typeof this.config.defaults.cookie === 'object'
     || scenarioSpec.some(s => Object.values(s).some(e => e.cookie != undefined));
   if (usesCookies) {
-    initialContext._defaultCookie = this.config.defaults.cookie;
+    if (typeof this.config.defaults.cookie === 'object') {
+      initialContext._defaultCookie = this.config.defaults.cookie;
+    }
+
     initialContext._enableCookieJar = true;
   }
 
