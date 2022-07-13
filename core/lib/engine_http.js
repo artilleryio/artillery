@@ -761,15 +761,14 @@ HttpEngine.prototype.setInitialContext = function (initialContext, scenarioSpec)
 
   initialContext._jar = new tough.CookieJar();
   initialContext._enableCookieJar = false;
-  // If a cookie is set by default or is set in at least one scenario, we will use the jar straightaway:
 
+  // If a cookie is set by default or is set in at least one scenario, we will use the jar straightaway:
   const usesCookies = typeof this.config.defaults.cookie === 'object'
     || scenarioSpec.some(s => Object.values(s).some(e => e.cookie != undefined));
   if (usesCookies) {
     initialContext._defaultCookie = this.config.defaults.cookie;
     initialContext._enableCookieJar = true;
   }
-
 
   if (this.config.http && typeof this.config.http.pool !== 'undefined') {
     // Reuse common agents (created in the engine instance constructor)
