@@ -23,7 +23,6 @@ const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 const decompressResponse = require('decompress-response');
-const e = require('express');
 
 module.exports = HttpEngine;
 
@@ -73,6 +72,7 @@ function createAgents(proxies, opts) {
 
 function HttpEngine(script) {
   this.config = script.config;
+
   if (typeof this.config.defaults === 'undefined') {
     this.config.defaults = {};
   }
@@ -767,7 +767,7 @@ HttpEngine.prototype.setInitialContext = function (initialContext, scenarioSpec)
     || scenarioSpec.some(s => Object.values(s).some(e => e.cookie != undefined));
   if (hasScenarioWithCookie) {
     initialContext._defaultCookie = this.config.defaults.cookie;
-		initialContext._enableCookieJar = true;
+    initialContext._enableCookieJar = true;
   }
 
 
