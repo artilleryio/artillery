@@ -763,9 +763,9 @@ HttpEngine.prototype.setInitialContext = function (initialContext, scenarioSpec)
   initialContext._enableCookieJar = false;
   // If a cookie is set by default or is set in at least one scenario, we will use the jar straightaway:
 
-  const hasScenarioWithCookie = typeof this.config.defaults.cookie === 'object'
+  const usesCookies = typeof this.config.defaults.cookie === 'object'
     || scenarioSpec.some(s => Object.values(s).some(e => e.cookie != undefined));
-  if (hasScenarioWithCookie) {
+  if (usesCookies) {
     initialContext._defaultCookie = this.config.defaults.cookie;
     initialContext._enableCookieJar = true;
   }
