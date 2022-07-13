@@ -23,6 +23,7 @@ const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 const decompressResponse = require('decompress-response');
+const e = require('express');
 
 module.exports = HttpEngine;
 
@@ -72,7 +73,6 @@ function createAgents(proxies, opts) {
 
 function HttpEngine(script) {
   this.config = script.config;
-
   if (typeof this.config.defaults === 'undefined') {
     this.config.defaults = {};
   }
@@ -754,15 +754,20 @@ HttpEngine.prototype._handleResponse = function (
   });
 };
 
-HttpEngine.prototype.setInitialContext = function (initialContext) {
+HttpEngine.prototype.setInitialContext = function (initialContext, scenarioSpec) {
   initialContext._successCount = 0;
+
   initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
 
   initialContext._jar = new tough.CookieJar();
-  initialContext._enableCookieJar = true;
-  // If a default cookie is set, we will use the jar straightaway:
-  if (typeof this.config.defaults.cookie === 'object') {
+  initialContext._enableCookieJar = false;
+  // If a cookie is set by default or is set in at least one scenario, we will use the jar straightaway:
+
+  const hasScenarioWithCookie = typeof this.config.defaults.cookie === 'object'
+    || scenarioSpec.some(s => Object.values(s).some(e => e.cookie != undefined));
+  if (hasScenarioWithCookie) {
     initialContext._defaultCookie = this.config.defaults.cookie;
+		initialContext._enableCookieJar = true;
   }
 
 
@@ -795,7 +800,7 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
 
   return function scenario(initialContext, callback) {
-    initialContext = self.setInitialContext(initialContext);
+    initialContext = self.setInitialContext(initialContext, scenarioSpec);
     let steps = _.flatten([
       function zero(cb) {
         ee.emit('started');
