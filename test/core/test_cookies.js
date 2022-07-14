@@ -97,8 +97,27 @@ test('no default cookie', function (t) {
   });
 });
 
-test('no default cookie still sends defined cookies', function (t) {
+test('no default cookie still sends cookies defined in script', function (t) {
   var script = require('./scripts/no_defaults_cookies.json');
+  runner(script).then(function (ee) {
+    ee.on('done', function (nr) {
+      const report = SSMS.legacyReport(nr).report();
+      t.ok(
+        report.codes[200] && report.codes[200] > 0,
+        'There should be some 200s'
+      );
+      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      ee.stop().then(() => {
+        t.end();
+      });
+    });
+    ee.run();
+  });
+});
+
+test('no default cookie still sends cookies defined in custom JS', function (t) {
+  var script = require('./scripts/test-set-cookie-js.json');
+  var js = require('./scripts/test-set-cookie-js.js');
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();

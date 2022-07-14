@@ -1,0 +1,16 @@
+{
+  "config": {
+      "target": "http://127.0.0.1:3003",
+      "processor": "./test-set-cookie-js.js",
+      "phases": [
+        {"duration": 10, "arrivalRate": 1}
+      ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {"get": {"url": "/expectscookie", "beforeRequest": "setCookie" } }
+      ]
+    }
+  ]
+}
