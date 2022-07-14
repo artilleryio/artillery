@@ -761,7 +761,7 @@ HttpEngine.prototype.setInitialContext = function (initialContext) {
 
   initialContext._jar = new tough.CookieJar();
   initialContext._enableCookieJar = false;
-  // If a cookie is set by default or is set in at least one scenario, we will use the jar straightaway:
+  // If a default cookie is set, we will use the jar straightaway:
   if (typeof this.config.defaults.cookie === 'object') {
     initialContext._defaultCookie = this.config.defaults.cookie;
     initialContext._enableCookieJar = true;
