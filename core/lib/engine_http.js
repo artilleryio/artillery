@@ -754,7 +754,7 @@ HttpEngine.prototype._handleResponse = function (
   });
 };
 
-HttpEngine.prototype.setInitialContext = function (initialContext, scenarioSpec) {
+HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
 
   initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
@@ -797,7 +797,7 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
 
   return function scenario(initialContext, callback) {
-    initialContext = self.setInitialContext(initialContext, scenarioSpec);
+    initialContext = self.setInitialContext(initialContext);
     let steps = _.flatten([
       function zero(cb) {
         ee.emit('started');
