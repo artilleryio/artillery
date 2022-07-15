@@ -268,7 +268,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       timeout: timeout * 1000
     });
 
-    if (context._enableCookieJar || typeof (params.cookie) === 'object') {
+    if (context._enableCookieJar) {
       requestParams.cookieJar = context._jar;
     }
 
