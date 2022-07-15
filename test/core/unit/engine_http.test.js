@@ -303,14 +303,12 @@ test('HTTP engine', function (tap) {
   });
 
   tap.test('custom cookie js', function (t) {
-    const cookie = 'something';
-    const cookieValue = 'abcde';
     const target = nock('http://localhost:8888')
       .get('/')
       .reply(200, function () {
         t.equal(
-          this.req.headers[cookie],
-          cookie + '=' + cookieValue,
+          this.req.headers.cookie,
+          'something=1234',
           'Cookie not found. Should be set in processor logic'
         );
 
@@ -322,7 +320,7 @@ test('HTTP engine', function (tap) {
         target: 'http://localhost:8888',
         processor: {
           setCookie: function(requestParams, context, ee, next) {
-            requestParams.cookie = { cookie: cookieValue };
+            requestParams.cookie = { 'something': '1234' };
             return next();
           },
         },
