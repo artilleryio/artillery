@@ -302,6 +302,58 @@ test('HTTP engine', function (tap) {
     });
   });
 
+  tap.test('custom cookie js', function (t) {
+    const cookie = 'something';
+    const cookieValue = 'abcde';
+    const target = nock('http://localhost:8888')
+      .get('/')
+      .reply(200, function () {
+        t.equal(
+          this.req.cookie[cookie],
+          cookieValue,
+          'Cookie not found. Should be set in processor logic'
+        );
+
+        return 'ok';
+      });
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      processor: {
+        setCookie: function(requestParams, context, ee, next) {
+        requestParams.cookie = { cookie : "FAILING TEST" };
+          return next();
+        },
+      scenarios: [
+        {
+          flow: [
+            {
+              get: {
+                url: '/',
+                beforeRequest: "setCookie"
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    runScenario({ vars: {} }, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), 'Should have made a request to /');
+
+      t.end();
+    });
+  });
   tap.test('url and uri parameters', function (t) {
     const target = nock('http://localhost:8888')
       .get('/hello?hello=world')
