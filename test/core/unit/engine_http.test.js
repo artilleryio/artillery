@@ -309,8 +309,8 @@ test('HTTP engine', function (tap) {
       .get('/')
       .reply(200, function () {
         t.equal(
-          this.req.cookie[cookie],
-          cookieValue,
+          this.req.headers[cookie],
+          cookie + '=' + cookieValue,
           'Cookie not found. Should be set in processor logic'
         );
 
@@ -319,12 +319,12 @@ test('HTTP engine', function (tap) {
 
     const script = {
       config: {
-        target: 'http://localhost:8888'
-      },
-      processor: {
-        setCookie: function(requestParams, context, ee, next) {
-        requestParams.cookie = { cookie : "FAILING TEST" };
-          return next();
+        target: 'http://localhost:8888',
+        processor: {
+          setCookie: function(requestParams, context, ee, next) {
+            requestParams.cookie = { cookie: cookieValue };
+            return next();
+          },
         },
       },
       scenarios: [
