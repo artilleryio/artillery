@@ -268,7 +268,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       timeout: timeout * 1000
     });
 
-    if (context._enableCookieJar || typeof (requestParams.cookie) === 'object') {
+    if (context._enableCookieJar || typeof (params.cookie) === 'object') {
       requestParams.cookieJar = context._jar;
     }
 
@@ -398,13 +398,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         requestParams.headers = templatedHeaders;
 
         if (
-          typeof params.cookie === 'object' ||
+          typeof requestParams.cookie === 'object' ||
           typeof context._defaultCookie === 'object'
         ) {
+          requestParams.cookieJar = context._jar;
           const cookie = Object.assign(
             {},
             context._defaultCookie,
-            params.cookie
+            requestParams.cookie
           );
           Object.keys(cookie).forEach(function (k) {
             context._jar.setCookieSync(
