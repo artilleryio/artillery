@@ -326,6 +326,7 @@ test('HTTP engine', function (tap) {
         requestParams.cookie = { cookie : "FAILING TEST" };
           return next();
         },
+      },
       scenarios: [
         {
           flow: [
