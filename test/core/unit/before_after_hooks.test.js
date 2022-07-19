@@ -1,10 +1,10 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const assert = require('assert');
 const http = require('http');
 const { cloneDeep } = require('lodash');
-const createLauncher = require('../../../lib/launch-local');
+const createLauncher = require('../../../lib/launch-platform');
 const {
   beforeHookBeforeRequest,
   afterHookBeforeRequest
@@ -63,40 +63,40 @@ const script = {
 
 const authToken = 'abcdefg';
 
-test('before/after hooks', async (t) => {
+test('before/after hooks', (t) => {
   const s = cloneDeep(script);
-  const runner = await createLauncher(s, {}, { scriptPath: '.' });
+  createLauncher(s, {}, { scriptPath: '.' }).then((runner) => {
+    runner.events.once('done', async () => {
+      await runner.shutdown();
 
-  runner.events.once('done', async () => {
-    await runner.shutdown();
+      t.equal(
+        stats[beforeEndpoint],
+        1,
+        'should have made one request to the "before" endpoint'
+      );
+      t.equal(
+        stats[afterEndpoint],
+        1,
+        'should have made one request to "after" endpoint'
+      );
 
-    t.equal(
-      stats[beforeEndpoint],
-      1,
-      'should have made one request to the "before" endpoint'
-    );
-    t.equal(
-      stats[afterEndpoint],
-      1,
-      'should have made one request to "after" endpoint'
-    );
+      t.equal(
+        stats[scenarioEndpoint],
+        script.config.phases[0].duration * script.config.phases[0].arrivalRate,
+        'should call the endpoint in the scenario section'
+      );
 
-    t.equal(
-      stats[scenarioEndpoint],
-      script.config.phases[0].duration * script.config.phases[0].arrivalRate,
-      'should call the endpoint in the scenario section'
-    );
+      // reset stats
+      stats = {};
 
-    // reset stats
-    stats = {};
+      t.end();
+    });
 
-    t.end();
+    runner.run();
   });
-
-  runner.run();
 });
 
-test('before/after hooks - processor', async (t) => {
+test('before/after hooks - processor', (t) => {
   const s = cloneDeep(script);
 
   beforeHookBeforeRequest.resetHistory();
@@ -120,30 +120,30 @@ test('before/after hooks - processor', async (t) => {
     }
   };
 
-  const runner = await createLauncher(s, {}, { scriptPath: '.' });
+  createLauncher(s, {}, { scriptPath: '.' }).then((runner) => {
+    runner.events.once('done', async () => {
+      await runner.shutdown();
 
-  runner.events.once('done', async () => {
-    await runner.shutdown();
+      t.ok(
+        beforeHookBeforeRequest.calledOnce,
+        'should call processor functions in before hook'
+      );
+      t.ok(
+        afterHookBeforeRequest.calledOnce,
+        'should call processor functions in after hook'
+      );
 
-    t.ok(
-      beforeHookBeforeRequest.calledOnce,
-      'should call processor functions in before hook'
-    );
-    t.ok(
-      afterHookBeforeRequest.calledOnce,
-      'should call processor functions in after hook'
-    );
+      // reset stats
+      stats = {};
 
-    // reset stats
-    stats = {};
+      t.end();
+    });
 
-    t.end();
+    runner.run();
   });
-
-  runner.run();
 });
 
-test('before/after hooks - payload', async (t) => {
+test('before/after hooks - payload', (t) => {
   const s = cloneDeep(script);
   const payloadValue = 'value';
 
@@ -151,45 +151,45 @@ test('before/after hooks - payload', async (t) => {
     {
       path: '.',
       fields: ['field1'],
-      data: [[payloadValue]],
-    },
+      data: [[payloadValue]]
+    }
   ];
 
   s.before.flow[0] = {
     ...s.before.flow[0],
     post: {
       ...s.before.flow[0].post,
-      url: `${beforeEndpoint}/{{ field1 }}`,
-    },
+      url: `${beforeEndpoint}/{{ field1 }}`
+    }
   };
 
-  const runner = await createLauncher(s, s.config.payload, { scriptPath: '.' });
+  createLauncher(s, s.config.payload, { scriptPath: '.' }).then((runner) => {
+    runner.events.once('done', async () => {
+      await runner.shutdown();
 
-  runner.events.once('done', async () => {
-    await runner.shutdown();
+      t.equal(
+        stats[`${beforeEndpoint}/${payloadValue}`],
+        1,
+        'should be able to use payload values in the "before" hook'
+      );
 
-    t.equal(
-      stats[`${beforeEndpoint}/${payloadValue}`],
-      1,
-      'should be able to use payload values in the "before" hook'
-    );
+      t.equal(
+        stats[scenarioEndpoint],
+        script.config.phases[0].duration * script.config.phases[0].arrivalRate,
+        'should call the endpoint in the scenario section'
+      );
 
-    t.equal(
-      stats[scenarioEndpoint],
-      script.config.phases[0].duration * script.config.phases[0].arrivalRate,
-      'should call the endpoint in the scenario section'
-    );
+      // reset stats
+      stats = {};
 
-    // reset stats
-    stats = {};
+      t.end();
+    });
 
-    t.end();
+    runner.run();
   });
-
-  runner.run();
 });
 
-test('before/after hooks - teardown', async (t) => {
+test('before/after hooks - teardown', (t) => {
   targetServer.close(t.end);
 });
 

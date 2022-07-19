@@ -184,11 +184,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     });
   }
 
-  if (requestSpec.think) {
+  if (typeof requestSpec.think !== 'undefined') {
     return engineUtil.createThink(requestSpec, self.config.defaults.think);
   }
 
-  if (requestSpec.log) {
+  if (typeof requestSpec.log !== 'undefined') {
     return function (context, callback) {
       console.log(template(requestSpec.log, context));
       return process.nextTick(function () {
@@ -661,8 +661,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             ee.emit('counter', 'http.requests', 1);
             ee.emit('rate', 'http.request_rate');
             req.on('response', function (res) {
+
               self._handleResponse(
-                requestParams.url,
+                requestParams,
                 res,
                 ee,
                 context,
@@ -670,6 +671,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 callback
               );
             });
+
           })
           .on('error', function (err, body, res) {
             if (err.name === 'HTTPError') {
@@ -705,13 +707,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 };
 
 HttpEngine.prototype._handleResponse = function (
-  url,
+  requestParams,
   res,
   ee,
   context,
   maybeCallback,
   callback
 ) {
+  const url = requestParams.url;
   const decompressedRes = decompressResponse(res);
   let code = decompressedRes.statusCode;
   if (!context._enableCookieJar) {
@@ -727,11 +730,7 @@ HttpEngine.prototype._handleResponse = function (
   ee.emit('counter', 'http.codes.' + code, 1);
   ee.emit('counter', 'http.responses', 1);
   // ee.emit('rate', 'http.response_rate');
-  ee.emit(
-    'histogram',
-    'http.response_time',
-    res.timings.phases.firstByte
-  );
+  ee.emit('histogram', 'http.response_time', res.timings.phases.firstByte);
   if (this.extendedHTTPMetrics) {
     ee.emit('histogram', 'http.dns', res.timings.phases.dns);
     ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
@@ -751,7 +750,15 @@ HttpEngine.prototype._handleResponse = function (
 
     context._successCount++;
     if (!maybeCallback) {
-      callback(null, context);
+      // We're done when:
+      // - 3xx response and not following redirects
+      // - not a 3xx response
+      if ((res.statusCode >= 300 && res.statusCode < 400 && !requestParams.followRedirect) ||
+         (res.statusCode < 300 || res.statusCode >= 400)) {
+        callback(null, context);
+      } else {
+        // should not happen, will hang indefinitely
+      }
     } else {
       maybeCallback(null, res, body);
     }

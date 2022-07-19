@@ -1,0 +1,6 @@
+config:
+  target: "https://www.wontresolve.none"
+scenarios:
+  - flow:
+      - get:
+          url: "{{ $processEnvironment.URL }}"

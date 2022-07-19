@@ -9,7 +9,7 @@ const _ = require('lodash');
 
 const io = require('socket.io-client');
 
-const deepEqual = require('deep-equal');
+const deepEqual = require('fast-deep-equal');
 const debug = require('debug')('socketio');
 const engineUtil = require('./engine_util');
 const EngineHttp = require('./engine_http');
@@ -30,7 +30,7 @@ SocketIoEngine.prototype.createScenario = function (scenarioSpec, ee) {
   this.socketioOpts = { ...this.socketioOpts, ...scenarioSpec.socketio };
 
   const tasks = _.map(scenarioSpec.flow, function (rs) {
-    if (rs.think) {
+    if (typeof rs.think !== 'undefined') {
       return engineUtil.createThink(
         rs,
         _.get(self.config, 'defaults.think', {})

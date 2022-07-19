@@ -4,7 +4,7 @@
 
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const sinon = require('sinon');
 const rewiremock = require('rewiremock/node');
 
@@ -26,12 +26,12 @@ const baseScript = {
   ]
 };
 
-let sandbox;
-let WebsocketMock;
-let wsMockInstance;
-let WebSocketEngine;
+function setup() {
+  let sandbox;
+  let WebsocketMock;
+  let wsMockInstance;
+  let WebSocketEngine;
 
-test('WebSocket engine - setup', (t) => {
   sandbox = sinon.sandbox.create();
   rewiremock.enable();
 
@@ -52,10 +52,17 @@ test('WebSocket engine - setup', (t) => {
 
   WebSocketEngine = require('../../../core/lib/engine_ws');
 
-  t.end();
-});
+  return {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine};
+}
+
+function teardown(sandbox) {
+  sandbox.restore();
+  rewiremock.disable();
+}
+
 
 test('WebSocket engine - proxy', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -82,12 +89,12 @@ test('WebSocket engine - proxy', (t) => {
   runScenario({}, (err) => {
     const [, , websocketOptions] = WebsocketMock.args[0];
 
-    t.assert(!err, 'Virtual user finished successfully');
-    t.true(
+    t.ok(!err, 'Virtual user finished successfully');
+    t.ok(
       websocketOptions.agent instanceof HttpsProxyAgent,
       'Passes an agent to the WebSocket constructor'
     );
-    t.true(
+    t.ok(
       websocketOptions.agent.proxy.href.startsWith(script.config.ws.proxy.url),
       'Gets the proxy url from the scenario'
     );
@@ -97,11 +104,14 @@ test('WebSocket engine - proxy', (t) => {
       'Passes additional configuration properties to the agent constructor'
     );
 
+    teardown(sandbox);
     t.end();
   });
 });
 
 test('WebSocket engine - connect action (string)', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
+
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -133,15 +143,17 @@ test('WebSocket engine - connect action (string)', (t) => {
     (err) => {
       const [target] = WebsocketMock.args[0];
 
-      t.assert(!err, 'Virtual user finished successfully');
+      t.ok(!err, 'Virtual user finished successfully');
       t.equal(target, expectedTarget, 'Templates connection target');
 
+      teardown(sandbox);
       t.end();
     }
   );
 });
 
 test('WebSocket engine - connect action (function)', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
   t.plan(4);
   const script = _.cloneDeep(baseScript);
 
@@ -156,12 +168,12 @@ test('WebSocket engine - connect action (function)', (t) => {
 
   script.config.processor = {
     connectionHook: (params, userContext, callback) => {
-      t.equals(
+      t.equal(
         params.target,
         script.config.target,
         'Processor fn receives global config target'
       );
-      t.deepEqual(userContext, context, 'Processor fn receives user\'s context');
+      t.same(userContext, context, "Processor fn receives user's context");
 
       params.subprotocols = [expectedSubProtocol];
 
@@ -188,16 +200,20 @@ test('WebSocket engine - connect action (function)', (t) => {
   runScenario(context, (err) => {
     const [, subprotocols] = WebsocketMock.args[0];
 
-    t.assert(!err, 'Virtual user finished successfully');
-    t.deepEqual(
+    t.ok(!err, 'Virtual user finished successfully');
+    t.same(
       subprotocols,
       [expectedSubProtocol],
       'Processor fn can set WS constructor parameters'
     );
+
+    teardown(sandbox);
   });
 });
 
 test('WebSocket engine - connect action (object)', (t) => {
+  const {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine} = setup();
+
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -237,20 +253,20 @@ test('WebSocket engine - connect action (object)', (t) => {
   runScenario(context, (err) => {
     const [target, subprotocols, wsOptions] = WebsocketMock.args[0];
 
-    t.assert(!err, 'Virtual user finished successfully');
-    t.equals(target, connectHook.target, 'Overrides connection target');
+    t.ok(!err, 'Virtual user finished successfully');
+    t.equal(target, connectHook.target, 'Overrides connection target');
     t.ok(
       wsOptions.agent.proxy.href.startsWith(connectHook.proxy.url),
       'Gets the proxy url from the connect object'
     );
 
-    t.deepEqual(
+    t.same(
       subprotocols,
       connectHook.subprotocols,
       'Gets suprotocols from the connect object'
     );
 
-    t.deepEqual(
+    t.same(
       wsOptions.headers,
       {
         'Sec-WebSocket-Key': 'abcde'
@@ -258,13 +274,7 @@ test('WebSocket engine - connect action (object)', (t) => {
       'Gets headers from the connect object'
     );
 
+    teardown(sandbox);
     t.end();
   });
-});
-
-test('WebSocket engine - teardown', (t) => {
-  sandbox.restore();
-  rewiremock.disable();
-
-  t.end();
 });

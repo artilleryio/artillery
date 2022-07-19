@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const sinon = require('sinon');
 
 const fs = require('fs');
@@ -73,7 +73,7 @@ test('readArtilleryConfig', function (t) {
     .withArgs(`${os.homedir()}/.artilleryrc`);
 
   readFileSyncStub.throws();
-  t.deepEqual(
+  t.same(
     util.readArtilleryConfig(),
     {},
     'Returns an empty object if .artilleryrc is not present'
@@ -82,7 +82,7 @@ test('readArtilleryConfig', function (t) {
   const expectedConf = { property: 'value' };
 
   readFileSyncStub.returns(JSON.stringify(expectedConf));
-  t.deepEqual(
+  t.same(
     util.readArtilleryConfig(),
     expectedConf,
     'Returns the configuration as a JSON object'
@@ -105,7 +105,7 @@ test('updateArtilleryConfig', function (t) {
   const newConfiguration = fsWriteFileSyncStub.args[0][1];
   const configPath = fsWriteFileSyncStub.args[0][0];
 
-  t.deepEqual(
+  t.same(
     newConfiguration,
     JSON.stringify({
       ...existingConf,

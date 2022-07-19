@@ -4,7 +4,7 @@
 
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const runner = require('../../core').runner;
 const path = require('path');
 
@@ -34,7 +34,7 @@ function runTest(t, scriptName) {
   const script = require(scriptName);
   runner(script).then(function (ee) {
     ee.on('plugin_loaded', function (stats) {
-      t.assert(true);
+      t.ok(true);
       t.end();
     });
 

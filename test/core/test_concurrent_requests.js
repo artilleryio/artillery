@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const runner = require('../../core').runner;
 const { SSMS } = require('../../core/lib/ssms');
 
@@ -16,8 +16,9 @@ test('scenarios avoided - arrival rate', function (t) {
 
     ee.on('done', function (nr) {
       const stats = SSMS.legacyReport(nr).report();
-      t.assert(stats.codes['200'] === 1, 'Expected number of requests made');
-      t.assert(stats.scenariosAvoided === 999, 'Expected number of VUs skipped');
+
+      t.ok(stats.codes['200'] === 1, 'Expected number of requests made');
+      t.ok(stats.scenariosAvoided === 999, 'Expected number of VUs skipped');
       ee.stop().then(() => {
         t.end();
       });
@@ -38,8 +39,8 @@ test('scenarios avoided - arrival count', function (t) {
 
     ee.on('done', function (nr) {
       const stats = SSMS.legacyReport(nr).report();
-      t.assert(stats.codes['200'] === 1, 'Expected number of requests made');
-      t.assert(stats.scenariosAvoided === 999, 'Expected number of VUs skipped');
+      t.ok(stats.codes['200'] === 1, 'Expected number of requests made');
+      t.ok(stats.scenariosAvoided === 999, 'Expected number of VUs skipped');
       ee.stop().then(() => {
         t.end();
       });
@@ -60,8 +61,8 @@ test('scenarios avoided - ramp to', function (t) {
 
     ee.on('done', function (nr) {
       const stats = SSMS.legacyReport(nr).report();
-      t.assert(stats.codes['200'] > 0, 'should receive some 200s');
-      t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
+      t.ok(stats.codes['200'] > 0, 'should receive some 200s');
+      t.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');
       ee.stop().then(() => {
         t.end();
       });
@@ -82,9 +83,9 @@ test('scenarios avoided - multiple phases', function (t) {
 
     ee.on('done', function (nr) {
       const stats = SSMS.legacyReport(nr).report();
-      t.assert(stats.codes['200'] > 0, 'should receive some 200s');
-      t.assert(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-      t.assert(stats.scenariosAvoided < 1000, 'should avoid less than 1000');
+      t.ok(stats.codes['200'] > 0, 'should receive some 200s');
+      t.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');
+      t.ok(stats.scenariosAvoided < 1000, 'should avoid less than 1000');
       ee.stop().then(() => {
         t.end();
       });
