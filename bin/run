@@ -4,33 +4,32 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const semver = require('semver');
-const chalk = require('chalk');
-const command = require('@oclif/command');
-const updateNotifier = require('update-notifier');
 const pkg = require('../package.json');
 // check node version before require other modules
 checkNodeVersion();
+
+const command = require('@oclif/command');
+const updateNotifier = require('update-notifier');
 const { createGlobalObject } = require('../lib/artillery-global');
 const { rainbow } = require('../util');
 const telemetry = require('../lib/telemetry');
 const banner = require('../lib/cli/banner');
 
 function checkNodeVersion() {
+  const semver = require('semver');
+  const chalk = require('chalk');
   const current = process.version;
   const supported = pkg.engines.node;
   if (!semver.satisfies(current, supported)) {
     console.log(
       chalk.red(
         '\n' +
-          'You are using node version ' +
-          semver.valid(current) +
-          '.\n\n' +
-          'Artillery supports node verion ' +
+          'Artillery requires node ' +
           semver.valid(semver.minVersion(supported)) +
-          ' and newer.\n\n' +
-          'Please update your version of node\n\n' +
-          'We are sorry for the inconvenience.' +
+          ' or newer, \n' +
+          'you are using ' + current + '.\n\n' +
+          'Please update your version of node,\n' +
+          'we are sorry for the inconvenience.' +
           '\n'
       )
     );
