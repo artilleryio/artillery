@@ -1,11 +1,7 @@
-
-<img width="1012" alt="Modern testing for DevOps and SRE" src="https://user-images.githubusercontent.com/1490/177872672-2d2513bb-16f5-4637-b2d9-dab30a1fbad8.png">
-
-
-
-<h3 align="center">
-  keep <code>production</code> fast & reliable, customers happy, and pagers silent
-</h3>
+<p align="center">
+<img src="https://user-images.githubusercontent.com/1490/180195823-5368e322-1124-47b6-9b24-82bc82c14fb6.svg#gh-light-mode-only">
+<img src="https://user-images.githubusercontent.com/1490/180196546-e5cd90d2-85ee-4219-836c-18b880d30764.svg#gh-dark-mode-only">
+</p>
 
 <p align="center">
   <a href="https://www.artillery.io/docs">Docs</a> | <a href="https://github.com/artilleryio/artillery/discussions">Discussions</a> | <a href="https://twitter.com/artilleryio">@artilleryio</a>
@@ -15,67 +11,47 @@
   <img alt="npm" src="https://img.shields.io/npm/dm/artillery?style=flat-square">
 </p>
 
-<p align="center">
-  Enjoying using Artillery? Give us a star for good karma 🌟
-  (We <a href="#artillery-forest">plant a tree</a> for every Github star we get)
-</p>
+<h2 align="center">
+  Artillery is an open-source performance & reliability testing suite for developers & SREs
+</h2>
 
-<p align="center">
-  Join us, <a href="https://www.artillery.io/blog/artillery-hiring-product-engineers">we're hiring</a>.
-</p>
+- Emulate user behavior with scenarios - with multiple steps, transactions, request chaining, and more
+- Run scenarios as **load tests** or **end-to-end** synthetic tests
+- **Cloud-scale** and **cloud-native** - run distributed tests from your own AWS account using AWS Lambda
+  - AWS Fargate and Kubernetes support coming next!
+- **Full-stack attack** - test at protocol level (HTTP, WebSocket, Socket.io and more) or with **real headless browsers**
+- And lots more: detailed performance metrics, monitoring/o11y integrations, extension APIs for custom scripting in JavaScript, and plugins 
 
 ----
 
-# Use Cases
+## Get started
 
-- Prepare for traffic spikes - run load tests to help prepare your API or service for upcoming peak traffic
-- Run load tests to help ensure that SLOs are met under load as code and infrastructure config change
-- Run continuous smoke tests to catch issues before they reach production
-- Run Artillery in CI/CD to prevent performance regressions
-- Profile and debug performance issues such as memory leaks, high tail latency caused by GC pauses or high CPU usage, or misconfigured resource pools
-- Scale out and run distributed load tests from your own AWS account
+Follow our [quick start guide](https://artillery.io/docs/guides/getting-started/installing-artillery.html) to get started.
 
-# Features
+## Learn more
 
-- **Test ANY stack**:  Load test HTTP, WebSocket, Socket.io, Kinesis, HLS, and more
-- **Scenarios**: Support for complex *scenarios* to test multi-step interactions in your API or web app (great for ecommerce, transactional APIs, game servers etc).
-- **Load testing & smoke testing**: reuse the same scenario definitions to run performance tests or functional tests on your API or backend.
-- **Detailed performance metrics**: get detailed performance metrics (response time, TTFB, transactions per second, concurrency, throughput). Track [**custom metrics**](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) with high precision (histograms, counters and rates)
-- **Scriptable**: write custom logic in JS, using any of the thousands of useful `npm` modules.
-- **Batteries-included**: out-of-the-box integrations with external monitoring systems such as Datadog, InfluxDB, Honeygcomb, and Lightstep, [per-URL metrics](https://artillery.io/docs/guides/plugins/plugin-metrics-by-endpoint.html), file uploads, SSL auth, [fuzz testing](https://artillery.io/docs/guides/plugins/plugin-fuzzer.html), and [more](https://www.artillery.io/integrations)!
-- **Extensible**: write custom reporters, custom plugins, and custom engines, or customize VU scenarios and behavior
-- **Cloud-native**: built for the cloud from day one - run [distributed load tests](https://artillery.io/pro/) from your own AWS account with ease
-- **and more!** HTML reports, nice CLI, parameterization with CSV files, CICD integrations
+### Docs and guides
 
----
+- [Distributed load testing with Artillery on AWS Lambda](https://www.artillery.io/blog/open-source-distributed-load-testing-with-lambda)
+- Setting [API response expectations](https://www.artillery.io/docs/guides/plugins/plugin-publish-metrics) and [SLO checks](https://www.artillery.io/docs/guides/guides/test-script-reference#ensure---slo-checks)
+- [Running tests using real headless browsers](https://github.com/artilleryio/artillery-engine-playwright) with Artillery's Playwright integration
+- [Publishing metrics](https://www.artillery.io/docs/guides/plugins/plugin-publish-metrics) to Datadog, Honeycomb, Lightstep, and more
 
-- **Docs**: [https://artillery.io/docs/](https://artillery.io/docs/)
-- **Q&A and discussions**: [https://github.com/artilleryio/artillery/discussions](https://github.com/artilleryio/artillery/discussions)
-- **Website**: [https://artillery.io](https://artillery.io)
-- **Twitter**: [@artilleryio](https://twitter.com/artilleryio)
-- **Source**: [https://github.com/artilleryio/artillery](https://github.com/artilleryio/artillery) - `master` build status: [![CircleCI](https://circleci.com/gh/artilleryio/artillery.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery)
-- **Issues**: [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
+### Integrations and plugins
 
----
+We maintain a list of official and community-built [integrations and plugins](https://www.artillery.io/integrations) on our website: https://www.artillery.io/integrations.
 
-# Getting Started With Artillery
+### Example tests
 
-👉&nbsp;&nbsp;[Artillery Getting Started Guide](https://artillery.io/docs/guides/getting-started/installing-artillery.html)
-
-# Using Artillery?
-
-Add your team to the [Artillery users list on the wiki](https://github.com/shoreditch-ops/artillery/wiki/Companies-using-Artillery).
-
-# Artillery Forest
-
-We have planted [a lot of trees](https://ecologi.com/artilleryio) with the help of Artillery community.
-
-Want to help us grow the forest?
-
-- Just star this repo! We plant a tree for every star we get on Github. 🌟 ➡️ 🌳
-- Plant some extra trees through Ecologi → https://ecologi.com/artilleryio (use your name or the name of your company for credit)
+You can find a list of ready-to-run Artillery examples in the [artillery-examples](https://github.com/artilleryio/artillery-examples) repo.
 
 
-# License
+## License
 
 **Artillery** is open-source software distributed under the terms of the [MPLv2](https://www.mozilla.org/en-US/MPL/2.0/) license.
+
+----
+
+Enjoying using Artillery? Give us a star for good karma 🌟 (we <a href="https://ecologi.com/artilleryio">plant a tree</a> for every GitHub star)
+
+<a href="https://www.artillery.io/blog/artillery-hiring-product-engineers">We're also hiring</a>. If you love building tools for other developers, and want to help make the world's software more performant and reliable, we'd love to hear from you.
