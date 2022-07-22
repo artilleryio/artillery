@@ -1,0 +1,59 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 600
+      arrivalRate: 25
+  variables:
+    email:
+      - "testuser1@artillery.io"
+      - "testuser2@artillery.io"
+      - "testuser3@artillery.io"
+      - "testuser4@artillery.io"
+      - "testuser5@artillery.io"
+
+scenarios:
+  # In this scenario, the request to /login will capture the user's
+  # email and set it in a cookie, which will get returned in the response.
+  # The subsequent request to /account will return the value of the
+  # email from the saved cookie.
+  - name: "Login and verify cookie"
+    flow:
+    - post:
+        url: "/login"
+        json:
+          email: "{{ email }}"
+          password: "test-password-123"
+    - get:
+        url: "/account"
+        match:
+          json: "$.user.email"
+          value: "{{ email }}"
+
+  # In this scenario, we'll manually set cookie values when making a
+  # request to /set-state, and validating the value saved in the cookie
+  # in a request to /state.
+  - name: "Set cookie values"
+    flow:
+      - post:
+          url: "/login"
+          json:
+            email: "{{ email }}"
+            password: "test-password-123"
+      - post:
+          url: "/set-state"
+          cookie:
+            state: "online"
+      - get:
+          url: "/state"
+          match:
+            json: "$.currentState"
+            value: "online"
+      - post:
+          url: "/set-state"
+          cookie:
+            state: "busy"
+      - get:
+          url: "/state"
+          match:
+            json: "$.currentState"
+            value: "busy"

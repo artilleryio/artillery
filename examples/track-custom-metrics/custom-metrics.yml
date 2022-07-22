@@ -1,0 +1,15 @@
+config:
+  target: "http://localhost:3000"
+  processor: "./metrics.js"
+  phases:
+    - arrivalRate: 25
+      duration: 60
+
+scenarios:
+  - afterResponse: "trackPets"
+    flow:
+      - post:
+          url: "/pets"
+          json:
+            species: "pony"
+            name: "Tiki"

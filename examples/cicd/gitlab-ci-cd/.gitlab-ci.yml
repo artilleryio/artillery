@@ -1,0 +1,11 @@
+artillery:
+  image:
+    name: artilleryio/artillery:latest
+    entrypoint: [""]
+  script: |
+    mkdir reports
+    /home/node/artillery/bin/artillery run --output reports/report.json tests/performance/socket-io.yml
+    /home/node/artillery/bin/artillery report --output reports/report.html reports/report.json
+  artifacts:
+    paths:
+      - reports

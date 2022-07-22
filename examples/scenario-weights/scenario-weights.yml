@@ -1,0 +1,40 @@
+# In Artillery, each VU will be assigned to one of the defined
+# scenarios. By default, each scenario has a weight of 1, meaning
+# each scenario has the same probability of getting assigned to a
+# VU.
+#
+# By specifying a weight in a scenario, you'll increase the chances
+# of Artillery assigning the scenario for a VU. The probability of
+# a scenario getting chosen depends on the total weight for all
+# scenarios.
+#
+# To learn more, read the Artillery documentation on scenario weights:
+# https://artillery.io/docs/guides/guides/test-script-reference.html#Scenario-weights
+
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 600
+      arrivalRate: 25
+
+scenarios:
+  # Approximately 60% of all VUs will access this scenario.
+  - name: "Access the /common route"
+    weight: 6
+    flow:
+      - get:
+          url: "/common"
+
+  # Approximately 30% of all VUs will access this scenario.
+  - name: "Access the /average route"
+    weight: 3
+    flow:
+      - get:
+          url: "/average"
+
+  # Approximately 10% of all VUs will access this scenario.
+  - name: "Access the /rare route"
+    weight: 1
+    flow:
+      - get:
+          url: "/rare"

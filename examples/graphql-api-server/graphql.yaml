@@ -1,0 +1,65 @@
+config:
+  target: "http://localhost:4000/"
+  phases:
+    - duration: 60
+      arrivalRate: 25
+
+scenarios:
+  - name: "Create, update, and delete a user from the database"
+    flow:
+      - post:
+          url: "/"
+          json:
+            query: |
+              mutation CreateUserMutation($createUserInput: UserInput) {
+                createUser(input: $createUserInput) {
+                  id
+                }
+              }
+            variables:
+              createUserInput:
+                username: "{{ $randomString() }}"
+                email: "user-{{ $randomString() }}@artillery.io"
+          capture:
+            json: "$.data.createUser.id"
+            as: "userId"
+
+      - post:
+          url: "/"
+          json:
+            query: |
+              query UserQuery($userId: ID!) {
+                user(id: $userId) {
+                  username
+                  email
+                }
+              }
+            variables:
+              userId: "{{ userId }}"
+
+      - post:
+          url: "/"
+          json:
+            query: |
+              mutation UpdateUserMutation($userId: ID!, $updateUserInput: UserInput) {
+                updateUser(id: $userId, input: $updateUserInput) {
+                  username
+                  email
+                }
+              }
+            variables:
+              userId: "{{ userId }}"
+              updateUserInput:
+                email: "user-{{ $randomString() }}@artillery.io"
+
+      - post:
+          url: "/"
+          json:
+            query: |
+              mutation DeleteUserMutation($userId: ID!) {
+                deleteUser(id: $userId) {
+                  id
+                }
+              }
+            variables:
+              userId: "{{ userId }}"

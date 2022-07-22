@@ -1,0 +1,87 @@
+version: 1
+config:
+  target: "https://api.someservice.com"
+  phases:
+    - name: "Warming up the application"
+      duration: 5
+      arrivalRate: 1
+    - name: "Mild load on the application"
+      duration: 10
+      rampTo: 30
+    - name: "Putting load on the application"
+      duration: 180
+      arrivalRate: 3
+      maxVusers: 120
+  payload:
+    - path: "../data/users.csv"
+      fields: 
+        - "firstName"
+        - "lastName"
+        - "emailAddress"
+      order: sequence
+      skipHeader: true
+  ensure:
+    p95: 200
+    maxErrorRate: 1
+  defaults:
+    headers:
+      x-api-key: "{{ $processEnvironment.SERVICE_API_KEY }}"
+      Content-Type: "application/json"
+      Accept: "application/json"
+  tls:
+    rejectUnauthorized: false
+  http:
+    pool: 10
+    timeout: 15
+    maxSockets: 6
+  environments:
+    production:
+      target: "http://wontresolve.prod:44321"
+      phases:
+        - duration: 10
+          arrivalRate: 10
+    local:
+      target: "http://127.0.0.1:3003"
+      phases:
+        - duration: 60
+          arrivalRate: 20
+  variables:
+    postcode:
+      - "SE1"
+      - "EC1"
+      - "E8"
+      - "WH9"
+    id:
+      - "8731"
+      - "9965"
+      - "2806"
+  processor: "../functions.js"
+scenarios:
+  - name: "The first flow"
+    flow:
+      - function: "generateRandomData"
+      - get:
+          url: "/members/{{ id }}"
+          afterResponse: "printStatus"
+      - post:
+          url: "/members/member"
+          afterResponse: "printStatus"
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            description: "Some randomly generated user"
+            salary: 666000
+  - name: "The second flow"
+    flow:
+      - function: "generateRandomData"
+      - get:
+          url: "/members/{{ id }}"
+          afterResponse: "printStatus"
+      - post:
+          url: "/members/member"
+          afterResponse: "printStatus"
+          json:
+            id: "{{ id }}"
+            name: "{{ name }}"
+            description: "Some randomly generated user"
+            salary: 666000
