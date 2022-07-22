@@ -44,7 +44,7 @@ We maintain a list of official and community-built [integrations and plugins](ht
 
 ### Example tests
 
-You can find a list of ready-to-run Artillery examples in the [artillery-examples](https://github.com/artilleryio/artillery-examples) repo.
+You can find a list of ready-to-run Artillery examples under [`examples/`](https://github.com/artilleryio/artillery/tree/master/examples#readme).
 
 
 ## License
