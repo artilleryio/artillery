@@ -1,0 +1,20 @@
+{
+  "name": "graphql-api-server",
+  "version": "1.0.0",
+  "description": "Load testing a GraphQL API using Artillery",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dennis Martinez",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^3.1.1",
+    "apollo-server": "^3.3.0",
+    "graphql": "^15.6.0"
+  },
+  "devDependencies": {
+    "artillery": "^1.7.9",
+    "prisma": "^3.1.1"
+  }
+}

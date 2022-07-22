@@ -1,0 +1,12 @@
+{
+  "name": "track-custom-metrics",
+  "version": "1.0.0",
+  "description": "Artillery.io - Custom metrics example",
+  "main": "app.js",
+  "author": "Dennis Martinez",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "server-timing": "^3.3.1"
+  }
+}

@@ -1,0 +1,22 @@
+config:
+  target: "http://lab.artillery.io"
+  # As an example, we'll only run a single virtual user in this
+  # test script. For real-world load testing, you'll want to
+  # adjust your load phases according to your needs.
+  phases:
+    - duration: 1
+      arrivalRate: 1
+  ensure:
+    maxErrorRate: 1
+    max: 500
+
+scenarios:
+  - name: "Emit an event"
+    engine: "socketio"
+    flow:
+      - emit:
+          channel: "echo"
+          data: "Hello from Artillery"
+          response:
+            channel: "echoResponse"
+            data: "Hello from Artillery"

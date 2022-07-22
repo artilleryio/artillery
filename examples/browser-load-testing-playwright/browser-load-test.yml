@@ -1,0 +1,12 @@
+config:
+  target: "https://artillery.io"
+  phases:
+    - arrivalRate: 1
+      duration: 10
+  engines:
+    playwright: {}
+  processor: ./flows.js
+scenarios:
+  - name: "Dev account signup"
+    engine: playwright
+    flowFunction: "devAccountSignupFlow"

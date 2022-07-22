@@ -1,0 +1,18 @@
+config:
+  target: "http://localhost:31337"
+  processor: "./helpers.js"
+  phases:
+    - duration: 1
+      arrivalCount: 1
+scenarios:
+  - name: Set custom header
+    flow:
+      - get:
+          url: "/"
+          qs:
+            foo: bar
+          headers:
+            content-type: application/json
+            accept: application/json
+          json: {}
+          beforeRequest: setCustomHeader

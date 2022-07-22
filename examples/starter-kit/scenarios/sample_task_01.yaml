@@ -1,0 +1,14 @@
+version: 1
+config:
+  target: "https://run.mocky.io"
+  phases:
+    - duration: 30
+      arrivalRate: 3
+      maxVusers: 10
+  processor: "../processors/sample_task_01.js"
+scenarios:
+  - flow:
+      - function: "generateRandomTiming"
+      - get:
+          url: "/v3/0eff1291-866e-4afd-a462-e3711607caa4?mocky-delay={{ timing }}ms"
+          afterResponse: "printStatus"
