@@ -34,9 +34,9 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [track-custom-metrics](./track-custom-metrics) - track custom metrics (counters and histograms)
 - [artillery-plugin-hello-world](./artillery-plugin-hello-world) - a "hello world" plugin
 
-## CI/CD
+## Running Artillery in CI/CD
 
-- [artillery-example-cicd](https://github.com/artilleryio/artillery-examples-cicd) - using Artillery with Github Actions, Gitlab CI, Azure DevOps, CircleCI and more
+- [cicd examples](./cicd) - using Artillery with Github Actions, Gitlab CI, Azure DevOps, CircleCI and more
 
 ## Starter kits
 
