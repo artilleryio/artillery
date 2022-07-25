@@ -8,6 +8,7 @@ const { SSMS } = require('../../core/lib/ssms');
 
 test('cookie jar http', function (t) {
   var script = require('./scripts/cookies.json');
+
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
@@ -28,6 +29,24 @@ test('cookie jar http', function (t) {
         .catch((err) => {
           t.fail(err);
         });
+    });
+    ee.run();
+  });
+});
+
+test('cookie jar invalid response', function (t) {
+  var script = require('./scripts/cookies_malformed_response.json');
+  runner(script).then(function (ee) {
+    ee.on('done', function (nr) {
+      const report = SSMS.legacyReport(nr).report();
+      t.ok(
+        report.codes[200] && report.codes[200] > 0,
+        'There should be some 200s'
+      );
+      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      ee.stop().then(() => {
+        t.end();
+      });
     });
     ee.run();
   });
