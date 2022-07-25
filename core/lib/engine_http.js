@@ -720,7 +720,11 @@ HttpEngine.prototype._handleResponse = function (
     if (rawCookies) {
       context._enableCookieJar = true;
       rawCookies.forEach(function (cookieString) {
-        context._jar.setCookieSync(cookieString, url);
+        if (tough.Cookie.parse(cookieString) !== undefined) {
+          context._jar.setCookieSync(cookieString, url);
+        } else {
+          console.log('Could not parse cookieString from response header, skipping it ' + cookieString);
+        }
       });
     }
   }
