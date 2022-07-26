@@ -1,0 +1,15 @@
+{
+  "name": "scenario-weights",
+  "version": "1.0.0",
+  "description": "See how to change how often a scenario is run in your Artillery tests",
+  "main": "app.js",
+  "scripts": {
+    "app:start": "node app.js",
+    "test": "artillery run scenario-weights.yml"
+  },
+  "author": "Dennis Martinez",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}

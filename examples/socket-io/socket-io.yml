@@ -1,0 +1,26 @@
+config:
+  target: "http://localhost:8080/"
+  phases:
+    - duration: 60
+      arrivalRate: 25
+
+scenarios:
+  - name: "Emit and validate response"
+    engine: socketio
+    flow:
+      - emit:
+          channel: "echo"
+          data: "Hello from Artillery"
+          response:
+            channel: "echoResponse"
+            data: "Hello from Artillery"
+
+  - name: "Emit and validate acknowledgement"
+    engine: socketio
+    flow:
+      - emit:
+          channel: "userDetails"
+          acknowledge:
+            match:
+              json: "$.0.name"
+              value: "Artillery"

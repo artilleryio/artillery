@@ -1,0 +1,41 @@
+version: 2.1
+
+jobs:
+  artillery:
+    docker:
+      - image: artilleryio/artillery:latest
+    steps:
+      - checkout
+
+      - run:
+          name: Make reports directory
+          command: mkdir reports
+
+      - run:
+          name: Execute load tests
+          command: /home/node/artillery/bin/artillery run --output reports/report.json tests/performance/socket-io.yml
+
+      - run:
+          name: Generate HTML report
+          command: /home/node/artillery/bin/artillery report --output reports/report.html reports/report.json
+
+      - store_artifacts:
+          path: reports
+
+workflows:
+  load-tests:
+    jobs:
+      - artillery:
+          filters:
+            branches:
+              only: main
+  nightly:
+    jobs:
+      - artillery
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - main

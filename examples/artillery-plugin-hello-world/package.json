@@ -1,0 +1,15 @@
+{
+  "name": "artillery-plugin-hello-world",
+  "version": "1.0.0",
+  "description": "This is a \"hello world\" plugin for Artillery which shows:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "debug": "^4.3.1"
+  }
+}

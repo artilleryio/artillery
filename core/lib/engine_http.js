@@ -398,13 +398,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         requestParams.headers = templatedHeaders;
 
         if (
-          typeof params.cookie === 'object' ||
+          typeof requestParams.cookie === 'object' ||
           typeof context._defaultCookie === 'object'
         ) {
+          requestParams.cookieJar = context._jar;
           const cookie = Object.assign(
             {},
             context._defaultCookie,
-            params.cookie
+            requestParams.cookie
           );
           Object.keys(cookie).forEach(function (k) {
             context._jar.setCookieSync(
@@ -447,7 +448,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           return callback(err, context);
         }
 
-        function requestCallback(err, res, body) {
+        function responseProcessor(err, res, body, done) {
           if (err) {
             return;
           }
@@ -524,7 +525,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   ee,
                   function (asyncErr) {
                     ee.emit('error', err.message);
-                    return callback(err, context);
+                    return done(err, context);
                   }
                 );
               }
@@ -603,27 +604,24 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   if (err) {
                     debug(err);
                     ee.emit('error', err.code || err.message);
-                    return callback(err, context);
+                    return done(err, context);
                   }
 
                   if (haveFailedMatches || haveFailedCaptures) {
                     // FIXME: This means only one error in the report even if multiple captures failed for the same request.
-                    return callback(
+                    return done(
                       new Error('Failed capture or match'),
                       context
                     );
                   }
-
-                  return callback(null, context);
+                  return done(null, context);
                 }
               );
             }
           );
         }
 
-        // If we aren't processing the full response, we don't need the
-        // callback:
-        let maybeCallback;
+        let needToProcessResponse = false;
         if (
           typeof requestParams.capture === 'object' ||
           typeof requestParams.match === 'object' ||
@@ -632,7 +630,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             opts.afterResponse.length > 0) ||
           process.env.DEBUG
         ) {
-          maybeCallback = requestCallback;
+          needToProcessResponse = true;
         }
 
         if (!requestParams.url) {
@@ -667,7 +665,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 res,
                 ee,
                 context,
-                maybeCallback,
+                needToProcessResponse ? responseProcessor : null,
                 callback
               );
             });
@@ -711,7 +709,7 @@ HttpEngine.prototype._handleResponse = function (
   res,
   ee,
   context,
-  maybeCallback,
+  responseProcessor,
   callback
 ) {
   const url = requestParams.url;
@@ -737,7 +735,7 @@ HttpEngine.prototype._handleResponse = function (
     ee.emit('histogram', 'http.tls', res.timings.phases.tls);
   }
   let body = '';
-  if (maybeCallback) {
+  if (responseProcessor) {
     decompressedRes.on('data', (d) => {
       body += d;
     });
@@ -749,21 +747,33 @@ HttpEngine.prototype._handleResponse = function (
     }
 
     context._successCount++;
-    if (!maybeCallback) {
-      // We're done when:
-      // - 3xx response and not following redirects
-      // - not a 3xx response
-      if ((res.statusCode >= 300 && res.statusCode < 400 && !requestParams.followRedirect) ||
-         (res.statusCode < 300 || res.statusCode >= 400)) {
-        callback(null, context);
-      } else {
-        // should not happen, will hang indefinitely
-      }
+
+    if (responseProcessor) {
+      responseProcessor(null, res, body, (processResponseErr) => {
+        if(processResponseErr) {
+          return callback(processResponseErr, context);
+        }
+
+        if (lastRequest(res, requestParams)) {
+          return callback(null, context);
+        }
+      });
     } else {
-      maybeCallback(null, res, body);
+      if(lastRequest(res, requestParams)) {
+        return callback(null, context);
+      }
     }
   });
 };
+
+function lastRequest(res, requestParams) {
+  // We're done when:
+  // - 3xx response and not following redirects
+  // - not a 3xx response
+
+  return ((res.statusCode >= 300 && res.statusCode < 400 && !requestParams.followRedirect) ||
+         (res.statusCode < 300 || res.statusCode >= 400))
+}
 
 HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;

@@ -1,0 +1,33 @@
+trigger:
+- main
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: 'Midnight (UTC) performance test'
+  branches:
+    include:
+    - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- task: NodeTool@0
+  inputs:
+    versionSpec: '12.x'
+  displayName: 'Install Node.js v12.x'
+
+- script: npm install -g artillery@latest
+  displayName: 'Install Artillery'
+
+- script: mkdir $(System.DefaultWorkingDirectory)/reports
+  displayName: 'Make reports directory'
+
+- script: artillery run --output reports/report.json tests/performance/socket-io.yml
+  displayName: 'Execute load tests'
+
+- script: artillery report --output reports/report.html reports/report.json
+  displayName: 'Generate HTML report'
+
+- publish: $(System.DefaultWorkingDirectory)/reports
+  artifact: artillery-test-report

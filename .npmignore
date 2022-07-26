@@ -20,3 +20,4 @@ lib-cov
 *scratch*
 coverage/*
 node_modules
+examples

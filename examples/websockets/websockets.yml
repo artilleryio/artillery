@@ -1,0 +1,18 @@
+config:
+  target: "ws://localhost:8888/"
+  processor: "./my-functions.js"
+  phases:
+    - duration: 60
+      arrivalRate: 25
+
+scenarios:
+  - name: "Sending a string"
+    engine: ws
+    flow:
+      - send: "Artillery"
+
+  - name: "Sending an object from a function"
+    engine: ws
+    flow:
+      - function: "createRandomScore"
+      - send: "{{ data }}"
