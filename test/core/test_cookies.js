@@ -43,7 +43,6 @@ test('cookie jar invalid response', function (t) {
         report.codes[200] && report.codes[200] > 0,
         'There should be some 200s'
       );
-      t.ok(report.codes[403] === undefined, 'There should be no 403s');
       ee.stop().then(() => {
         t.end();
       });
