@@ -43,6 +43,11 @@ test('cookie jar invalid response', function (t) {
         report.codes[200] && report.codes[200] > 0,
         'There should be some 200s'
       );
+      t.ok(
+        report.errors.COOKIE_PARSE_ERROR_INVALID_COOKIE &&
+        report.errors.COOKIE_PARSE_ERROR_INVALID_COOKIE > 0,
+        'There shoud be some cookie errors'
+      );
       ee.stop().then(() => {
         t.end();
       });
