@@ -1,0 +1,20 @@
+config:
+  target: https://www.artillery.io
+  processor: "./helpers.js"
+  phases:
+    - arrivalCount: 10
+      duration: 1
+before:
+  flow:
+    - function: "generateSharedToken"
+scenarios:
+  - flow:
+      - function: "generateVUToken"
+      - log: "VU id: {{ $uuid }}"
+      - log: "    shared token is: {{ sharedToken }}"
+      - log: "    VU-specific token is: {{ vuToken }}"
+      - get:
+          headers:
+            x-auth-one: "{{ sharedToken }}"
+            x-auth-two: "{{ vuToken }}"
+          url: "/"
