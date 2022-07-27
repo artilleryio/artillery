@@ -211,6 +211,17 @@ function route(server) {
       handler: ok
     }
   ]);
+
+  server.route([
+    {
+      method: 'GET',
+      path: '/malformed_cookie',
+      handler: function (request, h) {
+        return h.response().header('Set-Cookie', '').code(200);
+      }
+    }
+  ]);
+
 }
 
 function ok(req, h) {
