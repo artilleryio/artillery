@@ -14,4 +14,6 @@ artillery run auth-with-token.yml
 
 The output will look similar to the screenshot below. The value of `sharedToken` generated in the `before` block will be the same for every VU, whereas the value of VU-specific token in `vuToken` will differ between VUs.
 
+![auth tokens artillery](./screenshot.png)
+
 To turn this into a working test-case for your API, replace the example implementation of one (or both) of the custom JS functions to implement the token generation logic you need, and tweak the way in which those tokens are sent as appropriate for your API.
