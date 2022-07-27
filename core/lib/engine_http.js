@@ -724,7 +724,7 @@ HttpEngine.prototype._handleResponse = function (
           context._jar.setCookieSync(cookieString, url);
         } catch (err) {
           debug(`Could not parse cookieString "${cookieString}" from response header, skipping it`);
-          ee.emit('error', 'COOKIE_PARSE_ERROR_INVALID_COOKIE');
+          ee.emit('error', 'cookie_parse_error_invalid_cookie');
         }
       });
     }
