@@ -219,6 +219,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   let f = function (context, callback) {
+    // Previous request had an error of the kind that should stop current VU
+    if (context.error) {
+      ee.emit('error', err.message || err.code);
+      return callback(context.error, context);
+    }
+
     let method = _.keys(requestSpec)[0].toUpperCase();
     let params = requestSpec[method.toLowerCase()];
 
@@ -755,8 +761,8 @@ HttpEngine.prototype._handleResponse = function (
 
     if (responseProcessor) {
       responseProcessor(null, res, body, (processResponseErr) => {
-        if(processResponseErr) {
-          return callback(processResponseErr, context);
+        if (processResponseErr) {
+          context.error = processResponseErr;
         }
 
         if (lastRequest(res, requestParams)) {
@@ -764,7 +770,7 @@ HttpEngine.prototype._handleResponse = function (
         }
       });
     } else {
-      if(lastRequest(res, requestParams)) {
+      if (lastRequest(res, requestParams)) {
         return callback(null, context);
       }
     }
@@ -833,7 +839,6 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
 
     async.waterfall(steps, function scenarioWaterfallCb(err, context) {
       if (err) {
-        //ee.emit('error', err.message);
         return callback(err, context);
       } else {
         return callback(null, context);
