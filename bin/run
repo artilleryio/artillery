@@ -19,7 +19,9 @@ async function main() {
 
   if (!process.argv.slice(2).length) {
     // print telemetry notification message
-    telemetry.notice();
+    if (telemetry.isEnabled()) {
+      telemetry.notice();
+    }
 
     console.log(Math.random() * 100 > 34 ?
                 banner :
