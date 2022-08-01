@@ -19,7 +19,7 @@
 - Run scenarios as **load tests** or **end-to-end** synthetic tests
 - **Cloud-scale** and **cloud-native** - run distributed tests from your own AWS account using AWS Lambda
   - AWS Fargate and Kubernetes support coming next!
-- **Full-stack attack** - test at protocol level (HTTP, WebSocket, Socket.io and more) or with **real headless browsers**
+- **Full-stack attack** - test at the protocol level (HTTP, WebSocket, Socket.io, and more) or with **real headless browsers**
 - And lots more: detailed performance metrics, monitoring/o11y integrations, extension APIs for custom scripting in JavaScript, and plugins 
 
 ----
@@ -55,4 +55,4 @@ You can find a list of ready-to-run Artillery examples under [`examples/`](https
 
 Enjoying using Artillery? Give us a star for good karma 🌟 (we <a href="https://ecologi.com/artilleryio">plant a tree</a> for every GitHub star)
 
-<a href="https://www.artillery.io/blog/artillery-hiring-product-engineers">We're also hiring</a>. If you love building tools for other developers, and want to help make the world's software more performant and reliable, we'd love to hear from you.
+<a href="https://www.artillery.io/blog/artillery-hiring-product-engineers">We're also hiring</a>. If you love building tools for other developers and want to help make the world's software more performant and reliable, we'd love to hear from you.
