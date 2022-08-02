@@ -46,7 +46,8 @@ test('Telemetry', function (t) {
       version: artilleryVersion,
       os: process.platform,
       isCi: ci.isCI,
-      $ip: null
+      $ip: null,
+      source: 'test-suite'
     }
   };
 
