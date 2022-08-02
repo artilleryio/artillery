@@ -86,7 +86,7 @@
   },
   "dependencies": {
     "@artilleryio/sketches-js": "^1.0.4",
-    "@aws-sdk/credential-providers": "^3.121.0",
+    "@aws-sdk/credential-providers": "^3.127.0",
     "@oclif/command": "^1.8.16",
     "@oclif/config": "^1.18.3",
     "@oclif/plugin-help": "^3.3.1",
