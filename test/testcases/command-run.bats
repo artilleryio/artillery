@@ -14,20 +14,6 @@
   [ $? -eq 0 ]
 }
 
-@test "Telemetry notice is printed" {
-  ./bin/run | grep -i 'telemetry is on'
-  [ $? -eq 0 ]
-}
-
-@test "If telemetry is disabled, no notice is printed" {
-  set +e
-  ARTILLERY_DISABLE_TELEMETRY ./bin/run | grep -i 'telemetry is on'
-  status=$?
-  set -e
-
-  [ $status -eq 1 ]
-}
-
 @test "Environment specified with -e should be used" {
   # FIXME: Should not need to use "-k" here, see #59
   STATS="$(mktemp -d)/stats"
