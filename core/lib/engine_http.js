@@ -719,10 +719,10 @@ HttpEngine.prototype._handleResponse = function (
   callback
 ) {
   const url = requestParams.url;
-  const decompressedRes = decompressResponse(res);
-  let code = decompressedRes.statusCode;
+  res = decompressResponse(res);
+  let code = res.statusCode;
   if (!context._enableCookieJar) {
-    const rawCookies = decompressedRes.headers['set-cookie'];
+    const rawCookies = res.headers['set-cookie'];
     if (rawCookies) {
       context._enableCookieJar = true;
       rawCookies.forEach(function (cookieString) {
@@ -747,7 +747,7 @@ HttpEngine.prototype._handleResponse = function (
   }
   let body = '';
   if (responseProcessor) {
-    decompressedRes.on('data', (d) => {
+    res.on('data', (d) => {
       body += d;
     });
   }
