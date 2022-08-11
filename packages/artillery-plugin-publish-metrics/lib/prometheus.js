@@ -10,6 +10,7 @@ const COUNTERS_STATS = 'counters', // counters stats
 class PrometheusReporter {
 
   constructor(config, events) {
+    this.hasPendingRequest = false;
     this.workerID = process.env.WORKER_ID || uuid.v4();
     this.config = Object.assign({
       tags: [],
@@ -117,19 +118,34 @@ class PrometheusReporter {
       }
 
       // noinspection JSCheckFunctionSignatures
+      this.hasPendingRequest = true;
       this.pushgateway.pushAdd({ jobName: this.workerID.toString()})
         .then(() => {
           debug("metrics pushed successfully")
         })
         .catch(err => {
           console.log('Error pushing metrics to push gateway', err);
+        })
+        .finally(() => {
+          this.hasPendingRequest = false;
         });
     });
   }
 
+  async waitingForRequest() {
+    do {
+      debug('Waiting for pending request ...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } while(this.hasPendingRequest)
+
+    debug('Pending requests done')
+    return true;
+  }
+
   cleanup(done) {
     debug('cleaning up');
-    return done();
+    return this.waitingForRequest()
+      .then(done);
   }
 }
 
