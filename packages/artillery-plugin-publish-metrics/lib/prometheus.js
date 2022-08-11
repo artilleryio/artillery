@@ -1,4 +1,6 @@
 const http = require('http');
+const https = require('https');
+const fs = require('fs');
 const PromClient = require('prom-client');
 const uuid = require('uuid');
 const debug = require('debug')('plugin:publish-metrics:prometheus');
@@ -19,6 +21,7 @@ class PrometheusReporter {
 
     this.prometheusOpts = {
       pushgatewayUrl: config.pushgateway,
+      ca: config.ca,
     };
 
     debug('ensuring pushgatewayUrl is configured');
@@ -32,9 +35,11 @@ class PrometheusReporter {
     this.registerMetrics(this.config.prefix)
 
     debug('creating pushgateway client using url: %s', this.prometheusOpts.pushgatewayUrl);
+    const httpModule = isHttps(this.prometheusOpts.pushgatewayUrl) ? https : http;
     this.pushgateway = new PromClient.Pushgateway(this.prometheusOpts.pushgatewayUrl,{
       timeout: 5000, //Set the request timeout to 5000ms
-      agent: new http.Agent({
+      ca: this.prometheusOpts.ca ? fs.readFileSync(this.prometheusOpts.ca) : null,
+      agent: new httpModule.Agent({
         keepAlive: true,
         keepAliveMsec: 10000,
         maxSockets: 10,
@@ -151,6 +156,10 @@ class PrometheusReporter {
 
 function createPrometheusReporter(config, events, script) {
   return new PrometheusReporter(config, events, script);
+}
+
+function isHttps(href) {
+  return href.search(/^https/) !== -1;
 }
 
 module.exports = {
