@@ -24,6 +24,8 @@ const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 const decompressResponse = require('decompress-response');
 
+const { promisify } = require('node:util');
+
 module.exports = HttpEngine;
 
 const DEFAULT_AGENT_OPTIONS = {
@@ -202,9 +204,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       let processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
         return processFunc(context, ee, function (hookErr) {
-          if (hookErr) {
-            ee.emit('error', hookErr.code || hookErr.message);
-          }
           return callback(hookErr, context);
         });
       } else {
@@ -219,12 +218,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   let f = function (context, callback) {
-    // Previous request had an error of the kind that should stop current VU
-    if (context.error) {
-      ee.emit('error', err.message || err.code);
-      return callback(context.error, context);
-    }
-
     let method = _.keys(requestSpec)[0].toUpperCase();
     let params = requestSpec[method.toLowerCase()];
 
@@ -236,7 +229,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     // This will be obsoleted by better script validation.
     if (!params.url && !params.uri) {
       let err = new Error('an URL must be specified');
-      ee.emit('error', err.message);
       return callback(err, context);
     }
 
@@ -310,9 +302,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       function done(err) {
         if (err) {
           debug(err);
-          let errCode = err.code || err.message;
-          // FIXME: Should not need to have to emit manually here
-          ee.emit('error', errCode);
           return callback(err, context);
         }
 
@@ -450,15 +439,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         if (!requestParams.url || !requestParams.url.startsWith('http')) {
           let err = new Error(`Invalid URL - ${requestParams.url}`);
-          ee.emit('error', err.message);
           return callback(err, context);
         }
 
-        function responseProcessor(err, res, body, done) {
-          if (err) {
-            return;
-          }
-
+        function responseProcessor(isLast, res, body, done) {
           if (process.env.DEBUG) {
             let requestInfo = {
               url: requestParams.url,
@@ -514,6 +498,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           debugResponse(JSON.stringify(res.headers, null, 2));
           debugResponse(JSON.stringify(body, null, 2));
 
+          // capture/match/response hooks run only for last request in a task
+          if(!isLast) {
+            return done(null, context);
+          }
+
           const resForCapture = { headers: res.headers, body: body };
           engineUtil.captureOrMatch(
             params,
@@ -530,7 +519,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   context,
                   ee,
                   function (asyncErr) {
-                    ee.emit('error', err.message);
                     return done(err, context);
                   }
                 );
@@ -609,7 +597,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 function (err) {
                   if (err) {
                     debug(err);
-                    ee.emit('error', err.code || err.message);
                     return done(err, context);
                   }
 
@@ -651,7 +638,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             context,
             ee,
             function (asyncErr) {
-              ee.emit('error', err.message);
               return callback(err, context);
             }
           );
@@ -692,15 +678,12 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               context,
               ee,
               function (asyncErr) {
-                let errCode = err.code || err.message;
-                ee.emit('error', errCode);
                 return callback(err, context);
               }
             );
           })
           .catch((gotErr) => {
             // TODO: Handle the error properly with run hooks
-            ee.emit('error', gotErr.code || gotErr.message);
             return callback(gotErr, context);
           });
       }
@@ -759,18 +742,23 @@ HttpEngine.prototype._handleResponse = function (
 
     context._successCount++;
 
+    // config.defaults won't be taken into account for this
+    const isLastRequest = lastRequest(res, requestParams);
+
     if (responseProcessor) {
-      responseProcessor(null, res, body, (processResponseErr) => {
+      responseProcessor(isLastRequest, res, body, (processResponseErr) => {
+          // capture/match returned an error object, or a hook function returned
+          // with an error
         if (processResponseErr) {
-          context.error = processResponseErr;
+          return callback(processResponseErr, context);
         }
 
-        if (lastRequest(res, requestParams)) {
+        if (isLastRequest) {
           return callback(null, context);
         }
       });
     } else {
-      if (lastRequest(res, requestParams)) {
+      if (isLastRequest) {
         return callback(null, context);
       }
     }
@@ -827,23 +815,19 @@ HttpEngine.prototype.setInitialContext = function (initialContext) {
 HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
 
-  return function scenario(initialContext, callback) {
+  return async function scenario(initialContext, callback) {
     initialContext = self.setInitialContext(initialContext);
-    let steps = _.flatten([
-      function zero(cb) {
-        ee.emit('started');
-        return cb(null, initialContext);
-      },
-      tasks
-    ]);
-
-    async.waterfall(steps, function scenarioWaterfallCb(err, context) {
-      if (err) {
-        return callback(err, context);
-      } else {
-        return callback(null, context);
+    ee.emit('started');
+    let context = initialContext;
+    for (const task of tasks) {
+      try {
+        context = await promisify(task)(context);
+      } catch (taskErr) {
+        ee.emit('error', taskErr);
+        return callback(taskErr, context); // calling back for now for existing client code
       }
-    });
+    }
+    return callback(null, context);
   };
 };
 
