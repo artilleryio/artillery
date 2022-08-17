@@ -106,7 +106,7 @@ function HttpEngine(script) {
 
   if (
     (script.config.http && script.config.http.extendedMetrics === true) ||
-    global.artillery.runtimeOptions.extendedHTTPMetrics
+    global.artillery?.runtimeOptions.extendedHTTPMetrics
   ) {
     this.extendedHTTPMetrics = true;
   }
