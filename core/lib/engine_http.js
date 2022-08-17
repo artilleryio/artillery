@@ -334,9 +334,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         // Follow all redirects by default unless specified otherwise
         if (typeof requestParams.followRedirect === 'undefined') {
           requestParams.followRedirect = true;
-          requestParams.followAllRedirects = true;
-        } else if (requestParams.followRedirect === false) {
-          requestParams.followAllRedirects = false;
         }
 
         // TODO: Use traverse on the entire flow instead
