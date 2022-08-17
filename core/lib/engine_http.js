@@ -573,7 +573,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   let processFunc = config.processor[fn];
                   if (!processFunc) {
                     // TODO: DRY - #223
-                    processFunc = function (r, c, e, cb) {
+                    processFunc = function (r, res, c, e, cb) {
                       return cb(null);
                     };
                     console.log(
