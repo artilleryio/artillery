@@ -610,7 +610,17 @@ test('HTTP engine', function (tap) {
       },
       scenarios: [
         {
-          flow: [{ get: { url: '/foo' } }]
+          flow: [
+            {
+              get: {
+                url: '/foo',
+                capture: {
+                  json: '$',
+                  as: 'jsonBody'
+                }
+              }
+            }
+          ]
         }
       ]
     };
