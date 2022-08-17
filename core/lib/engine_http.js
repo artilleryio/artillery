@@ -823,7 +823,7 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
       try {
         context = await promisify(task)(context);
       } catch (taskErr) {
-        ee.emit('error', taskErr);
+        ee.emit('error', taskErr.code || taskErr.message);
         return callback(taskErr, context); // calling back for now for existing client code
       }
     }
