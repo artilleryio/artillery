@@ -40,8 +40,17 @@ function MetricsByEndpoint(script, events) {
 }
 
 function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  // TODO: If hostname is not target, keep it.
-  const baseUrl = url.parse(req.url).path;
+  const targetUrl = userContext.vars.target && url.parse(userContext.vars.target);
+  const requestUrl = url.parse(req.url);
+
+  let baseUrl = '';
+  if (targetUrl && requestUrl.hostname && targetUrl.hostname !== requestUrl.hostname) {
+    baseUrl += requestUrl.hostname
+  }
+  if (targetUrl && requestUrl.port && targetUrl.port !== requestUrl.port) {
+    baseUrl += `:${requestUrl.port}`
+  }
+  baseUrl += requestUrl.path
 
   let reqName = '';
   if (useOnlyRequestNames && req.name) {
