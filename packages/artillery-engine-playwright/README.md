@@ -205,6 +205,34 @@ config:
           x-my-header: my-value
 ```
 
+### Aggregate metrics by scenario name
+
+By default metrics are aggregated separately for each unique URL. When load testing the same endpoint with different/randomized query params, it can be hepful to group metrics by a common name. 
+
+To enable the option pass `aggregateByName: true` to the playwright engine and give a name to your scenarios:
+```
+config:
+  target: https://artillery.io
+  engines:
+    playwright: { aggregateByName: true } 
+  processor: "./flows.js"
+scenarios:
+  - name: blog
+    engine: playwright
+    flowFunction: "helloFlow"
+    flow: []
+```
+`flows.js`
+```
+module.exports = { helloFlow };
+
+function helloFlow(page) {
+  await page.goto(`https://artillery.io/blog/${getRandomSlug()}`);
+}
+```
+
+This serves a similar purpose to the `useOnlyRequestNames` option from the [metrics-by-endpoint](https://github.com/artilleryio/artillery-plugin-metrics-by-endpoint) artillery plugin.
+
 ## Flow function API
 
 By default, only the `page` argument (see Playwright's [`page` API](https://playwright.dev/docs/api/class-page/)) is required for functions that implement Playwright scenarios, e.g.:
@@ -230,6 +258,8 @@ async function helloFlow(page, vuContext, events) {
   await page.goto('https://artillery.io/');
 }
 ```
+
+
 
 ## More examples
 

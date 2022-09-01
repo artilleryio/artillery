@@ -20,6 +20,12 @@ class PlaywrightEngine {
     debug(spec);
 
     const self = this;
+
+    function getName(url) {
+      const { aggregateByName } = self.config.engines.playwright;
+      return aggregateByName && spec.name ? spec.name : url;
+    }
+    
     return async function scenario(initialContext, cb) {
       events.emit('started');
       const launchOptions = Object.assign({}, {
@@ -64,20 +70,19 @@ class PlaywrightEngine {
           const performanceTimingJson = await page.evaluate(() => JSON.stringify(window.performance.timing));
           const performanceTiming = JSON.parse(performanceTimingJson);
 
-          if(uniquePageLoadToTiming[page.url()+performanceTiming.connectStart]) {
+          if(uniquePageLoadToTiming[getName(page.url()) + performanceTiming.connectStart]) {
             return;
           } else {
-            uniquePageLoadToTiming[page.url()+performanceTiming.connectStart] = performanceTiming;
+            uniquePageLoadToTiming[getName(page.url()) + performanceTiming.connectStart] = performanceTiming;
           }
 
-          debug('domcontentloaded:', page.url());
-;
+          debug('domcontentloaded:', getName(page.url()));
           const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart;
 
           events.emit('counter', 'engine.browser.page.domcontentloaded', 1);
-          events.emit('counter', `engine.browser.page.domcontentloaded.${page.url()}`, 1);
+          events.emit('counter', `engine.browser.page.domcontentloaded.${getName(page.url())}`, 1);
           events.emit('histogram', 'engine.browser.page.dominteractive', startToInteractive);
-          events.emit('histogram', `engine.browser.page.dominteractive.${page.url()}`, startToInteractive);
+          events.emit('histogram', `engine.browser.page.dominteractive.${getName(page.url())}`, startToInteractive);
         });
 
         page.on('console', async msg => {
@@ -88,20 +93,20 @@ class PlaywrightEngine {
               // TODO: expose via extended metrics: TTFB
               if (metric.name === 'FCP' || metric.name === 'LCP') {
                 const { name, value, url } = metric;
-                events.emit('histogram', `engine.browser.page.${name}.${url}`, value);
+                events.emit('histogram', `engine.browser.page.${name}.${getName(url)}`, value);
               }
             } catch (err) {}
           }
         });
 
         page.on('load', async (page) => {
-          debug('load:', page.url());
+          debug('load:', getName(page.url()));
 
           const { usedJSHeapSize } = JSON.parse(await page.evaluate(() => JSON.stringify({usedJSHeapSize: window.performance.memory.usedJSHeapSize})));
           events.emit('histogram', 'engine.browser.memory_used_mb', usedJSHeapSize / 1000 / 1000);
         });
         page.on('pageerror', (error) => {
-          debug('pageerror:', page.url());
+          debug('pageerror:', getName(page.url()));
         });
         page.on('requestfinished', (request) => {
           // const timing = request.timing();
