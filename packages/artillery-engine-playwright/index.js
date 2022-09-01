@@ -5,7 +5,7 @@ class PlaywrightEngine {
   constructor(script) {
     debug('constructor');
     this.config = script.config?.engines?.playwright || {};
-
+    this.processor = script.config.processor || {};
     this.launchOptions = this.config.launchOptions || {};
     this.contextOptions = this.config.contextOptions || {};
 
@@ -29,8 +29,9 @@ class PlaywrightEngine {
           '--disable-dev-shm-usage',
         ],
         },
-        this.launchOptions);
-      const contextOptions = this.contextOptions || {};
+        self.launchOptions);
+
+      const contextOptions = self.contextOptions || {};
 
       const browser = await chromium.launch(launchOptions);
       debug('browser created');
@@ -109,7 +110,7 @@ class PlaywrightEngine {
         page.on('response', (response) => {
         });
 
-        const fn = self.config.processor[spec.flowFunction];
+        const fn = self.processor[spec.flowFunction];
         await fn(page, initialContext, events);
 
         await page.close({ runBeforeUnload:true });
