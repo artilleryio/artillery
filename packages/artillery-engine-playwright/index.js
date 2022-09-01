@@ -1,11 +1,17 @@
 const debug = require('debug')('engine:playwright');
-const P = require('playwright');
-const chromium = P.chromium;
+const { chromium } = require('playwright');
 
 class PlaywrightEngine {
   constructor(script) {
     debug('constructor');
-    this.config = script.config;
+    this.config = script.config?.engines?.playwright || {};
+
+    this.launchOptions = this.config.launchOptions || {};
+    this.contextOptions = this.config.contextOptions || {};
+
+    this.defaultNavigationTimeout = (parseInt(this.config.defaultNavigationTimeout, 10) || 30) * 1000;
+    this.defaultTimeout = (parseInt(this.config.defaultPageTimeout, 10) || 30) * 1000;
+
     return this;
   }
 
@@ -16,15 +22,24 @@ class PlaywrightEngine {
     const self = this;
     return async function scenario(initialContext, cb) {
       events.emit('started');
-      const browser = await chromium.launch({
-        headless: self.config.engines.playwright.headless === false ? false : true,
+      const launchOptions = Object.assign({}, {
+        headless: true,
         args: [
           '--enable-precise-memory-info',
+          '--disable-dev-shm-usage',
         ],
-        });
+        },
+        this.launchOptions);
+      const contextOptions = this.contextOptions || {};
+
+      const browser = await chromium.launch(launchOptions);
       debug('browser created');
-      const context = await browser.newContext();
+      const context = await browser.newContext(contextOptions);
+
+      context.setDefaultNavigationTimeout(self.defaultNavigationTimeout);
+      context.setDefaultTimeout(self.defaultTimeout);
       debug('context created');
+
       const uniquePageLoadToTiming = {};
       try {
         // UMD module inlined from the NPM version of https://github.com/GoogleChrome/web-vitals (web-vitals.umd.js):
@@ -41,6 +56,7 @@ class PlaywrightEngine {
         });
 
         const page = await context.newPage();
+
         debug('page created');
 
         page.on('domcontentloaded', async (page) => {
