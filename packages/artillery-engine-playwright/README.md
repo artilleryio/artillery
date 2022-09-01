@@ -24,7 +24,7 @@ This Artillery engine lets you combine Playwright with Artillery to be able to l
 * 🤖&nbsp;&nbsp;&nbsp;Run load tests with real (headless) Chrome instances
 * 🛰&nbsp;&nbsp;&nbsp;Run synthetic checks in CICD with the same Artillery + Playwright scripts
 * 📊&nbsp;&nbsp;&nbsp;See most important front-end metrics ([Largest Contentful Paint (LCP)](https://web.dev/lcp/), [First Contentful Paint (FCP)](https://web.dev/fcp/) etc) and how they are affected by high load
-* ♻️&nbsp;&nbsp;&nbsp;Reuse existing Playwright scripts for load testing (full access to [`page` API](https://playwright.dev/docs/api/class-page/))
+* ♻️&nbsp;&nbsp;&nbsp; Use Playwright for load testing (full access to [`page` API](https://playwright.dev/docs/api/class-page/))
 * 🏎&nbsp;&nbsp;&nbsp;Create new load testing scripts 10x faster with [`playwright codegen`](https://playwright.dev/docs/cli/#generate-code)
 * 🌐&nbsp;&nbsp;&nbsp;Launch thousands of browsers, with **zero** infrastructure setup with [Artillery Pro](https://artillery.io/pro)
 
@@ -54,7 +54,7 @@ All of those factors combined make load testing web apps with traditional approa
 Install Artillery and this engine:
 
 ```sh
-npm install -g artillery@dev artillery-engine-playwright
+npm install -g artillery artillery-engine-playwright
 ```
 
 (See [Use in Docker/CI](#use-in-dockerci) if running tests in Docker/CI)
@@ -67,7 +67,7 @@ Create an Artillery script:
 
 ```yaml
 config:
-  target: https://artillery.io
+  target: https://www.artillery.io
   # Enable the Playwright engine:
   engines:
     playwright: {}
@@ -170,6 +170,41 @@ browser.page.LCP.https://artillery.io/pro/:
   p99: ...................................................... 206.5
 ```
 
+## Configuration
+
+The underlying Playwright instance may be configured through `config.engines.playwright`.
+
+You can pass the following options in:
+
+- `launchOptions` - an object containing arguments to [`browserType.launch()`](https://playwright.dev/docs/api/class-browsertype#browser-type-launch) method
+- `contextOptions` - an object containing arguments to [`browser.newContext()`](https://playwright.dev/docs/api/class-browser#browser-new-context) method
+- `defaultNavigationTimeout` and `defaultTimeout` - a number in seconds. These values are shorthands for [`browserContext.setDefaultNavigationTimeout()`](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout) and [`browserContext.setDefaultTimeout`](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
+
+### Example 1: turn off headless mode
+
+You can turn off the default headless mode to see the browser window for local debugging by setting the [`headless`](https://playwright.dev/docs/api/class-browsertype#browser-type-launch-option-headless) option.
+
+```yaml
+config:
+  engines:
+    playwright:
+      launchOptions:
+        headless: false
+```
+
+### Example 2: set extra HTTP headers
+
+This example sets the [`extraHTTPHeaders`](https://playwright.dev/docs/api/class-browser#browser-new-context-option-extra-http-headers) option for the browser context that is created by the engine.
+
+```yaml
+config:
+  engines:
+    playwright:
+      contextOptions:
+        extraHTTPHeaders:
+          x-my-header: my-value
+```
+
 ## Flow function API
 
 By default, only the `page` argument (see Playwright's [`page` API](https://playwright.dev/docs/api/class-page/)) is required for functions that implement Playwright scenarios, e.g.:
@@ -198,7 +233,7 @@ async function helloFlow(page, vuContext, events) {
 
 ## More examples
 
-See [Artillery + Playwright examples](https://github.com/artilleryio/artillery-examples/tree/main/browser-load-testing-playwright) in `artillery-examples` repo.
+See [Artillery + Playwright examples](https://github.com/artilleryio/artillery/tree/master/examples/browser-load-testing-playwright) in the main `artillery` repo.
 
 ## Use in Docker/CI
 
