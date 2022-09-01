@@ -1,0 +1,5 @@
+config:
+  target: http://asciizoo.artillery.io:8080
+  plugins:
+    metrics-by-endpoint: {}
+    expect: {}

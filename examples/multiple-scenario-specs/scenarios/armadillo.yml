@@ -1,0 +1,7 @@
+scenarios:
+  - name: Armadillo
+    flow:
+      - get:
+          url: "/armadillo"
+          expect:
+            statusCode: 200

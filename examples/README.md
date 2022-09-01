@@ -13,7 +13,7 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [using-data-from-csv](./using-data-from-csv) - using data from an external CSV file in vuser scenarios
 - [scenario-weights](./scenario-weights) - set weights to change how often Artillery runs a scenario
 - [script-overrides](./script-overrides) - override parts of the script such as load phases dynamically at runtime
-
+- [multiple-scenario-specs](./multiple-scenario-specs) - organizing your Artillery test codebase into separate scenario files
 ### End-to-end examples
 
 - [socket-io](./socket-io) - testing a Socket.io service

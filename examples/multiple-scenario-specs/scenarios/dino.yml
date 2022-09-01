@@ -1,0 +1,7 @@
+scenarios:
+  - name: Dino
+    flow:
+      - get:
+          url: "/dino"
+          expect:
+            statusCode: 200
