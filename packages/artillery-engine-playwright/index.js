@@ -12,6 +12,8 @@ class PlaywrightEngine {
     this.defaultNavigationTimeout = (parseInt(this.config.defaultNavigationTimeout, 10) || 30) * 1000;
     this.defaultTimeout = (parseInt(this.config.defaultPageTimeout, 10) || 30) * 1000;
 
+    this.aggregateByName = script.config.engines.playwright.aggregateByName || false;
+
     return this;
   }
 
@@ -22,10 +24,9 @@ class PlaywrightEngine {
     const self = this;
 
     function getName(url) {
-      const { aggregateByName } = self.config.engines.playwright;
-      return aggregateByName && spec.name ? spec.name : url;
+      return (self.aggregateByName && spec.name) ? spec.name : url;
     }
-    
+
     return async function scenario(initialContext, cb) {
       events.emit('started');
       const launchOptions = Object.assign({}, {
