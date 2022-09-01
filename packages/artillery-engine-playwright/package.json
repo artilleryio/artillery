@@ -1,6 +1,6 @@
 {
   "name": "artillery-engine-playwright",
-  "version": "0.0.6",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
