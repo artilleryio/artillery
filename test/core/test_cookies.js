@@ -56,6 +56,30 @@ test('cookie jar invalid response', function (t) {
   });
 });
 
+test('setting cookie jar parsing options', function (t) {
+  var script = require('./scripts/cookies_malformed_response.json');
+  Object.assign(script.config, { http: { cookieJarOptions: { looseMode: true } }});
+
+  runner(script).then(function (ee) {
+    ee.on('done', function (nr) {
+      const report = SSMS.legacyReport(nr).report();
+      t.ok(
+        report.codes[200] && report.codes[200] > 0,
+        'There should be some 200s'
+      );
+
+      t.ok(
+        Object.keys(report.errors).length === 0,
+        'There shoud be no errors'
+      );
+      ee.stop().then(() => {
+        t.end();
+      });
+    });
+    ee.run();
+  });
+});
+
 test('cookie jar socketio', function (t) {
   var script = require('./scripts/cookies_socketio.json');
   runner(script).then(function (ee) {

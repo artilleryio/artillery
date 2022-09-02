@@ -79,6 +79,14 @@ function HttpEngine(script) {
     this.config.defaults = {};
   }
 
+  if (typeof this.config.http === 'undefined') {
+    this.config.http = {};
+  }
+
+  if(typeof this.config.http.cookieJarOptions === 'undefined') {
+    this.config.http.cookieJarOptions = {};
+  };
+
   // If config.http.pool is set, create & reuse agents for all requests (with
   // max sockets set). That's what we're done here.
   // If config.http.pool is not set, we create new agents for each virtual user.
@@ -710,6 +718,7 @@ HttpEngine.prototype._handleResponse = function (
           context._jar.setCookieSync(cookieString, url);
         } catch (err) {
           debug(`Could not parse cookieString "${cookieString}" from response header, skipping it`);
+          debug(err);
           ee.emit('error', 'cookie_parse_error_invalid_cookie');
         }
       });
@@ -775,8 +784,8 @@ HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
 
   initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
+  initialContext._jar = new tough.CookieJar(null, this.config.http.cookieJarOptions);
 
-  initialContext._jar = new tough.CookieJar();
   initialContext._enableCookieJar = false;
   // If a default cookie is set, we will use the jar straightaway:
   if (typeof this.config.defaults.cookie === 'object') {
