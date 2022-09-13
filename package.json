@@ -136,7 +136,7 @@
     "sqs-consumer": "^5.7.0",
     "temp": "^0.9.4",
     "tmp": "0.2.1",
-    "tough-cookie": "^4.0.0",
+    "tough-cookie": "^4.1.0",
     "try-require": "1.2.1",
     "update-notifier": "^5.1.0",
     "uuid": "^8.0.0",
