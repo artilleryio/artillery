@@ -4,6 +4,8 @@ const { chromium } = require('playwright');
 class PlaywrightEngine {
   constructor(script) {
     debug('constructor');
+    this.target = script.config.target;
+
     this.config = script.config?.engines?.playwright || {};
     this.processor = script.config.processor || {};
     this.launchOptions = this.config.launchOptions || {};
@@ -13,6 +15,8 @@ class PlaywrightEngine {
     this.defaultTimeout = (parseInt(this.config.defaultPageTimeout, 10) || 30) * 1000;
 
     this.aggregateByName = script.config.engines.playwright.aggregateByName || false;
+    this.extendedMetrics = typeof script.config.engines.playwright.extendedMetrics !== 'undefined';
+    this.showAllPageMetrics = typeof script.config.engines.playwright.showAllPageMetrics !== 'undefined';
 
     return this;
   }
@@ -56,10 +60,11 @@ class PlaywrightEngine {
         await context.addInitScript(() => {
           // https://github.com/GoogleChrome/web-vitals/issues/38
           window.addEventListener('DOMContentLoaded', () => {
-            webVitals.getTTFB(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) })
-            webVitals.getFCP(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) })
-            webVitals.getLCP(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) })
-            webVitals.getCLS(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) })
+            webVitals.getLCP(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) });
+            webVitals.getFID(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) });
+            webVitals.getCLS(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) });
+            webVitals.getTTFB(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) });
+            webVitals.getFCP(metric => { console.trace(JSON.stringify({ name: metric.name, value: metric.value, metric: metric, url: window.location.href })) });
           })
         });
 
@@ -68,22 +73,28 @@ class PlaywrightEngine {
         debug('page created');
 
         page.on('domcontentloaded', async (page) => {
-          const performanceTimingJson = await page.evaluate(() => JSON.stringify(window.performance.timing));
-          const performanceTiming = JSON.parse(performanceTimingJson);
-
-          if(uniquePageLoadToTiming[getName(page.url()) + performanceTiming.connectStart]) {
+          if(!self.extendedMetrics) {
             return;
-          } else {
-            uniquePageLoadToTiming[getName(page.url()) + performanceTiming.connectStart] = performanceTiming;
           }
 
-          debug('domcontentloaded:', getName(page.url()));
-          const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart;
+          try {
+            const performanceTimingJson = await page.evaluate(() => JSON.stringify(window.performance.timing));
+            const performanceTiming = JSON.parse(performanceTimingJson);
 
-          events.emit('counter', 'engine.browser.page.domcontentloaded', 1);
-          events.emit('counter', `engine.browser.page.domcontentloaded.${getName(page.url())}`, 1);
-          events.emit('histogram', 'engine.browser.page.dominteractive', startToInteractive);
-          events.emit('histogram', `engine.browser.page.dominteractive.${getName(page.url())}`, startToInteractive);
+            if(uniquePageLoadToTiming[getName(page.url()) + performanceTiming.connectStart]) {
+              return;
+            } else {
+              uniquePageLoadToTiming[getName(page.url()) + performanceTiming.connectStart] = performanceTiming;
+            }
+
+            debug('domcontentloaded:', getName(page.url()));
+            const startToInteractive = performanceTiming.domInteractive - performanceTiming.navigationStart;
+
+            events.emit('counter', 'browser.page.domcontentloaded', 1);
+            events.emit('counter', `browser.page.domcontentloaded.${getName(page.url())}`, 1);
+            events.emit('histogram', 'browser.page.dominteractive', startToInteractive);
+            events.emit('histogram', `browser.page.dominteractive.${getName(page.url())}`, startToInteractive);
+          } catch(err) {}
         });
 
         page.on('console', async msg => {
@@ -91,27 +102,35 @@ class PlaywrightEngine {
             debug(msg);
             try {
               const metric = JSON.parse(msg.text());
-              // TODO: expose via extended metrics: TTFB
-              if (metric.name === 'FCP' || metric.name === 'LCP') {
-                const { name, value, url } = metric;
-                events.emit('histogram', `engine.browser.page.${name}.${getName(url)}`, value);
+              const { name, value, url } = metric;
+
+              // We only want metrics for pages on our website, not iframes
+              if (url.startsWith(self.target) || self.showAllPageMetrics) {
+                events.emit('histogram', `browser.page.${name}.${getName(url)}`, value);
               }
             } catch (err) {}
           }
         });
 
         page.on('load', async (page) => {
-          debug('load:', getName(page.url()));
+          if(!self.extendedMetrics) {
+            return;
+          }
 
-          const { usedJSHeapSize } = JSON.parse(await page.evaluate(() => JSON.stringify({usedJSHeapSize: window.performance.memory.usedJSHeapSize})));
-          events.emit('histogram', 'engine.browser.memory_used_mb', usedJSHeapSize / 1000 / 1000);
+          try {
+            debug('load:', getName(page.url()));
+
+            const { usedJSHeapSize } = JSON.parse(await page.evaluate(() => JSON.stringify({usedJSHeapSize: window.performance.memory.usedJSHeapSize})));
+            events.emit('histogram', 'browser.memory_used_mb', usedJSHeapSize / 1000 / 1000);
+          } catch(err) {}
         });
+
         page.on('pageerror', (error) => {
           debug('pageerror:', getName(page.url()));
         });
         page.on('requestfinished', (request) => {
           // const timing = request.timing();
-          events.emit('counter', 'engine.browser.http_requests', 1);
+          events.emit('counter', 'browser.http_requests', 1);
         });
         page.on('response', (response) => {
         });
