@@ -58,3 +58,30 @@ tap.test('divideWork', (t) => {
 
   t.end();
 });
+
+tap.test('set max vusers', (t) => {
+  const numWorkers = 5;
+  const script = {
+    config: {
+      target: 'http://targ.get.url',
+      phases: [{ name: 'vusers', duration: 10, maxVusers: 20, arrivalRate: 100 }]
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const phases = divideWork(script, numWorkers);
+  const actualVusers = phases.reduce((partialSum, phase) =>
+    partialSum + phase.config.phases[0].maxVusers, 0);
+  t.equal(script.config.phases[0].maxVusers, actualVusers);
+  t.end();
+});
