@@ -8,7 +8,7 @@ tap.test('Run with no arguments', async (t) => {
 });
 
 tap.test('Basic probes', async (t) => {
-  const { stdout } = await a9(['http', 'www.artillery.io']);
+  const { stdout } = await a9(['http', 'http://asciiart.artillery.io:8080/dino']);
 
   t.equal(
     true,
