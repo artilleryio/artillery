@@ -68,6 +68,21 @@ test('pause', function (t) {
   phaser.run();
 });
 
+test('rampTo with no arrivalRate defaults to 0', function (t) {
+  const phaseSpec = { rampTo: 5, arrivalRate: 0 };
+
+  t.plan(1);
+  let phaser = createPhaser([phaseSpec]);
+  phaser.on('phaseStarted', function (spec) {
+    t.ok(
+      _.isEqual(spec.arrivalRate, 0),
+      'arrivalRate starts as zero'
+    );
+  t.end();
+  });
+  phaser.run();
+});
+
 test('arrivalCount', function (t) {
   const phaseSpec = {
     duration: 10,
@@ -225,3 +240,4 @@ function testRamp(t, phaseSpec) {
   startedAt = Date.now();
   phaser.run();
 }
+
