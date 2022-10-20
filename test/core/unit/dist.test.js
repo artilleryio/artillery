@@ -2,7 +2,6 @@
 
 const tap = require('tap');
 const divideWork = require('../../../lib/dist');
-const isIdlePhase = require('../../../core/lib/is-idle-phase');
 
 
 tap.test('divideWork', (t) => {
