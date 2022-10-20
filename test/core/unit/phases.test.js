@@ -68,7 +68,7 @@ test('pause', function (t) {
   phaser.run();
 });
 
-test('rampTo with no arrivalRate defaults to 0', function (t) {
+test('arrivalRate set to 0 stays at 0', function (t) {
   const phaseSpec = { rampTo: 5, arrivalRate: 0 };
 
   t.plan(1);
