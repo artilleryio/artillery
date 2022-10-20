@@ -10,3 +10,4 @@ scenarios:
   - name: "Dev account signup"
     engine: playwright
     flowFunction: "devAccountSignupFlow"
+    flow: []

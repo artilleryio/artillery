@@ -10,3 +10,4 @@ scenarios:
   - name: Check page
     engine: playwright
     flowFunction: checkPage
+    flow: []
