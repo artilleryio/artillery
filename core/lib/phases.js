@@ -94,7 +94,7 @@ function createPause(spec, ee) {
 
 function createRamp(spec, ee) {
   const duration = spec.duration || 1;
-  const arrivalRate = spec.arrivalRate || 1;
+  const arrivalRate = spec.arrivalRate || 0;
   const rampTo = spec.rampTo || arrivalRate + 1;
 
   const tick = 1000 / Math.max(arrivalRate, rampTo); // smallest tick

@@ -3,6 +3,7 @@
 const tap = require('tap');
 const divideWork = require('../../../lib/dist');
 
+
 tap.test('divideWork', (t) => {
   const numWorkers = 5;
   const script = {
@@ -83,5 +84,33 @@ tap.test('set max vusers', (t) => {
   const actualVusers = phases.reduce((partialSum, phase) =>
     partialSum + phase.config.phases[0].maxVusers, 0);
   t.equal(script.config.phases[0].maxVusers, actualVusers);
+  t.end();
+});
+
+tap.test('arrivalRate defaults to zero if not present', (t) => {
+  const numWorkers = 5;
+  const script = {
+    config: {
+      target: 'http://targ.get.url',
+      phases: [{ name: 'rampto', duration: 10, rampTo: 25 }]
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const phases = divideWork(script, numWorkers);
+  const totalArrivalRate = phases.reduce((partialSum, phase) =>
+    partialSum + phase.config.phases[0].arrivalRate, 0);
+
+  t.equal(totalArrivalRate, 0);
   t.end();
 });
