@@ -97,7 +97,7 @@ function createRamp(spec, ee) {
   const arrivalRate = spec.arrivalRate;
   const rampTo = spec.rampTo;
 
-  const tick = 1000; // 1s; match VUs arrival rate
+  const tick = 1000 / Math.max(arrivalRate, rampTo); // smallest tick
   const difference = rampTo - arrivalRate;
   const periods = duration * 1000 / tick;
 
@@ -107,13 +107,13 @@ function createRamp(spec, ee) {
     // Anything under function value should be an arrival
 
     let t = currentStep * tick / 1000;
-    return ((difference / duration) * t + arrivalRate) / Math.max(difference, arrivalRate);
+    return ((difference / duration) * t + arrivalRate) / Math.max(rampTo, arrivalRate);
   };
 
   let probabilities = Array.from({length: periods}, () => Math.random());
 
   debug(
-    `rampTo: tick = ${tick}; difference = ${difference}; rampTo: tick = ${tick}ms; arrivalRate = ${arrivalRate}; periods = ${periods}`
+    `rampTo: tick = ${tick}; difference = ${difference}; rampTo = ${rampTo}; arrivalRate = ${arrivalRate}; periods = ${periods}`
   );
 
   return function rampTask(callback) {
@@ -122,7 +122,7 @@ function createRamp(spec, ee) {
     const timer = driftless.setDriftlessInterval(function maybeArrival() {
       if (currentStep <= periods) {
         let arrivalBreakpoint = arrivalProbability(currentStep);
-        let roll = probabilities[currentStep];
+        let roll = probabilities[currentStep-1];
         debug(`roll:${roll} <= breakpoint:${arrivalBreakpoint}`);
         if (roll <= arrivalBreakpoint) {
           ee.emit('arrival', spec);
