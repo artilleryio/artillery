@@ -94,83 +94,46 @@ function createPause(spec, ee) {
 
 function createRamp(spec, ee) {
   const duration = spec.duration || 1;
-  const arrivalRate = spec.arrivalRate || 0;
-  const rampTo = spec.rampTo || arrivalRate + 1;
+  const arrivalRate = spec.arrivalRate;
+  const rampTo = spec.rampTo;
 
   const tick = 1000 / Math.max(arrivalRate, rampTo); // smallest tick
-  const r0 = arrivalRate; // initial arrival rate
   const difference = rampTo - arrivalRate;
-  const offset = difference < 0 ? -1 : 1;
-  const periods = Math.abs(difference) + 1;
-  const ticksPerPeriod = ((duration / periods) * 1000) / tick;
-  const periodLenSec = duration / periods;
+  const periods = duration * 1000 / tick;
 
-  let expected = 0;
-  for (let i = 1; i <= periods; i++) {
-    let expectedInPeriod = periodLenSec * i;
-    expected += expectedInPeriod;
-  }
-  expected = Math.floor(expected);
+  function arrivalProbability(currentStep) {
+    // linear function ax + b
+    // normalized to 0 <= f(t) <= 1
+    // Anything under function value should be an arrival
 
-  // console.log(`expecting ${expected} total arrivals`);
+    let t = currentStep * tick / 1000;
+    return ((difference / duration) * t + arrivalRate) / Math.max(rampTo, arrivalRate);
+  };
 
-  let probabilities = crypto.randomBytes(
-    Math.ceil(((duration * 1000) / tick) * 1.25)
-  );
+  let probabilities = Array.from({length: periods}, () => Math.random());
 
   debug(
-    `rampTo: tick = ${tick}ms; r0 = ${r0}; periods = ${periods}; ticksPerPeriod = ${ticksPerPeriod}; period length = ${periodLenSec}s`
+    `rampTo: tick = ${tick}; difference = ${difference}; rampTo = ${rampTo}; arrivalRate = ${arrivalRate}; periods = ${periods}`
   );
 
   return function rampTask(callback) {
     ee.emit('phaseStarted', spec);
-    let currentRate = r0;
-    let p = (periodLenSec * currentRate) / ticksPerPeriod;
-    let ticksElapsed = 0;
-
-    let i = 0;
+    let currentStep = 1;
     const timer = driftless.setDriftlessInterval(function maybeArrival() {
-      let startedAt = Date.now();
-      if (++ticksElapsed > ticksPerPeriod) {
-        debug(`ticksElapsed: ${ticksElapsed}; upping probability or stopping`);
-        if (offset === -1 ? currentRate > rampTo : currentRate < rampTo) {
-          currentRate += offset;
-          ticksElapsed = 0;
-
-          p = (periodLenSec * currentRate) / ticksPerPeriod;
-
-          debug(`update: currentRate = ${currentRate} - p = ${p}`);
-          debug(
-            `\texpecting ~${
-              periodLenSec * currentRate
-            } arrivals before updating again`
-          );
-        } else {
-          debug(
-            `done: ticksElapsed = ${ticksElapsed}; currentRate = ${currentRate}; rampTo = ${rampTo} `
-          );
-
-          driftless.clearDriftless(timer);
-          ee.emit('phaseCompleted', spec);
-
-          /*
-          var profile = profiler.stopProfiling();
-          profile.export(function(err, result) {
-            if (err) {
-              console.log(err);
-            }
-            fs.writeFileSync('profile1.json.cpuprofile', result); // extension is important
-            return callback(null);
-          });
-           */
-
-          return callback(null);
+      if (currentStep <= periods) {
+        let arrivalBreakpoint = arrivalProbability(currentStep);
+        let roll = probabilities[currentStep-1];
+        debug(`roll:${roll} <= breakpoint:${arrivalBreakpoint}`);
+        if (roll <= arrivalBreakpoint) {
+          ee.emit('arrival', spec);
         }
-      }
 
-      let prob = probabilities[i++] / 256;
-      if (prob <= p) {
-        ee.emit('arrival', spec);
+        currentStep++;
+      } else {
+        driftless.clearDriftless(timer);
+        ee.emit('phaseCompleted', spec);
+
+        return callback(null);
       }
     }, tick);
   };

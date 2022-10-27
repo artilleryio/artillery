@@ -111,3 +111,18 @@
 
     [[ $status -eq 1 ]]
 }
+
+@test "Ramp up script throughput does not depend on workers" {
+    ./bin/run run -o multiple_workers.json test/scripts/ramp.json
+    WORKERS=1 ./bin/run run -o single_worker.json test/scripts/ramp.json
+
+    multiple_count=$(jq '.aggregate.counters."vusers.created"' multiple_workers.json)
+    single_count=$(jq '.aggregate.counters."vusers.created"' single_worker.json)
+
+    rm multiple_workers.json
+    rm single_worker.json
+
+    diff=$((single_count-multiple_count))
+    diff_abs=${diff#-}
+    [ $diff_abs -le 10 ]
+}
