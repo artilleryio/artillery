@@ -6,7 +6,7 @@
 
 Ever wished you could run load tests with *real browsers*? Well, now you can! You can combine Artillery with Playwright to run full browser tests, and this example shows you how. We can run both load tests, and smoke tests with headless browsers.
 
-**Note**: this feature is in alpha stage. We'd love your feedback! -> [discord chatroom](https://discord.com/invite/QthdcAAPRK)
+We'd love your feedback! -> [Discussion board](https://github.com/artilleryio/artillery/discussions)
 
 ## Pre-requisites
 
@@ -33,6 +33,24 @@ This example shows how we can implement a smoke test (or a synthetic check) usin
 ```sh
 $(npm bin)/artillery run browser-smoke-test.yml
 ```
+
+## Example 3: Tracking custom metrics for part of the flow
+
+A common usage scenario is reporting performance metrics only for one part of a test flow. For example, you may be testing an ecommerce app with the following steps:
+
+1. Go to the homepage
+2. Search for a product
+3. Navigate to product page
+4. Add product to cart
+5. Login
+6. Complete checkout:
+  - Enter a discount code
+  - Update billing info
+  - Check out
+
+You may want to report performance metrics only for part 6 of the flow. Artillery lets you do that with its [custom metrics API](https://www.artillery.io/docs/guides/guides/extension-apis#tracking-custom-metrics).
+
+See the example in [./advanced-custom-metric-for-subflow.yml](./advanced-custom-metric-for-subflow.yml) and specifically the `multistepWithCustomMetrics()` test in [flows.js](./flows.js) for details.
 
 
 ## Creating Playwright scripts
