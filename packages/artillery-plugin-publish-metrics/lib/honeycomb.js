@@ -39,6 +39,7 @@ class HoneycombReporter {
       url: url.href,
       host: url.host,
       method: req.method,
+      name: req.name,
       statusCode: res.statusCode
     };
 
