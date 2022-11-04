@@ -3,8 +3,6 @@ const { a9 } = require('./_helpers.js');
 const path = require('path');
 
 tap.test('Run a test on AWS Lambda', async (t) => {
-  t.setTimeout(300 * 1000);
-
   const configPath = path.resolve(
     __dirname,
     '..',
@@ -27,10 +25,16 @@ tap.test('Run a test on AWS Lambda', async (t) => {
     'aws:lambda',
     '--count',
     '10',
+    '--platform-opt',
+    'memory-size=3000',
+    '--platform-opt',
+    'region=eu-west-1',
     '--config',
     configPath,
     scenarioPath
   ]);
 
-  t.ok(stdout.indexOf('Summary report') > 0);
+  t.ok(
+    stdout.indexOf('Summary report') > 0 && stdout.indexOf('http.codes.200' > 0)
+  );
 });
