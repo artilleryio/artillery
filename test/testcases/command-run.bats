@@ -122,7 +122,12 @@
     rm multiple_workers.json
     rm single_worker.json
 
-    diff=$((single_count-multiple_count))
-    diff_abs=${diff#-}
-    [ $diff_abs -le 10 ]
+    expected=55
+    single_diff=$((single_count-expected))
+    single_diff_abs=${single_diff#-}
+
+    multiple_diff=$((multiple_count-expected))
+    multiple_diff_abs=${multiple_diff#-}
+
+    [[ $multiple_diff_abs -le 11 && $single_diff_abs -le 11 ]]
 }
