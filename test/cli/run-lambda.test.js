@@ -3,6 +3,8 @@ const { a9 } = require('./_helpers.js');
 const path = require('path');
 
 tap.test('Run a test on AWS Lambda', async (t) => {
+  t.setTimeout(300 * 1000);
+
   const configPath = path.resolve(
     __dirname,
     '..',
