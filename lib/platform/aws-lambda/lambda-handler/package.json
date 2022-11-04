@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "artillery": "latest",
     "artillery-plugin-sqs-reporter": "^1.2.0"
   }
 }
