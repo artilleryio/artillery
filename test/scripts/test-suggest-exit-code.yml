@@ -1,6 +1,6 @@
 config:
   processor: ./test-suggest-exit-code.js
-  target: https://artillery.io
+  target: http://asciiart.artillery.io:8080
   phases:
     - arrivalRate: 10
       duration: 10
