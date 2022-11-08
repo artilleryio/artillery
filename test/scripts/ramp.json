@@ -2,7 +2,7 @@
   "config": {
     "target": "http://localhost:3003",
     "phases": [
-      {"duration": 10, "arrivalRate": 1, "rampTo": 10 }
+      {"duration": 2, "arrivalRate": 6, "rampTo": 1 }
     ]
   },
   "scenarios": [
