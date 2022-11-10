@@ -200,15 +200,15 @@ function run(script, ee, options, runState, contextVars) {
   });
   phaser.on('phaseStarted', function (spec) {
     ee.emit('phaseStarted', spec);
-    // if (isIdlePhase(spec)) {
-    //   ee.emit('stats', SSMS.empty());
-    // }
+    if (isIdlePhase(spec)) {
+      ee.emit('stats', SSMS.empty());
+    }
   });
   phaser.on('phaseCompleted', function (spec) {
-    // if (isIdlePhase(spec)) {
-    //   ee.emit('stats', SSMS.empty());
-    // }
     ee.emit('phaseCompleted', spec);
+    if (isIdlePhase(spec)) {
+      ee.emit('stats', SSMS.empty());
+    }
   });
   phaser.on('done', function () {
     debug('All phases launched');
