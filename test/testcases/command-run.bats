@@ -112,7 +112,10 @@
     [[ $status -eq 1 ]]
 }
 
-@test "Ramp up script throughput does not depend on workers" {
+@test "Ramp to script throughput behaves as expected running on multiple workers" {
+    # This would cause older versions of artillery to generate much more traffic than expected
+    # We compare them to the max amount of arrivals we expect from the script
+    # Note: v2.0.0-22 generates 20+ arrivals, almost double
     ./bin/run run -o multiple_workers.json test/scripts/ramp.json
     WORKERS=1 ./bin/run run -o single_worker.json test/scripts/ramp.json
 
@@ -122,12 +125,7 @@
     rm multiple_workers.json
     rm single_worker.json
 
-    expected=55
-    single_diff=$((single_count-expected))
-    single_diff_abs=${single_diff#-}
+    max_expected=11
 
-    multiple_diff=$((multiple_count-expected))
-    multiple_diff_abs=${multiple_diff#-}
-
-    [[ $multiple_diff_abs -le 11 && $single_diff_abs -le 11 ]]
+    [[ $multiple_count -le $max_expected && $single_count -le $max_expected ]]
 }
