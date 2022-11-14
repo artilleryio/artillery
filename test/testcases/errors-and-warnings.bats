@@ -31,8 +31,8 @@
   [[ true ]]
 }
 
-@test "Exits with non zero when an unknown command is used" {
-    run ./bin/run makemeasandwich --with cheese
+@test "Exits with non zero when an unknown command is used (" {
+    printf "no" | run ./bin/run makemeasandwich --with cheese
     [[ $status -ne 0 ]]
 }
 
