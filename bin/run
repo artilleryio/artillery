@@ -6,6 +6,7 @@
 
 const command = require('@oclif/command');
 const { createGlobalObject } = require('../lib/artillery-global');
+const debug = require('debug')('run');
 
 const updateNotifier = require('update-notifier');
 const pkg = require('../package.json');
@@ -36,12 +37,13 @@ async function main() {
   } catch(err) {
     await require('@oclif/errors/handle')(err);
 
-    let errInfo = ['stack', 'code', 'message'];
+    console.log(err.message);
 
+    let errInfo = ['stack', 'code'];
     errInfo.forEach((e) => {
       let info = err[e];
       if (info) {
-        console.log(info);
+        debug(info);
       }
     });
   }
