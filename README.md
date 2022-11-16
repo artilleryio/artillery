@@ -11,16 +11,18 @@
   <img alt="npm" src="https://img.shields.io/npm/dm/artillery?style=flat-square">
 </p>
 
-<h2 align="center">
-  Artillery is an open-source performance & reliability testing suite for developers & SREs
-</h2>
+<h1 align="center">
+  The most advanced load testing platform in the world
+</h1>
 
-- Emulate user behavior with scenarios - with multiple steps, transactions, request chaining, and more
-- Run scenarios as **load tests** or **end-to-end** synthetic tests
-- **Cloud-scale** and **cloud-native** - run distributed tests from your own AWS account using AWS Lambda
-  - AWS Fargate and Kubernetes support coming next!
-- **Full-stack attack** - test at the protocol level (HTTP, WebSocket, Socket.io, and more) or with **real headless browsers**
-- And lots more: detailed performance metrics, monitoring/o11y integrations, extension APIs for custom scripting in JavaScript, and plugins 
+- **Test at cloud scale.** Artillery has cloud-native distributed load testing out-of-the box.
+  - Run serverless load tests on AWS Lambda today. AWS Fargate and Kubernetes coming soon.
+- **Batteries-included.** 20+ integrations for monitoring, observability, and CICD.
+- **Test anything**. HTTP, WebSocket, Socket.io, gRPC, Kinesis, and more.
+- **Playwright support**. Load test with real headless browsers.
+- **Powerful workload modeling**. Emulate complex user behavior with request chains, multiple steps, transactions, and more.
+- **Extensible & hackable**. Artillery has a plugin API to allow extending and customization.
+- **Open source**. Permissive open source license to let you build on top of Artillery.
 
 ----
 
