@@ -37,7 +37,7 @@ function createServer() {
   test('plugins can attach functions to processor object', async (t) => {
     const output = await $`ARTILLERY_PLUGIN_PATH=${path.join(
       __dirname,
-      '../../core/plugins'
+      '../../plugins'
     )} ${A9} run --quiet --overrides ${overrides} ${path.join(
       __dirname,
       '/script.json'
