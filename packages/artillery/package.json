@@ -105,6 +105,7 @@
     "cli-highlight": "^2.1.11",
     "cli-table3": "^0.6.2",
     "csv-parse": "^4.16.3",
+    "core": "*",
     "debug": "^4.3.1",
     "decompress-response": "^6.0.0",
     "deep-for-each": "^3.0.0",
