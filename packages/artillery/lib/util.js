@@ -10,10 +10,10 @@ const os = require('os');
 
 const chalk = require('chalk');
 
-const engineUtil = require('../core/lib/engine_util');
+const engineUtil = require('core').engine_util;
 const renderVariables = engineUtil._renderVariables;
 const template = engineUtil.template;
-const { contextFuncs } = require('../core/lib/runner');
+const { contextFuncs } = require('core').runner;
 
 const p = require('util').promisify;
 

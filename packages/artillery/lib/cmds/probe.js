@@ -16,9 +16,10 @@ const jmespath = require('jmespath');
 const cheerio = require('cheerio');
 const YAML = require('js-yaml');
 
-const telemetry = require('../telemetry').init();
-const HttpEngine = require('../../core/lib/engine_http');
 const { expectations, formatters } = require('artillery-plugin-expect');
+
+const telemetry = require('../telemetry').init();
+const HttpEngine = require('core').engine_http;
 const sleep = require('../util/sleep');
 
 function fmt(val, padTo = 8) {

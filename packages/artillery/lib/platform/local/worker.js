@@ -22,12 +22,12 @@ const debug = require('debug')('artillery:worker');
 
 const path = require('path');
 
-const { SSMS } = require('../../../core/lib/ssms');
+const { SSMS } = require('core').ssms;
 const { loadPlugins, loadPluginsConfig } = require('../../load-plugins');
 
 const EventEmitter = require('eventemitter3');
 const p = require('util').promisify;
-const { loadProcessor } = core.runnerFuncs;
+const { loadProcessor } = core.runner.runnerFuncs;
 
 process.env.LOCAL_WORKER_ID = threadId;
 

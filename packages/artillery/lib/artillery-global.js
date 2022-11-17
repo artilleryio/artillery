@@ -3,7 +3,7 @@ const chalk = require('chalk');
 
 const createReporter = require('./console-reporter');
 const util = require('./util');
-const { SSMS } = require('../core/lib/ssms');
+const { SSMS } = require('core').ssms;
 const EventEmitter = require('events');
 const telemetry = require('./telemetry').init();
 

@@ -1,6 +1,6 @@
 const { ArtilleryWorker } = require('./artillery-worker-local');
 const core = require('../../dispatcher');
-const { handleScriptHook, prepareScript, loadProcessor } = core.runnerFuncs;
+const { handleScriptHook, prepareScript, loadProcessor } = core.runner.runnerFuncs;
 const debug = require('debug')('platform:local');
 const EventEmitter = require('events');
 const _ = require('lodash');

@@ -6,7 +6,7 @@
 
 const assert = require('assert');
 const L = require('lodash');
-const isIdlePhase = require('../core/lib/is-idle-phase');
+const isIdlePhase = require('core').isIdlePhase;
 
 module.exports = divideWork;
 

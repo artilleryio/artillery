@@ -10,7 +10,7 @@ const moment = require('moment');
 const chalk = require('chalk');
 const Table = require('cli-table3');
 const util = require('./util');
-const SSMS = require('../core/lib/ssms').SSMS;
+const SSMS = require('core').ssms.SSMS;
 
 module.exports = createConsoleReporter;
 

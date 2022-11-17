@@ -4,6 +4,6 @@
 
 'use strict';
 
-const core = require('../core');
+const core = require('core');
 
 module.exports = core;
