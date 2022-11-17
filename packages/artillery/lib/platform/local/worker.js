@@ -17,7 +17,7 @@ const {
 } = require('worker_threads');
 
 const core = require('../../dispatcher');
-const createRunner = core.runner;
+const createRunner = core.runner.runner;
 const debug = require('debug')('artillery:worker');
 
 const path = require('path');
@@ -37,10 +37,11 @@ let shuttingDown = false;
 
 let runnerInstance = null;
 
-artillery.globalEvents.on('log', (...args) => {
+global.artillery.globalEvents.on('log', (...args) => {
   send({ event: 'log', args });
 });
-artillery._workerThreadSend = send;
+
+global.artillery._workerThreadSend = send;
 
 //
 // Supported messages: run, stop

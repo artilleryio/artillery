@@ -159,7 +159,7 @@ class PlatformLambda {
     // Copy this version of Artillery into the Lambda package
     const a9basepath = path.resolve(__dirname, '..', '..', '..');
     // TODO: read this from .files in package.json instead:
-    for (const dir of ['bin', 'lib', 'core']) {
+    for (const dir of ['bin', 'lib']) {
       const destdir = path.join(dirname, 'node_modules', 'artillery', dir);
       const srcdir = path.join(a9basepath, dir);
       fs.ensureDirSync(destdir);
