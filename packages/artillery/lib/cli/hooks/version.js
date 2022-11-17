@@ -11,13 +11,9 @@ async function versionHook() {
     console.log(`
 VERSION INFO:
 
-Artillery Core: ${version}
-Artillery Pro:  ${
-      Pro ? Pro.version : 'not installed (https://artillery.io/product)'
-    }
-
-Node.js: ${process.version}
-OS:      ${process.platform}
+Artillery: ${version}
+Node.js:   ${process.version}
+OS:        ${process.platform}
 `);
 
     return process.exit(0);
