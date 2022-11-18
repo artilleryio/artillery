@@ -129,3 +129,15 @@
 
     [[ $multiple_count -le $max_expected && $single_count -le $max_expected ]]
 }
+
+@test "Ramp to 2.0.0-24 regression #1682" {
+    # This would cause older versions of artillery to use Infinity as tick duration
+    # causing a worker to break and log:
+    # `(node:12259) TimeoutOverflowWarning: Infinity does not fit into a 32-bit signed integer.
+    # Timeout duration was set to 1.`
+    # This happened because for a certain phase a worker had arrivalRate==rampTo==0
+    set +e
+    WORKERS=7 ./bin/run run ./test/scripts/ramp-regression-1682.json 2>&1 | grep -q -m1 "TimeoutOverflowWarning"
+    [[ $? -eq 1 ]]
+    set -e
+}
