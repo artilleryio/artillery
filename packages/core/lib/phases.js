@@ -97,7 +97,10 @@ function createRamp(spec, ee) {
   const arrivalRate = spec.arrivalRate;
   const rampTo = spec.rampTo;
 
-  const tick = 1000 / Math.max(arrivalRate, rampTo); // smallest tick
+  // smallest tick we can get away with. Both arrivalRate and rampTo
+  // can be zero. So in that case we use 1s ticks even tho no
+  // arrivals will be generated
+  let tick = 1000 / Math.max(Math.max(arrivalRate, rampTo), 1);
   const difference = rampTo - arrivalRate;
   const periods = duration * 1000 / tick;
 
@@ -107,7 +110,7 @@ function createRamp(spec, ee) {
     // Anything under function value should be an arrival
 
     let t = currentStep * tick / 1000;
-    return ((difference / duration) * t + arrivalRate) / Math.max(rampTo, arrivalRate);
+    return ((difference / duration) * t + arrivalRate) / Math.max(rampTo, arrivalRate) || 0;
   };
 
   let probabilities = Array.from({length: periods}, () => Math.random());
