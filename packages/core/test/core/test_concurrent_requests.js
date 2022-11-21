@@ -1,8 +1,8 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../../core').runner;
-const { SSMS } = require('../../core/lib/ssms');
+const runner = require('../../lib/runner').runner;
+const { SSMS } = require('../../lib/ssms');
 
 test('scenarios avoided - arrival rate', function (t) {
   var script = require('./scripts/concurrent_requests_arrival_rate.json');

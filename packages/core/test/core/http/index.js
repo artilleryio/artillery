@@ -1,3 +1,3 @@
 'use strict';
 
-require('./test_function');
+// require('./test_function');

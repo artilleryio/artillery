@@ -1,14 +1,14 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../../core').runner;
+const runner = require('../..').runner.runner;
 const l = require('lodash');
 const url = require('url');
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parse');
 const async = require('async');
-const { SSMS } = require('../../core/lib/ssms');
+const { SSMS } = require('../../lib/ssms');
 
 test('single payload', function (t) {
   const fn = path.resolve(__dirname, './scripts/single_payload.json');

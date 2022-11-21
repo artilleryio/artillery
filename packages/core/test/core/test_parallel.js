@@ -1,7 +1,7 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../../core').runner;
+const runner = require('../..').runner.runner;
 const L = require('lodash');
 
 test('parallel requests', (t) => {

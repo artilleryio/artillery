@@ -1,8 +1,8 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../../core').runner;
-const { SSMS } = require('../../core/lib/ssms');
+const runner = require('../..').runner.runner;
+const { SSMS } = require('../../lib/ssms');
 
 test('config variables', function (t) {
   const script = require('./scripts/config_variables.json');

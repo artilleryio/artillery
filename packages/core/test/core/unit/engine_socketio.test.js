@@ -6,8 +6,9 @@
 
 const EventEmitter = require('events');
 const { test } = require('tap');
-const SocketIoEngine = require('../../../core/lib/engine_socketio');
-const { createGlobalObject } = require('../../../lib/artillery-global');
+const SocketIoEngine = require('../../../lib/engine_socketio');
+
+const { updateGlobalObject } = require('../../../index');
 
 const createServer = require('../targets/simple_socketio');
 

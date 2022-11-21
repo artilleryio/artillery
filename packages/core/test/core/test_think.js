@@ -1,8 +1,8 @@
 'use strict';
 
 var { test } = require('tap');
-var runner = require('../../core').runner;
-const { SSMS } = require('../../core/lib/ssms');
+var runner = require('../..').runner.runner;
+const { SSMS } = require('../../lib/ssms');
 
 test('think', function (t) {
   var script = require('./scripts/thinks_http.json');

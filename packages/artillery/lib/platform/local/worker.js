@@ -16,7 +16,7 @@ const {
   threadId
 } = require('worker_threads');
 
-const core = require('../../dispatcher');
+const core = require('core');
 const createRunner = core.runner.runner;
 const debug = require('debug')('artillery:worker');
 

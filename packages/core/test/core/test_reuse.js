@@ -1,8 +1,8 @@
 'use strict';
 
 var { test } = require('tap');
-var runner = require('../../core').runner;
-const { SSMS } = require('../../core/lib/ssms');
+var runner = require('../..').runner.runner;
+const { SSMS } = require('../../lib/ssms');
 
 test('concurrent runners', function (t) {
   let script = require('./scripts/hello.json');

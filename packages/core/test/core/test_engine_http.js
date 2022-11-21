@@ -12,7 +12,7 @@ var { test } = require('tap');
 var l = require('lodash');
 var nockify = require('./lib/nockify');
 
-var httpWorker = require('../../core/lib/engine_http');
+var httpWorker = require('../../lib/engine_http');
 // nockify does not support payloads yet
 var scripts = [
   ['hello', require('./scripts/hello.json')],

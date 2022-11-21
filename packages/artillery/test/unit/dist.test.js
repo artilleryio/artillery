@@ -1,7 +1,7 @@
 'use strict';
 
 const tap = require('tap');
-const divideWork = require('../../../lib/dist');
+const divideWork = require('../../lib/dist');
 
 
 tap.test('divideWork for arrivalCount single phase', (t) => {

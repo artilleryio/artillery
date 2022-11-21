@@ -1,10 +1,10 @@
 'use strict';
 
 var { test } = require('tap');
-var runner = require('../../core').runner;
+var runner = require('../..').runner.runner;
 var l = require('lodash');
 var request = require('got');
-const { SSMS } = require('../../core/lib/ssms');
+const { SSMS } = require('../../lib/ssms');
 
 test('cookie jar http', function (t) {
   var script = require('./scripts/cookies.json');

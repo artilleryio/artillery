@@ -1,10 +1,10 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../../core').runner;
+const runner = require('../..').runner.runner;
 const L = require('lodash');
 
-const { SSMS } = require('../../core/lib/ssms');
+const { SSMS } = require('../../lib/ssms');
 
 test('simple loop', (t) => {
   const script = require('./scripts/loop.json');

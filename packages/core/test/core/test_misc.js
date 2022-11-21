@@ -1,9 +1,9 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../../core').runner;
+const runner = require('../..').runner.runner;
 const l = require('lodash');
-const { SSMS } = require('../../core/lib/ssms');
+const { SSMS } = require('../../lib/ssms');
 
 var SCRIPTS = [
   'hello.json',
