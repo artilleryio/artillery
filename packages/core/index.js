@@ -1,6 +1,8 @@
 const EventEmitter = require('events');
 const chalk = require('chalk');
 
+const { createGlobalObject } = require('../artillery/lib/artillery-global');
+
 // NOTE: This may be called more than once, and so should be non-destructive
 async function updateGlobalObject(opts) {
   global.artillery = global.artillery || {};
@@ -20,7 +22,7 @@ async function updateGlobalObject(opts) {
 
   global.artillery.util = global.artillery.util || {};
 
-  global.artillery.util.template = require('./lib/engine_util').template;
+  global.artillery.util.template = require('../commons/engine_util').template;
 
   global.artillery.plugins = global.artillery.plugins || [];
 
@@ -33,11 +35,16 @@ async function updateGlobalObject(opts) {
       this.extensionEvents.push(event);
     };
 
-  global.artillery.globalEvents =
-    global.artillery.globalEvents || new EventEmitter();
+  if (!global.artillery.hasOwnProperty('globalEvents')) {
+    Object.defineProperty(global.artillery, 'globalEvents', {
+      value: new EventEmitter()
+    })
+
+  }
+
   global.artillery.__SSMS = require('./lib/ssms').SSMS;
 
-  if (typeof global.artillery.suggestedExitCode === 'undefined') {
+  if (!global.artillery.hasOwnProperty('suggestedExitCode')) {
     Object.defineProperty(global.artillery, 'suggestedExitCode', {
       get() {
         return global.artillery._exitCode;
@@ -53,6 +60,7 @@ async function updateGlobalObject(opts) {
 }
 
 async function main() {
+  await createGlobalObject();
   await updateGlobalObject();
 }
 

@@ -1,10 +1,6 @@
 const version = require('../package.json').version;
 
-const createReporter = require('./console-reporter');
-const util = require('./util');
-const telemetry = require('./telemetry').init();
-
-const { updateGlobalObject } = require('core');
+//const telemetry = require('./telemetry').init();
 
 async function createGlobalObject(opts) {
   global.artillery = global.artillery || {};
@@ -16,7 +12,7 @@ async function createGlobalObject(opts) {
 
   global.artillery._exitCode = 0;
 
-  global.artillery.telemetry = global.artillery.telemetry || telemetry;
+  //global.artillery.telemetry = global.artillery.telemetry || telemetry;
 
   global.artillery.logger = global.artillery.logger || function (opts) {
     return {
@@ -34,14 +30,6 @@ async function createGlobalObject(opts) {
     // TODO: Move graceful shutdown logic into here
     process.exit(global.artillery.suggestedExitCode);
   };
-
-  //global.artillery.suggestedExitCode = 99;
-
-  // TODO: Refactor
-  global.artillery.__createReporter = createReporter;
-  global.artillery.__util = util;
-
-  await updateGlobalObject();
 }
 
 module.exports = {

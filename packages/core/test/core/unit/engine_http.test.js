@@ -9,7 +9,7 @@ const sinon = require('sinon');
 
 const HttpEngine = require('../../../lib/engine_http');
 const EventEmitter = require('events');
-const { createGlobalObject } = require('../../../lib/artillery-global');
+const { updateGlobalObject } = require('../../../index');
 const nock = require('nock');
 const zlib = require('zlib');
 
@@ -68,7 +68,7 @@ const script = {
 };
 
 test('HTTP engine', function (tap) {
-  tap.before(async () => await createGlobalObject());
+  tap.before(async () => await updateGlobalObject());
 
   tap.beforeEach(() => nock.cleanAll());
 
@@ -207,7 +207,7 @@ test('HTTP engine', function (tap) {
           zlib.gzipSync(
             JSON.stringify({
               status: responseStatus
-            })
+            }),
           ),
           {
             'content-encoding': 'gzip',

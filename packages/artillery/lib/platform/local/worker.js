@@ -37,10 +37,6 @@ let shuttingDown = false;
 
 let runnerInstance = null;
 
-global.artillery.globalEvents.on('log', (...args) => {
-  send({ event: 'log', args });
-});
-
 global.artillery._workerThreadSend = send;
 
 //
@@ -101,6 +97,10 @@ async function cleanup() {
 }
 
 async function prepare(opts) {
+  global.artillery.globalEvents.on('log', (...args) => {
+    send({ event: 'log', args });
+  });
+
   const { script: _script, payload, options } = opts;
   const script = loadProcessor(_script, options);
 
