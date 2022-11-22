@@ -6,7 +6,6 @@ const YAML = require('js-yaml');
 const debug = require('debug')('util');
 const moment = require('moment');
 const _ = require('lodash');
-const os = require('os');
 
 const chalk = require('chalk');
 
@@ -16,8 +15,6 @@ const template = engineUtil.template;
 const { contextFuncs } = require('core').runner;
 
 const p = require('util').promisify;
-
-const configFilePath = `${os.homedir()}/.artilleryrc`;
 
 module.exports = {
   readScript,
@@ -31,8 +28,6 @@ module.exports = {
   formatDuration,
   padded,
   rainbow,
-  readArtilleryConfig,
-  updateArtilleryConfig
 };
 
 async function readScript(scriptPath) {
@@ -232,29 +227,4 @@ function rainbow(str) {
       return chalk[color](l);
     })
     .join('');
-}
-
-function readArtilleryConfig() {
-  try {
-    const config = fs.readFileSync(configFilePath, 'utf-8');
-
-    return JSON.parse(config);
-  } catch (err) {
-    return {};
-  }
-}
-
-function updateArtilleryConfig(data) {
-  try {
-    const updatedConf = {
-      ...readArtilleryConfig(),
-      ...data
-    };
-
-    fs.writeFileSync(configFilePath, JSON.stringify(updatedConf));
-
-    return updatedConf;
-  } catch (err) {
-    console.error(err);
-  }
 }

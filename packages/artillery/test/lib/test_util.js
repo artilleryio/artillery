@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 
 const util = require('../../lib/util');
+const utilConfig = require('../../lib/utils-config');
 
 let sandbox;
 test('util - setup', (t) => {
@@ -74,7 +75,7 @@ test('readArtilleryConfig', function (t) {
 
   readFileSyncStub.throws();
   t.same(
-    util.readArtilleryConfig(),
+    utilConfig.readArtilleryConfig(),
     {},
     'Returns an empty object if .artilleryrc is not present'
   );
@@ -83,7 +84,7 @@ test('readArtilleryConfig', function (t) {
 
   readFileSyncStub.returns(JSON.stringify(expectedConf));
   t.same(
-    util.readArtilleryConfig(),
+    utilConfig.readArtilleryConfig(),
     expectedConf,
     'Returns the configuration as a JSON object'
   );
@@ -98,9 +99,9 @@ test('updateArtilleryConfig', function (t) {
   const addedConf = { newProperty: 'value2' };
   const fsWriteFileSyncStub = sandbox.stub(fs, 'writeFileSync');
 
-  sandbox.stub(util, 'readArtilleryConfig').returns(existingConf);
+  sandbox.stub(utilConfig, 'readArtilleryConfig').returns(existingConf);
 
-  util.updateArtilleryConfig(addedConf);
+  utilConfig.updateArtilleryConfig(addedConf);
 
   const newConfiguration = fsWriteFileSyncStub.args[0][1];
   const configPath = fsWriteFileSyncStub.args[0][0];
