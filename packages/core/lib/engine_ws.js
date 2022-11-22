@@ -10,7 +10,7 @@ const WebSocket = require('ws');
 const HttpsProxyAgent = require('https-proxy-agent');
 const debug = require('debug')('ws');
 const url = require('url');
-const engineUtil = require('../../commons/engine_util');
+const engineUtil = require('commons').engine_util;
 const template = engineUtil.template;
 
 module.exports = WSEngine;

@@ -5,7 +5,7 @@
 'use strict';
 
 var { test } = require('tap');
-var template = require('../../../../commons/engine_util').template;
+var template = require('commons').engine_util.template;
 
 const { contextFuncs } = require('../../../lib/runner');
 

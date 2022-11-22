@@ -22,7 +22,7 @@ async function updateGlobalObject(opts) {
 
   global.artillery.util = global.artillery.util || {};
 
-  global.artillery.util.template = require('../commons/engine_util').template;
+  global.artillery.util.template = require('commons').engine_util.template;
 
   global.artillery.plugins = global.artillery.plugins || [];
 
