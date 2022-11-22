@@ -46,7 +46,7 @@
     }
   },
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/unit/*.js test/cli/probe/*.js test/cli/*.test.js && bash test/runner.sh && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
+    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/unit/*.test.js test/cli/probe/*.js test/cli/*.test.js && bash test/runner.sh && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
     "is_linted": "find . -name '*.js' | grep -v node_modules | xargs eslint",
     "lint": "eslint --ext \".js,.ts,.tsx\" --ignore-path .gitignore .",
     "lint-fix": "npm run lint -- --fix",
