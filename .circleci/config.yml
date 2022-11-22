@@ -16,7 +16,7 @@ jobs:
 
       - run: ln -s ~/repo ~/$CIRCLE_PROJECT_REPONAME
       - node/install-packages
-      - run: npm run commitlint-last-commit
+      # - run: npm run commitlint-last-commit
       - run:
           command: npm run build
       - run:
