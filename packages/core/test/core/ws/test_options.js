@@ -1,9 +1,9 @@
 'use strict';
 
 const { test } = require('tap');
-const core = require('../../../core');
-const vuserLauncher = core.runner;
-const { SSMS } = require('../../../core/lib/ssms');
+const core = require('../../..');
+const vuserLauncher = core.runner.runner;
+const { SSMS } = require('../../../lib/ssms');
 
 //
 // If config.ws.rejectUnauthorized is not set, we will have an error.
