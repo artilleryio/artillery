@@ -41,7 +41,7 @@ const scriptWithoutEmits = {
 };
 
 test('SocketIo Engine', function (tap) {
-  tap.before(async () => await createGlobalObject());
+  tap.before(async () => await updateGlobalObject());
 
   tap.test('SocketIo engine interface', function (t) {
     const server = createServer();
