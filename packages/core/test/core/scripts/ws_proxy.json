@@ -7,7 +7,7 @@
     "ws": {
       "proxy": {
         "url": "http://localhost:9095",
-        "localAddress": "127.0.0.2"
+        "localAddress": "127.0.0.1"
       }
     }
   },

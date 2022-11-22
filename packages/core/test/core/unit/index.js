@@ -10,5 +10,3 @@ require('./engine_http.test');
 require('./engine_socketio.test');
 require('./engine_ws.test');
 require('./interpolation.test');
-require('./before_after_hooks.test');
-require('./dist.test');
