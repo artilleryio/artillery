@@ -11,6 +11,8 @@ const debug = require('debug')('bom');
 const _ = require('lodash');
 const Table = require('cli-table3');
 
+const { readScript, parseScript } = require('../util');
+
 const BUILTIN_PLUGINS = ['artillery-plugin-metrics-by-endpoint', 'artillery-plugin-ensure', 'artillery-plugin-publish-metrics', 'artillery-plugin-expect'];
 
 // NOTE: Presumes ALL paths are absolute.
@@ -18,8 +20,8 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   A.waterfall(
     [
       A.constant(absoluteScriptPath),
-      global.artillery.__util.readScript,
-      global.artillery.__util.parseScript,
+      readScript,
+      parseScript,
       (scriptData, next) => {
         return next(null, {
           opts: {
