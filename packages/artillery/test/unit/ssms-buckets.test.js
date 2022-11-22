@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const tap = require('tap');
-const { SSMS } = require('../../core/lib/ssms');
+const { SSMS } = require('core').ssms;
 const data = require('../data/ssms-buckets.json');
 
 tap.test('Metric buckets', async (t) => {
