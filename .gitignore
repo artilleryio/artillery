@@ -21,3 +21,7 @@ artillery_report*
 coverage/*
 .vagrant/
 .vscode
+.turbo
+build/**
+dist/**
+.next/**
