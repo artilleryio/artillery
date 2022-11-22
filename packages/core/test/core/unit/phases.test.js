@@ -5,7 +5,7 @@
 'use strict';
 
 const { test } = require('tap');
-const createPhaser = require('../../../core/lib/phases');
+const createPhaser = require('../../../lib/phases');
 const util = require('util');
 const _ = require('lodash');
 const debug = require('debug')('test:phases');

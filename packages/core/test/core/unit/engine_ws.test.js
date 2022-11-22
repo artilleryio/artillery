@@ -50,7 +50,7 @@ function setup() {
 
   rewiremock('ws').with(WebsocketMock);
 
-  WebSocketEngine = require('../../../core/lib/engine_ws');
+  WebSocketEngine = require('../../../lib/engine_ws');
 
   return {sandbox, WebsocketMock, wsMockInstance, WebSocketEngine};
 }

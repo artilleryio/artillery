@@ -5,7 +5,7 @@
 'use strict';
 
 const { test } = require('tap');
-const createReader = require('../../../core/lib/readers');
+const createReader = require('../../../lib/readers');
 const _ = require('lodash');
 
 const payloadData = [

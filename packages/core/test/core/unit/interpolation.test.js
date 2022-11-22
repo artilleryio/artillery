@@ -7,7 +7,7 @@
 const { test } = require('tap');
 const sinon = require('sinon');
 
-const HttpEngine = require('../../../core/lib/engine_http');
+const HttpEngine = require('../../../lib/engine_http');
 const EventEmitter = require('events');
 const nock = require('nock');
 

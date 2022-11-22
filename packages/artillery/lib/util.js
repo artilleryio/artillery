@@ -9,7 +9,7 @@ const _ = require('lodash');
 
 const chalk = require('chalk');
 
-const engineUtil = require('core').engine_util;
+const engineUtil = require('../../commons/engine_util');
 const renderVariables = engineUtil._renderVariables;
 const template = engineUtil.template;
 const { contextFuncs } = require('core').runner;

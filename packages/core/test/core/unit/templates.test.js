@@ -5,9 +5,9 @@
 'use strict';
 
 var { test } = require('tap');
-var template = require('../../../core/lib/engine_util').template;
+var template = require('../../../../commons/engine_util').template;
 
-const { contextFuncs } = require('../../../core/lib/runner');
+const { contextFuncs } = require('../../../lib/runner');
 
 var bigObject = require('./large-json-payload-7.2mb.json');
 

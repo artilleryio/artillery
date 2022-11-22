@@ -16,7 +16,7 @@ const tryResolve = require('try-require').resolve;
 const createPhaser = require('./phases');
 const isIdlePhase = require('./is-idle-phase');
 const createReader = require('./readers');
-const engineUtil = require('./engine_util');
+const engineUtil = require('../../commons/engine_util');
 const wl = require('./weighted-pick');
 
 const Engines = {

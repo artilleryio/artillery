@@ -6,8 +6,8 @@
 
 const { test } = require('tap');
 const L = require('lodash');
-const jitter = require('../../../core/lib/jitter').jitter;
-const util = require('../../../core/lib/engine_util');
+const jitter = require('../../../../commons/jitter').jitter;
+const util = require('../../../../commons/engine_util');
 
 test('jitter', function (t) {
   t.ok(

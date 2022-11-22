@@ -11,7 +11,7 @@ const io = require('socket.io-client');
 
 const deepEqual = require('fast-deep-equal');
 const debug = require('debug')('socketio');
-const engineUtil = require('./engine_util');
+const engineUtil = require('../../commons/engine_util');
 const EngineHttp = require('./engine_http');
 const template = engineUtil.template;
 
