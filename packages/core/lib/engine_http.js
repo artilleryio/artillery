@@ -353,7 +353,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         if (typeof params.gzip === 'boolean') {
           requestParams.decompress = params.gzip;
         } else {
-          requestParams.decompress = false;
+          requestParams.decompress = true;
         }
 
         if (params.form) {
@@ -509,6 +509,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           }
 
           const resForCapture = { headers: res.headers, body: body };
+
           engineUtil.captureOrMatch(
             params,
             resForCapture,
@@ -707,7 +708,11 @@ HttpEngine.prototype._handleResponse = function (
   callback
 ) {
   const url = requestParams.url;
-  res = decompressResponse(res);
+
+  if (requestParams.decompress) {
+    res = decompressResponse(res);
+  }
+
   let code = res.statusCode;
   if (!context._enableCookieJar) {
     const rawCookies = res.headers['set-cookie'];
