@@ -15,8 +15,8 @@ jobs:
       - run: pushd ~/bats && sudo bash install.sh /usr/local && popd
 
       - run: ln -s ~/repo ~/$CIRCLE_PROJECT_REPONAME
-      - node/install-packages
-      # - run: npm run commitlint-last-commit
+      - node/install-packages:
+          with-cache: false
       - run:
           command: npm run build
       - run:
