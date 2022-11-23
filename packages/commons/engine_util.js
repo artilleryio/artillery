@@ -7,11 +7,11 @@
 const async = require('async');
 const debug = require('debug')('engine_util');
 const deepForEach = require('deep-for-each');
-const esprima = require('esprima');
+const espree = require('espree');
 const L = require('lodash');
 const vm = require('vm');
 const A = require('async');
-const jsonpath = require('jsonpath');
+const { JSONPath: jsonpath } = require('jsonpath-plus');
 const cheerio = require('cheerio');
 const jitter = require('./jitter').jitter;
 
@@ -213,7 +213,7 @@ function template(o, context, inPlace) {
     let match = o.match(funcCallRegex);
     if (match) {
       // This looks like it could be a function call:
-      const syntax = esprima.parse(match[1]);
+      const syntax = espree.parse(match[1]);
       // TODO: Use a proper schema for what we expect here
       if (
         syntax.body &&
@@ -570,7 +570,7 @@ function extractJSONPath(doc, expr) {
   let results;
 
   try {
-    results = jsonpath.query(doc, expr);
+    results = jsonpath(expr, doc);
   } catch (queryErr) {
     debug(queryErr);
   }

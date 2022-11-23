@@ -1,12 +1,13 @@
 {
   "name": "commons",
+  "main": "./index.js",
   "dependencies": {
     "async": "^2.6.4",
     "cheerio": "^1.0.0-rc.10",
     "debug": "^4.3.1",
     "deep-for-each": "^3.0.0",
-    "esprima": "^4.0.0",
-    "jsonpath": "^1.1.1",
+    "espree": "^9.4.1",
+    "jsonpath-plus": "^7.2.0",
     "lodash": "^4.17.19"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "main": "index.js",
+  "main": "./index.js",
   "dependencies": {
     "@artilleryio/sketches-js": "^1.0.4",
     "@hapi/basic": "^6.0.0",
@@ -9,9 +9,9 @@
     "async": "^2.6.4",
     "chalk": "^2.4.2",
     "cheerio": "^1.0.0-rc.10",
+    "commons": "*",
     "cookie-parser": "^1.4.3",
     "csv-parse": "^4.16.3",
-    "commons": "*",
     "debug": "^4.3.1",
     "decompress-response": "^6.0.0",
     "deep-for-each": "^3.0.0",
@@ -25,7 +25,6 @@
     "got": "^11.8.5",
     "hpagent": "^0.1.1",
     "https-proxy-agent": "^5.0.0",
-    "jsonpath": "^1.1.1",
     "lodash": "^4.17.19",
     "nock": "^11.8.2",
     "proxy": "^1.0.2",

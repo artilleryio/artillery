@@ -73,7 +73,7 @@
   "preferGlobal": true,
   "man": "./man/artillery.1",
   "bin": {
-    "artillery": "bin/run"
+    "artillery": "./bin/run"
   },
   "repository": {
     "type": "git",
@@ -102,9 +102,9 @@
     "ci-info": "^2.0.0",
     "cli-highlight": "^2.1.11",
     "cli-table3": "^0.6.2",
-    "core": "*",
+    "commons": "file:*",
+    "core": "file:*",
     "csv-parse": "^4.16.3",
-    "commons": "*",
     "debug": "^4.3.1",
     "dotenv": "^16.0.1",
     "eventemitter3": "^4.0.4",
@@ -122,8 +122,7 @@
     "sqs-consumer": "^5.7.0",
     "temp": "^0.9.4",
     "tmp": "0.2.1",
-    "try-require": "1.2.1",
-    "update-notifier": "^5.1.0"
+    "try-require": "1.2.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",
