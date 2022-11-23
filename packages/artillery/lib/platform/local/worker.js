@@ -16,13 +16,13 @@ const {
   threadId
 } = require('worker_threads');
 
-const core = require('core');
+const core = require('@artilleryio/int-core');
 const createRunner = core.runner.runner;
 const debug = require('debug')('artillery:worker');
 
 const path = require('path');
 
-const { SSMS } = require('core').ssms;
+const { SSMS } = require('@artilleryio/int-core').ssms;
 const { loadPlugins, loadPluginsConfig } = require('../../load-plugins');
 
 const EventEmitter = require('eventemitter3');

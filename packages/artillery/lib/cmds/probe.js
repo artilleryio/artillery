@@ -19,7 +19,7 @@ const YAML = require('js-yaml');
 const { expectations, formatters } = require('artillery-plugin-expect');
 
 const telemetry = require('../telemetry').init();
-const HttpEngine = require('core').engine_http;
+const HttpEngine = require('@artilleryio/int-core').engine_http;
 const sleep = require('../util/sleep');
 
 function fmt(val, padTo = 8) {

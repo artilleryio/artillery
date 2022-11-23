@@ -25,7 +25,7 @@ const createConsoleReporter = require('../../console-reporter');
 
 const moment = require('moment');
 
-const { SSMS } = require('core').ssms;
+const { SSMS } = require('@artilleryio/int-core').ssms;
 const telemetry = require('../telemetry').init();
 const validateScript = require('../util/validate-script');
 

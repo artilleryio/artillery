@@ -1,5 +1,5 @@
 const tap = require('tap');
-const { SSMS } = require('core').ssms;
+const { SSMS } = require('@artilleryio/int-core').ssms;
 const sleep = require('../helpers/sleep');
 
 tap.test('Basic metric collection', async (t) => {

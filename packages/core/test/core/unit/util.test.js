@@ -6,8 +6,8 @@
 
 const { test } = require('tap');
 const L = require('lodash');
-const jitter = require('commons').jitter.jitter;
-const util = require('commons').engine_util;
+const jitter = require('@artilleryio/int-commons').jitter.jitter;
+const util = require('@artilleryio/int-commons').engine_util;
 
 test('jitter', function (t) {
   t.ok(

@@ -6,7 +6,7 @@
 
 const assert = require('assert');
 const L = require('lodash');
-const isIdlePhase = require('core').isIdlePhase;
+const isIdlePhase = require('@artilleryio/int-core').isIdlePhase;
 
 module.exports = divideWork;
 

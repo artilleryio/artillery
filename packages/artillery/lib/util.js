@@ -9,10 +9,10 @@ const _ = require('lodash');
 
 const chalk = require('chalk');
 
-const engineUtil = require('commons').engine_util;
+const engineUtil = require('@artilleryio/int-commons').engine_util;
 const renderVariables = engineUtil._renderVariables;
 const template = engineUtil.template;
-const { contextFuncs } = require('core').runner;
+const { contextFuncs } = require('@artilleryio/int-core').runner;
 
 const p = require('util').promisify;
 

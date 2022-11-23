@@ -4,6 +4,6 @@
 
 'use strict';
 
-const core = require('core');
+const core = require('@artilleryio/int-core');
 
 module.exports = core;
