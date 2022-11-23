@@ -20,9 +20,9 @@ const engineUtil = require('commons').engine_util;
 const wl = require('./weighted-pick');
 
 const Engines = {
-  http: {},
-  ws: {},
-  socketio: {}
+  http: require('./engine_http'),
+  ws: require('./engine_ws'),
+  socketio: require('./engine_socketio')
 };
 
 module.exports = {
@@ -50,10 +50,12 @@ function loadEngines(
     function loadEngine(engineConfig, engineName) {
       let moduleName = 'artillery-engine-' + engineName;
       try {
-        if (Engines[engineName]) {
-          moduleName = './engine_' + engineName;
+        let Engine;
+        if (typeof Engines[engineName] !== 'undefined') {
+          Engine = Engines[engineName];
+        } else {
+          Engine = require(moduleName);
         }
-        const Engine = require(moduleName);
         const engine = new Engine(script, ee, engineUtil);
         engine.__name = engineName;
         return engine;
