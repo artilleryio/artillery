@@ -1,5 +1,5 @@
 {
-  "name": "commons",
+  "name": "@artilleryio/int-commons",
   "main": "./index.js",
   "dependencies": {
     "async": "^2.6.4",

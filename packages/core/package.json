@@ -1,5 +1,5 @@
 {
-  "name": "core",
+  "name": "@artilleryio/int-core",
   "main": "./index.js",
   "dependencies": {
     "@artilleryio/sketches-js": "^1.0.4",
