@@ -1,10 +1,8 @@
 const EventEmitter = require('events');
 const chalk = require('chalk');
 
-const { createGlobalObject } = require('../artillery/lib/artillery-global');
-
 // NOTE: This may be called more than once, and so should be non-destructive
-async function updateGlobalObject(opts) {
+async function updateGlobalObject(opts = {}) {
   global.artillery = global.artillery || {};
 
   global.artillery.runtimeOptions = global.artillery.runtimeOptions || {};
@@ -57,10 +55,28 @@ async function updateGlobalObject(opts) {
       }
     });
   }
+
+  global.artillery.logger = global.artillery.logger || function (opts) {
+    return {
+      log: (...args) => {
+        global.artillery.globalEvents.emit('log', opts, ...args);
+      }
+    };
+  };
+
+  global.artillery.log = global.artillery.log || function (...args) {
+    global.artillery.globalEvents.emit('log', {}, ...args);
+  };
+
+  if (opts.version) {
+    global.artillery.version = opts.version;
+  }
+  if (opts.telemetry) {
+    global.artillery.telemetry = opts.telemetry;
+  }
 }
 
 async function main() {
-  await createGlobalObject();
   await updateGlobalObject();
 }
 
