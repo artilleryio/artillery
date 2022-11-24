@@ -21,3 +21,4 @@ lib-cov
 coverage/*
 node_modules
 examples
+packages/
