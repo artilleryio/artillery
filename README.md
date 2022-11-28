@@ -40,6 +40,8 @@ Follow our [quick start guide](https://artillery.io/docs/guides/getting-started/
 - [Publishing metrics](https://www.artillery.io/docs/guides/plugins/plugin-publish-metrics) to Datadog, Honeycomb, Lightstep, and more
 - [Sending HTTP requests from using `artillery probe`](https://www.artillery.io/blog/swiss-army-knife-for-http-testing), visualizing performance waterfalls, and creating lightweight API checks
 
+If you have a problem or a doubt feel free to open a [discussion](https://github.com/artilleryio/artillery/discussions). We are happy to help!
+
 ### Integrations and plugins
 
 We maintain a list of official and community-built [integrations and plugins](https://www.artillery.io/integrations) on our website: https://www.artillery.io/integrations.
@@ -48,6 +50,9 @@ We maintain a list of official and community-built [integrations and plugins](ht
 
 You can find a list of ready-to-run Artillery examples under [`examples/`](https://github.com/artilleryio/artillery/tree/master/examples#readme).
 
+### Contributing
+
+You can find our contributing guide [here](https://github.com/artilleryio/artillery/blob/main/CONTRIBUTING.md)
 
 ## License
 
