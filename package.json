@@ -5,8 +5,8 @@
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "turbo run lint",
-    "lint-fix": "turbo run lint-fix"
+    "lint": "turbo run lint  --continue",
+    "lint-fix": "turbo run lint-fix  --continue"
   },
   "devDependencies": {
     "turbo": "^1.5.1"
