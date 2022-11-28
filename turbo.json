@@ -28,6 +28,8 @@
     },
     "lint": {
       "outputs": []
+    },
+    "lint-fix": {
     }
   }
 }

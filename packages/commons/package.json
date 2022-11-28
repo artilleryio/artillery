@@ -11,6 +11,7 @@
     "lodash": "^4.17.19"
   },
   "scripts": {
-    "lint": "eslint --ext \".js,.ts,.tsx\" ."
+    "lint": "eslint --ext \".js,.ts,.tsx\" .",
+    "lint-fix": "npm run lint -- --fix"
   }
 }

@@ -39,6 +39,7 @@
   },
   "scripts": {
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
+    "lint-fix": "npm run lint -- --fix",
     "test": "tap --no-coverage --timeout=300 test/core/unit/*.test.js && bash test/core/run.sh"
   },
   "devDependencies": {

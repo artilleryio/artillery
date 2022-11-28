@@ -1,12 +1,12 @@
 {
   "workspaces": [
-    "packages/*",
-    "apps/*"
+    "packages/*"
   ],
   "scripts": {
     "build": "turbo run build",
     "test": "turbo run test",
-    "lint": "turbo run lint"
+    "lint": "turbo run lint",
+    "lint-fix": "turbo run lint-fix"
   },
   "devDependencies": {
     "turbo": "^1.5.1"
