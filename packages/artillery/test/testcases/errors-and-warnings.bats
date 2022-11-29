@@ -31,9 +31,9 @@
   [[ true ]]
 }
 
-@test "Exits with non zero when an unknown command is used" {
-    run ./bin/run makemeasandwich --with cheese
-    [[ $status -ne 0 ]]
+@test "Suggest similar commands if unknown command is used" {
+   output=echo "n" | ./bin/run helpp 2>&1 | grep -q "Did you mean help"
+   [[ $output -eq 0 ]]
 }
 
 @test "Exits with non-zero when an unknown option is used" {
