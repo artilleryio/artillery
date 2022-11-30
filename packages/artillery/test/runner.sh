@@ -3,7 +3,7 @@
 echo "# starting target"
 &>/dev/null node ./test/gh_215_target.js &
 target_pid=$!
-&>/dev/null node ./test/socketio_wildcard_target.js &
+&>/dev/null node ../core/test/core/targets/simple_socketio.js &
 target2_pid=$!
 
 echo "# running tests"
