@@ -35,6 +35,6 @@ tap.test('Run a test on AWS Lambda', async (t) => {
   ]);
 
   t.ok(
-    stdout.indexOf('Summary report') > 0 && stdout.indexOf('http.codes.200' > 0)
+    stdout.indexOf('Summary report') > 0 && stdout.indexOf('http.codes.200') > 0
   );
 });
