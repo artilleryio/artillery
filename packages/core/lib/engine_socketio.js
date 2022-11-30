@@ -305,7 +305,7 @@ SocketIoEngine.prototype.loadContextSocket = function (namespace, context, cb) {
 
     wildcardPatch(socket);
 
-    socket.onAny(() => {
+    socket.on('*', function () {
       context.__receivedMessageCount++;
     });
 
