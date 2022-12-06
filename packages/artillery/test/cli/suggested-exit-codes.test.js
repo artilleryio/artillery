@@ -1,25 +1,15 @@
 const tap = require('tap');
+const { execute } = require('../cli/_helpers.js');
 const path = require('path');
-const { $ } = require('zx');
 
-async function main() {
-  tap.test('Workers should be able to set exit codes', async (t) => {
-    try {
-      const result = await $`${path.join(
-        __dirname,
-        '../../bin/run'
-      )} run ${path.join(
-        __dirname,
-        '../scripts/test-suggest-exit-code.yml'
-      )} --quiet`;
-      t.ok(false, 'Exit code not set properly');
-    } catch (err) {
-      t.ok(
-        err.exitCode === 17,
-        'CLI exited with error code set in a worker thread'
-      );
-    }
-  });
-}
+tap.test('Workers should be able to set exit codes', async (t) => {
+  const scenarioPath = path.resolve(
+    __dirname,
+    '..',
+    'scripts',
+    'test-suggest-exit-code.yml'
+  );
 
-main();
+  const [exitCode] = await execute(['run', scenarioPath]);
+  t.ok(exitCode === 17, 'CLI exited with error code set in a worker thread');
+});
