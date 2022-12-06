@@ -3,7 +3,7 @@
 const Hapi = require('@hapi/hapi');
 
 const main = async () => {
-  const server = Hapi.server({ port: 3004, host: 'localhost' });
+  const server = Hapi.server({ port: 3004, host: '127.0.0.1' });
   server.route({
     path: '/api/v1/register',
     method: 'POST',

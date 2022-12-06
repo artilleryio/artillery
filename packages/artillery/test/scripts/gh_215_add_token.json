@@ -3,9 +3,9 @@
         "target": "http://127.0.0.1:3004",
         "phases": [
             {
-                "duration": 20,
-                "arrivalRate": 20,
-                "name": "Stress"
+                "duration": 1,
+                "arrivalRate": 1,
+                "name": "test that failed to end"
             }
         ]
     },
