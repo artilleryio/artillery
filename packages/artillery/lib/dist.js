@@ -23,13 +23,6 @@ function divideWork(script, numWorkers) {
   // Adjust phase definitions:
   //
   L.each(script.config.phases, function (phase, phaseSpecIndex) {
-    if(phase.maxVusers) {
-      let maxVusers = distribute(phase.maxVusers, numWorkers);
-      L.each(maxVusers, function (Lr, i) {
-        newPhases[i][phaseSpecIndex].maxVusers = maxVusers[i];
-      });
-    }
-
     if (phase.rampTo) {
       // same behaviour as a single worker. Now we support scripts
       // with rampTo and no arrivalRate
@@ -37,17 +30,27 @@ function divideWork(script, numWorkers) {
 
       let rates = distribute(phase.arrivalRate, numWorkers);
       let ramps = distribute(phase.rampTo, numWorkers);
+      let activeWorkers = Math.max(rates.filter(r => r > 0).length, ramps.filter(r => r > 0).length);
+      let maxVusers = phase.maxVusers ? distribute(phase.maxVusers, activeWorkers) : false;
       L.each(rates, function (Lr, i) {
         newPhases[i][phaseSpecIndex].arrivalRate = rates[i];
         newPhases[i][phaseSpecIndex].rampTo = ramps[i];
+        if(maxVusers) {
+          newPhases[i][phaseSpecIndex].maxVusers = maxVusers[i];
+        }
       });
       return;
     }
 
     if (phase.arrivalRate && !phase.rampTo) {
       let rates = distribute(phase.arrivalRate, numWorkers);
+      let activeWorkers = rates.filter(r => r > 0).length;
+      let maxVusers = phase.maxVusers ? distribute(phase.maxVusers, activeWorkers) : false;
       L.each(rates, function (Lr, i) {
         newPhases[i][phaseSpecIndex].arrivalRate = rates[i];
+        if(maxVusers) {
+          newPhases[i][phaseSpecIndex].maxVusers = maxVusers[i] || 0;
+        }
       });
       return;
     }
@@ -55,6 +58,9 @@ function divideWork(script, numWorkers) {
     if (phase.arrivalCount) {
       // arrivalCount is executed in the first worker
       // and replaced with a `pause` phase in the others
+      if(phase.maxVusers) {
+        newPhases[0][phaseSpecIndex].maxVusers = phase.maxVusers;
+      }
       for (let i = 1; i < numWorkers; i++) {
         newPhases[i][phaseSpecIndex] = {
           name: phase.name,

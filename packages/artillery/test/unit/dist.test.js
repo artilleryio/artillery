@@ -3,7 +3,6 @@
 const tap = require('tap');
 const divideWork = require('../../lib/dist');
 
-
 tap.test('divideWork for arrivalCount single phase', (t) => {
   const numWorkers = 5;
   const expectedWorkers = 1; // arrivalCount uses only the first worker
@@ -156,5 +155,43 @@ tap.test('arrivalRate defaults to zero if not present', (t) => {
     partialSum + phase.config.phases[0].arrivalRate, 0);
 
   t.equal(totalArrivalRate, 0);
+  t.end();
+});
+
+tap.test('maxVusers distributes evenly in all phases', (t) => {
+  const numWorkers = 7;
+  const maxVusers = 10;
+  const script = {
+    config: {
+      target: 'http://targ.get.url',
+      phases: [
+        { name: 'rate small', duration: 10, arrivalRate: 2, maxVusers: maxVusers },
+        { name: 'rate big', duration: 10, arrivalRate: 200, maxVusers: maxVusers },
+        { name: 'rampto small', duration: 10, rampTo: 2, maxVusers: maxVusers },
+        { name: 'rampto big', duration: 10, rampTo: 200, maxVusers: maxVusers },
+        { name: 'count', duration: 10, arrivalCount: 25, maxVusers: maxVusers }
+      ]
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const phases = divideWork(script, numWorkers);
+  for (let i = 0; i < script.config.phases.length - 1; i++) {
+    let activeMaxVusers = phases
+      .map(p => p.config.phases[i])
+      .filter(p => p.arrivalRate > 0 || p.arrivalCount > 0 || p.rampTo > 0)
+      .reduce((sum, p) => sum + p.maxVusers, 0);
+    t.equal(10, activeMaxVusers);
+  }
   t.end();
 });
