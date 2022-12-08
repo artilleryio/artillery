@@ -12,6 +12,9 @@ const arrivals = require('arrivals');
 const debug = require('debug')('phases');
 const crypto = require('crypto');
 const driftless = require('driftless');
+const { setNonEnumerableProperties } = require('got/dist/source');
+const { IoT1ClickProjects } = require('aws-sdk');
+const sleep = require('../../artillery/lib/util/sleep');
 
 module.exports = phaser;
 
@@ -96,51 +99,61 @@ function createRamp(spec, ee) {
   const duration = spec.duration || 1;
   const arrivalRate = spec.arrivalRate;
   const rampTo = spec.rampTo;
+  const worker = spec.worker;
+  const totalWorkers = spec.totalWorkers;
 
-  // smallest tick we can get away with. Both arrivalRate and rampTo
-  // can be zero. So in that case we use 1s ticks even tho no
-  // arrivals will be generated
-  let tick = 1000 / Math.max(Math.max(arrivalRate, rampTo), 1);
   const difference = rampTo - arrivalRate;
-  const periods = duration * 1000 / tick;
+  const periods = duration;
+  debug(`worker ${worker} totalWorkers ${totalWorkers} arrivalRate ${arrivalRate} rampTo ${rampTo} difference ${difference} periods ${periods}`);
 
-  function arrivalProbability(currentStep) {
-    // linear function ax + b
-    // normalized to 0 <= f(t) <= 1
-    // Anything under function value should be an arrival
-
-    let t = currentStep * tick / 1000;
-    return ((difference / duration) * t + arrivalRate) / Math.max(rampTo, arrivalRate) || 0;
-  };
-
-  let probabilities = Array.from({length: periods}, () => Math.random());
-
-  debug(
-    `rampTo: tick = ${tick}; difference = ${difference}; rampTo = ${rampTo}; arrivalRate = ${arrivalRate}; periods = ${periods}`
-  );
-
-  return function rampTask(callback) {
-    ee.emit('phaseStarted', spec);
-    let currentStep = 1;
-    const timer = driftless.setDriftlessInterval(function maybeArrival() {
-      if (currentStep <= periods) {
-        let arrivalBreakpoint = arrivalProbability(currentStep);
-        let roll = probabilities[currentStep-1];
-        debug(`roll:${roll} <= breakpoint:${arrivalBreakpoint}`);
-        if (roll <= arrivalBreakpoint) {
-          ee.emit('arrival', spec);
-        }
-
-        currentStep++;
-      } else {
-        driftless.clearDriftless(timer);
-        ee.emit('phaseCompleted', spec);
-
-        return callback(null);
+  const periodArrivals = [];
+  const periodTick = [];
+  if (periods === 1) {
+    periodArrivals[0] = Math.floor((rampTo + arrivalRate) / 2);
+    periodTick[0] = 1000 / periodArrivals;
+  } else {
+    for (let i = 0; i < periods; i++) {
+      const rawPeriodArrivals = (difference / (duration - 1)) * i + arrivalRate;
+      periodArrivals[i] = Math.floor(rawPeriodArrivals);
+      if ((rawPeriodArrivals % 1) * totalWorkers * 1.1 >= worker) {
+        console.log(`worker ${worker} bumping period ${i} raw ${rawPeriodArrivals}`);
+        periodArrivals[i] = periodArrivals[i] + 1;
       }
-    }, tick);
-  };
+      periodTick[i] = periodArrivals[i] > 0 ? Math.floor(1000 / periodArrivals[i]) : 1000;
+    }
+  }
+
+  debug(`periodArrivals ${periodArrivals}`);
+  debug(`periodTick ${periodTick}`);
+
+  return async function rampTask(callback) {
+    let start = Date.now();
+    ee.emit('phaseStarted', spec);
+    for (let period = 0; period < periods; period++) {
+      ticker(period);
+      await sleep(1000);
+    }
+
+    const end = Date.now();
+    console.log(`Execution time: ${end - start} ms`);
+    ee.emit('phaseCompleted', spec);
+  }
+
+  function ticker(currentPeriod) {
+    let currentArrivals = 0;
+    let arrivalTimer = driftless.setDriftlessInterval(function arrivals() {
+      if (currentArrivals < periodArrivals[currentPeriod]) {
+        ee.emit('arrival', spec);
+        currentArrivals++;
+      } else {
+        currentPeriod++;
+        driftless.clearDriftless(arrivalTimer);
+      }
+    }, periodTick[currentPeriod]);
+    return;
+  }
 }
+
 
 function createArrivalCount(spec, ee) {
   const task = function (callback) {
@@ -171,7 +184,7 @@ function createArrivalRate(spec, ee) {
     ee.emit('phaseStarted', spec);
     const ar = 1000 / spec.arrivalRate;
     const duration = spec.duration * 1000;
-    debug('creating a %s process for arrivalRate', spec.mode);
+    debug('areating a %s process for arrivalRate', spec.mode);
     const p = arrivals[spec.mode].process(ar, duration);
     p.on('arrival', function () {
       ee.emit('arrival', spec);
