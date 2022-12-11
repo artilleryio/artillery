@@ -12,7 +12,7 @@ module.exports = {
   pretty: prettyPrint,
   json: jsonPrint,
   prettyError: prettyError,
-  silent: silent
+  silent: silent,
 };
 
 function silent(requestExpectation, req, res, userContext) {
@@ -20,22 +20,23 @@ function silent(requestExpectation, req, res, userContext) {
 }
 
 function prettyPrint(requestExpectations, req, res, userContext) {
+  debug('prettyPrint formatter');
   if (requestExpectations.results.length > 0) {
-    artillery.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}`);
+    console.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}\n`);
   }
 
   let hasFailedExpectations = false;
 
   requestExpectations.results.forEach(result => {
-    artillery.log(
+    console.log(
       `  ${result.ok ? chalk.green('ok') : chalk.red('not ok')} ${
         result.type
       } ${result.got} `
     );
 
     if (!result.ok) {
-      artillery.log(`  expected: ${result.expected}`);
-      artillery.log(`       got: ${result.got}`);
+      console.log(`  expected: ${result.expected}`);
+      console.log(`       got: ${result.got}`);
 
       hasFailedExpectations = true;
     }
@@ -47,24 +48,24 @@ function prettyPrint(requestExpectations, req, res, userContext) {
 }
 
 function printExchangeContext(req, res, userContext) {
-  artillery.log(chalk.yellow('  Request params:'));
-  artillery.log(prepend(req.url, '    '));
-  artillery.log(prepend(JSON.stringify(req.json || '', null, 2), '    '));
-  artillery.log(chalk.yellow('  Headers:'));
+  console.log(chalk.yellow('  Request params:'));
+  console.log(prepend(req.url, '    '));
+  console.log(prepend(JSON.stringify(req.json || '', null, 2), '    '));
+  console.log(chalk.yellow('  Headers:'));
   Object.keys(res.headers).forEach(function(h) {
-    artillery.log(`  ${h}: ${res.headers[h]}`);
+    console.log(`  ${h}: ${res.headers[h]}`);
   });
-  artillery.log(chalk.yellow('  Body:'));
-  artillery.log(prepend(String(JSON.stringify(res.body, null, 2)), '    '));
+  console.log(chalk.yellow('  Body:'));
+  console.log(res.body?.substring(0, 512));
 
-  artillery.log(chalk.yellow('  User variables:'));
+  console.log(chalk.yellow('  User variables:'));
   Object.keys(userContext.vars).filter(varName => varName !== '$processEnvironment').forEach(function(varName) {
-    artillery.log(`    ${varName}: ${userContext.vars[varName]}`);
+    console.log(`    ${varName}: ${userContext.vars[varName]}`);
   });
 }
 
 function jsonPrint(requestExpectations, req, res, userContext) {
-  artillery.log(JSON.stringify(requestExpectations));
+  console.log(JSON.stringify(requestExpectations));
 }
 
 function prettyError(requestExpectations, req, res, userContext) {
