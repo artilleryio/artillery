@@ -3,7 +3,7 @@
 set -eu -o pipefail
 typeset -r DIR=$(cd "$(dirname "$0")" && pwd)
 
-MOCKINGJAY_VERSION="1.10.7"
+MOCKINGJAY_VERSION="1.12.0"
 
 #
 # Start mock server
@@ -25,7 +25,7 @@ if [[ ! -z ${CIRCLECI:-""} ]] ; then
     mock_server_pid=$!
     mock_server_status=$?
 else
-    docker run --rm -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml &
+    docker run --rm -it -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml
     mock_server_pid=$!
     mock_server_status=$?
 fi
