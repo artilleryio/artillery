@@ -1,4 +1,12 @@
 - request:
+    uri: /cookie-gh-1575
+    method: GET
+  response:
+    code: 200
+    headers:
+      set-cookie: "GUEST_LANGUAGE_ID=es_ES; Domain=.example.net; Expires=Wed, 23-Aug-2023 18:22:09 GMT; Path=/; HttpOnly"
+      body: ok
+- request:
     uri: /pets
     method: POST
     body: "*"
@@ -40,3 +48,80 @@
     body: '{"user": "banana", "user_id": 15}'
     headers:
       content-type: application/json
+
+- request:
+    uri: /redirect/1
+    method: GET
+  response:
+    code: 301
+    headers:
+      location: /destination/1
+
+- request:
+    uri: /destination/1
+    method: GET
+  response:
+    code: 200
+    body: '{ "destination": 1 }'
+    headers:
+      content-type: application/json
+
+- request:
+    uri: /redirect/chain
+    method: GET
+  response:
+    code: 301
+    headers:
+      location: /redirect/chain1
+- request:
+    uri: /redirect/chain1
+    method: GET
+  response:
+    code: 302
+    headers:
+      location: /redirect/chain2
+- request:
+    uri: /redirect/chain2
+    method: GET
+  response:
+    code: 303
+    headers:
+      location: /redirect/chain3
+- request:
+    uri: /redirect/chain3
+    method: GET
+  response:
+    code: 304
+    headers:
+      location: /destination/chain
+
+- request:
+    uri: /destination/chain
+    method: GET
+  response:
+    code: 200
+    body: '{ "destination": "chain" }'
+    headers:
+      content-type: application/json
+
+#
+# Redirect loop:
+#
+- request:
+    uri: /redirect/loop
+    method: GET
+  response:
+    code: 308
+    headers:
+      location: /redirect/loop2
+- request:
+    uri: /redirect/loop2
+    method: GET
+  response:
+    code: 308
+    headers:
+      location: /redirect/loop
+
+#
+# Redirect with a 308:
+#
