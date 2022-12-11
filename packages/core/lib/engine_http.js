@@ -26,6 +26,8 @@ const decompressResponse = require('decompress-response');
 
 const { promisify } = require('node:util');
 
+const crypto = require('node:crypto');
+
 module.exports = HttpEngine;
 
 const DEFAULT_AGENT_OPTIONS = {
@@ -534,6 +536,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               let haveFailedCaptures = false;
 
               if (result !== null) {
+                ee.emit('trace:http:capture', result, uuid);
                 if (
                   Object.keys(result.matches).length > 0 ||
                   Object.keys(result.captures).length > 0
@@ -651,13 +654,16 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         requestParams.retry = 0; // disable retries - ignored when using streams
 
+        const uuid = crypto.randomUUID();
         request(requestParams)
           .on('request', function (req) {
+            ee.emit('trace:http:request', requestParams, uuid);
+
             debugRequests('request start: %s', req.path);
             ee.emit('counter', 'http.requests', 1);
             ee.emit('rate', 'http.request_rate');
             req.on('response', function (res) {
-
+              ee.emit('trace:http:response', res, uuid);
               self._handleResponse(
                 requestParams,
                 res,
@@ -670,6 +676,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
           })
           .on('error', function (err, body, res) {
+            ee.emit('trace:http:error', err, uuid);
             if (err.name === 'HTTPError') {
               return;
             }
