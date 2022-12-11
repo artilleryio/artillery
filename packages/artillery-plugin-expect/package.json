@@ -1,0 +1,32 @@
+{
+  "name": "artillery-plugin-expect",
+  "version": "2.1.0",
+  "description": "Expectations and assertions for HTTP",
+  "main": "index.js",
+  "engines": {
+    "node": ">= 14.17.6"
+  },
+  "scripts": {
+    "test": "bash test/run.sh"
+  },
+  "author": "Hassy Veldstra <h@artillery.io>",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "debug": "^4.3.2",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^13.1.0",
+    "@commitlint/config-conventional": "^13.1.0",
+    "artillery": "^2.0.0-2",
+    "ava": "^3.15.0",
+    "husky": "^7.0.2",
+    "shelljs": "^0.8.4"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -e"
+    }
+  }
+}
