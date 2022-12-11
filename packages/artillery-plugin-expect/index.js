@@ -59,6 +59,7 @@ function ExpectationsPlugin(script, events) {
     userContext.expectationsPlugin.formatter = script.config.plugins.expect.formatter ||
       script.config.plugins.expect.outputFormat ||
       'pretty';
+    userContext.expectationsPlugin.expectDefault200 = (script.config.plugins.expect.expectDefault200 === true || script.config.plugins.expect.expectDefault200 === 'true');
     return done();
   };
 
@@ -86,6 +87,12 @@ function expectationsPluginCheckExpectations(
   const expectations = _.isArray(req.expect) ?
         req.expect :
         _.map(req.expect, (v, k) => { const o = {}; o[k] = v; return o; });
+
+  if (expectations.length === 0) {
+    if (userContext.expectationsPlugin.expectDefault200) {
+      expectations[0] = { statusCode: 200 };
+    }
+  }
 
   const results = [];
 
