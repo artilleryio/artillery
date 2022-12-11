@@ -1,7 +1,7 @@
 {
   "name": "artillery",
   "version": "2.0.0-27",
-  "description": "Modern performance testing toolkit for DevOps and SRE",
+  "description": "Cloud-scale load testing",
   "main": "./lib",
   "engines": {
     "node": ">= 16.15.0"
