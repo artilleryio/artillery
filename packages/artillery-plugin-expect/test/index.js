@@ -15,7 +15,7 @@ const path = require('path');
 //
 global.artillery = {
   util: {
-    template: require('artillery/util').template
+    template: global.artillery.util.template
   },
   log: console.log.bind(console)
 };
