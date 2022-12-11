@@ -129,9 +129,10 @@ function expectationsPluginCheckExpectations(
     }
   });
 
-  events.emit('plugin:expect:expectations', requestExpectations);
+  events.emit('plugin:expect:expectations', requestExpectations, req, res, userContext);
 
   const formatterName = userContext.expectationsPlugin.formatter;
+
   FORMATTERS[formatterName].call(
     this,
     requestExpectations,
