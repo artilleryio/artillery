@@ -652,7 +652,7 @@ class PlatformLambda {
       FunctionName: functionName,
       Description: 'Artillery.io test',
       Handler: 'index.handler',
-      MemorySize: 4096,
+      MemorySize: this.memorySize,
       PackageType: 'Zip',
       Runtime: 'nodejs16.x',
       Architectures: [this.architecture],
