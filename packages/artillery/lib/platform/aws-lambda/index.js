@@ -51,8 +51,8 @@ class PlatformLambda {
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
 
-    this.securityGroupIds = platformConfig['security-group-ids'] || [];
-    this.subnetIds = platformConfig['subnet-ids'] || [];
+    this.securityGroupIds = platformConfig['security-group-ids']?.split(',') || [];
+    this.subnetIds = platformConfig['subnet-ids']?.split(',') || [];
 
     this.memorySize = platformConfig['memory-size'] || 4096;
 
