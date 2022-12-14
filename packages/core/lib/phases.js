@@ -12,8 +12,6 @@ const arrivals = require('arrivals');
 const debug = require('debug')('phases');
 const crypto = require('crypto');
 const driftless = require('driftless');
-const { setNonEnumerableProperties } = require('got/dist/source');
-const { IoT1ClickProjects } = require('aws-sdk');
 const sleep = require('../../artillery/lib/util/sleep');
 
 module.exports = phaser;
@@ -96,6 +94,7 @@ function createPause(spec, ee) {
 }
 
 function createRamp(spec, ee) {
+  const FRACTIONAL_CORRECTION = 1.1;
   const duration = spec.duration || 1;
   const arrivalRate = spec.arrivalRate;
   const rampTo = spec.rampTo;
@@ -108,17 +107,29 @@ function createRamp(spec, ee) {
 
   const periodArrivals = [];
   const periodTick = [];
+  // if there is only one peridod we generate mean arrivals
   if (periods === 1) {
     periodArrivals[0] = Math.floor((rampTo + arrivalRate) / 2);
     periodTick[0] = 1000 / periodArrivals;
   } else {
+    // for each period we calculate the corresponding arrivals:
+    // knowing that arrivals(0) = arrivalRate and arrivals(duration -1) = rampTo
+    // then: arrivals(t) = difference / (duration-1) * t + arrivalRate
     for (let i = 0; i < periods; i++) {
       const rawPeriodArrivals = (difference / (duration - 1)) * i + arrivalRate;
+
+      // We use the floor of the expected arrivals, then we add up all decimal digits
+      // and evaluate if one or more workers should bump their arrivalRate.
       periodArrivals[i] = Math.floor(rawPeriodArrivals);
-      if ((rawPeriodArrivals % 1) * totalWorkers * 1.1 >= worker) {
-        console.log(`worker ${worker} bumping period ${i} raw ${rawPeriodArrivals}`);
+
+      // Think of fractionalPart * workers as the amount of arrivals that could not be
+      // shared evenly across all workers. Multiplier is used to adress fraction precision
+      // i.e: (X.3333333333 % 1) * 3 < 1
+      if ((rawPeriodArrivals % 1) * totalWorkers * FRACTIONAL_CORRECTION >= worker) {
         periodArrivals[i] = periodArrivals[i] + 1;
       }
+
+      // Needed ticks to get to periodArrivals in 1000ms
       periodTick[i] = periodArrivals[i] > 0 ? Math.floor(1000 / periodArrivals[i]) : 1000;
     }
   }
@@ -127,15 +138,12 @@ function createRamp(spec, ee) {
   debug(`periodTick ${periodTick}`);
 
   return async function rampTask(callback) {
-    let start = Date.now();
     ee.emit('phaseStarted', spec);
     for (let period = 0; period < periods; period++) {
       ticker(period);
       await sleep(1000);
     }
 
-    const end = Date.now();
-    console.log(`Execution time: ${end - start} ms`);
     ee.emit('phaseCompleted', spec);
   }
 
@@ -153,7 +161,6 @@ function createRamp(spec, ee) {
     return;
   }
 }
-
 
 function createArrivalCount(spec, ee) {
   const task = function (callback) {
@@ -184,7 +191,7 @@ function createArrivalRate(spec, ee) {
     ee.emit('phaseStarted', spec);
     const ar = 1000 / spec.arrivalRate;
     const duration = spec.duration * 1000;
-    debug('areating a %s process for arrivalRate', spec.mode);
+    debug('creating a %s process for arrivalRate', spec.mode);
     const p = arrivals[spec.mode].process(ar, duration);
     p.on('arrival', function () {
       ee.emit('arrival', spec);
