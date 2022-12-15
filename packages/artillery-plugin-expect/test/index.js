@@ -15,9 +15,8 @@ const path = require('path');
 //
 global.artillery = {
   util: {
-    template: global.artillery.util.template
-  },
-  log: console.log.bind(console)
+    template: require('artillery/util').template
+  }
 };
 
 test('Basic interface checks', async t => {
@@ -239,7 +238,7 @@ test('Integration with Artillery', async (t) => {
   shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
   shelljs.env["PATH"] = process.env.PATH;
   const result = shelljs.exec(
-    `${__dirname}/../node_modules/.bin/artillery run --solo -q ${__dirname}/pets-test.yaml`,
+    `${__dirname}/../../../node_modules/.bin/artillery run --solo -q ${__dirname}/pets-test.yaml`,
   {
     silent: false
   });
@@ -267,7 +266,7 @@ test('Produce metrics', async(t) => {
   shelljs.env["ARTILLERY_PLUGIN_PATH"] = path.resolve(__dirname, '..', '..');
   shelljs.env["PATH"] = process.env.PATH;
   const result = shelljs.exec(
-    `${__dirname}/../node_modules/.bin/artillery run --solo ${__dirname}/pets-test.yaml`,
+    `${__dirname}/../../../node_modules/.bin/artillery run --solo ${__dirname}/pets-test.yaml`,
   {
     silent: false
   });

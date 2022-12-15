@@ -5,7 +5,7 @@
 'use strict';
 
 const debug = require('debug')('plugin:expect');
-const template = global.artillery.util.template;
+const template = global.artillery ? global.artillery.util.template : require('artillery/util').template;
 const _ = require('lodash');
 
 module.exports = {
