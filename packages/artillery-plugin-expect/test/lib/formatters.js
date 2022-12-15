@@ -5,23 +5,18 @@ const expectations = require('../../lib/expectations');
 const formatters = require('../../lib/formatters');
 
 let loggedMessages = [];
-let origConsole;
 const req = {
     url: 'http://localhost/api/a_path'
 };
 
-global.artillery = {
-  log: console.log.bind(console)
+global.console = {
+  log: function(message) {
+    loggedMessages.push(message);
+  }
 };
 
 test.beforeEach(() => {
     loggedMessages = [];
-    origConsole = artillery.log;
-    artillery.log = (message) => loggedMessages.push(message);
-});
-
-test.afterEach(() => {
-    artillery.log = origConsole;
 });
 
 test('does not log ok status', async t => {
