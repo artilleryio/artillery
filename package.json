@@ -9,6 +9,6 @@
     "lint-fix": "turbo run lint-fix  --continue"
   },
   "devDependencies": {
-    "turbo": "^1.5.1"
+    "turbo": "^1.6.3"
   }
 }

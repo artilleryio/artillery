@@ -137,11 +137,13 @@ ConsoleReporter.prototype.done = function done(data) {
     return this;
   }
 
-  artillery.log(
-    `All VUs finished. Total time: ${util.formatDuration(
-      Date.now() - this.startTime
-    )}\n`
-  );
+  if (this.startTime !== null) {
+    artillery.log(
+      `All VUs finished. Total time: ${util.formatDuration(
+        Date.now() - this.startTime
+      )}\n`
+    );
+  }
 
   const txt = `Summary report @ ${formatTimestamp(new Date())}`;
   artillery.log(`${underline(txt)}\n${txt}\n${underline(txt)}\n`);

@@ -1,0 +1,11 @@
+config:
+  target: https://www.artillery.io
+  plugins:
+    expect: {}
+scenarios:
+  - flow:
+      - get:
+          url: "/"
+          expect:
+            cdnHit: true
+            statusCode: 200

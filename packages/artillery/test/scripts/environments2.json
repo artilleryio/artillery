@@ -2,7 +2,7 @@
   "config": {
     "target": "http://localhost",
     "phases": [
-      {"duration": 10, "arrivalRate": 1}
+      {"duration": 1, "arrivalRate": 10}
     ],
     "environments": {
       "production": {

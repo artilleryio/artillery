@@ -2,6 +2,7 @@ const tap = require('tap');
 const { a9 } = require('./_helpers.js');
 const path = require('path');
 
+/*
 tap.test('Run a test on AWS Lambda', async (t) => {
   const configPath = path.resolve(
     __dirname,
@@ -35,6 +36,7 @@ tap.test('Run a test on AWS Lambda', async (t) => {
   ]);
 
   t.ok(
-    stdout.indexOf('Summary report') > 0 && stdout.indexOf('http.codes.200' > 0)
+    stdout.indexOf('Summary report') > 0 && stdout.indexOf('http.codes.200') > 0
   );
 });
+*/

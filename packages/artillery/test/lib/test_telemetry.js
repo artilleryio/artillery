@@ -55,7 +55,7 @@ test('Telemetry', function (t) {
     expectedEvent.properties.ciName = ci.name;
   }
 
-  t.deepEquals(callArg, expectedEvent, 'Sends telemetry data');
+  t.same(callArg, expectedEvent, 'Sends telemetry data');
 
   t.end();
 });
@@ -90,7 +90,7 @@ test('Telemetry with defaults env var', function (t) {
     expectedEvent.properties.ciName = ci.name;
   }
 
-  t.deepEquals(callArg, expectedEvent, 'Sends telemetry data');
+  t.same(callArg, expectedEvent, 'Sends telemetry data');
 
   delete process.env.ARTILLERY_TELEMETRY_DEFAULTS;
 

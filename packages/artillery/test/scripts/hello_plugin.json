@@ -1,8 +1,8 @@
 {
   "config": {
-      "target": "http://127.0.0.1:3003",
+      "target": "http://127.0.0.1:3004",
       "phases": [
-        {"duration": 10, "arrivalRate": 10}
+        {"duration": 2, "arrivalRate": 10}
       ],
       "plugins": {
         "dummy-csv-logger": {

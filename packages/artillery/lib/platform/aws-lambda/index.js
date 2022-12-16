@@ -51,8 +51,8 @@ class PlatformLambda {
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
 
-    this.securityGroupIds = platformConfig['security-group-ids'] || [];
-    this.subnetIds = platformConfig['subnet-ids'] || [];
+    this.securityGroupIds = platformConfig['security-group-ids']?.split(',') || [];
+    this.subnetIds = platformConfig['subnet-ids']?.split(',') || [];
 
     this.memorySize = platformConfig['memory-size'] || 4096;
 
@@ -391,11 +391,38 @@ class PlatformLambda {
     debug('Lambda event payload:');
     debug({ event });
 
-    const args = Buffer.from(JSON.stringify(event));
+    const payload = JSON.stringify(event);
 
-    await lambda.invokeAsync({
+    // Wait for the function to be invocable:
+    let waited = 0;
+    let ok = false;
+    while (waited < 120 * 1000) {
+      try {
+        var state = (await lambda.getFunctionConfiguration({ FunctionName: this.functionName}).promise()).State;
+        if (state === 'Active') {
+          debug('Lambda function ready:', this.functionName);
+          ok = true;
+          break;
+        } else {
+          await sleep(10 * 1000);
+          waited += 10 * 1000;
+        }
+      } catch (err) {
+        debug('Error getting lambda state:', err);
+        await sleep(10 * 1000);
+        waited += 10 * 1000;
+      }
+    }
+
+    if(!ok) {
+      debug('Time out waiting for lamda function to be ready:', this.functionName);
+      throw new Error(`Timeout waiting for lambda function to be ready for invocation`);
+    }
+
+    await lambda.invoke({
       FunctionName: this.functionName,
-      InvokeArgs: args,
+      Payload: payload,
+      InvocationType: 'Event'
     }).promise();
 
     this.count++;
@@ -625,7 +652,7 @@ class PlatformLambda {
       FunctionName: functionName,
       Description: 'Artillery.io test',
       Handler: 'index.handler',
-      MemorySize: 4096,
+      MemorySize: this.memorySize,
       PackageType: 'Zip',
       Runtime: 'nodejs16.x',
       Architectures: [this.architecture],
