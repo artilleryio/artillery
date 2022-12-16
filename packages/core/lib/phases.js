@@ -94,7 +94,6 @@ function createPause(spec, ee) {
 }
 
 function createRamp(spec, ee) {
-  const FRACTIONAL_CORRECTION = 1.1;
   const duration = spec.duration || 1;
   const arrivalRate = spec.arrivalRate;
   const rampTo = spec.rampTo;
@@ -123,9 +122,8 @@ function createRamp(spec, ee) {
       periodArrivals[i] = Math.floor(rawPeriodArrivals);
 
       // Think of fractionalPart * workers as the amount of arrivals that could not be
-      // shared evenly across all workers. Multiplier is used to adress fraction precision
-      // i.e: (X.3333333333 % 1) * 3 < 1
-      if ((rawPeriodArrivals % 1) * totalWorkers * FRACTIONAL_CORRECTION >= worker) {
+      // shared evenly across all workers.
+      if (Math.round((rawPeriodArrivals % 1) * totalWorkers) >= worker) {
         periodArrivals[i] = periodArrivals[i] + 1;
       }
 
