@@ -10,5 +10,9 @@
     "espree": "^9.4.1",
     "jsonpath-plus": "^7.2.0",
     "lodash": "^4.17.19"
+  },
+  "scripts": {
+    "lint": "eslint --ext \".js,.ts,.tsx\" .",
+    "lint-fix": "npm run lint -- --fix"
   }
 }
