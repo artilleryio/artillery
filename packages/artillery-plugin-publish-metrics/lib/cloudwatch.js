@@ -2,153 +2,171 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const {
-  CloudWatchClient,
-  PutMetricDataCommand
-} = require('@aws-sdk/client-cloudwatch');
-const { attachScenarioHooks } = require('./util');
+const { CloudWatchClient, PutMetricDataCommand } = require('@aws-sdk/client-cloudwatch');
 const debug = require('debug')('plugin:publish-metrics:cloudwatch');
 
+const COUNTERS_STATS = 'counters'; // counters stats
+const RATES_STATS = 'rates'; // rates stats
+const SUMMARIES_STATS = 'summaries'; // summaries stats
+
+const DEFAULT_UNIT = 'Count';
+
+const DEFAULT_STATS_ALLOWED = ['p50', 'p99', 'max', 'min', 'median', 'count'];
+
+const STATS_KEYS = ['p50', 'p75', 'p95', 'p99', 'p999', 'max', 'min', 'median'];
+
+const KNOWN_METRICS = ['http.response_time', 'http.tls', 'http.tcp', 'http.dns', 'http.total', 'vusers.session_length'];
+
+const KNOWN_UNITS = {
+  [SUMMARIES_STATS]: KNOWN_METRICS.reduce((acc, key) => {
+    acc[key] = {};
+    STATS_KEYS.forEach((metric) => {
+      acc[key][metric] = 'Milliseconds';
+    });
+    return acc;
+  }, {}),
+  [RATES_STATS]: {
+    'http.request_rate': 'Count/Second'
+  }
+};
+
 class CloudWatchReporter {
-  constructor(config, events, script) {
+  constructor(config, events) {
     this.options = {
       region: config.region || 'eu-west-1',
       namespace: config.namespace || 'artillery',
       name: config.name || 'loadtest',
-      allowedStats: config.allowedStats || ['scenariosCreated', 'scenariosCompleted', 'requestsCompleted', 'customStats' ]
+      dimensions: config.dimensions || [],
+      extended: config.extended || false
     };
 
-    this.cw = new CloudWatchClient(this.options);
-    this.promises = [];
+    this.pendingRequests = 0;
+    this.cw = new CloudWatchClient({
+      region: this.options.region
+    });
     this.metrics = [];
 
-    events.on('stats', async (stats, b) => {
-      const statsReport = stats.report();
-      const report = this.options.allowedStats
-          .map((stat) => ({name: stat, value: statsReport[stat]}))
-          .reduce((p, c) => {
-            p[c.name] = c.value;
-            return p;
-          }, {});
-
-      this.addMetric('scenarios.created', report.scenariosCreated);
-      this.addMetric('scenarios.completed', report.scenariosCompleted);
-      this.addMetric('requests.completed', report.requestsCompleted);
-
-      if (report.latency) {
-        this.addMetric('latency.min', report.latency.min);
-        this.addMetric('latency.max', report.latency.max);
-        this.addMetric('latency.median', report.latency.median);
-        this.addMetric('latency.p95', report.latency.p95);
-        this.addMetric('latency.p99', report.latency.p99);
+    events.on('stats', async (stats) => {
+      if (stats[COUNTERS_STATS]) {
+        for (const cKey in stats[COUNTERS_STATS]) {
+          this.addMetric(COUNTERS_STATS, `${cKey}`, stats[COUNTERS_STATS][cKey], DEFAULT_UNIT);
+        }
       }
 
-      if (report.customStats) {
-        Object.entries(report.customStats).forEach(([groupName, group]) => {
-          Object.entries(group)
-              .filter(([statName, value]) => ['min', 'max', 'median'].includes(statName))
-              .forEach(([statName, value]) => {
-                const key = `custom.${groupName}.${statName}`;
-                // this.addMetric(key, value);
-              })
-        });
+      if (stats[RATES_STATS]) {
+        for (const rKey in stats[RATES_STATS]) {
+          this.addMetric(
+            RATES_STATS,
+            `${rKey}`,
+            stats[RATES_STATS][rKey],
+            (KNOWN_UNITS[RATES_STATS] && KNOWN_UNITS[RATES_STATS][rKey]) || DEFAULT_UNIT
+          );
+        }
       }
 
-      if (report.counters) {
-        Object.entries(report.counters).forEach(([name, value]) => {
-          const key = `counters.${name}`;
-          this.addMetric(key, value);
-        })
-      }
-      let errorCount = 0;
-      if (report.errors) {
-        Object.keys(report.errors).forEach((errCode) => {
-          const metricName = errCode
-              .replace(/[^a-zA-Z0-9_]/g, '_');
-          errorCount += report.errors[errCode];
-          this.addMetric(`errors.${metricName}`, report.errors[errCode]);
-        });
-        this.addMetric(`error_count`, errorCount);
-      }
-
-      const codeCounts = {
-        '1xx': 0,
-        '2xx': 0,
-        '3xx': 0,
-        '4xx': 0,
-        '5xx': 0
-      };
-
-      if (report.codes) {
-        Object.keys(report.codes).forEach((code) => {
-          const codeFamily = `${String(code)[0]}xx`;
-          if (!codeCounts[codeFamily]) {
-            codeCounts[codeFamily] = 0; // 6xx etc
+      if (stats[SUMMARIES_STATS]) {
+        for (const sKey in stats[SUMMARIES_STATS]) {
+          let readings = stats[SUMMARIES_STATS][sKey];
+          for (const readingKey in readings) {
+            if (this.options.extended || DEFAULT_STATS_ALLOWED.includes(readingKey.split('.').pop())) {
+              this.addMetric(
+                SUMMARIES_STATS,
+                `${sKey}.${readingKey}`,
+                readings[readingKey],
+                (KNOWN_UNITS[SUMMARIES_STATS] &&
+                  KNOWN_UNITS[SUMMARIES_STATS][sKey] &&
+                  KNOWN_UNITS[SUMMARIES_STATS][sKey][readingKey]) ||
+                  DEFAULT_UNIT
+              );
+            }
           }
-          codeCounts[codeFamily] += report.codes[code];
-        });
-        Object.keys(codeCounts).forEach((codeFamily) => {
-          this.addMetric(`response.${codeFamily}`, codeCounts[codeFamily]);
-        });
+        }
       }
 
-      if (report.rps) {
-        this.addMetric('rps.mean', report.rps.mean);
-        this.addMetric('rps.count', report.count);
-      }
-
-      this.putMetric();
+      await this.putMetric();
     });
-
 
     debug('init done');
   }
 
-  cleanup(done) {
-    debug('cleaning up');
-
-    Promise.all(this.promises).then(() => {
-      debug('cleaning up completed');
-      done()
-    });
+  isMetricValid(value) {
+    return value !== undefined && value !== null && !isNaN(value) && isFinite(value);
   }
 
-  addMetric(name, value) {
-
+  addMetric(group, name, value, unit = DEFAULT_UNIT) {
     // ignore undefined values
-    if (value === undefined) {
+    if (!this.isMetricValid(value)) {
       return;
     }
-    debug({name, value, pid: process.pid, isMaster: require('cluster').isMaster}, 'addMetric');
+
+    const metric = {
+      MetricName: name,
+      Unit: unit,
+      Value: value
+    };
+    debug(
+      {
+        group,
+        metric,
+        pid: process.pid,
+        isMaster: require('cluster').isMaster
+      },
+      'addMetric'
+    );
 
     this.metrics.push({
-      MetricName: name,
-      Unit: "None",
-      Value: isNaN(value) ? 0 : value,
       Dimensions: [
+        {
+          Name: 'Group',
+          Value: group
+        },
         {
           Name: 'Name',
           Value: this.options.name
-        }
+        },
+        ...this.options.dimensions.map((dimension) => ({
+          Name: dimension.name,
+          Value: dimension.value
+        }))
       ],
+      ...metric
     });
   }
 
-  putMetric() {
-
+  async putMetric() {
+    this.pendingRequests += 1;
     const metrics = this.metrics;
     this.metrics = [];
 
-    debug(metrics,'putMetric')
+    // debug('putMetric', metrics);
+    try {
+      await this.cw.send(
+        new PutMetricDataCommand({
+          MetricData: metrics,
+          Namespace: this.options.namespace
+        })
+      );
+    } catch (error) {
+      debug(error);
+    }
 
-    const promise = this.cw.send(new PutMetricDataCommand({
-      MetricData: metrics,
-      Namespace: this.options.namespace,
-    }));
-
-    this.promises.push(promise);
+    this.pendingRequests -= 1;
   }
 
+  async waitingForRequest() {
+    do {
+      debug('Waiting for pending request ...');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    } while (this.pendingRequests > 0);
+
+    debug('Pending requests done');
+    return true;
+  }
+
+  cleanup(done) {
+    debug('cleaning up');
+    return this.waitingForRequest().then(done);
+  }
 }
 
 function createCloudWatchReporter(config, events, script) {
