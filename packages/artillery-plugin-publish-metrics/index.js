@@ -47,7 +47,7 @@ function Plugin(script, events) {
         {
           type: 'plugin',
           id: NS,
-        },
+        }
       );
     }
   });
@@ -64,6 +64,6 @@ Plugin.prototype.cleanup = function (done) {
     },
     () => {
       return done();
-    },
+    }
   );
 };
