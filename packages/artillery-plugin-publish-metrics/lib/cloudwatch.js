@@ -38,7 +38,8 @@ class CloudWatchReporter {
       name: config.name || 'loadtest',
       dimensions: config.dimensions || [],
       extended: config.extended || false,
-      excluded: config.excluded || []
+      excluded: config.excluded || [],
+      included: config.included || []
     };
 
     this.pendingRequests = 0;
@@ -98,6 +99,10 @@ class CloudWatchReporter {
       return;
     }
     if (this.options.excluded.includes(name)) {
+      return;
+    }
+
+    if (this.options.included.length > 0 && !this.options.included.includes(name)) {
       return;
     }
 
