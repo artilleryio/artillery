@@ -11,7 +11,7 @@ const SUMMARIES_STATS = 'summaries'; // summaries stats
 
 const DEFAULT_UNIT = 'Count';
 
-const DEFAULT_STATS_ALLOWED = ['p50', 'p99', 'max', 'min', 'median', 'count'];
+const DEFAULT_STATS_ALLOWED = ['p99', 'max', 'min', 'median', 'count'];
 
 const STATS_KEYS = ['p50', 'p75', 'p95', 'p99', 'p999', 'max', 'min', 'median'];
 
@@ -37,7 +37,8 @@ class CloudWatchReporter {
       namespace: config.namespace || 'artillery',
       name: config.name || 'loadtest',
       dimensions: config.dimensions || [],
-      extended: config.extended || false
+      extended: config.extended || false,
+      excluded: config.excluded || []
     };
 
     this.pendingRequests = 0;
@@ -49,14 +50,13 @@ class CloudWatchReporter {
     events.on('stats', async (stats) => {
       if (stats[COUNTERS_STATS]) {
         for (const cKey in stats[COUNTERS_STATS]) {
-          this.addMetric(COUNTERS_STATS, `${cKey}`, stats[COUNTERS_STATS][cKey], DEFAULT_UNIT);
+          this.addMetric(`${cKey}`, stats[COUNTERS_STATS][cKey], DEFAULT_UNIT);
         }
       }
 
       if (stats[RATES_STATS]) {
         for (const rKey in stats[RATES_STATS]) {
           this.addMetric(
-            RATES_STATS,
             `${rKey}`,
             stats[RATES_STATS][rKey],
             (KNOWN_UNITS[RATES_STATS] && KNOWN_UNITS[RATES_STATS][rKey]) || DEFAULT_UNIT
@@ -70,7 +70,6 @@ class CloudWatchReporter {
           for (const readingKey in readings) {
             if (this.options.extended || DEFAULT_STATS_ALLOWED.includes(readingKey.split('.').pop())) {
               this.addMetric(
-                SUMMARIES_STATS,
                 `${sKey}.${readingKey}`,
                 readings[readingKey],
                 (KNOWN_UNITS[SUMMARIES_STATS] &&
@@ -93,9 +92,12 @@ class CloudWatchReporter {
     return value !== undefined && value !== null && !isNaN(value) && isFinite(value);
   }
 
-  addMetric(group, name, value, unit = DEFAULT_UNIT) {
+  addMetric(name, value, unit = DEFAULT_UNIT) {
     // ignore undefined values
     if (!this.isMetricValid(value)) {
+      return;
+    }
+    if (this.options.excluded.includes(name)) {
       return;
     }
 
@@ -106,7 +108,6 @@ class CloudWatchReporter {
     };
     debug(
       {
-        group,
         metric,
         pid: process.pid,
         isMaster: require('cluster').isMaster
@@ -116,10 +117,6 @@ class CloudWatchReporter {
 
     this.metrics.push({
       Dimensions: [
-        {
-          Name: 'Group',
-          Value: group
-        },
         {
           Name: 'Name',
           Value: this.options.name
