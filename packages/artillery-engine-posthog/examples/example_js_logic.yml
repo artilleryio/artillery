@@ -1,0 +1,33 @@
+config:
+  target: "posthog-test"
+  posthog:
+    api_key: "{{ $processEnvironment.POSTHOG_API_KEY }}"
+    # instance_address: "cloud as default"
+  phases:
+    - arrivalCount: 1
+      duration: 1
+  engines:
+    posthog: {}
+  processor: "./logic.js"
+scenarios:
+  - name: "post posthog event"
+    engine: posthog
+    flow:
+      - function: "generateIds"
+      - count: 1
+        loop:
+        - capture:
+            distinctId: "{{ user }}"
+            event: "movie played {{ movie }}"
+            properties:
+              movieId: "{{ movie }}"
+              category: "action"
+        - identify:
+            distinctId: "{{ user }}"
+            properties:
+              movieId: " {{ movie }}"
+              category: "action"
+        - alias:
+            distinctId: "{{ user }}"
+            alias: "john"
+        - think: 3
