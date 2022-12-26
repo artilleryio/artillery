@@ -35,7 +35,7 @@ Check out these plugins for ideas of how to do more things:
 
 Artillery's extension APIs:
 
-https://artillery.io/docs/guides/guides/extending.html
+https://artillery.io/blog/extend-artillery-by-creating-your-own-plugins
 
 ## Write a plugin (and let us know!) ⚡
 
