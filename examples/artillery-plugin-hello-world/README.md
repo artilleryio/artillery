@@ -44,6 +44,5 @@ Artillery's plugin interface + the power of Node.js (there's an npm package for 
 If you write a new plugin, let us know!
 
 - Github Discussion board: https://github.com/artilleryio/artillery/discussions
-- Discord chat: https://discord.gg/37vGhH3NMB 💬
 
 💜
