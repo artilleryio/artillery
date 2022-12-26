@@ -4,7 +4,7 @@
   "description": "Load test Posthog with Artillery.io",
   "main": "index.js",
   "scripts": {
-    "test": "node test/index.js",
+    "test": "node test/index.js"
   },
   "keywords": [
     "posthog",

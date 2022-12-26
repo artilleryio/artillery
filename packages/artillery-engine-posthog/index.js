@@ -2,22 +2,82 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
- const debug = require('debug')('engine:posthog');
- const A = require('async');
- const _ = require('lodash');
- const { PostHog } = require('posthog-node');
- 
- let template;
- 
- class PosthogEngine {
+const debug = require('debug')('engine:posthog');
+const A = require('async');
+const _ = require('lodash');
+const { PostHog } = require('posthog-node');
+
+class PosthogEngine {
   constructor(script, ee, helpers) {
     this.script = script;
     this.ee = ee;
     this.helpers = helpers;
-    template = helpers.template;
 
     return this;
   }
+
+  customHandler(self, rs, ee) {
+    console.log(rs);
+    if (rs.capture) {
+      return function capture(context, callback) {
+        const params = {
+          distinctId: self.helpers.template(rs.capture.distinctId, context, true),
+          event: self.helpers.template(rs.capture.event, context, true),
+          properties: self.helpers.template(rs.capture.properties, context, true)
+        };
+        debug(params);
+        ee.emit('request');
+        context.posthog.capture(params);
+        ee.emit('response', 0, 0, context._uid); // FIXME
+        return callback(null, context);
+      };
+    }
+    if (rs.identify) {
+      return function identify(context, callback) {
+        const params = {
+          distinctId: self.helpers.template(rs.identify.distinctId, context, true),
+          properties: self.helpers.template(rs.identify.properties, context, true)
+        };
+        debug(params);
+        ee.emit('request');
+        context.posthog.identify(params);
+        ee.emit('response', 0, 0, context._uid); // FIXME
+        return callback(null, context);
+      };
+    }
+
+    if (rs.alias) {
+      return function alias(context, callback) {
+        const params = {
+          distinctId: self.helpers.template(rs.alias.distinctId, context, true),
+          alias: self.helpers.template(rs.alias.alias, context, true)
+        };
+        debug(params);
+        ee.emit('request');
+        context.posthog.alias(params);
+        ee.emit('response', 0, 0, context._uid); // FIXME
+        return callback(null, context);
+      };
+    }
+  }
+
+  customSetup(self, initialContext) {
+    let opts = { ...self.script.config.posthog };
+
+    if (!opts.api_key) {
+      throw new Error("no PostHog api key provided");
+    }
+
+    if (!opts.instance_address) {
+      console.log(`WARNING: no PostHog instance provided. Defaulting to PostHog cloud`); // TODO: a 'warning' event
+    }
+
+    const client = new PostHog(opts.api_key, {
+      flushInterval: 100
+    });
+    initialContext.posthog = client;
+  }
+
   createScenario(scenarioSpec, ee) {
     const tasks = scenarioSpec.flow.map(rs => this.step(rs, ee));
 
@@ -55,70 +115,20 @@
       };
     }
 
-    if (rs.capture) {
-      return function capture(context, callback) {
-        const params = {
-          distinctId: template(rs.capture.distinctId, context, true),
-          event: template(rs.capture.event, context, true),
-          properties: template(rs.capture.properties, context, true)
-        };
-        debug(params);
-        ee.emit('request');
-        context.posthog.capture(params);
-        ee.emit('response', 0, 0, context._uid); // FIXME
+    const customResult = this.customHandler(self, rs, ee);
+    if (customResult !== undefined) {
+      return customResult;
+    } else {
+      return function (context, callback) {
         return callback(null, context);
       };
     }
-    if (rs.identify) {
-      return function identify(context, callback) {
-        const params = {
-          distinctId: template(rs.identify.distinctId, context, true),
-          properties: template(rs.identify.properties, context, true)
-        };
-        debug(params);
-        ee.emit('request');
-        context.posthog.identify(params);
-        ee.emit('response', 0, 0, context._uid); // FIXME
-        return callback(null, context);
-      };
-    }
-
-    if (rs.alias) {
-      return function alias(context, callback) {
-        const params = {
-          distinctId: template(rs.alias.distinctId, context, true),
-          alias: template(rs.alias.alias, context, true)
-        };
-        debug(params);
-        ee.emit('request');
-        context.posthog.alias(params);
-        ee.emit('response', 0, 0, context._uid); // FIXME
-        return callback(null, context);
-      };
-    }
-
-    return function (context, callback) {
-      return callback(null, context);
-    };
   }
   compile(tasks, scenarioSpec, ee) {
     const self = this;
     return function scenario(initialContext, callback) {
       const init = function init(next) {
-        let opts = { ...self.script.config.posthog };
-
-        if (!opts.api_key) {
-          throw new Error("no PostHog api key provided");
-        }
-
-        if (!opts.instance_address) {
-          console.log(`WARNING: no PostHog instance provided. Defaulting to PostHog cloud`); // TODO: a 'warning' event
-        }
-
-        const client = new PostHog(opts.api_key, {
-          flushInterval: 100
-        });
-        initialContext.posthog = client;
+        self.customSetup(self, initialContext);
         ee.emit('started');
         return next(null, initialContext);
       };
@@ -137,5 +147,5 @@
     };
   }
 }
- module.exports = PosthogEngine;
+module.exports = PosthogEngine;
 
