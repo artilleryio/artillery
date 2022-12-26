@@ -2,17 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const debug = require('debug')('engine:posthog');
-const engineUtil = require('@artilleryio/int-commons').engine_util;
-const A = require('async');
-const _ = require('lodash');
-const { PostHog } = require('posthog-node');
-
-class PosthogEngine {
+ const debug = require('debug')('engine:posthog');
+ const A = require('async');
+ const _ = require('lodash');
+ const { PostHog } = require('posthog-node');
+ 
+ let template;
+ 
+ class PosthogEngine {
   constructor(script, ee, helpers) {
     this.script = script;
     this.ee = ee;
     this.helpers = helpers;
+    template = helpers.template;
 
     return this;
   }
@@ -56,9 +58,9 @@ class PosthogEngine {
     if (rs.capture) {
       return function capture(context, callback) {
         const params = {
-          distinctId: engineUtil.template(rs.capture.distinctId, context, true),
-          event: engineUtil.template(rs.capture.event, context, true),
-          properties: engineUtil.template(rs.capture.properties, context, true)
+          distinctId: template(rs.capture.distinctId, context, true),
+          event: template(rs.capture.event, context, true),
+          properties: template(rs.capture.properties, context, true)
         };
         debug(params);
         ee.emit('request');
@@ -70,8 +72,8 @@ class PosthogEngine {
     if (rs.identify) {
       return function identify(context, callback) {
         const params = {
-          distinctId: engineUtil.template(rs.identify.distinctId, context, true),
-          properties: engineUtil.template(rs.identify.properties, context, true)
+          distinctId: template(rs.identify.distinctId, context, true),
+          properties: template(rs.identify.properties, context, true)
         };
         debug(params);
         ee.emit('request');
@@ -84,8 +86,8 @@ class PosthogEngine {
     if (rs.alias) {
       return function alias(context, callback) {
         const params = {
-          distinctId: engineUtil.template(rs.alias.distinctId, context, true),
-          alias: engineUtil.template(rs.alias.alias, context, true)
+          distinctId: template(rs.alias.distinctId, context, true),
+          alias: template(rs.alias.alias, context, true)
         };
         debug(params);
         ee.emit('request');
@@ -135,8 +137,5 @@ class PosthogEngine {
     };
   }
 }
+ module.exports = PosthogEngine;
 
-
-
-
-module.exports = PosthogEngine;

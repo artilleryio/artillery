@@ -26,7 +26,6 @@
     "tape": "^5.6.1"
   },
   "dependencies": {
-    "@artilleryio/int-commons": "^2.0.0",
     "async": "^3.2.4",
     "lodash": "^4.17.21",
     "posthog-node": "^2.2.3"
