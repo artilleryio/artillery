@@ -5,8 +5,6 @@
   "main": "index.js",
   "scripts": {
     "test": "node test/index.js",
-    "commitmsg": "conventional-changelog-lint -e",
-    "precommit": "semistandard"
   },
   "keywords": [
     "posthog",
@@ -15,14 +13,6 @@
   "author": "Juan Gil <jgil@artillery.io>",
   "license": "MPL-2.0",
   "devDependencies": {
-    "conventional-changelog-lint": "^1.1.9",
-    "eslint": "^3.19.0",
-    "eslint-config-standard": "^10.2.1",
-    "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-node": "^4.2.2",
-    "eslint-plugin-promise": "^3.5.0",
-    "eslint-plugin-standard": "^3.0.1",
-    "semistandard": "^11.0.0",
     "tape": "^5.6.1"
   },
   "dependencies": {
