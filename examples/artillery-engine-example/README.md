@@ -1,6 +1,7 @@
 # Artillery.io example Engine
 
-Simple example engine
+Simple example engine that prints config and scenario props using `debug`.
+The idea is to provide a peek into artillery engines with a hands-on approach.
 
 ## Usage
 
