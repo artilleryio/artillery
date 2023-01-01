@@ -1,0 +1,23 @@
+{
+  "name": "artillery-engine-example",
+  "version": "0.0.1",
+  "description": "Engine template/example for Artillery",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/index.js"
+  },
+  "keywords": [
+    "artillery",
+    "engine",
+    "load"
+  ],
+  "author": "Juan Gil <jgil@artillery.io>",
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "tape": "^5.6.1"
+  },
+  "dependencies": {
+    "async": "^3.2.4",
+    "lodash": "^4.17.21"
+  }
+}

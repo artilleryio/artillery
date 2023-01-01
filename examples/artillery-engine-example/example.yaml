@@ -1,0 +1,15 @@
+config:
+  target: "not-really-used"
+  example:
+    mandatoryString: "script wide prop loaded at startup"
+  phases:
+    - arrivalRate: 1
+      duration: 1
+  engines:
+    example: {}
+scenarios:
+  - name: "posthog engine test"
+    engine: example
+    flow:
+      - example:
+          id: "distinct id"
