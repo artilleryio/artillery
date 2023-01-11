@@ -11,7 +11,12 @@ let sandbox;
 let captureSpy;
 let shutdownSpy;
 
-function PostHogMock() {}
+class InnerPostHog {}
+const PostHogMock = {
+  PostHog: InnerPostHog
+}
+
+
 
 test('Telemetry - setup', (t) => {
   sandbox = sinon.sandbox.create();
@@ -23,8 +28,8 @@ test('Telemetry - setup', (t) => {
   // make sure telemetry is enabled
   delete process.env.ARTILLERY_DISABLE_TELEMETRY;
 
-  PostHogMock.prototype.capture = captureSpy;
-  PostHogMock.prototype.shutdown = shutdownSpy;
+  InnerPostHog.prototype.capture = captureSpy;
+  InnerPostHog.prototype.shutdown = shutdownSpy;
 
   rewiremock('posthog-node').with(PostHogMock);
 
@@ -106,7 +111,7 @@ test('Telemetry - disable through environment variable', function (t) {
 
   telemetryClient.capture('test event');
 
-  t.false(
+  t.notOk(
     captureSpy.called,
     'Does not send telemetry data if ARTILLERY_DISABLE_TELEMETRY environment variable is set to "true"'
   );

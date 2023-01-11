@@ -8,7 +8,6 @@ const { version: artilleryVersion } = require('../package.json');
 const { isCI, name: ciName } = require('ci-info');
 const chalk = require('chalk');
 const { readArtilleryConfig, updateArtilleryConfig } = require('./utils-config');
-const { PostHog } = require('posthog-node');
 const debug = require('debug')('telemetry');
 
 const POSTHOG_TOKEN = '_uzX-_WJoVmE_tsLvu0OFD2tpd0HGz72D5sU1zM2hbs';
@@ -93,9 +92,11 @@ const init = () => {
   };
 
   try {
+    const PostHog = require('posthog-node').PostHog;
     const client = new PostHog(POSTHOG_TOKEN, {
       flushInterval: 100
     });
+
     telemetry.capture = capture(client);
     telemetry.shutdown = shutdown(client);
   } catch (err) {
