@@ -78,16 +78,15 @@ const init = () => {
       try {
         debug({ eventPayload });
         client.capture(eventPayload);
-        client.flush();
       } catch (err) {
         debug(err);
       }
     };
   };
 
-  const shutdown = (client) => () => {
+  const shutdown = (client) => async () => {
     try {
-      client.shutdown();
+      await client.shutdownAsync();
     } catch (err) {
       debug(err);
     }
