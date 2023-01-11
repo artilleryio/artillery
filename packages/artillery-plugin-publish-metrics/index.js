@@ -10,7 +10,8 @@ const { createDatadogReporter } = require('./lib/datadog');
 const { createHoneycombReporter } = require('./lib/honeycomb');
 const { createLightstepReporter } = require('./lib/lightstep');
 const { createMixPanelReporter } = require('./lib/mixpanel');
-const { createPrometheusReporter } = require("./lib/prometheus");
+const { createPrometheusReporter } = require('./lib/prometheus');
+const { createCloudWatchReporter } = require('./lib/cloudwatch');
 
 module.exports = {
   Plugin,
@@ -37,6 +38,8 @@ function Plugin(script, events) {
       this.reporters.push(createMixPanelReporter(config, events, script));
     } else if (config.type === 'prometheus') {
       this.reporters.push(createPrometheusReporter(config, events, script));
+    } else if (config.type === 'cloudwatch') {
+      this.reporters.push(createCloudWatchReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',
