@@ -4,7 +4,7 @@ function generateIds(context, events, done) {
     context.vars['movie'] = 'bar';
     return done();
   };
-  
+
   module.exports = {
     generateIds: generateIds
   }

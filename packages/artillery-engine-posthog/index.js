@@ -6,6 +6,7 @@ const debug = require('debug')('engine:posthog');
 const A = require('async');
 const _ = require('lodash');
 const { PostHog } = require('posthog-node');
+let client;
 
 class PosthogEngine {
   constructor(script, ee, helpers) {
@@ -16,8 +17,12 @@ class PosthogEngine {
     return this;
   }
 
+  cleanup(){
+    debug("Shutting down");
+    client.shutdown();
+  }
+
   customHandler(self, rs, ee) {
-    console.log(rs);
     if (rs.capture) {
       return function capture(context, callback) {
         const params = {
@@ -27,7 +32,7 @@ class PosthogEngine {
         };
         debug(params);
         ee.emit('request');
-        context.posthog.capture(params);
+        client.capture(params);
         ee.emit('response', 0, 0, context._uid); // FIXME
         return callback(null, context);
       };
@@ -40,7 +45,7 @@ class PosthogEngine {
         };
         debug(params);
         ee.emit('request');
-        context.posthog.identify(params);
+        client.identify(params);
         ee.emit('response', 0, 0, context._uid); // FIXME
         return callback(null, context);
       };
@@ -54,7 +59,7 @@ class PosthogEngine {
         };
         debug(params);
         ee.emit('request');
-        context.posthog.alias(params);
+        client.alias(params);
         ee.emit('response', 0, 0, context._uid); // FIXME
         return callback(null, context);
       };
@@ -72,10 +77,9 @@ class PosthogEngine {
       console.log(`WARNING: no PostHog instance provided. Defaulting to PostHog cloud`); // TODO: a 'warning' event
     }
 
-    const client = new PostHog(opts.api_key, {
+    client = new PostHog(opts.api_key, {
       flushInterval: 100
     });
-    initialContext.posthog = client;
   }
 
   createScenario(scenarioSpec, ee) {
