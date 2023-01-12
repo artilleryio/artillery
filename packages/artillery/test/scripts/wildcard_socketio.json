@@ -1,0 +1,31 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:9091",
+    "phases": [
+      {
+        "duration": 5,
+        "arrivalCount": 1
+      }
+    ],
+    "processor": "wildcard_processor.js"
+  },
+  "scenarios": [
+    {
+      "engine": "socketio",
+      "flow": [
+        {
+          "function": "init"
+        },
+        {
+          "emit": {
+            "channel": "echo",
+            "data": "Hello from Artillery"
+          }
+        },
+        {
+          "think": 1
+        }
+      ]
+    }
+  ]
+}

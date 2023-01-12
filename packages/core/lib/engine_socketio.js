@@ -8,6 +8,7 @@ const async = require('async');
 const _ = require('lodash');
 
 const io = require('socket.io-client');
+const wildcardPatch = require('socketio-wildcard')(io.Manager);
 
 const deepEqual = require('fast-deep-equal');
 const debug = require('debug')('socketio');
@@ -302,7 +303,9 @@ SocketIoEngine.prototype.loadContextSocket = function (namespace, context, cb) {
     const socket = io(target, options);
     context.sockets[namespace] = socket;
 
-    socket.onAny(() => {
+    wildcardPatch(socket);
+
+    socket.on('*', function () {
       context.__receivedMessageCount++;
     });
 
