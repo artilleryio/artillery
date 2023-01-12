@@ -41,31 +41,36 @@ const init = () => {
     shutdown: noop
   };
 
-  if (telemetryDisabled) {
-    return telemetry;
-  }
-
   const capture = (client) => {
     return (event, data = {}) => {
-      const eventPayload = {
-        event,
-        distinctId: data.distinctId || 'artillery-core',
-        properties: {
-          ...data,
-          version: artilleryVersion,
-          os: process.platform,
-          isCi: isCI,
-          $ip: null
+      let eventPayload;
+
+      if (telemetryDisabled) {
+        eventPayload = {
+          event,
+          distinctId: 'artillery-core'
+        };
+      } else {
+        eventPayload = {
+          event,
+          distinctId: data.distinctId || 'artillery-core',
+          properties: {
+            ...data,
+            version: artilleryVersion,
+            os: process.platform,
+            isCi: isCI,
+            $ip: null
+          }
+        };
+
+        eventPayload.properties = Object.assign(
+          eventPayload.properties,
+          telemetryDefaults
+        );
+
+        if (isCI) {
+          eventPayload.properties.ciName = ciName;
         }
-      };
-
-      eventPayload.properties = Object.assign(
-        eventPayload.properties,
-        telemetryDefaults
-      );
-
-      if (isCI) {
-        eventPayload.properties.ciName = ciName;
       }
 
       if (debugEnabled) {
