@@ -77,26 +77,26 @@ const init = () => {
       try {
         debug({ eventPayload });
         client.capture(eventPayload);
-        client.flush();
       } catch (err) {
         debug(err);
       }
     };
   };
 
-  const shutdown = (client) => () => {
+  const shutdown = (client) => async () => {
     try {
-      client.shutdown();
+      await client.shutdownAsync();
     } catch (err) {
       debug(err);
     }
   };
 
   try {
-    const PostHog = require('posthog-node');
+    const PostHog = require('posthog-node').PostHog;
     const client = new PostHog(POSTHOG_TOKEN, {
       flushInterval: 100
     });
+
     telemetry.capture = capture(client);
     telemetry.shutdown = shutdown(client);
   } catch (err) {

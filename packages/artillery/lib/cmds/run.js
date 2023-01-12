@@ -200,7 +200,7 @@ class RunCommand extends Command {
         debug('Graceful shutdown initiated');
 
         shuttingDown = true;
-        telemetry.shutdown();
+        await telemetry.shutdown();
 
         await launcher.shutdown();
         await (async function () {
