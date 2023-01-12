@@ -39,7 +39,7 @@ class CloudWatchReporter {
       dimensions: config.dimensions || [],
       extended: config.extended || false,
       excluded: config.excluded || [],
-      included: config.included || []
+      includeOnly: config.includeOnly || []
     };
 
     this.pendingRequests = 0;
@@ -102,7 +102,7 @@ class CloudWatchReporter {
       return;
     }
 
-    if (this.options.included.length > 0 && !this.options.included.includes(name)) {
+    if (this.options.includeOnly.length > 0 && !this.options.includeOnly.includes(name)) {
       return;
     }
 
