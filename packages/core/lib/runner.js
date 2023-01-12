@@ -215,13 +215,24 @@ function run(script, ee, options, runState, contextVars) {
   phaser.on('done', function () {
     debug('All phases launched');
 
-    const doneYet = setInterval(function checkIfDone() {
+    const doneYet = setInterval(async function checkIfDone() {
       if (runState.pendingScenarios === 0) {
         clearInterval(doneYet);
 
         metrics.aggregate(true);
 
         const totals = SSMS.pack(intermediates);
+
+        for (const engine of runState.engines) {
+          if (engine.cleanup) {
+            try {
+              await engine.cleanup();
+              debug('engine unloaded:', engine.__name);
+            } catch (cleanupErr) {
+              debug(cleanupErr);
+            }
+          }
+        };
 
         ee.emit('done', totals);
       } else {
