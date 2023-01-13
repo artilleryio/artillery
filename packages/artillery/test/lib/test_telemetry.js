@@ -102,7 +102,7 @@ test('Telemetry with defaults env var', function (t) {
   t.end();
 });
 
-test('Telemetry - disable through environment variable', function (t) {
+test('Telemetry - disable user info through environment variable', function (t) {
   captureSpy.resetHistory();
 
   process.env.ARTILLERY_DISABLE_TELEMETRY = 'true';
@@ -110,11 +110,13 @@ test('Telemetry - disable through environment variable', function (t) {
   const telemetryClient = telemetry.init();
 
   telemetryClient.capture('test event');
+  const callArg = captureSpy.args[0][0];
+  const expectedEvent = {
+    event: 'test event',
+    distinctId: 'artillery-core'
+  };
 
-  t.notOk(
-    captureSpy.called,
-    'Does not send telemetry data if ARTILLERY_DISABLE_TELEMETRY environment variable is set to "true"'
-  );
+  t.same(callArg, expectedEvent, 'Only basic ping is sent if user opted out');
 
   delete process.env.ARTILLERY_DISABLE_TELEMETRY;
   t.end();
