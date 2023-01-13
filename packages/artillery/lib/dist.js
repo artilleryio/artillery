@@ -28,8 +28,8 @@ function divideWork(script, numWorkers) {
       // with rampTo and no arrivalRate
       phase.arrivalRate = phase.arrivalRate || 0;
 
-      let rates = distribute(phase.arrivalRate, numWorkers);
-      let ramps = distribute(phase.rampTo, numWorkers);
+      let rates = distributeEven(phase.arrivalRate, numWorkers);
+      let ramps = distributeEven(phase.rampTo, numWorkers);
       let activeWorkers = Math.max(rates.filter(r => r > 0).length, ramps.filter(r => r > 0).length);
       let maxVusers = phase.maxVusers ? distribute(phase.maxVusers, activeWorkers) : false;
       L.each(rates, function (Lr, i) {
@@ -108,12 +108,32 @@ function divideWork(script, numWorkers) {
     }
   }
 
+  let activeWorkers = 1;
+  result.forEach(r => {
+    r.config.phases.forEach(p => {
+      p.totalWorkers = result.length;
+    p.worker = activeWorkers;
+    }),
+    activeWorkers++;
+  });
+
   return result;
 }
 
 /**
  * Given M "things", distribute them between N peers as equally as possible
  */
+function distributeEven(m, n){
+  m = Number(m);
+  n = Number(n);
+  let result = [];
+  for (let i = 0; i < n; i++) {
+    result.push(m/n);
+  }
+
+  return result;
+}
+
 function distribute(m, n) {
   m = Number(m);
   n = Number(n);

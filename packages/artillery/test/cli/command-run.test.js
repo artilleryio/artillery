@@ -251,7 +251,7 @@ tap.test(
   async (t) => {
     // This would cause older versions of artillery to generate much more traffic than expected
     // We compare them to the max amount of arrivals we expect from the script # Note: v2.0.0-22 generates 20+ arrivals, almost double
-    const arrivalUpperBound = 11;
+    const totalRequests = 7;
 
     const reportMultipleFile = 'multiple_workers.json';
     const reportMultipleFilePath = await getRootPath(reportMultipleFile);
@@ -281,8 +281,8 @@ tap.test(
         deleteFile(reportSingleFilePath) &&
         exitCodeMultiple === 0 &&
         exitCodeSingle === 0 &&
-        multipleCount <= arrivalUpperBound &&
-        singleCount <= arrivalUpperBound
+        multipleCount === totalRequests &&
+        singleCount === totalRequests
     );
   }
 );

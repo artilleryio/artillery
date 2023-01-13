@@ -12,6 +12,7 @@ const arrivals = require('arrivals');
 const debug = require('debug')('phases');
 const crypto = require('crypto');
 const driftless = require('driftless');
+const sleep = require('../../artillery/lib/util/sleep');
 
 module.exports = phaser;
 
@@ -96,50 +97,67 @@ function createRamp(spec, ee) {
   const duration = spec.duration || 1;
   const arrivalRate = spec.arrivalRate;
   const rampTo = spec.rampTo;
+  const worker = spec.worker;
+  const totalWorkers = spec.totalWorkers;
 
-  // smallest tick we can get away with. Both arrivalRate and rampTo
-  // can be zero. So in that case we use 1s ticks even tho no
-  // arrivals will be generated
-  let tick = 1000 / Math.max(Math.max(arrivalRate, rampTo), 1);
   const difference = rampTo - arrivalRate;
-  const periods = duration * 1000 / tick;
+  const periods = duration;
+  debug(`worker ${worker} totalWorkers ${totalWorkers} arrivalRate ${arrivalRate} rampTo ${rampTo} difference ${difference} periods ${periods}`);
 
-  function arrivalProbability(currentStep) {
-    // linear function ax + b
-    // normalized to 0 <= f(t) <= 1
-    // Anything under function value should be an arrival
+  const periodArrivals = [];
+  const periodTick = [];
+  // if there is only one peridod we generate mean arrivals
+  if (periods === 1) {
+    periodArrivals[0] = Math.floor((rampTo + arrivalRate) / 2);
+    periodTick[0] = 1000 / periodArrivals;
+  } else {
+    // for each period we calculate the corresponding arrivals:
+    // knowing that arrivals(0) = arrivalRate and arrivals(duration -1) = rampTo
+    // then: arrivals(t) = difference / (duration-1) * t + arrivalRate
+    for (let i = 0; i < periods; i++) {
+      const rawPeriodArrivals = (difference / (duration - 1)) * i + arrivalRate;
 
-    let t = currentStep * tick / 1000;
-    return ((difference / duration) * t + arrivalRate) / Math.max(rampTo, arrivalRate) || 0;
-  };
+      // We use the floor of the expected arrivals, then we add up all decimal digits
+      // and evaluate if one or more workers should bump their arrivalRate.
+      periodArrivals[i] = Math.floor(rawPeriodArrivals);
 
-  let probabilities = Array.from({length: periods}, () => Math.random());
-
-  debug(
-    `rampTo: tick = ${tick}; difference = ${difference}; rampTo = ${rampTo}; arrivalRate = ${arrivalRate}; periods = ${periods}`
-  );
-
-  return function rampTask(callback) {
-    ee.emit('phaseStarted', spec);
-    let currentStep = 1;
-    const timer = driftless.setDriftlessInterval(function maybeArrival() {
-      if (currentStep <= periods) {
-        let arrivalBreakpoint = arrivalProbability(currentStep);
-        let roll = probabilities[currentStep-1];
-        debug(`roll:${roll} <= breakpoint:${arrivalBreakpoint}`);
-        if (roll <= arrivalBreakpoint) {
-          ee.emit('arrival', spec);
-        }
-
-        currentStep++;
-      } else {
-        driftless.clearDriftless(timer);
-        ee.emit('phaseCompleted', spec);
-
-        return callback(null);
+      // Think of fractionalPart * workers as the amount of arrivals that could not be
+      // shared evenly across all workers.
+      if (Math.round((rawPeriodArrivals % 1) * totalWorkers) >= worker) {
+        periodArrivals[i] = periodArrivals[i] + 1;
       }
-    }, tick);
-  };
+
+      // Needed ticks to get to periodArrivals in 1000ms
+      periodTick[i] = periodArrivals[i] > 0 ? Math.floor(1000 / periodArrivals[i]) : 1000;
+    }
+  }
+
+  debug(`periodArrivals ${periodArrivals}`);
+  debug(`periodTick ${periodTick}`);
+
+  return async function rampTask(callback) {
+    ee.emit('phaseStarted', spec);
+    for (let period = 0; period < periods; period++) {
+      ticker(period);
+      await sleep(1000);
+    }
+
+    ee.emit('phaseCompleted', spec);
+  }
+
+  function ticker(currentPeriod) {
+    let currentArrivals = 0;
+    let arrivalTimer = driftless.setDriftlessInterval(function arrivals() {
+      if (currentArrivals < periodArrivals[currentPeriod]) {
+        ee.emit('arrival', spec);
+        currentArrivals++;
+      } else {
+        currentPeriod++;
+        driftless.clearDriftless(arrivalTimer);
+      }
+    }, periodTick[currentPeriod]);
+    return;
+  }
 }
 
 function createArrivalCount(spec, ee) {
