@@ -17,9 +17,9 @@ class PosthogEngine {
     return this;
   }
 
-  cleanup(){
+  async cleanup(){
     debug("Shutting down");
-    client.shutdown();
+    await client.shutdownAsync();
   }
 
   customHandler(self, rs, ee) {
