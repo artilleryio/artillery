@@ -19,6 +19,6 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: npm -w artillery publish --tag dev
+      - run: npm -w artillery publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
