@@ -6,7 +6,7 @@
 
 ## Why?
 
-Load testing PostHog stream will help you answer question like _"is our self-hosted posthog instance able to handle expected volume?"_
+Load testing PostHog stream will help you answer question like _"is our self-hosted PostHog instance able to handle expected volume?"_
 
 Take guesswork out of provisioning capacity and make sure you are ready to scale.
 
