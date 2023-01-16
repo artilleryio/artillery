@@ -568,13 +568,14 @@ class PlatformLambda {
   }
 
   async createLambdaRole() {
-    const ROLE_NAME = 'artilleryio-default-lambda-role';
+    const ROLE_NAME = 'artilleryio-default-lambda-role-20230116';
+    const POLICY_NAME = 'artilleryio-lambda-policy-20230116';
 
     const iam = new AWS.IAM();
 
     try {
-      const res = await iam.getRole({RoleName: ROLE_NAME}).promise();
-      return res.Role.Arn
+      const res = await iam.getRole({ RoleName: ROLE_NAME }).promise();
+      return res.Role.Arn;
     } catch (err) {
       debug(err);
     }
@@ -625,7 +626,7 @@ class PlatformLambda {
         ]
       }
       `,
-      PolicyName: 'artilleryio-lambda-policy',
+      PolicyName: POLICY_NAME,
       Path: '/',
     }).promise();
 
