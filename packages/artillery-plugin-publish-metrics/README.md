@@ -1,10 +1,8 @@
 # artillery-plugin-publish-metrics
 
-[![CircleCI](https://circleci.com/gh/artilleryio/artillery-plugin-publish-metrics.svg?style=svg)](https://circleci.com/gh/artilleryio/artillery-plugin-publish-metrics)
+**This plugin is part of Artillery and does not need to be installed separately.**
 
-## Purpose
-
-Send metrics and events from Artillery to external monitoring and observability systems. Chart, analyze and compare performance data from Artillery alongside that of your applications and infrastructure.
+The plugin sends metrics and events from Artillery tests to external monitoring and observability systems.
 
 ### Supported destinations
 
@@ -21,17 +19,8 @@ Send metrics and events from Artillery to external monitoring and observability 
 
 📖 [Plugin docs](https://artillery.io/docs/guides/plugins/plugin-publish-metrics.html)
 
-# License
-
-MPL 2.0
-
-# Bugs & feature suggestions
-
-Please create an [issue](https://github.com/artilleryio/artillery/issues) to report a bug or suggest an improvement.
-
 ## Wishlist
 
-- CloudWatch
 - NewRelic
 - InfluxDB (HTTP API)
 - Splunk
