@@ -8,6 +8,7 @@ Send metrics and events from Artillery to external monitoring and observability 
 
 ### Supported destinations
 
+- [AWS CloudWatch](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/working_with_metrics.html)
 - Datadog - (via [agent](https://docs.datadoghq.com/agent/) or [HTTP API](https://docs.datadoghq.com/api/))
 - [Prometheus](https://prometheus.io/docs/concepts/metric_types/) via [Pushgateway](https://prometheus.io/docs/instrumenting/pushing/)
 - [Honeycomb](https://honeycomb.io)
