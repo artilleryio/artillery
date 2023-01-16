@@ -26,7 +26,7 @@ const script = {
           event: 'movie played',
           properties: {
             movieId: 'Die Hard',
-              category : 'Christmas'
+            category: 'Christmas'
           }
         }
       }

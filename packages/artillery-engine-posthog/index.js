@@ -17,12 +17,13 @@ class PosthogEngine {
     return this;
   }
 
-  async cleanup(){
+  async cleanup() {
     debug("Shutting down");
     await client.shutdownAsync();
   }
 
-  customHandler(self, rs, ee) {
+  customHandler(rs, ee) {
+    const self = this;
     if (rs.capture) {
       return function capture(context, callback) {
         const params = {
@@ -33,7 +34,7 @@ class PosthogEngine {
         debug(params);
         ee.emit('request');
         client.capture(params);
-        ee.emit('response', 0, 0, context._uid); // FIXME
+        ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
     }
@@ -46,7 +47,7 @@ class PosthogEngine {
         debug(params);
         ee.emit('request');
         client.identify(params);
-        ee.emit('response', 0, 0, context._uid); // FIXME
+        ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
     }
@@ -60,21 +61,21 @@ class PosthogEngine {
         debug(params);
         ee.emit('request');
         client.alias(params);
-        ee.emit('response', 0, 0, context._uid); // FIXME
+        ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
     }
   }
 
-  customSetup(self, initialContext) {
-    let opts = { ...self.script.config.posthog };
+  customSetup(initialContext) {
+    let opts = { ...this.script.config.posthog };
 
     if (!opts.api_key) {
-      throw new Error("no PostHog api key provided");
+      throw new Error("no PostHog API key provided");
     }
 
     if (!opts.instance_address) {
-      console.log(`WARNING: no PostHog instance provided. Defaulting to PostHog cloud`); // TODO: a 'warning' event
+      console.log(`WARNING: no PostHog instance provided. Defaulting to PostHog cloud`);
     }
 
     client = new PostHog(opts.api_key, {
@@ -119,7 +120,7 @@ class PosthogEngine {
       };
     }
 
-    const customResult = this.customHandler(self, rs, ee);
+    const customResult = this.customHandler(rs, ee);
     if (customResult !== undefined) {
       return customResult;
     } else {
