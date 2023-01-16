@@ -16,6 +16,8 @@ const {
   threadId
 } = require('worker_threads');
 
+const { createGlobalObject } = require('../../artillery-global');
+
 const core = require('@artilleryio/int-core');
 const createRunner = core.runner.runner;
 const debug = require('debug')('artillery:worker');
@@ -97,6 +99,8 @@ async function cleanup() {
 }
 
 async function prepare(opts) {
+  await createGlobalObject();
+
   global.artillery.globalEvents.on('log', (...args) => {
     send({ event: 'log', args });
   });
