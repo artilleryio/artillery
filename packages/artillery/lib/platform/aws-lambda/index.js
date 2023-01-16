@@ -195,10 +195,11 @@ class PlatformLambda {
     const sqsQueueUrl = await this.createSQSQueue(this.region);
     this.sqsQueueUrl = sqsQueueUrl;
 
-    // TODO: Print Lambda role ARN if custom
-    if(typeof this.lambdaRoleArn === 'undefined') {
+    if (typeof this.lambdaRoleArn === 'undefined') {
       const lambdaRoleArn = await this.createLambdaRole();
       this.lambdaRoleArn = lambdaRoleArn;
+    } else {
+      artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
     }
 
     this.functionName = `artilleryio-${this.testRunId}`;
