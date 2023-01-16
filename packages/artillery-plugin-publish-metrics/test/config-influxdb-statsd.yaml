@@ -1,0 +1,16 @@
+config:
+  target: https://artillery.io
+  phases:
+    - duration: 11
+      arrivalRate: 1
+  plugins:
+    publish-metrics:
+      - type: influxdb-statsd
+        prefix: 'artillery.publish_metrics_plugin.'
+        tags:
+          - "testId:{{ $processEnvironment.TEST_ID }}"
+          - "reporterType:influxdb-statsd"
+        event:
+          priority: low
+          tags:
+            - "testId:{{ $processEnvironment.TEST_ID }}"

@@ -1,0 +1,35 @@
+{
+  "name": "artillery-plugin-publish-metrics",
+  "version": "2.0.2",
+  "description": "Publish metrics from your Artillery.io tests to external monitoring & observability systems",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/artilleryio/artillery-plugin-publish-metrics.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch": "3.13.0",
+    "async": "^2.6.1",
+    "datadog-metrics": "^0.9.3",
+    "debug": "^4.1.1",
+    "dogapi": "^2.8.4",
+    "hot-shots": "^6.0.1",
+    "libhoney": "^4.0.0",
+    "lightstep-tracer": "^0.31.0",
+    "mixpanel": "^0.13.0",
+    "opentracing": "^0.14.5",
+    "prom-client": "^14.0.1",
+    "semver": "^7.3.5",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "ava": "^4.3.3",
+    "shelljs": "^0.8.4"
+  }
+}

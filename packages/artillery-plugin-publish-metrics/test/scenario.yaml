@@ -1,0 +1,9 @@
+scenarios:
+  - name: Just making a few requests
+    flow:
+      - get:
+          url: "/"
+      - get:
+          url: "/no-such-url"
+      - get:
+          url: "/no-such-url"

@@ -1,0 +1,15 @@
+config:
+  target: https://artillery.io
+  phases:
+    - duration: 32
+      arrivalRate: 1
+  plugins:
+    publish-metrics:
+      - type: lightstep
+        accessToken: "{{ $processEnvironment.LIGHTSTEP_API_KEY }}"
+        componentName: "artillery-test"
+        tags:
+          team: rocket-fuel
+          area: reservations
+          purpose: peak_surge
+          via: object-tags

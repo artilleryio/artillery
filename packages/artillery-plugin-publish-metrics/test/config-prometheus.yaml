@@ -1,0 +1,8 @@
+config:
+  target: https://artillery.io
+  phases:
+    - duration: 11
+      arrivalRate: 1
+  plugins:
+    publish-metrics:
+      - type: prometheus
