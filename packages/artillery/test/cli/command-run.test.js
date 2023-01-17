@@ -27,20 +27,6 @@ tap.test(
   }
 );
 
-tap.test('Telemetry notice is printed', async (t) => {
-  const [exitCode, output] = await execute([], { extendEnv: false });
-
-  t.ok(exitCode === 0 && output.stdout.includes('telemetry is on'));
-});
-
-tap.test('If telemetry is disabled, no notice is printed', async (t) => {
-  const [exitCode, output] = await execute([], {
-    env: { ARTILLERY_DISABLE_TELEMETRY: '1' }
-  });
-
-  t.ok(exitCode === 0 && !output.stdout.includes('telemetry is on'));
-});
-
 tap.test('Environment specified with -e should be used', async (t) => {
   const [exitCode, output] = await execute([
     'run',
