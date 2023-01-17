@@ -21,10 +21,10 @@ class ExampleEngine {
   }
 
   // Runs on startup and it's used to setup our engine and it's dependencies
-  customSetup(self, initialContext) {
+  customSetup(initialContext) {
     debug("executing setup logic");
     // Can use properties defined in the script we are running
-    let opts = { ...self.script.config.example };
+    let opts = { ...this.script.config.example };
 
     // We can add custom validations on those props
     if (!opts.mandatoryString) {
@@ -40,7 +40,8 @@ class ExampleEngine {
   }
 
   // Runs on every Artillery action
-  customHandler(self, rs, ee) {
+  customHandler(rs, ee) {
+    const self = this;
     // In this case we are only handling our simple `example` action
     if (rs.example) {
       return function example(context, callback) {
@@ -100,7 +101,7 @@ class ExampleEngine {
       };
     }
 
-    const customResult = this.customHandler(self, rs, ee);
+    const customResult = this.customHandler(rs, ee);
     if (customResult !== undefined) {
       return customResult;
     } else {
@@ -113,7 +114,7 @@ class ExampleEngine {
     const self = this;
     return function scenario(initialContext, callback) {
       const init = function init(next) {
-        self.customSetup(self, initialContext);
+        self.customSetup(initialContext);
         ee.emit('started');
         return next(null, initialContext);
       };
