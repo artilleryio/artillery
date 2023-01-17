@@ -1,0 +1,72 @@
+{
+  "name": "skytrace",
+  "version": "0.0.1",
+  "description": "Fast & simple e2e testing",
+  "author": "@artilleryio",
+  "bin": {
+    "skytrace": "./bin/run"
+  },
+  "homepage": "https://github.com/artilleryio/artillery/packages/skytrace",
+  "license": "MPL-2.0",
+  "main": "dist/index.js",
+  "repository": "artilleryio/artillery",
+  "files": [
+    "/bin",
+    "/dist",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json"
+  ],
+  "dependencies": {
+    "@oclif/core": "^1.19.1",
+    "@oclif/plugin-help": "^5",
+    "@oclif/plugin-plugins": "^2.1.6",
+    "gradient-string": "^2.0.2"
+  },
+  "devDependencies": {
+    "@oclif/test": "^2.2.10",
+    "@types/chai": "^4",
+    "@types/gradient-string": "^1.1.2",
+    "@types/inquirer": "^8.2.5",
+    "@types/js-yaml": "^4.0.5",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.18.3",
+    "chai": "^4",
+    "eslint": "^7.32.0",
+    "eslint-config-oclif": "^4",
+    "eslint-config-oclif-typescript": "^1.0.3",
+    "mocha": "^9",
+    "oclif": "^3",
+    "shx": "^0.3.3",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.4.1",
+    "typescript": "^4.8.4"
+  },
+  "oclif": {
+    "bin": "skytrace",
+    "dirname": "skytrace",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": " ",
+    "topics": {}
+  },
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint . --ext .ts --config .eslintrc",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "npm lint",
+    "prepack": "npm build && oclif manifest && oclif readme",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif readme && git add README.md"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "bugs": "https://github.com/artilleryio/artillery/issues",
+  "keywords": [
+    "oclif"
+  ],
+  "types": "dist/index.d.ts"
+}
