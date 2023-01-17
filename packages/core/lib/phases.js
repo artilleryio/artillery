@@ -12,9 +12,14 @@ const arrivals = require('arrivals');
 const debug = require('debug')('phases');
 const crypto = require('crypto');
 const driftless = require('driftless');
-const sleep = require('../../artillery/lib/util/sleep');
 
 module.exports = phaser;
+
+async function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 function phaser(phaseSpecs) {
   let ee = new EventEmitter();
