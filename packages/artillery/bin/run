@@ -8,18 +8,12 @@
  const { createGlobalObject } = require('../lib/artillery-global');
 
  const { rainbow } = require('../util');
- const telemetry = require('../lib/telemetry');
  const banner = require('../lib/cli/banner');
 
  async function main() {
    await createGlobalObject();
 
    if (!process.argv.slice(2).length) {
-     // print telemetry notification message
-     if (telemetry.isEnabled()) {
-       telemetry.notice();
-     }
-
      console.log(Math.random() * 100 > 34 ?
                  banner :
                  rainbow(banner));
