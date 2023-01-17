@@ -1,6 +1,6 @@
 {
   "name": "@artilleryio/int-core",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "main": "./index.js",
   "dependencies": {
     "@artilleryio/sketches-js": "^1.0.4",
