@@ -38,7 +38,6 @@ Follow our [quick start guide](https://artillery.io/docs/guides/getting-started/
 - Setting [API response expectations](https://www.artillery.io/docs/guides/plugins/plugin-publish-metrics) and [SLO checks](https://www.artillery.io/docs/guides/guides/test-script-reference#ensure---slo-checks)
 - [Running tests using real headless browsers](https://github.com/artilleryio/artillery-engine-playwright) with Artillery's Playwright integration
 - [Publishing metrics](https://www.artillery.io/docs/guides/plugins/plugin-publish-metrics) to Datadog, Honeycomb, Lightstep, and more
-- [Sending HTTP requests from using `artillery probe`](https://www.artillery.io/blog/swiss-army-knife-for-http-testing), visualizing performance waterfalls, and creating lightweight API checks
 
 ### Integrations and plugins
 

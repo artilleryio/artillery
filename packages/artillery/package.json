@@ -47,7 +47,7 @@
     }
   },
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/unit/*.test.js test/cli/probe/*.js test/cli/*.test.js && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
+    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/unit/*.test.js test/cli/*.test.js && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix",
     "commitlint-last-commit": "commitlint --from $(git show HEAD~1 | grep commit | awk '{print $2}')"
@@ -84,8 +84,8 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
-    "@artilleryio/int-commons": "*",
-    "@artilleryio/int-core": "*",
+    "@artilleryio/int-commons": "latest",
+    "@artilleryio/int-core": "latest",
     "@aws-sdk/credential-providers": "^3.127.0",
     "@oclif/command": "^1.8.16",
     "@oclif/config": "^1.18.3",
@@ -100,9 +100,7 @@
     "async": "^2.6.4",
     "aws-sdk": "^2.1172.0",
     "chalk": "^2.4.2",
-    "cheerio": "^1.0.0-rc.10",
     "ci-info": "^2.0.0",
-    "cli-highlight": "^2.1.11",
     "cli-table3": "^0.6.2",
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
@@ -110,15 +108,12 @@
     "eventemitter3": "^4.0.4",
     "fs-extra": "^10.1.0",
     "ip": "^1.1.8",
-    "jmespath": "^0.16.0",
     "joi": "^17.6.0",
     "js-yaml": "^3.13.1",
     "lodash": "^4.17.19",
-    "mime-types": "^2.1.35",
     "moment": "^2.29.4",
     "ora": "^4.0.4",
     "posthog-node": "^2.2.3",
-    "sprintf-js": "^1.1.2",
     "sqs-consumer": "^5.7.0",
     "temp": "^0.9.4",
     "tmp": "0.2.1",
