@@ -20,7 +20,9 @@
     "@oclif/core": "^1.19.1",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.1.6",
-    "gradient-string": "^2.0.2"
+    "cli-highlight": "^2.1.11",
+    "gradient-string": "^2.0.2",
+    "sprintf-js": "^1.1.2"
   },
   "devDependencies": {
     "@oclif/test": "^2.2.10",
