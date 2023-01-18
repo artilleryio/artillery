@@ -1,5 +1,6 @@
+
 <div align="center">
-  <img src="./skytrace-logo.svg" width="80">
+  <img src="/packages/skytrace/skytrace-logo.svg" width="80">
   <h1>Skytrace<br />fast & simple end-to-end testing</h1>
 </div>
 
@@ -21,7 +22,7 @@ A Swiss-army knife for testing HTTP from the command-line.
 * Command-line client for HTTP - send HTTP requests, set headers, send JSON. With color highlighting for HTTP responses.
 * Set checks and assertions with command-line flags - check status codes, content type, headers, JSON properties and more
 
-![Skytrace Ping](./assets/skytrace-ping.png)
+![Skytrace Ping](/packages/skytrace/assets/skytrace-ping.png)
 
 ## Skytrace Flow
 
@@ -34,7 +35,7 @@ A flow is a sequence of steps that describes how an API or app works from a clie
 * Run locally, in CI/CD, or in production - re-use flows for local development, as post-deployment checks, or for production monitoring
 * Monitoring integrations - send results to Slack, Datadog, Honeycomb, or Lightstep
 
-![Skytrace Flow](./assets/skytrace-flow.png)
+![Skytrace Flow](/packages/skytrace//assets/skytrace-flow.png)
 
 ## Get Started
 
