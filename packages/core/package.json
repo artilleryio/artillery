@@ -3,6 +3,7 @@
   "version": "2.0.2",
   "main": "./index.js",
   "dependencies": {
+    "@artilleryio/int-commons": "latest",
     "@artilleryio/sketches-js": "^1.0.4",
     "@hapi/basic": "^6.0.0",
     "agentkeepalive": "^4.1.0",
@@ -10,7 +11,6 @@
     "async": "^2.6.4",
     "chalk": "^2.4.2",
     "cheerio": "^1.0.0-rc.10",
-    "commons": "*",
     "cookie-parser": "^1.4.3",
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
