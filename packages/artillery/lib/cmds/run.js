@@ -51,6 +51,10 @@ class RunCommand extends Command {
       dotenv.config({ path: dotEnvPath });
     }
 
+    if (flags.output) {
+      checkDirExists(flags.output);
+    }
+
     try {
       const script = await prepareTestExecutionPlan(inputFiles, flags, args);
 
@@ -65,7 +69,10 @@ class RunCommand extends Command {
       };
 
       if (flags.config) {
-        runnerOpts.absoluteConfigPath = path.resolve(process.cwd(), flags.config);
+        runnerOpts.absoluteConfigPath = path.resolve(
+          process.cwd(),
+          flags.config
+        );
       }
 
       if (process.env.WORKERS) {
@@ -77,7 +84,7 @@ class RunCommand extends Command {
 
       let platformConfig = {};
       if (flags['platform-opt']) {
-        for(const opt of flags['platform-opt']) {
+        for (const opt of flags['platform-opt']) {
           const [k, v] = opt.split('=');
           platformConfig[k] = v;
         }
@@ -89,14 +96,14 @@ class RunCommand extends Command {
         mode: flags.platform === 'local' ? 'distribute' : 'multiply',
         region: 'eu-west-1', // TODO: Read from --platform-option region=eu-west-1
         count: parseInt(flags.count || 1, 10),
-        cliArgs: flags,
+        cliArgs: flags
       };
 
       let launcher = await createLauncher(
         script,
         script.config.payload,
         runnerOpts,
-        launcherOpts,
+        launcherOpts
       );
       let intermediates = [];
 
@@ -171,14 +178,13 @@ class RunCommand extends Command {
         await gracefulShutdown();
       });
 
-
-
       global.artillery.ext({
         ext: 'beforeExit',
         method: async (event) => {
           try {
             const duration = Math.round(
-              (event.report?.lastMetricAt - event.report?.firstMetricAt) / 1000);
+              (event.report?.lastMetricAt - event.report?.firstMetricAt) / 1000
+            );
             await sendTelemetry(script, flags, { duration });
           } catch (_err) {}
         }
@@ -294,26 +300,27 @@ RunCommand.flags = {
     char: 'i',
     description: 'Input script file',
     multiple: true,
-    hidden: true,
+    hidden: true
   }),
   solo: flags.boolean({
     char: 's',
     description: 'Create only one virtual user'
   }),
   dotenv: flags.string({
-    description: 'Path to a dotenv file to load environment variables from',
+    description: 'Path to a dotenv file to load environment variables from'
   }),
   platform: flags.string({
     description: 'Runtime platform',
-    default: 'local',
+    default: 'local'
   }),
   'platform-opt': flags.string({
-    description: 'Set a platform-specific option, e.g. --platform region=eu-west-1 for AWS Lambda',
-    multiple: true,
+    description:
+      'Set a platform-specific option, e.g. --platform region=eu-west-1 for AWS Lambda',
+    multiple: true
   }),
   count: flags.string({
     // locally defaults to number of CPUs with mode = distribute
-    default: '1',
+    default: '1'
   })
 };
 
@@ -529,17 +536,26 @@ async function sendTelemetry(script, flags, extraProps) {
   }
 }
 
+function checkDirExists(output) {
+  if (!output) {
+    return;
+  }
+  try {
+    path.extname(output)
+      ? fs.statSync(path.dirname(output))
+      : fs.statSync(output);
+  } catch (err) {
+    throw err;
+  }
+}
+
 function getLogFilename(output, nameFormat) {
   let logfile;
 
   // is the destination a directory that exists?
   let isDir = false;
   if (output) {
-    try {
-      isDir = fs.statSync(output).isDirectory();
-    } catch (err) {
-      // ENOENT, don't need to do anything
-    }
+    isDir = fs.statSync(output).isDirectory();
   }
 
   const defaultFormat = '[artillery_report_]YMMDD_HHmmSS[.json]';
