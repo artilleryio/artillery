@@ -1,0 +1,21 @@
+target: http://asciiart.artillery.io:8080
+http:
+  timings: true
+---
+- get:
+    url: "/armadillo"
+    expect:
+      - contentType: text/plain; charset=utf-8
+      - hasHeader: date
+      - headerEquals:
+        - server
+        - awselb/2.0
+      # Example of a check that will fail.
+      # Uncomment it to try.
+      # - headerEquals:
+      #   - x-no-such-header
+      #   - skytrace
+- get:
+    url: "/pony"
+- get:
+    url: "/dino"

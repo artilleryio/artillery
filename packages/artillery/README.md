@@ -1,7 +1,7 @@
-<p align="center">
-<img src="https://user-images.githubusercontent.com/1490/180195823-5368e322-1124-47b6-9b24-82bc82c14fb6.svg#gh-light-mode-only">
-<img src="https://user-images.githubusercontent.com/1490/180196546-e5cd90d2-85ee-4219-836c-18b880d30764.svg#gh-dark-mode-only">
-</p>
+<div align="center">
+  <img src="./artillery-logo.svg" width="80">
+  <h1>Artillery<br/>cloud-scale load testing</h1>
+</div>
 
 <p align="center">
   <a href="https://www.artillery.io/docs">Docs</a> | <a href="https://github.com/artilleryio/artillery/discussions">Discussions</a> | <a href="https://twitter.com/artilleryio">@artilleryio</a> | <a href="https://www.artillery.io/careers">We are hiring!</a>

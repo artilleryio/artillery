@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+
+const oclif = require('@oclif/core')
+const gradientString = require('gradient-string');
+
+if (!process.argv.slice(2).length) {
+  const banner = `    ───━━━★
+  SKYTRACE ──━━★
+        ──━━★`;
+      console.log(gradientString.vice(banner));
+      console.log();
+}
+
+oclif.run().then(require('@oclif/core/flush')).catch(require('@oclif/core/handle'))

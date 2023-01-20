@@ -1,9 +1,6 @@
 const banner = require('../banner');
 const version = require('../../../package.json').version;
 
-const tryRequire = require('try-require');
-const Pro = tryRequire('artillery-pro');
-
 async function versionHook() {
   if (['-v', '-V', '--version', 'version'].includes(process.argv[2])) {
     console.log(banner);
