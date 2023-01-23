@@ -16,6 +16,26 @@ tap.test('Run a simple script', async (t) => {
 });
 
 tap.test(
+  'Exits with error before test run if dir specified with -o is nonexistent',
+  async (t) => {
+    const [exitCode, output] = await execute([
+      'run',
+      '--config',
+      './test/scripts/hello_config.json',
+      'test/scripts/hello.json',
+      '-o',
+      'totally/bogus/path'
+    ]);
+    // We should get a "No such directory!" error here, and no Summary report as no test run
+    t.ok(
+      exitCode !== 0 &&
+        !output.stdout.includes('Summary report') &&
+        output.stdout.includes('No such directory')
+    );
+  }
+);
+
+tap.test(
   'Running with no target and no -e should exit with an error',
   async (t) => {
     const [exitCode, output] = await execute([
@@ -50,17 +70,14 @@ tap.test('Run a script with one payload command line', async (t) => {
   t.ok(output.stdout.includes('Summary report'));
 });
 
-tap.test(
-  'Run a script with one payload json config',
-  async (t) => {
-    const [exitCode, output] = await execute([
-      'run',
-      'test/scripts/single_payload_object.json'
-    ]);
+tap.test('Run a script with one payload json config', async (t) => {
+  const [exitCode, output] = await execute([
+    'run',
+    'test/scripts/single_payload_object.json'
+  ]);
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
-  }
-);
+  t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+});
 
 tap.test(
   'Run a script with one payload json config with parse options passed',
