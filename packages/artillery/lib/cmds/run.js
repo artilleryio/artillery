@@ -555,7 +555,11 @@ function getLogFilename(output, nameFormat) {
   // is the destination a directory that exists?
   let isDir = false;
   if (output) {
-    isDir = fs.statSync(output).isDirectory();
+    try {
+      isDir = fs.statSync(output).isDirectory();
+    } catch (err) {
+      // ENOENT do nothing, handled in checkDirExists before test run
+    }
   }
 
   const defaultFormat = '[artillery_report_]YMMDD_HHmmSS[.json]';
