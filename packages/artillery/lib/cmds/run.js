@@ -540,12 +540,13 @@ function checkDirExists(output) {
   if (!output) {
     return;
   }
-  try {
-    path.extname(output)
-      ? fs.statSync(path.dirname(output))
-      : fs.statSync(output);
-  } catch (err) {
-    throw err;
+  // If destination is a file check only path to its directory
+  const exists = path.extname(output)
+    ? fs.existsSync(path.dirname(output))
+    : fs.existsSync(output);
+
+  if (!exists) {
+    throw new Error('No such directory!');
   }
 }
 
