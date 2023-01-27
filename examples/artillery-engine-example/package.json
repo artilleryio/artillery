@@ -18,7 +18,6 @@
   },
   "dependencies": {
     "async": "^3.2.4",
-    "debug": "^4.3.4",
-    "lodash": "^4.17.21"
+    "debug": "^4.3.4"
   }
 }

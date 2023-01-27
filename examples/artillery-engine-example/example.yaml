@@ -1,15 +1,17 @@
 config:
-  target: "not-really-used"
+  target: "system-under-test-endpoint"
   example:
-    mandatoryString: "script wide prop loaded at startup"
+    mandatoryString: "a configuration setting for our engine"
   phases:
     - arrivalRate: 1
       duration: 1
   engines:
     example: {}
 scenarios:
-  - name: "posthog engine test"
+  - name: "A scenario using the custom 'example' engine"
     engine: example
     flow:
-      - example:
-          id: "distinct id"
+      - doSomething:
+          id: 123
+      - doSomething:
+          id: 456

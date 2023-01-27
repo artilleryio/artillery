@@ -3,72 +3,65 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const A = require('async');
-const _ = require('lodash');
-
-//This is important as it gives us debug granularity!
 const debug = require('debug')('engine:example');
 
-// Simple example engine that recieves a prop and prints it when an 'example'
+// Simple example engine that recieves a prop and prints it when a 'doSomething'
 // action is found.
 // Serves as a modifiable example to build on top of for new engines
 class ExampleEngine {
+  // Artillery initializes each engine with the following arguments:
+  //
+  // - script is the entire script object, with .config and .scenarios properties
+  // - events is an EventEmitter we can use to subscribe to events from Artillery, and
+  //   to report custom metrics
+  // - helpers is a collection of utility functions
   constructor(script, ee, helpers) {
     this.script = script;
     this.ee = ee;
     this.helpers = helpers;
 
-    return this;
-  }
+    // This would typically be the endpoint we're testing
+    this.target = script.config.target;
 
-  // Runs on startup and it's used to setup our engine and it's dependencies
-  customSetup(initialContext) {
-    debug("executing setup logic");
-    // Can use properties defined in the script we are running
-    let opts = { ...this.script.config.example };
+    const opts = { ...this.script.config.example };
 
     // We can add custom validations on those props
     if (!opts.mandatoryString) {
-      throw new Error("no Example engine opts found");
+      throw new Error('mandatoryString setting must be set');
     }
 
-    // setup initial context for our logic to work as desired
-    initialContext.mandatoryString = opts.mandatoryString;
-
-    // This is pretty basic but for example here we could set up
-    // an external dependency we introduced via `npm install ..` and that
-    // we are planning to use later on.
+    return this;
   }
 
-  // Runs on every Artillery action
-  customHandler(rs, ee) {
-    const self = this;
-    // In this case we are only handling our simple `example` action
-    if (rs.example) {
-      return function example(context, callback) {
-        const params = {
-          id: self.helpers.template(rs.example.id, context, true),
-        };
-        debug(params);
-        ee.emit('request');
-
-        // Custom logic here!
-        debug(`script prop: ${context.mandatoryString}`);
-        debug(`scenario prop: ${params.id}`);
-
-        ee.emit('response', 0, 0, context._uid);
-        return callback(null, context);
-      };
-    }
-  }
-
-  // Boiler plate that handles other Artillery functionalities
-  // Can be used as-is for most scripts but it's also modifiable!
+  // For each scenario in the script using this engine, Artillery calls this function
+  // to create a VU function
   createScenario(scenarioSpec, ee) {
     const tasks = scenarioSpec.flow.map(rs => this.step(rs, ee));
 
-    return this.compile(tasks, scenarioSpec.flow, ee);
+    return function scenario(initialContext, callback) {
+      ee.emit('started');
+
+      function vuInit(callback) {
+        // we can run custom VU-specific init code here
+        return callback(null, initialContext);
+      }
+
+      const steps = [vuInit].concat(tasks);
+
+      A.waterfall(
+        steps,
+        function done(err, context) {
+          if (err) {
+            debug(err);
+          }
+
+          return callback(err, context);
+        });
+    }
   }
 
+  // This is a convenience function where we delegate common actions like loop, log, and think,
+  // and handle actions which are custom for our engine, i.e. the "doSomething" action in this case
   step(rs, ee) {
     const self = this;
 
@@ -85,7 +78,7 @@ class ExampleEngine {
     }
 
     if (rs.think) {
-      return this.helpers.createThink(rs, _.get(self.config, 'defaults.think', {}));
+      return this.helpers.createThink(rs, self.config?.defaults?.think || {});
     }
 
     if (rs.function) {
@@ -101,37 +94,28 @@ class ExampleEngine {
       };
     }
 
-    const customResult = this.customHandler(rs, ee);
-    if (customResult !== undefined) {
-      return customResult;
-    } else {
-      return function (context, callback) {
+    //
+    // This is our custom action:
+    //
+    if (rs.doSomething) {
+      return function example(context, callback) {
+        console.log('doSomething action with id:', self.helpers.template(rs.doSomething.id, context, true));
+        console.log('target is:', self.target);
+
+        // Emit a metric to count the number of example actions performed:
+        ee.emit('counter', 'example.action_count', 1);
         return callback(null, context);
       };
     }
-  }
-  compile(tasks, scenarioSpec, ee) {
-    const self = this;
-    return function scenario(initialContext, callback) {
-      const init = function init(next) {
-        self.customSetup(initialContext);
-        ee.emit('started');
-        return next(null, initialContext);
-      };
 
-      let steps = [init].concat(tasks);
-
-      A.waterfall(
-        steps,
-        function done(err, context) {
-          if (err) {
-            debug(err);
-          }
-
-          return callback(err, context);
-        });
-    };
+    //
+    // Ignore any unrecognized actions:
+    //
+    return function doNothing(context, callback) {
+      return callback(null, context);
+    }
   }
 }
+
 module.exports = ExampleEngine;
 
