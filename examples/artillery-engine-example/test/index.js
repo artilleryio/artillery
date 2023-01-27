@@ -7,27 +7,22 @@
 const test = require('tape');
 const EventEmitter = require('events');
 
-const PosthogEngine = require('..');
+const ExampleEngine = require('..');
 
 const script = {
   config: {
-    target: 'my_awesome_posthog',
-    posthog: {
-      region: 'us-east-1'
+    target: 'my-endpoint',
+    example: {
+      mandatoryString: 'hello-world'
     }
   },
   scenarios: [{
-    name: 'capture event',
-    engine: 'posthog',
+    name: 'test scenario',
+    engine: 'example',
     flow: [
       {
-        capture: {
-          distinctId: 'distinct id',
-          event: 'movie played',
-          properties: {
-            movieId: 'Die Hard',
-              category : 'Christmas'
-          }
+        doSomething: {
+          id: 123
         }
       }
     ]
@@ -36,7 +31,7 @@ const script = {
 
 test('Engine interface', function (t) {
   const events = new EventEmitter();
-  const engine = new PosthogEngine(script, events, {});
+  const engine = new ExampleEngine(script, events, {});
   const scenario = engine.createScenario(script.scenarios[0], events);
   t.assert(engine, 'Can construct an engine');
   t.assert(typeof scenario === 'function', 'Can create a scenario');
