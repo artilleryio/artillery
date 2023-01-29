@@ -4,7 +4,6 @@
 
 const debug = require('debug')('engine:posthog');
 const A = require('async');
-const _ = require('lodash');
 const { PostHog } = require('posthog-node');
 const { callbackify } = require('node:util');
 class PosthogEngine {
@@ -84,7 +83,7 @@ class PosthogEngine {
     }
 
     if (rs.think) {
-      return this.helpers.createThink(rs, _.get(self.config, 'defaults.think', {}));
+      return this.helpers.createThink(rs, self.script.config.defaults?.think || {});
     }
 
     if (rs.function) {
