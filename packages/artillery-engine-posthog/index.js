@@ -6,7 +6,6 @@ const debug = require('debug')('engine:posthog');
 const A = require('async');
 const _ = require('lodash');
 const { PostHog } = require('posthog-node');
-let client;
 
 class PosthogEngine {
   constructor(script, ee, helpers) {
@@ -15,12 +14,13 @@ class PosthogEngine {
     this.helpers = helpers;
     this.target = script.config.target;
 
+    this.client = null;
     return this;
   }
 
   async cleanup() {
     debug('Shutting down');
-    await client.shutdownAsync();
+    await this.client.shutdownAsync();
   }
 
   customHandler(rs, ee) {
@@ -34,7 +34,7 @@ class PosthogEngine {
         };
         debug(params);
         ee.emit('request');
-        client.capture(params);
+        self.client.capture(params);
         ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
@@ -47,7 +47,7 @@ class PosthogEngine {
         };
         debug(params);
         ee.emit('request');
-        client.identify(params);
+        self.client.identify(params);
         ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
@@ -61,7 +61,7 @@ class PosthogEngine {
         };
         debug(params);
         ee.emit('request');
-        client.alias(params);
+        self.client.alias(params);
         ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
@@ -75,10 +75,12 @@ class PosthogEngine {
       throw new Error('no PostHog API key provided');
     }
 
-    client = new PostHog(opts.apiKey, {
-      flushInterval: 100,
-      host: this.target
-    });
+    if (!this.client) {
+      this.client = new PostHog(opts.apiKey, {
+        flushInterval: 100,
+        host: this.target
+      });
+    }
   }
 
   createScenario(scenarioSpec, ee) {
