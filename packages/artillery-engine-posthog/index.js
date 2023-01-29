@@ -127,7 +127,7 @@ class PosthogEngine {
     const self = this;
     return function scenario(initialContext, callback) {
       const init = function init(next) {
-        self.customSetup(self, initialContext);
+        self.customSetup(initialContext);
         ee.emit('started');
         return next(null, initialContext);
       };
