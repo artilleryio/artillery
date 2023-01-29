@@ -62,13 +62,6 @@ class PosthogEngine {
     }
   }
 
-  customSetup(initialContext) {
-    initialContext.postHogClient = new PostHog(opts.apiKey, {
-      flushInterval: 100,
-      host: this.target
-    });
-  }
-
   createScenario(scenarioSpec, ee) {
     const tasks = scenarioSpec.flow.map(rs => this.step(rs, ee));
 
@@ -115,6 +108,7 @@ class PosthogEngine {
       };
     }
   }
+
   compile(tasks, scenarioSpec, ee) {
     const self = this;
     return function scenario(initialContext, callback) {
