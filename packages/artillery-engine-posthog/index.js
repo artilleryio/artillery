@@ -19,7 +19,7 @@ class PosthogEngine {
   }
 
   async cleanup() {
-    debug("Shutting down");
+    debug('Shutting down');
     await client.shutdownAsync();
   }
 
@@ -72,7 +72,7 @@ class PosthogEngine {
     let opts = { ...this.script.config.posthog };
 
     if (!opts.apiKey) {
-      throw new Error("no PostHog API key provided");
+      throw new Error('no PostHog API key provided');
     }
 
     client = new PostHog(opts.apiKey, {
