@@ -33,9 +33,7 @@ class PosthogEngine {
           properties: self.helpers.template(rs.capture.properties, context, true)
         };
         debug(params);
-        ee.emit('request');
         self.client.capture(params);
-        ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
     }
@@ -46,9 +44,7 @@ class PosthogEngine {
           properties: self.helpers.template(rs.identify.properties, context, true)
         };
         debug(params);
-        ee.emit('request');
         self.client.identify(params);
-        ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
     }
@@ -60,9 +56,7 @@ class PosthogEngine {
           alias: self.helpers.template(rs.alias.alias, context, true)
         };
         debug(params);
-        ee.emit('request');
         self.client.alias(params);
-        ee.emit('response', 0, 0, context._uid);
         return callback(null, context);
       };
     }
