@@ -93,8 +93,8 @@ class PosthogEngine {
           return process.nextTick(function () { callback(null, context); });
         }
 
-        return func(context, ee, function () {
-          return callback(null, context);
+        return func(context, ee, function (hookErr) {
+          return callback(hookErr, context);
         });
       };
     }
