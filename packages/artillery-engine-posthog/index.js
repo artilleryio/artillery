@@ -70,7 +70,7 @@ class PosthogEngine {
   customSetup(initialContext) {
     let opts = { ...this.script.config.posthog };
 
-    if (!opts.api_key) {
+    if (!opts.apiKey) {
       throw new Error("no PostHog API key provided");
     }
 
@@ -79,6 +79,7 @@ class PosthogEngine {
     }
 
     client = new PostHog(opts.api_key, {
+    client = new PostHog(opts.apiKey, {
       flushInterval: 100
     });
   }
