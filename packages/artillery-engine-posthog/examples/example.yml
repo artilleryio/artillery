@@ -1,12 +1,10 @@
 config:
-  target: "posthog-test"
+  target: "https://app.posthog.com"
   posthog:
-    api_key: "{{ $processEnvironment.POSTHOG_API_KEY }}"
-    # uses PostHog Cloud as default but an instance address can be provided:
-    # instance_address: ".."
+    apiKey: "{{ $processEnvironment.POSTHOG_API_KEY }}"
   phases:
-    - arrivalCount: 5
-      duration: 10
+    - arrivalRate: 1
+      duration: 2
   engines:
     posthog: {}
 scenarios:

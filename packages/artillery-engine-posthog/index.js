@@ -13,6 +13,7 @@ class PosthogEngine {
     this.script = script;
     this.ee = ee;
     this.helpers = helpers;
+    this.target = script.config.target;
 
     return this;
   }
@@ -74,13 +75,9 @@ class PosthogEngine {
       throw new Error("no PostHog API key provided");
     }
 
-    if (!opts.instance_address) {
-      console.log(`WARNING: no PostHog instance provided. Defaulting to PostHog cloud`);
-    }
-
-    client = new PostHog(opts.api_key, {
     client = new PostHog(opts.apiKey, {
-      flushInterval: 100
+      flushInterval: 100,
+      host: this.target
     });
   }
 

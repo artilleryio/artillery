@@ -21,9 +21,7 @@ npm install -g artillery-engine-posthog
 
 ### Use the plugin
 
-1. in `config.posthog`:
-    - `apiKey` - Your PostHog project api key
-    - `instance_address` - **optional**: You can omit this if using PostHog Cloud
+1. Set the address of your PostHog instance with `config.target`, and set a PostHog API key with `config.posthog.apiKey`.
 2. Set the `engine` property of the scenario to `posthog`.
 3. In your scenario, use:
     - `capture` to send events to PostHog
@@ -33,11 +31,9 @@ npm install -g artillery-engine-posthog
 
 ```yaml
 config:
-  target: "posthog-test"
+  target: "https://posthog.acme.corp"
   posthog:
     apiKey: "{{ $processEnvironment.POSTHOG_API_KEY }}"
-    # uses PostHog Cloud as default but an instance address can be provided:
-    # instance_address: ".."
   phases:
     - arrivalCount: 5
       duration: 10
