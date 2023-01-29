@@ -78,6 +78,7 @@ class PosthogEngine {
 
     if (rs.log) {
       return function log(context, callback) {
+        console.log(self.helpers.template(rs.log, context));
         return process.nextTick(function () { callback(null, context); });
       };
     }
