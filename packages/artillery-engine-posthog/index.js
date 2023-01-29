@@ -33,6 +33,8 @@ class PosthogEngine {
         };
         debug(params);
         context.postHogClient.capture(params);
+        ee.emit('counter', 'engine.posthog.capture', 1);
+        ee.emit('rate', 'engine.posthog.capture_rate');
         return callback(null, context);
       };
     }
@@ -44,6 +46,8 @@ class PosthogEngine {
         };
         debug(params);
         context.postHogClient.identify(params);
+        ee.emit('counter', 'engine.posthog.identify', 1);
+        ee.emit('rate', 'engine.posthog.identify_rate');
         return callback(null, context);
       };
     }
@@ -56,6 +60,8 @@ class PosthogEngine {
         };
         debug(params);
         context.postHogClient.alias(params);
+        ee.emit('counter', 'engine.posthog.alias', 1);
+        ee.emit('rate', 'engine.posthog.alias_rate');
         return callback(null, context);
       };
     }
