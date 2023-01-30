@@ -1,25 +1,24 @@
-# Artillery.io PostHog Plugin
+# Artillery Engine for PostHog
 
-<p align="center">
-    <em>Load test Posthog with <a href="https://artillery.io">Artillery.io</a></em>
-</p>
+![PostHog logo](https://posthog.com/brand/posthog-logo.svg)
 
-## Why?
+[PostHog](https://posthog.com) is an open-source product analytics platform.
 
-Load testing PostHog stream will help you answer question like _"is our self-hosted PostHog instance able to handle expected volume?"_
+This Artillery engine is designed for users of self-hosted PostHog (Open-Source or [PostHog Enterprise](https://posthog.com/docs/self-host)). It makes it easy to load test your PostHog deployment to:
 
-Take guesswork out of provisioning capacity and make sure you are ready to scale.
+- Make sure the deployment can handle the event volume you're expecting
+- Make sure the deployment can handle bursts in event volumes
+- Take guesswork out of provisioning capacity and make sure that both PostHog and its dependencies (e.g. [ClickHouse](https://clickhouse.com/)) are ready to scale
 
 ## Usage
 
 ### Install the plugin
 
-```
-# If Artillery is installed globally:
+```sh
 npm install -g artillery-engine-posthog
 ```
 
-### Use the plugin
+### Configuration
 
 1. Set the address of your PostHog instance with `config.target`, and set a PostHog API key with `config.posthog.apiKey`.
 2. Set the `engine` property of the scenario to `posthog`.
@@ -62,6 +61,6 @@ scenarios:
 POSTHOG_API_KEY=xxx artillery run example.yml
 ```
 
-### License
+## License
 
 [MPL 2.0](https://www.mozilla.org/en-US/MPL/2.0/)
