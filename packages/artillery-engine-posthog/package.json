@@ -1,7 +1,7 @@
 {
   "name": "artillery-engine-posthog",
   "version": "0.0.1",
-  "description": "Load test Posthog with Artillery.io",
+  "description": "Load test PostHog with Artillery",
   "main": "index.js",
   "scripts": {
     "test": "node test/index.js"
@@ -10,7 +10,7 @@
     "posthog",
     "load"
   ],
-  "author": "Juan Gil <jgil@artillery.io>",
+  "author": "Artillery <team@artillery.io>",
   "license": "MPL-2.0",
   "devDependencies": {
     "tape": "^5.6.1"
