@@ -11,6 +11,7 @@ const _ = require('lodash');
 module.exports = {
   contentType: expectContentType,
   statusCode: expectStatusCode,
+  notStatusCode: expectNotStatusCode,
   hasHeader: expectHasHeader,
   headerEquals: expectHeaderEquals,
   hasProperty: expectHasProperty,
@@ -187,6 +188,27 @@ function expectStatusCode(expectation, body, req, res, userContext) {
     result.ok = expectedStatusCode.filter(x => Number(res.statusCode) === Number(x)).length > 0;
   } else {
     result.ok = Number(res.statusCode) === Number(expectedStatusCode);
+  }
+
+  result.got = res.statusCode;
+  return result;
+}
+
+function expectNotStatusCode(expectation, body, req, res, userContext) {
+  debug('check notStatusCode');
+
+  const expectedNotStatusCode = template(expectation.notStatusCode, userContext);
+
+  let result = {
+    ok: false,
+    expected: `Status code different than ${expectedNotStatusCode}`,
+    type: 'notStatusCode',
+  };
+
+  if (Array.isArray(expectedNotStatusCode)) {
+    result.ok = !expectedNotStatusCode.filter((x) => Number(res.statusCode) === Number(x)).length;
+  } else {
+    result.ok = Number(res.statusCode) !== Number(expectedNotStatusCode);
   }
 
   result.got = res.statusCode;
