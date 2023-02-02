@@ -12,6 +12,9 @@ function DatadogReporter(config, events, script) {
   this.dogapi = dogapi;
   this.reportingType = ''; // api | agent (DogStatsD, StatsD, Telegraf/StatsD)
 
+  this.excluded = config.excluded || [];
+  this.includeOnly = config.includeOnly || [];
+
   config = Object.assign({
     host: '127.0.0.1',
     port: 8125,
@@ -94,7 +97,9 @@ function DatadogReporter(config, events, script) {
 
   events.on('stats', (stats) => {
     for(const [name, value] of Object.entries(stats.counters || {})) {
-      this.metrics.increment(name, value);
+      if (this.shouldSendMetric(name)) {
+        this.metrics.increment(name, value);
+      }
     }
 
     /*
@@ -117,16 +122,32 @@ function DatadogReporter(config, events, script) {
      */
     for(const [name, values] of Object.entries(stats.summaries || {})) {
       for (const [aggregation, value] of Object.entries(values)) {
-        this.metrics.gauge(`${name}.${aggregation}`, value);
+        if (this.shouldSendMetric(name)) {
+          this.metrics.gauge(`${name}.${aggregation}`, value);
+        }
       }
     }
 
     for (const [name, value] of Object.entries(stats.rates || {})) {
-      this.metrics.gauge(name, value);
+      if (this.shouldSendMetric(name)) {
+        this.metrics.gauge(name, value);
+      }
     }
   });
 
   return this;
+}
+
+DatadogReporter.prototype.shouldSendMetric = function(metricName) {
+  if (this.includeOnly.length === 0 && this.excluded.length === 0) {
+    return true;
+  }
+
+  if (this.includeOnly.length > 0) {
+    return matchesPattern(metricName, this.includeOnly);
+  }
+
+  return !matchesPattern(metricName, this.excluded);
 }
 
 DatadogReporter.prototype.event = function(opts) {
@@ -210,6 +231,20 @@ function createDatadogReporter(config, events, script) {
 function sanitize(str) {
   return `${str.substring(0, 3)}********************${str.substring(str.length - 3, str.length)}`;
 }
+
+function matchesPattern(str, filters) {
+  let result = false;
+
+  for (const filterPattern of filters) {
+    if (str.startsWith(filterPattern)) {
+      result = true;
+      break;
+    }
+  }
+
+  return result;
+}
+
 
 module.exports = {
   createDatadogReporter
