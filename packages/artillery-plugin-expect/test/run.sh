@@ -25,7 +25,7 @@ if [[ ! -z ${CIRCLECI:-""} ]] ; then
     mock_server_pid=$!
     mock_server_status=$?
 else
-    docker run --rm -it -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml
+    docker run -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml
     mock_server_pid=$!
     mock_server_status=$?
 fi
