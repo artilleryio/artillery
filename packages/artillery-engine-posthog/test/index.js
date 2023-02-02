@@ -13,7 +13,8 @@ const script = {
   config: {
     target: 'my_awesome_posthog',
     posthog: {
-      region: 'us-east-1'
+      region: 'us-east-1',
+      apiKey: '12345'
     }
   },
   scenarios: [{
