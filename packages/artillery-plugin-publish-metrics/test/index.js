@@ -14,9 +14,6 @@ const testId = `test${process.hrtime()[0]}${process.hrtime()[1]}`;
 
 debug({ testId });
 
-assert(process.env.DD_API_KEY, 'DD_API_KEY must be set');
-assert(process.env.DD_APP_KEY, 'DD_APP_KEY must be set');
-
 test('Basic interface checks', async t => {
   const script = {
     config: {
