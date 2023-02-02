@@ -60,6 +60,8 @@ function ExpectationsPlugin(script, events) {
       script.config.plugins.expect.outputFormat ||
       'pretty';
     userContext.expectationsPlugin.expectDefault200 = (script.config.plugins.expect.expectDefault200 === true || script.config.plugins.expect.expectDefault200 === 'true');
+    userContext.expectationsPlugin.reportFailuresAsErrors = script.config.plugins.expect.reportFailuresAsErrors;
+
     return done();
   };
 
@@ -147,7 +149,11 @@ function expectationsPluginCheckExpectations(
     if (global.artillery) {
       global.artillery.suggestedExitCode = 1;
     }
-    return done(new Error(`Failed expectations for request ${req.url}`));
+    if (userContext.expectationsPlugin.reportFailuresAsErrors) {
+      return done(new Error(`Failed expectations for request ${req.url}`));
+    } else {
+      return done();
+    }
   } else {
     return done();
   }
