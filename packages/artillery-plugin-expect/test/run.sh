@@ -13,7 +13,8 @@ mock_server_pid=
 mock_server_status=
 
 cleanup() {
-    kill $mock_server_pid
+    kill $mock_server_pid || true
+    docker stop mockingjay || true
 }
 
 trap cleanup EXIT
@@ -23,18 +24,10 @@ if [[ ! -z ${CIRCLECI:-""} ]] ; then
     chmod +x mockingjay-server
     ./mockingjay-server --config ./test/mock-pets-server.yaml &
     mock_server_pid=$!
-    mock_server_status=$?
 else
-    docker run -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml
-    mock_server_pid=$!
-    mock_server_status=$?
+    docker run --name mockingjay -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml &
 fi
 
-if [[ $mock_server_status -ne 0 ]] ; then
-    echo "Could not start mock server"
-    exit 1
-fi
-
-sleep 5
+sleep 10
 
 "$DIR"/../../../node_modules/.bin/ava $DIR/index.js $DIR/lib/formatters.js
