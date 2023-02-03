@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 typeset -r DIR=$(cd "$(dirname "$0")" && pwd)
 
 SILENT=true node $DIR/targets/simple.js &
