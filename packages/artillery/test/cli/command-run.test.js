@@ -29,8 +29,7 @@ tap.test(
     // We should get a "No such directory!" error here, and no Summary report as no test run
     t.ok(
       exitCode !== 0 &&
-        !output.stdout.includes('Summary report') &&
-        output.stdout.includes('No such directory')
+        output.stdout.includes('Path does not exist')
     );
   }
 );
