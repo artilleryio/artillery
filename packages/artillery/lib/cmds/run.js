@@ -546,7 +546,7 @@ function checkDirExists(output) {
     : fs.existsSync(output);
 
   if (!exists) {
-    throw new Error('No such directory!');
+    throw new Error(`Path does not exist: ${output}`);
   }
 }
 
