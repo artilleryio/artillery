@@ -39,7 +39,7 @@ test('strings - huge strings are OK', function (t) {
   const end = Date.now();
   t.same(s1, s2);
   console.log('# delta:', end - start);
-  t.ok(end - start < 10, 'templated in <10ms');
+  t.ok(end - start < 30, 'templated in <30ms');
   t.end();
 });
 

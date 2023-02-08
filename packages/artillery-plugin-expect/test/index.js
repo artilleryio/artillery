@@ -64,8 +64,8 @@ test('Expectation: statusCode', async (t) => {
   });
 });
 
-test("Expectation: notStatusCode", async (t) => {
-  const expectations = require("../lib/expectations");
+test('Expectation: notStatusCode', async (t) => {
+  const expectations = require('../lib/expectations');
 
   const data = [
     // expectation - value received - user context - expected result
@@ -77,9 +77,8 @@ test("Expectation: notStatusCode", async (t) => {
     [[404, 200, 300], 310, { vars: {} }, true],
     [['404', '200', '300'], '310', { vars: {} }, true],
     [['404', '200', '300'], 310, { vars: {} }, true],
-    
-    [('{{ expectedNotStatusCode }}', 200, { vars: { expectedNotStatus: 200 } }, false)],
-    ['{{ expectedNotStatusCode }}', '200', { vars: {} }, false],
+    ['{{ expectedNotStatusCode }}', 200, { vars: { expectedNotStatusCode: 200 } }, false],
+    ['{{ expectedNotStatusCode }}', '200', { vars: { expectedNotStatusCode: 404 } }, true],
     [200, '200', { vars: {} }, false],
     ['200', 200, { vars: {} }, false],
     [[404, 202, 310], 404, { vars: {} }, false],
@@ -87,7 +86,7 @@ test("Expectation: notStatusCode", async (t) => {
     [['404', '200', '310'], 310, { vars: {} }, false],
   ];
 
-  data.forEach((e) => {
+  for(const e of data) {
     const result = expectations.notStatusCode(
       { notStatusCode: e[0] }, // expectation
       {}, // body
@@ -95,9 +94,9 @@ test("Expectation: notStatusCode", async (t) => {
       { statusCode: e[1] }, // res
       e[2] // userContext
     );
-
     t.true(result.ok === e[3]);
-  });
+  }
+
 });
 
 test('Expectation: validRegex', async (t) => {

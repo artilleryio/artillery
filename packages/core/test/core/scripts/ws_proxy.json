@@ -1,12 +1,12 @@
 {
   "config": {
-    "target": "ws://localhost:9093",
+    "target": "ws://127.0.0.1:9093",
     "phases": [
       {"duration": 1, "arrivalCount": 1}
     ],
     "ws": {
       "proxy": {
-        "url": "http://localhost:9095",
+        "url": "http://127.0.0.1:9095",
         "localAddress": "127.0.0.1"
       }
     }
