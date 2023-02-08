@@ -13,7 +13,7 @@ const Table = require('cli-table3');
 
 const { readScript, parseScript } = require('../util');
 
-const BUILTIN_PLUGINS = ['artillery-plugin-metrics-by-endpoint', 'artillery-plugin-ensure', 'artillery-plugin-publish-metrics', 'artillery-plugin-expect'];
+const BUILTIN_PLUGINS = ['metrics-by-endpoint', 'ensure', 'publish-metrics', 'expect'];
 
 // NOTE: Presumes ALL paths are absolute.
 async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
