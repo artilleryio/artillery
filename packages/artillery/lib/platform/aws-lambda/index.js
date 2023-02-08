@@ -156,6 +156,15 @@ class PlatformLambda {
       // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
     }
 
+    // Install extra plugins & engines
+    if (bom.modules.length > 0) {
+      artillery.log(`- Installing extra engines & plugins: ${bom.modules.join(', ')}`);
+      const { stdout, stderr, status, error } = spawnSync('npm', ['install'].concat(bom.modules), {cwd: dirname});
+      if (error) {
+        artillery.log(stdout?.toString(), stderr?.toString(), status, error);
+      }
+    }
+
     // Copy this version of Artillery into the Lambda package
     const a9basepath = path.resolve(__dirname, '..', '..', '..');
     // TODO: read this from .files in package.json instead:
