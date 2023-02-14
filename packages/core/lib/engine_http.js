@@ -494,7 +494,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               requestInfo.qs = qs.encode(
                 Object.assign(
                   qs.parse(urlparse(requestParams.url).query),
-                  requestParams.qs
+                  template(requestParams.qs, context)
                 )
               );
             }
