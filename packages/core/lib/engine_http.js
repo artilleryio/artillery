@@ -399,6 +399,20 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         );
         requestParams.headers = templatedHeaders;
 
+        // We compute the url here so that the cookies are set properly afterwards
+        let url = maybePrependBase(
+          template(requestParams.uri || requestParams.url, context),
+          config
+        );
+
+        if (requestParams.uri) {
+          // If a hook function sets requestParams.uri to something, request.js
+          // will pick that over .url, so we need to delete it.
+          delete requestParams.uri;
+        }
+
+        requestParams.url = url;
+
         if (
           typeof requestParams.cookie === 'object' ||
           typeof context._defaultCookie === 'object'
@@ -422,19 +436,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.password = template(requestParams.auth.pass, context);
           delete requestParams.auth;
         }
-
-        let url = maybePrependBase(
-          template(requestParams.uri || requestParams.url, context),
-          config
-        );
-
-        if (requestParams.uri) {
-          // If a hook function sets requestParams.uri to something, request.js
-          // will pick that over .url, so we need to delete it.
-          delete requestParams.uri;
-        }
-
-        requestParams.url = url;
 
         // TODO: Bypass proxy if "proxy: false" is set
         requestParams.agent = {
