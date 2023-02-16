@@ -353,6 +353,66 @@ test('HTTP engine', function (tap) {
       t.end();
     });
   });
+
+  tap.test('custom cookie js in loop', function (t) {
+    const target = nock('http://localhost:8888')
+      .get('/')
+      .reply(200, function () {
+        t.equal(
+          this.req.headers.cookie,
+          'something=1234',
+          'Cookie not set when url is fed from a loop. Make sure to compute url before setting cookies'
+        );
+
+        return 'ok';
+      });
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        processor: {
+          setCookie: function(requestParams, context, ee, next) {
+            requestParams.cookie = { 'something': '1234' };
+            return next();
+          },
+        },
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              loop: [
+                {
+                  get: {
+                    url: '{{ $loopElement }}',
+                    beforeRequest: "setCookie"
+                  }
+                }
+              ],
+              over: [
+                "/"
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    runScenario({ vars: {} }, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), 'Should have made a request to /');
+
+      t.end();
+    });
+  });
+
   tap.test('url and uri parameters', function (t) {
     const target = nock('http://localhost:8888')
       .get('/hello?hello=world')
