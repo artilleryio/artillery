@@ -1,4 +1,4 @@
-module.exports = { createRandomScore };
+module.exports = { createRandomScore, sendStream };
 
 function createRandomScore(userContext, events, done) {
   const data = {
@@ -10,4 +10,15 @@ function createRandomScore(userContext, events, done) {
   userContext.vars.data = data;
 
   return done();
+}
+
+function sendStream(userContext, events, done) {
+  const fs = require('fs');
+  const path = '/path/to/your/wavfile.wav';
+
+  userContext.vars.byteData = fs.readFile(path, (err, data) => {
+    // put it on byteData variable to not overide the "data" variable
+    userContext.vars.byteData = data;
+    return done();
+  });
 }

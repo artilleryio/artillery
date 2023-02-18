@@ -165,8 +165,25 @@ WSEngine.prototype.step = function (requestSpec, ee) {
     };
   }
 
+  const get_string_payload = (payload) => {
+    if (typeof payload === 'object') {
+      return JSON.stringify(payload);
+    }
+
+    return _.toString(payload);
+  }
+
+  const get_bytes_payload = (payload) => {
+    if (typeof payload === 'string') {
+      let utf8Encode = new TextEncoder()
+      return utf8Encode.encode(payload).buffer
+    }
+    
+    return payload
+  } 
+
   const f = function (context, callback) {
-    const params = requestSpec.wait || requestSpec.send;
+    const params = requestSpec.wait || requestSpec.send || requestSpec.sendBytes;
 
     // match exists on a string, so check match is not a prototype
     let captureOrMatch = _.has(params, 'capture') || _.has(params, 'match');
@@ -192,12 +209,11 @@ WSEngine.prototype.step = function (requestSpec, ee) {
 
     if (payload !== undefined) {
       payload = template(payload, context);
-      if (typeof payload === 'object') {
-        payload = JSON.stringify(payload);
+      if (requestSpec.sendBytes) {
+        payload = get_bytes_payload(payload)
       } else {
-        payload = _.toString(payload);
+        payload = get_string_payload(payload)
       }
-
       ee.emit('counter', 'websocket.messages_sent', 1);
       ee.emit('rate', 'websocket.send_rate');
       debug('WS send: %s', payload);
