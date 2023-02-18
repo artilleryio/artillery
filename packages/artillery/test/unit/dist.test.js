@@ -26,7 +26,11 @@ tap.test('divideWork for arrivalCount single phase', (t) => {
 
   const phases = divideWork(script, numWorkers);
 
-  t.equal(phases.length, expectedWorkers, 'it distributes work to a single worker');
+  t.equal(
+    phases.length,
+    expectedWorkers,
+    'it distributes work to a single worker'
+  );
   t.equal(
     phases.filter(
       (phase) =>
@@ -36,11 +40,7 @@ tap.test('divideWork for arrivalCount single phase', (t) => {
     1,
     'arrivalCount is assigned to just one worker'
   );
-  t.equal(
-    phases.length,
-    expectedWorkers,
-    'asleep workers are not returned'
-  );
+  t.equal(phases.length, expectedWorkers, 'asleep workers are not returned');
 
   t.end();
 });
@@ -52,7 +52,10 @@ tap.test('divideWork for arrivalCount multiple phases', (t) => {
   const script = {
     config: {
       target: 'http://targ.get.url',
-      phases: [{ name: 'arrivalCount', duration: 10, arrivalCount: 5 }, { name: 'keep-alive', duration: 10, arrivalRate: 10 } ]
+      phases: [
+        { name: 'arrivalCount', duration: 10, arrivalCount: 5 },
+        { name: 'keep-alive', duration: 10, arrivalRate: 10 }
+      ]
     },
     scenarios: [
       {
@@ -108,7 +111,9 @@ tap.test('set max vusers', (t) => {
   const script = {
     config: {
       target: 'http://targ.get.url',
-      phases: [{ name: 'vusers', duration: 10, maxVusers: 20, arrivalRate: 100 }]
+      phases: [
+        { name: 'vusers', duration: 10, maxVusers: 20, arrivalRate: 100 }
+      ]
     },
     scenarios: [
       {
@@ -124,8 +129,10 @@ tap.test('set max vusers', (t) => {
   };
 
   const phases = divideWork(script, numWorkers);
-  const actualVusers = phases.reduce((partialSum, phase) =>
-    partialSum + phase.config.phases[0].maxVusers, 0);
+  const actualVusers = phases.reduce(
+    (partialSum, phase) => partialSum + phase.config.phases[0].maxVusers,
+    0
+  );
   t.equal(script.config.phases[0].maxVusers, actualVusers);
   t.end();
 });
@@ -151,8 +158,10 @@ tap.test('arrivalRate defaults to zero if not present', (t) => {
   };
 
   const phases = divideWork(script, numWorkers);
-  const totalArrivalRate = phases.reduce((partialSum, phase) =>
-    partialSum + phase.config.phases[0].arrivalRate, 0);
+  const totalArrivalRate = phases.reduce(
+    (partialSum, phase) => partialSum + phase.config.phases[0].arrivalRate,
+    0
+  );
 
   t.equal(totalArrivalRate, 0);
   t.end();
@@ -165,8 +174,18 @@ tap.test('maxVusers distributes evenly in all phases', (t) => {
     config: {
       target: 'http://targ.get.url',
       phases: [
-        { name: 'rate small', duration: 10, arrivalRate: 2, maxVusers: maxVusers },
-        { name: 'rate big', duration: 10, arrivalRate: 200, maxVusers: maxVusers },
+        {
+          name: 'rate small',
+          duration: 10,
+          arrivalRate: 2,
+          maxVusers: maxVusers
+        },
+        {
+          name: 'rate big',
+          duration: 10,
+          arrivalRate: 200,
+          maxVusers: maxVusers
+        },
         { name: 'rampto small', duration: 10, rampTo: 2, maxVusers: maxVusers },
         { name: 'rampto big', duration: 10, rampTo: 200, maxVusers: maxVusers },
         { name: 'count', duration: 10, arrivalCount: 25, maxVusers: maxVusers }
@@ -188,10 +207,160 @@ tap.test('maxVusers distributes evenly in all phases', (t) => {
   const phases = divideWork(script, numWorkers);
   for (let i = 0; i < script.config.phases.length; i++) {
     let activeMaxVusers = phases
-      .map(p => p.config.phases[i])
-      .filter(p => p.arrivalRate > 0 || p.arrivalCount > 0 || p.rampTo > 0)
+      .map((p) => p.config.phases[i])
+      .filter((p) => p.arrivalRate > 0 || p.arrivalCount > 0 || p.rampTo > 0)
       .reduce((sum, p) => sum + p.maxVusers, 0);
     t.equal(10, activeMaxVusers);
   }
   t.end();
 });
+
+tap.test('payload is distributet between workers and does not repeat', (t) => {
+  const numWorkers = 7;
+  const maxVusers = 10;
+  const script = {
+    config: {
+      target: 'http://targ.get.url',
+      phases: [
+        {
+          name: 'rate small',
+          duration: 10,
+          arrivalRate: 2,
+          maxVusers: maxVusers
+        },
+        {
+          name: 'rate big',
+          duration: 10,
+          arrivalRate: 200,
+          maxVusers: maxVusers
+        },
+        { name: 'rampto small', duration: 10, rampTo: 2, maxVusers: maxVusers },
+        { name: 'rampto big', duration: 10, rampTo: 200, maxVusers: maxVusers },
+        { name: 'count', duration: 10, arrivalCount: 25, maxVusers: maxVusers }
+      ],
+      payload: [
+        {
+          data: [
+            ['1', 'value-1'],
+            ['2', 'value-2'],
+            ['3', 'value-3'],
+            ['4', 'value-4'],
+            ['5', 'value-5'],
+            ['6', 'value-6'],
+            ['7', 'value-7'],
+            ['8', 'value-8'],
+            ['9', 'value-9'],
+            ['10', 'value-10']
+          ]
+        }
+      ]
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: '/'
+            }
+          }
+        ]
+      }
+    ]
+  };
+
+  const workerScripts = divideWork(script, numWorkers);
+  const palyoadSet = new Set();
+  for (const script of workerScripts) {
+    for (const payload of script.config.payload) {
+      for (const data of payload.data) {
+        t.notOk(palyoadSet.has(data));
+        palyoadSet.add(data);
+      }
+    }
+  }
+  t.end();
+});
+
+tap.test(
+  'payloads DO repeat when distributed between workers, when there are more workers than palyoads',
+  (t) => {
+    const numWorkers = 7;
+    const maxVusers = 10;
+    const script = {
+      config: {
+        target: 'http://targ.get.url',
+        phases: [
+          {
+            name: 'rate small',
+            duration: 10,
+            arrivalRate: 2,
+            maxVusers: maxVusers
+          },
+          {
+            name: 'rate big',
+            duration: 10,
+            arrivalRate: 200,
+            maxVusers: maxVusers
+          },
+          {
+            name: 'rampto small',
+            duration: 10,
+            rampTo: 2,
+            maxVusers: maxVusers
+          },
+          {
+            name: 'rampto big',
+            duration: 10,
+            rampTo: 200,
+            maxVusers: maxVusers
+          },
+          {
+            name: 'count',
+            duration: 10,
+            arrivalCount: 25,
+            maxVusers: maxVusers
+          }
+        ],
+        payload: [
+          {
+            data: [
+              ['1', 'value-1'],
+              ['2', 'value-2'],
+              ['3', 'value-3'],
+              ['4', 'value-4'],
+              ['5', 'value-5'],
+              ['6', 'value-6']
+            ]
+          }
+        ]
+      },
+      scenarios: [
+        {
+          flow: [
+            {
+              get: {
+                url: '/'
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const workerScripts = divideWork(script, numWorkers);
+    const palyoadCount = {};
+
+    for (const script of workerScripts) {
+      for (const payload of script.config.payload) {
+        for (const data of payload.data) {
+          const dataStr = data.join('');
+          const count = palyoadCount[dataStr] || 0;
+          palyoadCount[dataStr] = count + 1;
+        }
+      }
+    }
+    t.ok(Object.values(palyoadCount).some((count) => count > 1));
+
+    t.end();
+  }
+);

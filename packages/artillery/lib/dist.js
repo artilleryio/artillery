@@ -62,14 +62,35 @@ function divideWork(script, numWorkers) {
   );
 
   // Add worker and totalWorkers properties to phases
-  for (let i = 0; i < result.length - 1; i++) {
+  const hasPayload = scriptHasPayload(script);
+  for (let i = 0; i < result.length; i++) {
     for (const phase of result[i].config.phases) {
       phase.totalWorkers = result.length;
       phase.worker = i + 1;
     }
+
+    // Distribute payload data to workers
+    if (hasPayload) {
+      for (
+        let payloadIdx = 0;
+        payloadIdx < script.config.payload.length;
+        payloadIdx++
+      ) {
+        // If there are more workers than payload data, then we will repeat the payload data
+        const scriptPayloadData = script.config.payload[payloadIdx].data;
+        const idxToMatch = i % scriptPayloadData.length;
+        result[i].config.payload[payloadIdx].data = scriptPayloadData.filter(
+          (_, index) => index % result.length === idxToMatch
+        );
+      }
+    }
   }
 
   return result;
+}
+
+function scriptHasPayload(script) {
+  return script.config.payload && script.config.payload.length > 0;
 }
 
 function handleArrivalCountPhase(workerScripts, phase, numWorkers) {
@@ -130,7 +151,15 @@ function createWorkerScriptBases(numWorkers, script) {
       ...script,
       config: {
         ...script.config,
-        phases: []
+        phases: [],
+        ...(scriptHasPayload(script) && {
+          payload: script.config.payload.map((payload) => {
+            return {
+              ...payload,
+              data: []
+            };
+          })
+        })
       }
     });
     // 'before' and 'after' hooks are executed in the main thread
