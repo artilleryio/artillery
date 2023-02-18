@@ -186,7 +186,7 @@ tap.test('maxVusers distributes evenly in all phases', (t) => {
   };
 
   const phases = divideWork(script, numWorkers);
-  for (let i = 0; i < script.config.phases.length - 1; i++) {
+  for (let i = 0; i < script.config.phases.length; i++) {
     let activeMaxVusers = phases
       .map(p => p.config.phases[i])
       .filter(p => p.arrivalRate > 0 || p.arrivalCount > 0 || p.rampTo > 0)

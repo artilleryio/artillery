@@ -11,127 +11,135 @@ const isIdlePhase = require('@artilleryio/int-core').isIdlePhase;
 module.exports = divideWork;
 
 /**
+ *
  * Create a number of scripts for workers from the script given to use by user.
+ *
+ * @param {Script} script
+ * @param {number} numWorkers
+ * @returns {Script[]} array of scripts distributed representing the work for each worker
+ *
+ * @todo: Distribute payload data to workers
  */
 function divideWork(script, numWorkers) {
-  let newPhases = [];
-  for (let i = 0; i < numWorkers; i++) {
-    newPhases.push(L.cloneDeep(script.config.phases));
+  const workerScripts = createWorkerScriptBases(numWorkers, script);
+  for (const phase of script.config.phases) {
+    //  switching on phase type to determine how to distribute work
+    switch (true) {
+      case !!phase.rampTo: {
+        handleRampToPhase(phase, numWorkers, workerScripts);
+        break;
+      }
+      case !!phase.arrivalRate: {
+        handleArrivalRatePhase(phase, numWorkers, workerScripts);
+        break;
+      }
+      case !!phase.arrivalCount: {
+        // arrivalCount is executed in the first worker
+        // and replaced with a `pause` phase in the others
+        handleArrivalCountPhase(workerScripts, phase, numWorkers);
+        break;
+      }
+      case !!phase.pause: {
+        // nothing to adjust here, pause is executed in all workers
+        for (let i = 0; i < numWorkers; i++) {
+          workerScripts[i].config.phases.push(L.cloneDeep(phase));
+        }
+        break;
+      }
+      default: {
+        console.log(
+          'Unknown phase spec definition, skipping.\n%j\n' +
+            'This should not happen',
+          phase
+        );
+      }
+    }
   }
-
-  //
-  // Adjust phase definitions:
-  //
-  L.each(script.config.phases, function (phase, phaseSpecIndex) {
-    if (phase.rampTo) {
-      // same behaviour as a single worker. Now we support scripts
-      // with rampTo and no arrivalRate
-      phase.arrivalRate = phase.arrivalRate || 0;
-
-      let rates = distributeEven(phase.arrivalRate, numWorkers);
-      let ramps = distributeEven(phase.rampTo, numWorkers);
-      let activeWorkers = Math.max(rates.filter(r => r > 0).length, ramps.filter(r => r > 0).length);
-      let maxVusers = phase.maxVusers ? distribute(phase.maxVusers, activeWorkers) : false;
-      L.each(rates, function (Lr, i) {
-        newPhases[i][phaseSpecIndex].arrivalRate = rates[i];
-        newPhases[i][phaseSpecIndex].rampTo = ramps[i];
-        if(maxVusers) {
-          newPhases[i][phaseSpecIndex].maxVusers = maxVusers[i];
-        }
-      });
-      return;
-    }
-
-    if (phase.arrivalRate && !phase.rampTo) {
-      let rates = distribute(phase.arrivalRate, numWorkers);
-      let activeWorkers = rates.filter(r => r > 0).length;
-      let maxVusers = phase.maxVusers ? distribute(phase.maxVusers, activeWorkers) : false;
-      L.each(rates, function (Lr, i) {
-        newPhases[i][phaseSpecIndex].arrivalRate = rates[i];
-        if(maxVusers) {
-          newPhases[i][phaseSpecIndex].maxVusers = maxVusers[i] || 0;
-        }
-      });
-      return;
-    }
-
-    if (phase.arrivalCount) {
-      // arrivalCount is executed in the first worker
-      // and replaced with a `pause` phase in the others
-      if(phase.maxVusers) {
-        newPhases[0][phaseSpecIndex].maxVusers = phase.maxVusers;
-      }
-      for (let i = 1; i < numWorkers; i++) {
-        newPhases[i][phaseSpecIndex] = {
-          name: phase.name,
-          pause: phase.duration
-        };
-      }
-
-      return;
-    }
-
-    if (phase.pause) {
-      // nothing to adjust here
-      return;
-    }
-
-    console.log(
-      'Unknown phase spec definition, skipping.\n%j\n' +
-        'This should not happen',
-      phase
-    );
-  });
-
-  //
-  // Create new scripts:
-  //
-  let newScripts = L.map(L.range(0, numWorkers), function (i) {
-    let newScript = L.cloneDeep(script);
-    newScript.config.phases = newPhases[i];
-
-    // 'before' and 'after' hooks are executed in the main thread
-    delete newScript.before;
-    delete newScript.after;
-
-    return newScript;
-  });
 
   // Filter out scripts which have only idle phases
-  const result = [];
-  for (const s of newScripts) {
-    const allIdle = L.every(s.config.phases, function (phase, phaseSpecIndex) {
-      return isIdlePhase(phase);
-    });
-    if (!allIdle) {
-      result.push(s);
+  const result = workerScripts.filter(
+    (workerScript) => !workerScript.config.phases.every(isIdlePhase)
+  );
+
+  // Add worker and totalWorkers properties to phases
+  for (let i = 0; i < result.length - 1; i++) {
+    for (const phase of result[i].config.phases) {
+      phase.totalWorkers = result.length;
+      phase.worker = i + 1;
     }
   }
-
-  let activeWorkers = 1;
-  result.forEach(r => {
-    r.config.phases.forEach(p => {
-      p.totalWorkers = result.length;
-    p.worker = activeWorkers;
-    }),
-    activeWorkers++;
-  });
 
   return result;
 }
 
-/**
- * Given M "things", distribute them between N peers as equally as possible
- */
-function distributeEven(m, n){
-  m = Number(m);
-  n = Number(n);
-  let result = [];
-  for (let i = 0; i < n; i++) {
-    result.push(m/n);
-  }
+function handleArrivalCountPhase(workerScripts, phase, numWorkers) {
+  workerScripts[0].config.phases.push(L.cloneDeep(phase));
 
-  return result;
+  for (let i = 1; i < numWorkers; i++) {
+    workerScripts[i].config.phases.push({
+      name: phase.name,
+      pause: phase.duration
+    });
+  }
+}
+
+function handleArrivalRatePhase(phase, numWorkers, workerScripts) {
+  const rates = distribute(phase.arrivalRate, numWorkers);
+  const activeWorkers = rates.reduce(
+    (acc, rate) => acc + (rate > 0 ? 1 : 0),
+    0
+  );
+  const maxVusers = phase.maxVusers
+    ? distribute(phase.maxVusers, activeWorkers)
+    : false;
+  for (let i = 0; i < numWorkers; i++) {
+    const newPhase = L.cloneDeep(phase);
+    newPhase.arrivalRate = rates[i];
+    if (maxVusers) {
+      newPhase.maxVusers = maxVusers[i];
+    }
+    workerScripts[i].config.phases.push(newPhase);
+  }
+}
+
+function handleRampToPhase(phase, numWorkers, workerScripts) {
+  phase.arrivalRate = phase.arrivalRate || 0;
+
+  const rate = phase.arrivalRate / numWorkers;
+  const ramp = phase.rampTo / numWorkers;
+  const activeWorkers = rate > 0 || ramp > 0 ? numWorkers : 0;
+  const maxVusers = phase.maxVusers
+    ? distribute(phase.maxVusers, activeWorkers)
+    : false;
+
+  for (let i = 0; i < numWorkers; i++) {
+    const newPhase = L.cloneDeep(phase);
+    newPhase.arrivalRate = rate;
+    newPhase.rampTo = ramp;
+    if (maxVusers) {
+      newPhase.maxVusers = maxVusers[i];
+    }
+    workerScripts[i].config.phases.push(newPhase);
+  }
+}
+
+function createWorkerScriptBases(numWorkers, script) {
+  const bases = [];
+  for (let i = 0; i < numWorkers; i++) {
+    const newScript = L.cloneDeep({
+      ...script,
+      config: {
+        ...script.config,
+        phases: []
+      }
+    });
+    // 'before' and 'after' hooks are executed in the main thread
+    delete newScript.before;
+    delete newScript.after;
+
+    bases.push(newScript);
+  }
+  return bases;
 }
 
 function distribute(m, n) {
