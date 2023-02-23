@@ -752,6 +752,8 @@ HttpEngine.prototype._handleResponse = function (
     res.on('data', (d) => {
       body += d;
     });
+  } else {
+    res.on('data', () => {});
   }
 
   res.on('end', () => {
