@@ -102,6 +102,7 @@
     "chalk": "^2.4.2",
     "ci-info": "^2.0.0",
     "cli-table3": "^0.6.2",
+    "cross-spawn": "^7.0.3",
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
     "dotenv": "^16.0.1",

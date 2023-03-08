@@ -4,7 +4,7 @@
 
 const temp = require('temp');
 const fs = require('fs-extra');
-const { spawnSync } = require('child_process');
+const spawn = require('cross-spawn');
 const chalk = require('chalk');
 
 const EventEmitter = require('events');
@@ -149,7 +149,7 @@ class PlatformLambda {
     this.artilleryArgs.push(p.noPrefix);
 
     artillery.log('- Installing dependencies')
-    const { stdout, stderr, status, error } = spawnSync('npm', ['install'], {cwd: dirname});
+    const { stdout, stderr, status, error } = spawn.sync('npm', ['install'], {cwd: dirname});
     if (error) {
       artillery.log(stdout?.toString(), stderr?.toString(), status, error);
     } else {
@@ -159,7 +159,7 @@ class PlatformLambda {
     // Install extra plugins & engines
     if (bom.modules.length > 0) {
       artillery.log(`- Installing extra engines & plugins: ${bom.modules.join(', ')}`);
-      const { stdout, stderr, status, error } = spawnSync('npm', ['install'].concat(bom.modules), {cwd: dirname});
+      const { stdout, stderr, status, error } = spawn.sync('npm', ['install'].concat(bom.modules), {cwd: dirname});
       if (error) {
         artillery.log(stdout?.toString(), stderr?.toString(), status, error);
       }
@@ -182,7 +182,7 @@ class PlatformLambda {
 
     fs.copyFileSync(path.resolve(a9basepath, 'package.json'), path.join(dirname, 'node_modules', 'artillery', 'package.json'));
 
-    const { stdout2, stderr2, status2, error2 } = spawnSync('npm', ['install', '--omit', 'dev'], {cwd: path.join(dirname, 'node_modules', 'artillery')});
+    const { stdout2, stderr2, status2, error2 } = spawn.sync('npm', ['install', '--omit', 'dev'], {cwd: path.join(dirname, 'node_modules', 'artillery')});
     if (error2) {
       artillery.log(stdout2?.toString(), stderr2?.toString(), status2, error2);
     } else {
