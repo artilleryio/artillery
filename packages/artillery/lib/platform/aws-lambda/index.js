@@ -8,7 +8,7 @@ const spawn = require('cross-spawn');
 const chalk = require('chalk');
 
 const EventEmitter = require('events');
-const debug = require('debug')('platform:aws-lambda')
+const debug = require('debug')('platform:aws-lambda');
 
 const { randomUUID } = require('crypto');
 
@@ -51,7 +51,8 @@ class PlatformLambda {
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
 
-    this.securityGroupIds = platformConfig['security-group-ids']?.split(',') || [];
+    this.securityGroupIds =
+      platformConfig['security-group-ids']?.split(',') || [];
     this.subnetIds = platformConfig['subnet-ids']?.split(',') || [];
 
     this.memorySize = platformConfig['memory-size'] || 4096;
@@ -65,8 +66,7 @@ class PlatformLambda {
   }
 
   async init() {
-    artillery.log(chalk.gray('NOTE: AWS Lambda support is experimental. Not all Artillery features work yet.'));
-    artillery.log(chalk.gray('For details please see https://docs.art/aws-lambda'));
+    artillery.log('NOTE: AWS Lambda support is experimental. Not all Artillery features work yet.\nFor details please see https://docs.art/aws-lambda');
     artillery.log();
     artillery.log('λ Creating AWS Lambda function...');
 
@@ -89,15 +89,26 @@ class PlatformLambda {
     // TODO: custom package.json path here
 
     artillery.log('- Bundling test data');
-    const bom = await promisify(createBOM)(entryPoint, extraFiles, createBomOpts);
+    const bom = await promisify(createBOM)(
+      entryPoint,
+      extraFiles,
+      createBomOpts
+    );
     for (const f of bom.files) {
       artillery.log('  -', f.noPrefix);
     }
 
     // Copy handler:
-    fs.copyFileSync(path.resolve(__dirname, 'lambda-handler', 'index.js'), path.join(dirname, 'index.js'));
-    fs.copyFileSync(path.resolve(__dirname, 'lambda-handler', 'package.json'), path.join(dirname, 'package.json'));
+    fs.copyFileSync(
+      path.resolve(__dirname, 'lambda-handler', 'index.js'),
+      path.join(dirname, 'index.js')
+    );
+    fs.copyFileSync(
+      path.resolve(__dirname, 'lambda-handler', 'package.json'),
+      path.join(dirname, 'package.json')
+    );
 
+    // FIXME: This may overwrite lambda-handler's index.js or package.json
     // Copy files that make up the test:
     for (const o of bom.files) {
       fs.ensureFileSync(path.join(dirname, o.noPrefix));
@@ -105,7 +116,10 @@ class PlatformLambda {
     }
 
     if (this.platformOpts.cliArgs.dotenv) {
-      fs.copyFileSync(path.resolve(process.cwd(), this.platformOpts.cliArgs.dotenv), path.join(dirname, path.basename(this.platformOpts.cliArgs.dotenv)));
+      fs.copyFileSync(
+        path.resolve(process.cwd(), this.platformOpts.cliArgs.dotenv),
+        path.join(dirname, path.basename(this.platformOpts.cliArgs.dotenv))
+      );
     }
 
     this.artilleryArgs.push('run');
@@ -169,8 +183,14 @@ class PlatformLambda {
 
     // Install extra plugins & engines
     if (bom.modules.length > 0) {
-      artillery.log(`- Installing extra engines & plugins: ${bom.modules.join(', ')}`);
-      const { stdout, stderr, status, error } = spawn.sync('npm', ['install'].concat(bom.modules), {cwd: dirname});
+      artillery.log(
+        `- Installing extra engines & plugins: ${bom.modules.join(', ')}`
+      );
+      const { stdout, stderr, status, error } = spawn.sync(
+        'npm',
+        ['install'].concat(bom.modules),
+        { cwd: dirname }
+      );
       if (error) {
         artillery.log(stdout?.toString(), stderr?.toString(), status, error);
       }
@@ -191,9 +211,19 @@ class PlatformLambda {
       fs.copyFileSync(srcfn, destfn);
     }
 
-    fs.copyFileSync(path.resolve(a9basepath, 'package.json'), path.join(dirname, 'node_modules', 'artillery', 'package.json'));
+    fs.copyFileSync(
+      path.resolve(a9basepath, 'package.json'),
+      path.join(dirname, 'node_modules', 'artillery', 'package.json')
+    );
 
-    const { stdout2, stderr2, status2, error2 } = spawn.sync('npm', ['install', '--omit', 'dev'], {cwd: path.join(dirname, 'node_modules', 'artillery')});
+    const a9cwd = path.join(dirname, 'node_modules', 'artillery');
+    debug({ a9basepath, a9cwd });
+
+    const { stdout: stdout2, stderr: stderr2, status: status2, error: error2 } = spawn.sync(
+      'npm',
+      ['install', '--omit', 'dev'],
+      { cwd: a9cwd }
+    );
     if (error2) {
       artillery.log(stdout2?.toString(), stderr2?.toString(), status2, error2);
     } else {
@@ -208,7 +238,7 @@ class PlatformLambda {
     artillery.log('- Creating zip package');
     await this.createZip(dirname, zipfile);
 
-    artillery.log('Preparing AWS environment...')
+    artillery.log('Preparing AWS environment...');
     const bucketName = await this.ensureS3BucketExists();
     this.bucketName = bucketName;
 
@@ -229,7 +259,7 @@ class PlatformLambda {
     await this.createLambda({
       bucketName: this.bucketName,
       functionName: this.functionName,
-      zipPath: this.lambdaZipPath,
+      zipPath: this.lambdaZipPath
     });
     artillery.log(` - Lambda function: ${this.functionName}`);
     artillery.log(` - Region: ${this.region}`);
@@ -361,7 +391,10 @@ class PlatformLambda {
         try {
           await telemetry.capture({
             event: 'ping',
-            awsAccountId: crypto.createHash('sha1').update(self.accountId).digest('base64')
+            awsAccountId: crypto
+              .createHash('sha1')
+              .update(self.accountId)
+              .digest('base64')
           });
 
           process.nextTick(() => {
@@ -383,7 +416,10 @@ class PlatformLambda {
           }
 
           const duration = Math.ceil((Date.now() - startedAt) / 1000);
-          const total = (price * self.memorySize / 1024 * self.platformOpts.count * duration);
+          const total =
+            ((price * self.memorySize) / 1024) *
+            self.platformOpts.count *
+            duration;
           const cost = round(total / 10e10, 4);
           console.log(`\nEstimated AWS Lambda cost for this test: $${cost}\n`);
         }
@@ -394,14 +430,16 @@ class PlatformLambda {
   async createWorker() {
     const workerId = randomUUID();
 
-    return {workerId};
+    return { workerId };
   }
 
-  async prepareWorker(workerId) {
-  }
+  async prepareWorker(workerId) {}
 
   async runWorker(workerId) {
-    const lambda = new AWS.Lambda({ apiVersion: '2015-03-31', region: this.region });
+    const lambda = new AWS.Lambda({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
     const event = {
       SQS_QUEUE_URL: this.sqsQueueUrl,
       SQS_REGION: this.region,
@@ -422,7 +460,11 @@ class PlatformLambda {
     let ok = false;
     while (waited < 120 * 1000) {
       try {
-        var state = (await lambda.getFunctionConfiguration({ FunctionName: this.functionName}).promise()).State;
+        var state = (
+          await lambda
+            .getFunctionConfiguration({ FunctionName: this.functionName })
+            .promise()
+        ).State;
         if (state === 'Active') {
           debug('Lambda function ready:', this.functionName);
           ok = true;
@@ -438,16 +480,23 @@ class PlatformLambda {
       }
     }
 
-    if(!ok) {
-      debug('Time out waiting for lamda function to be ready:', this.functionName);
-      throw new Error(`Timeout waiting for lambda function to be ready for invocation`);
+    if (!ok) {
+      debug(
+        'Time out waiting for lamda function to be ready:',
+        this.functionName
+      );
+      throw new Error(
+        `Timeout waiting for lambda function to be ready for invocation`
+      );
     }
 
-    await lambda.invoke({
-      FunctionName: this.functionName,
-      Payload: payload,
-      InvocationType: 'Event'
-    }).promise();
+    await lambda
+      .invoke({
+        FunctionName: this.functionName,
+        Payload: payload,
+        InvocationType: 'Event'
+      })
+      .promise();
 
     this.count++;
   }
@@ -463,22 +512,31 @@ class PlatformLambda {
 
     const s3 = new AWS.S3({ region: this.region });
     const sqs = new AWS.SQS({ region: this.region });
-    const lambda = new AWS.Lambda({ apiVersion: '2015-03-31', region: this.region });
+    const lambda = new AWS.Lambda({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
 
     try {
-      await s3.deleteObject({
-        Bucket: this.bucketName,
-        Key: this.lambdaZipPath,
-      }).promise();
+      await s3
+        .deleteObject({
+          Bucket: this.bucketName,
+          Key: this.lambdaZipPath
+        })
+        .promise();
 
-      await sqs.deleteQueue({
-        QueueUrl: this.sqsQueueUrl,
-      }).promise();
+      await sqs
+        .deleteQueue({
+          QueueUrl: this.sqsQueueUrl
+        })
+        .promise();
 
       if (typeof process.env.RETAIN_LAMBDA === 'undefined') {
-        await lambda.deleteFunction({
-          FunctionName: this.functionName,
-        }).promise();
+        await lambda
+          .deleteFunction({
+            FunctionName: this.functionName
+          })
+          .promise();
       }
     } catch (err) {
       console.error(err);
@@ -486,15 +544,14 @@ class PlatformLambda {
   }
 
   async createZip(src, out) {
-    const archive = archiver('zip', { zlib: { level: 9 }});
+    const archive = archiver('zip', { zlib: { level: 9 } });
     const stream = fs.createWriteStream(out);
 
     return new Promise((resolve, reject) => {
       archive
         .directory(src, false)
-        .on('error', err => reject(err))
-        .pipe(stream)
-      ;
+        .on('error', (err) => reject(err))
+        .pipe(stream);
 
       stream.on('close', () => resolve());
       archive.finalize();
@@ -510,7 +567,7 @@ class PlatformLambda {
     const s3 = new AWS.S3({ region: this.region });
 
     try {
-      await s3.listObjectsV2({Bucket: bucketName, MaxKeys: 1}).promise();
+      await s3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
     } catch (s3Err) {
       if (s3Err.code === 'NoSuchBucket') {
         const res = await s3.createBucket({ Bucket: bucketName }).promise();
@@ -525,8 +582,11 @@ class PlatformLambda {
   // TODO: Move into reusable platform util
   async getAccountId() {
     let stsOpts = {};
-    if(process.env.ARTILLERY_STS_OPTS) {
-      stsOpts = Object.assign(stsOpts, JSON.parse(process.env.ARTILLERY_STS_OPTS));
+    if (process.env.ARTILLERY_STS_OPTS) {
+      stsOpts = Object.assign(
+        stsOpts,
+        JSON.parse(process.env.ARTILLERY_STS_OPTS)
+      );
     }
 
     const sts = new AWS.STS(stsOpts);
@@ -537,13 +597,16 @@ class PlatformLambda {
   // TODO: Add timestamp to SQS queue name for automatic GC
   async createSQSQueue() {
     const sqs = new AWS.SQS({
-      region: this.region,
+      region: this.region
     });
 
     const SQS_QUEUES_NAME_PREFIX = 'artilleryio_test_metrics';
 
     // 36 is length of a UUUI v4 string
-    const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(0, 36)}.fifo`;
+    const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
+      0,
+      36
+    )}.fifo`;
     const params = {
       QueueName: queueName,
       Attributes: {
@@ -567,7 +630,9 @@ class PlatformLambda {
     let ok = false;
     while (waited < 120 * 1000) {
       try {
-        const results = await sqs.listQueues({ QueueNamePrefix: queueName }).promise();
+        const results = await sqs
+          .listQueues({ QueueNamePrefix: queueName })
+          .promise();
         if (results.QueueUrls && results.QueueUrls.length === 1) {
           debug('SQS queue created:', queueName);
           ok = true;
@@ -582,7 +647,7 @@ class PlatformLambda {
       }
     }
 
-    if(!ok) {
+    if (!ok) {
       debug('Time out waiting for SQS queue:', queueName);
       throw new Error(`SQS queue could not be created`);
     }
@@ -603,8 +668,9 @@ class PlatformLambda {
       debug(err);
     }
 
-    const res = await iam.createRole({
-      AssumeRolePolicyDocument: `{
+    const res = await iam
+      .createRole({
+        AssumeRolePolicyDocument: `{
         "Version": "2012-10-17",
         "Statement": [
           {
@@ -616,24 +682,32 @@ class PlatformLambda {
           }
         ]
       }`,
-      Path: '/',
-      RoleName: ROLE_NAME,
-    }).promise();
+        Path: '/',
+        RoleName: ROLE_NAME
+      })
+      .promise();
 
     const lambdaRoleArn = res.Role.Arn;
 
-    await iam.attachRolePolicy({
-      PolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
-      RoleName: ROLE_NAME,
-    }).promise();
+    await iam
+      .attachRolePolicy({
+        PolicyArn:
+          'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+        RoleName: ROLE_NAME
+      })
+      .promise();
 
-    await iam.attachRolePolicy({
-      PolicyArn: 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
-      RoleName: ROLE_NAME,
-    }).promise();
+    await iam
+      .attachRolePolicy({
+        PolicyArn:
+          'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
+        RoleName: ROLE_NAME
+      })
+      .promise();
 
-    const iamRes = await iam.createPolicy({
-      PolicyDocument: `{
+    const iamRes = await iam
+      .createPolicy({
+        PolicyDocument: `{
         "Version": "2012-10-17",
         "Statement": [
           {
@@ -649,14 +723,17 @@ class PlatformLambda {
         ]
       }
       `,
-      PolicyName: POLICY_NAME,
-      Path: '/',
-    }).promise();
+        PolicyName: POLICY_NAME,
+        Path: '/'
+      })
+      .promise();
 
-    await iam.attachRolePolicy({
-      PolicyArn: iamRes.Policy.Arn,
-      RoleName: ROLE_NAME,
-    }).promise();
+    await iam
+      .attachRolePolicy({
+        PolicyArn: iamRes.Policy.Arn,
+        RoleName: ROLE_NAME
+      })
+      .promise();
 
     // See https://stackoverflow.com/a/37438525 for why we need this
     await sleep(10 * 1000);
@@ -667,12 +744,15 @@ class PlatformLambda {
   async createLambda(opts) {
     const { bucketName, functionName, zipPath } = opts;
 
-    const lambda = new AWS.Lambda({ apiVersion: '2015-03-31', region: this.region });
+    const lambda = new AWS.Lambda({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
 
     const lambdaConfig = {
       Code: {
         S3Bucket: bucketName,
-        S3Key: zipPath,
+        S3Key: zipPath
       },
       FunctionName: functionName,
       Description: 'Artillery.io test',
@@ -682,13 +762,13 @@ class PlatformLambda {
       Runtime: 'nodejs16.x',
       Architectures: [this.architecture],
       Timeout: 900,
-      Role: this.lambdaRoleArn,
+      Role: this.lambdaRoleArn
     };
 
-    if(this.securityGroupIds.length > 0 && this.subnetIds.length > 0) {
+    if (this.securityGroupIds.length > 0 && this.subnetIds.length > 0) {
       lambdaConfig.VpcConfig = {
         SecurityGroupIds: this.securityGroupIds,
-        SubnetIds: this.subnetIds,
+        SubnetIds: this.subnetIds
       };
     }
 
@@ -699,11 +779,13 @@ class PlatformLambda {
     const key = `lambda/${randomUUID()}.zip`;
     // TODO: Set lifecycle policy on the bucket/key prefix to delete after 24 hours
     const s3 = new AWS.S3();
-    const s3res = await s3.putObject({
-      Body: fs.createReadStream(zipfile),
-      Bucket: bucketName,
-      Key: key,
-    }).promise();
+    const s3res = await s3
+      .putObject({
+        Body: fs.createReadStream(zipfile),
+        Bucket: bucketName,
+        Key: key
+      })
+      .promise();
 
     return key;
   }
