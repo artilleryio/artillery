@@ -11,9 +11,10 @@ The plugin sends metrics and events from Artillery tests to external monitoring 
 - [Prometheus](https://prometheus.io/docs/concepts/metric_types/) via [Pushgateway](https://prometheus.io/docs/instrumenting/pushing/)
 - [Honeycomb](https://honeycomb.io)
 - [Lightstep](https://lightstep.com)
+- [New Relic](https://newrelic.com/)
 - [Mixpanel](https://mixpanel.com)
 - InfluxDB with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
-- StatsD
+- StatsD 
 
 ## Docs
 
@@ -21,7 +22,6 @@ The plugin sends metrics and events from Artillery tests to external monitoring 
 
 ## Wishlist
 
-- NewRelic
 - InfluxDB (HTTP API)
 - Splunk
 - ELK
