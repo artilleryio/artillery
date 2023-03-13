@@ -306,15 +306,16 @@ class Launcher {
     if (this.periodsReportedFor.indexOf(earliest) > -1) {
       global.artillery.log('Warning: multiple batches of metrics for period', earliest, new Date(Number(earliest)));
 
-
       delete this.metricsByPeriod[earliest]; // FIXME: need to merge them in for the final report
     }
 
     // Dynamically adjust the duration we're willing to wait for. This matters on SQS where messages are received
     // in batches of 10 and more workers => need to wait longer.
-    const MAX_WAIT_FOR_PERIOD_MS = (Math.ceil(this.count / 10) * 3 + 20) * 1000;
+    const MAX_WAIT_FOR_PERIOD_MS = (Math.ceil(this.count / 10) * 3 + 30) * 1000;
 
     debug({
+      now: Date.now(),
+      count: this.count,
       earliestPeriodAvailable,
       earliest,
       MAX_WAIT_FOR_PERIOD_MS,
@@ -323,15 +324,20 @@ class Launcher {
       metricsByPeriod: Object.keys(this.metricsByPeriod),
     });
 
-    if (typeof earliestPeriodAvailable !== 'undefined' &&
-       (flushAll || this.metricsByPeriod[earliestPeriodAvailable].length === this.count
-         || Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS)) {
+    const allWorkersReportedForPeriod = this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
+    const waitedLongEnough = Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
+    if (typeof earliestPeriodAvailable !== 'undefined' && (flushAll || allWorkersReportedForPeriod || waitedLongEnough)) {
       // TODO: autoscaling. Handle workers that drop off or join, and update count
 
       if (flushAll) {
         debug('flushAll', earliestPeriodAvailable);
       } else {
-        debug('Got metrics from all workers for period or MAX_WAIT_FOR_PERIOD reached', earliestPeriodAvailable);
+        if (allWorkersReportedForPeriod) {
+          debug('Got metrics from all workers for period', earliestPeriodAvailable);
+        }
+        if (waitedLongEnough) {
+          debug('MAX_WAIT_FOR_PERIOD reached', earliestPeriodAvailable);
+        }
       }
 
       debug('Report @', new Date(Number(earliestPeriodAvailable)), 'made up of items:', this.metricsByPeriod[String(earliestPeriodAvailable)].length);
