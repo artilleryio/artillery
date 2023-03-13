@@ -10,6 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "artillery": "^1.7.2",
-    "socket.io": "^2.4.0"
+    "socket.io": "^2.5.0"
   }
 }
