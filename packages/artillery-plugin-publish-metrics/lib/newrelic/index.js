@@ -4,8 +4,7 @@ const debug = require('debug')('plugin:publish-metrics:newrelic');
 
 class NewRelicReporter {
 	constructor(config, events) {
-		// debug(Object.assign(config, { licenseKey: this.sanitize(config.licenseKey) }));
-
+		// set each config value as matching user config if exists, else default values
 		this.config = {
 			region: config.region || 'us',
 			prefix: config.prefix || 'artillery.',
@@ -19,9 +18,10 @@ class NewRelicReporter {
         ? "https://metric-api.eu.newrelic.com/metric/v1"
         : 'https://metric-api.newrelic.com/metric/v1';
 		
-		this.eventsAPIEndpoint = this.config.region === 'eu' 
-				? 'https://insights-collector.eu01.nr-data.net' 
-				: 'https://insights-collector.newrelic.com';
+		// prepared endpoints for incoming sending events feature
+		// this.eventsAPIEndpoint = this.config.region === 'eu' 
+		// 		? 'https://insights-collector.eu01.nr-data.net' 
+		// 		: 'https://insights-collector.newrelic.com';
 		
 		this.pendingRequests = 0;
 		
@@ -34,16 +34,15 @@ class NewRelicReporter {
 			const summaries = this.formatSummariesForNewRelic(stats.summaries, this.config);
 			
 			const reqBody = this.createRequestBody(timestamp, interval, this.config.attributes, [...rates, ...counters, ...summaries]);
-			await this.sendStats(this.metricsAPIEndpoint, this.config.licenseKey, reqBody)
+			await this.sendStats(this.metricsAPIEndpoint, this.config.licenseKey, reqBody);
 			
 		});
 		
-		debug('init done');
-	}
-	
+	};
+
+	// packs stats.counters metrics that need to be sent to NR into format recognised by NR metric API
 	formatCountersForNewRelic (counters, config) {
-		debug('formating stats counters');
-		const statMetrics = []
+		const statMetrics = [];
 		for (const[name, value] of Object.entries(counters || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
@@ -53,14 +52,14 @@ class NewRelicReporter {
 				type: "count",
 				value
 			};
-			statMetrics.push(metric)
-		}
-		return statMetrics
-	}
+			statMetrics.push(metric);
+		};
+		return statMetrics;
+	};
 	
+	// packs stats.rates metrics that need to be sent to NR into format recognised by NR metric API
 	formatRatesForNewRelic (rates, config) {
-		debug('formating stats rates');
-		const statMetrics = []
+		const statMetrics = [];
 		for (const[name, value] of Object.entries(rates || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
@@ -70,14 +69,14 @@ class NewRelicReporter {
 				type: "gauge",
 				value
 			};
-			statMetrics.push(metric)
-		}
-		return statMetrics
-	}
+			statMetrics.push(metric);
+		};
+		return statMetrics;
+	};
 	
+	// packs stats.summaries metrics that need to be sent to NR into format recognised by NR metric API
 	formatSummariesForNewRelic (summaries, config) {
-		debug('formating stats summaries');
-		const statMetrics = []
+		const statMetrics = [];
 		for (const[name, values] of Object.entries(summaries || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
@@ -87,22 +86,22 @@ class NewRelicReporter {
 					name: `${config.prefix}${name}.${agreggation}`,
 					type: "gauge",
 					value
-				}
-				statMetrics.push(metric)
+				};
+				statMetrics.push(metric);
 			};
-		}
-		return statMetrics
-	}
+		};
+		return statMetrics;
+	};
 	
+	// assembles metrics and info into req body format needed by NR metric API
 	createRequestBody (timestamp, interval, attributeList, metrics) { 
-		debug('creating request body')
 		const parsedAttributes = {};
 		if (attributeList.length > 0) {
 			for (const item of attributeList) {
-				const attribute = item.split(':')
-				parsedAttributes[attribute[0]] = attribute[1]
-			}
-		}
+				const attribute = item.split(':');
+				parsedAttributes[attribute[0]] = attribute[1];
+			};
+		};
 		const body = [
 			{
 				common: {
@@ -113,8 +112,8 @@ class NewRelicReporter {
 				metrics
 			}
 		]
-		return body
-	}
+		return body;
+	};
 	
 	async sendStats(url, licenseKey, body) {
 		this.pendingRequests += 1;
@@ -126,19 +125,20 @@ class NewRelicReporter {
 			headers,
 			json: body
 		};
-		debug('sending metrics to New Relic')
+		debug('sending metrics to New Relic');
 		try{
-			const res = await got.post(url, options)
+			const res = await got.post(url, options);
 			if ( res.statusCode !== 202 ) {
-				debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`)
-			}
+				debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
+			};
 		} catch (err) {
-			debug(err)
-		}
+			debug(err);
+		};
 		
 		this.pendingRequests -= 1;
-	}
+	};
 	
+	// checks if metric should be sent by screening for it in the excluded and includeOnly lists
 	shouldSendMetric (metricName, excluded, includeOnly) {
 		if (excluded.includes(metricName)) {
 			return
@@ -146,34 +146,29 @@ class NewRelicReporter {
 		
 		if (includeOnly.length > 0 && !includeOnly.includes(metricName)) {
 			return
-		}
+		};
 		return true 
-	}
-	
-	sanitize (str) {
-    return `${str.substring(0, 3)}********************${str.substring(str.length - 3, str.length)}`;
-	}
+	};
 
 	async waitingForRequest() {
 		while (this.pendingRequests > 0) {
 			debug('Waiting for pending request ...');
 			await new Promise((resolve) => setTimeout(resolve, 500));
-		} ;
+		};
 		
 		debug('Pending requests done');
 		return true;
-	}
+	};
 
 	cleanup(done) {
 		debug('cleaning up');
-		// done();
 		return this.waitingForRequest().then(done);
-	}
+	};
 	
-}
+};
 
 function createNewRelicReporter (config, events, script) {
-	return new NewRelicReporter(config, events, script)
+	return new NewRelicReporter(config, events, script);
 };
 
 module.exports = {
