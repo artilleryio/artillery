@@ -140,16 +140,27 @@ class PlatformLambda {
 
     if (this.platformOpts.cliArgs.config) {
       this.artilleryArgs.push('--config');
-      const p = bom.files.filter(x => x.orig === this.opts.absoluteConfigPath)[0];
+      const p = bom.files.filter(
+        (x) => x.orig === this.opts.absoluteConfigPath
+      )[0];
       this.artilleryArgs.push(p.noPrefix);
     }
 
     // This needs to be the last argument for now:
-    const p = bom.files.filter(x => x.orig === this.opts.absoluteScriptPath)[0];
+    const p = bom.files.filter(
+      (x) => x.orig === this.opts.absoluteScriptPath
+    )[0];
     this.artilleryArgs.push(p.noPrefix);
 
-    artillery.log('- Installing dependencies')
-    const { stdout, stderr, status, error } = spawn.sync('npm', ['install'], {cwd: dirname});
+    artillery.log('- Installing dependencies');
+    const { stdout, stderr, status, error } = spawn.sync(
+      'npm',
+      ['install', '--omit', 'dev'],
+      {
+        cwd: dirname
+      }
+    );
+
     if (error) {
       artillery.log(stdout?.toString(), stderr?.toString(), status, error);
     } else {
@@ -190,6 +201,9 @@ class PlatformLambda {
     }
 
     fs.removeSync(path.join(dirname, 'node_modules', 'aws-sdk'));
+    fs.removeSync(path.join(a9cwd, 'node_modules', 'typescript'));
+    fs.removeSync(path.join(a9cwd, 'node_modules', 'tap'));
+    fs.removeSync(path.join(a9cwd, 'node_modules', 'prettier'));
 
     artillery.log('- Creating zip package');
     await this.createZip(dirname, zipfile);
