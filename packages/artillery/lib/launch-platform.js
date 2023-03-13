@@ -246,6 +246,8 @@ class Launcher {
 
       // Relay event to workers
       this.pluginEvents.emit('done', stats);
+
+      global.artillery.globalEvents.emit('done', stats);
       this.pluginEventsLegacy.emit('done', SSMS.legacyReport(stats));
 
       this.events.emit('done', stats);
@@ -350,6 +352,7 @@ class Launcher {
       debug('Emitting stats event');
 
       this.pluginEvents.emit('stats', stats);
+      global.artillery.globalEvents.emit('stats', stats);
       this.pluginEventsLegacy.emit('stats', SSMS.legacyReport(stats));
 
       this.events.emit('stats', stats);
