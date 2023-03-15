@@ -35,7 +35,6 @@ class NewRelicReporter {
 			
 			const reqBody = this.createRequestBody(timestamp, interval, this.config.attributes, [...rates, ...counters, ...summaries]);
 			await this.sendStats(this.metricsAPIEndpoint, this.config.licenseKey, reqBody);
-			
 		});
 		
 	};
@@ -47,6 +46,7 @@ class NewRelicReporter {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
 			};
+
 			const metric = {
 				name: config.prefix + name,
 				type: "count",
@@ -54,6 +54,7 @@ class NewRelicReporter {
 			};
 			statMetrics.push(metric);
 		};
+
 		return statMetrics;
 	};
 	
@@ -64,6 +65,7 @@ class NewRelicReporter {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
 			};
+
 			const metric = {
 				name: config.prefix + name,
 				type: "gauge",
@@ -71,6 +73,7 @@ class NewRelicReporter {
 			};
 			statMetrics.push(metric);
 		};
+
 		return statMetrics;
 	};
 	
@@ -81,6 +84,7 @@ class NewRelicReporter {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
 			};
+
 			for (const [agreggation, value] of Object.entries(values)){
 				const metric = {
 					name: `${config.prefix}${name}.${agreggation}`,
@@ -90,6 +94,7 @@ class NewRelicReporter {
 				statMetrics.push(metric);
 			};
 		};
+
 		return statMetrics;
 	};
 	
@@ -102,6 +107,7 @@ class NewRelicReporter {
 				parsedAttributes[attribute[0]] = attribute[1];
 			};
 		};
+
 		const body = [
 			{
 				common: {
@@ -112,6 +118,7 @@ class NewRelicReporter {
 				metrics
 			}
 		]
+
 		return body;
 	};
 	
@@ -125,6 +132,7 @@ class NewRelicReporter {
 			headers,
 			json: body
 		};
+
 		debug('sending metrics to New Relic');
 		try{
 			const res = await got.post(url, options);
@@ -141,13 +149,14 @@ class NewRelicReporter {
 	// checks if metric should be sent by screening for it in the excluded and includeOnly lists
 	shouldSendMetric (metricName, excluded, includeOnly) {
 		if (excluded.includes(metricName)) {
-			return
+			return;
 		};
 		
 		if (includeOnly.length > 0 && !includeOnly.includes(metricName)) {
-			return
+			return;
 		};
-		return true 
+
+		return true;
 	};
 
 	async waitingForRequest() {
