@@ -251,7 +251,8 @@ class RunCommand extends Command {
       process.once('SIGINT', gracefulShutdown);
       process.once('SIGTERM', gracefulShutdown);
 
-      async function gracefulShutdown() {
+      // TODO: beforeExit event handlers need to fire here
+      async function gracefulShutdown(opts = { exitCode: 0 }) {
         debug('shutting down 🦑');
         if (shuttingDown) {
           return;
@@ -284,7 +285,7 @@ class RunCommand extends Command {
             }
           }
           debug('Cleanup finished');
-          process.exit(artillery.suggestedExitCode);
+          process.exit(artillery.suggestedExitCode || opts.exitCode);
         })();
       }
     } catch (err) {
