@@ -198,9 +198,19 @@ class RunCommand extends Command {
         }
 
         for (const e of global.artillery.extensionEvents) {
+          const ps = [];
+          const testInfo = { endTime: Date.now() };
           if (e.ext === 'beforeExit') {
-            await e.method({ report, flags, runnerOpts });
+            ps.push(
+              e.method({
+                report,
+                flags,
+                runnerOpts,
+                testInfo
+              })
+            );
           }
+          await Promise.allSettled(ps);
         }
 
         await gracefulShutdown();
