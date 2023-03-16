@@ -247,6 +247,16 @@ class RunCommand extends Command {
         debug('Graceful shutdown initiated');
 
         shuttingDown = true;
+        global.artillery.globalEvents.emit('shutdown:start', opts);
+
+        for (const e of global.artillery.extensionEvents) {
+          const ps = [];
+          if (e.ext === 'onShutdown') {
+            ps.push(e.method(opts));
+          }
+          await Promise.allSettled(ps);
+        }
+
         await telemetry.shutdown();
 
         await launcher.shutdown();
