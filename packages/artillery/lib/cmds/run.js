@@ -28,6 +28,7 @@ const moment = require('moment');
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const telemetry = require('../telemetry').init();
 const validateScript = require('../util/validate-script');
+const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
 const { customAlphabet } = require('nanoid');
 const parseTagString = require('../util/parse-tag-string');
@@ -227,6 +228,8 @@ class RunCommand extends Command {
           } catch (_err) {}
         }
       });
+
+      new CloudPlugin();
 
       global.artillery.globalEvents.emit('test:init', {
         flags,
