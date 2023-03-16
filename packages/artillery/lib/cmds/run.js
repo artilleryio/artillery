@@ -218,6 +218,19 @@ class RunCommand extends Command {
         }
       });
 
+      global.artillery.globalEvents.emit('test:init', {
+        flags,
+        testRunId,
+        tags: tagResult.tags,
+        metadata: {
+          testId: testRunId,
+          startedAt: Date.now(),
+          count: runnerOpts.count,
+          tags: tagResult.tags,
+          launchType: flags.platform
+        }
+      });
+
       launcher.run();
 
       // TODO: Extract this
