@@ -28,7 +28,10 @@ const moment = require('moment');
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const telemetry = require('../telemetry').init();
 const validateScript = require('../util/validate-script');
+const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
+const { customAlphabet } = require('nanoid');
+const parseTagString = require('../util/parse-tag-string');
 class RunCommand extends Command {
   static aliases = ['run'];
   // Enable multiple args:
@@ -39,6 +42,19 @@ class RunCommand extends Command {
 
     // Collect all input files for reading/parsing - via args, --config, or -i
     const inputFiles = argv.concat(flags.input || [], flags.config || []);
+
+    const tagResult = parseTagString(flags.tags);
+    if (tagResult.errors.length > 0) {
+      console.log(
+        'WARNING: could not parse some tags:',
+        tagResult.errors.join(', ')
+      );
+    }
+
+    if (tagResult.tags.length > 10) {
+      console.log('A maximum of 10 tags is supported');
+      process.exit(1);
+    }
 
     // TODO: Move into PlatformLocal
     if (flags.dotenv) {
@@ -68,6 +84,14 @@ class RunCommand extends Command {
         plugins: []
       };
 
+      // Set "name" tag if not set explicitly
+      if (tagResult.tags.filter((t) => t.name === 'name').length === 0) {
+        tagResult.tags.push({
+          name: 'name',
+          value: path.basename(runnerOpts.scriptPath)
+        });
+      }
+
       if (flags.config) {
         runnerOpts.absoluteConfigPath = path.resolve(
           process.cwd(),
@@ -90,13 +114,18 @@ class RunCommand extends Command {
         }
       }
 
+      const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
+      const testRunId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
+
+      console.log('Test run id:', testRunId);
+
       const launcherOpts = {
         platform: flags.platform,
         platformConfig,
         mode: flags.platform === 'local' ? 'distribute' : 'multiply',
-        region: 'eu-west-1', // TODO: Read from --platform-option region=eu-west-1
         count: parseInt(flags.count || 1, 10),
-        cliArgs: flags
+        cliArgs: flags,
+        testRunId
       };
 
       let launcher = await createLauncher(
@@ -170,9 +199,19 @@ class RunCommand extends Command {
         }
 
         for (const e of global.artillery.extensionEvents) {
+          const ps = [];
+          const testInfo = { endTime: Date.now() };
           if (e.ext === 'beforeExit') {
-            await e.method({ report, flags, runnerOpts });
+            ps.push(
+              e.method({
+                report,
+                flags,
+                runnerOpts,
+                testInfo
+              })
+            );
           }
+          await Promise.allSettled(ps);
         }
 
         await gracefulShutdown();
@@ -190,6 +229,21 @@ class RunCommand extends Command {
         }
       });
 
+      new CloudPlugin();
+
+      global.artillery.globalEvents.emit('test:init', {
+        flags,
+        testRunId,
+        tags: tagResult.tags,
+        metadata: {
+          testId: testRunId,
+          startedAt: Date.now(),
+          count: runnerOpts.count,
+          tags: tagResult.tags,
+          launchType: flags.platform
+        }
+      });
+
       launcher.run();
 
       // TODO: Extract this
@@ -197,7 +251,8 @@ class RunCommand extends Command {
       process.once('SIGINT', gracefulShutdown);
       process.once('SIGTERM', gracefulShutdown);
 
-      async function gracefulShutdown() {
+      // TODO: beforeExit event handlers need to fire here
+      async function gracefulShutdown(opts = { exitCode: 0 }) {
         debug('shutting down 🦑');
         if (shuttingDown) {
           return;
@@ -206,6 +261,16 @@ class RunCommand extends Command {
         debug('Graceful shutdown initiated');
 
         shuttingDown = true;
+        global.artillery.globalEvents.emit('shutdown:start', opts);
+
+        for (const e of global.artillery.extensionEvents) {
+          const ps = [];
+          if (e.ext === 'onShutdown') {
+            ps.push(e.method(opts));
+          }
+          await Promise.allSettled(ps);
+        }
+
         await telemetry.shutdown();
 
         await launcher.shutdown();
@@ -220,7 +285,7 @@ class RunCommand extends Command {
             }
           }
           debug('Cleanup finished');
-          process.exit(artillery.suggestedExitCode);
+          process.exit(artillery.suggestedExitCode || opts.exitCode);
         })();
       }
     } catch (err) {
@@ -321,6 +386,13 @@ RunCommand.flags = {
   count: flags.string({
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
+  }),
+  tags: flags.string({
+    description:
+      'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sqa,service:foo'
+  }),
+  note: flags.string({
+    description: 'Add a note/annotation to the test run'
   })
 };
 

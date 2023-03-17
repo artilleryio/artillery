@@ -9,9 +9,11 @@
 
  const { rainbow } = require('../util');
  const banner = require('../lib/cli/banner');
+ const setupConsoleCapture = require('../lib/console-capture');
 
  async function main() {
    await createGlobalObject();
+   await setupConsoleCapture();
 
    if (!process.argv.slice(2).length) {
      console.log(Math.random() * 100 > 34 ?
