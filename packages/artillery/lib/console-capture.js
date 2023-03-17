@@ -18,7 +18,7 @@ function setupConsoleCapture() {
       sendFromIndex = outputLines.length;
       global.artillery.globalEvents.emit('logLines', newBatch, Date.now());
     }
-  }, 10 * 1000);
+  }, 10 * 1000).unref();
 
   global.artillery.ext({
     ext: 'onShutdown',
