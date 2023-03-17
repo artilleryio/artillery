@@ -1,0 +1,75 @@
+{
+    counters: {
+      'vusers.created_by_name.0': 60,
+      'vusers.created': 60,
+      'http.requests': 180,
+      'http.codes.200': 120,
+      'http.responses': 180,
+      'plugins.expect.ok': 180,
+      'plugins.expect.ok.statusCode': 60,
+      'plugins.expect.ok.notStatusCode': 120,
+      'http.codes.404': 60,
+      'vusers.failed': 0,
+      'vusers.completed': 60
+    },
+    histograms: {
+      'http.response_time': BaseDDSketch {
+        mapping: [LogarithmicMapping],
+        store: [DenseStore],
+        negativeStore: [DenseStore],
+        zeroCount: 28,
+        count: 180,
+        min: 0,
+        max: 5,
+        sum: 213
+      },
+      'vusers.session_length': BaseDDSketch {
+        mapping: [LogarithmicMapping],
+        store: [DenseStore],
+        negativeStore: [DenseStore],
+        zeroCount: 0,
+        count: 60,
+        min: 6.510514,
+        max: 48.994247,
+        sum: 743.593006
+      }
+    },
+    rates: { 'http.request_rate': 21 },
+    'http.request_rate': NaN,
+    firstCounterAt: 1678050750622,
+    firstHistogramAt: 1678050750626,
+    lastCounterAt: 1678050759974,
+    lastHistogramAt: 1678050759974,
+    firstMetricAt: 1678050750622,
+    lastMetricAt: 1678050759974,
+    period: '1678050750000',
+    summaries: {
+      'http.response_time': {
+        min: 0,
+        max: 5,
+        count: 180,
+        p50: 1,
+        median: 1,
+        p75: 1,
+        p90: 2,
+        p95: 3,
+        p99: 5,
+        p999: 5
+      },
+      'vusers.session_length': {
+        min: 6.5,
+        max: 49,
+        count: 60,
+        p50: 10.7,
+        median: 10.7,
+        p75: 13.3,
+        p90: 16,
+        p95: 18.7,
+        p99: 46.1,
+        p999: 46.1
+      }
+    }
+  }
+
+
+  

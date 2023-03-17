@@ -26,6 +26,7 @@
     "opentracing": "^0.14.5",
     "prom-client": "^14.0.1",
     "semver": "^7.3.5",
+    "signalfx": "^7.4.1",
     "uuid": "^8.3.2"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@ const debug = require('debug')('plugin:publish-metrics:splunk');
 
 class SplunkReporter {
   constructor(config, events) {
+    debug('setting up config')
     this.config = {
       realm: config.realm || 'us0',
       prefix: config.prefix || 'artillery.',
@@ -10,19 +11,20 @@ class SplunkReporter {
       includeOnly: config.includeOnly || [],
       accessToken: config.accessToken,
     };
-
+    
     this.pendingRequests = 0
 
     this.config.dimensions = this.parseDimensions(config.dimensions);
 
     this.ingestAPIEndpoint = `https://ingest.${this.config.realm}.signalfx.com/v2/`;
-
+    debug('creating client')
     this.client = new signalFx.IngestJson(this.config.accessToken, {
       ingestEndpoint: this.ingestAPIEndpoint,
       dimensions: this.config.dimensions
     });
-
+    debug('client created')
     events.on('stats', async (stats) => {
+      debug('received stats event')
       const timestamp = Number(stats.period);
 
       const rates = this.formatRatesForSplunk(stats.rates, this.config, timestamp);
@@ -31,11 +33,12 @@ class SplunkReporter {
       const gauges = rates.concat(summaries);
       const counters = this.formatCountersForSplunk(stats.counters, this.config, timestamp);
 
-      this.sendStats(this.client, gauges, counters);
+      await this.sendStats(this.client, gauges, counters);
     });
   };
 
   formatCountersForSplunk (counters, config, timestamp) {
+    debug('formatting counters')
 		const statCounts = [];
 
 		for (const[name, value] of Object.entries(counters || {})) {
@@ -58,7 +61,7 @@ class SplunkReporter {
 	
 	formatRatesForSplunk (rates, config, timestamp) {
 		const statGauges = [];
-
+    debug('formatting rates')
 		for (const[name, value] of Object.entries(rates || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
@@ -78,7 +81,7 @@ class SplunkReporter {
 	
 	formatSummariesForSplunk (summaries, config, timestamp) {
 		const statGauges = [];
-
+    debug('formatting summaries')
 		for (const[name, values] of Object.entries(summaries || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
@@ -99,6 +102,7 @@ class SplunkReporter {
 	};
 	
   parseDimensions(dimensionList) {
+    debug('parsing dimensions')
     if (dimensionList && dimensionList.length === 0) {
       return {}
     }
@@ -121,12 +125,14 @@ class SplunkReporter {
 
 		debug('sending metrics to Splunk');
 		try{
-			 await client.send(report);
+			 const res = await client.send(report);
+       debug(res);
 		} catch (err) {
 			debug(err);
 		};
 		
 		this.pendingRequests -= 1;
+    debug('sendStats done')
 	};
 	
 	// checks if metric should be sent by screening for it in the excluded and includeOnly lists
