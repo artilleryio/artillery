@@ -7,6 +7,7 @@ const debug = require('debug')(NS);
 const A = require('async');
 
 const { createDatadogReporter } = require('./lib/datadog');
+const { createSplunkReporter } = require('./lib/splunk');
 const { createHoneycombReporter } = require('./lib/honeycomb');
 const { createLightstepReporter } = require('./lib/lightstep');
 const { createMixPanelReporter } = require('./lib/mixpanel');
@@ -30,6 +31,8 @@ function Plugin(script, events) {
       config.type === 'influxdb-statsd'
     ) {
       this.reporters.push(createDatadogReporter(config, events, script));
+    } else if (config.type === 'splunk') {
+      this.reporters.push(createSplunkReporter(config, events, script));
     } else if (config.type === 'honeycomb') {
       this.reporters.push(createHoneycombReporter(config, events, script));
     } else if (config.type === 'lightstep') {
