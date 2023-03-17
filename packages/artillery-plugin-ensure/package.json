@@ -1,0 +1,16 @@
+{
+  "name": "artillery-plugin-ensure",
+  "version": "1.1.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Artillery.io <team@artillery.io>",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "debug": "^4.3.3",
+    "filtrex": "^2.2.3"
+  }
+}
