@@ -51,6 +51,8 @@ class EnsurePlugin {
           const checks = this.script.config.ensure;
           const checkTests = EnsurePlugin.runChecks(checks, vars);
 
+          global.artillery.globalEvents.emit('checks', checkTests);
+
           checkTests.forEach(check => {
             if(check.result !== 1) {
               global.artillery.log(`fail: ${check.original}${check.strict ? '': ' (optional)'}`);
