@@ -3,7 +3,6 @@ const debug = require('debug')('plugin:publish-metrics:splunk');
 
 class SplunkReporter {
   constructor(config, events) {
-    debug('setting up config')
     this.config = {
       realm: config.realm || 'us0',
       prefix: config.prefix || 'artillery.',
@@ -12,38 +11,38 @@ class SplunkReporter {
       accessToken: config.accessToken,
     };
     
-    this.pendingRequests = 0
-
+    this.pendingRequests = 0;
     this.config.dimensions = this.parseDimensions(config.dimensions);
 
-    this.ingestAPIEndpoint = `https://ingest.${this.config.realm}.signalfx.com/v2/`;
-    debug('creating client')
+    this.ingestAPIEndpoint = `https://ingest.${this.config.realm}.signalfx.com`;
+
     this.client = new signalFx.IngestJson(this.config.accessToken, {
       ingestEndpoint: this.ingestAPIEndpoint,
       dimensions: this.config.dimensions
     });
-    debug('client created')
+    debug('client created');
+
     events.on('stats', async (stats) => {
-      debug('received stats event')
+      debug('received stats event');
       const timestamp = Number(stats.period);
 
       const rates = this.formatRatesForSplunk(stats.rates, this.config, timestamp);
       const summaries = this.formatSummariesForSplunk(stats.summaries, this.config, timestamp);
-
-      const gauges = rates.concat(summaries);
       const counters = this.formatCountersForSplunk(stats.counters, this.config, timestamp);
+
+			//rates and summaries are both gauges for Splunk, so we're combining them
+			const gauges = rates.concat(summaries);
 
       await this.sendStats(this.client, gauges, counters);
     });
   };
 
   formatCountersForSplunk (counters, config, timestamp) {
-    debug('formatting counters')
 		const statCounts = [];
 
 		for (const[name, value] of Object.entries(counters || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
-				continue
+				continue;
 			};
 
 			const count = {
@@ -61,10 +60,9 @@ class SplunkReporter {
 	
 	formatRatesForSplunk (rates, config, timestamp) {
 		const statGauges = [];
-    debug('formatting rates')
 		for (const[name, value] of Object.entries(rates || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
-				continue
+				continue;
 			};
 
 			const gauge = {
@@ -79,9 +77,9 @@ class SplunkReporter {
 		return statGauges;
 	};
 	
+
 	formatSummariesForSplunk (summaries, config, timestamp) {
 		const statGauges = [];
-    debug('formatting summaries')
 		for (const[name, values] of Object.entries(summaries || {})) {
 			if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
 				continue
@@ -101,12 +99,14 @@ class SplunkReporter {
 		return statGauges;
 	};
 	
+
   parseDimensions(dimensionList) {
-    debug('parsing dimensions')
     if (dimensionList && dimensionList.length === 0) {
-      return {}
-    }
-		parsedDimensions = {}
+      return {};
+    };
+
+		const parsedDimensions = {};
+
     for (const item of dimensionList) {
       const dimension = item.split(':');
       parsedDimensions[dimension[0]] = dimension[1];
@@ -115,6 +115,7 @@ class SplunkReporter {
 		return parsedDimensions;
 	};
 	
+
 	async sendStats(client, gauges, counters) {
     const report = {
       gauges,
@@ -123,18 +124,18 @@ class SplunkReporter {
 
 		this.pendingRequests += 1;
 
-		debug('sending metrics to Splunk');
+		debug(`sending metrics to Splunk: \n${JSON.stringify(report)}`);
 		try{
 			 const res = await client.send(report);
-       debug(res);
+       debug(res === "OK" ? "Metrics sucessfully sent" : `Metric API not OK, response:\n${res}`);
 		} catch (err) {
 			debug(err);
 		};
 		
 		this.pendingRequests -= 1;
-    debug('sendStats done')
 	};
 	
+
 	// checks if metric should be sent by screening for it in the excluded and includeOnly lists
 	shouldSendMetric (metricName, excluded, includeOnly) {
 		if (excluded.includes(metricName)) {
@@ -148,6 +149,7 @@ class SplunkReporter {
 		return true;
 	};
 
+
 	async waitingForRequest() {
 		while (this.pendingRequests > 0) {
 			debug('Waiting for pending request ...');
@@ -158,6 +160,7 @@ class SplunkReporter {
 		return true;
 	};
 
+
 	cleanup(done) {
 		debug('cleaning up');
 		return this.waitingForRequest().then(done);
@@ -165,9 +168,11 @@ class SplunkReporter {
 	
 };
 
+
 function createSplunkReporter (config, events, script) {
 	return new SplunkReporter(config, events, script);
 };
+
 
 module.exports = {
 	createSplunkReporter
