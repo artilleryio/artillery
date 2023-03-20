@@ -26,7 +26,7 @@ DEBUG=plugin:publish-metrics:splunk artillery run my-script.yaml
 
 ### Example: Splunk
 
-```
+```yaml
 config:
   plugins:
     publish-metrics:
@@ -34,7 +34,7 @@ config:
         realm: eu0
         # SP_ACCESS_TOKEN is an environment variable containing the API key
         accessToken: "{{ $processEnvironment.SP_ACCESS_TOKEN }}"
-        prefix: 'artillery.publish_metrics_plugin.'
+        prefix: "artillery.publish_metrics_plugin."
         dimensions:
           - "host:server_1"
           - "host_id:1.2.3.4"
