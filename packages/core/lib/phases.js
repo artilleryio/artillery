@@ -107,14 +107,20 @@ function createRamp(spec, ee) {
 
   const difference = rampTo - arrivalRate;
   const periods = duration;
-  debug(`worker ${worker} totalWorkers ${totalWorkers} arrivalRate ${arrivalRate} rampTo ${rampTo} difference ${difference} periods ${periods}`);
+  debug(
+    `worker ${worker} totalWorkers ${totalWorkers} arrivalRate ${arrivalRate} rampTo ${rampTo} difference ${difference} periods ${periods}`
+  );
 
   const periodArrivals = [];
   const periodTick = [];
   // if there is only one peridod we generate mean arrivals
   if (periods === 1) {
-    periodArrivals[0] = Math.floor((rampTo + arrivalRate) / 2);
-    periodTick[0] = 1000 / periodArrivals;
+    const rawPeriodArrivals = (rampTo + arrivalRate) / 2;
+    periodArrivals[0] = adjustArrivalsByWorker(
+      rawPeriodArrivals,
+      totalWorkers,
+      worker
+    );
   } else {
     // for each period we calculate the corresponding arrivals:
     // knowing that arrivals(0) = arrivalRate and arrivals(duration -1) = rampTo
@@ -122,18 +128,15 @@ function createRamp(spec, ee) {
     for (let i = 0; i < periods; i++) {
       const rawPeriodArrivals = (difference / (duration - 1)) * i + arrivalRate;
 
-      // We use the floor of the expected arrivals, then we add up all decimal digits
-      // and evaluate if one or more workers should bump their arrivalRate.
-      periodArrivals[i] = Math.floor(rawPeriodArrivals);
-
-      // Think of fractionalPart * workers as the amount of arrivals that could not be
-      // shared evenly across all workers.
-      if (Math.round((rawPeriodArrivals % 1) * totalWorkers) >= worker) {
-        periodArrivals[i] = periodArrivals[i] + 1;
-      }
+      // take into account added decimals and bump worker arrivals if needed
+      periodArrivals[i] = adjustArrivalsByWorker(
+        rawPeriodArrivals,
+        totalWorkers,
+        worker
+      );
 
       // Needed ticks to get to periodArrivals in 1000ms
-      periodTick[i] = periodArrivals[i] > 0 ? Math.floor(1000 / periodArrivals[i]) : 1000;
+      periodTick[i] = Math.min(Math.floor(1000 / periodArrivals[i]), 1000);
     }
   }
 
@@ -148,9 +151,24 @@ function createRamp(spec, ee) {
     }
 
     ee.emit('phaseCompleted', spec);
+  };
+
+  function adjustArrivalsByWorker(rawPeriodArrivals, totalWorkers, worker) {
+    // We use the floor of the expected arrivals, then we add up all decimal digits
+    // and evaluate if one or more workers should bump their arrivalRate.
+    let arrivals = Math.floor(rawPeriodArrivals);
+
+    // Think of fractionalPart * workers as the amount of arrivals that could not be
+    // shared evenly across all workers.
+    if (Math.round((rawPeriodArrivals % 1) * totalWorkers) >= worker) {
+      arrivals = arrivals + 1;
+    }
+    return arrivals;
   }
 
   function ticker(currentPeriod) {
+    // ensure we don't go past 1s
+    const delay = Math.min(periodTick[currentPeriod], 1000);
     let currentArrivals = 0;
     let arrivalTimer = driftless.setDriftlessInterval(function arrivals() {
       if (currentArrivals < periodArrivals[currentPeriod]) {
@@ -160,7 +178,7 @@ function createRamp(spec, ee) {
         currentPeriod++;
         driftless.clearDriftless(arrivalTimer);
       }
-    }, periodTick[currentPeriod]);
+    }, delay);
     return;
   }
 }
