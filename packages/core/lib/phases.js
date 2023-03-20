@@ -147,7 +147,9 @@ function createRamp(spec, ee) {
     ee.emit('phaseStarted', spec);
     for (let period = 0; period < periods; period++) {
       ticker(period);
-      await sleep(1000);
+      if (period < periods - 1) {
+        await sleep(1000);
+      }
     }
 
     ee.emit('phaseCompleted', spec);
