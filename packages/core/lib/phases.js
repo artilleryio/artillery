@@ -15,12 +15,6 @@ const driftless = require('driftless');
 
 module.exports = phaser;
 
-async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 function phaser(phaseSpecs) {
   let ee = new EventEmitter();
 
@@ -32,7 +26,7 @@ function phaser(phaseSpecs) {
       'pause',
       'rampTo',
       'duration',
-      'maxVusers'
+      'maxVusers',
     ].forEach(function (k) {
       if (!isUndefined(spec[k]) && typeof spec[k] !== 'number') {
         spec[k] = _.toNumber(spec[k]);
@@ -143,16 +137,17 @@ function createRamp(spec, ee) {
   debug(`periodArrivals ${periodArrivals}`);
   debug(`periodTick ${periodTick}`);
 
-  return async function rampTask(callback) {
+  return function rampTask(callback) {
     ee.emit('phaseStarted', spec);
     for (let period = 0; period < periods; period++) {
-      ticker(period);
-      if (period < periods - 1) {
-        await sleep(1000);
-      }
+      driftless.setDriftlessTimeout(() => {
+        ticker(period);
+      }, period * 1000);
     }
-
-    ee.emit('phaseCompleted', spec);
+    driftless.setDriftlessTimeout(() => {
+      ee.emit('phaseCompleted', spec);
+      return callback(null);
+    }, periods * 1000);
   };
 
   function adjustArrivalsByWorker(rawPeriodArrivals, totalWorkers, worker) {
@@ -170,18 +165,16 @@ function createRamp(spec, ee) {
 
   function ticker(currentPeriod) {
     // ensure we don't go past 1s
-    const delay = Math.min(periodTick[currentPeriod], 1000);
+    const interval = Math.min(periodTick[currentPeriod], 1000);
     let currentArrivals = 0;
     let arrivalTimer = driftless.setDriftlessInterval(function arrivals() {
       if (currentArrivals < periodArrivals[currentPeriod]) {
         ee.emit('arrival', spec);
         currentArrivals++;
       } else {
-        currentPeriod++;
         driftless.clearDriftless(arrivalTimer);
       }
-    }, delay);
-    return;
+    }, interval);
   }
 }
 
