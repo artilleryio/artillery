@@ -80,7 +80,10 @@
   },
   "bugs": "https://github.com/artilleryio/artillery/issues",
   "keywords": [
-    "oclif"
+    "skytrace",
+    "end-to-end testing",
+    "e2e testing",
+    "synthetic monitoring"
   ],
   "types": "dist/index.d.ts"
 }
