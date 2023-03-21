@@ -20,7 +20,6 @@ module.exports = {
 };
 
 function Plugin(script, events) {
-  console.log('PLUGIN PULLED');
   this.script = script;
   this.events = events;
 
@@ -55,7 +54,6 @@ function Plugin(script, events) {
       );
     }
   });
-  console.log('REPORTERS:', this.reporters);
   return this;
 }
 
