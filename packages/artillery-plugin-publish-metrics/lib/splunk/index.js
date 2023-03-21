@@ -112,7 +112,7 @@ class SplunkReporter {
   }
 
   parseDimensions(dimensionList) {
-    if (dimensionList && dimensionList.length === 0) {
+    if (!dimensionList || dimensionList && dimensionList.length === 0) {
       return {};
     };
 
