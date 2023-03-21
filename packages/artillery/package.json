@@ -85,8 +85,8 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
-    "@artilleryio/int-commons": "*",
-    "@artilleryio/int-core": "*",
+    "@artilleryio/int-commons": "file:../commons",
+    "@artilleryio/int-core": "file:../core",
     "@aws-sdk/credential-providers": "^3.127.0",
     "@oclif/command": "^1.8.16",
     "@oclif/config": "^1.18.3",

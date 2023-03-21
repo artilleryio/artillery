@@ -3,7 +3,7 @@
   "version": "2.0.5",
   "main": "./index.js",
   "dependencies": {
-    "@artilleryio/int-commons": "latest",
+    "@artilleryio/int-commons": "file:../commons",
     "@artilleryio/sketches-js": "^1.0.4",
     "agentkeepalive": "^4.1.0",
     "arrivals": "^2.1.2",
