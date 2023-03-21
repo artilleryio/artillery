@@ -22,21 +22,39 @@ class RunCommand extends Command {
 
     const showHttpTimings = (contents[0].http?.timings === true);
 
-    const script = {
-      config: {
-        target: contents[0].target,
-        plugins: {
-          expect: {
-            formatter: 'silent',
-            expectDefault200: true
+    let script;
+    if (typeof contents[0]['config']?.target !== 'undefined' && typeof contents[0]['scenarios'] !== 'undefined') {
+      script = {
+        config: {
+          target: contents[0]['config'].target,
+          plugins: {
+            expect: {
+              formatter: 'silent',
+              expectDefault200: true
+            }
+          },
+        },
+        scenarios: [
+            contents[0]['scenarios'][0]
+          ]
+        };
+    } else {
+      script = {
+        config: {
+          target: contents[0].target,
+          plugins: {
+            expect: {
+              formatter: 'silent',
+              expectDefault200: true
+            }
           }
-        }
-      },
-      scenarios: [{
-        name:  contents[0].name,
-        flow: contents[1],
-      }]
-    };
+        },
+        scenarios: [{
+          name:  contents[0].name,
+          flow: contents[1],
+        }]
+      };
+    }
 
     const events = new EventEmitter();
     process.env.LOCAL_WORKER_ID = '1337';
