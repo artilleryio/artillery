@@ -261,8 +261,9 @@ tap.test(
       'run',
       '-o',
       reportMultipleFile,
-      'test/scripts/ramp.json'
-    ]);
+      'test/scripts/ramp.json'],
+      { env: { WORKERS: 7 } }
+    );
     const [exitCodeSingle] = await execute(
       ['run', '-o', reportSingleFile, 'test/scripts/ramp.json'],
       { env: { WORKERS: 1 } }
@@ -302,8 +303,9 @@ tap.test(
       'run',
       '-o',
       reportMultipleFile,
-      'test/scripts/ramp-regression-1682.json'
-    ]);
+      'test/scripts/ramp-regression-1682.json'],
+      { env: { WORKERS: 7 } }
+    );
     const [exitCodeSingle] = await execute(
       ['run', '-o', reportSingleFile, 'test/scripts/ramp-regression-1682.json'],
       { env: { WORKERS: 1 } }
