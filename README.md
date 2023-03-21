@@ -54,6 +54,6 @@
 
 ----
 
-<img src="https://opensource.org/files/osi_symbol_0.png" width="36" align="left" />
+<img src="https://149753425.v2.pressablecdn.com/wp-content/uploads/2009/06/osi_symbol_100X100_0.png" width="36" align="left" />
 
 **Artillery** and **Skytrace** are open-source software distributed under the terms of the [MPLv2](https://www.mozilla.org/en-US/MPL/2.0/) license.
