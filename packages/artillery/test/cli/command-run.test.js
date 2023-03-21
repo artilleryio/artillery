@@ -26,10 +26,7 @@ tap.test(
       '-o',
       'totally/bogus/path'
     ]);
-    t.ok(
-      exitCode !== 0 &&
-        output.includes('Path does not exist')
-    );
+    t.ok(exitCode !== 0 && output.includes('Path does not exist'));
   }
 );
 
@@ -264,10 +261,53 @@ tap.test(
       'run',
       '-o',
       reportMultipleFile,
-      'test/scripts/ramp.json'
-    ]);
+      'test/scripts/ramp.json'],
+      { env: { WORKERS: 7 } }
+    );
     const [exitCodeSingle] = await execute(
       ['run', '-o', reportSingleFile, 'test/scripts/ramp.json'],
+      { env: { WORKERS: 1 } }
+    );
+
+    const multipleCount = JSON.parse(
+      fs.readFileSync(reportMultipleFilePath, 'utf8')
+    ).aggregate.counters['vusers.created'];
+    const singleCount = JSON.parse(
+      fs.readFileSync(reportSingleFilePath, 'utf8')
+    ).aggregate.counters['vusers.created'];
+    t.ok(
+      deleteFile(reportMultipleFilePath) &&
+        deleteFile(reportSingleFilePath) &&
+        exitCodeMultiple === 0 &&
+        exitCodeSingle === 0 &&
+        multipleCount === totalRequests &&
+        singleCount === totalRequests
+    );
+  }
+);
+
+tap.test(
+  'Ramp to script throughput behaves as expected running on multiple workers 1s duration',
+  async (t) => {
+    // amount of workers was still affecting ramps with duration = 1s
+    // check single worker and multiple workers now generate same throughput
+    const totalRequests = 10;
+
+    const reportMultipleFile = 'multiple_workers.json';
+    const reportMultipleFilePath = await getRootPath(reportMultipleFile);
+
+    const reportSingleFile = 'single_worker.json';
+    const reportSingleFilePath = await getRootPath(reportSingleFile);
+
+    const [exitCodeMultiple] = await execute([
+      'run',
+      '-o',
+      reportMultipleFile,
+      'test/scripts/ramp-regression-1682.json'],
+      { env: { WORKERS: 7 } }
+    );
+    const [exitCodeSingle] = await execute(
+      ['run', '-o', reportSingleFile, 'test/scripts/ramp-regression-1682.json'],
       { env: { WORKERS: 1 } }
     );
 
