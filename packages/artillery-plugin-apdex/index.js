@@ -22,7 +22,6 @@ class ApdexPlugin {
     });
 
     function apdexAfterResponse(req, res, userContext, events, done) {
-      // apdex = ( satisfied + tolerating / 2 ) / total
       const total = res.timings.phases.total;
       if (total <= t) {
         events.emit('counter', 'apdex_satisfied', 1);
@@ -36,6 +35,35 @@ class ApdexPlugin {
     }
 
     script.config.processor.apdexAfterResponse = apdexAfterResponse;
+
+    global.artillery.ext({
+      ext: 'beforeExit',
+      method: async (testInfo) => {
+        const s = testInfo.report.counters['apdex_satisfied'] || 0;
+        const t = testInfo.report.counters['apdex_tolerated'] || 0;
+        const f = testInfo.report.counters['apdex_frustrated'] || 0;
+        const total = s + t + f;
+        if (total > 0) {
+          const apdexScore = (s + t / 2) / total;
+          let ranking = '';
+          if (apdexScore >= 0.94) {
+            ranking = 'excellent';
+          }  else if (apdexScore >= 0.85) {
+            ranking = 'good';
+          } else if (apdexScore >= 0.7) {
+            ranking = 'fair';
+          } else if (apdexScore >= 0.49) {
+            ranking = 'poor';
+          } else {
+            ranking = 'unacceptable';
+          }
+
+          console.log(`\nApdex score: ${apdexScore} (${ranking})`);
+        } else {
+          // no data
+        }
+      }
+    });
   }
 }
 
