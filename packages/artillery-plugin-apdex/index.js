@@ -39,6 +39,11 @@ class ApdexPlugin {
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (testInfo) => {
+        if (typeof this.script?.config?.apdex === 'undefined' ||
+          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined') {
+          return;
+        }
+
         const s = testInfo.report.counters['apdex_satisfied'] || 0;
         const t = testInfo.report.counters['apdex_tolerated'] || 0;
         const f = testInfo.report.counters['apdex_frustrated'] || 0;
