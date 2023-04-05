@@ -13,7 +13,7 @@ const Table = require('cli-table3');
 
 const { readScript, parseScript } = require('../util');
 
-const BUILTIN_PLUGINS = ['metrics-by-endpoint', 'ensure', 'publish-metrics', 'expect'];
+const BUILTIN_PLUGINS = require('./built-in-plugins');
 
 // NOTE: Presumes ALL paths are absolute.
 async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
