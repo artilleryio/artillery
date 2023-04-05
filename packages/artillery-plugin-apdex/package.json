@@ -1,0 +1,12 @@
+{
+  "name": "artillery-plugin-apdex",
+  "version": "0.0.1",
+  "description": "Calculate and report Apdex scores",
+  "main": "index.js",
+  "scripts": {
+    "test": "exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MPL-2.0"
+}
