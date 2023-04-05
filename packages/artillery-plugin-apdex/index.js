@@ -53,7 +53,7 @@ class ApdexPlugin {
           let ranking = '';
           if (apdexScore >= 0.94) {
             ranking = 'excellent';
-          }  else if (apdexScore >= 0.85) {
+          } else if (apdexScore >= 0.85) {
             ranking = 'good';
           } else if (apdexScore >= 0.7) {
             ranking = 'fair';
@@ -62,6 +62,11 @@ class ApdexPlugin {
           } else {
             ranking = 'unacceptable';
           }
+
+          global.artillery.apdexPlugin = {
+            apdex: apdexScore,
+            ranking
+          };
 
           console.log(`\nApdex score: ${apdexScore} (${ranking})`);
         } else {

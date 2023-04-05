@@ -45,7 +45,7 @@ class EnsurePlugin {
           }
 
           debug(JSON.stringify(data));
-          const vars = EnsurePlugin.statsToVars(data);
+          const vars = Object.assign({}, global.artillery.apdexPlugin || {}, EnsurePlugin.statsToVars(data));
           debug({vars});
 
           const checks = this.script.config.ensure;
