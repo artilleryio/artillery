@@ -35,12 +35,15 @@ class EnsurePlugin {
     this.script = script;
     this.events = events;
 
+    const checks = this.script.config.ensure || this.script.plugins.ensure;
+
     global.artillery.ext(
       {
         ext: 'beforeExit',
         method: async (data) => {
 
-          if (typeof this.script?.config?.ensure === 'undefined' || typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined') {
+          if (typeof this.script?.config?.ensure === 'undefined' ||
+              typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined') {
             return;
           }
 
@@ -48,7 +51,6 @@ class EnsurePlugin {
           const vars = Object.assign({}, global.artillery.apdexPlugin || {}, EnsurePlugin.statsToVars(data));
           debug({vars});
 
-          const checks = this.script.config.ensure;
           const checkTests = EnsurePlugin.runChecks(checks, vars);
 
           global.artillery.globalEvents.emit('checks', checkTests);
