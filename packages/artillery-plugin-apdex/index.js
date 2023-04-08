@@ -6,6 +6,11 @@
 
 const debug = require('debug')('plugin:apdex');
 
+const METRICS = {
+  satisfied: 'apdex.satisfied',
+  tolerated: 'apdex.tolerated',
+  frustrated: 'apdex.frustrated',
+}
 class ApdexPlugin {
   constructor(script, _events) {
     this.script = script;
@@ -24,11 +29,11 @@ class ApdexPlugin {
     function apdexAfterResponse(req, res, userContext, events, done) {
       const total = res.timings.phases.total;
       if (total <= t) {
-        events.emit('counter', 'apdex_satisfied', 1);
+        events.emit('counter', METRICS.satisfied, 1);
       } else if (total <= 4 * t) {
-        events.emit('counter', 'apdex_tolerated', 1);
+        events.emit('counter', METRICS.tolerated, 1);
       } else {
-        events.emit('counter', 'apdex_frustrated', 1);
+        events.emit('counter', METRICS.frustrated, 1);
       }
 
       return done();
@@ -44,9 +49,9 @@ class ApdexPlugin {
           return;
         }
 
-        const s = testInfo.report.counters['apdex_satisfied'] || 0;
-        const t = testInfo.report.counters['apdex_tolerated'] || 0;
-        const f = testInfo.report.counters['apdex_frustrated'] || 0;
+        const s = testInfo.report.counters[METRICS.satisfied] || 0;
+        const t = testInfo.report.counters[METRICS.tolerated] || 0;
+        const f = testInfo.report.counters[METRICS.frustrated] || 0;
         const total = s + t + f;
         if (total > 0) {
           const apdexScore = (s + t / 2) / total;
@@ -69,8 +74,6 @@ class ApdexPlugin {
           };
 
           console.log(`\nApdex score: ${apdexScore} (${ranking})`);
-        } else {
-          // no data
         }
       }
     });
