@@ -45,7 +45,9 @@ class ArtilleryCloudPlugin {
         await this._event('testrun:addmetadata', {
           metadata: testInfo.metadata
         });
-        await this._event('testrun:addnote', { text: testInfo.flags.note });
+        if (typeof testInfo.flags.note !== 'undefined') {
+          await this._event('testrun:addnote', { text: testInfo.flags.note });
+        }
       } catch (err) {
         console.log('Error: error sending test data to Artillery Cloud');
         console.log('Test report may be incomplete');
