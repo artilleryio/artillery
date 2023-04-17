@@ -9,6 +9,7 @@ module.exports = { Plugin: MetricsByEndpoint };
 const debug = require('debug')('plugin:metrics-by-endpoint');
 
 let useOnlyRequestNames;
+let metricsPrefix;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
 function MetricsByEndpoint(script, events) {
@@ -30,6 +31,7 @@ function MetricsByEndpoint(script, events) {
   }
 
   useOnlyRequestNames = script.config.plugins['metrics-by-endpoint'].useOnlyRequestNames || false;
+  metricsPrefix = script.config.plugins['metrics-by-endpoint'].metricsNamespace || 'plugins.metrics-by-endpoint';
 
   script.config.processor.metricsByEndpoint_afterResponse = metricsByEndpoint_afterResponse;
 
@@ -61,14 +63,14 @@ function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
     reqName += baseUrl;
   }
 
-  const histoName = `plugins.metrics-by-endpoint.response_time.${reqName}`;
+  const histoName = `${metricsPrefix}.response_time.${reqName}`;
 
   if (res.headers['server-timing']) {
     const timing = getServerTimingTotal(res.headers['server-timing']);
-    events.emit('histogram', `plugins.metrics-by-endpoint.server-timing.${reqName}`, timing);
+    events.emit('histogram', `${metricsPrefix}.server-timing.${reqName}`, timing);
   }
 
-  events.emit('counter', `plugins.metrics-by-endpoint.${reqName}.codes.${res.statusCode}`, 1);
+  events.emit('counter', `${metricsPrefix}.${reqName}.codes.${res.statusCode}`, 1);
   events.emit('histogram', histoName, res.timings.phases.firstByte);
   return done();
 }

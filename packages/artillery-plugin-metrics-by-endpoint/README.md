@@ -46,6 +46,30 @@ scenarios:
         count: 100
 ```
 
+In order to ensure the latency metrics by [artillery-plugin-ensure](https://github.com/artilleryio/artillery-plugin-ensure) you have to specify a custom namespace for the latency metrics like this:
+
+```yaml
+config:
+  target: "https://my-app.acme-corp.internal"
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+      metricsNamespace: "latency_metrics"
+    ensure: {}
+  ensure:
+    thresholds:
+      - "latency_metrics.response_time.orders.p95": 150
+scenarios:
+  - flow:
+      - loop:
+          - get:
+              url: "/foos/{{ $loopElement }}"
+              name: "orders"
+        count: 100
+```
+
+This is due to different naming patterns for metrics in both plugins.
+
 # License
 
 MPL 2.0
