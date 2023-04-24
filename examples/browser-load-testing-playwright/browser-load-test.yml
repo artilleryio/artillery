@@ -7,7 +7,7 @@ config:
     playwright: {}
   processor: ./flows.js
 scenarios:
-  - name: "Dev account signup"
+  - name: "Cloud waitlist signup"
     engine: playwright
-    flowFunction: "devAccountSignupFlow"
+    flowFunction: "cloudWaitlistSignupFlow"
     flow: []

@@ -3,20 +3,11 @@
 // playwright codegen
 // https://playwright.dev/docs/cli/#generate-code
 //
-async function devAccountSignupFlow (page) {
-  // Go to https://artillery.io/
-  await page.goto('https://artillery.io/');
-  // Click text=Pricing
-  await page.click('text=Pricing');
-  // assert.equal(page.url(), 'https://artillery.io/pro/');
-  // Click text=Sign up
-  await page.click('text=Sign up');
-  // Click button:has-text("Start")
-  // await page.frame({
-  //   url: 'https://form.typeform.com/to/l2fWPad2?typeform-medium=embed-sdk&typeform-embed=popup-drawer&typeform-source=artillery.io&typeform-embed-id=feamc'
-  // }).click('button:has-text("Start")');
-  // ---------------------
-
+async function cloudWaitlistSignupFlow(page) {
+  await page.goto('https://www.artillery.io/');
+  await page.click('text=Cloud');
+  // assert.equal(page.url(), 'https://artillery.io/cloud/');
+  await page.click('text=Join');
   // await page.pause();
 }
 
@@ -48,7 +39,7 @@ async function multistepWithCustomMetrics(page, userContext, events) {
   // NOTE: We only have one action here, but we could have a longer sequence of
   // actions here which would add up to the time we are tracking as
   // time_taken_for_part_of_flow metric.
-  await page.goto('https://www.artillery.io/product');
+  await page.goto('https://www.artillery.io/cloud');
   // We then calculate the amount of time previous actions took and use
   // Artillery's custom metrics API to record it. The metric will be available
   // in Artillery's report alongside other metrics.
@@ -62,7 +53,7 @@ async function multistepWithCustomMetrics(page, userContext, events) {
 }
 
 module.exports = {
-  devAccountSignupFlow,
+  cloudWaitlistSignupFlow,
   checkPage,
   multistepWithCustomMetrics,
 };
