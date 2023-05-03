@@ -33,6 +33,31 @@ const crypto = require('node:crypto');
 const prices = require('./prices');
 const { STATES } = require('../local/artillery-worker-local');
 
+// https://stackoverflow.com/a/66523153
+function memoryToVCPU(memMB) {
+  if (memMB < 832) {
+    return 0.5;
+  }
+
+  if (memMB < 3009) {
+    return 2;
+  }
+
+  if (memMB < 5308) {
+    return 3;
+  }
+
+  if (memMB < 7077) {
+    return 4;
+  }
+
+  if (memMB < 8846) {
+    return 5;
+  }
+
+  return 6;
+}
+
 class PlatformLambda {
   constructor(script, payload, opts, platformOpts) {
     this.workers = {};
@@ -87,6 +112,15 @@ class PlatformLambda {
       createBomOpts.entryPointIsConfig = true;
     }
     // TODO: custom package.json path here
+
+    const metadata = {
+      region: this.region,
+      platformConfig: {
+        memory: this.memorySize,
+        cpu: memoryToVCPU(this.memorySize)
+      }
+    };
+    global.artillery.globalEvents.emit('metadata', metadata);
 
     artillery.log('- Bundling test data');
     const bom = await promisify(createBOM)(
