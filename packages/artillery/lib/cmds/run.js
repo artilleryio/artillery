@@ -240,7 +240,10 @@ class RunCommand extends Command {
           startedAt: Date.now(),
           count: runnerOpts.count,
           tags: tagResult.tags,
-          launchType: flags.platform
+          launchType: flags.platform,
+          artilleryVersion: {
+            core: global.artillery.version,
+          }
         }
       });
 
