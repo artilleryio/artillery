@@ -96,6 +96,12 @@ class ArtilleryCloudPlugin {
       debug(text.slice(text.length - 100, text.length));
     });
 
+    global.artillery.globalEvents.on('metadata', async (metadata) => {
+      await this._event('testrun:addmetadata', {
+        metadata
+      });
+    });
+
     let testEndInfo;
     global.artillery.ext({
       ext: 'beforeExit',
