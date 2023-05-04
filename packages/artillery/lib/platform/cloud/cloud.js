@@ -40,12 +40,6 @@ class ArtilleryCloudPlugin {
 
       try {
         await this._event('testrun:init', {});
-      } catch (err) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log(err);
-      }
-
-      try {
         await this._event('testrun:changestatus', { status: 'INITIALIZING' });
         await this._event('testrun:addmetadata', {
           metadata: testInfo.metadata
@@ -56,14 +50,18 @@ class ArtilleryCloudPlugin {
       } catch (err) {
         console.log('Error: error sending test data to Artillery Cloud');
         console.log('Test report may be incomplete');
-        console.log(err);
       }
     });
 
     global.artillery.globalEvents.on('stats', async (report) => {
       debug('stats', new Date());
       const ts = Number(report.period);
-      await this._event('testrun:metrics', { report, ts });
+      try {
+        await this._event('testrun:metrics', { report, ts });
+      } catch (err) {
+        console.log('Error: error sending test data to Artillery Cloud');
+        console.log('Test report may be incomplete');
+      }
     });
 
     global.artillery.globalEvents.on('done', async (report) => {
@@ -72,12 +70,22 @@ class ArtilleryCloudPlugin {
         'testrun:aggregatereport: payload size:',
         JSON.stringify(report).length
       );
-      await this._event('testrun:aggregatereport', { aggregate: report });
+      try {
+        await this._event('testrun:aggregatereport', { aggregate: report });
+      } catch (err) {
+        console.log('Error: error sending test data to Artillery Cloud');
+        console.log('Test report may be incomplete');
+      }
     });
 
     global.artillery.globalEvents.on('checks', async (checks) => {
       debug('checks');
-      await this._event('testrun:checks', { checks });
+      try {
+        await this._event('testrun:checks', { checks });
+      } catch (err) {
+        console.log('Error: error sending test data to Artillery Cloud');
+        console.log('Test report may be incomplete');
+      }
     });
 
     global.artillery.globalEvents.on('logLines', async (lines, ts) => {
@@ -95,16 +103,26 @@ class ArtilleryCloudPlugin {
         text += util.format(...Object.keys(args).map((k) => args[k])) + '\n';
       }
 
-      await this._event('testrun:textlog', { lines: text, ts });
+      try {
+        await this._event('testrun:textlog', { lines: text, ts });
+      } catch (err) {
+        console.log('Error: error sending test data to Artillery Cloud');
+        console.log('Test report may be incomplete');
+      }
 
       debug('last 100 characters:');
       debug(text.slice(text.length - 100, text.length));
     });
 
     global.artillery.globalEvents.on('metadata', async (metadata) => {
-      await this._event('testrun:addmetadata', {
-        metadata
-      });
+      try {
+        await this._event('testrun:addmetadata', {
+          metadata
+        });
+      } catch (err) {
+        console.log('Error: error sending test data to Artillery Cloud');
+        console.log('Test report may be incomplete');
+      }
     });
 
     let testEndInfo;
@@ -127,7 +145,6 @@ class ArtilleryCloudPlugin {
         } catch (err) {
           console.log('Error: error sending test data to Artillery Cloud');
           console.log('Test report may be incomplete');
-          console.log(err);
         }
       }
     });
@@ -136,17 +153,28 @@ class ArtilleryCloudPlugin {
   }
 
   async _event(eventName, eventPayload) {
-    await request
-      .post(this.eventsEndpoint, {
-        headers: this.defaultHeaders,
-        json: {
-          eventType: eventName,
-          eventData: Object.assign({}, eventPayload, {
-            testRunId: this.testRunId
-          })
-        }
-      })
-      .json();
+    debug('☁️', eventName, eventPayload);
+    try {
+      await request
+        .post(this.eventsEndpoint, {
+          headers: this.defaultHeaders,
+          json: {
+            eventType: eventName,
+            eventData: Object.assign({}, eventPayload, {
+              testRunId: this.testRunId
+            })
+          },
+          retry: {
+            limit: 2,
+            methods: ['POST']
+          }
+        })
+        .json();
+      debug('☁️', eventName, 'sent');
+    } catch (err) {
+      debug(err);
+      throw err;
+    }
   }
 
   cleanup(done) {
