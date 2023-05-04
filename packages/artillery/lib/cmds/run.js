@@ -229,7 +229,8 @@ class RunCommand extends Command {
         }
       });
 
-      new CloudPlugin();
+
+      new CloudPlugin(null, null, { flags });
 
       global.artillery.globalEvents.emit('test:init', {
         flags,
@@ -396,6 +397,12 @@ RunCommand.flags = {
   }),
   note: flags.string({
     description: 'Add a note/annotation to the test run'
+  }),
+  record: flags.boolean({
+    description: 'Record test run to Artillery Cloud'
+  }),
+  key: flags.string({
+    description: 'API key for Artillery Cloud'
   })
 };
 

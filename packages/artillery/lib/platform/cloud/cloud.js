@@ -9,14 +9,19 @@ const request = require('got');
 const util = require('node:util');
 
 class ArtilleryCloudPlugin {
-  constructor(_script, _events) {
-    if (typeof process.env.ARTILLERY_CLOUD_API_KEY === 'undefined') {
+  constructor(_script, _events, { flags }) {
+    if (!flags.record) {
       return this;
     }
 
-    this.pendingOps = 0;
+    this.apiKey = flags.key || process.env.ARTILLERY_CLOUD_API_KEY;
 
-    this.apiKey = process.env.ARTILLERY_CLOUD_API_KEY;
+    if (!this.apiKey) {
+      console.log(
+        'An API key is required to record test results to Artillery Cloud. See https://docs.art/setup-cloud for more information.'
+      );
+    }
+
     this.baseUrl =
       process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
     this.eventsEndpoint = `${this.baseUrl}/api/events`;
