@@ -13,8 +13,6 @@ class RunCommand extends Command {
   static strict = false;
 
   async run() {
-    new CloudPlugin();
-
     if (!Pro) {
       console.error(
         'Error: This command requires artillery-pro to be installed\n'
@@ -25,7 +23,8 @@ class RunCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(RunCommand);
+    const { flags, _argv, args } = this.parse(RunCommand);
+    new CloudPlugin(null, null, { flags });
     Pro.commands.runCluster(args.script, flags);
   }
 }
