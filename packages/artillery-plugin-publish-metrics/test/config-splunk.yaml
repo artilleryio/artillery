@@ -1,0 +1,9 @@
+config:
+  plugins:
+    publish-metrics:
+      - type: splunk
+        realm: eu0
+        accessToken: "{{ $processEnvironment.SP_ACCESS_TOKEN }}"
+        prefix: "artillery.publish_metrics_plugin."
+        dimensions:
+          - "testId:{{ $processEnvironment.TEST_ID }}"
