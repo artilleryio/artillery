@@ -12,7 +12,7 @@ class PlaywrightEngine {
     this.contextOptions = this.config.contextOptions || {};
 
     this.defaultNavigationTimeout = (parseInt(this.config.defaultNavigationTimeout, 10) || 30) * 1000;
-    this.defaultTimeout = (parseInt(this.config.defaultPageTimeout, 10) || 30) * 1000;
+    this.defaultTimeout = (parseInt(this.config.defaultPageTimeout || this.config.defaultTimeout, 10) || 30) * 1000;
 
     this.aggregateByName = script.config.engines.playwright.aggregateByName || false;
     this.extendedMetrics = typeof script.config.engines.playwright.extendedMetrics !== 'undefined';
