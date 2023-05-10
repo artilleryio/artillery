@@ -1,5 +1,5 @@
 const { Command, flags } = require('@oclif/command');
-require('aws-sdk/lib/maintenance_mode_message').suppress = true;
+
 const {
   readScript,
   parseScript,
