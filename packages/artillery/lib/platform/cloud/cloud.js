@@ -18,8 +18,9 @@ class ArtilleryCloudPlugin {
 
     if (!this.apiKey) {
       console.log(
-        'An API key is required to record test results to Artillery Cloud. See https://docs.art/setup-cloud for more information.'
+        'An API key is required to record test results to Artillery Cloud. See https://docs.art/get-started-cloud for more information.'
       );
+      return;
     }
 
     this.baseUrl =
