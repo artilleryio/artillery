@@ -93,6 +93,7 @@
     "@oclif/plugin-help": "^3.3.1",
     "@oclif/plugin-not-found": "^2.3.1",
     "archiver": "^5.3.1",
+    "artillery-plugin-apdex": "latest",
     "artillery-plugin-ensure": "latest",
     "artillery-plugin-expect": "latest",
     "artillery-plugin-metrics-by-endpoint": "latest",
