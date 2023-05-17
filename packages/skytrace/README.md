@@ -51,7 +51,7 @@ Ping a URL:
 skytrace ping http://lab.artillery.io/movies -bp
 ```
 
-Run a [simple flow](./asciiart-flow.yml):
+Run a [simple flow](https://github.com/artilleryio/artillery/blob/main/packages/skytrace/asciiart-flow.yml):
 
 ```sh
 skytrace run -r asciiart-flow.yml
