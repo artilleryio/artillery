@@ -83,7 +83,7 @@ class PlatformLambda {
     this.memorySize = platformConfig['memory-size'] || 4096;
 
     this.testRunId = platformOpts.testRunId || randomUUID();
-    this.lambdaRoleArn = platformOpts.lambdaRoleArn;
+    this.lambdaRoleArn = platformConfig['lambdaRoleArn'];
 
     this.platformOpts = platformOpts;
 
