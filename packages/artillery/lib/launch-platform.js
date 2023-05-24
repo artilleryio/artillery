@@ -100,6 +100,7 @@ class Launcher {
         this.phaseStartedEventsSeen[message.phase.index] = Date.now();
         this.events.emit('phaseStarted', message.phase);
         this.pluginEvents.emit('phaseStarted', message.phase);
+        this.pluginEventsLegacy.emit('phaseStarted', message.phase);
       }
     });
 
@@ -111,6 +112,7 @@ class Launcher {
         this.phaseCompletedEventsSeen[message.phase.index] = Date.now();
         this.events.emit('phaseCompleted', message.phase);
         this.pluginEvents.emit('phaseCompleted', message.phase);
+        this.pluginEventsLegacy.emit('phaseCompleted', message.phase);
       }
     });
 
