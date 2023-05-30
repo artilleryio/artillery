@@ -656,6 +656,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         requestParams.retry = 0; // disable retries - ignored when using streams
 
         const uuid = crypto.randomUUID();
+        let totalDownloaded = 0;
         request(requestParams)
           .on('request', function (req) {
             ee.emit('trace:http:request', requestParams, uuid);
@@ -664,6 +665,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             ee.emit('counter', 'http.requests', 1);
             ee.emit('rate', 'http.request_rate');
             req.on('response', function (res) {
+              res.on('end', () => {
+                ee.emit('counter', 'http.downloaded_bytes', totalDownloaded);
+              });
               ee.emit('trace:http:response', res, uuid);
               self._handleResponse(
                 requestParams,
@@ -675,6 +679,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               );
             });
 
+          })
+          .on('downloadProgress', (progress) => {
+            totalDownloaded = progress.total;
           })
           .on('error', function (err, body, res) {
             ee.emit('trace:http:error', err, uuid);
