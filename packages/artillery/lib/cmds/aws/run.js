@@ -8,7 +8,7 @@ var tryRequire = require('try-require');
 const Pro = tryRequire('artillery-pro');
 
 class RunCommand extends Command {
-  static aliases = ['run-test', 'run-cluster', 'run:fargate'];
+  static aliases = ['run-test', 'run-cluster'];
   // Enable multiple args:
   static strict = false;
 
