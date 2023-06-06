@@ -303,7 +303,7 @@ class RunCommand extends Command {
 }
 
 // Line no. 2 onwards is the description in help output
-RunCommand.description = `run a test script locally
+RunCommand.description = `run a test script locally or on AWS Lambda
 Run a test script
 
 Examples:
