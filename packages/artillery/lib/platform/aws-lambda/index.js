@@ -91,7 +91,9 @@ class PlatformLambda {
   }
 
   async init() {
-    artillery.log('NOTE: AWS Lambda support is experimental. Not all Artillery features work yet.\nFor details please see https://docs.art/aws-lambda');
+    artillery.log(
+      'NOTE: AWS Lambda support is experimental. Not all Artillery features work yet.\nFor details please see https://docs.art/aws-lambda'
+    );
     artillery.log();
     artillery.log('λ Creating AWS Lambda function...');
 
@@ -253,13 +255,28 @@ class PlatformLambda {
     const a9cwd = path.join(dirname, 'node_modules', 'artillery');
     debug({ a9basepath, a9cwd });
 
-    const { stdout: stdout2, stderr: stderr2, status: status2, error: error2 } = spawn.sync(
-      'npm',
-      ['install', '--omit', 'dev'],
-      { cwd: a9cwd }
-    );
+    const {
+      stdout: stdout2,
+      stderr: stderr2,
+      status: status2,
+      error: error2
+    } = spawn.sync('npm', ['install', '--omit', 'dev'], { cwd: a9cwd });
     if (error2) {
       artillery.log(stdout2?.toString(), stderr2?.toString(), status2, error2);
+    } else {
+      // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
+    }
+
+    const {
+      stdout: stdout3,
+      stderr: stderr3,
+      status: status3,
+      error: error3
+    } = spawn.sync('npm', ['uninstall', '@artilleryio/platform-fargate'], {
+      cwd: a9cwd
+    });
+    if (error3) {
+      artillery.log(stdout3?.toString(), stderr3?.toString(), status3, error3);
     } else {
       // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
     }
