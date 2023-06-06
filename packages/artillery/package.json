@@ -39,10 +39,12 @@
     ],
     "topics": {
       "aws": {
-        "description": "run tests on AWS"
+        "description": "run tests on AWS",
+        "hidden": true
       },
       "pro": {
-        "description": "deploy and manage Artillery Pro"
+        "description": "deploy and manage Artillery Pro",
+        "hidden": true
       }
     }
   },
