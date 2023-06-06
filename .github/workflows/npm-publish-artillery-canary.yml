@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - packages/artillery
+      - 'packages/artillery/**'
 jobs:
   build:
     runs-on: ubuntu-latest
