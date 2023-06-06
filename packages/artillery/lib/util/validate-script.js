@@ -92,7 +92,7 @@ const scenarioItem = Joi.object({
   flow: Joi.any().when('engine', {
     is: Joi.valid('socketio', 'ws', 'http'),
     then: Joi.array().items(flowItemSchema).required(),
-    otherwise: Joi.array().items(Joi.any()).required()
+    otherwise: Joi.array().items(Joi.any())
   })
 });
 
