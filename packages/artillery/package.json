@@ -94,7 +94,7 @@
     "@oclif/plugin-help": "^3.3.1",
     "@oclif/plugin-not-found": "^2.3.1",
     "archiver": "^5.3.1",
-    "artillery-engine-playwright": "^0.2.2",
+    "artillery-engine-playwright": "^0.3.0",
     "artillery-plugin-apdex": "latest",
     "artillery-plugin-ensure": "latest",
     "artillery-plugin-expect": "latest",
