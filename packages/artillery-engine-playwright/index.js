@@ -132,7 +132,7 @@ class PlaywrightEngine {
         page.on('response', (response) => {
         });
 
-        const fn = self.processor[spec.flowFunction];
+        const fn = self.processor[spec.testFunction] || self.processor[spec.flowFunction];
         await fn(page, initialContext, events);
 
         await page.close();
