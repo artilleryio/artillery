@@ -22,14 +22,14 @@
 
 **Artillery is the most advanced load testing platform in the world.**
 
-- **Test at cloud scale.** Artillery provides cloud-native distributed load testing out-of-the box.
-  - Run serverless load tests on AWS Lambda today. AWS Fargate and Kubernetes coming soon.
+- **Test at cloud scale.** Cloud-native distributed load testing at scale, **out-of-the box and for free**.
+  - Run serverless load tests on AWS Lambda or AWS Fargate. Kubernetes coming soon.
 - **Batteries-included.** 20+ integrations for monitoring, observability, and CICD.
 - **Test anything**. HTTP, WebSocket, Socket.io, gRPC, Kinesis, and more.
 - **Playwright support**. Load test with real headless browsers.
 - **Powerful workload modeling**. Emulate complex user behavior with request chains, multiple steps, transactions, and more.
 - **Extensible & hackable**. Artillery has a plugin API to allow extending and customization.
-- **Open source**. Permissive open source license to let you build on top of Artillery.
+- **Open source**. Permissive open source license to let you build on top of Artillery without worry.
 
 → [Learn more](./packages/artillery#readme)
 
