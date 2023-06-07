@@ -386,7 +386,8 @@ function createContext(script, contextVars) {
       {
         target: script.config.target,
         $environment: script._environment,
-        $processEnvironment: process.env
+        $processEnvironment: process.env, // TODO: deprecate
+        $env: process.env,
       },
       contextVars || {}
     ),
