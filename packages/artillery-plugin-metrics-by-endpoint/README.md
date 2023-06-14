@@ -70,6 +70,14 @@ scenarios:
 
 This is due to different naming patterns for metrics in both plugins.
 
+## Configuration
+| Name | Default | Description |
+|------|---------|-------------|
+| useOnlyRequestNames | `false` | If `true`, will use only the `name` field of a request as the metric name. If `false`, the `name` will be prepended to the standard metric name if it exists. |
+| stripQueryString | `false` | If `true`, query-strings will be stripped from the metric name. |
+| ignoreUnnamedRequests | `false` | If `true`, any requests without a `name` field will not have metrics published. |
+| metricsPrefix | `plugins.metrics-by-endpoint` | Custom prefix to use for metrics published by this plugin. |
+
 # License
 
 MPL 2.0
