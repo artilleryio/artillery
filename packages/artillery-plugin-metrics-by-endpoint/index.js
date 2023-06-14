@@ -9,6 +9,8 @@ module.exports = { Plugin: MetricsByEndpoint };
 const debug = require('debug')('plugin:metrics-by-endpoint');
 
 let useOnlyRequestNames;
+let stripQueryString;
+let ignoreUnnamedRequests;
 let metricsPrefix;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
@@ -31,6 +33,8 @@ function MetricsByEndpoint(script, events) {
   }
 
   useOnlyRequestNames = script.config.plugins['metrics-by-endpoint'].useOnlyRequestNames || false;
+  stripQueryString = script.config.plugins['metrics-by-endpoint'].stripQueryString || false;
+  ignoreUnnamedRequests = script.config.plugins['metrics-by-endpoint'].ignoreUnnamedRequests || false;
   metricsPrefix = script.config.plugins['metrics-by-endpoint'].metricsNamespace || 'plugins.metrics-by-endpoint';
 
   script.config.processor.metricsByEndpoint_afterResponse = metricsByEndpoint_afterResponse;
@@ -52,15 +56,19 @@ function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
   if (targetUrl && requestUrl.port && targetUrl.port !== requestUrl.port) {
     baseUrl += `:${requestUrl.port}`
   }
-  baseUrl += requestUrl.path
+  baseUrl += stripQueryString ? requestUrl.pathname : requestUrl.path;
 
   let reqName = '';
   if (useOnlyRequestNames && req.name) {
     reqName += req.name;
   } else if (req.name) {
     reqName += `${baseUrl} (${req.name})`;
-  } else {
+  } else if(!ignoreUnnamedRequests) {
     reqName += baseUrl;
+  }
+
+  if (reqName === '') {
+    return done()
   }
 
   const histoName = `${metricsPrefix}.response_time.${reqName}`;
