@@ -40,261 +40,13 @@ class RunCommand extends Command {
   async run() {
     const { flags, argv, args } = this.parse(RunCommand);
 
-    // Collect all input files for reading/parsing - via args, --config, or -i
-    const inputFiles = argv.concat(flags.input || [], flags.config || []);
-
-    const tagResult = parseTagString(flags.tags);
-    if (tagResult.errors.length > 0) {
-      console.log(
-        'WARNING: could not parse some tags:',
-        tagResult.errors.join(', ')
-      );
+    if (flags.platform === 'aws:fargate') {
+      // Delegate to existing implementation
+      const RunFargateCommand = require('./run-fargate');
+      return await RunFargateCommand.run(argv);
     }
 
-    if (tagResult.tags.length > 10) {
-      console.log('A maximum of 10 tags is supported');
-      process.exit(1);
-    }
-
-    // TODO: Move into PlatformLocal
-    if (flags.dotenv) {
-      const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
-      try {
-        fs.statSync(dotEnvPath);
-      } catch (err) {
-        console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
-      }
-      dotenv.config({ path: dotEnvPath });
-    }
-
-    if (flags.output) {
-      checkDirExists(flags.output);
-    }
-
-    try {
-      const script = await prepareTestExecutionPlan(inputFiles, flags, args);
-
-      const runnerOpts = {
-        environment: flags.environment,
-        // This is used in the worker to resolve
-        // the path to the processor module
-        scriptPath: args.script,
-        // TODO: This should be an array of files, like inputFiles above
-        absoluteScriptPath: path.resolve(process.cwd(), args.script),
-        plugins: []
-      };
-
-      // Set "name" tag if not set explicitly
-      if (tagResult.tags.filter((t) => t.name === 'name').length === 0) {
-        tagResult.tags.push({
-          name: 'name',
-          value: path.basename(runnerOpts.scriptPath)
-        });
-      }
-
-      if (flags.config) {
-        runnerOpts.absoluteConfigPath = path.resolve(
-          process.cwd(),
-          flags.config
-        );
-      }
-
-      if (process.env.WORKERS) {
-        runnerOpts.count = parseInt(process.env.WORKERS, 10) || 1;
-      }
-      if (flags.solo) {
-        runnerOpts.count = 1;
-      }
-
-      let platformConfig = {};
-      if (flags['platform-opt']) {
-        for (const opt of flags['platform-opt']) {
-          const [k, v] = opt.split('=');
-          platformConfig[k] = v;
-        }
-      }
-
-      const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-      const testRunId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
-
-      console.log('Test run id:', testRunId);
-
-      const launcherOpts = {
-        platform: flags.platform,
-        platformConfig,
-        mode: flags.platform === 'local' ? 'distribute' : 'multiply',
-        count: parseInt(flags.count || 1, 10),
-        cliArgs: flags,
-        testRunId
-      };
-
-      let launcher = await createLauncher(
-        script,
-        script.config.payload,
-        runnerOpts,
-        launcherOpts
-      );
-      let intermediates = [];
-
-      // TODO: Wire up workerLog or something like that
-      const consoleReporter = createConsoleReporter(launcher.events, {
-        quiet: flags.quiet || false
-      });
-
-      let reporters = [consoleReporter];
-      if (process.env.CUSTOM_REPORTERS) {
-        const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
-        customReporterNames.forEach(function (name) {
-          const createReporter = require(name);
-          const reporter = createReporter(launcher.events, flags);
-          reporters.push(reporter);
-        });
-      }
-
-      launcher.events.on('phaseStarted', function (phase) {});
-
-      launcher.events.on('stats', function (stats) {
-        if (artillery.runtimeOptions.legacyReporting) {
-          let report = SSMS.legacyReport(stats).report();
-          intermediates.push(report);
-        } else {
-          intermediates.push(stats);
-        }
-      });
-
-      launcher.events.on('done', async function (stats) {
-        let report;
-        if (artillery.runtimeOptions.legacyReporting) {
-          report = SSMS.legacyReport(stats).report();
-          report.phases = _.get(script, 'config.phases', []);
-        } else {
-          report = stats;
-        }
-
-        if (flags.output) {
-          let logfile = getLogFilename(flags.output);
-          if (!flags.quiet) {
-            console.log('Log file: %s', logfile);
-          }
-
-          for (const ix of intermediates) {
-            delete ix.histograms;
-            ix.histograms = ix.summaries;
-          }
-          delete report.histograms;
-          report.histograms = report.summaries;
-
-          fs.writeFileSync(
-            logfile,
-            JSON.stringify(
-              {
-                aggregate: report,
-                intermediate: intermediates
-              },
-              null,
-              2
-            ),
-            { flag: 'w' }
-          );
-        }
-
-        for (const e of global.artillery.extensionEvents) {
-          const ps = [];
-          const testInfo = { endTime: Date.now() };
-          if (e.ext === 'beforeExit') {
-            ps.push(
-              e.method({
-                report,
-                flags,
-                runnerOpts,
-                testInfo
-              })
-            );
-          }
-          await Promise.allSettled(ps);
-        }
-
-        await gracefulShutdown();
-      });
-
-      global.artillery.ext({
-        ext: 'beforeExit',
-        method: async (event) => {
-          try {
-            const duration = Math.round(
-              (event.report?.lastMetricAt - event.report?.firstMetricAt) / 1000
-            );
-            await sendTelemetry(script, flags, { duration });
-          } catch (_err) {}
-        }
-      });
-
-
-      new CloudPlugin(null, null, { flags });
-
-      global.artillery.globalEvents.emit('test:init', {
-        flags,
-        testRunId,
-        tags: tagResult.tags,
-        metadata: {
-          testId: testRunId,
-          startedAt: Date.now(),
-          count: runnerOpts.count,
-          tags: tagResult.tags,
-          launchType: flags.platform,
-          artilleryVersion: {
-            core: global.artillery.version,
-          }
-        }
-      });
-
-      launcher.run();
-
-      // TODO: Extract this
-      let shuttingDown = false;
-      process.once('SIGINT', gracefulShutdown);
-      process.once('SIGTERM', gracefulShutdown);
-
-      // TODO: beforeExit event handlers need to fire here
-      async function gracefulShutdown(opts = { exitCode: 0 }) {
-        debug('shutting down 🦑');
-        if (shuttingDown) {
-          return;
-        }
-
-        debug('Graceful shutdown initiated');
-
-        shuttingDown = true;
-        global.artillery.globalEvents.emit('shutdown:start', opts);
-
-        for (const e of global.artillery.extensionEvents) {
-          const ps = [];
-          if (e.ext === 'onShutdown') {
-            ps.push(e.method(opts));
-          }
-          await Promise.allSettled(ps);
-        }
-
-        await telemetry.shutdown();
-
-        await launcher.shutdown();
-        await (async function () {
-          for (const r of reporters) {
-            if (r.cleanup) {
-              try {
-                await p(r.cleanup.bind(r))();
-              } catch (cleanupErr) {
-                debug(cleanupErr);
-              }
-            }
-          }
-          debug('Cleanup finished');
-          process.exit(artillery.suggestedExitCode || opts.exitCode);
-        })();
-      }
-    } catch (err) {
-      throw err;
-    }
+    await RunCommand.runCommandImplementation(flags, argv, args);
   }
 
   // async catch(err) {
@@ -407,6 +159,260 @@ RunCommand.flags = {
 };
 
 RunCommand.args = [{ name: 'script', required: true }];
+
+RunCommand.runCommandImplementation = async function (flags, argv, args) {
+  // Collect all input files for reading/parsing - via args, --config, or -i
+  const inputFiles = argv.concat(flags.input || [], flags.config || []);
+
+  const tagResult = parseTagString(flags.tags);
+  if (tagResult.errors.length > 0) {
+    console.log(
+      'WARNING: could not parse some tags:',
+      tagResult.errors.join(', ')
+    );
+  }
+
+  if (tagResult.tags.length > 10) {
+    console.log('A maximum of 10 tags is supported');
+    process.exit(1);
+  }
+
+  // TODO: Move into PlatformLocal
+  if (flags.dotenv) {
+    const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
+    try {
+      fs.statSync(dotEnvPath);
+    } catch (err) {
+      console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
+    }
+    dotenv.config({ path: dotEnvPath });
+  }
+
+  if (flags.output) {
+    checkDirExists(flags.output);
+  }
+
+  try {
+    const script = await prepareTestExecutionPlan(inputFiles, flags, args);
+
+    const runnerOpts = {
+      environment: flags.environment,
+      // This is used in the worker to resolve
+      // the path to the processor module
+      scriptPath: args.script,
+      // TODO: This should be an array of files, like inputFiles above
+      absoluteScriptPath: path.resolve(process.cwd(), args.script),
+      plugins: []
+    };
+
+    // Set "name" tag if not set explicitly
+    if (tagResult.tags.filter((t) => t.name === 'name').length === 0) {
+      tagResult.tags.push({
+        name: 'name',
+        value: path.basename(runnerOpts.scriptPath)
+      });
+    }
+
+    if (flags.config) {
+      runnerOpts.absoluteConfigPath = path.resolve(process.cwd(), flags.config);
+    }
+
+    if (process.env.WORKERS) {
+      runnerOpts.count = parseInt(process.env.WORKERS, 10) || 1;
+    }
+    if (flags.solo) {
+      runnerOpts.count = 1;
+    }
+
+    let platformConfig = {};
+    if (flags['platform-opt']) {
+      for (const opt of flags['platform-opt']) {
+        const [k, v] = opt.split('=');
+        platformConfig[k] = v;
+      }
+    }
+
+    const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
+    const testRunId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
+
+    console.log('Test run id:', testRunId);
+
+    const launcherOpts = {
+      platform: flags.platform,
+      platformConfig,
+      mode: flags.platform === 'local' ? 'distribute' : 'multiply',
+      count: parseInt(flags.count || 1, 10),
+      cliArgs: flags,
+      testRunId
+    };
+
+    let launcher = await createLauncher(
+      script,
+      script.config.payload,
+      runnerOpts,
+      launcherOpts
+    );
+    let intermediates = [];
+
+    // TODO: Wire up workerLog or something like that
+    const consoleReporter = createConsoleReporter(launcher.events, {
+      quiet: flags.quiet || false
+    });
+
+    let reporters = [consoleReporter];
+    if (process.env.CUSTOM_REPORTERS) {
+      const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
+      customReporterNames.forEach(function (name) {
+        const createReporter = require(name);
+        const reporter = createReporter(launcher.events, flags);
+        reporters.push(reporter);
+      });
+    }
+
+    launcher.events.on('phaseStarted', function (phase) {});
+
+    launcher.events.on('stats', function (stats) {
+      if (artillery.runtimeOptions.legacyReporting) {
+        let report = SSMS.legacyReport(stats).report();
+        intermediates.push(report);
+      } else {
+        intermediates.push(stats);
+      }
+    });
+
+    launcher.events.on('done', async function (stats) {
+      let report;
+      if (artillery.runtimeOptions.legacyReporting) {
+        report = SSMS.legacyReport(stats).report();
+        report.phases = _.get(script, 'config.phases', []);
+      } else {
+        report = stats;
+      }
+
+      if (flags.output) {
+        let logfile = getLogFilename(flags.output);
+        if (!flags.quiet) {
+          console.log('Log file: %s', logfile);
+        }
+
+        for (const ix of intermediates) {
+          delete ix.histograms;
+          ix.histograms = ix.summaries;
+        }
+        delete report.histograms;
+        report.histograms = report.summaries;
+
+        fs.writeFileSync(
+          logfile,
+          JSON.stringify(
+            {
+              aggregate: report,
+              intermediate: intermediates
+            },
+            null,
+            2
+          ),
+          { flag: 'w' }
+        );
+      }
+
+      for (const e of global.artillery.extensionEvents) {
+        const ps = [];
+        const testInfo = { endTime: Date.now() };
+        if (e.ext === 'beforeExit') {
+          ps.push(
+            e.method({
+              report,
+              flags,
+              runnerOpts,
+              testInfo
+            })
+          );
+        }
+        await Promise.allSettled(ps);
+      }
+
+      await gracefulShutdown();
+    });
+
+    global.artillery.ext({
+      ext: 'beforeExit',
+      method: async (event) => {
+        try {
+          const duration = Math.round(
+            (event.report?.lastMetricAt - event.report?.firstMetricAt) / 1000
+          );
+          await sendTelemetry(script, flags, { duration });
+        } catch (_err) {}
+      }
+    });
+
+    new CloudPlugin(null, null, { flags });
+
+    global.artillery.globalEvents.emit('test:init', {
+      flags,
+      testRunId,
+      tags: tagResult.tags,
+      metadata: {
+        testId: testRunId,
+        startedAt: Date.now(),
+        count: runnerOpts.count,
+        tags: tagResult.tags,
+        launchType: flags.platform,
+        artilleryVersion: {
+          core: global.artillery.version
+        }
+      }
+    });
+
+    launcher.run();
+
+    // TODO: Extract this
+    let shuttingDown = false;
+    process.once('SIGINT', gracefulShutdown);
+    process.once('SIGTERM', gracefulShutdown);
+
+    // TODO: beforeExit event handlers need to fire here
+    async function gracefulShutdown(opts = { exitCode: 0 }) {
+      debug('shutting down 🦑');
+      if (shuttingDown) {
+        return;
+      }
+
+      debug('Graceful shutdown initiated');
+
+      shuttingDown = true;
+      global.artillery.globalEvents.emit('shutdown:start', opts);
+
+      for (const e of global.artillery.extensionEvents) {
+        const ps = [];
+        if (e.ext === 'onShutdown') {
+          ps.push(e.method(opts));
+        }
+        await Promise.allSettled(ps);
+      }
+
+      await telemetry.shutdown();
+
+      await launcher.shutdown();
+      await (async function () {
+        for (const r of reporters) {
+          if (r.cleanup) {
+            try {
+              await p(r.cleanup.bind(r))();
+            } catch (cleanupErr) {
+              debug(cleanupErr);
+            }
+          }
+        }
+        debug('Cleanup finished');
+        process.exit(artillery.suggestedExitCode || opts.exitCode);
+      })();
+    }
+  } catch (err) {
+    throw err;
+  }
+}
 
 async function prepareTestExecutionPlan(inputFiles, flags, args) {
   let script1 = {};
