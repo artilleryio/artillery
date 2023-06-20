@@ -7,6 +7,7 @@
 const debug = require('debug')('plugin:expect');
 const template = global.artillery ? global.artillery.util.template : require('artillery/util').template;
 const _ = require('lodash');
+const jmespath = require('jmespath');
 
 module.exports = {
   contentType: expectContentType,
@@ -19,7 +20,21 @@ module.exports = {
   matchesRegexp: expectMatchesRegexp,
   notHasProperty: expectNotHasProperty,
   cdnHit: expectCdnHit,
+  jmespath: expectJmesPath,
+  jpath: expectJmesPath,
 };
+
+function expectJmesPath(expectation, body, req, res, userContext) {
+  debug('check jmespath');
+  debug('expectation', expectation);
+  const result = jmespath.search(JSON.parse(body), expectation.jmespath || expectation.jpath);
+  return {
+    ok: result,
+    expected: expectation.description || expectation.jmespath,
+    got: expectation.jmespath,
+    type: expectation.jmespath ? 'jmespath' : 'jpath'
+  };
+}
 
 function expectCdnHit(expectation, body, req, res, userContext) {
   debug('check cdn');
