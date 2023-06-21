@@ -1,0 +1,49 @@
+# This an example Artillery load test that includes:
+# - A load configuration with 3 distinct phases that create
+#   a burst of traffic after a warm up period
+# - How to use built-in "apdex" and "ensure" plugins to set up
+#   automated scoring and checking of performance results from the test
+# - Using metrics-by-endpoint plugin to enable reporting of metrics
+#   for each individual URL in the test
+config:
+  # This is a test server run by team Artillery
+  # It's designed to be highly scalable and withstand
+  # traffic spikes of millions of requests per second
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - duration: 60
+      arrivalRate: 1
+      rampTo: 5
+      name: Warm up phase
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 10
+      name: Ramp up load
+    - duration: 30
+      arrivalRate: 10
+      rampTo: 30
+      name: Spike phase
+  # Load a couple of useful plugins
+  # https://docs.art/reference/extensions
+  plugins:
+    ensure: {}
+    apdex: {}
+    metrics-by-endpoint: {}
+  # Set a threshold of 25ms for calculating Apdex scores
+  # https://docs.art/reference/extensions/apdex
+  apdex:
+    threshold: 100
+  # Configure automated checks
+  # https://docs.art/reference/extensions/ensure
+  ensure:
+      thresholds:
+        - http.response_time.p99: 100
+        - http.response_time.p95: 75
+scenarios:
+  - flow:
+      - get:
+          url: "/dino"
+      - get:
+          url: "/pony"
+      - get:
+          url: "/armadillo"
