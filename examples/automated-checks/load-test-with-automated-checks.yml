@@ -41,9 +41,11 @@ config:
         - http.response_time.p95: 75
 scenarios:
   - flow:
-      - get:
-          url: "/dino"
-      - get:
-          url: "/pony"
-      - get:
-          url: "/armadillo"
+      - loop:
+        - get:
+            url: "/dino"
+        - get:
+            url: "/pony"
+        - get:
+            url: "/armadillo"
+        count: 100
