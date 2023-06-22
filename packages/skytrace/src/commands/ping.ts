@@ -66,9 +66,10 @@ function parse(str : string) {
 
 const VERBS = [
   'get',
+  'head',
+  'post',
   'put',
   'delete',
-  'head',
   'options',
   'patch',
   'connect',
@@ -106,9 +107,6 @@ class PingCommand extends Command {
     }
 
     debug({ flags, args, argv });
-
-    const targetType = 'http';
-    const method = 'get';
 
     if (!args.target && !args.method) {
       this._help();
@@ -370,7 +368,7 @@ class PingCommand extends Command {
       const timings = context.vars.timings;
       const phases = timings.phases;
 
-      this.log(`Connected to ${target} (${chalk.cyan(context.vars.ip)})\n`);
+      this.log(`Connected to ${(new URL(target)).origin} (${chalk.cyan(context.vars.ip)})\n`);
 
       if (flags.verbose) {
         this.log(chalk.cyan('Request:\n'));
