@@ -19,7 +19,7 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: npm run build
+      - run: npm run build -w skytrace
       - run: npm -w skytrace publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
