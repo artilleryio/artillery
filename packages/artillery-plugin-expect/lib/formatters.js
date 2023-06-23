@@ -59,7 +59,7 @@ function printExchangeContext(req, res, userContext) {
   console.log(res.body?.substring(0, 512));
 
   console.log(chalk.yellow('  User variables:'));
-  Object.keys(userContext.vars).filter(varName => varName !== '$processEnvironment').forEach(function(varName) {
+  Object.keys(userContext.vars).filter(varName => varName !== '$processEnvironment' && varName !== '$env').forEach(function(varName) {
     console.log(`    ${varName}: ${userContext.vars[varName]}`);
   });
 }
