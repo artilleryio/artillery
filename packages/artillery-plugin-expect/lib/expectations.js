@@ -27,13 +27,22 @@ module.exports = {
 function expectJmesPath(expectation, body, req, res, userContext) {
   debug('check jmespath');
   debug('expectation', expectation);
-  const result = jmespath.search(JSON.parse(body), expectation.jmespath || expectation.jpath);
-  return {
-    ok: result,
+
+  const result = {
     expected: expectation.description || expectation.jmespath,
-    got: expectation.jmespath,
-    type: expectation.jmespath ? 'jmespath' : 'jpath'
+    type: expectation.jmespath ? 'jmespath' : 'jpath',
   };
+
+  if (body === null || typeof body !== 'object') {
+    result.ok = false;
+    result.got = `response body is not an object`;
+  } else {
+    result.ok = jmespath.search(body, expectation.jmespath || expectation.jpath);
+    result.got = expectation.jmespath
+  }
+
+
+  return result;
 }
 
 function expectCdnHit(expectation, body, req, res, userContext) {
