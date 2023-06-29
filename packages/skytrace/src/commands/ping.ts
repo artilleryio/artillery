@@ -76,6 +76,19 @@ const VERBS = [
   'trace'
 ];
 
+const _parseValidJson = (jsonString: string, shouldError = true) => {
+  try {
+    return JSON.parse(jsonString)
+  } catch (err) {
+    console.error(chalk.red(`Invalid JSON: ${err.message}`));
+    if (shouldError) {
+      process.exit(1);
+    } else {
+      return undefined
+    }
+  }
+}
+
 class PingCommand extends Command {
   static aliases = ['probe', 'http'];
   // Enable multiple args:
@@ -433,13 +446,14 @@ class PingCommand extends Command {
       const isJSON = /json/gi.test(contentType)
       const isXML = /html/gi.test(contentType) || /xml/gi.test(contentType);
 
-      let parsedBody;
+      let validatedBody;
 
-      try {
-        parsedBody = (isJSON) ? JSON.parse(context.vars.body) : context.vars.body
-      } catch (err) {
-        console.error(chalk.red(`Error JSON body: ${err.message}`));
-        process.exit(1);
+      if (flags.jmespath || (isJSON && flags.q)) {
+        validatedBody = _parseValidJson(context.vars.body)
+      } else if (isJSON) {
+        validatedBody = _parseValidJson(context.vars.body, false)
+      } else {
+        validatedBody = context.vars.body
       }
 
       if (flags.showBody) {
@@ -452,20 +466,20 @@ class PingCommand extends Command {
         }
 
         if (language) {
-          let output = parsedBody;
+          let output = validatedBody;
           if (language === 'json' && flags.pretty) {
-            output = JSON.stringify(parsedBody, null, 4);
+            output = JSON.stringify(_parseValidJson(context.vars.body), null, 4);
           }
           this.log(highlight(output, { language }));
         } else {
-          this.log(parsedBody);
+          this.log(validatedBody);
         }
       }
 
       if (flags.jmespath || flags.cheerio || flags.q) {
         if (flags.jmespath || (isJSON && flags.q)) {
           try {
-            const result = jmespath.search(parsedBody, flags.jmespath || flags.query);
+            const result = jmespath.search(validatedBody, flags.jmespath || flags.query);
 
             // If our output is piped we want to print the JSON without highlighting:
             if (process.stdout.isTTY) {
@@ -481,7 +495,7 @@ class PingCommand extends Command {
           }
         } else if (flags.cheerio || (isXML && flags.query)) {
           try {
-            const $ = cheerio.load(parsedBody);
+            const $ = cheerio.load(validatedBody);
             const elts = $(flags.cheerio || flags.query).html();
             // If our output is piped we want to print the without highlighting:
             if (process.stdout.isTTY) {
@@ -510,7 +524,7 @@ class PingCommand extends Command {
           let result = expectations[checker].call(
             this,
             ex,
-            parsedBody,
+            validatedBody,
             context.vars.req,
             context.vars.res,
             {}
