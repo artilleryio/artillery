@@ -430,8 +430,10 @@ class PingCommand extends Command {
         this.log(`\n${chalk.cyan('Body')} stored in: ${fn}\n`);
       }
 
-      const isJSON = contentType.match(/json/gi);
-      const isXML = contentType.match(/html/gi) || contentType.match(/xml/gi);
+      const isJSON = /json/gi.test(contentType)
+      const isXML = /html/gi.test(contentType) || /xml/gi.test(contentType);
+
+      const parsedBody = (isJSON) ? JSON.parse(context.vars.body) : context.vars.body
 
       if (flags.showBody) {
         let language;
@@ -443,21 +445,20 @@ class PingCommand extends Command {
         }
 
         if (language) {
-          let output = context.vars.body;
+          let output = parsedBody;
           if (language === 'json' && flags.pretty) {
-            output = JSON.stringify(JSON.parse(context.vars.body), null, 4);
+            output = JSON.stringify(parsedBody, null, 4);
           }
           this.log(highlight(output, { language }));
         } else {
-          this.log(context.vars.body);
+          this.log(parsedBody);
         }
       }
 
       if (flags.jmespath || flags.cheerio || flags.q) {
         if (flags.jmespath || (isJSON && flags.q)) {
           try {
-            const json = JSON.parse(context.vars.body);
-            const result = jmespath.search(json, flags.jmespath || flags.query);
+            const result = jmespath.search(parsedBody, flags.jmespath || flags.query);
 
             // If our output is piped we want to print the JSON without highlighting:
             if (process.stdout.isTTY) {
@@ -473,7 +474,7 @@ class PingCommand extends Command {
           }
         } else if (flags.cheerio || (isXML && flags.query)) {
           try {
-            const $ = cheerio.load(context.vars.body);
+            const $ = cheerio.load(parsedBody);
             const elts = $(flags.cheerio || flags.query).html();
             // If our output is piped we want to print the without highlighting:
             if (process.stdout.isTTY) {
@@ -497,13 +498,12 @@ class PingCommand extends Command {
       if (checks.length > 0) {
         this.log(chalk.cyan('Expectations:\n'));
         let results = [];
-
         for (const ex of checks) {
           const checker = Object.keys(ex)[0];
           let result = expectations[checker].call(
             this,
             ex,
-            context.vars.body,
+            parsedBody,
             context.vars.req,
             context.vars.res,
             {}
