@@ -433,7 +433,14 @@ class PingCommand extends Command {
       const isJSON = /json/gi.test(contentType)
       const isXML = /html/gi.test(contentType) || /xml/gi.test(contentType);
 
-      const parsedBody = (isJSON) ? JSON.parse(context.vars.body) : context.vars.body
+      let parsedBody;
+
+      try {
+        parsedBody = (isJSON) ? JSON.parse(context.vars.body) : context.vars.body
+      } catch (err) {
+        console.error(chalk.red(`Error JSON body: ${err.message}`));
+        process.exit(1);
+      }
 
       if (flags.showBody) {
         let language;
