@@ -3,7 +3,7 @@ const debug = require('debug')('plugin:publish-metrics:newrelic');
 
 class NewRelicReporter {
   constructor(config, events) {
-    // set each config value as matching user config if exists, else default values
+    // Set each config value as matching user config if exists, else default values
     this.config = {
       region: config.region || 'us',
       prefix: config.prefix || 'artillery.',
@@ -54,7 +54,7 @@ class NewRelicReporter {
     });
   }
 
-  // packs stats.counters metrics that need to be sent to NR into format recognised by NR metric API
+  // Packs stats.counters metrics that need to be sent to NR into format recognised by NR metric API
   formatCountersForNewRelic(counters, config) {
     const statMetrics = [];
     for (const [name, value] of Object.entries(counters || {})) {
@@ -73,7 +73,7 @@ class NewRelicReporter {
     return statMetrics;
   }
 
-  // packs stats.rates metrics that need to be sent to NR into format recognised by NR metric API
+  // Packs stats.rates metrics that need to be sent to NR into format recognised by NR metric API
   formatRatesForNewRelic(rates, config) {
     const statMetrics = [];
     for (const [name, value] of Object.entries(rates || {})) {
@@ -92,7 +92,7 @@ class NewRelicReporter {
     return statMetrics;
   }
 
-  // packs stats.summaries metrics that need to be sent to NR into format recognised by NR metric API
+  // Packs stats.summaries metrics that need to be sent to NR into format recognised by NR metric API
   formatSummariesForNewRelic(summaries, config) {
     const statMetrics = [];
     for (const [name, values] of Object.entries(summaries || {})) {
@@ -100,9 +100,9 @@ class NewRelicReporter {
         continue;
       }
 
-      for (const [agreggation, value] of Object.entries(values)) {
+      for (const [aggregation, value] of Object.entries(values)) {
         const metric = {
-          name: `${config.prefix}${name}.${agreggation}`,
+          name: `${config.prefix}${name}.${aggregation}`,
           type: 'gauge',
           value
         };
@@ -113,7 +113,7 @@ class NewRelicReporter {
     return statMetrics;
   }
 
-  // assembles metrics and info into req body format needed by NR metric API
+  // Assembles metrics and info into req body format needed by NR metric API
   createRequestBody(timestamp, interval, attributeList, metrics) {
     const parsedAttributes = {};
     if (attributeList.length > 0) {
@@ -148,7 +148,7 @@ class NewRelicReporter {
       json: body
     };
 
-    debug('sending metrics to New Relic');
+    debug('Sending metrics to New Relic');
     try {
       const res = await got.post(url, options);
       if (res.statusCode !== 202) {
@@ -161,7 +161,7 @@ class NewRelicReporter {
     this.pendingRequests -= 1;
   }
 
-  // checks if metric should be sent by screening for it in the excluded and includeOnly lists
+  // Checks if metric should be sent by screening for it in the excluded and includeOnly lists
   shouldSendMetric(metricName, excluded, includeOnly) {
     if (excluded.includes(metricName)) {
       return;
@@ -176,7 +176,7 @@ class NewRelicReporter {
 
   async waitingForRequest() {
     while (this.pendingRequests > 0) {
-      debug('Waiting for pending request ...');
+      debug('Waiting for pending request...');
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
@@ -185,7 +185,7 @@ class NewRelicReporter {
   }
 
   cleanup(done) {
-    debug('cleaning up');
+    debug('Cleaning up');
     return this.waitingForRequest().then(done);
   }
 }
