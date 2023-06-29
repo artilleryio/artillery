@@ -40,9 +40,7 @@ class ArtilleryCloudPlugin {
       console.log(`Run URL: ${this.baseUrl}/load-tests/${this.testRunId}`);
 
       try {
-        await this._event('testrun:init', {});
-        await this._event('testrun:changestatus', { status: 'INITIALIZING' });
-        await this._event('testrun:addmetadata', {
+        await this._event('testrun:init', {
           metadata: testInfo.metadata
         });
         if (typeof testInfo.flags.note !== 'undefined') {
