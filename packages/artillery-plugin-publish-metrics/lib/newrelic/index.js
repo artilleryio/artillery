@@ -3,8 +3,7 @@ const debug = require('debug')('plugin:publish-metrics:newrelic');
 
 class NewRelicReporter {
   constructor(config, events, script) {
-    debug('NewRelicReporter plugin loaded');
-    // set each config value as matching user config if exists, else default values
+    // Set each config value as matching user config if exists, else default values
     this.config = {
       region: config.region || 'us',
       prefix: config.prefix || 'artillery.',
@@ -88,7 +87,7 @@ class NewRelicReporter {
     }
   }
 
-  // packs stats.counters metrics that need to be sent to NR into format recognised by NR metric API
+  // Packs stats.counters metrics that need to be sent to NR into format recognised by NR metric API
   formatCountersForNewRelic(counters, config) {
     const statMetrics = [];
     for (const [name, value] of Object.entries(counters || {})) {
@@ -107,7 +106,7 @@ class NewRelicReporter {
     return statMetrics;
   }
 
-  // packs stats.rates metrics that need to be sent to NR into format recognised by NR metric API
+  // Packs stats.rates metrics that need to be sent to NR into format recognised by NR metric API
   formatRatesForNewRelic(rates, config) {
     const statMetrics = [];
     for (const [name, value] of Object.entries(rates || {})) {
@@ -126,7 +125,7 @@ class NewRelicReporter {
     return statMetrics;
   }
 
-  // packs stats.summaries metrics that need to be sent to NR into format recognised by NR metric API
+  // Packs stats.summaries metrics that need to be sent to NR into format recognised by NR metric API
   formatSummariesForNewRelic(summaries, config) {
     const statMetrics = [];
     for (const [name, values] of Object.entries(summaries || {})) {
@@ -158,7 +157,7 @@ class NewRelicReporter {
     return parsedAttributes;
   }
 
-  // assembles metrics and info into req body format needed by NR metric API
+  // Assembles metrics and info into req body format needed by NR metric API
   createRequestBody(timestamp, interval, attributeList, metrics) {
     const body = [
       {
@@ -188,9 +187,16 @@ class NewRelicReporter {
     debug('Sending metrics to New Relic');
     try {
       const res = await got.post(url, options);
+
       if (res.statusCode !== 202) {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
+
+      // In case an error is generated during the Metric API asynchronous check (after succesfull response), UUID can be used to match error to request
+      debug(
+        `Request to Metric API at ${body[0].common.timestamp} UUID: `,
+        JSON.parse(res.body).uuid
+      );
     } catch (err) {
       debug(err);
     }
@@ -223,17 +229,19 @@ class NewRelicReporter {
       json: eventOptions
     };
 
-    debug('sending ' + eventOptions.phase + ' event to New Relic');
+    debug('Sending ' + eventOptions.phase + ' event to New Relic');
     try {
       const res = await got.post(url, options);
-      debug(`Event API Response: ${res.statusCode} ${res.statusMessage}`);
-      // In case an error is generated during the Event API asynchronous check (after succesfull response), UUID can be used to match error to request
-      debug(`Request UUID: `, JSON.parse(res.body).uuid);
 
       if (res.statusCode !== 200) {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
 
+      // In case an error is generated during the Event API asynchronous check (after succesfull response), UUID can be used to match error to request
+      debug(
+        `Request to Event API at ${eventOptions.timestamp} Request UUID: `,
+        JSON.parse(res.body).uuid
+      );
       debug(eventOptions.phase + ' event sent to New Relic');
     } catch (err) {
       debug(err);
