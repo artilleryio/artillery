@@ -133,9 +133,9 @@ class NewRelicReporter {
         continue;
       }
 
-      for (const [agreggation, value] of Object.entries(values)) {
+      for (const [aggregation, value] of Object.entries(values)) {
         const metric = {
-          name: `${config.prefix}${name}.${agreggation}`,
+          name: `${config.prefix}${name}.${aggregation}`,
           type: 'gauge',
           value
         };
