@@ -44,7 +44,7 @@ config:
         event:
           accountId: '{{ $processEnvironment.NEW_RELIC_ACCOUNT_ID }}'
           eventType: 'Artillery_load_test'
-          dimensions:
+          attributes:
             'alertType:info'
             'priority:low'
             'testId:myTest123'
