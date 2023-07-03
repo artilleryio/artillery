@@ -1,0 +1,21 @@
+name: "Artillery load testing action"
+author: Artillery
+description: "Load testing of your application at scale."
+
+# inputs:
+#   who-to-greet:
+#     description: "Who to greet"
+#     required: true
+#     default: "World"
+
+# outputs:
+#   time:
+#     description: "The time we greeted you"
+
+runs:
+  using: "node16"
+  main: "index.js"
+
+branding:
+  icon: zap
+  color: gray-dark

@@ -1,0 +1,7 @@
+{
+  "name": "artillery-github-action",
+  "version": "0.0.0",
+  "devDependencies": {
+    "@actions/core": "^1.10.0"
+  }
+}
