@@ -160,10 +160,11 @@ async function checkConfig(script, scriptPath, flags) {
   //
   const absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
   _.forEach(script.config.payload, function (payloadSpec) {
-    payloadSpec.path = path.resolve(
+    const resolvedPathToPayload = path.resolve(
       path.dirname(absoluteScriptPath),
       payloadSpec.path
     );
+    payloadSpec.path = resolvedPathToPayload;
   });
 
   // if environment feature is used, then payload paths in environment must be replaced too
@@ -176,10 +177,12 @@ async function checkConfig(script, scriptPath, flags) {
       script.config.environments[flags.environment]
     ) {
       _.forEach(script.config.environments[flags.environment].payload, function (payloadSpec) {
-        payloadSpec.path = path.resolve(
+        const resolvedPathToPayload = path.resolve(
           path.dirname(absoluteScriptPath),
           payloadSpec.path
         );
+
+        payloadSpec.path = resolvedPathToPayload;
       });
     }}
 
