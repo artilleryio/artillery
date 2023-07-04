@@ -266,7 +266,7 @@ class NewRelicReporter {
       this.eventOpts.timestamp = timestamp;
       this.eventOpts.phase = `Test Finished`;
 
-      const res = this.sendEvent(
+      this.sendEvent(
         this.eventsAPIEndpoint,
         this.config.licenseKey,
         this.eventOpts
