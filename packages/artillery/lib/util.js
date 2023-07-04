@@ -160,13 +160,28 @@ async function checkConfig(script, scriptPath, flags) {
   //
   const absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
   _.forEach(script.config.payload, function (payloadSpec) {
-    const resolvedPathToPayload = path.resolve(
+    payloadSpec.path = path.resolve(
       path.dirname(absoluteScriptPath),
       payloadSpec.path
     );
-
-    payloadSpec.path = resolvedPathToPayload;
   });
+
+  // if environment feature is used, then payload paths in environment must be replaced too
+  // this is so that multiple calls of checkConfig function don't override each other, as can happen if you specify a scenario + config file
+  // otherwise the second call to checkConfig will use a non-resolved path from the script.config.environments and merge that above, causing the whole thing to fail
+  // Addresses: https://github.com/artilleryio/artillery/issues/1961
+  if (flags.environment) {
+    if (
+      script.config.environments &&
+      script.config.environments[flags.environment]
+    ) {
+      _.forEach(script.config.environments[flags.environment].payload, function (payloadSpec) {
+        payloadSpec.path = path.resolve(
+          path.dirname(absoluteScriptPath),
+          payloadSpec.path
+        );
+      });
+    }}
 
   return script;
 }
