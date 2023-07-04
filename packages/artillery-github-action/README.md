@@ -103,8 +103,6 @@ on:
 jobs:
   load-test:
     runs-on: ubuntu-latest
-    # Make sure to use Artillery's container for this job.
-    container: artilleryio/artillery:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -139,7 +137,6 @@ on:
 jobs:
   load-test:
     runs-on: ubuntu-latest
-    container: artilleryio/artillery:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3

@@ -1,4 +1,5 @@
 const core = require("@actions/core");
+const artillery = require("artillery/lib/cli");
 
 function getInputs() {
   const tests = core.getInput("tests");
