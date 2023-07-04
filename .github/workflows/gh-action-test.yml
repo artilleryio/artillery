@@ -1,0 +1,15 @@
+name: gh-action-test
+on:
+  push:
+    branches: [feat/github-actions]
+jobs:
+  action-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Action test
+        uses: ./packages/artillery-github-action
+        with:
+          test: ./packages/artillery-github-action/test.yml
