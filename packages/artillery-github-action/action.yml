@@ -3,9 +3,9 @@ author: Artillery
 description: "Load testing of your application at scale."
 
 inputs:
-  tests:
+  test:
     required: true
-    description: A path to a single or multiple tests scripts to run.
+    description: A test script path.
 
   target:
     description: Set or override the target URL for the tests.

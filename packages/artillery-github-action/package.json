@@ -2,7 +2,9 @@
   "name": "artillery-github-action",
   "version": "0.0.0",
   "devDependencies": {
-    "@actions/core": "^1.10.0"
+    "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/tool-cache": "^2.0.1"
   },
   "dependencies": {
     "artillery": "^2.0.0-34"

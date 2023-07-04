@@ -1,24 +1,47 @@
 const core = require("@actions/core");
-const artillery = require("artillery/lib/cli");
+const toolCache = require("@actions/tool-cache");
+const { exec } = require("@actions/exec");
 
 function getInputs() {
-  const tests = core.getInput("tests");
+  const test = core.getInput("test");
   const target = core.getInput("target");
   const output = core.getInput("output");
   const config = core.getInput("config");
 
   return {
-    tests,
+    test,
     target,
     output,
     config,
   };
 }
 
-async function main() {
-  const { tests, ...options } = getInputs();
+const ARTILLERY_TAG = "v2.0.0-34";
 
-  core.info("hello from Artillery!");
+function getDownloadUrl(tag) {
+  return `https://github.com/artilleryio/artillery/archive/refs/tags/${tag}.tar.gz`;
+}
+
+async function main() {
+  const { test, ...options } = getInputs();
+
+  // Download the CLI tarball.
+  const downloadUrl = getDownloadUrl(ARTILLERY_TAG);
+  core.info({ downloadTool });
+
+  const tarballPath = await toolCache.downloadTool(downloadUrl);
+  core.info({ tarballPath });
+
+  const cliPath = await toolCache.extractTar(tarballPath);
+
+  core.info({ cliPath });
+
+  // Run the CLI.
+  await exec(cliPath, [test], {
+    stdio: "inherit",
+  }).catch((error) => {
+    core.setFailed(error.message);
+  });
 }
 
 main();

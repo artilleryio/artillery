@@ -11,30 +11,15 @@ Official GitHub Action for running load tests with [Artillery](https://artillery
 
 ## Inputs
 
-### `tests`
+### `test`
 
-A path to a single or multiple tests scripts to run.
-
-#### Running a single test
+A test script path.
 
 ```yml
 - name: Load tests
   uses: artilleryio/run@v1
   with:
-    tests: ./preprod.yml
-    # You can also use a glob pattern:
-    # tests: ./tests/**/*.preprod.yml
-```
-
-#### Running multiple tests
-
-```yml
-- name: Load tests
-  uses: artilleryio/run@v1
-  with:
-    tests:
-      - ./load-tests/**/*.js
-      - ./load-test/two.yml
+    test: ./preprod.yml
 ```
 
 ### `target`
@@ -53,7 +38,7 @@ Write the test report to the given path.
 - name: Load tests
   uses: artilleryio/run@v1
   with:
-    tests: ./load-tests/**/*.yml
+    test: ./load-tests/prod.yml
     # Apply a shared Artillery configuration
     # for all the test scripts in this run.
     config: ./load-tests/artillery.config.yml
@@ -71,7 +56,7 @@ A path to the shared configuration file. When provided, the configuration will m
 - name: Load tests
   uses: artilleryio/run@v1
   with:
-    tests: ./load-tests/**/*.yml
+    test: ./load-tests/prod.yml
     # Apply a shared Artillery configuration
     # for all the test scripts in this run.
     config: ./load-tests/artillery.config.yml
@@ -111,7 +96,7 @@ jobs:
         uses: artilleryio/run@v1
         with:
           # Provide the test scripts to run.
-          tests: ./load-tests/**/*.yml
+          test: ./load-tests/pre-prod.yml
           # Run the test scripts against the staging environment
           # as a quality assurance before promoting it to preprod.
           target: https://staging.myapp.com
@@ -144,7 +129,7 @@ jobs:
       - name: Load tests
         uses: artilleryio/run@v1
         with:
-          tests: ./prod.yml
+          test: ./prod.yml
           output: ./report.json
 
       - name: Upload test report
