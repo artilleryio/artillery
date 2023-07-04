@@ -37,26 +37,45 @@ A path to a single or multiple tests scripts to run.
       - ./load-test/two.yml
 ```
 
-### `options`
+### `target`
 
 - _Optional_
 
-Options to use for the current test run.
+Set or override the target URL for the tests.
+
+### `output`
+
+- _Optional_
+
+Write the test report to the given path.
 
 ```yml
 - name: Load tests
   uses: artilleryio/run@v1
   with:
     tests: ./load-tests/**/*.yml
-    options:
-      # Apply a shared Artillery configuration
-      # for all the test scripts in this run.
-      config: ./load-tests/artillery.config.yml
-      # Generate a report for this test run.
-      output: ./report.json
+    # Apply a shared Artillery configuration
+    # for all the test scripts in this run.
+    config: ./load-tests/artillery.config.yml
+    # Generate a report for this test run.
+    output: ./report.json
 ```
 
-> See the full list of supported [Options](https://www.artillery.io/docs/reference/cli/run#options).
+### `config`
+
+- _Optional_
+
+A path to the shared configuration file. When provided, the configuration will merge with the existing `config` fields in individual test scripts.
+
+```yml
+- name: Load tests
+  uses: artilleryio/run@v1
+  with:
+    tests: ./load-tests/**/*.yml
+    # Apply a shared Artillery configuration
+    # for all the test scripts in this run.
+    config: ./load-tests/artillery.config.yml
+```
 
 ## Outputs
 
@@ -95,10 +114,9 @@ jobs:
         with:
           # Provide the test scripts to run.
           tests: ./load-tests/**/*.yml
-          options:
-            # Run the test scripts against the staging environment
-            # as a quality assurance before promoting it to preprod.
-            target: https://staging.myapp.com
+          # Run the test scripts against the staging environment
+          # as a quality assurance before promoting it to preprod.
+          target: https://staging.myapp.com
 
       - name: Deploy
         run: ./deploy.sh
@@ -130,8 +148,7 @@ jobs:
         uses: artilleryio/run@v1
         with:
           tests: ./prod.yml
-          options:
-            output: ./report.json
+          output: ./report.json
 
       - name: Upload test report
         uses: actions/upload-artifact@v2
