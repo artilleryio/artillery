@@ -1,10 +1,14 @@
 {
   "name": "artillery-github-action",
   "version": "0.0.0",
+  "scripts": {
+    "prepare": "ncc build ./index.js -o ./dist --source-map"
+  },
   "devDependencies": {
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
-    "@actions/tool-cache": "^2.0.1"
+    "@actions/tool-cache": "^2.0.1",
+    "@vercel/ncc": "^0.36.1"
   },
   "dependencies": {
     "artillery": "^2.0.0-34"

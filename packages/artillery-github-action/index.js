@@ -27,7 +27,7 @@ async function main() {
 
   // Download the CLI tarball.
   const downloadUrl = getDownloadUrl(ARTILLERY_TAG);
-  core.info({ downloadTool });
+  core.info({ downloadUrl });
 
   const tarballPath = await toolCache.downloadTool(downloadUrl);
   core.info({ tarballPath });
