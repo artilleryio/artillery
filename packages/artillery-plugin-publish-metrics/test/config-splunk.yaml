@@ -3,7 +3,16 @@ config:
     publish-metrics:
       - type: splunk
         realm: eu0
-        accessToken: "{{ $processEnvironment.SP_ACCESS_TOKEN }}"
-        prefix: "artillery.publish_metrics_plugin."
+        accessToken: '{{ $processEnvironment.SP_ACCESS_TOKEN }}'
+        prefix: 'artillery.publish_metrics_plugin.'
         dimensions:
-          - "testId:{{ $processEnvironment.TEST_ID }}"
+          - 'testId:{{ $processEnvironment.TEST_ID }}'
+          - 'reporterType:splunk-metric-ingest-api'
+        event:
+          eventType: 'Splunk_reporter_test'
+          dimensions:
+            - 'testId:{{ $processEnvironment.TEST_ID }}'
+            - 'reporterType:splunk-event-ingest-api'
+          properties:
+            - 'testId:{{ $processEnvironment.TEST_ID }}'
+            - 'reporterType:splunk-event-ingest-api'
