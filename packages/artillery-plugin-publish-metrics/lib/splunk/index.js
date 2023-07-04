@@ -15,14 +15,17 @@ class SplunkReporter {
     if (config.event) {
       this.shouldSendEvent = config.event.send || true;
 
-      this.eventOpts = {
-        eventType: config.event.eventType || `Artillery_io_Test`,
-        dimensions: {
-          target: script.config.target,
-          ...this.parseDimensions(config.event.dimensions)
-        },
-        properties: this.parseDimensions(config.event.properties)
-      };
+      // Event API endpoint requires request payload to be an array of objects
+      this.eventOpts = [
+        {
+          eventType: config.event.eventType || `Artillery_io_Test`,
+          dimensions: {
+            target: script.config.target,
+            ...this.parseDimensions(config.event.dimensions)
+          },
+          properties: this.parseDimensions(config.event.properties)
+        }
+      ];
     }
 
     this.ingestAPIMetricEndpoint = `https://ingest.${this.config.realm}.signalfx.com/v2/datapoint`;
@@ -51,14 +54,10 @@ class SplunkReporter {
       );
 
       //rates and summaries are both gauges for Splunk, so we're combining them
-      const gauges = rates.concat(summaries);
+      const gauge = rates.concat(summaries);
+      const payload = { gauge, count: counters };
 
-      await this.sendStats(
-        this.ingestAPIMetricEndpoint,
-        this.config.accessToken,
-        gauges,
-        counters
-      );
+      await this.sendStats(this.ingestAPIMetricEndpoint, payload);
     });
 
     this.startedEventSent = false;
@@ -69,13 +68,9 @@ class SplunkReporter {
           return;
         }
         const timestamp = Date.now();
-        this.eventOpts.timestamp = timestamp;
-        this.eventOpts.dimensions.phase = `Test-Started`;
-        await this.sendEvent(
-          this.ingestAPIEventEndpoint,
-          this.config.accessToken,
-          this.eventOpts
-        );
+        this.eventOpts[0].timestamp = timestamp;
+        this.eventOpts[0].dimensions.phase = `Test-Started`;
+        await this.sendEvent(this.ingestAPIEventEndpoint, this.eventOpts);
 
         this.startedEventSent = true;
       });
@@ -160,21 +155,20 @@ class SplunkReporter {
     return parsedDimensions;
   }
 
-  async sendStats(url, token, gaugeArray, counterArray) {
-    const headers = {
-      'Content-Type': 'application/json; charset=UTF-8',
-      'X-SF-Token': token
-    };
-
+  formRequest(payload) {
     const options = {
-      headers,
-      json: {
-        gauge: gaugeArray,
-        count: counterArray
-      }
+      headers: {
+        'X-SF-Token': this.config.accessToken
+      },
+      json: payload
     };
 
+    return options;
+  }
+
+  async sendStats(url, payload) {
     this.pendingRequests += 1;
+    const options = this.formRequest(payload);
 
     debug('sending metrics to Splunk');
     try {
@@ -202,18 +196,11 @@ class SplunkReporter {
     return true;
   }
 
-  async sendEvent(url, token, eventOptions) {
-    const headers = {
-      'Content-Type': 'application/json; charset=UTF-8',
-      'X-SF-Token': token
-    };
-    const options = {
-      headers,
-      json: [eventOptions]
-    };
+  async sendEvent(url, payload) {
     this.pendingRequests += 1;
+    const options = this.formRequest(payload);
 
-    debug('Sending ' + eventOptions.dimensions.phase + ' event to Splunk');
+    debug('Sending ' + payload[0].dimensions.phase + ' event to Splunk');
     try {
       const res = await got.post(url, options);
       debug(`Splunk API Response: ${res.statusCode} ${res.statusMessage}`);
@@ -222,7 +209,7 @@ class SplunkReporter {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
 
-      debug(eventOptions.dimensions.phase + ' event sent to Splunk');
+      debug(payload[0].dimensions.phase + ' event sent to Splunk');
     } catch (err) {
       debug('There has been an error: ', err);
     }
@@ -243,14 +230,10 @@ class SplunkReporter {
   cleanup(done) {
     if (this.startedEventSent) {
       const timestamp = Date.now();
-      this.eventOpts.timestamp = timestamp;
-      this.eventOpts.dimensions.phase = `Test-Finished`;
+      this.eventOpts[0].timestamp = timestamp;
+      this.eventOpts[0].dimensions.phase = `Test-Finished`;
 
-      this.sendEvent(
-        this.ingestAPIEventEndpoint,
-        this.config.accessToken,
-        this.eventOpts
-      );
+      this.sendEvent(this.ingestAPIEventEndpoint, this.eventOpts);
     }
 
     debug('cleaning up');
