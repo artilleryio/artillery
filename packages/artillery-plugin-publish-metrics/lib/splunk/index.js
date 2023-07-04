@@ -57,7 +57,7 @@ class SplunkReporter {
       const gauge = rates.concat(summaries);
       const payload = { gauge, count: counters };
 
-      await this.sendStats(this.ingestAPIMetricEndpoint, payload);
+      await this.sendRequest(this.ingestAPIMetricEndpoint, payload, 'metrics');
     });
 
     this.startedEventSent = false;
@@ -70,7 +70,11 @@ class SplunkReporter {
         const timestamp = Date.now();
         this.eventOpts[0].timestamp = timestamp;
         this.eventOpts[0].dimensions.phase = `Test-Started`;
-        await this.sendEvent(this.ingestAPIEventEndpoint, this.eventOpts);
+        await this.sendRequest(
+          this.ingestAPIEventEndpoint,
+          this.eventOpts,
+          'event'
+        );
 
         this.startedEventSent = true;
       });
@@ -166,19 +170,22 @@ class SplunkReporter {
     return options;
   }
 
-  async sendStats(url, payload) {
+  async sendRequest(url, payload, type) {
     this.pendingRequests += 1;
     const options = this.formRequest(payload);
 
-    debug('sending metrics to Splunk');
+    debug(`Sending ${type} to Splunk`);
     try {
       const res = await got.post(url, options);
+      debug(`Splunk API Response: ${res.statusCode} ${res.statusMessage}`);
+
       if (res.statusCode !== 200) {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
     } catch (err) {
-      debug(err);
+      debug('There has been an error: ', err);
     }
+    debug(`${type[0].toUpperCase() + type.slice(1)} sent to Splunk`);
 
     this.pendingRequests -= 1;
   }
@@ -194,27 +201,6 @@ class SplunkReporter {
     }
 
     return true;
-  }
-
-  async sendEvent(url, payload) {
-    this.pendingRequests += 1;
-    const options = this.formRequest(payload);
-
-    debug('Sending ' + payload[0].dimensions.phase + ' event to Splunk');
-    try {
-      const res = await got.post(url, options);
-      debug(`Splunk API Response: ${res.statusCode} ${res.statusMessage}`);
-
-      if (res.statusCode !== 200) {
-        debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
-      }
-
-      debug(payload[0].dimensions.phase + ' event sent to Splunk');
-    } catch (err) {
-      debug('There has been an error: ', err);
-    }
-
-    this.pendingRequests -= 1;
   }
 
   async waitingForRequest() {
@@ -233,7 +219,7 @@ class SplunkReporter {
       this.eventOpts[0].timestamp = timestamp;
       this.eventOpts[0].dimensions.phase = `Test-Finished`;
 
-      this.sendEvent(this.ingestAPIEventEndpoint, this.eventOpts);
+      this.sendRequest(this.ingestAPIEventEndpoint, this.eventOpts, 'event');
     }
 
     debug('cleaning up');
