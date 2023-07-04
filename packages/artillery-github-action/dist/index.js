@@ -6708,14 +6708,14 @@ async function main() {
 
   // Download the CLI tarball.
   const downloadUrl = getDownloadUrl(ARTILLERY_TAG);
-  core.info({ downloadUrl });
+  core.info(`downloadUrl: ${downloadUrl}`);
 
   const tarballPath = await toolCache.downloadTool(downloadUrl);
-  core.info({ tarballPath });
+  core.info(`tarballPath: ${tarballPath}`);
 
   const cliPath = await toolCache.extractTar(tarballPath);
 
-  core.info({ cliPath });
+  core.info(`cliPath: ${cliPath}`);
 
   // Run the CLI.
   await exec(cliPath, [test], {
