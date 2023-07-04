@@ -40,17 +40,17 @@ class SplunkReporter {
       const rates = this.formatRatesForSplunk(
         stats.rates,
         this.config,
-        timestamp,
+        timestamp
       );
       const summaries = this.formatSummariesForSplunk(
         stats.summaries,
         this.config,
-        timestamp,
+        timestamp
       );
       const counters = this.formatCountersForSplunk(
         stats.counters,
         this.config,
-        timestamp,
+        timestamp
       );
 
       //rates and summaries are both gauges for Splunk, so we're combining them
@@ -171,21 +171,21 @@ class SplunkReporter {
   };
 
   async sendRequest(url, payload, type) {
-    this.pendingRequests += 1
-    const options = this.formRequest(payload)
+    this.pendingRequests += 1;
+    const options = this.formRequest(payload);
 
-    debug(`Sending ${type} to Splunk`)
+    debug(`Sending ${type} to Splunk`);
     try {
-      const res = await got.post(url, options)
-      debug(`Splunk API Response: ${res.statusCode} ${res.statusMessage}`)
+      const res = await got.post(url, options);
+      debug(`Splunk API Response: ${res.statusCode} ${res.statusMessage}`);
 
       if (res.statusCode !== 200) {
-        debug(`Status Code: ${ res.statusCode }, ${ res.statusMessage }`)
+        debug(`Status Code: ${ res.statusCode }, ${ res.statusMessage }`);
       };
     } catch (err) {
-      debug("There has been an error: ", err)
+      debug("There has been an error: ", err);
     };
-    debug(`${type[0].toUpperCase() + type.slice(1)} sent to Splunk`)
+    debug(`${type[0].toUpperCase() + type.slice(1)} sent to Splunk`);
 
     this.pendingRequests -= 1;
   };
@@ -205,19 +205,19 @@ class SplunkReporter {
 
   async waitingForRequest() {
     while (this.pendingRequests > 0) {
-      debug("Waiting for pending request ...")
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      debug("Waiting for pending request ...");
+      await new Promise((resolve) => setTimeout(resolve, 500));
     };
 
-    debug("Pending requests done")
+    debug("Pending requests done");
     return true;
   };
 
   cleanup(done) {
     if (this.startedEventSent) {
-      const timestamp = Date.now()
-      this.eventOpts[0].timestamp = timestamp
-      this.eventOpts[0].dimensions.phase = `Test-Finished`
+      const timestamp = Date.now();
+      this.eventOpts[0].timestamp = timestamp;
+      this.eventOpts[0].dimensions.phase = `Test-Finished`;
 
       this.sendRequest(this.ingestAPIEventEndpoint, this.eventOpts, "event");
     };
