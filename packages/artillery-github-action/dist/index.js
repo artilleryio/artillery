@@ -3998,6 +3998,14 @@ module.exports = require("net");
 
 /***/ }),
 
+/***/ 561:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:fs");
+
+/***/ }),
+
 /***/ 37:
 /***/ ((module) => {
 
@@ -4087,6 +4095,7 @@ module.exports = require("util");
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
+const fs = __nccwpck_require__(561);
 const path = __nccwpck_require__(17);
 const core = __nccwpck_require__(117);
 const { exec } = __nccwpck_require__(473);
@@ -4111,7 +4120,11 @@ function inputsToFlags(inputs) {
   const flags = [];
 
   for (const optionName in inputs) {
-    flags.push(`--${optionName}=${inputs[optionName]}`);
+    const optionValue = inputs[optionName];
+
+    if (optionValue) {
+      flags.push(`--${optionName}=${optionValue}`);
+    }
   }
 
   return flags;
@@ -4121,15 +4134,26 @@ async function main() {
   core.debug(`running Artillery binary at "${ARTILLERY_BINARY_PATH}"...`);
 
   const { test, ...options } = getInputs();
+
   const flags = inputsToFlags(options);
 
-  core.info(`flags: ${JSON.stringify(flags, null, 2)}`);
+  core.debug(`cli flags: ${JSON.stringify(flags, null, 2)}`);
 
+  // Run the tests.
   await exec(ARTILLERY_BINARY_PATH, ["run", test, ...flags], {
     stdio: "inherit",
   }).catch((error) => {
     core.setFailed(error.message);
   });
+
+  // Generate the HTML report.
+  // await exec(ARTILLERY_BINARY_PATH, ["report", ""]).catch((error) => {
+  //   core.error("Generating HTML report failed!");
+  //   core.error(error);
+  // });
+
+  core.summary.addRaw("<h1>Hello world!</h1>");
+  await core.summary.write();
 }
 
 main();
