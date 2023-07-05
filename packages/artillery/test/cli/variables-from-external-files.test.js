@@ -34,3 +34,22 @@ tap.test('Load variables from single CSV successfully', async (t) => {
       !output.stdout.includes('http.codes.400')
   );
 });
+
+tap.test('Load variables from single CSV successfully', async (t) => {
+  const [exitCode, output] = await execute([
+    'run',
+    '--environment',
+    'staging',
+    './test/scripts/scenario-payload-with-envs/scenario.yml',
+    '--config',
+    './test/scripts/scenario-payload-with-envs/config/artillery-config.yml',
+  ]);
+
+  t.ok(
+    exitCode === 0 &&
+      output.stdout.includes('Successfully ran with id') && (
+        output.stdout.includes('abc12345') ||
+        output.stdout.includes('abc56789')
+      )
+  );
+});
