@@ -27,7 +27,7 @@ module.exports = {
   template,
   formatDuration,
   padded,
-  rainbow,
+  rainbow
 };
 
 async function readScript(scriptPath) {
@@ -176,21 +176,25 @@ async function checkConfig(script, scriptPath, flags) {
       script.config.environments &&
       script.config.environments[flags.environment]
     ) {
-      _.forEach(script.config.environments[flags.environment].payload, function (payloadSpec) {
-        if (!payloadSpec.path) {
-          //path may not be present if -p is used (payload is an object). in that case this is unnecessary, as the payload will already have been added above.
-          //and this logic would error as there would be no path
-          return;
+      _.forEach(
+        script.config.environments[flags.environment].payload,
+        function (payloadSpec) {
+          if (!payloadSpec.path) {
+            //path may not be present if -p is used (payload is an object). in that case this is unnecessary, as the payload will already have been added above.
+            //and this logic would error as there would be no path
+            return;
+          }
+
+          const resolvedPathToPayload = path.resolve(
+            path.dirname(absoluteScriptPath),
+            payloadSpec.path
+          );
+
+          payloadSpec.path = resolvedPathToPayload;
         }
-
-        const resolvedPathToPayload = path.resolve(
-          path.dirname(absoluteScriptPath),
-          payloadSpec.path
-        );
-
-        payloadSpec.path = resolvedPathToPayload;
-      });
-    }}
+      );
+    }
+  }
 
   return script;
 }
