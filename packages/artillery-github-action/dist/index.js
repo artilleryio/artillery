@@ -4105,12 +4105,27 @@ function getInputs() {
   };
 }
 
-const ARTILLERY_CLI_PATH = "/home/node/artillery/bin/run";
+const ARTILLERY_BINARY_PATH = "/home/node/artillery/bin/run";
+
+function inputsToFlags(inputs) {
+  const flags = [];
+
+  for (const optionName in inputs) {
+    flags.push(`--${optionName}=${inputs[optionName]}`);
+  }
+
+  return flags;
+}
 
 async function main() {
-  const { test, ...options } = getInputs();
+  core.debug(`running Artillery binary at "${ARTILLERY_BINARY_PATH}"...`);
 
-  await exec(ARTILLERY_CLI_PATH, ["run", test], {
+  const { test, ...options } = getInputs();
+  const flags = inputsToFlags(options);
+
+  core.info(`flags: ${JSON.stringify(flags, null, 2)}`);
+
+  await exec(ARTILLERY_BINARY_PATH, ["run", test, ...flags], {
     stdio: "inherit",
   }).catch((error) => {
     core.setFailed(error.message);
