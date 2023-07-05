@@ -4,17 +4,17 @@ config:
     - duration: 60
       arrivalRate: 5
       rampTo: 10
-    - duration: 60
-      arrivalRate: 10
-      rampTo: 50
-    - duration: 300
-      rampTo: 50
+    # - duration: 60
+    #   arrivalRate: 10
+    #   rampTo: 50
+    # - duration: 300
+    #   rampTo: 50
 scenarios:
   - name: Get 3 animal pictures
     flow:
       - get:
           url: "/dino"
-      - get:
-          url: "/armadillo"
-      - get:
-          url: "/pony"
+      # - get:
+      #     url: "/armadillo"
+      # - get:
+      #     url: "/pony"
