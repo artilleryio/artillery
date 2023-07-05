@@ -32,12 +32,9 @@ module.exports = async function setDefaultAWSCredentials(SDK) {
     if (credentials !== null) {
       await updateSSOCredentials(aws);
 
-      setInterval(
-        async () => {
-          await updateSSOCredentials(aws);
-        },
-        60 * 10 * 1000
-      ).unref();
+      setInterval(async () => {
+        await updateSSOCredentials(aws);
+      }, 60 * 10 * 1000).unref();
     } else {
       throw new Error(
         'The SSO session associated with this profile has expired or is otherwise invalid. To refresh this SSO session run aws sso login with the corresponding profile.'

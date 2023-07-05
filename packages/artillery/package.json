@@ -13,12 +13,6 @@
     "util.js",
     ".artilleryrc"
   ],
-  "prettier": {
-    "semi": true,
-    "singleQuote": true,
-    "useTabs": false,
-    "trailingComma": "none"
-  },
   "oclif": {
     "update": {
       "s3": {
@@ -52,8 +46,10 @@
     "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/unit/*.test.js test/cli/*.test.js && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
     "test:cloud": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/cloud-e2e/*.test.js",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
-    "lint-fix": "npm run lint -- --fix",
-    "commitlint-last-commit": "commitlint --from $(git show HEAD~1 | grep commit | awk '{print $2}')"
+    "lint-fix": "npm run lint -- --fix"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,tsx}": "eslint --fix"
   },
   "tap": {
     "check-coverage": false
@@ -127,24 +123,15 @@
     "try-require": "1.2.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "^9.1.2",
-    "@commitlint/config-conventional": "^7.1.2",
     "@hapi/hapi": "^20.1.3",
     "eslint": "^8.6.0",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
     "execa": "^0.10.0",
     "get-bin-path": "^5.1.0",
-    "husky": "^4.2.5",
-    "prettier": "^2.5.1",
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
     "tap": "^15.2.3",
     "zx": "^4.2.0"
-  },
-  "husky": {
-    "hooks": {
-      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
-    }
   }
 }
