@@ -420,8 +420,10 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   for (const fn of inputFiles) {
     const data = await readScript(fn);
     const parsedData = await parseScript(data);
-    script1 = await checkConfig(_.merge(script1, parsedData), fn, flags);
+    script1 = _.merge(script1, parsedData);
   }
+
+  script1 = await checkConfig(script1, inputFiles[0], flags)
 
   if (flags.config) {
     const absoluteConfigPath = path.resolve(process.cwd(), flags.config);
