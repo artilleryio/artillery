@@ -1,4 +1,4 @@
-const fs = require("node:fs");
+const fs = require("node:fs/promises");
 const path = require("path");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
@@ -35,9 +35,7 @@ function inputsToFlags(inputs) {
 
 async function main() {
   core.debug(`running Artillery binary at "${ARTILLERY_BINARY_PATH}"...`);
-
   const { test, ...options } = getInputs();
-
   const flags = inputsToFlags(options);
 
   core.debug(`cli flags: ${JSON.stringify(flags, null, 2)}`);
@@ -50,13 +48,29 @@ async function main() {
   });
 
   // Generate the HTML report.
-  // await exec(ARTILLERY_BINARY_PATH, ["report", ""]).catch((error) => {
-  //   core.error("Generating HTML report failed!");
-  //   core.error(error);
-  // });
+  if (options.output) {
+    const htmlReportFilename = `report.html`;
+    await exec(ARTILLERY_BINARY_PATH, [
+      "report",
+      `-o=${htmlReportFilename}`,
+      options.output,
+    ]).catch((error) => {
+      core.error("Generating HTML report failed!");
+      core.error(error);
+    });
 
-  core.summary.addRaw("<h1>Hello world!</h1>");
-  await core.summary.write();
+    const htmlReportFilePath = path.resolve(process.cwd(), htmlReportFilename);
+
+    const reportContent = await fs
+      .readFile(htmlReportFilePath, "utf8")
+      .catch((error) => {
+        core.error("Reading the generated report HTML failed!");
+        core.error(error);
+      });
+
+    core.summary.addRaw(reportContent, true);
+    await core.summary.write();
+  }
 }
 
 main();
