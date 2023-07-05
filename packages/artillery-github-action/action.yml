@@ -12,7 +12,7 @@ inputs:
 
   output:
     description: "Save the test run report to the given path"
-    default: "./report.json"
+    default: "./artillery.report.json"
 
   config:
     description: "A path to the shared configuration file"
