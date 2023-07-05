@@ -11,6 +11,10 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Action test
+        id: loadtest
         uses: ./packages/artillery-github-action
         with:
           test: ./packages/artillery-github-action/test.yml
+
+      - name: Output test
+        run: echo "${{ steps.loadtest.outputs.report }}"
