@@ -1,7 +1,8 @@
-const fs = require("node:fs/promises");
-const path = require("path");
+const path = require("node:path");
 const core = require("@actions/core");
 const { exec } = require("@actions/exec");
+
+const ARTILLERY_BINARY_PATH = "/home/node/artillery/bin/run";
 
 function getInputs() {
   const test = core.getInput("test");
@@ -16,8 +17,6 @@ function getInputs() {
     config,
   };
 }
-
-const ARTILLERY_BINARY_PATH = "/home/node/artillery/bin/run";
 
 function inputsToFlags(inputs) {
   const flags = [];
@@ -47,30 +46,9 @@ async function main() {
     core.setFailed(error.message);
   });
 
-  // Generate the HTML report.
-  if (options.output) {
-    const htmlReportFilename = `report.html`;
-    await exec(ARTILLERY_BINARY_PATH, [
-      "report",
-      `-o=${htmlReportFilename}`,
-      options.output,
-    ]).catch((error) => {
-      core.error("Generating HTML report failed!");
-      core.error(error);
-    });
-
-    const htmlReportFilePath = path.resolve(process.cwd(), htmlReportFilename);
-
-    const reportContent = await fs
-      .readFile(htmlReportFilePath, "utf8")
-      .catch((error) => {
-        core.error("Reading the generated report HTML failed!");
-        core.error(error);
-      });
-
-    core.summary.addRaw(reportContent, true);
-    await core.summary.write();
-  }
+  // Set the generated report JSON as the action's output.
+  const reportPath = path.resolve(process.cwd(), options.output);
+  core.setOutput("report", reportPath);
 }
 
 main();

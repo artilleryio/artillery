@@ -5,21 +5,26 @@ description: "Load testing of your application at scale."
 inputs:
   test:
     required: true
-    description: A test script path.
+    description: "A test script path."
 
   target:
-    description: Set or override the target URL for the tests.
+    description: "Set or override the target URL for the tests"
 
   output:
-    description: Save the test run report to the given path.
-    default: ./report.json
+    description: "Save the test run report to the given path"
 
   config:
-    description: A path to the shared configuration file.
+    description: "A path to the shared configuration file"
 
-# outputs:
-#   time:
-#     description: "The time we greeted you"
+  insecure:
+    description: "Turn off TLS validation during the test run"
+
+  quiet:
+    description: "Run in quiet mode"
+
+outputs:
+  report:
+    description: "A path to the generated report JSON file"
 
 runs:
   using: "node16"

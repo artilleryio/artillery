@@ -3998,11 +3998,11 @@ module.exports = require("net");
 
 /***/ }),
 
-/***/ 977:
+/***/ 411:
 /***/ ((module) => {
 
 "use strict";
-module.exports = require("node:fs/promises");
+module.exports = require("node:path");
 
 /***/ }),
 
@@ -4095,10 +4095,11 @@ module.exports = require("util");
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
-const fs = __nccwpck_require__(977);
-const path = __nccwpck_require__(17);
+const path = __nccwpck_require__(411);
 const core = __nccwpck_require__(117);
 const { exec } = __nccwpck_require__(473);
+
+const ARTILLERY_BINARY_PATH = "/home/node/artillery/bin/run";
 
 function getInputs() {
   const test = core.getInput("test");
@@ -4113,8 +4114,6 @@ function getInputs() {
     config,
   };
 }
-
-const ARTILLERY_BINARY_PATH = "/home/node/artillery/bin/run";
 
 function inputsToFlags(inputs) {
   const flags = [];
@@ -4144,30 +4143,9 @@ async function main() {
     core.setFailed(error.message);
   });
 
-  // Generate the HTML report.
-  if (options.output) {
-    const htmlReportFilename = `report.html`;
-    await exec(ARTILLERY_BINARY_PATH, [
-      "report",
-      `-o=${htmlReportFilename}`,
-      options.output,
-    ]).catch((error) => {
-      core.error("Generating HTML report failed!");
-      core.error(error);
-    });
-
-    const htmlReportFilePath = path.resolve(process.cwd(), htmlReportFilename);
-
-    const reportContent = await fs
-      .readFile(htmlReportFilePath, "utf8")
-      .catch((error) => {
-        core.error("Reading the generated report HTML failed!");
-        core.error(error);
-      });
-
-    core.summary.addRaw(reportContent, true);
-    await core.summary.write();
-  }
+  // Set the generated report JSON as the action's output.
+  const reportPath = path.resolve(process.cwd(), options.output);
+  core.setOutput("report", reportPath);
 }
 
 main();
