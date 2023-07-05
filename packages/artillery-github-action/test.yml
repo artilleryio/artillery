@@ -1,4 +1,4 @@
-onfig:
+config:
   target: "http://asciiart.artillery.io:8080"
   phases:
     - duration: 60
