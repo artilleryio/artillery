@@ -138,10 +138,10 @@ function expectationsPluginCheckExpectations(
 
   requestExpectations.results.forEach((e) => {
     if (e.ok) {
-      events.emit('counter', `plugins.expect.ok`, 1);
+      events.emit('counter', 'plugins.expect.ok', 1);
       events.emit('counter', `plugins.expect.ok.${e.type}`, 1);
     } else {
-      events.emit('counter', `plugins.expect.failed`, 1);
+      events.emit('counter', 'plugins.expect.failed', 1);
       events.emit('counter', `plugins.expect.failed.${e.type}`, 1);
     }
   });

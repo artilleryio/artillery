@@ -6,9 +6,35 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint  --continue",
-    "lint-fix": "turbo run lint-fix  --continue"
+    "lint-fix": "turbo run lint-fix  --continue",
+    "format": "npx prettier -w ./packages/**/*.{js,ts,json}",
+    "prepare": "npx simple-git-hooks"
   },
   "devDependencies": {
+    "@commitlint/cli": "^9.1.2",
+    "@commitlint/config-conventional": "^7.6.0",
+    "lint-staged": "^13.2.3",
+    "prettier": "^2.8.8",
+    "simple-git-hooks": "^2.8.1",
     "turbo": "^1.6.3"
+  },
+  "simple-git-hooks": {
+    "commit-msg": "npx commitlint --edit $1",
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.json": [
+      "prettier --write"
+    ]
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "useTabs": false,
+    "trailingComma": "none"
   }
 }
