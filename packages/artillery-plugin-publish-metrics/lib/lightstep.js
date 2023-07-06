@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
-* */
+ * */
 
 const lightstep = require('lightstep-tracer');
 const opentracing = require('opentracing');
@@ -16,12 +16,12 @@ class LightstepReporter {
     this.lightstepOpts = {
       accessToken: config.accessToken,
       componentName: config.componentName,
-      disabled: config.enabled === false,
+      disabled: config.enabled === false
     };
 
     this.defaultTags = {};
-    if(typeof config.tags !== 'undefined') {
-      if(Array.isArray(config.tags)) {
+    if (typeof config.tags !== 'undefined') {
+      if (Array.isArray(config.tags)) {
         (config.tags || []).forEach((s) => {
           this.defaultTags[s.split(':')[0]] = s.split(':')[1];
         });
@@ -33,7 +33,11 @@ class LightstepReporter {
     }
 
     if (!versionCheck('>=1.7.0')) {
-      console.error(`[publish-metrics][lightstep] Lightstep support requires Artillery >= v1.7.0 (current version: ${global.artillery ? global.artillery.version || 'unknown' : 'unknown'})`);
+      console.error(
+        `[publish-metrics][lightstep] Lightstep support requires Artillery >= v1.7.0 (current version: ${
+          global.artillery ? global.artillery.version || 'unknown' : 'unknown'
+        })`
+      );
     }
 
     // TODO: Validate options
@@ -43,17 +47,21 @@ class LightstepReporter {
     });
     opentracing.initGlobalTracer(this.tracer);
 
-    attachScenarioHooks(script, [{
-      type: 'beforeRequest',
-      name: 'startLightstepSpan',
-      hook: this.startLightstepSpan.bind(this)
-    }]);
+    attachScenarioHooks(script, [
+      {
+        type: 'beforeRequest',
+        name: 'startLightstepSpan',
+        hook: this.startLightstepSpan.bind(this)
+      }
+    ]);
 
-    attachScenarioHooks(script, [{
-      type: 'afterResponse',
-      name: 'sendToLightstep',
-      hook: this.sendToLightstep.bind(this)
-    }]);
+    attachScenarioHooks(script, [
+      {
+        type: 'afterResponse',
+        name: 'sendToLightstep',
+        hook: this.sendToLightstep.bind(this)
+      }
+    ]);
 
     debug('init done');
   }

@@ -1,19 +1,22 @@
 {
   "config": {
-      "target": "http://127.0.0.1:3003",
-      "phases": [
-        { "duration": 2, "arrivalRate": 10 }
-      ],
-      "payload": {
-        "path": "./pets.csv",
-        "fields": ["species", "name"]
-      }
+    "target": "http://127.0.0.1:3003",
+    "phases": [{ "duration": 2, "arrivalRate": 10 }],
+    "payload": {
+      "path": "./pets.csv",
+      "fields": ["species", "name"]
+    }
   },
   "scenarios": [
     {
       "flow": [
-        {"get": {"url": "/{{{name}}}"}},
-        {"post": {"url": "/pets", "json": {"name": "{{ name }}", "species": "{{ species }}"}}}
+        { "get": { "url": "/{{{name}}}" } },
+        {
+          "post": {
+            "url": "/pets",
+            "json": { "name": "{{ name }}", "species": "{{ species }}" }
+          }
+        }
       ]
     }
   ]

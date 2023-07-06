@@ -55,5 +55,5 @@ async function multistepWithCustomMetrics(page, userContext, events) {
 module.exports = {
   cloudWaitlistSignupFlow,
   checkPage,
-  multistepWithCustomMetrics,
+  multistepWithCustomMetrics
 };

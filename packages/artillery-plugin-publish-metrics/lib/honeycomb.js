@@ -19,16 +19,22 @@ class HoneycombReporter {
     };
 
     if (!versionCheck('>=1.7.0')) {
-      console.error(`[publish-metrics][honeycomb] Honeycomb support requires Artillery >= v1.7.0 (current version: ${global.artillery ? global.artillery.version || 'unknown' : 'unknown' })`);
+      console.error(
+        `[publish-metrics][honeycomb] Honeycomb support requires Artillery >= v1.7.0 (current version: ${
+          global.artillery ? global.artillery.version || 'unknown' : 'unknown'
+        })`
+      );
     }
 
     this.hny = new Libhoney(this.hnyOpts);
 
-    attachScenarioHooks(script, [{
-      type: 'afterResponse',
-      name: 'sendToHoneycomb',
-      hook: this.sendToHoneycomb.bind(this)
-    }]);
+    attachScenarioHooks(script, [
+      {
+        type: 'afterResponse',
+        name: 'sendToHoneycomb',
+        hook: this.sendToHoneycomb.bind(this)
+      }
+    ]);
 
     debug('init done');
   }

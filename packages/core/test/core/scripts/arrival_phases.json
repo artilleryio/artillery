@@ -3,16 +3,14 @@
     "target": "http://127.0.0.1:3003",
 
     "phases": [
-      {"duration": 10, "arrivalCount": 10},
-      {"pause": 5},
-      {"duration": 10, "arrivalCount": 50}
+      { "duration": 10, "arrivalCount": 10 },
+      { "pause": 5 },
+      { "duration": 10, "arrivalCount": 50 }
     ]
   },
   "scenarios": [
     {
-      "flow": [
-        {"get": {"url": "/"}}
-      ]
+      "flow": [{ "get": { "url": "/" } }]
     }
   ]
 }

@@ -15,13 +15,16 @@ function DatadogReporter(config, events, script) {
   this.excluded = config.excluded || [];
   this.includeOnly = config.includeOnly || [];
 
-  config = Object.assign({
-    host: '127.0.0.1',
-    port: 8125,
-    prefix: 'artillery.',
-    event: { send: true },
-    tags: []
-  }, config);
+  config = Object.assign(
+    {
+      host: '127.0.0.1',
+      port: 8125,
+      prefix: 'artillery.',
+      event: { send: true },
+      tags: []
+    },
+    config
+  );
 
   config.event = Object.assign(
     {
@@ -31,12 +34,15 @@ function DatadogReporter(config, events, script) {
       alertType: 'info',
       tags: []
     },
-    config.event);
+    config.event
+  );
 
   debug('creating DatadogReporter with config');
-  debug(config.apiKey ?
-        Object.assign({ apiKey: sanitize(config.apiKey) }, config) :
-        config);
+  debug(
+    config.apiKey
+      ? Object.assign({ apiKey: sanitize(config.apiKey) }, config)
+      : config
+  );
 
   this.config = config;
   if (config.apiKey) {
@@ -71,7 +77,7 @@ function DatadogReporter(config, events, script) {
   }
 
   this.startedEventSent = false;
-  if (config.event && String(config.event.send) !== "false") {
+  if (config.event && String(config.event.send) !== 'false') {
     if (this.reportingType === 'api') {
       this.dogapi.initialize({
         api_key: config.apiKey
@@ -79,7 +85,7 @@ function DatadogReporter(config, events, script) {
     }
 
     events.on('phaseStarted', () => {
-      if(!this.startedEventSent) {
+      if (!this.startedEventSent) {
         debug('sending start event');
         this.event({
           title: `Started: ${config.event.title}`,
@@ -96,7 +102,7 @@ function DatadogReporter(config, events, script) {
   }
 
   events.on('stats', (stats) => {
-    for(const [name, value] of Object.entries(stats.counters || {})) {
+    for (const [name, value] of Object.entries(stats.counters || {})) {
       if (this.shouldSendMetric(name)) {
         this.metrics.increment(name, value);
       }
@@ -120,7 +126,7 @@ function DatadogReporter(config, events, script) {
 
       so we create gauges such as: http.response_time.p50 = 19.9
      */
-    for(const [name, values] of Object.entries(stats.summaries || {})) {
+    for (const [name, values] of Object.entries(stats.summaries || {})) {
       for (const [aggregation, value] of Object.entries(values)) {
         if (this.shouldSendMetric(name)) {
           this.metrics.gauge(`${name}.${aggregation}`, value);
@@ -138,7 +144,7 @@ function DatadogReporter(config, events, script) {
   return this;
 }
 
-DatadogReporter.prototype.shouldSendMetric = function(metricName) {
+DatadogReporter.prototype.shouldSendMetric = function (metricName) {
   if (this.includeOnly.length === 0 && this.excluded.length === 0) {
     return true;
   }
@@ -148,9 +154,9 @@ DatadogReporter.prototype.shouldSendMetric = function(metricName) {
   }
 
   return !matchesPattern(metricName, this.excluded);
-}
+};
 
-DatadogReporter.prototype.event = function(opts) {
+DatadogReporter.prototype.event = function (opts) {
   debug(`sending event ${opts.text || opts.title}`);
 
   const eventOpts = {
@@ -174,7 +180,8 @@ DatadogReporter.prototype.event = function(opts) {
           // See https://github.com/DataDog/datadogpy/issues/169
           debug(res);
         }
-      });
+      }
+    );
   } else {
     this.metrics.event(
       opts.title,
@@ -191,7 +198,7 @@ DatadogReporter.prototype.event = function(opts) {
   }
 };
 
-DatadogReporter.prototype.cleanup = function(done) {
+DatadogReporter.prototype.cleanup = function (done) {
   if (this.startedEventSent) {
     const config = this.config;
     this.event({
@@ -219,17 +226,20 @@ DatadogReporter.prototype.cleanup = function(done) {
       },
       // see bufferFlushInterval above, needs to be higher; close()
       // doesn't flush (yet)
-      1500);
+      1500
+    );
   }
 };
-
 
 function createDatadogReporter(config, events, script) {
   return new DatadogReporter(config, events, script);
 }
 
 function sanitize(str) {
-  return `${str.substring(0, 3)}********************${str.substring(str.length - 3, str.length)}`;
+  return `${str.substring(0, 3)}********************${str.substring(
+    str.length - 3,
+    str.length
+  )}`;
 }
 
 function matchesPattern(str, filters) {
@@ -244,7 +254,6 @@ function matchesPattern(str, filters) {
 
   return result;
 }
-
 
 module.exports = {
   createDatadogReporter

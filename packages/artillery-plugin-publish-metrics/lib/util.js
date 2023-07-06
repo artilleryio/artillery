@@ -18,7 +18,6 @@ function attachScenarioHooks(script, specs) {
   const scenarios = script.scenarios;
 
   if (typeof scenarios !== 'object' || scenarios.length < 1) {
-
     return;
   }
 

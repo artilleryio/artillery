@@ -1,15 +1,13 @@
 {
   "config": {
-      "target": "http://127.0.0.1:3003",
-      "phases": [
-        {"duration": 10, "arrivalRate": 1}
-      ]
+    "target": "http://127.0.0.1:3003",
+    "phases": [{ "duration": 10, "arrivalRate": 1 }]
   },
   "scenarios": [
     {
       "flow": [
-        {"post": {"url": "/setscookie"}},
-        {"get": {"url": "/expectscookie"}}
+        { "post": { "url": "/setscookie" } },
+        { "get": { "url": "/expectscookie" } }
       ]
     }
   ]

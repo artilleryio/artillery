@@ -412,7 +412,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   } catch (err) {
     throw err;
   }
-}
+};
 
 async function prepareTestExecutionPlan(inputFiles, flags, args) {
   let script1 = {};

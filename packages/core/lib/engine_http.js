@@ -85,9 +85,9 @@ function HttpEngine(script) {
     this.config.http = {};
   }
 
-  if(typeof this.config.http.cookieJarOptions === 'undefined') {
+  if (typeof this.config.http.cookieJarOptions === 'undefined') {
     this.config.http.cookieJarOptions = {};
-  };
+  }
 
   // If config.http.pool is set, create & reuse agents for all requests (with
   // max sockets set). That's what we're done here.
@@ -507,7 +507,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           debugResponse(JSON.stringify(body, null, 2));
 
           // capture/match/response hooks run only for last request in a task
-          if(!isLast) {
+          if (!isLast) {
             return done(null, context);
           }
 
@@ -612,10 +612,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
                   if (haveFailedMatches || haveFailedCaptures) {
                     // FIXME: This means only one error in the report even if multiple captures failed for the same request.
-                    return done(
-                      new Error('Failed capture or match'),
-                      context
-                    );
+                    return done(new Error('Failed capture or match'), context);
                   }
                   return done(null, context);
                 }
@@ -678,7 +675,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 callback
               );
             });
-
           })
           .on('downloadProgress', (progress) => {
             totalDownloaded = progress.total;
@@ -737,7 +733,9 @@ HttpEngine.prototype._handleResponse = function (
         try {
           context._jar.setCookieSync(cookieString, url);
         } catch (err) {
-          debug(`Could not parse cookieString "${cookieString}" from response header, skipping it`);
+          debug(
+            `Could not parse cookieString "${cookieString}" from response header, skipping it`
+          );
           debug(err);
           ee.emit('error', 'cookie_parse_error_invalid_cookie');
         }
@@ -775,8 +773,8 @@ HttpEngine.prototype._handleResponse = function (
 
     if (responseProcessor) {
       responseProcessor(isLastRequest, res, body, (processResponseErr) => {
-          // capture/match returned an error object, or a hook function returned
-          // with an error
+        // capture/match returned an error object, or a hook function returned
+        // with an error
         if (processResponseErr) {
           return callback(processResponseErr, context);
         }
@@ -798,15 +796,23 @@ function lastRequest(res, requestParams) {
   // - 3xx response and not following redirects
   // - not a 3xx response
 
-  return ((res.statusCode >= 300 && res.statusCode < 400 && !requestParams.followRedirect) ||
-         (res.statusCode < 300 || res.statusCode >= 400))
+  return (
+    (res.statusCode >= 300 &&
+      res.statusCode < 400 &&
+      !requestParams.followRedirect) ||
+    res.statusCode < 300 ||
+    res.statusCode >= 400
+  );
 }
 
 HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
 
   initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
-  initialContext._jar = new tough.CookieJar(null, this.config.http.cookieJarOptions);
+  initialContext._jar = new tough.CookieJar(
+    null,
+    this.config.http.cookieJarOptions
+  );
 
   initialContext._enableCookieJar = false;
   // If a default cookie is set, we will use the jar straightaway:

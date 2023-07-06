@@ -16,7 +16,7 @@ const typeDefs = gql`
   }
 
   type Query {
-    users: [User],
+    users: [User]
     user(id: ID!): User
     userByUsername(username: String!): User
     userByEmail(username: String!): User
@@ -38,26 +38,26 @@ const resolvers = {
     user: async (_, { id }) => {
       return await prisma.user.findUnique({
         where: { id: parseInt(id) }
-      })
+      });
     },
 
     userByEmail: async (_, { email }) => {
       return await prisma.user.findUnique({
         where: { email }
-      })
+      });
     },
 
     userByUsername: async (_, { username }) => {
       return await prisma.user.findUnique({
         where: { username }
-      })
+      });
     }
   },
 
   Mutation: {
     createUser: async (_, { input }) => {
       return await prisma.user.create({
-        data: input,
+        data: input
       });
     },
 

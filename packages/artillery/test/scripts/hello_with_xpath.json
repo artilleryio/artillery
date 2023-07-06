@@ -1,15 +1,20 @@
 {
   "config": {
-      "target": "http://127.0.0.1:3003",
-      "phases": [
-        {"duration": 2, "arrivalRate": 5}
-      ]
+    "target": "http://127.0.0.1:3003",
+    "phases": [{ "duration": 2, "arrivalRate": 5 }]
   },
   "scenarios": [
     {
       "flow": [
-        {"get": {"url": "/", "capture": {"xpath": "//", "as": "whatever"}}},
-        {"post": {"url": "/pets", "json": {"name": "Figo", "species": "dog"}}}
+        {
+          "get": { "url": "/", "capture": { "xpath": "//", "as": "whatever" } }
+        },
+        {
+          "post": {
+            "url": "/pets",
+            "json": { "name": "Figo", "species": "dog" }
+          }
+        }
       ]
     }
   ]

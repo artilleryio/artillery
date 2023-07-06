@@ -45,7 +45,7 @@ test('cookie jar invalid response', function (t) {
       );
       t.ok(
         report.errors.cookie_parse_error_invalid_cookie &&
-        report.errors.cookie_parse_error_invalid_cookie > 0,
+          report.errors.cookie_parse_error_invalid_cookie > 0,
         'There shoud be some cookie errors'
       );
       ee.stop().then(() => {
@@ -58,7 +58,9 @@ test('cookie jar invalid response', function (t) {
 
 test('setting cookie jar parsing options', function (t) {
   var script = require('./scripts/cookies_malformed_response.json');
-  Object.assign(script.config, { http: { cookieJarOptions: { looseMode: true } }});
+  Object.assign(script.config, {
+    http: { cookieJarOptions: { looseMode: true } }
+  });
 
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
@@ -68,10 +70,7 @@ test('setting cookie jar parsing options', function (t) {
         'There should be some 200s'
       );
 
-      t.ok(
-        Object.keys(report.errors).length === 0,
-        'There shoud be no errors'
-      );
+      t.ok(Object.keys(report.errors).length === 0, 'There shoud be no errors');
       ee.stop().then(() => {
         t.end();
       });

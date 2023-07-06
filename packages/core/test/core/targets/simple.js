@@ -221,7 +221,6 @@ function route(server) {
       }
     }
   ]);
-
 }
 
 function ok(req, h) {

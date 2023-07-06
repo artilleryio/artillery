@@ -1,17 +1,12 @@
 {
   "config": {
-      "target": "https://127.0.0.1:3002",
-      "phases": [
-        {"duration": 10, "arrivalRate": 1}
-      ],
-      "tls": {
-      }
+    "target": "https://127.0.0.1:3002",
+    "phases": [{ "duration": 10, "arrivalRate": 1 }],
+    "tls": {}
   },
   "scenarios": [
     {
-      "flow": [
-        {"get": {"url": "/"}}
-      ]
+      "flow": [{ "get": { "url": "/" } }]
     }
   ]
 }

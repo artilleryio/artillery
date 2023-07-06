@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { CloudWatchClient, PutMetricDataCommand } = require('@aws-sdk/client-cloudwatch');
+const {
+  CloudWatchClient,
+  PutMetricDataCommand
+} = require('@aws-sdk/client-cloudwatch');
 const debug = require('debug')('plugin:publish-metrics:cloudwatch');
 
 const COUNTERS_STATS = 'counters'; // counters stats
@@ -15,7 +18,14 @@ const DEFAULT_STATS_ALLOWED = ['p99', 'max', 'min', 'median', 'count'];
 
 const STATS_KEYS = ['p50', 'p75', 'p95', 'p99', 'p999', 'max', 'min', 'median'];
 
-const KNOWN_METRICS = ['http.response_time', 'http.tls', 'http.tcp', 'http.dns', 'http.total', 'vusers.session_length'];
+const KNOWN_METRICS = [
+  'http.response_time',
+  'http.tls',
+  'http.tcp',
+  'http.dns',
+  'http.total',
+  'vusers.session_length'
+];
 
 const KNOWN_UNITS = {
   [SUMMARIES_STATS]: KNOWN_METRICS.reduce((acc, key) => {
@@ -60,7 +70,8 @@ class CloudWatchReporter {
           this.addMetric(
             `${rKey}`,
             stats[RATES_STATS][rKey],
-            (KNOWN_UNITS[RATES_STATS] && KNOWN_UNITS[RATES_STATS][rKey]) || DEFAULT_UNIT
+            (KNOWN_UNITS[RATES_STATS] && KNOWN_UNITS[RATES_STATS][rKey]) ||
+              DEFAULT_UNIT
           );
         }
       }
@@ -69,7 +80,10 @@ class CloudWatchReporter {
         for (const sKey in stats[SUMMARIES_STATS]) {
           let readings = stats[SUMMARIES_STATS][sKey];
           for (const readingKey in readings) {
-            if (this.options.extended || DEFAULT_STATS_ALLOWED.includes(readingKey.split('.').pop())) {
+            if (
+              this.options.extended ||
+              DEFAULT_STATS_ALLOWED.includes(readingKey.split('.').pop())
+            ) {
               this.addMetric(
                 `${sKey}.${readingKey}`,
                 readings[readingKey],
@@ -90,7 +104,9 @@ class CloudWatchReporter {
   }
 
   isMetricValid(value) {
-    return value !== undefined && value !== null && !isNaN(value) && isFinite(value);
+    return (
+      value !== undefined && value !== null && !isNaN(value) && isFinite(value)
+    );
   }
 
   addMetric(name, value, unit = DEFAULT_UNIT) {
@@ -102,7 +118,10 @@ class CloudWatchReporter {
       return;
     }
 
-    if (this.options.includeOnly.length > 0 && !this.options.includeOnly.includes(name)) {
+    if (
+      this.options.includeOnly.length > 0 &&
+      !this.options.includeOnly.includes(name)
+    ) {
       return;
     }
 
