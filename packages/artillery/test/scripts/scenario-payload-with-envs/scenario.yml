@@ -9,7 +9,7 @@ config:
           skipHeader: true
           path: "./data/my-data.csv"
           order: sequence
-  target: https://http.cat
+  target: http://asciiart.artillery.io:8080
   phases:
     - duration: 1
       arrivalRate: 1
@@ -18,4 +18,4 @@ config:
 scenarios:
   - name: Test Scenario
     flow:
-      - log: "Successfully ran with id: {{ id }}"
+      - log: "Successfully ran with id {{ id }}"
