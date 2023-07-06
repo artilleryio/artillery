@@ -3,13 +3,13 @@
 </p>
 <h1 align="center">Artillery GitHub Action</h1>
 
-<center>
-
-Official GitHub Action for running load tests with [Artillery](https://artillery.io/).
-
-</center>
+<p align="center">
+Official GitHub Action for running load tests with <a href="https://artillery.io/">Artillery</a>.
+</p>
 
 ## Inputs
+
+The `artilleryio/run` action supports a subset of the [`run` command options](https://www.artillery.io/docs/reference/cli/run#options) of our CLI.
 
 ### `test`
 
@@ -30,7 +30,7 @@ Set or override the target URL for the tests.
 
 ### `output`
 
-- _Optional_
+- _Optional_, default: `./report.json`
 
 Write the test report to the given path.
 
@@ -43,7 +43,7 @@ Write the test report to the given path.
     # for all the test scripts in this run.
     config: ./load-tests/artillery.config.yml
     # Generate a report for this test run.
-    output: ./report.json
+    output: ./custom-report.json
 ```
 
 ### `config`
@@ -62,17 +62,38 @@ A path to the shared configuration file. When provided, the configuration will m
     config: ./load-tests/artillery.config.yml
 ```
 
+### `insecure`
+
+- _Optional_
+
+Ignore TLS validation during the test run.
+
+### `quiet`
+
+- _Optional_
+
+Run the tests in quiet mode.
+
 ## Outputs
 
-What the action returns to you as an output.
+### `report`
+
+A path to the generated test run report JSON file.
+
+```yml
+- name: Load tests
+  id: loadtest
+  uses: artilleryio/run@v1
+  with:
+    test: ./test.yml
+
+- name: Access report output
+  run: echo "Load test report saved to ${{ steps.loadtest.outputs.report }}"
+```
 
 ## Examples
 
 > Make the most out of your CI/CD pipelines by reading the [Best practices](https://www.artillery.io/docs/get-started/best-practices) of load testing with Artillery.
-
-### Previewing test results
-
-> Artem: I'd rather we don't ship any preview functionality and instead allow the users to provide their `API_KEY` for the Dashboard. Then, we generate a preview URL for the test run in the Dashboard and set it as an output of the action.
 
 ### Load testing before deployment
 
