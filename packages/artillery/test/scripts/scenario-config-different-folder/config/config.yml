@@ -1,0 +1,8 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - duration: 1
+      arrivalRate: 1
+      maxVusers: 1
+      name: "low level"
+  processor: ../__processor__/index.js #relative to the path of scenario.yml
