@@ -5,4 +5,4 @@ config:
       arrivalRate: 1
       maxVusers: 1
       name: "low level"
-  processor: ./__processor__/index.js #relative to the path of scenario.yml
+  processor: ./__processor__/index.js #relative to the path of scenario.yml (backward compatible mode)
