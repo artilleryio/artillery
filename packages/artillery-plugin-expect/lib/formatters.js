@@ -12,7 +12,7 @@ module.exports = {
   pretty: prettyPrint,
   json: jsonPrint,
   prettyError: prettyError,
-  silent: silent,
+  silent: silent
 };
 
 function silent(requestExpectation, req, res, userContext) {
@@ -22,12 +22,16 @@ function silent(requestExpectation, req, res, userContext) {
 function prettyPrint(requestExpectations, req, res, userContext) {
   debug('prettyPrint formatter');
   if (requestExpectations.results.length > 0) {
-    console.log(`${chalk.blue('*', req.method, urlparse(req.url).path)} ${req.name ? '- ' + req.name : ''}\n`);
+    console.log(
+      `${chalk.blue('*', req.method, urlparse(req.url).path)} ${
+        req.name ? '- ' + req.name : ''
+      }\n`
+    );
   }
 
   let hasFailedExpectations = false;
 
-  requestExpectations.results.forEach(result => {
+  requestExpectations.results.forEach((result) => {
     console.log(
       `  ${result.ok ? chalk.green('ok') : chalk.red('not ok')} ${
         result.type
@@ -52,16 +56,20 @@ function printExchangeContext(req, res, userContext) {
   console.log(prepend(req.url, '    '));
   console.log(prepend(JSON.stringify(req.json || '', null, 2), '    '));
   console.log(chalk.yellow('  Headers:'));
-  Object.keys(res.headers).forEach(function(h) {
+  Object.keys(res.headers).forEach(function (h) {
     console.log(`  ${h}: ${res.headers[h]}`);
   });
   console.log(chalk.yellow('  Body:'));
   console.log(res.body?.substring(0, 512));
 
   console.log(chalk.yellow('  User variables:'));
-  Object.keys(userContext.vars).filter(varName => varName !== '$processEnvironment' && varName !== '$env').forEach(function(varName) {
-    console.log(`    ${varName}: ${userContext.vars[varName]}`);
-  });
+  Object.keys(userContext.vars)
+    .filter(
+      (varName) => varName !== '$processEnvironment' && varName !== '$env'
+    )
+    .forEach(function (varName) {
+      console.log(`    ${varName}: ${userContext.vars[varName]}`);
+    });
 }
 
 function jsonPrint(requestExpectations, req, res, userContext) {
@@ -69,7 +77,7 @@ function jsonPrint(requestExpectations, req, res, userContext) {
 }
 
 function prettyError(requestExpectations, req, res, userContext) {
-  if (requestExpectations.results.find(result => !result.ok) === undefined) {
+  if (requestExpectations.results.find((result) => !result.ok) === undefined) {
     return;
   }
   prettyPrint(requestExpectations, req, res, userContext);
@@ -78,7 +86,7 @@ function prettyError(requestExpectations, req, res, userContext) {
 function prepend(text, str) {
   return text
     .split('\n')
-    .map(function(line) {
+    .map(function (line) {
       return str + line;
     })
     .join('\n');

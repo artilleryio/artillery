@@ -207,7 +207,7 @@ test('HTTP engine', function (tap) {
           zlib.gzipSync(
             JSON.stringify({
               status: responseStatus
-            }),
+            })
           ),
           {
             'content-encoding': 'gzip',
@@ -319,11 +319,11 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          setCookie: function(requestParams, context, ee, next) {
-            requestParams.cookie = { 'something': '1234' };
+          setCookie: function (requestParams, context, ee, next) {
+            requestParams.cookie = { something: '1234' };
             return next();
-          },
-        },
+          }
+        }
       },
       scenarios: [
         {
@@ -331,7 +331,7 @@ test('HTTP engine', function (tap) {
             {
               get: {
                 url: '/',
-                beforeRequest: "setCookie"
+                beforeRequest: 'setCookie'
               }
             }
           ]
@@ -371,11 +371,11 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          setCookie: function(requestParams, context, ee, next) {
-            requestParams.cookie = { 'something': '1234' };
+          setCookie: function (requestParams, context, ee, next) {
+            requestParams.cookie = { something: '1234' };
             return next();
-          },
-        },
+          }
+        }
       },
       scenarios: [
         {
@@ -385,13 +385,11 @@ test('HTTP engine', function (tap) {
                 {
                   get: {
                     url: '{{ $loopElement }}',
-                    beforeRequest: "setCookie"
+                    beforeRequest: 'setCookie'
                   }
                 }
               ],
-              over: [
-                "/"
-              ]
+              over: ['/']
             }
           ]
         }

@@ -17,22 +17,24 @@ const script = {
       apiKey: '12345'
     }
   },
-  scenarios: [{
-    name: 'capture event',
-    engine: 'posthog',
-    flow: [
-      {
-        capture: {
-          distinctId: 'distinct id',
-          event: 'movie played',
-          properties: {
-            movieId: 'Die Hard',
-            category: 'Christmas'
+  scenarios: [
+    {
+      name: 'capture event',
+      engine: 'posthog',
+      flow: [
+        {
+          capture: {
+            distinctId: 'distinct id',
+            event: 'movie played',
+            properties: {
+              movieId: 'Die Hard',
+              category: 'Christmas'
+            }
           }
         }
-      }
-    ]
-  }]
+      ]
+    }
+  ]
 };
 
 test('Engine interface', function (t) {

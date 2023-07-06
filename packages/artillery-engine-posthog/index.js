@@ -27,9 +27,17 @@ class PosthogEngine {
     if (rs.capture) {
       return function capture(context, callback) {
         const params = {
-          distinctId: self.helpers.template(rs.capture.distinctId, context, true),
+          distinctId: self.helpers.template(
+            rs.capture.distinctId,
+            context,
+            true
+          ),
           event: self.helpers.template(rs.capture.event, context, true),
-          properties: self.helpers.template(rs.capture.properties, context, true)
+          properties: self.helpers.template(
+            rs.capture.properties,
+            context,
+            true
+          )
         };
         debug(params);
         context.postHogClient.capture(params);
@@ -41,8 +49,16 @@ class PosthogEngine {
     if (rs.identify) {
       return function identify(context, callback) {
         const params = {
-          distinctId: self.helpers.template(rs.identify.distinctId, context, true),
-          properties: self.helpers.template(rs.identify.properties, context, true)
+          distinctId: self.helpers.template(
+            rs.identify.distinctId,
+            context,
+            true
+          ),
+          properties: self.helpers.template(
+            rs.identify.properties,
+            context,
+            true
+          )
         };
         debug(params);
         context.postHogClient.identify(params);
@@ -68,7 +84,7 @@ class PosthogEngine {
   }
 
   createScenario(scenarioSpec, ee) {
-    const tasks = scenarioSpec.flow.map(rs => this.step(rs, ee));
+    const tasks = scenarioSpec.flow.map((rs) => this.step(rs, ee));
 
     return this.compile(tasks, scenarioSpec.flow, ee);
   }
@@ -76,7 +92,7 @@ class PosthogEngine {
     const self = this;
 
     if (rs.loop) {
-      const steps = rs.loop.map(loopStep => this.step(loopStep, ee));
+      const steps = rs.loop.map((loopStep) => this.step(loopStep, ee));
 
       return this.helpers.createLoopWithCount(rs.count || -1, steps, {});
     }
@@ -84,19 +100,26 @@ class PosthogEngine {
     if (rs.log) {
       return function log(context, callback) {
         console.log(self.helpers.template(rs.log, context));
-        return process.nextTick(function () { callback(null, context); });
+        return process.nextTick(function () {
+          callback(null, context);
+        });
       };
     }
 
     if (rs.think) {
-      return this.helpers.createThink(rs, self.script.config.defaults?.think || {});
+      return this.helpers.createThink(
+        rs,
+        self.script.config.defaults?.think || {}
+      );
     }
 
     if (rs.function) {
       return function (context, callback) {
         let func = self.script.config.processor[rs.function];
         if (!func) {
-          return process.nextTick(function () { callback(null, context); });
+          return process.nextTick(function () {
+            callback(null, context);
+          });
         }
 
         return func(context, ee, function (hookErr) {
@@ -130,23 +153,20 @@ class PosthogEngine {
 
       let steps = [init].concat(tasks);
 
-      A.waterfall(
-        steps,
-        function done(err, context) {
-          if (err) {
-            debug(err);
-          }
+      A.waterfall(steps, function done(err, context) {
+        if (err) {
+          debug(err);
+        }
 
-          if (context.postHogClient) {
-            callbackify(context.postHogClient.shutdownAsync)((postHogErr) => {
-              // Ignore PostHog error as there's nothing we can do anyway
-              debug(postHogErr);
-              return callback(err, context);
-            })
-          }
-        });
+        if (context.postHogClient) {
+          callbackify(context.postHogClient.shutdownAsync)((postHogErr) => {
+            // Ignore PostHog error as there's nothing we can do anyway
+            debug(postHogErr);
+            return callback(err, context);
+          });
+        }
+      });
     };
   }
 }
 module.exports = PosthogEngine;
-

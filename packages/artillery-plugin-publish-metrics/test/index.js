@@ -14,14 +14,16 @@ const testId = `test${process.hrtime()[0]}${process.hrtime()[1]}`;
 
 debug({ testId });
 
-test('Basic interface checks', async t => {
+test('Basic interface checks', async (t) => {
   const script = {
     config: {
       plugins: {
-        'publish-metrics': [{
-          type: 'datadog',
-          apiKey: '123'
-        }]
+        'publish-metrics': [
+          {
+            type: 'datadog',
+            apiKey: '123'
+          }
+        ]
       }
     },
     scenarios: []

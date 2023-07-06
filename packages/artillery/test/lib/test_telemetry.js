@@ -14,9 +14,7 @@ let shutdownSpy;
 class InnerPostHog {}
 const PostHogMock = {
   PostHog: InnerPostHog
-}
-
-
+};
 
 test('Telemetry - setup', (t) => {
   sandbox = sinon.sandbox.create();

@@ -9,7 +9,6 @@ const filtrex = require('filtrex').compileExpression;
 
 class EnsurePlugin {
   constructor(script, events) {
-
     // If running in Artillery v1, do nothing
     // If running in Artillery v2, we only want to run on the main thread
 
@@ -17,16 +16,20 @@ class EnsurePlugin {
       debug('Running in an unsupported Artillery version, nothing to do');
       return;
     }
-    if (global.artillery &&
-        Number(global.artillery.version.slice(0, 1)) === 1) {
-      debug('Running in Artillery v1, nothing to do')
+    if (
+      global.artillery &&
+      Number(global.artillery.version.slice(0, 1)) === 1
+    ) {
+      debug('Running in Artillery v1, nothing to do');
       return;
     }
 
-    if (global.artillery &&
-        Number(global.artillery.version.slice(0, 1)) > 1 &&
-        typeof process.env.LOCAL_WORKER_ID !== 'undefined') {
-      debug('Running in a worker, nothing to do')
+    if (
+      global.artillery &&
+      Number(global.artillery.version.slice(0, 1)) > 1 &&
+      typeof process.env.LOCAL_WORKER_ID !== 'undefined'
+    ) {
+      debug('Running in a worker, nothing to do');
       return;
     }
 
@@ -37,44 +40,49 @@ class EnsurePlugin {
 
     const checks = this.script.config.ensure || this.script.plugins.ensure;
 
-    global.artillery.ext(
-      {
-        ext: 'beforeExit',
-        method: async (data) => {
-
-          if (typeof this.script?.config?.ensure === 'undefined' ||
-              typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined') {
-            return;
-          }
-
-          debug(JSON.stringify(data));
-          const vars = Object.assign({}, global.artillery.apdexPlugin || {}, EnsurePlugin.statsToVars(data));
-          debug({vars});
-
-          const checkTests = EnsurePlugin.runChecks(checks, vars);
-
-          global.artillery.globalEvents.emit('checks', checkTests);
-
-          checkTests.forEach(check => {
-            if(check.result !== 1) {
-              global.artillery.log(`fail: ${check.original}${check.strict ? '': ' (optional)'}`);
-              if(check.strict) {
-                global.artillery.suggestedExitCode = 1;
-              }
-            } else {
-              global.artillery.log(`ok: ${check.original}`);
-            }
-          });
+    global.artillery.ext({
+      ext: 'beforeExit',
+      method: async (data) => {
+        if (
+          typeof this.script?.config?.ensure === 'undefined' ||
+          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
+        ) {
+          return;
         }
+
+        debug(JSON.stringify(data));
+        const vars = Object.assign(
+          {},
+          global.artillery.apdexPlugin || {},
+          EnsurePlugin.statsToVars(data)
+        );
+        debug({ vars });
+
+        const checkTests = EnsurePlugin.runChecks(checks, vars);
+
+        global.artillery.globalEvents.emit('checks', checkTests);
+
+        checkTests.forEach((check) => {
+          if (check.result !== 1) {
+            global.artillery.log(
+              `fail: ${check.original}${check.strict ? '' : ' (optional)'}`
+            );
+            if (check.strict) {
+              global.artillery.suggestedExitCode = 1;
+            }
+          } else {
+            global.artillery.log(`ok: ${check.original}`);
+          }
+        });
       }
-    );
+    });
   }
 
   // Combine counters/rates/summaries into a flat key->value object for filtrex
   static statsToVars(data) {
     const vars = Object.assign({}, data.report.counters, data.report.rates);
-    for(const [name, values] of Object.entries(data.report.summaries || {})) {
-      for(const [aggregation, value] of Object.entries(values)) {
+    for (const [name, values] of Object.entries(data.report.summaries || {})) {
+      for (const [aggregation, value] of Object.entries(values)) {
         vars[`${name}.${aggregation}`] = value;
       }
     }
@@ -124,8 +132,8 @@ class EnsurePlugin {
     }
 
     Object.keys(checks)
-      .filter(k => LEGACY_CONDITIONS.indexOf(k) > -1)
-      .forEach(k => {
+      .filter((k) => LEGACY_CONDITIONS.indexOf(k) > -1)
+      .forEach((k) => {
         const metricName = `http.response_time.${k}`;
         const maxValue = parseInt(checks[k]);
         let f = () => {};
@@ -139,7 +147,7 @@ class EnsurePlugin {
         checkTests.push({ f, strict: true, original: `${k} < ${maxValue}` });
       });
 
-    if(typeof checks.maxErrorRate !== 'undefined') {
+    if (typeof checks.maxErrorRate !== 'undefined') {
       const maxValue = Number(checks.maxErrorRate);
       const expression = `((vusers.created - vusers.completed)/vusers.created * 100) <= ${maxValue}`;
       let f = () => {};
@@ -149,14 +157,18 @@ class EnsurePlugin {
         global.artillery.log(err);
       }
 
-      checkTests.push({ f, strict: true, original: `maxErrorRate < ${maxValue}` });
+      checkTests.push({
+        f,
+        strict: true,
+        original: `maxErrorRate < ${maxValue}`
+      });
     }
 
-    if(checkTests.length > 0) {
+    if (checkTests.length > 0) {
       global.artillery.log('\nChecks:');
     }
 
-    checkTests.forEach(check => {
+    checkTests.forEach((check) => {
       const result = check.f(vars);
       check.result = result;
       debug(`check ${check.original} -> ${result}`);
@@ -166,5 +178,5 @@ class EnsurePlugin {
 }
 
 module.exports = {
-  Plugin: EnsurePlugin,
+  Plugin: EnsurePlugin
 };

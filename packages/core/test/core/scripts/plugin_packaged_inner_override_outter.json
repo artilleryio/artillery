@@ -1,15 +1,13 @@
 {
   "config": {
-      "target": "http://127.0.0.1:3003",
-      "phases": [
-        {"duration": 2, "arrivalRate": 1}
-      ],
-      "pluginsScope": "@common_package/",
-      "plugins": {
-        "somePackagedPlugin": {
-          "scope": "@package/"
-        }
+    "target": "http://127.0.0.1:3003",
+    "phases": [{ "duration": 2, "arrivalRate": 1 }],
+    "pluginsScope": "@common_package/",
+    "plugins": {
+      "somePackagedPlugin": {
+        "scope": "@package/"
       }
+    }
   },
   "scenarios": [
     {

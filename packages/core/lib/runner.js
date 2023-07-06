@@ -103,7 +103,10 @@ function prepareScript(script, payload) {
       runnableScript.config.payload = [
         {
           fields: runnableScript.config.payload.fields,
-          reader: createReader(runnableScript.config.payload.order, runnableScript.config.payload),
+          reader: createReader(
+            runnableScript.config.payload.order,
+            runnableScript.config.payload
+          ),
           data: payload
         }
       ];
@@ -387,7 +390,7 @@ function createContext(script, contextVars) {
         target: script.config.target,
         $environment: script._environment,
         $processEnvironment: process.env, // TODO: deprecate
-        $env: process.env,
+        $env: process.env
       },
       contextVars || {}
     ),

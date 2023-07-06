@@ -9,13 +9,16 @@ const debug = require('debug')('plugin:apdex');
 const METRICS = {
   satisfied: 'apdex.satisfied',
   tolerated: 'apdex.tolerated',
-  frustrated: 'apdex.frustrated',
-}
+  frustrated: 'apdex.frustrated'
+};
 class ApdexPlugin {
   constructor(script, _events) {
     this.script = script;
 
-    const t = script.config.apdex?.threshold || script.config.plugins.apdex?.threshold || 500;
+    const t =
+      script.config.apdex?.threshold ||
+      script.config.plugins.apdex?.threshold ||
+      500;
 
     if (!script.config.processor) {
       script.config.processor = {};
@@ -44,8 +47,10 @@ class ApdexPlugin {
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (testInfo) => {
-        if (typeof this.script?.config?.apdex === 'undefined' ||
-          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined') {
+        if (
+          typeof this.script?.config?.apdex === 'undefined' ||
+          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
+        ) {
           return;
         }
 
@@ -82,4 +87,4 @@ class ApdexPlugin {
 
 module.exports = {
   Plugin: ApdexPlugin
-}
+};

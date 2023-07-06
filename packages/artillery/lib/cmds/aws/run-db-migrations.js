@@ -28,4 +28,4 @@ if (Pro) {
   RunDbMigrations.description = 'this command requires artillery-pro';
 }
 
-module.exports = RunDbMigrations;;
+module.exports = RunDbMigrations;

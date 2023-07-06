@@ -1,9 +1,7 @@
 {
   "config": {
     "target": "ws://127.0.0.1:9093",
-    "phases": [
-      {"duration": 1, "arrivalCount": 1}
-    ],
+    "phases": [{ "duration": 1, "arrivalCount": 1 }],
     "ws": {
       "proxy": {
         "url": "http://127.0.0.1:9095",
@@ -14,9 +12,7 @@
   "scenarios": [
     {
       "engine": "ws",
-      "flow": [
-        {"send": "hello"}
-      ]
+      "flow": [{ "send": "hello" }]
     }
   ]
 }

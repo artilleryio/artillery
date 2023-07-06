@@ -1,9 +1,7 @@
 {
   "config": {
     "target": "http://asciiart.artillery.io:8080/dino",
-    "phases": [
-      {"duration": 1, "arrivalCount": 1}
-    ],
+    "phases": [{ "duration": 1, "arrivalCount": 1 }],
     "processor": "./processor.js"
   }
 }

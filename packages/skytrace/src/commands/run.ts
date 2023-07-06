@@ -13,17 +13,20 @@ import { Plugin, formatters } from 'artillery-plugin-expect';
 import * as gradientString from 'gradient-string';
 
 class RunCommand extends Command {
-  static aliases = [ 'test' ];
+  static aliases = ['test'];
   static strict = false;
 
   async runFlow(flowFilePath: string) {
     const HttpEngine = Core.engine_http;
     const contents: any[] = YAML.loadAll(fs.readFileSync(flowFilePath, 'utf8'));
 
-    const showHttpTimings = (contents[0].http?.timings === true);
+    const showHttpTimings = contents[0].http?.timings === true;
 
     let script;
-    if (typeof contents[0]['config']?.target !== 'undefined' && typeof contents[0]['scenarios'] !== 'undefined') {
+    if (
+      typeof contents[0]['config']?.target !== 'undefined' &&
+      typeof contents[0]['scenarios'] !== 'undefined'
+    ) {
       script = {
         config: {
           target: contents[0]['config'].target,
@@ -32,12 +35,10 @@ class RunCommand extends Command {
               formatter: 'silent',
               expectDefault200: true
             }
-          },
+          }
         },
-        scenarios: [
-            contents[0]['scenarios'][0]
-          ]
-        };
+        scenarios: [contents[0]['scenarios'][0]]
+      };
     } else {
       script = {
         config: {
@@ -49,10 +50,12 @@ class RunCommand extends Command {
             }
           }
         },
-        scenarios: [{
-          name:  contents[0].name,
-          flow: contents[1],
-        }]
+        scenarios: [
+          {
+            name: contents[0].name,
+            flow: contents[1]
+          }
+        ]
       };
     }
 
@@ -66,23 +69,29 @@ class RunCommand extends Command {
     };
 
     events.on('error', (errCode, uuid) => {});
-    events.on('trace:http:request', (requestParams, uuid) => {
-    });
-    events.on('trace:http:response', (resp, uuid) => {
-    });
-    events.on('trace:http:capture', (result) => {
-    });
-    events.on('plugin:expect:expectations', (expectations, req, res, userContext) => {
-      formatters.pretty(expectations, req, res, userContext);
-      if (showHttpTimings) {
-        const phases = res?.timings?.phases;
-        if (phases) {
-          console.log();
-          console.log(`  time: total=${phases.total} | dns=${phases.dns} | tcp=${phases.tcp} | ssl: ${phases.ssl || 'n/a'} | ttfb=${phases.firstByte} | download=${phases.download}`);
+    events.on('trace:http:request', (requestParams, uuid) => {});
+    events.on('trace:http:response', (resp, uuid) => {});
+    events.on('trace:http:capture', (result) => {});
+    events.on(
+      'plugin:expect:expectations',
+      (expectations, req, res, userContext) => {
+        formatters.pretty(expectations, req, res, userContext);
+        if (showHttpTimings) {
+          const phases = res?.timings?.phases;
+          if (phases) {
+            console.log();
+            console.log(
+              `  time: total=${phases.total} | dns=${phases.dns} | tcp=${
+                phases.tcp
+              } | ssl: ${phases.ssl || 'n/a'} | ttfb=${
+                phases.firstByte
+              } | download=${phases.download}`
+            );
+          }
         }
+        console.log();
       }
-      console.log();
-    });
+    );
 
     try {
       const context = await vu(initialContext);
@@ -93,7 +102,7 @@ class RunCommand extends Command {
 
   async run() {
     const { flags, argv, args } = this.parse(RunCommand);
-    const flowFilePaths = [ path.resolve(process.cwd(), argv[0]) ];
+    const flowFilePaths = [path.resolve(process.cwd(), argv[0])];
 
     const banner = `    ───━━━★
 SKYTRACE ──━━★
@@ -101,39 +110,39 @@ SKYTRACE ──━━★
     console.log(gradientString.vice(banner));
     console.log();
 
-    if(flags.reload) {
+    if (flags.reload) {
       console.log('> Running flow (reload mode on)');
       console.log();
       this.runFlow(flowFilePaths[0]);
       let prevMtime = new Date(0);
       let rerunning = false;
       fs.watch(flowFilePaths[0], {}, (eventType, fn) => {
-                if (!fn) {
-                  return;
-                }
+        if (!fn) {
+          return;
+        }
 
-                const stat = fs.statSync(fn);
-                if (stat.mtime.valueOf() === prevMtime.valueOf()) {
-                  return;
-                }
+        const stat = fs.statSync(fn);
+        if (stat.mtime.valueOf() === prevMtime.valueOf()) {
+          return;
+        }
 
-                if(rerunning) {
-                  return;
-                }
+        if (rerunning) {
+          return;
+        }
 
-                prevMtime = stat.mtime;
-                rerunning = true;
+        prevMtime = stat.mtime;
+        rerunning = true;
 
-                console.log();
-                console.log('  --------------');
-                console.log('> Rerunning flow');
-                console.log(' ', new Date());
-                console.log('  --------------');
-                this.runFlow(flowFilePaths[0]);
-                console.log();
+        console.log();
+        console.log('  --------------');
+        console.log('> Rerunning flow');
+        console.log(' ', new Date());
+        console.log('  --------------');
+        this.runFlow(flowFilePaths[0]);
+        console.log();
 
-                rerunning = false;
-              });
+        rerunning = false;
+      });
     } else {
       console.log('> Running flow');
       // console.log('source:', flowFilePath);
@@ -150,10 +159,12 @@ RunCommand.flags = {
     description: 'reload and rerun flow automatically'
   })
 };
-RunCommand.args = [{
-  name: 'file',
-  required: true,
-  description: 'Path to flow files'
-}];
+RunCommand.args = [
+  {
+    name: 'file',
+    required: true,
+    description: 'Path to flow files'
+  }
+];
 
 module.exports = { RunCommand };

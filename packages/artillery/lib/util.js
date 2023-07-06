@@ -27,7 +27,7 @@ module.exports = {
   template,
   formatDuration,
   padded,
-  rainbow,
+  rainbow
 };
 
 async function readScript(scriptPath) {

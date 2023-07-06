@@ -257,11 +257,8 @@ tap.test(
     const reportSingleFile = 'single_worker.json';
     const reportSingleFilePath = await getRootPath(reportSingleFile);
 
-    const [exitCodeMultiple] = await execute([
-      'run',
-      '-o',
-      reportMultipleFile,
-      'test/scripts/ramp.json'],
+    const [exitCodeMultiple] = await execute(
+      ['run', '-o', reportMultipleFile, 'test/scripts/ramp.json'],
       { env: { WORKERS: 7 } }
     );
     const [exitCodeSingle] = await execute(
@@ -299,11 +296,13 @@ tap.test(
     const reportSingleFile = 'single_worker.json';
     const reportSingleFilePath = await getRootPath(reportSingleFile);
 
-    const [exitCodeMultiple] = await execute([
-      'run',
-      '-o',
-      reportMultipleFile,
-      'test/scripts/ramp-regression-1682.json'],
+    const [exitCodeMultiple] = await execute(
+      [
+        'run',
+        '-o',
+        reportMultipleFile,
+        'test/scripts/ramp-regression-1682.json'
+      ],
       { env: { WORKERS: 7 } }
     );
     const [exitCodeSingle] = await execute(

@@ -1,24 +1,24 @@
 {
-    "config": {
-        "target": "http://127.0.0.1:3004",
-        "phases": [
-            {
-                "duration": 1,
-                "arrivalRate": 1,
-                "name": "test that failed to end"
-            }
-        ]
-    },
-    "scenarios": [
-        {
-            "name": "Add token",
-            "flow": [
-                {
-                    "post": {
-                        "url": "/api/v1/register"
-                    }
-                }
-            ]
-        }
+  "config": {
+    "target": "http://127.0.0.1:3004",
+    "phases": [
+      {
+        "duration": 1,
+        "arrivalRate": 1,
+        "name": "test that failed to end"
+      }
     ]
+  },
+  "scenarios": [
+    {
+      "name": "Add token",
+      "flow": [
+        {
+          "post": {
+            "url": "/api/v1/register"
+          }
+        }
+      ]
+    }
+  ]
 }
