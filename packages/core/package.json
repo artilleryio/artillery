@@ -26,7 +26,6 @@
     "https-proxy-agent": "^5.0.0",
     "lodash": "^4.17.19",
     "proxy": "^1.0.2",
-    "socket.io": "^3.1.2",
     "socket.io-client": "^4.5.1",
     "socketio-wildcard": "^2.0.0",
     "tough-cookie": "^4.0.0",
@@ -46,6 +45,7 @@
     "nock": "^11.8.2",
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
+    "socket.io": "^4.7.1",
     "tap": "15.2.3"
   }
 }
