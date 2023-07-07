@@ -17,6 +17,7 @@ module.exports.expectations = EXPECTATIONS;
 module.exports.formatters = FORMATTERS;
 
 function ExpectationsPlugin(script, events) {
+  console.log('HELLOOOOOOOOOOOO');
   if (!global.artillery || !global.artillery.log) {
     console.error('artillery-plugin-expect requires Artillery v2');
     return;
@@ -66,6 +67,9 @@ function ExpectationsPlugin(script, events) {
       script.config.plugins.expect.expectDefault200 === 'true';
     userContext.expectationsPlugin.reportFailuresAsErrors =
       script.config.plugins.expect.reportFailuresAsErrors;
+    userContext.expectationsPlugin.useRequestNames =
+      script.config.plugins.expect.useRequestNames === true ||
+      script.config.plugins.expect.useRequestNames === 'true';
 
     return done();
   };
@@ -166,18 +170,23 @@ function expectationsPluginCheckExpectations(
 
   const failedExpectations = results.filter((res) => !res.ok).length > 0;
 
-  if (failedExpectations) {
-    if (global.artillery) {
-      global.artillery.suggestedExitCode = 1;
-    }
-    if (userContext.expectationsPlugin.reportFailuresAsErrors) {
-      return done(new Error(`Failed expectations for request ${req.url}`));
-    } else {
-      return done();
-    }
-  } else {
+  if (!failedExpectations) {
     return done();
   }
+
+  if (global.artillery) {
+    global.artillery.suggestedExitCode = 1;
+  }
+
+  if (userContext.expectationsPlugin.reportFailuresAsErrors) {
+    const reportFilter =
+      userContext.expectationsPlugin.useRequestNames && req.name
+        ? req.name
+        : req.url;
+    return done(new Error(`Failed expectations for request ${reportFilter}`));
+  }
+
+  return done();
 }
 
 function maybeParseBody(res) {
