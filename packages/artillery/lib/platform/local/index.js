@@ -1,6 +1,7 @@
 const { ArtilleryWorker } = require('./artillery-worker-local');
 const core = require('../../dispatcher');
-const { handleScriptHook, prepareScript, loadProcessor } = core.runner.runnerFuncs;
+const { handleScriptHook, prepareScript, loadProcessor } =
+  core.runner.runnerFuncs;
 const debug = require('debug')('platform:local');
 const EventEmitter = require('events');
 const _ = require('lodash');
@@ -68,7 +69,7 @@ class PlatformLocal {
 
     this.workers[worker.workerId] = {
       proc: worker,
-      state: worker.state, // TODO: replace with getState() use
+      state: worker.state // TODO: replace with getState() use
     };
 
     return worker;
@@ -78,18 +79,16 @@ class PlatformLocal {
     return this.workers[workerId].proc.prepare(opts);
   }
 
-  async runWorker(workerId, contextVarsString) { // TODO: this will become opts
+  async runWorker(workerId, contextVarsString) {
+    // TODO: this will become opts
     debug('runWorker', workerId);
     return this.workers[workerId].proc.run(contextVarsString);
-
   }
   async stopWorker(workerId) {
     return this.workers[workerId].proc.stop();
   }
 
-  async getWorkerState(workerId) {
-
-  }
+  async getWorkerState(workerId) {}
 
   async shutdown() {
     // 'after' hook is executed in the main thread, after all workers

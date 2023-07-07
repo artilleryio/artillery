@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "plugin:prettier/recommended"
-  ],
+  "extends": ["plugin:prettier/recommended"],
   "env": {
     "node": true,
     "es6": true

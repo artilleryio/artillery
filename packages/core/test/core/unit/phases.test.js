@@ -74,11 +74,8 @@ test('arrivalRate set to 0 stays at 0', function (t) {
   t.plan(1);
   let phaser = createPhaser([phaseSpec]);
   phaser.on('phaseStarted', function (spec) {
-    t.ok(
-      _.isEqual(spec.arrivalRate, 0),
-      'arrivalRate starts as zero'
-    );
-  t.end();
+    t.ok(_.isEqual(spec.arrivalRate, 0), 'arrivalRate starts as zero');
+    t.end();
   });
   phaser.run();
 });
@@ -240,4 +237,3 @@ function testRamp(t, phaseSpec) {
   startedAt = Date.now();
   phaser.run();
 }
-

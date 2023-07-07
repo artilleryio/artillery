@@ -25,4 +25,4 @@ async function getSSOCredentials() {
       return [false, null];
     }
   }
-};
+}

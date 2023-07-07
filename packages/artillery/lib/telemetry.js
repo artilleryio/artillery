@@ -7,7 +7,10 @@
 const { version: artilleryVersion } = require('../package.json');
 const { isCI, name: ciName } = require('ci-info');
 const chalk = require('chalk');
-const { readArtilleryConfig, updateArtilleryConfig } = require('./utils-config');
+const {
+  readArtilleryConfig,
+  updateArtilleryConfig
+} = require('./utils-config');
 const debug = require('debug')('telemetry');
 
 const POSTHOG_TOKEN = '_uzX-_WJoVmE_tsLvu0OFD2tpd0HGz72D5sU1zM2hbs';
@@ -22,12 +25,13 @@ const notice = () => {
 
 const isEnabled = () => {
   return typeof process.env.ARTILLERY_DISABLE_TELEMETRY === 'undefined';
-}
+};
 
 const init = () => {
   const telemetryDisabled = !isEnabled();
 
-  const debugEnabled = typeof process.env.ARTILLERY_TELEMETRY_DEBUG !== 'undefined';
+  const debugEnabled =
+    typeof process.env.ARTILLERY_TELEMETRY_DEBUG !== 'undefined';
 
   let telemetryDefaults = {};
   try {

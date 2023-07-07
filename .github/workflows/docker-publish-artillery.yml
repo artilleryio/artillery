@@ -33,6 +33,7 @@ jobs:
           images: artilleryio/artillery
           tags: |
             type=semver,pattern={{version}},value=${{env.ARTILLERY_VERSION}}
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc

@@ -14,7 +14,8 @@ async function createGlobalObject(opts) {
   global.artillery.runtimeOptions = global.artillery.runtimeOptions || {};
   global.artillery.runtimeOptions.legacyReporting =
     typeof process.env.ARTILLERY_USE_LEGACY_REPORT_FORMAT !== 'undefined';
-  global.artillery._workerThreadSend = global.artillery._workerThreadSend || null;
+  global.artillery._workerThreadSend =
+    global.artillery._workerThreadSend || null;
 
   // TODO: Refactor these special fields away
   global.artillery.__util = global.artillery.__util || {};
@@ -24,10 +25,12 @@ async function createGlobalObject(opts) {
 
   global.artillery._exitCode = 0;
 
-  global.artillery.shutdown = global.artillery.shutdown || async function () {
-    // TODO: Move graceful shutdown logic into here
-    process.exit(global.artillery.suggestedExitCode);
-  };
+  global.artillery.shutdown =
+    global.artillery.shutdown ||
+    async function () {
+      // TODO: Move graceful shutdown logic into here
+      process.exit(global.artillery.suggestedExitCode);
+    };
 }
 
 module.exports = {

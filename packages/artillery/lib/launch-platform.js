@@ -18,10 +18,9 @@ const PlatformLambda = require('./platform/aws-lambda');
 const STATES = require('./platform/worker-states');
 
 async function createLauncher(script, payload, opts, launcherOpts) {
-
   launcherOpts = launcherOpts || {
     platform: 'local',
-    mode: 'distribute',
+    mode: 'distribute'
   };
   return new Launcher(script, payload, opts, launcherOpts);
 }
@@ -54,7 +53,8 @@ class Launcher {
 
     if (launcherOpts.platform === 'local') {
       this.platform = new PlatformLocal(script, payload, opts);
-    } else { // aws:lambda
+    } else {
+      // aws:lambda
       this.platform = new PlatformLambda(script, payload, opts, launcherOpts);
     }
 
@@ -62,9 +62,8 @@ class Launcher {
       this.workerScripts = divideWork(this.script, this.count);
       this.count = this.workerScripts.length;
     } else {
-
       this.count = this.launcherOpts.count;
-      this.workerScripts = new Array(this.count).fill().map(_ => this.script);
+      this.workerScripts = new Array(this.count).fill().map((_) => this.script);
     }
 
     this.phaseStartedEventsSeen = {};
@@ -218,10 +217,13 @@ class Launcher {
   }
 
   async handleAllWorkersFinished() {
-    const allWorkersDone = Object.keys(this.workers)
-                              .filter((workerId) => {
-                                return this.workers[workerId].state === STATES.completed || this.workers[workerId].state === STATES.stoppedError;
-                              }).length === this.count;
+    const allWorkersDone =
+      Object.keys(this.workers).filter((workerId) => {
+        return (
+          this.workers[workerId].state === STATES.completed ||
+          this.workers[workerId].state === STATES.stoppedError
+        );
+      }).length === this.count;
 
     if (allWorkersDone) {
       clearInterval(this.i1);
@@ -306,7 +308,11 @@ class Launcher {
     // TODO: better name. One above is earliestNotAlreadyReported
     const earliest = Object.keys(this.metricsByPeriod).sort()[0];
     if (this.periodsReportedFor.indexOf(earliest) > -1) {
-      global.artillery.log('Warning: multiple batches of metrics for period', earliest, new Date(Number(earliest)));
+      global.artillery.log(
+        'Warning: multiple batches of metrics for period',
+        earliest,
+        new Date(Number(earliest))
+      );
 
       delete this.metricsByPeriod[earliest]; // FIXME: need to merge them in for the final report
     }
@@ -323,29 +329,44 @@ class Launcher {
       MAX_WAIT_FOR_PERIOD_MS,
       numReports: this.metricsByPeriod[earliestPeriodAvailable]?.length,
       periodsReportedFor: this.periodsReportedFor,
-      metricsByPeriod: Object.keys(this.metricsByPeriod),
+      metricsByPeriod: Object.keys(this.metricsByPeriod)
     });
 
-    const allWorkersReportedForPeriod = this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
-    const waitedLongEnough = Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
-    if (typeof earliestPeriodAvailable !== 'undefined' && (flushAll || allWorkersReportedForPeriod || waitedLongEnough)) {
+    const allWorkersReportedForPeriod =
+      this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
+    const waitedLongEnough =
+      Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
+    if (
+      typeof earliestPeriodAvailable !== 'undefined' &&
+      (flushAll || allWorkersReportedForPeriod || waitedLongEnough)
+    ) {
       // TODO: autoscaling. Handle workers that drop off or join, and update count
 
       if (flushAll) {
         debug('flushAll', earliestPeriodAvailable);
       } else {
         if (allWorkersReportedForPeriod) {
-          debug('Got metrics from all workers for period', earliestPeriodAvailable);
+          debug(
+            'Got metrics from all workers for period',
+            earliestPeriodAvailable
+          );
         }
         if (waitedLongEnough) {
           debug('MAX_WAIT_FOR_PERIOD reached', earliestPeriodAvailable);
         }
       }
 
-      debug('Report @', new Date(Number(earliestPeriodAvailable)), 'made up of items:', this.metricsByPeriod[String(earliestPeriodAvailable)].length);
+      debug(
+        'Report @',
+        new Date(Number(earliestPeriodAvailable)),
+        'made up of items:',
+        this.metricsByPeriod[String(earliestPeriodAvailable)].length
+      );
 
       // TODO: Track how many workers provided metrics in the metrics report
-      const stats = SSMS.mergeBuckets(this.metricsByPeriod[String(earliestPeriodAvailable)])[String(earliestPeriodAvailable)];
+      const stats = SSMS.mergeBuckets(
+        this.metricsByPeriod[String(earliestPeriodAvailable)]
+      )[String(earliestPeriodAvailable)];
       this.mergedPeriodMetrics.push(stats);
       // summarize histograms for console reporter
       stats.summaries = {};
@@ -384,7 +405,6 @@ class Launcher {
       await this.handleAllWorkersFinished();
     }, 2 * 1000);
 
-
     const contextVars = await this.platform.init();
 
     // TODO: only makes sense for "distribute" / "local"
@@ -394,7 +414,7 @@ class Launcher {
       this.workers[w1.workerId] = {
         id: w1.workerId,
         script,
-        state: STATES.initializing,
+        state: STATES.initializing
       };
       debug(`worker init ok: ${w1.workerId}`);
     }
@@ -403,11 +423,11 @@ class Launcher {
 
     for (const [workerId, w] of Object.entries(this.workers)) {
       await this.platform.prepareWorker(workerId, {
-            script: w.script,
-            payload: this.payload,
-            options: this.opts
-          });
-        this.workers[workerId].state = STATES.preparing;
+        script: w.script,
+        payload: this.payload,
+        options: this.opts
+      });
+      this.workers[workerId].state = STATES.preparing;
     }
     debug('workers prepared');
 

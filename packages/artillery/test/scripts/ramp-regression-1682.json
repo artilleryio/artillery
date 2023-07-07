@@ -2,15 +2,13 @@
   "config": {
     "target": "http://localhost:3003",
     "phases": [
-      {"duration": 1, "arrivalRate": 1, "rampTo": 5 },
-      {"duration": 1, "arrivalRate": 3, "rampTo": 10 }
+      { "duration": 1, "arrivalRate": 1, "rampTo": 5 },
+      { "duration": 1, "arrivalRate": 3, "rampTo": 10 }
     ]
   },
   "scenarios": [
     {
-      "flow": [
-        { "get": { "url": "/test" } }
-      ]
+      "flow": [{ "get": { "url": "/test" } }]
     }
   ]
 }

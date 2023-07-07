@@ -2,7 +2,6 @@ const tap = require('tap');
 const { a9 } = require('../cli/_helpers.js');
 const path = require('path');
 
-
 tap.test('Run a test on AWS Lambda', async (t) => {
   const configPath = path.resolve(
     __dirname,

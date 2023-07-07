@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require('express');
 const serverTiming = require('server-timing');
 const app = express();
 const port = 3000;
@@ -6,16 +6,19 @@ const port = 3000;
 app.use(express.json());
 app.use(serverTiming());
 
-app.post("/pets", (req, res) => {
-  res.startTime("pets", "Creating pet");
+app.post('/pets', (req, res) => {
+  res.startTime('pets', 'Creating pet');
 
-  setTimeout(() => {
-    res.endTime("pets");
-    res.json({
-      species: req.body.species,
-      name: req.body.name
-    });
-  }, Math.ceil(Math.random() * 500));
+  setTimeout(
+    () => {
+      res.endTime('pets');
+      res.json({
+        species: req.body.species,
+        name: req.body.name
+      });
+    },
+    Math.ceil(Math.random() * 500)
+  );
 });
 
 app.listen(port, () => {

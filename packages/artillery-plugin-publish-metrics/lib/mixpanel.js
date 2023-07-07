@@ -5,10 +5,10 @@ const debug = require('debug')('plugin:publish-metrics:mixpanel');
 class MixPanelReporter {
   constructor(config, events, script) {
     this.mixPanelOpts = {
-      projectToken: config.projectToken,
+      projectToken: config.projectToken
     };
 
-    if (!versionCheck(">=1.7.0")) {
+    if (!versionCheck('>=1.7.0')) {
       console.error(
         `[publish-metrics][mixpanel] Mixpanel support requires Artillery >= v1.7.0 (current version: ${
           global.artillery ? global.artillery.version || 'unknown' : 'unknown'
@@ -31,7 +31,7 @@ class MixPanelReporter {
         : script.config.target;
 
       this.mixpanel.track(`${env}-${script.scenarios[0].name}`, {
-        ...report,
+        ...report
       });
     });
   }
@@ -47,5 +47,5 @@ function createMixPanelReporter(config, events, script) {
 }
 
 module.exports = {
-  createMixPanelReporter,
+  createMixPanelReporter
 };

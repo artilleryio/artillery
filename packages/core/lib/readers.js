@@ -11,9 +11,14 @@ module.exports = createReader;
 function createReader(order, spec) {
   if (order === 'sequence') {
     return createSequencedReader();
-  } else if (typeof order === 'undefined' && (typeof spec?.name !== 'undefined') && spec?.loadAll === true) {
+  } else if (
+    typeof order === 'undefined' &&
+    typeof spec?.name !== 'undefined' &&
+    spec?.loadAll === true
+  ) {
     return createEverythingReader(spec);
-  } else { // random
+  } else {
+    // random
     return createRandomReader();
   }
 }
@@ -42,10 +47,10 @@ function createEverythingReader(spec) {
       if (spec.fields?.length > 0) {
         for (const row of data) {
           let o = {};
-            for(let i = 0; i < spec.fields.length; i++) {
-              const fieldName = spec.fields[i];
-              o[fieldName] = row[i];
-            }
+          for (let i = 0; i < spec.fields.length; i++) {
+            const fieldName = spec.fields[i];
+            o[fieldName] = row[i];
+          }
           parsedData.push(o);
         }
       } else {

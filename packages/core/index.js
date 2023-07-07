@@ -20,7 +20,8 @@ async function updateGlobalObject(opts = {}) {
 
   global.artillery.util = global.artillery.util || {};
 
-  global.artillery.util.template = require('@artilleryio/int-commons').engine_util.template;
+  global.artillery.util.template =
+    require('@artilleryio/int-commons').engine_util.template;
 
   global.artillery.plugins = global.artillery.plugins || [];
 
@@ -36,8 +37,7 @@ async function updateGlobalObject(opts = {}) {
   if (!global.artillery.hasOwnProperty('globalEvents')) {
     Object.defineProperty(global.artillery, 'globalEvents', {
       value: new EventEmitter()
-    })
-
+    });
   }
 
   global.artillery.__SSMS = require('./lib/ssms').SSMS;
@@ -50,23 +50,30 @@ async function updateGlobalObject(opts = {}) {
       set(code) {
         global.artillery._exitCode = code;
         if (typeof global.artillery._workerThreadSend === 'function') {
-          global.artillery._workerThreadSend({ event: 'setSuggestedExitCode', code: code });
+          global.artillery._workerThreadSend({
+            event: 'setSuggestedExitCode',
+            code: code
+          });
         }
       }
     });
   }
 
-  global.artillery.logger = global.artillery.logger || function (opts) {
-    return {
-      log: (...args) => {
-        global.artillery.globalEvents.emit('log', opts, ...args);
-      }
+  global.artillery.logger =
+    global.artillery.logger ||
+    function (opts) {
+      return {
+        log: (...args) => {
+          global.artillery.globalEvents.emit('log', opts, ...args);
+        }
+      };
     };
-  };
 
-  global.artillery.log = global.artillery.log || function (...args) {
-    global.artillery.globalEvents.emit('log', {}, ...args);
-  };
+  global.artillery.log =
+    global.artillery.log ||
+    function (...args) {
+      global.artillery.globalEvents.emit('log', {}, ...args);
+    };
 
   if (opts.version) {
     global.artillery.version = opts.version;

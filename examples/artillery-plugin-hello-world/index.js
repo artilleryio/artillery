@@ -37,14 +37,19 @@ function ArtilleryHelloWorldPlugin(script, events) {
   // Create processor object if needed to hold our custom function:
   script.config.processor = script.config.processor || {};
   // Add our custom function:
-  script.config.processor['pluginHelloWorldBeforeRequestHook'] = function(req, vuContext, events, next) {
+  script.config.processor['pluginHelloWorldBeforeRequestHook'] = function (
+    req,
+    vuContext,
+    events,
+    next
+  ) {
     // This a beforeRequest handler function:
     // https://artillery.io/docs/guides/guides/http-reference.html#beforeRequest
 
     console.log(self.greeting); // print greeting
     events.emit('counter', 'greeting_count', 1); // increase custom counter
     return next(); // the hook is done, go on to the next one (or let Artillery make the request)
-  }
+  };
   // Attach the function to every scenario as a scenario-level hook:
   script.scenarios.forEach((scenario) => {
     scenario.beforeRequest = scenario.beforeRequest || [];
@@ -57,7 +62,7 @@ function ArtilleryHelloWorldPlugin(script, events) {
 // Artillery will call this before it exits to give plugins
 // a chance to clean up, e.g. by flushing any in-flight data,
 // writing something to disk etc.
-ArtilleryHelloWorldPlugin.prototype.cleanup = function(done) {
+ArtilleryHelloWorldPlugin.prototype.cleanup = function (done) {
   debug('cleaning up');
   done(null);
 };

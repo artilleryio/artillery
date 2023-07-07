@@ -16,17 +16,19 @@ const script = {
       mandatoryString: 'hello-world'
     }
   },
-  scenarios: [{
-    name: 'test scenario',
-    engine: 'example',
-    flow: [
-      {
-        doSomething: {
-          id: 123
+  scenarios: [
+    {
+      name: 'test scenario',
+      engine: 'example',
+      flow: [
+        {
+          doSomething: {
+            id: 123
+          }
         }
-      }
-    ]
-  }]
+      ]
+    }
+  ]
 };
 
 test('Engine interface', function (t) {

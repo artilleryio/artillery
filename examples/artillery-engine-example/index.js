@@ -36,7 +36,7 @@ class ExampleEngine {
   // For each scenario in the script using this engine, Artillery calls this function
   // to create a VU function
   createScenario(scenarioSpec, ee) {
-    const tasks = scenarioSpec.flow.map(rs => this.step(rs, ee));
+    const tasks = scenarioSpec.flow.map((rs) => this.step(rs, ee));
 
     return function scenario(initialContext, callback) {
       ee.emit('started');
@@ -48,16 +48,14 @@ class ExampleEngine {
 
       const steps = [vuInit].concat(tasks);
 
-      A.waterfall(
-        steps,
-        function done(err, context) {
-          if (err) {
-            debug(err);
-          }
+      A.waterfall(steps, function done(err, context) {
+        if (err) {
+          debug(err);
+        }
 
-          return callback(err, context);
-        });
-    }
+        return callback(err, context);
+      });
+    };
   }
 
   // This is a convenience function where we delegate common actions like loop, log, and think,
@@ -66,14 +64,16 @@ class ExampleEngine {
     const self = this;
 
     if (rs.loop) {
-      const steps = rs.loop.map(loopStep => this.step(loopStep, ee));
+      const steps = rs.loop.map((loopStep) => this.step(loopStep, ee));
 
       return this.helpers.createLoopWithCount(rs.count || -1, steps, {});
     }
 
     if (rs.log) {
       return function log(context, callback) {
-        return process.nextTick(function () { callback(null, context); });
+        return process.nextTick(function () {
+          callback(null, context);
+        });
       };
     }
 
@@ -85,7 +85,9 @@ class ExampleEngine {
       return function (context, callback) {
         let func = self.script.config.processor[rs.function];
         if (!func) {
-          return process.nextTick(function () { callback(null, context); });
+          return process.nextTick(function () {
+            callback(null, context);
+          });
         }
 
         return func(context, ee, function () {
@@ -99,7 +101,10 @@ class ExampleEngine {
     //
     if (rs.doSomething) {
       return function example(context, callback) {
-        console.log('doSomething action with id:', self.helpers.template(rs.doSomething.id, context, true));
+        console.log(
+          'doSomething action with id:',
+          self.helpers.template(rs.doSomething.id, context, true)
+        );
         console.log('target is:', self.target);
 
         // Emit a metric to count the number of example actions performed:
@@ -113,9 +118,8 @@ class ExampleEngine {
     //
     return function doNothing(context, callback) {
       return callback(null, context);
-    }
+    };
   }
 }
 
 module.exports = ExampleEngine;
-

@@ -17,7 +17,7 @@ const { createNewRelicReporter } = require('./lib/newrelic');
 
 module.exports = {
   Plugin,
-  LEGACY_METRICS_FORMAT: false,
+  LEGACY_METRICS_FORMAT: false
 };
 
 function Plugin(script, events) {
@@ -52,7 +52,7 @@ function Plugin(script, events) {
         `Reporting type "${config.type}" is not recognized.`,
         {
           type: 'plugin',
-          id: NS,
+          id: NS
         }
       );
     }

@@ -16,9 +16,7 @@
   },
   "scenarios": [
     {
-      "flow": [
-        {"get": {"url": "/pets"}}
-      ]
+      "flow": [{ "get": { "url": "/pets" } }]
     }
   ]
 }

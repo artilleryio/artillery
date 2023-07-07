@@ -1,9 +1,7 @@
 {
   "config": {
     "target": "http://localhost",
-    "phases": [
-      {"duration": 1, "arrivalRate": 10}
-    ],
+    "phases": [{ "duration": 1, "arrivalRate": 10 }],
     "environments": {
       "production": {
         "target": "https://artillery.io"
@@ -15,9 +13,7 @@
   },
   "scenarios": [
     {
-      "flow": [
-        { "get": { "url": "/" } }
-      ]
+      "flow": [{ "get": { "url": "/" } }]
     }
   ]
 }

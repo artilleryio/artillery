@@ -17,7 +17,7 @@ module.exports.expectations = EXPECTATIONS;
 module.exports.formatters = FORMATTERS;
 
 function ExpectationsPlugin(script, events) {
-  if(!global.artillery || !global.artillery.log) {
+  if (!global.artillery || !global.artillery.log) {
     console.error('artillery-plugin-expect requires Artillery v2');
     return;
   }
@@ -34,7 +34,7 @@ function ExpectationsPlugin(script, events) {
     script.config.processor = {};
   }
 
-  script.scenarios.forEach(function(scenario) {
+  script.scenarios.forEach(function (scenario) {
     scenario.onError = [].concat(scenario.onError || []);
     scenario.onError.push('expectationsPluginOnError');
 
@@ -47,20 +47,25 @@ function ExpectationsPlugin(script, events) {
     scenario.afterScenario = [].concat(scenario.afterScenario || []);
   });
 
-  script.config.processor.expectationsPluginCheckExpectations = expectationsPluginCheckExpectations;
+  script.config.processor.expectationsPluginCheckExpectations =
+    expectationsPluginCheckExpectations;
   script.config.processor.expectationsPluginOnError = expectationsPluginOnError;
 
-  script.config.processor.expectationsPluginSetExpectOptions = function(
+  script.config.processor.expectationsPluginSetExpectOptions = function (
     userContext,
     events,
     done
   ) {
     userContext.expectationsPlugin = {};
-    userContext.expectationsPlugin.formatter = script.config.plugins.expect.formatter ||
+    userContext.expectationsPlugin.formatter =
+      script.config.plugins.expect.formatter ||
       script.config.plugins.expect.outputFormat ||
       'pretty';
-    userContext.expectationsPlugin.expectDefault200 = (script.config.plugins.expect.expectDefault200 === true || script.config.plugins.expect.expectDefault200 === 'true');
-    userContext.expectationsPlugin.reportFailuresAsErrors = script.config.plugins.expect.reportFailuresAsErrors;
+    userContext.expectationsPlugin.expectDefault200 =
+      script.config.plugins.expect.expectDefault200 === true ||
+      script.config.plugins.expect.expectDefault200 === 'true';
+    userContext.expectationsPlugin.reportFailuresAsErrors =
+      script.config.plugins.expect.reportFailuresAsErrors;
 
     return done();
   };
@@ -68,7 +73,13 @@ function ExpectationsPlugin(script, events) {
   debug('Initialized');
 }
 
-function expectationsPluginOnError(scenarioErr, requestParams, userContext, events, done) {
+function expectationsPluginOnError(
+  scenarioErr,
+  requestParams,
+  userContext,
+  events,
+  done
+) {
   if (userContext.expectationsPlugin.outputFormat === 'json') {
     artillery.log(JSON.stringify({ ok: false, error: scenarioErr.message }));
   } else {
@@ -86,9 +97,13 @@ function expectationsPluginCheckExpectations(
 ) {
   debug('Checking expectations');
 
-  const expectations = _.isArray(req.expect) ?
-        req.expect :
-        _.map(req.expect, (v, k) => { const o = {}; o[k] = v; return o; });
+  const expectations = _.isArray(req.expect)
+    ? req.expect
+    : _.map(req.expect, (v, k) => {
+        const o = {};
+        o[k] = v;
+        return o;
+      });
 
   if (expectations.length === 0) {
     if (userContext.expectationsPlugin.expectDefault200) {
@@ -99,7 +114,7 @@ function expectationsPluginCheckExpectations(
   const results = [];
 
   let body = maybeParseBody(res);
-  _.each(expectations, ex => {
+  _.each(expectations, (ex) => {
     const checker = Object.keys(ex)[0];
     debug(`checker: ${checker}`);
     let result = EXPECTATIONS[checker]?.call(
@@ -123,15 +138,21 @@ function expectationsPluginCheckExpectations(
 
   requestExpectations.results.forEach((e) => {
     if (e.ok) {
-      events.emit('counter', `plugins.expect.ok`, 1);
+      events.emit('counter', 'plugins.expect.ok', 1);
       events.emit('counter', `plugins.expect.ok.${e.type}`, 1);
     } else {
-      events.emit('counter', `plugins.expect.failed`, 1);
+      events.emit('counter', 'plugins.expect.failed', 1);
       events.emit('counter', `plugins.expect.failed.${e.type}`, 1);
     }
   });
 
-  events.emit('plugin:expect:expectations', requestExpectations, req, res, userContext);
+  events.emit(
+    'plugin:expect:expectations',
+    requestExpectations,
+    req,
+    res,
+    userContext
+  );
 
   const formatterName = userContext.expectationsPlugin.formatter;
 
@@ -143,7 +164,7 @@ function expectationsPluginCheckExpectations(
     userContext
   );
 
-  const failedExpectations = results.filter(res => !res.ok).length > 0;
+  const failedExpectations = results.filter((res) => !res.ok).length > 0;
 
   if (failedExpectations) {
     if (global.artillery) {
@@ -164,11 +185,9 @@ function maybeParseBody(res) {
   if (
     typeof res.body === 'string' &&
     res.headers['content-type'] &&
-    (
-      res.headers['content-type'].indexOf('application/json') !== -1
-      || res.headers['content-type'].indexOf('application/problem+json') !== -1
-      || res.headers['content-type'].indexOf('application/ld+json') !== -1
-    )
+    (res.headers['content-type'].indexOf('application/json') !== -1 ||
+      res.headers['content-type'].indexOf('application/problem+json') !== -1 ||
+      res.headers['content-type'].indexOf('application/ld+json') !== -1)
   ) {
     try {
       body = JSON.parse(res.body);

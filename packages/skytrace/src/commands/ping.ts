@@ -21,7 +21,7 @@ const YAML = require('js-yaml');
 //const telemetry = require('../telemetry').init();
 const HttpEngine = require('@artilleryio/int-core').engine_http;
 
-import { expectations, formatters }  from 'artillery-plugin-expect';
+import { expectations, formatters } from 'artillery-plugin-expect';
 
 function fmt(val: any, padTo: number = 8) {
   return chalk.cyan(
@@ -29,12 +29,12 @@ function fmt(val: any, padTo: number = 8) {
   );
 }
 
-function parse(str : string) {
+function parse(str: string) {
   const format1 = /^[A-Za-z0-9\-_]+=[A-Za-z0-9\-_]+$/i;
   const format2 = /^[A-Za-z0-9\-_]+:[A-Za-z0-9\-_]+$/i;
 
   if (format1.test(str)) {
-    const components : string[] = str.split('=');
+    const components: string[] = str.split('=');
     const result = {};
     result[components[0]] = components[1];
     debug('parse: format1:', str, result);
@@ -42,7 +42,7 @@ function parse(str : string) {
   }
 
   if (format2.test(str)) {
-    const components : string[] = str.split(':');
+    const components: string[] = str.split(':');
     const result = {};
     result[components[0]] = components[1];
     debug('parse: format2:', str, result);
@@ -191,7 +191,7 @@ class PingCommand extends Command {
 
     const requestSpec: RequestParams = {
       url: target,
-      afterResponse: 'captureRequestDetails',
+      afterResponse: 'captureRequestDetails'
     };
 
     // Basic auth:
@@ -368,7 +368,11 @@ class PingCommand extends Command {
       const timings = context.vars.timings;
       const phases = timings.phases;
 
-      this.log(`Connected to ${(new URL(target)).origin} (${chalk.cyan(context.vars.ip)})\n`);
+      this.log(
+        `Connected to ${new URL(target).origin} (${chalk.cyan(
+          context.vars.ip
+        )})\n`
+      );
 
       if (flags.verbose) {
         this.log(chalk.cyan('Request:\n'));
@@ -433,31 +437,49 @@ class PingCommand extends Command {
       const isJSON = contentType.match(/json/gi);
       const isXML = contentType.match(/html/gi) || contentType.match(/xml/gi);
 
-      if (flags.showBody) {
-        let language;
-        if (isJSON) {
-          language = 'json';
-        }
-        if (isXML) {
-          language = 'html';
-        }
+      let body = context.vars.body;
+      let isBodyValidJSON = false;
+      if (isJSON) {
+        // Try to parse the body as JSON. Errors are ignored because as a
+        // general purpose HTTP client we don't want to fail on invalid
+        // JSON by default - only if the user explicitly or implicitly
+        // specifies that the body needs to be valid.
+        try {
+          body = JSON.parse(context.vars.body);
+          isBodyValidJSON = true;
+        } catch (_parseErr) {}
+      }
 
-        if (language) {
-          let output = context.vars.body;
-          if (language === 'json' && flags.pretty) {
-            output = JSON.stringify(JSON.parse(context.vars.body), null, 4);
-          }
-          this.log(highlight(output, { language }));
-        } else {
+      // If -b is set without -p -- just print the body as-is.
+      // If -bp is set - pretty-print JSON or XML/HTML, otherwise print the body as-is.
+      if (flags.showBody) {
+        if (!flags.pretty) {
           this.log(context.vars.body);
+        } else {
+          if (isJSON) {
+            if (!isBodyValidJSON) {
+              this.log(
+                chalk.red(
+                  'Could not parse body is valid JSON for pretty-printing'
+                )
+              );
+            } else {
+              this.log(
+                highlight(JSON.stringify(body, null, 4), { language: 'json' })
+              );
+            }
+          } else if (isXML) {
+            this.log(highlight(context.vars.body, { language: 'html' }));
+          } else {
+            this.log(context.vars.body);
+          }
         }
       }
 
       if (flags.jmespath || flags.cheerio || flags.q) {
         if (flags.jmespath || (isJSON && flags.q)) {
           try {
-            const json = JSON.parse(context.vars.body);
-            const result = jmespath.search(json, flags.jmespath || flags.query);
+            const result = jmespath.search(body, flags.jmespath || flags.query);
 
             // If our output is piped we want to print the JSON without highlighting:
             if (process.stdout.isTTY) {
@@ -473,7 +495,7 @@ class PingCommand extends Command {
           }
         } else if (flags.cheerio || (isXML && flags.query)) {
           try {
-            const $ = cheerio.load(context.vars.body);
+            const $ = cheerio.load(body);
             const elts = $(flags.cheerio || flags.query).html();
             // If our output is piped we want to print the without highlighting:
             if (process.stdout.isTTY) {
@@ -503,7 +525,7 @@ class PingCommand extends Command {
           let result = expectations[checker].call(
             this,
             ex,
-            context.vars.body,
+            body,
             context.vars.req,
             context.vars.res,
             {}
@@ -546,12 +568,12 @@ class PingCommand extends Command {
 }
 
 interface TelemetryPing {
-  method: string,
-  usesExpectations: boolean,
-  usesJmesPath: boolean,
-  targetHash: string,
-  distinctId: string,
-};
+  method: string;
+  usesExpectations: boolean;
+  usesJmesPath: boolean;
+  targetHash: string;
+  distinctId: string;
+}
 
 // TODO: Move this to entrypoint of the CLI
 PingCommand.description = `Swiss Army Knife For Testing HTTP
