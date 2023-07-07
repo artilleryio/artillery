@@ -85,7 +85,7 @@
   "dependencies": {
     "@artilleryio/int-commons": "latest",
     "@artilleryio/int-core": "latest",
-    "@artilleryio/platform-fargate": "^1.0.4",
+    "@artilleryio/platform-fargate": "^1.0.5",
     "@aws-sdk/credential-providers": "^3.127.0",
     "@oclif/command": "^1.8.16",
     "@oclif/config": "^1.18.3",
