@@ -1,0 +1,5 @@
+config:
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+      stripQueryString: true

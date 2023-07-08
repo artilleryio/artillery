@@ -42,6 +42,36 @@ tap.test(
   }
 );
 
+tap.test(
+  'Run a script with config/processor in different folders and processor resolved relative to scenario (backwards compatibility)',
+  async (t) => {
+    const [exitCode, output] = await execute([
+      'run',
+      'test/scripts/scenario-config-different-folder/scenario.yml',
+      '--config',
+      'test/scripts/scenario-config-different-folder/config/config-processor-backward-compatibility.yml'
+    ]);
+    console.log(output)
+
+    t.ok(exitCode === 0 && output.stdout.includes('Successfully ran with id myTestId123'));
+  }
+);
+
+tap.test(
+  'Run a script with config/processor in different folders and processor resolved relative to config',
+  async (t) => {
+    const [exitCode, output] = await execute([
+      'run',
+      'test/scripts/scenario-config-different-folder/scenario.yml',
+      '--config',
+      'test/scripts/scenario-config-different-folder/config/config.yml'
+    ]);
+    console.log(output)
+
+    t.ok(exitCode === 0 && output.stdout.includes('Successfully ran with id myTestId123'));
+  }
+);
+
 tap.test('Environment specified with -e should be used', async (t) => {
   const [exitCode, output] = await execute([
     'run',

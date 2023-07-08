@@ -164,7 +164,6 @@ async function checkConfig(script, scriptPath, flags) {
       path.dirname(absoluteScriptPath),
       payloadSpec.path
     );
-
     payloadSpec.path = resolvedPathToPayload;
   });
 
