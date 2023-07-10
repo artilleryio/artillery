@@ -2,17 +2,34 @@ const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:splunk');
 
 class SplunkReporter {
-  constructor(config, events) {
+  constructor(config, events, script) {
     this.config = {
       realm: config.realm || 'us0',
       prefix: config.prefix || 'artillery.',
       excluded: config.excluded || [],
       includeOnly: config.includeOnly || [],
-      accessToken: config.accessToken
+      accessToken: config.accessToken,
+      dimensions: this.parseDimensions(config.dimensions)
     };
 
-    this.config.dimensions = this.parseDimensions(config.dimensions);
-    this.ingestAPIEndpoint = `https://ingest.${this.config.realm}.signalfx.com/v2/datapoint`;
+    if (config.event) {
+      this.shouldSendEvent = config.event.send || true;
+
+      // Event API endpoint requires request payload to be an array of objects
+      this.eventOpts = [
+        {
+          eventType: config.event.eventType || `Artillery_io_Test`,
+          dimensions: {
+            target: script.config.target,
+            ...this.parseDimensions(config.event.dimensions)
+          },
+          properties: this.parseDimensions(config.event.properties)
+        }
+      ];
+    }
+
+    this.ingestAPIMetricEndpoint = `https://ingest.${this.config.realm}.signalfx.com/v2/datapoint`;
+    this.ingestAPIEventEndpoint = `https://ingest.${this.config.realm}.signalfx.com/v2/event`;
 
     this.pendingRequests = 0;
 
@@ -37,15 +54,31 @@ class SplunkReporter {
       );
 
       //rates and summaries are both gauges for Splunk, so we're combining them
-      const gauges = rates.concat(summaries);
+      const gauge = rates.concat(summaries);
+      const payload = { gauge, count: counters };
 
-      await this.sendStats(
-        this.ingestAPIEndpoint,
-        this.config.accessToken,
-        gauges,
-        counters
-      );
+      await this.sendRequest(this.ingestAPIMetricEndpoint, payload, 'metrics');
     });
+
+    this.startedEventSent = false;
+    if (config.event && String(this.shouldSendEvent) !== 'false') {
+      events.on('phaseStarted', async () => {
+        debug('phaseStarted event fired');
+        if (this.startedEventSent) {
+          return;
+        }
+        const timestamp = Date.now();
+        this.eventOpts[0].timestamp = timestamp;
+        this.eventOpts[0].dimensions.phase = 'Test-Started';
+        await this.sendRequest(
+          this.ingestAPIEventEndpoint,
+          this.eventOpts,
+          'event'
+        );
+
+        this.startedEventSent = true;
+      });
+    }
   }
 
   formatCountersForSplunk(counters, config, timestamp) {
@@ -119,38 +152,40 @@ class SplunkReporter {
     const parsedDimensions = {};
 
     for (const item of dimensionList) {
-      const dimension = item.split(':');
-      parsedDimensions[dimension[0]] = dimension[1];
+      const [name, ...value] = item.split(':');
+      parsedDimensions[name] = value.join(':');
     }
 
     return parsedDimensions;
   }
 
-  async sendStats(url, token, gaugeArray, counterArray) {
-    const headers = {
-      'Content-Type': 'application/json; charset=UTF-8',
-      'X-SF-Token': token
-    };
-
+  formRequest(payload) {
     const options = {
-      headers,
-      json: {
-        gauge: gaugeArray,
-        count: counterArray
-      }
+      headers: {
+        'X-SF-Token': this.config.accessToken
+      },
+      json: payload
     };
 
-    this.pendingRequests += 1;
+    return options;
+  }
 
-    debug('sending metrics to Splunk');
+  async sendRequest(url, payload, type) {
+    this.pendingRequests += 1;
+    const options = this.formRequest(payload);
+
+    debug(`Sending ${type} to Splunk`);
     try {
       const res = await got.post(url, options);
+      debug(`Splunk API Response: ${res.statusCode} ${res.statusMessage}`);
+
       if (res.statusCode !== 200) {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
     } catch (err) {
-      debug(err);
+      debug('There has been an error: ', err);
     }
+    debug(`${type[0].toUpperCase() + type.slice(1)} sent to Splunk`);
 
     this.pendingRequests -= 1;
   }
@@ -179,6 +214,14 @@ class SplunkReporter {
   }
 
   cleanup(done) {
+    if (this.startedEventSent) {
+      const timestamp = Date.now();
+      this.eventOpts[0].timestamp = timestamp;
+      this.eventOpts[0].dimensions.phase = `Test-Finished`;
+
+      this.sendRequest(this.ingestAPIEventEndpoint, this.eventOpts, 'event');
+    }
+
     debug('cleaning up');
     return this.waitingForRequest().then(done);
   }
