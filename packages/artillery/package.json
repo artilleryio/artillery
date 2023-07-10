@@ -88,7 +88,7 @@
     "@artilleryio/platform-fargate": "^1.0.5",
     "@aws-sdk/credential-providers": "^3.127.0",
     "@oclif/core": "^2.8.11",
-    "@oclif/plugin-help": "^3.3.1",
+    "@oclif/plugin-help": "^5.2.11",
     "@oclif/plugin-not-found": "^2.3.1",
     "archiver": "^5.3.1",
     "artillery-engine-playwright": "^0.3.0",
