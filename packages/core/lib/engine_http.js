@@ -23,6 +23,10 @@ const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 const decompressResponse = require('decompress-response');
+const {
+  returnFlowWithScenarioHooks,
+  handleFunctionAsStep
+} = require('./hooks');
 
 const { promisify } = require('node:util');
 
@@ -127,8 +131,6 @@ HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
 
   ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
   ensurePropertyIsAList(scenarioSpec, 'afterResponse');
-  ensurePropertyIsAList(scenarioSpec, 'beforeScenario');
-  ensurePropertyIsAList(scenarioSpec, 'afterScenario');
   ensurePropertyIsAList(scenarioSpec, 'onError');
 
   // Add scenario-level hooks if needed:
@@ -136,24 +138,11 @@ HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
   // directly into the flow array.
   // TODO: Scenario-level hooks will probably want access to the
   // entire scenario spec rather than just the userContext.
-  const beforeScenarioFns = _.map(
-    scenarioSpec.beforeScenario,
-    function (hookFunctionName) {
-      return { function: hookFunctionName };
-    }
-  );
-  const afterScenarioFns = _.map(
-    scenarioSpec.afterScenario,
-    function (hookFunctionName) {
-      return { function: hookFunctionName };
-    }
-  );
 
-  const newFlow = beforeScenarioFns.concat(
-    scenarioSpec.flow.concat(afterScenarioFns)
-  );
-
-  scenarioSpec.flow = newFlow;
+  console.log('SCENARIO SPEC BEFORE:');
+  console.log(JSON.stringify(scenarioSpec));
+  scenarioSpec.flow = returnFlowWithScenarioHooks(scenarioSpec);
+  console.log(JSON.stringify(scenarioSpec));
 
   let tasks = _.map(scenarioSpec.flow, function (rs) {
     return self.step(rs, ee, {
@@ -163,6 +152,7 @@ HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
     });
   });
 
+  console.log(tasks);
   return self.compile(tasks, scenarioSpec.flow, ee);
 };
 
@@ -210,21 +200,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   if (requestSpec.function) {
-    return function (context, callback) {
-      let processFunc = self.config.processor[requestSpec.function];
-      if (processFunc) {
-        return processFunc(context, ee, function (hookErr) {
-          return callback(hookErr, context);
-        });
-      } else {
-        debug(`Function "${requestSpec.function}" not defined`);
-        debug('processor: %o', self.config.processor);
-        ee.emit('error', `Undefined function "${requestSpec.function}"`);
-        return process.nextTick(function () {
-          callback(null, context);
-        });
-      }
-    };
+    return handleFunctionAsStep(requestSpec, self.config.processor, ee, debug);
   }
 
   let f = function (context, callback) {
