@@ -17,7 +17,7 @@ class ListTestRunsCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(ListTestRunsCommand);
+    const { flags, argv, args } = await this.parse(ListTestRunsCommand);
     Pro.commands.listTestRuns(flags);
   }
 }

@@ -11,12 +11,11 @@ const _ = require('lodash');
 const tmp = require('tmp');
 const debug = require('debug')('commands:quick');
 
-const { Command, Flags } = require('@oclif/core');
+const { Command, Flags, Args } = require('@oclif/core');
 
 class QuickCommand extends Command {
   async run() {
-    const { flags, argv, args } = this.parse(QuickCommand);
-    const arrivalCount = flags.count;
+    const { flags, args } = await this.parse(QuickCommand);
     const url = args.target;
 
     const script = {
@@ -116,11 +115,8 @@ QuickCommand.flags = {
     description: 'Quiet mode'
   })
 };
-QuickCommand.args = [
-  {
-    name: 'target',
-    required: 'true'
-  }
-];
+QuickCommand.args = {
+  target: Args.string()
+};
 
 module.exports = QuickCommand;

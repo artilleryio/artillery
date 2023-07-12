@@ -1,4 +1,4 @@
-const { Command, Flags } = require('@oclif/core');
+const { Command, Flags, Args } = require('@oclif/core');
 
 const {
   readScript,
@@ -38,7 +38,7 @@ class RunCommand extends Command {
   static strict = false;
 
   async run() {
-    const { flags, argv, args } = this.parse(RunCommand);
+    const { flags, argv, args } = await this.parse(RunCommand);
 
     if (flags.platform === 'aws:fargate') {
       // Delegate to existing implementation
@@ -158,7 +158,12 @@ RunCommand.flags = {
   })
 };
 
-RunCommand.args = [{ name: 'script', required: true }];
+RunCommand.args = {
+  script: Args.string({
+    name: 'script',
+    required: true
+  })
+};
 
 RunCommand.runCommandImplementation = async function (flags, argv, args) {
   // Collect all input files for reading/parsing - via args, --config, or -i

@@ -7,7 +7,7 @@ class DeleteTestRunCommand extends Command {
   static aliases = ['delete-test-run'];
   static hidden = true;
   async run() {
-    const { flags, argv, args } = this.parse(DeleteTestRunCommand);
+    const { flags, argv, args } = await this.parse(DeleteTestRunCommand);
     Pro.commands.deleteTestRun(args.id);
   }
 }

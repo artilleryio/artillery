@@ -1,4 +1,4 @@
-const { Command, Flags } = require('@oclif/core');
+const { Command, Flags, Args } = require('@oclif/core');
 
 const RunCommand = require('./run');
 
@@ -7,7 +7,7 @@ class RunLambdaCommand extends Command {
   static strict = false;
 
   async run() {
-    const { flags, argv, args } = this.parse(RunLambdaCommand);
+    const { flags, argv, args } = await this.parse(RunLambdaCommand);
 
     flags['platform-opt'] = [
       `region=${flags.region}`,
@@ -138,6 +138,11 @@ RunLambdaCommand.flags = {
   })
 };
 
-RunLambdaCommand.args = [{ name: 'script', required: true }];
+RunLambdaCommand.args = {
+  script: Args.string({
+    name: 'script',
+    required: true
+  })
+};
 
 module.exports = RunLambdaCommand;

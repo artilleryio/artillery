@@ -19,7 +19,7 @@ class CreateTestBundleCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(CreateTestBundleCommand);
+    const { flags, argv, args } = await this.parse(CreateTestBundleCommand);
     Pro.commands.createTest(args.script, flags);
   }
 }

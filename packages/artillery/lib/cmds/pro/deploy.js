@@ -7,9 +7,9 @@ const Pro = tryRequire('artillery-pro');
 
 class RunCommand extends Command {
   static aliases = ['deploy'];
-
+  static hidden = true;
   async run() {
-    const { flags, argv, args } = this.parse(RunCommand);
+    const { flags, argv, args } = await this.parse(RunCommand);
     telemetry.capture('pro:deploy');
     Pro.commands.setup(flags);
   }

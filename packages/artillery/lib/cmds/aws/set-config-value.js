@@ -19,7 +19,7 @@ class SetConfigValueCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(SetConfigValueCommand);
+    const { flags, argv, args } = await this.parse(SetConfigValueCommand);
     Pro.commands.configSet(flags);
   }
 }

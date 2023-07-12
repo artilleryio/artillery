@@ -16,7 +16,7 @@ class RunDbMigrations extends Command {
       );
       process.exit(1);
     }
-    const { flags, argv, args } = this.parse(RunDbMigrations);
+    const { flags, argv, args } = await this.parse(RunDbMigrations);
     Pro.commands.runDbMigrations(flags);
   }
 }

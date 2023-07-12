@@ -7,7 +7,7 @@ const { rainbow } = require('../util');
 
 class DinoCommand extends Command {
   async run() {
-    const { flags } = this.parse(DinoCommand);
+    const { flags } = await this.parse(DinoCommand);
     let output = '';
     const message = flags.message
       ? flags.message

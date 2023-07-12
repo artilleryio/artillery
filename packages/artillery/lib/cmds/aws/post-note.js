@@ -16,7 +16,7 @@ class PostNoteCommand extends Command {
       );
       process.exit(1);
     }
-    const { flags, argv, args } = this.parse(PostNoteCommand);
+    const { flags, argv, args } = await this.parse(PostNoteCommand);
     Pro.commands.postNote(flags);
   }
 }

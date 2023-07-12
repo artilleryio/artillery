@@ -19,7 +19,7 @@ class DeleteTestBundleCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(DeleteTestBundleCommand);
+    const { flags, argv, args } = await this.parse(DeleteTestBundleCommand);
     Pro.commands.deleteTest(args.name);
   }
 }

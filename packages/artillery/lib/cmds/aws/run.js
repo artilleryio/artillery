@@ -23,7 +23,7 @@ class RunCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, _argv, args } = this.parse(RunCommand);
+    const { flags, _argv, args } = await this.parse(RunCommand);
     new CloudPlugin(null, null, { flags });
     Pro.commands.runCluster(args.script, flags);
   }
