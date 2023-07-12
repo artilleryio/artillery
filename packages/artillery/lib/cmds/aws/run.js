@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 const telemetry = require('../../telemetry').init();
 
@@ -11,7 +11,7 @@ class RunCommand extends Command {
   static aliases = ['run-test', 'run-cluster'];
   // Enable multiple args:
   static strict = false;
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(
@@ -23,7 +23,7 @@ class RunCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, _argv, args } = this.parse(RunCommand);
+    const { flags, _argv, args } = await this.parse(RunCommand);
     new CloudPlugin(null, null, { flags });
     Pro.commands.runCluster(args.script, flags);
   }

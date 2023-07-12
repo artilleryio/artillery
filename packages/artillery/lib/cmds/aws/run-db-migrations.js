@@ -1,10 +1,11 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 var tryRequire = require('try-require');
 const Pro = tryRequire('artillery-pro');
 
 class RunDbMigrations extends Command {
   static aliases = ['admin:run-db-migrations'];
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(
@@ -15,7 +16,7 @@ class RunDbMigrations extends Command {
       );
       process.exit(1);
     }
-    const { flags, argv, args } = this.parse(RunDbMigrations);
+    const { flags, argv, args } = await this.parse(RunDbMigrations);
     Pro.commands.runDbMigrations(flags);
   }
 }

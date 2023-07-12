@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags, Args } = require('@oclif/core');
 const telemetry = require('../telemetry').init();
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
@@ -16,7 +16,7 @@ class RunCommand extends Command {
   static strict = false;
 
   async run() {
-    const { flags, _argv, args } = this.parse(RunCommand);
+    const { flags, _argv, args } = await this.parse(RunCommand);
     new CloudPlugin(null, null, { flags });
 
     const ECS = new PlatformECS(null, null, {}, { testRunId: 'foo' });

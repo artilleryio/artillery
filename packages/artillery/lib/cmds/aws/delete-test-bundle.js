@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 const telemetry = require('../../telemetry').init();
 
@@ -7,7 +7,7 @@ const Pro = tryRequire('artillery-pro');
 
 class DeleteTestBundleCommand extends Command {
   static aliases = ['delete-test-bundle'];
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(
@@ -19,7 +19,7 @@ class DeleteTestBundleCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(DeleteTestBundleCommand);
+    const { flags, argv, args } = await this.parse(DeleteTestBundleCommand);
     Pro.commands.deleteTest(args.name);
   }
 }

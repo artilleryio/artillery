@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags, Args } = require('@oclif/core');
 
 const fs = require('fs');
 const path = require('path');
@@ -8,7 +8,7 @@ const telemetry = require('../telemetry').init();
 class ReportCommand extends Command {
   async run() {
     telemetry.capture('report generate');
-    const { flags, args } = this.parse(ReportCommand);
+    const { flags, args } = await this.parse(ReportCommand);
     const output = flags.output || args.file + '.html'; // TODO: path.resolve
     const data = JSON.parse(fs.readFileSync(args.file, 'utf-8'));
     data.intermediate.forEach((o) => delete o.latencies); // TODO: still needed?
@@ -29,17 +29,12 @@ ReportCommand.description =
   'generate a HTML report from a JSON log produced with artillery run';
 
 ReportCommand.flags = {
-  output: flags.string({
+  output: Flags.string({
     char: 'o',
     description: 'Write HTML report to specified location'
   })
 };
 
-ReportCommand.args = [
-  {
-    name: 'file',
-    required: true
-  }
-];
+ReportCommand.args = { file: Args.string() };
 
 module.exports = ReportCommand;

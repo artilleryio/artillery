@@ -1,10 +1,11 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 var tryRequire = require('try-require');
 const Pro = tryRequire('artillery-pro');
 
 class ListTagsCommand extends Command {
   static aliases = ['list-tags'];
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

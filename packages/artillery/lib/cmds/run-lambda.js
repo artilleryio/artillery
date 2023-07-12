@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags, Args } = require('@oclif/core');
 
 const RunCommand = require('./run');
 
@@ -7,7 +7,7 @@ class RunLambdaCommand extends Command {
   static strict = false;
 
   async run() {
-    const { flags, argv, args } = this.parse(RunLambdaCommand);
+    const { flags, argv, args } = await this.parse(RunLambdaCommand);
 
     flags['platform-opt'] = [
       `region=${flags.region}`,
@@ -48,37 +48,37 @@ Examples:
     $ artillery run:lambda --region us-east-1 --count 10 my-test.yml
 `;
 RunLambdaCommand.flags = {
-  target: flags.string({
+  target: Flags.string({
     char: 't',
     description:
       'Set target endpoint. Overrides the target already set in the test script'
   }),
-  output: flags.string({
+  output: Flags.string({
     char: 'o',
     description: 'Write a JSON report to file'
   }),
-  insecure: flags.boolean({
+  insecure: Flags.boolean({
     char: 'k',
     description: 'Allow insecure TLS connections; do not use in production'
   }),
-  overrides: flags.string({
+  overrides: Flags.string({
     description: 'Dynamically override values in the test script; a JSON object'
   }),
-  variables: flags.string({
+  variables: Flags.string({
     char: 'v',
     description:
       'Set variables available to vusers during the test; a JSON object'
   }),
   // TODO: Replace with --profile
-  environment: flags.string({
+  environment: Flags.string({
     char: 'e',
     description: 'Use one of the environments specified in config.environments'
   }),
-  config: flags.string({
+  config: Flags.string({
     char: 'c',
     description: 'Read configuration for the test from the specified file'
   }),
-  payload: flags.string({
+  payload: Flags.string({
     char: 'p',
     description: 'Specify a CSV file for dynamic data'
   }),
@@ -87,57 +87,62 @@ RunLambdaCommand.flags = {
   // does not work as expected. Instead of being considered an argument, "main.yml"
   // is considered to be input for "-i" and oclif then complains about missing
   // argument
-  input: flags.string({
+  input: Flags.string({
     char: 'i',
     description: 'Input script file',
     multiple: true,
     hidden: true
   }),
-  dotenv: flags.string({
+  dotenv: Flags.string({
     description: 'Path to a dotenv file to load environment variables from'
   }),
-  count: flags.string({
+  count: Flags.string({
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
   }),
-  tags: flags.string({
+  tags: Flags.string({
     description:
       'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sqa,service:foo'
   }),
-  note: flags.string({
+  note: Flags.string({
     description: 'Add a note/annotation to the test run'
   }),
-  record: flags.boolean({
+  record: Flags.boolean({
     description: 'Record test run to Artillery Cloud'
   }),
-  key: flags.string({
+  key: Flags.string({
     description: 'API key for Artillery Cloud'
   }),
-  architecture: flags.string({
+  architecture: Flags.string({
     description: 'Architecture of the Lambda function',
     default: 'arm64'
   }),
-  'memory-size': flags.string({
+  'memory-size': Flags.string({
     description: 'Memory size of the Lambda function',
     default: '4096'
   }),
-  region: flags.string({
+  region: Flags.string({
     description: 'AWS region to run the test in',
     default: 'us-east-1'
   }),
-  'lambda-role-arn': flags.string({
+  'lambda-role-arn': Flags.string({
     description: 'ARN of the IAM role to use for the Lambda function'
   }),
-  'security-group-ids': flags.string({
+  'security-group-ids': Flags.string({
     description:
       'Comma-separated list of security group IDs to use for the Lambda function'
   }),
-  'subnet-ids': flags.string({
+  'subnet-ids': Flags.string({
     description:
       'Comma-separated list of subnet IDs to use for the Lambda function'
   })
 };
 
-RunLambdaCommand.args = [{ name: 'script', required: true }];
+RunLambdaCommand.args = {
+  script: Args.string({
+    name: 'script',
+    required: true
+  })
+};
 
 module.exports = RunLambdaCommand;
