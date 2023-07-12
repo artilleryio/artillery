@@ -5,6 +5,7 @@ const Pro = tryRequire('artillery-pro');
 
 class ListTestRunsCommand extends Command {
   static aliases = ['list-test-runs'];
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

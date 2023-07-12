@@ -11,7 +11,7 @@ class RunCommand extends Command {
   static aliases = ['run-test', 'run-cluster'];
   // Enable multiple args:
   static strict = false;
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

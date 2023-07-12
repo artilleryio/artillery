@@ -5,6 +5,7 @@ const Pro = tryRequire('artillery-pro');
 
 class DescribeTestRunCommand extends Command {
   static aliases = ['describe-test-run'];
+  static hidden = true;
   async run() {
     const { flags, argv, args } = this.parse(DescribeTestRunCommand);
     Pro.commands.describeTestRun(args.id);

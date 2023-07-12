@@ -7,7 +7,7 @@ const Pro = tryRequire('artillery-pro');
 
 class ListTestBundlesCommand extends Command {
   static aliases = ['list-test-bundles'];
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

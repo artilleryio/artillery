@@ -7,7 +7,7 @@ const Pro = tryRequire('artillery-pro');
 
 class SetSecretCommand extends Command {
   static aliases = ['set-secret'];
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

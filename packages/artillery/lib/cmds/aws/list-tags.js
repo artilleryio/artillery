@@ -5,6 +5,7 @@ const Pro = tryRequire('artillery-pro');
 
 class ListTagsCommand extends Command {
   static aliases = ['list-tags'];
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

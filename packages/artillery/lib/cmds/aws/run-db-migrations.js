@@ -5,6 +5,7 @@ const Pro = tryRequire('artillery-pro');
 
 class RunDbMigrations extends Command {
   static aliases = ['admin:run-db-migrations'];
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

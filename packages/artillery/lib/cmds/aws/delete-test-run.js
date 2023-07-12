@@ -5,6 +5,7 @@ const Pro = tryRequire('artillery-pro');
 
 class DeleteTestRunCommand extends Command {
   static aliases = ['delete-test-run'];
+  static hidden = true;
   async run() {
     const { flags, argv, args } = this.parse(DeleteTestRunCommand);
     Pro.commands.deleteTestRun(args.id);

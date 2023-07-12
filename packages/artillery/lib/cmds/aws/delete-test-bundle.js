@@ -7,7 +7,7 @@ const Pro = tryRequire('artillery-pro');
 
 class DeleteTestBundleCommand extends Command {
   static aliases = ['delete-test-bundle'];
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

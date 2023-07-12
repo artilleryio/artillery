@@ -7,7 +7,7 @@ const Pro = tryRequire('artillery-pro');
 
 class SetConfigValueCommand extends Command {
   static aliases = ['set-config-value'];
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(

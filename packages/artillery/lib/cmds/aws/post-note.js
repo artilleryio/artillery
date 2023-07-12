@@ -5,6 +5,7 @@ const Pro = tryRequire('artillery-pro');
 
 class PostNoteCommand extends Command {
   static aliases = ['post-note'];
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(
