@@ -17,7 +17,6 @@ module.exports.expectations = EXPECTATIONS;
 module.exports.formatters = FORMATTERS;
 
 function ExpectationsPlugin(script, events) {
-  console.log('HELLOOOOOOOOOOOO');
   if (!global.artillery || !global.artillery.log) {
     console.error('artillery-plugin-expect requires Artillery v2');
     return;
@@ -179,11 +178,13 @@ function expectationsPluginCheckExpectations(
   }
 
   if (userContext.expectationsPlugin.reportFailuresAsErrors) {
-    const reportFilter =
+    const filteredRequestName =
       userContext.expectationsPlugin.useRequestNames && req.name
         ? req.name
         : req.url;
-    return done(new Error(`Failed expectations for request ${reportFilter}`));
+    return done(
+      new Error(`Failed expectations for request ${filteredRequestName}`)
+    );
   }
 
   return done();
