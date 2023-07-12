@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 const { rainbow } = require('../util');
 
 class DinoCommand extends Command {
@@ -32,15 +32,15 @@ class DinoCommand extends Command {
 
 DinoCommand.description = 'here be dinosaurs';
 DinoCommand.flags = {
-  message: flags.string({
+  message: Flags.string({
     char: 'm',
     description: 'Tell dinosaur what to say'
   }),
-  rainbow: flags.boolean({
+  rainbow: Flags.boolean({
     char: 'r',
     description: 'Add some color'
   }),
-  quiet: flags.boolean({
+  quiet: Flags.boolean({
     char: 'q',
     description: 'Quiet mode'
   })

@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 const fs = require('fs');
 const path = require('path');
@@ -29,7 +29,7 @@ ReportCommand.description =
   'generate a HTML report from a JSON log produced with artillery run';
 
 ReportCommand.flags = {
-  output: flags.string({
+  output: Flags.string({
     char: 'o',
     description: 'Write HTML report to specified location'
   })

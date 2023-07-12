@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 const {
   readScript,
@@ -72,27 +72,27 @@ Examples:
 // TODO: Link to an Examples section in the docs
 
 RunCommand.flags = {
-  target: flags.string({
+  target: Flags.string({
     char: 't',
     description:
       'Set target endpoint. Overrides the target already set in the test script'
   }),
-  output: flags.string({
+  output: Flags.string({
     char: 'o',
     description: 'Write a JSON report to file'
   }),
-  insecure: flags.boolean({
+  insecure: Flags.boolean({
     char: 'k',
     description: 'Allow insecure TLS connections; do not use in production'
   }),
-  quiet: flags.boolean({
+  quiet: Flags.boolean({
     char: 'q',
     description: 'Quiet mode'
   }),
-  overrides: flags.string({
+  overrides: Flags.string({
     description: 'Dynamically override values in the test script; a JSON object'
   }),
-  variables: flags.string({
+  variables: Flags.string({
     char: 'v',
     description:
       'Set variables available to vusers during the test; a JSON object'
@@ -100,15 +100,15 @@ RunCommand.flags = {
   // TODO: Deprecation notices for commands below:
 
   // TODO: Replace with --profile
-  environment: flags.string({
+  environment: Flags.string({
     char: 'e',
     description: 'Use one of the environments specified in config.environments'
   }),
-  config: flags.string({
+  config: Flags.string({
     char: 'c',
     description: 'Read configuration for the test from the specified file'
   }),
-  payload: flags.string({
+  payload: Flags.string({
     char: 'p',
     description: 'Specify a CSV file for dynamic data'
   }),
@@ -117,43 +117,43 @@ RunCommand.flags = {
   // does not work as expected. Instead of being considered an argument, "main.yml"
   // is considered to be input for "-i" and oclif then complains about missing
   // argument
-  input: flags.string({
+  input: Flags.string({
     char: 'i',
     description: 'Input script file',
     multiple: true,
     hidden: true
   }),
-  solo: flags.boolean({
+  solo: Flags.boolean({
     char: 's',
     description: 'Create only one virtual user'
   }),
-  dotenv: flags.string({
+  dotenv: Flags.string({
     description: 'Path to a dotenv file to load environment variables from'
   }),
-  platform: flags.string({
+  platform: Flags.string({
     description: 'Runtime platform',
     default: 'local'
   }),
-  'platform-opt': flags.string({
+  'platform-opt': Flags.string({
     description:
       'Set a platform-specific option, e.g. --platform region=eu-west-1 for AWS Lambda',
     multiple: true
   }),
-  count: flags.string({
+  count: Flags.string({
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
   }),
-  tags: flags.string({
+  tags: Flags.string({
     description:
       'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sqa,service:foo'
   }),
-  note: flags.string({
+  note: Flags.string({
     description: 'Add a note/annotation to the test run'
   }),
-  record: flags.boolean({
+  record: Flags.boolean({
     description: 'Record test run to Artillery Cloud'
   }),
-  key: flags.string({
+  key: Flags.string({
     description: 'API key for Artillery Cloud'
   })
 };
@@ -423,7 +423,7 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
     script1 = _.merge(script1, parsedData);
   }
 
-  script1 = await checkConfig(script1, inputFiles[0], flags)
+  script1 = await checkConfig(script1, inputFiles[0], flags);
 
   if (flags.config) {
     const absoluteConfigPath = path.resolve(process.cwd(), flags.config);

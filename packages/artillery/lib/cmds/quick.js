@@ -11,7 +11,7 @@ const _ = require('lodash');
 const tmp = require('tmp');
 const debug = require('debug')('commands:quick');
 
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 class QuickCommand extends Command {
   async run() {
@@ -91,27 +91,27 @@ class QuickCommand extends Command {
 
 QuickCommand.description = 'run a simple test without writing a test script';
 QuickCommand.flags = {
-  count: flags.string({
+  count: Flags.string({
     char: 'c',
     description: 'Number of VUs to create',
     parse: (input) => parseInt(input, 10),
     default: 10
   }),
-  num: flags.string({
+  num: Flags.string({
     char: 'n',
     description: 'Number of requests/messages that each VU will send',
     parse: (input) => parseInt(input, 10),
     default: 10
   }),
-  output: flags.string({
+  output: Flags.string({
     char: 'o',
     description: 'Filename of the JSON report'
   }),
-  insecure: flags.boolean({
+  insecure: Flags.boolean({
     char: 'k',
     description: 'Allow insecure TLS connections'
   }),
-  quiet: flags.boolean({
+  quiet: Flags.boolean({
     char: 'q',
     description: 'Quiet mode'
   })
