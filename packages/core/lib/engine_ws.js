@@ -12,6 +12,10 @@ const debug = require('debug')('ws');
 const url = require('url');
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const template = engineUtil.template;
+const {
+  handleFunctionAsStep,
+  returnFlowWithScenarioHooks
+} = require('./hooks');
 
 module.exports = WSEngine;
 
@@ -21,6 +25,9 @@ function WSEngine(script) {
 
 WSEngine.prototype.createScenario = function (scenarioSpec, ee) {
   const self = this;
+
+  scenarioSpec.flow = returnFlowWithScenarioHooks(scenarioSpec);
+
   const tasks = _.map(scenarioSpec.flow, function (rs) {
     if (typeof rs.think !== 'undefined') {
       return engineUtil.createThink(
@@ -138,14 +145,7 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   }
 
   if (requestSpec.function) {
-    return function (context, callback) {
-      const processFunc = self.config.processor[requestSpec.function];
-      if (processFunc) {
-        processFunc(context, ee, function () {
-          return callback(null, context);
-        });
-      }
-    };
+    return handleFunctionAsStep(requestSpec, self.config.processor, ee, debug);
   }
 
   if (requestSpec.log) {
