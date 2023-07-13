@@ -4,7 +4,7 @@
   "main": "./index.js",
   "dependencies": {
     "@artilleryio/int-commons": "latest",
-    "@artilleryio/sketches-js": "^1.0.4",
+    "@artilleryio/sketches-js": "^2.1.0",
     "agentkeepalive": "^4.1.0",
     "arrivals": "^2.1.2",
     "async": "^2.6.4",
