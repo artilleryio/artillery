@@ -15,6 +15,10 @@ const debug = require('debug')('socketio');
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const EngineHttp = require('./engine_http');
 const template = engineUtil.template;
+const {
+  handleFunctionAsStep,
+  returnFlowWithScenarioHooks
+} = require('./hooks');
 
 module.exports = SocketIoEngine;
 
@@ -29,6 +33,8 @@ SocketIoEngine.prototype.createScenario = function (scenarioSpec, ee) {
   const self = this;
   // Adds scenario overridden configuration into the static config
   this.socketioOpts = { ...this.socketioOpts, ...scenarioSpec.socketio };
+
+  scenarioSpec.flow = returnFlowWithScenarioHooks(scenarioSpec);
 
   const tasks = _.map(scenarioSpec.flow, function (rs) {
     if (typeof rs.think !== 'undefined') {
@@ -147,6 +153,10 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     });
   }
 
+  if (requestSpec.function) {
+    return handleFunctionAsStep(requestSpec, self.config.processor, ee, debug);
+  }
+
   const f = function (context, callback) {
     // Only process emit requests; delegate the rest to the HTTP engine (or think utility)
     if (requestSpec.think) {
@@ -155,6 +165,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
         _.get(self.config, 'defaults.think', {})
       );
     }
+
     if (!requestSpec.emit) {
       const delegateFunc = self.httpDelegate.step(requestSpec, ee);
       return delegateFunc(context, callback);
