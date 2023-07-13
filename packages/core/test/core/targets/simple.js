@@ -217,7 +217,7 @@ function route(server) {
       method: 'GET',
       path: '/malformed_cookie',
       handler: function (request, h) {
-        return h.response().header('Set-Cookie', '').code(200);
+        return h.response().header('Set-Cookie', 'malformed').code(200);
       }
     }
   ]);
