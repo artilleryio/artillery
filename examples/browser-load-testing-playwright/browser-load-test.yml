@@ -1,5 +1,5 @@
 config:
-  target: "https://artillery.io"
+  target: "https://www.artillery.io"
   phases:
     - arrivalRate: 1
       duration: 10

@@ -1,14 +1,17 @@
 //
 // The code in this function was generated with
 // playwright codegen
-// https://playwright.dev/docs/cli/#generate-code
+// https://playwright.dev/docs/codegen
 //
 async function cloudWaitlistSignupFlow(page) {
   await page.goto('https://www.artillery.io/');
-  await page.click('text=Cloud');
-  // assert.equal(page.url(), 'https://artillery.io/cloud/');
-  await page.click('text=Join');
-  // await page.pause();
+  await page
+    .getByLabel('Main navigation')
+    .getByRole('link', { name: 'Cloud' })
+    .click();
+  await page
+    .getByRole('button', { name: 'Join Artillery Cloud early access waitlist' })
+    .click();
 }
 
 //

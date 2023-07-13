@@ -1,5 +1,5 @@
 config:
-  target: "https://artillery.io"
+  target: "https://www.artillery.io"
   payload:
     - path: ./pages.csv
       fields: ["url"]
