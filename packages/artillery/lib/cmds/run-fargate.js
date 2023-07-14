@@ -6,7 +6,8 @@ const { Command, Flags, Args } = require('@oclif/core');
 const telemetry = require('../telemetry').init();
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
-const PlatformFargateLegacy = require('@artilleryio/platform-fargate');
+const tryRequire = require('try-require');
+const PlatformFargateLegacy = tryRequire('@artilleryio/platform-fargate');
 const PlatformECS = require('../platform/aws-ecs/ecs');
 const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
 
@@ -37,8 +38,10 @@ class RunCommand extends Command {
   }
 }
 
-RunCommand.description = PlatformFargateLegacy.oclif.runTest.description;
-RunCommand.flags = PlatformFargateLegacy.oclif.runTest.flags;
-RunCommand.args = PlatformFargateLegacy.oclif.runTest.args;
+if (PlatformFargateLegacy) {
+  RunCommand.description = PlatformFargateLegacy.oclif.runTest.description;
+  RunCommand.flags = PlatformFargateLegacy.oclif.runTest.flags;
+  RunCommand.args = PlatformFargateLegacy.oclif.runTest.args;
+}
 
 module.exports = RunCommand;
