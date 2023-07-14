@@ -39,28 +39,18 @@ class ArtilleryCloudPlugin {
       console.log('Artillery Cloud reporting is configured for this test run');
       console.log(`Run URL: ${this.baseUrl}/load-tests/${this.testRunId}`);
 
-      try {
-        await this._event('testrun:init', {
-          metadata: testInfo.metadata
-        });
-        if (typeof testInfo.flags.note !== 'undefined') {
-          await this._event('testrun:addnote', { text: testInfo.flags.note });
-        }
-      } catch (err) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
+      await this._event('testrun:init', {
+        metadata: testInfo.metadata
+      });
+      if (typeof testInfo.flags.note !== 'undefined') {
+        await this._event('testrun:addnote', { text: testInfo.flags.note });
       }
     });
 
     global.artillery.globalEvents.on('stats', async (report) => {
       debug('stats', new Date());
       const ts = Number(report.period);
-      try {
-        await this._event('testrun:metrics', { report, ts });
-      } catch (err) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
-      }
+      await this._event('testrun:metrics', { report, ts });
     });
 
     global.artillery.globalEvents.on('done', async (report) => {
@@ -69,22 +59,12 @@ class ArtilleryCloudPlugin {
         'testrun:aggregatereport: payload size:',
         JSON.stringify(report).length
       );
-      try {
-        await this._event('testrun:aggregatereport', { aggregate: report });
-      } catch (err) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
-      }
+      await this._event('testrun:aggregatereport', { aggregate: report });
     });
 
     global.artillery.globalEvents.on('checks', async (checks) => {
       debug('checks');
-      try {
-        await this._event('testrun:checks', { checks });
-      } catch (err) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
-      }
+      await this._event('testrun:checks', { checks });
     });
 
     global.artillery.globalEvents.on('logLines', async (lines, ts) => {
@@ -102,26 +82,16 @@ class ArtilleryCloudPlugin {
         text += util.format(...Object.keys(args).map((k) => args[k])) + '\n';
       }
 
-      try {
-        await this._event('testrun:textlog', { lines: text, ts });
-      } catch (err) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
-      }
+      await this._event('testrun:textlog', { lines: text, ts });
 
       debug('last 100 characters:');
       debug(text.slice(text.length - 100, text.length));
     });
 
     global.artillery.globalEvents.on('metadata', async (metadata) => {
-      try {
-        await this._event('testrun:addmetadata', {
-          metadata
-        });
-      } catch (err) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
-      }
+      await this._event('testrun:addmetadata', {
+        metadata
+      });
     });
 
     let testEndInfo;
@@ -138,13 +108,8 @@ class ArtilleryCloudPlugin {
     global.artillery.ext({
       ext: 'onShutdown',
       method: async () => {
-        try {
-          await this._event('testrun:end', { ts: testEndInfo.endTime });
-          await this._event('testrun:changestatus', { status: 'COMPLETED' });
-        } catch (err) {
-          console.log('Error: error sending test data to Artillery Cloud');
-          console.log('Test report may be incomplete');
-        }
+        await this._event('testrun:end', { ts: testEndInfo.endTime });
+        await this._event('testrun:changestatus', { status: 'COMPLETED' });
       }
     });
 
@@ -153,26 +118,39 @@ class ArtilleryCloudPlugin {
 
   async _event(eventName, eventPayload) {
     debug('☁️', eventName, eventPayload);
+
     try {
-      await request
-        .post(this.eventsEndpoint, {
-          headers: this.defaultHeaders,
-          json: {
-            eventType: eventName,
-            eventData: Object.assign({}, eventPayload, {
-              testRunId: this.testRunId
-            })
-          },
-          retry: {
-            limit: 2,
-            methods: ['POST']
-          }
-        })
-        .json();
+      const res = await request.post(this.eventsEndpoint, {
+        headers: this.defaultHeaders,
+        json: {
+          eventType: eventName,
+          eventData: Object.assign({}, eventPayload, {
+            testRunId: this.testRunId
+          })
+        },
+        throwHttpErrors: false,
+        retry: {
+          limit: 2,
+          methods: ['POST']
+        }
+      });
+
+      if (res.statusCode != 200) {
+        console.log('Error: error sending test data to Artillery Cloud');
+        console.log('Test report may be incomplete');
+
+        let body;
+        try {
+          body = JSON.parse(res.body);
+        } catch (_err) {}
+
+        if (body && body.requestId) {
+          console.log('Request ID:', body.requestId);
+        }
+      }
       debug('☁️', eventName, 'sent');
     } catch (err) {
       debug(err);
-      throw err;
     }
   }
 

@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 const telemetry = require('../../telemetry').init();
 
@@ -7,7 +7,7 @@ const Pro = tryRequire('artillery-pro');
 
 class ListTestBundlesCommand extends Command {
   static aliases = ['list-test-bundles'];
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(
@@ -19,7 +19,7 @@ class ListTestBundlesCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(ListTestBundlesCommand);
+    const { flags, argv, args } = await this.parse(ListTestBundlesCommand);
     Pro.commands.listTests(flags);
   }
 }

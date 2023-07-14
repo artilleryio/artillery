@@ -1,4 +1,4 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 const telemetry = require('../../telemetry').init();
 
@@ -7,7 +7,7 @@ const Pro = tryRequire('artillery-pro');
 
 class ListSecretsCommand extends Command {
   static aliases = ['list-secrets'];
-
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(
@@ -19,7 +19,7 @@ class ListSecretsCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(ListSecretsCommand);
+    const { flags, argv, args } = await this.parse(ListSecretsCommand);
     Pro.commands.listSecrets(flags);
   }
 }

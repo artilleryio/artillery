@@ -1,13 +1,13 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 var tryRequire = require('try-require');
 const Pro = tryRequire('artillery-pro');
 
 class StopTestCommand extends Command {
   static aliases = ['stop-test'];
-
+  static hidden = true;
   async run() {
-    const { flags, argv, args } = this.parse(StopTestCommand);
+    const { flags, argv, args } = await this.parse(StopTestCommand);
     Pro.commands.stopTest(args.id);
   }
 }

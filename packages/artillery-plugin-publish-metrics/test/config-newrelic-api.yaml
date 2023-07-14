@@ -7,9 +7,14 @@ config:
     publish-metrics:
       - type: newrelic
         region: 'us'
-        licenseKey: "{{ $processEnvironment.NR_LICENSE_KEY }}"
+        licenseKey: '{{ $processEnvironment.NR_LICENSE_KEY }}'
         prefix: 'artillery.publish_metrics_plugin.'
         attributes:
-          - "testId:{{ $processEnvironment.TEST_ID }}"
-          - "reporterType:newrelic-metric-api"
-
+          - 'testId:{{ $processEnvironment.TEST_ID }}'
+          - 'reporterType:newrelic-metric-api'
+        event:
+          accountId: '{{ $processEnvironment.NEW_RELIC_ACCOUNT_ID }}'
+          eventType: 'Plugin_integration_test'
+          attributes:
+            - 'priority:low'
+            - 'testId:myTest123'

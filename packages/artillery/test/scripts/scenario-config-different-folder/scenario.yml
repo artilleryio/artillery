@@ -1,0 +1,5 @@
+scenarios:
+  - name: Test Scenario
+    beforeScenario: "setId"
+    flow:
+      - log: "Successfully ran with id {{ artilleryTestId }}"

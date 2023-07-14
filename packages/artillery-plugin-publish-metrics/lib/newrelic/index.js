@@ -2,7 +2,7 @@ const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:newrelic');
 
 class NewRelicReporter {
-  constructor(config, events) {
+  constructor(config, events, script) {
     // Set each config value as matching user config if exists, else default values
     this.config = {
       region: config.region || 'us',
@@ -13,15 +13,29 @@ class NewRelicReporter {
       licenseKey: config.licenseKey
     };
 
+    if (config.event) {
+      this.eventConfig = {
+        attributes: config.event.attributes || [],
+        send: config.event.send || true,
+        accountId: config.event.accountId
+      };
+
+      this.eventOpts = {
+        eventType: config.event.eventType || `Artillery_io_Test`,
+        target: `${script.config.target}`,
+        ...this.parseAttributes(this.eventConfig.attributes)
+      };
+    }
+
     this.metricsAPIEndpoint =
       this.config.region === 'eu'
         ? 'https://metric-api.eu.newrelic.com/metric/v1'
         : 'https://metric-api.newrelic.com/metric/v1';
 
-    // prepared endpoints for incoming sending events feature
-    // this.eventsAPIEndpoint = this.config.region === 'eu'
-    // 		? `https://insights-collector.eu01.nr-data.net/v1/accounts/${ACCOUNT_ID}/events`
-    // 		: `https://insights-collector.newrelic.com/v1/accounts/${ACCOUNT_ID}/events`;
+    this.eventsAPIEndpoint =
+      this.config.region === 'eu'
+        ? `https://insights-collector.eu01.nr-data.net/v1/accounts/${this.eventConfig.accountId}/events`
+        : `https://insights-collector.newrelic.com/v1/accounts/${this.eventConfig.accountId}/events`;
 
     this.pendingRequests = 0;
 
@@ -52,6 +66,25 @@ class NewRelicReporter {
         reqBody
       );
     });
+
+    this.startedEventSent = false;
+    if (config.event && String(this.eventConfig.send) !== 'false') {
+      events.on('phaseStarted', async () => {
+        debug('phaseStarted event fired');
+        if (this.startedEventSent) {
+          return;
+        }
+        const timestamp = Date.now();
+        this.eventOpts.timestamp = timestamp;
+        this.eventOpts.phase = `Test Started`;
+        await this.sendEvent(
+          this.eventsAPIEndpoint,
+          this.config.licenseKey,
+          this.eventOpts
+        );
+        this.startedEventSent = true;
+      });
+    }
   }
 
   // Packs stats.counters metrics that need to be sent to NR into format recognised by NR metric API
@@ -113,22 +146,25 @@ class NewRelicReporter {
     return statMetrics;
   }
 
-  // Assembles metrics and info into req body format needed by NR metric API
-  createRequestBody(timestamp, interval, attributeList, metrics) {
+  parseAttributes(attributeList) {
     const parsedAttributes = {};
     if (attributeList.length > 0) {
       for (const item of attributeList) {
-        const attribute = item.split(':');
-        parsedAttributes[attribute[0]] = attribute[1];
+        const [name, ...value] = item.split(':');
+        parsedAttributes[name] = value.join(':');
       }
     }
+    return parsedAttributes;
+  }
 
+  // Assembles metrics and info into req body format needed by NR metric API
+  createRequestBody(timestamp, interval, attributeList, metrics) {
     const body = [
       {
         common: {
           timestamp,
           'interval.ms': interval,
-          attributes: parsedAttributes
+          attributes: this.parseAttributes(attributeList)
         },
         metrics
       }
@@ -151,9 +187,16 @@ class NewRelicReporter {
     debug('Sending metrics to New Relic');
     try {
       const res = await got.post(url, options);
+
       if (res.statusCode !== 202) {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
+
+      // In case an error is generated during the Metric API asynchronous check (after succesfull response), UUID can be used to match error to request
+      debug(
+        `Request to Metric API at ${body[0].common.timestamp} UUID: `,
+        JSON.parse(res.body).uuid
+      );
     } catch (err) {
       debug(err);
     }
@@ -174,6 +217,39 @@ class NewRelicReporter {
     return true;
   }
 
+  async sendEvent(url, licenseKey, eventOptions) {
+    this.pendingRequests += 1;
+    const headers = {
+      'Content-Type': 'application/json; charset=UTF-8',
+      'Api-Key': licenseKey
+    };
+
+    const options = {
+      headers,
+      json: eventOptions
+    };
+
+    debug('Sending ' + eventOptions.phase + ' event to New Relic');
+    try {
+      const res = await got.post(url, options);
+
+      if (res.statusCode !== 200) {
+        debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
+      }
+
+      // In case an error is generated during the Event API asynchronous check (after succesfull response), UUID can be used to match error to request
+      debug(
+        `Request to Event API at ${eventOptions.timestamp} Request UUID: `,
+        JSON.parse(res.body).uuid
+      );
+      debug(eventOptions.phase + ' event sent to New Relic');
+    } catch (err) {
+      debug(err);
+    }
+
+    this.pendingRequests -= 1;
+  }
+
   async waitingForRequest() {
     while (this.pendingRequests > 0) {
       debug('Waiting for pending request...');
@@ -185,6 +261,18 @@ class NewRelicReporter {
   }
 
   cleanup(done) {
+    if (this.startedEventSent) {
+      const timestamp = Date.now();
+      this.eventOpts.timestamp = timestamp;
+      this.eventOpts.phase = `Test Finished`;
+
+      this.sendEvent(
+        this.eventsAPIEndpoint,
+        this.config.licenseKey,
+        this.eventOpts
+      );
+    }
+
     debug('Cleaning up');
     return this.waitingForRequest().then(done);
   }

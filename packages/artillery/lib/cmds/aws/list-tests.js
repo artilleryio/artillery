@@ -1,10 +1,11 @@
-const { Command, flags } = require('@oclif/command');
+const { Command, Flags } = require('@oclif/core');
 
 var tryRequire = require('try-require');
 const Pro = tryRequire('artillery-pro');
 
 class ListTestsCommand extends Command {
   static aliases = ['list-tests'];
+  static hidden = true;
   async run() {
     if (!Pro) {
       console.error(
@@ -16,7 +17,7 @@ class ListTestsCommand extends Command {
       process.exit(1);
     }
 
-    const { flags, argv, args } = this.parse(ListTestsCommand);
+    const { flags, argv, args } = await this.parse(ListTestsCommand);
     Pro.commands.getTests(flags);
   }
 }

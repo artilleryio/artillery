@@ -16,7 +16,7 @@
     "lint-staged": "^13.2.3",
     "prettier": "^2.8.8",
     "simple-git-hooks": "^2.8.1",
-    "turbo": "^1.6.3"
+    "turbo": "1.10.7"
   },
   "simple-git-hooks": {
     "commit-msg": "npx commitlint --edit $1",

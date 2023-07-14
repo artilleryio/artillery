@@ -1,10 +1,10 @@
 {
   "name": "artillery",
-  "version": "2.0.0-34",
+  "version": "2.0.0-35",
   "description": "Cloud-scale load testing. https://www.artillery.io",
   "main": "./lib",
   "engines": {
-    "node": ">= 16.15.0"
+    "node": ">= 18.16.1"
   },
   "files": [
     "/bin",
@@ -85,11 +85,10 @@
   "dependencies": {
     "@artilleryio/int-commons": "latest",
     "@artilleryio/int-core": "latest",
-    "@artilleryio/platform-fargate": "^1.0.5",
+    "@artilleryio/platform-fargate": "^2.0.0",
     "@aws-sdk/credential-providers": "^3.127.0",
-    "@oclif/command": "^1.8.16",
-    "@oclif/config": "^1.18.3",
-    "@oclif/plugin-help": "^3.3.1",
+    "@oclif/core": "^2.8.11",
+    "@oclif/plugin-help": "^5.2.11",
     "@oclif/plugin-not-found": "^2.3.1",
     "archiver": "^5.3.1",
     "artillery-engine-playwright": "^0.3.0",
@@ -120,7 +119,7 @@
     "sqs-consumer": "5.8.0",
     "temp": "^0.9.4",
     "tmp": "0.2.1",
-    "try-require": "1.2.1"
+    "try-require": "^1.2.1"
   },
   "devDependencies": {
     "@hapi/hapi": "^20.1.3",
