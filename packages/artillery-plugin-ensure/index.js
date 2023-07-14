@@ -38,7 +38,7 @@ class EnsurePlugin {
     this.script = script;
     this.events = events;
 
-    const checks = this.script.config.ensure || this.script.plugins.ensure;
+    const checks = this.script.config?.ensure || this.script.config?.plugins?.ensure;
 
     global.artillery.ext({
       ext: 'beforeExit',
