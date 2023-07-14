@@ -25,6 +25,7 @@
     "hpagent": "^0.1.1",
     "https-proxy-agent": "^5.0.0",
     "lodash": "^4.17.19",
+    "protobufjs": "^7.2.4",
     "proxy": "^1.0.2",
     "socket.io-client": "^4.5.1",
     "socketio-wildcard": "^2.0.0",
