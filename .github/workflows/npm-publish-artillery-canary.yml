@@ -5,6 +5,15 @@ on:
       - main
     paths:
       - 'packages/artillery/**'
+      - 'packages/artillery-plugin-expect/**'
+      - 'packages/artillery-plugin-publish-metrics/**'      
+      - 'packages/artillery-plugin-metrics-by-endpoint/**'
+      - 'packages/artillery-plugin-apdex/**'
+      - 'packages/artillery-plugin-ensure/**'
+      - 'packages/core/**'
+      - 'packages/commons/**'
+      - 'packages/artillery-engine-playwright/**'
+      
 jobs:
   build:
     runs-on: ubuntu-latest
