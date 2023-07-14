@@ -10,8 +10,9 @@ MOCKINGJAY_VERSION="1.12.0"
 #
 
 cleanup() {
+    container_id=$(docker container ls -aqf "name=mockingjay")
 
-    docker stop mockingjay || true
+    (docker stop mockingjay && docker rm "$container_id") || true
 }
 
 trap cleanup EXIT
@@ -20,4 +21,4 @@ docker run --name mockingjay -p 9090:9090 -v "$DIR":/data "quii/mockingjay-serve
 
 sleep 10
 
-"$DIR"/../../../node_modules/.bin/ava $DIR/index.js $DIR/lib/formatters.js
+"$DIR"/../../../node_modules/.bin/ava --timeout 30s $DIR/index.js $DIR/lib/formatters.js
