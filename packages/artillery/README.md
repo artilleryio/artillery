@@ -23,7 +23,15 @@
 
 ## Get started
 
-Follow our [quick start guide](https://artillery.io/docs/guides/getting-started/installing-artillery.html) to get started.
+### Install Artillery
+
+```
+npm install -g artillery
+```
+
+### Run your first test
+
+Follow our 5-minute guide to run your first load test - https://www.artillery.io/docs/get-started/first-test
 
 ## Learn more
 
