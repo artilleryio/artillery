@@ -1,6 +1,6 @@
 {
   "name": "@artilleryio/int-core",
-  "version": "2.0.9",
+  "version": "2.0.10",
   "main": "./index.js",
   "dependencies": {
     "@artilleryio/int-commons": "latest",
