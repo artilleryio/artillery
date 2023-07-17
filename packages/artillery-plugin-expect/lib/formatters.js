@@ -34,7 +34,7 @@ function prettyPrint(requestExpectations, req, res, userContext) {
 
   requestExpectations.results.forEach((result) => {
     console.log(
-      `  ${result.ok ? `${chalk.green('ok')}` : chalk.red('not ok')} ${
+      `  ${result.ok ? chalk.green('ok') : chalk.red('not ok')} ${
         result.type
       } ${result.got} `
     );
