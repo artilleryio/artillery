@@ -94,7 +94,7 @@
     "artillery-engine-playwright": "^0.3.0",
     "artillery-plugin-apdex": "latest",
     "artillery-plugin-ensure": "latest",
-    "artillery-plugin-expect": "latest",
+    "artillery-plugin-expect": "*",
     "artillery-plugin-metrics-by-endpoint": "latest",
     "artillery-plugin-publish-metrics": "latest",
     "async": "^2.6.4",
