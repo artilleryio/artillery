@@ -38,13 +38,14 @@ class EnsurePlugin {
     this.script = script;
     this.events = events;
 
-    const checks = this.script.config?.ensure || this.script.config?.plugins?.ensure;
+    const checks =
+      this.script.config?.ensure || this.script.config?.plugins?.ensure;
 
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (data) => {
         if (
-          typeof this.script?.config?.ensure === 'undefined' ||
+          !checks ||
           typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
         ) {
           return;
