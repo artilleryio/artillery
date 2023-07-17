@@ -66,7 +66,7 @@ test('logs error with pretty formatter', async (t) => {
   t.pass();
 });
 
-test('uses request name when instead of url', async (t) => {
+test('uses request name instead of url', async (t) => {
   const userContext = {
     vars: { expectedStatus: 200 },
     expectationsPlugin: { useRequestNames: true }
@@ -79,8 +79,9 @@ test('uses request name when instead of url', async (t) => {
     res, // res
     userContext
   );
+
   formatters.pretty.call(this, { results: [result] }, req, res, userContext);
-  console.log('MY TEST', loggedMessages);
+
   t.true(loggedMessages[0].includes('unicorns'));
   t.pass();
 });
