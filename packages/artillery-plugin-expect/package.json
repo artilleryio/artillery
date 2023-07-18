@@ -7,7 +7,7 @@
     "node": ">= 14.17.6"
   },
   "scripts": {
-    "test": "FORCE_COLOR=1 bash test/run.sh"
+    "test": "bash test/run.sh"
   },
   "author": "Hassy Veldstra <h@artillery.io>",
   "license": "SEE LICENSE IN LICENSE.txt",
