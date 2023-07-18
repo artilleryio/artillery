@@ -43,7 +43,7 @@
     }
   },
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/unit/*.test.js test/cli/*.test.js && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
+    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 --color test/unit/*.test.js test/cli/*.test.js && bash test/lib/run.sh && tap --no-coverage --color test/testcases/plugins/*.test.js",
     "test:cloud": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/cloud-e2e/*.test.js",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix"
@@ -130,7 +130,7 @@
     "get-bin-path": "^5.1.0",
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
-    "tap": "^15.2.3",
+    "tap": "^16.3.7",
     "zx": "^4.2.0"
   }
 }
