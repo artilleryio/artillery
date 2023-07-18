@@ -18,7 +18,7 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "ava": "^3.15.0",
-    "shelljs": "^0.8.4"
+    "shelljs": "^0.8.4",
+    "tap": "^16.3.7"
   }
 }
