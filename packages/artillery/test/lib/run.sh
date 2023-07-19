@@ -2,7 +2,7 @@
 
 typeset -r DIR=$(cd "$(dirname "$0")" && pwd)
 
-node $DIR/index.js
+"$DIR"/../../../../node_modules/.bin/tap $DIR/index.js --no-coverage --color
 
 test_status=$?
 
