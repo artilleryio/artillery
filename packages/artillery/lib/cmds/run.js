@@ -321,22 +321,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         );
       }
 
-      for (const e of global.artillery.extensionEvents) {
-        const ps = [];
-        const testInfo = { endTime: Date.now() };
-        if (e.ext === 'beforeExit') {
-          ps.push(
-            e.method({
-              report,
-              flags,
-              runnerOpts,
-              testInfo
-            })
-          );
-        }
-        await Promise.allSettled(ps);
-      }
-
+      // This is used in the beforeExit event handler in gracefulShutdown
+      finalReport = report;
       await gracefulShutdown();
     });
 
@@ -372,12 +358,15 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
     launcher.run();
 
-    // TODO: Extract this
+    let finalReport = {};
     let shuttingDown = false;
-    process.once('SIGINT', gracefulShutdown);
-    process.once('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', async () => {
+      gracefulShutdown({ earlyStop: true });
+    });
+    process.on('SIGTERM', async () => {
+      gracefulShutdown({ earlyStop: true });
+    });
 
-    // TODO: beforeExit event handlers need to fire here
     async function gracefulShutdown(opts = { exitCode: 0 }) {
       debug('shutting down 🦑');
       if (shuttingDown) {
@@ -389,13 +378,31 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       shuttingDown = true;
       global.artillery.globalEvents.emit('shutdown:start', opts);
 
+      // Run beforeExit first, and then onShutdown
+
+      const ps = [];
       for (const e of global.artillery.extensionEvents) {
-        const ps = [];
-        if (e.ext === 'onShutdown') {
-          ps.push(e.method(opts));
+        const testInfo = { endTime: Date.now() };
+        if (e.ext === 'beforeExit') {
+          ps.push(
+            e.method({
+              report: finalReport,
+              flags,
+              runnerOpts,
+              testInfo
+            })
+          );
         }
-        await Promise.allSettled(ps);
       }
+      await Promise.allSettled(ps);
+
+      const ps2 = [];
+      for (const e of global.artillery.extensionEvents) {
+        if (e.ext === 'onShutdown') {
+          ps2.push(e.method(opts));
+        }
+      }
+      await Promise.allSettled(ps2);
 
       await telemetry.shutdown();
 
