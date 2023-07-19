@@ -107,9 +107,11 @@ class ArtilleryCloudPlugin {
     // output has been captured and sent to the dashboard.
     global.artillery.ext({
       ext: 'onShutdown',
-      method: async () => {
+      method: async (opts) => {
         await this._event('testrun:end', { ts: testEndInfo.endTime });
-        await this._event('testrun:changestatus', { status: 'COMPLETED' });
+        await this._event('testrun:changestatus', {
+          status: opts.earlyStop ? 'EARLY_STOP' : 'COMPLETED'
+        });
       }
     });
 

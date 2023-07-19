@@ -360,8 +360,12 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
     let finalReport = {};
     let shuttingDown = false;
-    process.once('SIGINT', gracefulShutdown);
-    process.once('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', async () => {
+      gracefulShutdown({ earlyStop: true });
+    });
+    process.on('SIGTERM', async () => {
+      gracefulShutdown({ earlyStop: true });
+    });
 
     async function gracefulShutdown(opts = { exitCode: 0 }) {
       debug('shutting down 🦑');
