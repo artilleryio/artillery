@@ -1,11 +1,11 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
+const runner = require('../../..').runner.runner;
+const { SSMS } = require('../../../lib/ssms');
 
 test('config variables', function (t) {
-  const script = require('./scripts/config_variables.json');
+  const script = require('../scripts/config_variables.json');
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();

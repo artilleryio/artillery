@@ -12,11 +12,11 @@ var { test } = require('tap');
 var l = require('lodash');
 var nockify = require('./lib/nockify');
 
-var httpWorker = require('../../lib/engine_http');
+var httpWorker = require('../../../lib/engine_http');
 // nockify does not support payloads yet
 var scripts = [
-  ['hello', require('./scripts/hello.json')],
-  ['multiple_phases', require('./scripts/multiple_phases.json')]
+  ['hello', require('../scripts/hello.json')],
+  ['multiple_phases', require('../scripts/multiple_phases.json')]
 ];
 
 l.each(scripts, function (script) {
