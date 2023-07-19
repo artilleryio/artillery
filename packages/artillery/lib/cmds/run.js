@@ -396,11 +396,13 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
       await Promise.allSettled(ps);
 
+      const ps2 = [];
+      for (const e of global.artillery.extensionEvents) {
         if (e.ext === 'onShutdown') {
-          ps.push(e.method(opts));
+          ps2.push(e.method(opts));
         }
-        await Promise.allSettled(ps);
       }
+      await Promise.allSettled(ps2);
 
       await telemetry.shutdown();
 
