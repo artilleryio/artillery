@@ -19,6 +19,7 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
+      - run: PACKAGE_FOLDER_NAME=skytrace node .github/workflows/scripts/rename-packages-to-latest.js
       - run: npm run build -w skytrace
       - run: npm -w skytrace publish
         env:
