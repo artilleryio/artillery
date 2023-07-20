@@ -19,7 +19,7 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: node .github/workflows/scripts/rename-packages-to-latest.js
+      - run: PACKAGE_FOLDER_NAME=artillery node .github/workflows/scripts/rename-packages-to-latest.js
       - run: npm -w artillery publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
