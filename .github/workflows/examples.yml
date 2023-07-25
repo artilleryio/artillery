@@ -1,0 +1,20 @@
+name: Examples
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Prepare examples
+        run: cp ./examples/websockets/.github/workflows/ci.yml ./.github/workflows/example-websockets.yml
+
+  websockets:
+    uses: ./.github/workflows/example-websockets.yml
