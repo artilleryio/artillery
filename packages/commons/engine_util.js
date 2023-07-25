@@ -606,9 +606,9 @@ function extractRegExp(doc, expr, opts) {
   if (!match) {
     return '';
   }
-  const potentialGroupMatch = match.groups[group];
-  if (group && potentialGroupMatch) {
-    return potentialGroupMatch;
+  
+  if (group && match.groups) {
+    return match.groups[group];
   } else if (match[0]) {
     return match[0];
   } else {
