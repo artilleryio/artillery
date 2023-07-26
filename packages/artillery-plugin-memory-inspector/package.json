@@ -1,0 +1,15 @@
+{
+  "name": "artillery-plugin-memory-inspector",
+  "version": "1.0.0",
+  "description": "Inspect the memory of processes running together with your load tests!",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "debug": "^4.3.4",
+    "pidusage": "^3.0.2"
+  }
+}
