@@ -4,12 +4,16 @@
   "description": "Inspect the memory of processes running together with your load tests!",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tap ./test/*.spec.mjs --no-coverage --timeout 300"
   },
   "author": "",
   "license": "MPL-2.0",
   "dependencies": {
     "debug": "^4.3.4",
     "pidusage": "^3.0.2"
+  },
+  "devDependencies": {
+    "tap": "^16.3.7",
+    "zx": "^7.2.3"
   }
 }
