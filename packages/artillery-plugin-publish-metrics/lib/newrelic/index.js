@@ -21,21 +21,21 @@ class NewRelicReporter {
       };
 
       this.eventOpts = {
-        eventType: config.event.eventType || `Artillery_io_Test`,
+        eventType: config.event.eventType || 'Artillery_io_Test',
         target: `${script.config.target}`,
         ...this.parseAttributes(this.eventConfig.attributes)
       };
+
+      this.eventsAPIEndpoint =
+        this.config.region === 'eu'
+          ? `https://insights-collector.eu01.nr-data.net/v1/accounts/${this.eventConfig.accountId}/events`
+          : `https://insights-collector.newrelic.com/v1/accounts/${this.eventConfig.accountId}/events`;
     }
 
     this.metricsAPIEndpoint =
       this.config.region === 'eu'
         ? 'https://metric-api.eu.newrelic.com/metric/v1'
         : 'https://metric-api.newrelic.com/metric/v1';
-
-    this.eventsAPIEndpoint =
-      this.config.region === 'eu'
-        ? `https://insights-collector.eu01.nr-data.net/v1/accounts/${this.eventConfig.accountId}/events`
-        : `https://insights-collector.newrelic.com/v1/accounts/${this.eventConfig.accountId}/events`;
 
     this.pendingRequests = 0;
 
@@ -76,7 +76,7 @@ class NewRelicReporter {
         }
         const timestamp = Date.now();
         this.eventOpts.timestamp = timestamp;
-        this.eventOpts.phase = `Test Started`;
+        this.eventOpts.phase = 'Test Started';
         await this.sendEvent(
           this.eventsAPIEndpoint,
           this.config.licenseKey,
@@ -264,7 +264,7 @@ class NewRelicReporter {
     if (this.startedEventSent) {
       const timestamp = Date.now();
       this.eventOpts.timestamp = timestamp;
-      this.eventOpts.phase = `Test Finished`;
+      this.eventOpts.phase = 'Test Finished';
 
       this.sendEvent(
         this.eventsAPIEndpoint,
