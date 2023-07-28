@@ -3,16 +3,16 @@ import { test, beforeEach, afterEach } from 'tap';
 import { exec } from 'child_process';
 import { $ } from 'zx';
 
-let child;
+let childProcess;
 let currentPid;
 
 beforeEach(async () => {
-  child = exec('node', ['./test/server/server.mjs']);
-  currentPid = child.pid;
+  childProcess = exec('node ./test/server/server.mjs');
+  currentPid = childProcess.pid;
 });
 
 afterEach(async () => {
-  child.kill();
+  childProcess.kill();
   fs.unlinkSync('./test/output.json');
 });
 
@@ -36,6 +36,9 @@ test('cpu and memory metrics display in the aggregate report with the correct na
       'Issue with running existing Before Scenario Handler!'
     )
   );
+
+  //sanity check that it can reach server
+  t.ok(report.aggregate.counters['http.codes.200'] > 0, "Should have 200 status codes")
 
   //assert that correct custom metrics are emitted
   t.hasProp(
@@ -72,6 +75,9 @@ test('cpu and memory metrics display in the aggregate report with a default name
   await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
 
+  //sanity check that it can reach server
+  t.ok(report.aggregate.counters['http.codes.200'] > 0, "Should have 200 status codes")
+
   //assert that correct custom metrics are emitted
   t.hasProp(
     report.aggregate.summaries,
@@ -106,6 +112,9 @@ test('cpu and memory metrics display in the aggregate report with a default name
 
   await $`ARTILLERY_INTROSPECT_MEMORY=true ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
+
+  //sanity check that it can reach server
+  t.ok(report.aggregate.counters['http.codes.200'] > 0, "Should have 200 status codes")
 
   //assert that correct custom metrics are emitted
   t.hasProp(
