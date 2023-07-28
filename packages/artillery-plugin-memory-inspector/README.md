@@ -16,7 +16,7 @@ npm install -g artillery-plugin-memory-inspector
 
 All you need to do is set the pid of the process you want to watch. Additionally, you can also set a name for the process, which will be the name it will show up in the custom metrics.
 
-You can set more than one metric at the same time.
+You can set more than one `pid` to be watched by the plugin, so that you can watch more than one process. This might be useful if you have different versions of the application you want to test against, for instance, and want to leverage Artillery's scenario weights for that.
 
 ### Example Usage
 
