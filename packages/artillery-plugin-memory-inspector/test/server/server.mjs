@@ -6,11 +6,12 @@ let leakyArray = [];
 
 const server = http.createServer((req, res) => {
   if (req.url === '/' && req.method === 'GET') {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
     const longString = new Array(1000000).join('x');
     leakyArray.push(longString);
-    res.end('Hello, this is a simple Node.js server!\n');
+
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('Hello, this is a simple Node.js server!');
   } else {
     res.statusCode = 404;
     res.end('Not Found');
