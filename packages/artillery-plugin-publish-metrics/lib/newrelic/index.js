@@ -199,10 +199,10 @@ class NewRelicReporter {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
 
-      // In case an error is generated during the Metric API asynchronous check (after succesfull response), UUID can be used to match error to request
+      // In case an error is generated during the Metric API asynchronous check (after succesfull response), requestId can be used to match error to request
       debug(
-        `Request to Metric API at ${body[0].common.timestamp} UUID: `,
-        JSON.parse(res.body).uuid
+        `Request to Metric API at ${body[0].common.timestamp} requestId: `,
+        JSON.parse(res.body).requestId
       );
     } catch (err) {
       debug(err);
