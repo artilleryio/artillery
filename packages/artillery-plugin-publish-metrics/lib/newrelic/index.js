@@ -26,10 +26,17 @@ class NewRelicReporter {
         ...this.parseAttributes(this.eventConfig.attributes)
       };
 
-      this.eventsAPIEndpoint =
-        this.config.region === 'eu'
-          ? `https://insights-collector.eu01.nr-data.net/v1/accounts/${this.eventConfig.accountId}/events`
-          : `https://insights-collector.newrelic.com/v1/accounts/${this.eventConfig.accountId}/events`;
+      if (!config.event.accountId) {
+        this.eventConfig.send = false;
+        debug(
+          'Events will not be sent to New Relic. In order to send events `accountId` must be provided'
+        );
+      } else {
+        this.eventsAPIEndpoint =
+          this.config.region === 'eu'
+            ? `https://insights-collector.eu01.nr-data.net/v1/accounts/${this.eventConfig.accountId}/events`
+            : `https://insights-collector.newrelic.com/v1/accounts/${this.eventConfig.accountId}/events`;
+      }
     }
 
     this.metricsAPIEndpoint =
