@@ -27,6 +27,7 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
+      - run: PACKAGE_FOLDER_NAME=artillery node .github/workflows/scripts/rename-packages-to-latest.js
       - run: |
           # Get current version of artillery from package.json, and replace with one
           # than includes the current commit hash

@@ -1,10 +1,11 @@
 'use strict';
 
-const test = require('ava');
+const { test } = require('tap');
 const createDebug = require('debug');
 const EventEmitter = require('events');
 
 const debug = createDebug('expect-plugin:test');
+const chalk = require('chalk');
 
 const shelljs = require('shelljs');
 const path = require('path');
@@ -29,10 +30,8 @@ test('Basic interface checks', async (t) => {
   const events = new EventEmitter();
   const plugin = new ExpectationsPlugin.Plugin(script, events);
 
-  t.true(typeof ExpectationsPlugin.Plugin === 'function');
-  t.true(typeof plugin === 'object');
-
-  t.pass();
+  t.type(ExpectationsPlugin.Plugin, 'function');
+  t.type(plugin, 'object');
 });
 
 test('Expectation: statusCode', async (t) => {
@@ -60,7 +59,7 @@ test('Expectation: statusCode', async (t) => {
       e[2] // userContext
     );
 
-    t.true(result.ok === e[3]);
+    t.equal(result.ok, e[3]);
   });
 });
 
@@ -109,7 +108,8 @@ test('Expectation: notStatusCode', async (t) => {
       { statusCode: e[1] }, // res
       e[2] // userContext
     );
-    t.true(result.ok === e[3]);
+
+    t.equal(result.ok, e[3]);
   }
 });
 
@@ -127,10 +127,10 @@ test('Expectation: validRegex', async (t) => {
     '' // userContext
   );
 
-  t.true(result.ok === true);
+  t.equal(result.ok, true);
 });
 
-test('Expectation: hasProperty', (t) => {
+test('Expectation: hasProperty', async (t) => {
   const expectations = require('../lib/expectations');
 
   const data = [
@@ -166,11 +166,12 @@ test('Expectation: hasProperty', (t) => {
       { statusCode: 200 }, // res
       e[2]
     ); // userContext
-    t.true(result.ok === e[3]);
+
+    t.equal(result.ok, e[3]);
   });
 });
 
-test('Expectation: notHasProperty', (t) => {
+test('Expectation: notHasProperty', async (t) => {
   const expectations = require('../lib/expectations');
 
   const data = [
@@ -206,7 +207,8 @@ test('Expectation: notHasProperty', (t) => {
       { statusCode: 200 }, // res
       e[2]
     ); // userContext
-    t.true(result.ok === e[3]);
+
+    t.equal(result.ok, e[3]);
   });
 });
 
@@ -246,11 +248,11 @@ test('Expectation: contentType', async (t) => {
       { vars: e[3] } // userContext
     );
 
-    t.true(result.ok === e[4]);
+    t.equal(result.ok, e[4]);
   });
 });
 
-test('Expectation: headerEquals', (t) => {
+test('Expectation: headerEquals', async (t) => {
   const expectations = require('../lib/expectations');
 
   // expectation - response object - user context - expected result
@@ -315,7 +317,7 @@ test('Expectation: headerEquals', (t) => {
       e[1], // res
       e[2]
     ); // userContext
-    t.true(result.ok === e[3]);
+    t.equal(result.ok, e[3]);
   });
 });
 
@@ -333,19 +335,22 @@ test('Integration with Artillery', async (t) => {
 
   const EXPECTED_EXPECTATION_COUNT = 16;
   const actualCount = output.split('\n').filter((s) => {
-    return s.startsWith('  ok') || s.startsWith('  not ok');
+    return (
+      s.trim().startsWith(chalk.green('ok')) ||
+      s.trim().startsWith(chalk.red('not ok'))
+    );
   }).length;
 
   if (EXPECTED_EXPECTATION_COUNT !== actualCount) {
     console.log('Artillery output:');
     console.log(output);
   }
-  t.true(EXPECTED_EXPECTATION_COUNT === actualCount);
+  t.equal(EXPECTED_EXPECTATION_COUNT, actualCount);
 
-  t.true(output.indexOf('ok contentType json') > -1);
-  t.true(output.indexOf('ok statusCode 404') > -1);
-  t.true(output.indexOf('Errors:') === -1);
-  t.true(result.code === 0);
+  t.equal(output.indexOf(`${chalk.green('ok')} contentType json`) > -1, true);
+  t.equal(output.indexOf(`${chalk.green('ok')} statusCode 404`) > -1, true);
+  t.equal(output.indexOf('Errors:') === -1, true);
+  t.equal(result.code, 0);
 });
 
 test('Produce metrics', async (t) => {
@@ -360,8 +365,8 @@ test('Produce metrics', async (t) => {
 
   const output = result.stdout;
 
-  t.true(output.indexOf('expect.ok') > -1);
-  t.true(result.code === 0);
+  t.equal(output.indexOf('expect.ok') > -1, true);
+  t.equal(result.code, 0);
 });
 
 test('Report failures as errors by request name', async (t) => {

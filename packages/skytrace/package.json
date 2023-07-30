@@ -18,13 +18,13 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
-    "@artilleryio/int-commons": "latest",
-    "@artilleryio/int-core": "latest",
+    "@artilleryio/int-commons": "*",
+    "@artilleryio/int-core": "*",
     "@oclif/command": "^1.8.16",
     "@oclif/core": "^1.19.1",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.1.6",
-    "artillery-plugin-expect": "latest",
+    "artillery-plugin-expect": "*",
     "chalk": "^4.1.2",
     "cheerio": "^1.0.0-rc.10",
     "cli-highlight": "^2.1.11",

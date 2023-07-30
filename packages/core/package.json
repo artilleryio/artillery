@@ -3,7 +3,7 @@
   "version": "2.0.10",
   "main": "./index.js",
   "dependencies": {
-    "@artilleryio/int-commons": "latest",
+    "@artilleryio/int-commons": "*",
     "@artilleryio/sketches-js": "^2.1.1",
     "agentkeepalive": "^4.1.0",
     "arrivals": "^2.1.2",
@@ -37,7 +37,7 @@
   "scripts": {
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix",
-    "test": "tap --no-coverage --timeout=300 test/core/unit/*.test.js && bash test/core/run.sh"
+    "test": "tap --no-coverage --color --timeout=300 test/core/unit/*.test.js && bash test/core/run.sh"
   },
   "devDependencies": {
     "@hapi/basic": "^6.0.0",
@@ -47,6 +47,6 @@
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
     "socket.io": "^4.7.1",
-    "tap": "15.2.3"
+    "tap": "^16.3.7"
   }
 }

@@ -1,12 +1,12 @@
 'use strict';
 
 var { test } = require('tap');
-var runner = require('../../lib/runner').runner;
+var runner = require('../../../lib/runner').runner;
 var createTarget = require('./lib/interfakify').create;
 var url = require('url');
 
 test('environments - override target', function (t) {
-  var script = require('./scripts/hello_environments.json');
+  var script = require('../scripts/hello_environments.json');
   runner(script, null, { environment: 'production' }).then(function (ee) {
     ee.on('done', function (report) {
       t.ok(
@@ -25,7 +25,7 @@ test('environments - override target', function (t) {
 
 test('environments - override target and phases', function (t) {
   var startedAt;
-  var script = require('./scripts/hello_environments.json');
+  var script = require('../scripts/hello_environments.json');
   var target = createTarget(
     script.scenarios[0].flow,
     script.config.environments.staging

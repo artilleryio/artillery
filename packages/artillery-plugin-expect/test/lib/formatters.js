@@ -1,6 +1,6 @@
 'use strict';
 
-const test = require('ava');
+const { test, beforeEach } = require('tap');
 const expectations = require('../../lib/expectations');
 const formatters = require('../../lib/formatters');
 
@@ -16,7 +16,7 @@ global.console = {
   }
 };
 
-test.beforeEach(() => {
+beforeEach(() => {
   loggedMessages = [];
 });
 
@@ -39,8 +39,7 @@ test('does not log ok status', async (t) => {
     userContext
   );
 
-  t.true(loggedMessages.length === 0);
-  t.pass();
+  t.equal(loggedMessages.length, 0);
 });
 
 test('logs error with pretty formatter', async (t) => {
@@ -62,8 +61,7 @@ test('logs error with pretty formatter', async (t) => {
     userContext
   );
 
-  t.true(loggedMessages.length !== 0);
-  t.pass();
+  t.not(loggedMessages.length, 0);
 });
 
 test('uses request name instead of url', async (t) => {

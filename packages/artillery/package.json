@@ -43,7 +43,7 @@
     }
   },
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/unit/*.test.js test/cli/*.test.js && bash test/lib/run.sh && node test/testcases/plugins/*.test.js",
+    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 --color test/unit/*.test.js test/cli/*.test.js && bash test/lib/run.sh && tap --no-coverage --color test/testcases/plugins/*.test.js",
     "test:cloud": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/cloud-e2e/*.test.js",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix"
@@ -83,20 +83,20 @@
     "email": "npm@veldstra.org"
   },
   "dependencies": {
-    "@artilleryio/int-commons": "latest",
-    "@artilleryio/int-core": "latest",
+    "@artilleryio/int-commons": "*",
+    "@artilleryio/int-core": "*",
     "@artilleryio/platform-fargate": "^2.0.0",
     "@aws-sdk/credential-providers": "^3.127.0",
     "@oclif/core": "^2.8.11",
     "@oclif/plugin-help": "^5.2.11",
     "@oclif/plugin-not-found": "^2.3.1",
     "archiver": "^5.3.1",
-    "artillery-engine-playwright": "^0.3.0",
-    "artillery-plugin-apdex": "latest",
-    "artillery-plugin-ensure": "latest",
+    "artillery-engine-playwright": "*",
+    "artillery-plugin-apdex": "*",
+    "artillery-plugin-ensure": "*",
     "artillery-plugin-expect": "*",
-    "artillery-plugin-metrics-by-endpoint": "latest",
-    "artillery-plugin-publish-metrics": "latest",
+    "artillery-plugin-metrics-by-endpoint": "*",
+    "artillery-plugin-publish-metrics": "*",
     "async": "^2.6.4",
     "aws-sdk": "^2.1338.0",
     "chalk": "^2.4.2",
@@ -130,7 +130,7 @@
     "get-bin-path": "^5.1.0",
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
-    "tap": "^15.2.3",
+    "tap": "^16.3.7",
     "zx": "^4.2.0"
   }
 }

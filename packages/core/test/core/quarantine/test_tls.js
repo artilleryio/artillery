@@ -1,7 +1,7 @@
 'use strict';
 
 var { test } = require('tap');
-var runner = require('../../lib/runner').runner;
+var runner = require('../../../lib/runner').runner;
 var tls = require('tls');
 var fs = require('fs');
 var path = require('path');
@@ -18,7 +18,7 @@ var server = tls.createServer(options, function (socket) {
 server.listen(3002);
 
 test('tls strict', function (t) {
-  var script = require('./scripts/tls-strict.json');
+  var script = require('../scripts/tls-strict.json');
   runner(script).then(function (ee) {
     ee.on('done', function (report) {
       var rejected = report.errors.DEPTH_ZERO_SELF_SIGNED_CERT;
@@ -31,7 +31,7 @@ test('tls strict', function (t) {
 });
 
 test('tls lax', function (t) {
-  var script = require('./scripts/tls-lax.json');
+  var script = require('../scripts/tls-lax.json');
   runner(script).then(function (ee) {
     ee.on('done', function (report) {
       var rejected = report.errors.DEPTH_ZERO_SELF_SIGNED_CERT;
