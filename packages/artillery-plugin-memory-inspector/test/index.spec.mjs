@@ -1,25 +1,16 @@
 import fs from 'fs';
-import portfinder from 'portfinder';
 import { startTestServer } from './util.mjs';
-import { test, beforeEach, afterEach, teardown } from 'tap';
+import { test, afterEach } from 'tap';
 import { $ } from 'zx';
 
-
 afterEach(async () => {
-//   await childProcess.kill();
+  //cleanup output file after each test
   fs.unlinkSync('./test/output.json');
 });
 
-// teardown(() => {
-//     for(const process of processesOpen) {
-//         process.kill()
-//     }
-// })
-
 test('cpu and memory metrics display in the aggregate report with the correct name', async (t) => {
-
-    //Arrange Test Server
-    const {currentPort, childProcess, currentPid} = await startTestServer();
+  //Arrange: Test Server and Plugin overrides
+  const { currentPort, childProcess, currentPid } = await startTestServer();
   const override = JSON.stringify({
     config: {
       plugins: {
@@ -28,11 +19,13 @@ test('cpu and memory metrics display in the aggregate report with the correct na
     }
   });
 
+  //Act: run the test and get report
   const output =
     await $`TEST_PORT=${currentPort} ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
 
-  //assert that plugin doesn't mess with existing before scenario handlers
+  //Assert:
+  //plugin doesn't mess with existing before scenario handlers
   t.ok(
     output.stdout.includes(
       'Hello from the Handler!',
@@ -68,12 +61,13 @@ test('cpu and memory metrics display in the aggregate report with the correct na
     "Aggregate Histograms doesn't have Memory metric"
   );
 
-    childProcess.kill()
+  //Cleanup: server
+  childProcess.kill();
 });
 
 test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
-    //Arrange Test Server
-    const {currentPort, childProcess, currentPid} = await startTestServer();
+  //Arrange: Test Server and Plugin overrides
+  const { currentPort, childProcess, currentPid } = await startTestServer();
   const override = JSON.stringify({
     config: {
       plugins: {
@@ -82,9 +76,11 @@ test('cpu and memory metrics display in the aggregate report with a default name
     }
   });
 
+  //Act: run the test and get report
   await $`TEST_PORT=${currentPort} ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
 
+  //Assert
   //sanity check that it can reach server
   t.ok(
     report.aggregate.counters['http.codes.200'] > 0,
@@ -113,12 +109,13 @@ test('cpu and memory metrics display in the aggregate report with a default name
     "Aggregate Histograms doesn't have Memory metric"
   );
 
-    childProcess.kill()
+  //Cleanup: server
+  childProcess.kill();
 });
 
 test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
-    //Arrange Test Server
-    const {currentPort, childProcess, currentPid} = await startTestServer();
+  //Arrange: Test Server and Plugin overrides
+  const { currentPort, childProcess, currentPid } = await startTestServer();
   const override = JSON.stringify({
     config: {
       plugins: {
@@ -127,9 +124,11 @@ test('cpu and memory metrics display in the aggregate report with a default name
     }
   });
 
+  //Act: run the test and get report
   await $`TEST_PORT=${currentPort} ARTILLERY_INTROSPECT_MEMORY=true ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
 
+  //Assert
   //sanity check that it can reach server
   t.ok(
     report.aggregate.counters['http.codes.200'] > 0,
@@ -201,5 +200,6 @@ test('cpu and memory metrics display in the aggregate report with a default name
     "Aggregate Histograms doesn't have Artillery Heap Total metric"
   );
 
-    childProcess.kill()
+  //Cleanup: server
+  childProcess.kill();
 });
