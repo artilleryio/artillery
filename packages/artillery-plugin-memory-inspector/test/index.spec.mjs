@@ -23,11 +23,13 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  childProcess.kill();
+  await childProcess.kill();
   fs.unlinkSync('./test/output.json');
 });
 
 test('cpu and memory metrics display in the aggregate report with the correct name', async (t) => {
+
+    //Arrange Test Server
   const override = JSON.stringify({
     config: {
       plugins: {
