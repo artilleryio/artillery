@@ -1,5 +1,5 @@
 import portfinder from 'portfinder';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 
 export const startTestServer = async () => {
     const port = await portfinder.getPortPromise({
@@ -7,11 +7,12 @@ export const startTestServer = async () => {
         stopPort: 4600
     });
 
-    const childProcess = exec('node ./test/server/server.mjs', {
+        const childProcess = spawn(`node`, ['./test/server/server.mjs'], {
         env: {
           ...process.env,
           TEST_PORT: `${port}`
-        }
+        },
+        
     });
 
     return {

@@ -2,31 +2,19 @@ import fs from 'fs';
 import portfinder from 'portfinder';
 import { startTestServer } from './util.mjs';
 import { test, beforeEach, afterEach, teardown } from 'tap';
-import { exec } from 'child_process';
 import { $ } from 'zx';
 
-// let childProcess;
-// let currentPid;
-// let currentPort;
-let processesOpen = []
-
-// beforeEach(async () => {
-//  const server = await startTestServer();
-//   currentPort = server.port
-//   childProcess = server.childProcess
-//   currentPid = server.pid;
-// });
 
 afterEach(async () => {
 //   await childProcess.kill();
   fs.unlinkSync('./test/output.json');
 });
 
-teardown(() => {
-    for(const process of processesOpen) {
-        process.kill()
-    }
-})
+// teardown(() => {
+//     for(const process of processesOpen) {
+//         process.kill()
+//     }
+// })
 
 test('cpu and memory metrics display in the aggregate report with the correct name', async (t) => {
 
@@ -80,7 +68,7 @@ test('cpu and memory metrics display in the aggregate report with the correct na
     "Aggregate Histograms doesn't have Memory metric"
   );
 
-  processesOpen.push(childProcess)
+    childProcess.kill()
 });
 
 test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
@@ -125,7 +113,7 @@ test('cpu and memory metrics display in the aggregate report with a default name
     "Aggregate Histograms doesn't have Memory metric"
   );
 
-  processesOpen.push(childProcess)
+    childProcess.kill()
 });
 
 test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
@@ -213,5 +201,5 @@ test('cpu and memory metrics display in the aggregate report with a default name
     "Aggregate Histograms doesn't have Artillery Heap Total metric"
   );
 
-  processesOpen.push(childProcess)
+    childProcess.kill()
 });
