@@ -7,7 +7,14 @@ let childProcess;
 let currentPid;
 
 beforeEach(async () => {
-  childProcess = exec('node ./test/server/server.mjs');
+  childProcess = exec('node ./test/server/server.mjs', (err, stdout, stderr) => {
+    console.log(`ERROR:`)
+    console.log(err)
+    console.log(`STDOUT:`)
+    console.log(stdout)
+    console.log(`STDERR:`)
+    console.log(stderr)
+  });
   currentPid = childProcess.pid;
 });
 
@@ -77,7 +84,7 @@ test('cpu and memory metrics display in the aggregate report with a default name
 
   //sanity check that it can reach server
   t.ok(report.aggregate.counters['http.codes.200'] > 0, "Should have 200 status codes")
-
+  
   //assert that correct custom metrics are emitted
   t.hasProp(
     report.aggregate.summaries,
