@@ -5,14 +5,16 @@ on:
       - main
     paths:
       - 'packages/artillery/**'
-      - 'packages/artillery-plugin-expect/**'
-      - 'packages/artillery-plugin-publish-metrics/**'      
-      - 'packages/artillery-plugin-metrics-by-endpoint/**'
+      - 'packages/artillery-engine-playwright/**'
+      - 'packages/artillery-engine-posthog/**'
       - 'packages/artillery-plugin-apdex/**'
       - 'packages/artillery-plugin-ensure/**'
-      - 'packages/core/**'
+      - 'packages/artillery-plugin-expect/**'
+      - 'packages/artillery-plugin-metrics-by-endpoint/**'
+      - 'packages/artillery-plugin-publish-metrics/**'      
       - 'packages/commons/**'
-      - 'packages/artillery-engine-playwright/**'
+      - 'packages/core/**'
+      - 'packages/skytrace/**'
       
 jobs:
   build:
@@ -20,6 +22,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -27,12 +31,19 @@ jobs:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: PACKAGE_FOLDER_NAME=artillery node .github/workflows/scripts/rename-packages-to-latest.js
-      - run: |
-          # Get current version of artillery from package.json, and replace with one
-          # than includes the current commit hash
-          ARTILLERY_VERSION=$(node -p "require('./packages/artillery/package.json').version")
-          sed -i "s/\"version\": \".*\"/\"version\": \"${ARTILLERY_VERSION}-$(git rev-parse --short HEAD)\"/" packages/artillery/package.json
-          npm -w artillery publish --tag canary
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: | 
+          export COMMIT_SHA=$(git rev-parse --short HEAD)
+          node .github/workflows/scripts/rename-packages-with-commit-sha.js
+      # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc)
+      - run: npm -w @artilleryio/int-commons publish --tag canary
+      - run: npm -w @artilleryio/int-core publish --tag canary
+      - run: npm -w artillery-plugin-expect publish --tag canary
+      - run: npm -w artillery-plugin-publish-metrics publish --tag canary
+      - run: npm -w artillery-plugin-metrics-by-endpoint publish --tag canary
+      - run: npm -w artillery-plugin-ensure publish --tag canary
+      - run: npm -w artillery-plugin-apdex publish --tag canary
+      - run: npm -w artillery-engine-posthog publish --tag canary
+      - run: npm -w artillery-engine-playwright publish --tag canary
+      - run: npm -w artillery publish --tag canary
+      - run: npm run build -w skytrace
+      - run: npm -w skytrace publish --tag canary
