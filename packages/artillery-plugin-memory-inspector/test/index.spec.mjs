@@ -1,35 +1,30 @@
 import fs from 'fs';
 import portfinder from 'portfinder';
+import { startTestServer } from './util.mjs';
 import { test, beforeEach, afterEach } from 'tap';
 import { exec } from 'child_process';
 import { $ } from 'zx';
 
-let childProcess;
-let currentPid;
-let currentPort;
+// let childProcess;
+// let currentPid;
+// let currentPort;
 
-beforeEach(async () => {
-  currentPort = await portfinder.getPortPromise({
-    port: 4444,
-    stopPort: 4600
-  });
-  childProcess = exec('node ./test/server/server.mjs', {
-    env: {
-      ...process.env,
-      TEST_PORT: `${currentPort}`
-    }
-  });
-  currentPid = childProcess.pid;
-});
+// beforeEach(async () => {
+//  const server = await startTestServer();
+//   currentPort = server.port
+//   childProcess = server.childProcess
+//   currentPid = server.pid;
+// });
 
 afterEach(async () => {
-  await childProcess.kill();
+//   await childProcess.kill();
   fs.unlinkSync('./test/output.json');
 });
 
 test('cpu and memory metrics display in the aggregate report with the correct name', async (t) => {
 
     //Arrange Test Server
+    const {currentPort, childProcess, currentPid} = await startTestServer();
   const override = JSON.stringify({
     config: {
       plugins: {
@@ -77,9 +72,13 @@ test('cpu and memory metrics display in the aggregate report with the correct na
     'express-example.memory',
     "Aggregate Histograms doesn't have Memory metric"
   );
+
+  await childProcess.kill();
 });
 
 test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
+    //Arrange Test Server
+    const {currentPort, childProcess, currentPid} = await startTestServer();
   const override = JSON.stringify({
     config: {
       plugins: {
@@ -118,9 +117,13 @@ test('cpu and memory metrics display in the aggregate report with a default name
     `process_${currentPid}.memory`,
     "Aggregate Histograms doesn't have Memory metric"
   );
+
+  await childProcess.kill();
 });
 
 test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
+    //Arrange Test Server
+    const {currentPort, childProcess, currentPid} = await startTestServer();
   const override = JSON.stringify({
     config: {
       plugins: {
@@ -202,4 +205,6 @@ test('cpu and memory metrics display in the aggregate report with a default name
     'artillery_internal.heap_total',
     "Aggregate Histograms doesn't have Artillery Heap Total metric"
   );
+
+  await childProcess.kill();
 });
