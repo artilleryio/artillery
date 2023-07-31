@@ -14,6 +14,7 @@ const { createMixPanelReporter } = require('./lib/mixpanel');
 const { createPrometheusReporter } = require('./lib/prometheus');
 const { createCloudWatchReporter } = require('./lib/cloudwatch');
 const { createNewRelicReporter } = require('./lib/newrelic');
+const { createDynatraceReporter } = require('./lib/dynatrace');
 
 module.exports = {
   Plugin,
@@ -46,6 +47,8 @@ function Plugin(script, events) {
       this.reporters.push(createCloudWatchReporter(config, events, script));
     } else if (config.type === 'newrelic') {
       this.reporters.push(createNewRelicReporter(config, events, script));
+    } else if (config.type === 'dynatrace') {
+      this.reporters.push(createDynatraceReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',
