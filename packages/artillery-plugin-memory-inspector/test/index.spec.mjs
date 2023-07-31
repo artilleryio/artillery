@@ -1,19 +1,23 @@
 import fs from 'fs';
+import portfinder from 'portfinder';
 import { test, beforeEach, afterEach } from 'tap';
 import { exec } from 'child_process';
 import { $ } from 'zx';
 
 let childProcess;
 let currentPid;
+let currentPort;
 
 beforeEach(async () => {
-  childProcess = exec('node ./test/server/server.mjs', (err, stdout, stderr) => {
-    console.log(`ERROR:`)
-    console.log(err)
-    console.log(`STDOUT:`)
-    console.log(stdout)
-    console.log(`STDERR:`)
-    console.log(stderr)
+  currentPort = await portfinder.getPortPromise({
+    port: 4444,
+    stopPort: 4600
+  });
+  childProcess = exec('node ./test/server/server.mjs', {
+    env: {
+      ...process.env,
+      TEST_PORT: `${currentPort}`
+    }
   });
   currentPid = childProcess.pid;
 });
@@ -33,7 +37,7 @@ test('cpu and memory metrics display in the aggregate report with the correct na
   });
 
   const output =
-    await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
+    await $`TEST_PORT=${currentPort} ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
 
   //assert that plugin doesn't mess with existing before scenario handlers
@@ -45,7 +49,10 @@ test('cpu and memory metrics display in the aggregate report with the correct na
   );
 
   //sanity check that it can reach server
-  t.ok(report.aggregate.counters['http.codes.200'] > 0, "Should have 200 status codes")
+  t.ok(
+    report.aggregate.counters['http.codes.200'] > 0,
+    'Should have 200 status codes'
+  );
 
   //assert that correct custom metrics are emitted
   t.hasProp(
@@ -79,12 +86,15 @@ test('cpu and memory metrics display in the aggregate report with a default name
     }
   });
 
-  await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
+  await $`TEST_PORT=${currentPort} ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
 
   //sanity check that it can reach server
-  t.ok(report.aggregate.counters['http.codes.200'] > 0, "Should have 200 status codes")
-  
+  t.ok(
+    report.aggregate.counters['http.codes.200'] > 0,
+    'Should have 200 status codes'
+  );
+
   //assert that correct custom metrics are emitted
   t.hasProp(
     report.aggregate.summaries,
@@ -117,11 +127,14 @@ test('cpu and memory metrics display in the aggregate report with a default name
     }
   });
 
-  await $`ARTILLERY_INTROSPECT_MEMORY=true ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
+  await $`TEST_PORT=${currentPort} ARTILLERY_INTROSPECT_MEMORY=true ../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override} --output ./test/output.json`;
   const report = JSON.parse(fs.readFileSync('./test/output.json'));
 
   //sanity check that it can reach server
-  t.ok(report.aggregate.counters['http.codes.200'] > 0, "Should have 200 status codes")
+  t.ok(
+    report.aggregate.counters['http.codes.200'] > 0,
+    'Should have 200 status codes'
+  );
 
   //assert that correct custom metrics are emitted
   t.hasProp(
