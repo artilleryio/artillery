@@ -16,7 +16,7 @@ class DynatraceReporter {
 
     if (!config.apiToken || !config.envUrl) {
       throw new Error(
-        'Dynatrace reporter configuration incomplete: `apiToken` or `envUrl` missing. In order to send metrics to Dynatrace both `apiToken` and `envUrl` must be set'
+        'Dynatrace API Access Token or Environment URL not specified. In order to send metrics to Dynatrace both `apiToken` and `envUrl` must be set'
       );
     }
 
