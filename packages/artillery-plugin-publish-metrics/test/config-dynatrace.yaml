@@ -1,0 +1,14 @@
+config:
+  target: https://artillery.io
+  phases:
+    - duration: 11
+      arrivalRate: 1
+  plugins:
+    publish-metrics:
+      - type: dynatrace
+        envUrl: '{{ $processEnvironment.DY_ENV_URL }}'
+        apiKey: '{{ $processEnvironment.DY_API_KEY }}'
+        prefix: 'artillery.publish_metrics_plugin.'
+        dimensions:
+          - 'testId:{{ $processEnvironment.TEST_ID }}'
+          - 'reporterType:dynatrace-metric-api'
