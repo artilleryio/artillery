@@ -15,7 +15,8 @@ The plugin sends metrics and events from Artillery tests to external monitoring 
 - [New Relic](https://newrelic.com/)
 - [Mixpanel](https://mixpanel.com)
 - InfluxDB with [Telegraf + StatsD plugin](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/statsd)
-- StatsD 
+- StatsD
+- [Dynatrace](https://dynatrace.com/)
 
 ## Docs
 
