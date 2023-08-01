@@ -136,7 +136,6 @@ class DynatraceReporter {
 
   formPayload(counters, rates, summaries) {
     const payload = `${[...counters, ...rates, ...summaries].join('\n')}`;
-    debug(payload);
     return payload;
   }
 
@@ -146,7 +145,7 @@ class DynatraceReporter {
         'Content-Type': 'text/plain',
         Authorization: `Api-Token ${this.config.apiToken}`
       },
-      body: String(payload)
+      body: payload
     };
 
     return options;
@@ -154,7 +153,6 @@ class DynatraceReporter {
 
   async sendRequest(url, options) {
     this.pendingRequests += 1;
-    // const options = this.formRequest(payload);
 
     debug('Sending metrics to Dynatrace');
     try {
@@ -164,7 +162,7 @@ class DynatraceReporter {
         debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
       }
     } catch (err) {
-      debug('There has been an error: ', err);
+      debug('An error occured when sending metrics to Dynatrace: ', err);
     }
     debug('Metrics sent to Dynatrace');
 
