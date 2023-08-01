@@ -34,6 +34,7 @@ class DynatraceReporter {
         this.config,
         timestamp
       );
+
       const rates = this.formatRatesForDynatrace(
         stats.rates,
         this.config,
@@ -87,9 +88,10 @@ class DynatraceReporter {
         continue;
       }
 
-      const count = `${config.prefix + name},${config.dimensions.join(
+      const count = `${config.prefix}${name},${config.dimensions.join(
         ','
-      )} count,delta=${value} ${timestamp}`; //TODO check if need to add value to previous values https://www.dynatrace.com/support/help/extend-dynatrace/extend-metrics/reference/metric-ingestion-protocol#payload
+      )} count,delta=${value} ${timestamp}`;
+
       statCounts.push(count);
     }
 
@@ -119,11 +121,12 @@ class DynatraceReporter {
         continue;
       }
       for (const [agreggation, value] of Object.entries(values)) {
+        const type = agreggation === 'count' ? 'count,delta=' : 'gauge,';
         const gauge = `${
           config.prefix
         }${name}.${agreggation},${config.dimensions.join(
           ','
-        )} gauge,${value} ${timestamp}`;
+        )} ${type}${value} ${timestamp}`;
 
         statGauges.push(gauge);
       }
