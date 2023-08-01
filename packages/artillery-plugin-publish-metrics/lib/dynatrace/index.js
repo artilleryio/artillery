@@ -121,12 +121,11 @@ class DynatraceReporter {
         continue;
       }
       for (const [agreggation, value] of Object.entries(values)) {
-        const type = agreggation === 'count' ? 'count,delta=' : 'gauge,';
         const gauge = `${
           config.prefix
         }${name}.${agreggation},${config.dimensions.join(
           ','
-        )} ${type}${value} ${timestamp}`;
+        )} gauge,${value} ${timestamp}`;
 
         statGauges.push(gauge);
       }
