@@ -70,6 +70,11 @@ async function addVariables(script, flags) {
   for (const [k, v] of Object.entries(variables)) {
     script.config.variables[k] = v;
   }
+
+  script.config.variables = engineUtil.template(script.config.variables, {
+    vars: JSON.parse(flags.variables)
+  });
+
   return script;
 }
 
