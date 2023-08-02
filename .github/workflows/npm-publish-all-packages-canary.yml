@@ -34,7 +34,7 @@ jobs:
       - run: | 
           export COMMIT_SHA=$(git rev-parse --short HEAD)
           node .github/workflows/scripts/replace-package-versions-with-commit-sha.js
-      # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc)
+      # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
       - run: npm -w @artilleryio/int-commons publish --tag canary
       - run: npm -w @artilleryio/int-core publish --tag canary
       - run: npm -w artillery-plugin-expect publish --tag canary
