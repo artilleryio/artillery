@@ -51,9 +51,11 @@ tap.test(
       '--config',
       'test/scripts/scenario-config-different-folder/config/config-processor-backward-compatibility.yml'
     ]);
-    console.log(output)
 
-    t.ok(exitCode === 0 && output.stdout.includes('Successfully ran with id myTestId123'));
+    t.ok(
+      exitCode === 0 &&
+        output.stdout.includes('Successfully ran with id myTestId123')
+    );
   }
 );
 
@@ -66,9 +68,11 @@ tap.test(
       '--config',
       'test/scripts/scenario-config-different-folder/config/config.yml'
     ]);
-    console.log(output)
 
-    t.ok(exitCode === 0 && output.stdout.includes('Successfully ran with id myTestId123'));
+    t.ok(
+      exitCode === 0 &&
+        output.stdout.includes('Successfully ran with id myTestId123')
+    );
   }
 );
 
@@ -146,6 +150,36 @@ tap.test('Run a script overwriting default options (output)', async (t) => {
       output.stdout.includes('Log file: artillery_report_custom.json')
   );
 });
+
+tap.test(
+  'Run a script with overwriting config variables with cli variables (including templated vars)',
+  async (t) => {
+    const variableOverride = {
+      bar: 'this is me',
+      myVar: 3
+    };
+    const [exitCode, output] = await execute([
+      'run',
+      'test/scripts/scenario-with-cli-variables.yml',
+      '--variables',
+      JSON.stringify(variableOverride)
+    ]);
+
+    t.ok(exitCode === 0);
+    t.ok(
+      output.stdout.includes(`foo is ${variableOverride.myVar}`),
+      'Templated foo variable is not showing'
+    );
+    t.ok(
+      output.stdout.includes(`bar is ${variableOverride.bar}`),
+      'bar variable from config not showing'
+    );
+    t.ok(
+      output.stdout.includes(`myVar is ${variableOverride.myVar}`),
+      'myVar variable from --variables not showing'
+    );
+  }
+);
 
 tap.test('Script using hook functions', async (t) => {
   const [exitCode, output] = await execute([

@@ -1,0 +1,14 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - duration: 1
+      arrivalRate: 1
+      name: "Phase 1"
+  variables:
+    foo: "{{ myVar }}"
+
+scenarios:
+  - flow:
+      - log: "foo is {{ foo }}"
+      - log: "bar is {{ bar }}"
+      - log: "myVar is {{ myVar }}"
