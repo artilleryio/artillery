@@ -33,7 +33,7 @@ jobs:
           scope: '@artilleryio'
       - run: | 
           export COMMIT_SHA=$(git rev-parse --short HEAD)
-          node .github/workflows/scripts/rename-packages-with-commit-sha.js
+          node .github/workflows/scripts/replace-package-versions-with-commit-sha.js
       # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc)
       - run: npm -w @artilleryio/int-commons publish --tag canary
       - run: npm -w @artilleryio/int-core publish --tag canary
