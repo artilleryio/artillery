@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["vitest/globals"],
+    "skipLibCheck": true
+  },
+  "include": ["**/*.test.ts"]
+}

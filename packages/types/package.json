@@ -1,0 +1,21 @@
+{
+  "name": "@artilleryio/types",
+  "version": "0.0.0",
+  "main": "",
+  "files": [
+    "./artillery.ts",
+    "./schema.json"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "build": "typescript-json-schema ./tsconfig.schema.json \"TestScript\" --required --noExtraProps -o ./schema.json",
+    "prepare": "npm run build"
+  },
+  "devDependencies": {
+    "ajv": "^8.12.0",
+    "js-yaml": "^4.1.0",
+    "typescript-json-schema": "^0.59.0",
+    "vitest": "^0.34.1"
+  }
+}
