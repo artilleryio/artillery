@@ -152,7 +152,7 @@ tap.test('Run a script overwriting default options (output)', async (t) => {
 });
 
 tap.test(
-  'Run a script with overwriting config variables with cli variables (including templated vars)',
+  'Run a script with overwriting templated variables in variables config with cli variables',
   async (t) => {
     const variableOverride = {
       bar: 'this is me',
@@ -160,7 +160,7 @@ tap.test(
     };
     const [exitCode, output] = await execute([
       'run',
-      'test/scripts/scenario-with-cli-variables.yml',
+      'test/scripts/scenario-cli-variables/scenario-with-variables.yml',
       '--variables',
       JSON.stringify(variableOverride)
     ]);
@@ -168,15 +168,54 @@ tap.test(
     t.ok(exitCode === 0);
     t.ok(
       output.stdout.includes(`foo is ${variableOverride.myVar}`),
-      'Templated foo variable is not showing'
+      'Templated foo nested config variable is not showing'
+    );
+    t.ok(
+      output.stdout.includes(`other is ${variableOverride.myVar}`),
+      'other variable from config variable not showing'
     );
     t.ok(
       output.stdout.includes(`bar is ${variableOverride.bar}`),
-      'bar variable from config not showing'
+      'bar variable from --variables not showing'
     );
     t.ok(
       output.stdout.includes(`myVar is ${variableOverride.myVar}`),
       'myVar variable from --variables not showing'
+    );
+  }
+);
+
+tap.test(
+  'Run a script with overwriting templated variables in other nested config with cli variables',
+  async (t) => {
+    const variableOverride = {
+      myVar: 3,
+      defaultCookie: 'abc123',
+      anotherCookie: 'hellothere'
+    };
+    const [exitCode, output] = await execute([
+      'run',
+      'test/scripts/scenario-cli-variables/scenario-with-other-nested-config.yml',
+      '--variables',
+      JSON.stringify(variableOverride)
+    ]);
+
+    t.ok(exitCode === 0);
+    t.ok(
+      output.stdout.includes(`other is ${variableOverride.myVar}`),
+      'other variable from config variable not showing'
+    );
+    t.ok(
+      output.stdout.includes(`HTTP timeout is: ${variableOverride.myVar}`),
+      'Templated variable in other nested config (http) is not showing'
+    );
+    t.ok(
+      output.stdout.includes('Has default cookie: true'),
+      'Templated variable in other nested config (cookie) is not showing'
+    );
+    t.ok(
+      output.stdout.includes('Has cookie from flow: true'),
+      'Templated variable in nested scenario option is not showing'
     );
   }
 );

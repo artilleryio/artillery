@@ -5,10 +5,13 @@ config:
       arrivalRate: 1
       name: "Phase 1"
   variables:
-    foo: "{{ myVar }}"
+    foo:
+      nested: "{{ myVar }}"
+    other: "{{ myVar }}"
 
 scenarios:
   - flow:
-      - log: "foo is {{ foo }}"
+      - log: "foo is {{ foo.nested }}"
       - log: "bar is {{ bar }}"
+      - log: "other is {{ other }}"
       - log: "myVar is {{ myVar }}"

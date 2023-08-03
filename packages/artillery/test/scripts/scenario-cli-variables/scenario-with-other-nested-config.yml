@@ -1,0 +1,23 @@
+config:
+  target: http://asciiart.artillery.io
+  processor: "./processor.js"
+  phases:
+    - duration: 1
+      arrivalRate: 1
+      name: "Phase 1"
+  variables:
+    other: "{{ myVar }}"
+  http:
+    timeout: "{{ myVar }}"
+  defaults:
+    cookie:
+      myCookie: "{{ defaultCookie }}"
+
+scenarios:
+  - flow:
+      - log: "other is {{ other }}"
+      - get:
+          url: "/"
+          cookie:
+            bar: "{{ anotherCookie }}"
+          afterResponse: myAfterResponseHandler
