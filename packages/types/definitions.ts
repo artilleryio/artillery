@@ -419,7 +419,7 @@ export type DefaultHttpRequest = {
   /**
    * @title Cookie
    */
-  cookie?: string;
+  cookie?: Record<string, string>;
   /**
    * @title Query string
    */
