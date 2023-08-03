@@ -1,23 +1,25 @@
+import * as tap from 'tap';
 import { validateTestScript } from './helpers';
 
-it('validates a script with 1 phase and 1 http scenario', () => {
+tap.test('validates a script with 1 phase and 1 http scenario', (tap) => {
   const errors = validateTestScript(`
-config:
-  target: http://localhost:3000
-  phases:
-    - duration: 10
-      rampTo: 50
-scenarios:
-  - engine: http
-    flow:
-      - get:
-          url: /resource
-`);
+  config:
+    target: http://localhost:3000
+    phases:
+      - duration: 10
+        rampTo: 50
+  scenarios:
+    - engine: http
+      flow:
+        - get:
+            url: /resource
+  `);
 
-  expect(errors).toEqual([]);
+  tap.same(errors, []);
+  tap.end();
 });
 
-it('validates a script without "config" set', () => {
+tap.test('validates a script without "config" set', (tap) => {
   const errors = validateTestScript(`
 scenarios:
   - engine: http
@@ -26,10 +28,11 @@ scenarios:
           url: /resource
     `);
 
-  expect(errors).toEqual([]);
+  tap.same(errors, []);
+  tap.end();
 });
 
-it('errors when the "scenarios" are missing', () => {
+tap.test('errors when the "scenarios" are missing', (tap) => {
   const errors = validateTestScript(`
 config:
   target: http://localhost:3000
@@ -38,10 +41,9 @@ config:
       rampTo: 50
   `);
 
-  expect(errors).toEqual([
-    expect.objectContaining({
-      keyword: 'required',
-      params: { missingProperty: 'scenarios' }
-    })
-  ]);
+  tap.same(errors[0]?.params, {
+    missingProperty: 'scenarios'
+  });
+  tap.same(errors.length, 1);
+  tap.end();
 });
