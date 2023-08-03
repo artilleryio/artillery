@@ -12,3 +12,7 @@ config:
         dimensions:
           - 'testId:{{ $processEnvironment.TEST_ID }}'
           - 'reporterType:dynatrace-metric-api'
+        event:
+          title: 'Plugin integration test'
+          properties:
+            - 'testId:{{ $processEnvironment.TEST_ID }}'

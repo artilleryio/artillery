@@ -4,7 +4,7 @@ const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:dynatrace');
 
 class DynatraceReporter {
-  constructor(config, events) {
+  constructor(config, events, script) {
     this.config = {
       apiToken: config.apiToken,
       envUrl: config.envUrl,
@@ -17,6 +17,35 @@ class DynatraceReporter {
     if (!config.apiToken || !config.envUrl) {
       throw new Error(
         'Dynatrace API Access Token or Environment URL not specified. In order to send metrics to Dynatrace both `apiToken` and `envUrl` must be set'
+      );
+    }
+
+    // Configure event if set - if event key is set but its value isn't we use defaults
+    if (config.hasOwnProperty('event')) {
+      this.eventConfig = {
+        properties: config.event?.properties || [],
+        send: config.event?.send || true,
+        entitySelector: config.event?.entitySelector
+      };
+
+      this.eventOpts = {
+        eventType: config.event?.eventType || 'CUSTOM_INFO',
+        title: config.event?.title || 'Artillery_io_test',
+        startTime: 0,
+        endTime: 0,
+        properties: {
+          target: script.config.target,
+          ...this.parseDimensions(this.eventConfig.properties, 'object')
+        }
+      };
+
+      if (this.eventConfig.entitySelector) {
+        this.eventOpts.entitySelector = String(this.eventConfig.entitySelector);
+      }
+
+      this.ingestEventsEndpoint = new URL(
+        '/api/v2/events/ingest',
+        this.config.envUrl
       );
     }
 
@@ -47,21 +76,45 @@ class DynatraceReporter {
       );
 
       const request = this.formRequest(
-        this.formPayload(counters, rates, summaries)
+        this.formMetricsPayload(counters, rates, summaries)
       );
       await this.sendRequest(this.ingestMetricsEndpoint, request);
     });
+
+    this.startedEventSent = false;
+    if (this.eventConfig && String(this.eventConfig.send) !== 'false') {
+      events.on('phaseStarted', async () => {
+        debug('phaseStarted event fired');
+        if (this.startedEventSent) {
+          return;
+        }
+        const timestamp = Date.now();
+        this.eventOpts.startTime = timestamp;
+        this.eventOpts.endTime = timestamp + 1;
+        this.eventOpts.properties.Phase = 'Test-Started';
+
+        await this.sendRequest(
+          this.ingestEventsEndpoint,
+          this.formRequest(JSON.stringify(this.eventOpts), 'event'),
+          'event'
+        );
+
+        this.startedEventSent = true;
+      });
+    }
   }
 
-  parseDimensions(dimensionList) {
+  parseDimensions(dimensionList, returnValue = 'list') {
     if (!dimensionList || (dimensionList && dimensionList.length === 0)) {
       return false;
     }
-    const parsedDimensions = [];
+    const parsedDimensions = returnValue === 'object' ? {} : [];
 
     for (const item of dimensionList) {
       const [name, value] = item.split(':');
-      parsedDimensions.push(`${name}="${value}"`);
+      returnValue === 'object'
+        ? (parsedDimensions[name] = value)
+        : parsedDimensions.push(`${name}="${value}"`);
     }
 
     return parsedDimensions;
@@ -134,15 +187,15 @@ class DynatraceReporter {
     return statGauges;
   }
 
-  formPayload(counters, rates, summaries) {
+  formMetricsPayload(counters, rates, summaries) {
     const payload = `${[...counters, ...rates, ...summaries].join('\n')}`;
     return payload;
   }
 
-  formRequest(payload) {
+  formRequest(payload, type = 'metrics') {
     const options = {
       headers: {
-        'Content-Type': 'text/plain',
+        'Content-Type': type === 'event' ? 'application/json' : 'text/plain',
         Authorization: `Api-Token ${this.config.apiToken}`
       },
       body: payload
@@ -151,20 +204,29 @@ class DynatraceReporter {
     return options;
   }
 
-  async sendRequest(url, options) {
+  async sendRequest(url, options, type = 'metrics') {
     this.pendingRequests += 1;
 
-    debug('Sending metrics to Dynatrace');
+    debug(`Sending ${type} to Dynatrace`);
     try {
       const res = await got.post(url, options);
 
-      if (res.statusCode !== 202) {
-        debug(`Status Code: ${res.statusCode}, ${res.statusMessage}`);
+      if (type === 'metrics' && res.statusCode !== 202) {
+        debug(
+          `Dynatrace Metric API response status: ${res.statusCode}, ${res.statusMessage}`
+        );
+      }
+
+      if (type === 'event') {
+        debug(
+          `Dynatrace Event API response status: ${res.statusCode}, ${res.statusMessage}`
+        );
+        debug(`Dynatrace EventIngestResult: ${res.body}`);
       }
     } catch (err) {
-      debug('An error occured when sending metrics to Dynatrace: ', err);
+      debug(`There has been an error in sending ${type} to Dynatrace: `, err);
     }
-    debug('Metrics sent to Dynatrace');
+    debug(`${type[0].toUpperCase() + type.slice(1)} sent to Dynatrace`);
 
     this.pendingRequests -= 1;
   }
@@ -180,7 +242,20 @@ class DynatraceReporter {
   }
 
   cleanup(done) {
-    console.log('cleaning up');
+    if (this.startedEventSent) {
+      const timestamp = Date.now();
+      this.eventOpts.startTime = timestamp;
+      this.eventOpts.endTime = timestamp + 1;
+      this.eventOpts.properties.Phase = 'Test-Finished';
+
+      this.sendRequest(
+        this.ingestEventsEndpoint,
+        this.formRequest(JSON.stringify(this.eventOpts), 'event'),
+        'event'
+      );
+    }
+
+    debug('Cleaning up');
     return this.waitingForRequest().then(done);
   }
 }
