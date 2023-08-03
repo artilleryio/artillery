@@ -152,7 +152,7 @@ tap.test('Run a script overwriting default options (output)', async (t) => {
 });
 
 tap.test(
-  'Run a script with overwriting templated variables in variables config with cli variables',
+  'Run a script with overwriting variables in config with cli variables',
   async (t) => {
     const variableOverride = {
       bar: 'this is me',
@@ -186,7 +186,7 @@ tap.test(
 );
 
 tap.test(
-  'Run a script with overwriting templated variables in other nested config with cli variables',
+  'Run a script with overwriting variables in other nested config with cli variables',
   async (t) => {
     const variableOverride = {
       myVar: 3,
