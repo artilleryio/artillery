@@ -4,19 +4,24 @@ This Plugin is useful for searching for memory leaks of applications you are wor
 
 The plugin will emit histograms of these metrics and provide you with a summary at the end. Currently, it will emit them for each VU execution.
 
-## Usage
 
-### Install the plugin
+## Install the plugin
 
 ```sh
 npm install -g artillery-plugin-memory-inspector
 ```
 
-### Configuration
+## Configuration
 
-All you need to do is set the pid of the process you want to watch. Additionally, you can also set a name for the process, which will be the name it will show up in the custom metrics.
+### `pid`
+
+The process ID to inspect. 
 
 You can set more than one `pid` to be watched by the plugin, so that you can watch more than one process. This might be useful if you have different versions of the application you want to test against, for instance, and want to leverage Artillery's scenario weights for that.
+
+### `name`
+
+_Optional_. The name of the process to display in the custom metrics report. It is the name that will show up in the custom metrics, otherwise defaults to `process_${pid}`.
 
 ### Example Usage
 

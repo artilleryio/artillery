@@ -113,7 +113,7 @@ test('cpu and memory metrics display in the aggregate report with a default name
   childProcess.kill();
 });
 
-test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
+test('cpu and memory metrics also display in the aggregate report for artillery internals', async (t) => {
   //Arrange: Test Server and Plugin overrides
   const { currentPort, childProcess, currentPid } = await startTestServer();
   const override = JSON.stringify({
