@@ -7,14 +7,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  prepare:
+  http-metrics-by-endpoint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CWD: ./examples/http-metrics-by-endpoint
+    defaults:
+      run:
+        working-directory: ${{ env.CWD }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
-      - name: Prepare examples
-        run: cp ./examples/websockets/.github/workflows/ci.yml ./.github/workflows/example-websockets.yml
+      - name: Install
+        run: npm ci
 
-  websockets:
-    uses: ./.github/workflows/example-websockets.yml
+      - name: Test
+        uses: artilleryio/action-cli@v1
+        with:
+          command: run ${{ env.CWD }}/endpoint-metrics.yml
