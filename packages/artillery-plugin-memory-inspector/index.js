@@ -21,7 +21,7 @@ function ArtilleryPluginMemoryInspector(script, events) {
 
     for (let { pid, name } of inspectorConfig) {
       if (!pid) {
-        debug(`No pid (${pid}) or name (${name}) found. Skipping!`);
+        debug(`No pid (${pid}) found. Skipping!`);
         continue;
       }
       let stats;
