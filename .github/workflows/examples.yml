@@ -19,13 +19,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install
-        run: npm ci
-
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
-          command: run ${{ env.CWD }}/endpoint-metrics.yml
+          command: run ./endpoint-metrics.yml
+          working-directory: ${{ env.CWD }}
 
   multiple-scenarios-spec:
     runs-on: ubuntu-latest
@@ -39,18 +37,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install
-        run: npm ci
-
       - name: Run armadillo scenario
         uses: artilleryio/action-cli@v1
         with:
-          command: run --config ${{ env.CWD }}/common-config.yml ${{ env.CWD }}/scenarios/armadillo.yml
+          command: run --config ./common-config.yml ./scenarios/armadillo.yml
+          working-directory: ${{ env.CWD }}
 
       - name: Run dino scenario
         uses: artilleryio/action-cli@v1
         with:
-          command: run --config ${{ env.CWD }}/common-config.yml ${{ env.CWD }}/scenarios/dino.yml
+          command: run --config ./common-config.yml ./scenarios/dino.yml
+          working-directory: ${{ env.CWD }}
 
   using-data-from-csv:
     runs-on: ubuntu-latest
@@ -64,10 +61,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install
-        run: npm ci
-
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
-          command: run ${{ env.CWD }}/website-test.yml
+          command: run ./website-test.yml
+          working-directory: ${{ env.CWD }}

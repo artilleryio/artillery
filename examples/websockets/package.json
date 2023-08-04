@@ -4,7 +4,6 @@
   "description": "Artillery.io - WebSockets example",
   "main": "app.js",
   "scripts": {
-    "start": "./exampleRunner.js server http://localhost:8888 test",
     "server": "node app.js",
     "test": "artillery run test.yml"
   },
