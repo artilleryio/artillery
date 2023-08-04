@@ -45,5 +45,7 @@ jobs:
       - run: npm -w artillery-engine-posthog publish --tag canary
       - run: npm -w artillery-engine-playwright publish --tag canary
       - run: npm -w artillery publish --tag canary
+      # Skytrace is a Typescript Package and needs to install -> build -> publish
+      - run: npm install -w skytrace
       - run: npm run build -w skytrace
       - run: npm -w skytrace publish --tag canary
