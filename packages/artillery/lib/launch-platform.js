@@ -100,6 +100,8 @@ class Launcher {
         this.events.emit('phaseStarted', message.phase);
         this.pluginEvents.emit('phaseStarted', message.phase);
         this.pluginEventsLegacy.emit('phaseStarted', message.phase);
+
+        global.artillery.globalEvents.emit('phaseStarted', message.phase);
       }
     });
 
@@ -112,6 +114,7 @@ class Launcher {
         this.events.emit('phaseCompleted', message.phase);
         this.pluginEvents.emit('phaseCompleted', message.phase);
         this.pluginEventsLegacy.emit('phaseCompleted', message.phase);
+        global.artillery.globalEvents.emit('phaseCompleted', message.phase);
       }
     });
 
