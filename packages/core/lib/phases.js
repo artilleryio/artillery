@@ -10,7 +10,7 @@ const _ = require('lodash');
 const isUndefined = _.isUndefined;
 const arrivals = require('arrivals');
 const debug = require('debug')('phases');
-const crypto = require('crypto');
+const { randomUUID } = require('crypto');
 const driftless = require('driftless');
 
 module.exports = phaser;
@@ -89,8 +89,11 @@ function phaser(phaseSpecs) {
 function createPause(spec, ee) {
   const duration = spec.pause * 1000;
   const task = function (callback) {
+    spec.startTime = Date.now();
+    spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
     setTimeout(function () {
+      spec.endTime = Date.now();
       ee.emit('phaseCompleted', spec);
       return callback(null);
     }, duration);
@@ -144,12 +147,14 @@ function createRamp(spec, ee) {
   debug(`periodTick ${periodTick}`);
 
   return async function rampTask(callback) {
+    spec.startTime = Date.now();
+    spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
     for (let period = 0; period < periods; period++) {
       ticker(period);
       await sleep(1000);
     }
-
+    spec.endTime = Date.now();
     ee.emit('phaseCompleted', spec);
   };
 
@@ -185,6 +190,8 @@ function createRamp(spec, ee) {
 
 function createArrivalCount(spec, ee) {
   const task = function (callback) {
+    spec.startTime = Date.now();
+    spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
     const duration = spec.duration * 1000;
 
@@ -195,6 +202,7 @@ function createArrivalCount(spec, ee) {
         ee.emit('arrival', spec);
       });
       p.on('finished', function () {
+        spec.endTime = Date.now();
         ee.emit('phaseCompleted', spec);
         return callback(null);
       });
@@ -209,6 +217,8 @@ function createArrivalCount(spec, ee) {
 
 function createArrivalRate(spec, ee) {
   const task = function (callback) {
+    spec.startTime = Date.now();
+    spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
     const ar = 1000 / spec.arrivalRate;
     const duration = spec.duration * 1000;
@@ -218,6 +228,7 @@ function createArrivalRate(spec, ee) {
       ee.emit('arrival', spec);
     });
     p.on('finished', function () {
+      spec.endTime = Date.now();
       ee.emit('phaseCompleted', spec);
       return callback(null);
     });
