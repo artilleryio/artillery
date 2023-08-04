@@ -11,7 +11,8 @@ export const startTestServer = async () => {
     env: {
       ...process.env,
       TEST_PORT: `${port}`
-    }
+    },
+    stdio: 'inherit'
   });
 
   return {
