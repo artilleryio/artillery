@@ -47,6 +47,20 @@ class ArtilleryCloudPlugin {
       }
     });
 
+    global.artillery.globalEvents.on('phaseStarted', async (phase) => {
+      await this._event('testrun:event', {
+        eventName: 'phaseStarted',
+        eventAttributes: phase
+      });
+    });
+
+    global.artillery.globalEvents.on('phaseCompleted', async (phase) => {
+      await this._event('testrun:event', {
+        eventName: 'phaseCompleted',
+        eventAttributes: phase
+      });
+    });
+
     global.artillery.globalEvents.on('stats', async (report) => {
       debug('stats', new Date());
       const ts = Number(report.period);
