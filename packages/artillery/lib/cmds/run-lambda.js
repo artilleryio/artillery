@@ -33,6 +33,8 @@ class RunLambdaCommand extends Command {
       flags['platform-opt'].push(`subnet-ids=${flags['subnet-ids']}`);
     }
 
+    flags.platform = 'aws:lambda';
+
     RunCommand.runCommandImplementation(flags, argv, args);
   }
 }

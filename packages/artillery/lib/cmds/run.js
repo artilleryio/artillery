@@ -347,7 +347,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       metadata: {
         testId: testRunId,
         startedAt: Date.now(),
-        count: runnerOpts.count,
+        count: runnerOpts.count || Number(flags.count),
         tags: tagResult.tags,
         launchType: flags.platform,
         artilleryVersion: {
