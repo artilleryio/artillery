@@ -47,3 +47,4 @@ jobs:
       - run: npm -w artillery publish --tag canary
       - run: npm run build -w skytrace
       - run: npm -w skytrace publish --tag canary
+      - run: npm -w artillery-plugin-memory-inspector publish --tag canary
