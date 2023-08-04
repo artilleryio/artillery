@@ -1,0 +1,49 @@
+name: Publish canary of Artillery CLI to npm
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/artillery/**'
+      - 'packages/artillery-engine-playwright/**'
+      - 'packages/artillery-engine-posthog/**'
+      - 'packages/artillery-plugin-apdex/**'
+      - 'packages/artillery-plugin-ensure/**'
+      - 'packages/artillery-plugin-expect/**'
+      - 'packages/artillery-plugin-metrics-by-endpoint/**'
+      - 'packages/artillery-plugin-publish-metrics/**'      
+      - 'packages/commons/**'
+      - 'packages/core/**'
+      - 'packages/skytrace/**'
+      
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@artilleryio'
+      - run: | 
+          export COMMIT_SHA=$(git rev-parse --short HEAD)
+          node .github/workflows/scripts/replace-package-versions-with-commit-sha.js
+      # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
+      - run: npm -w @artilleryio/int-commons publish --tag canary
+      - run: npm -w @artilleryio/int-core publish --tag canary
+      - run: npm -w artillery-plugin-expect publish --tag canary
+      - run: npm -w artillery-plugin-publish-metrics publish --tag canary
+      - run: npm -w artillery-plugin-metrics-by-endpoint publish --tag canary
+      - run: npm -w artillery-plugin-ensure publish --tag canary
+      - run: npm -w artillery-plugin-apdex publish --tag canary
+      - run: npm -w artillery-engine-posthog publish --tag canary
+      - run: npm -w artillery-engine-playwright publish --tag canary
+      - run: npm -w artillery publish --tag canary
+      - run: npm run build -w skytrace
+      - run: npm -w skytrace publish --tag canary
