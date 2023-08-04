@@ -51,3 +51,23 @@ jobs:
         uses: artilleryio/action-cli@v1
         with:
           command: run --config ${{ env.CWD }}/common-config.yml ${{ env.CWD }}/scenarios/dino.yml
+
+  using-data-from-csv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CWD: ./examples/using-data-from-csv
+    defaults:
+      run:
+        working-directory: ${{ env.CWD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install
+        run: npm ci
+
+      - name: Test
+        uses: artilleryio/action-cli@v1
+        with:
+          command: run ${{ env.CWD }}/website-test.yml
