@@ -26,3 +26,28 @@ jobs:
         uses: artilleryio/action-cli@v1
         with:
           command: run ${{ env.CWD }}/endpoint-metrics.yml
+
+  multiple-scenarios-spec:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CWD: ./examples/multiple-scenario-specs
+    defaults:
+      run:
+        working-directory: ${{ env.CWD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install
+        run: npm ci
+
+      - name: Run armadillo scenario
+        uses: artilleryio/action-cli@v1
+        with:
+          command: run --config ${{ env.CWD }}/common-config.yml ${{ env.CWD }}/scenarios/armadillo.yml
+
+      - name: Run dino scenario
+        uses: artilleryio/action-cli@v1
+        with:
+          command: run --config ${{ env.CWD }}/common-config.yml ${{ env.CWD }}/scenarios/dino.yml
