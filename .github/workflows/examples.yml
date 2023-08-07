@@ -6,6 +6,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  ARTILLERY_BINARY_PATH: ${{ github.workspace }}/packages/artillery/bin/run
+
 jobs:
   http-metrics-by-endpoint:
     runs-on: ubuntu-latest
@@ -19,11 +22,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Install
+        run: npm ci
+
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
           command: run ./endpoint-metrics.yml
           working-directory: ${{ env.CWD }}
+        env:
+          ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
 
   multiple-scenarios-spec:
     runs-on: ubuntu-latest
@@ -37,17 +45,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Install
+        run: npm ci
+
       - name: Run armadillo scenario
         uses: artilleryio/action-cli@v1
         with:
           command: run --config ./common-config.yml ./scenarios/armadillo.yml
           working-directory: ${{ env.CWD }}
+        env:
+          ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
 
       - name: Run dino scenario
         uses: artilleryio/action-cli@v1
         with:
           command: run --config ./common-config.yml ./scenarios/dino.yml
           working-directory: ${{ env.CWD }}
+        env:
+          ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
 
   using-data-from-csv:
     runs-on: ubuntu-latest
@@ -61,8 +76,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Install
+        run: npm ci
+
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
           command: run ./website-test.yml
           working-directory: ${{ env.CWD }}
+        env:
+          ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
