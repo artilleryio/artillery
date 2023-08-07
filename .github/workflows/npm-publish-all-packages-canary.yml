@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
       - run: | 
@@ -45,6 +45,8 @@ jobs:
       - run: npm -w artillery-engine-posthog publish --tag canary
       - run: npm -w artillery-engine-playwright publish --tag canary
       - run: npm -w artillery publish --tag canary
+      # Skytrace is a Typescript Package and needs to install -> build -> publish
+      - run: npm install -w skytrace
       - run: npm run build -w skytrace
       - run: npm -w skytrace publish --tag canary
       - run: npm -w artillery-plugin-memory-inspector publish --tag canary
