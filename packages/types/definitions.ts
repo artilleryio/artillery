@@ -256,7 +256,7 @@ export type Scenario = {
         | HttpFlow
         | WebSocketFlow
         | ({
-            loop: Array<WebSocketFlow>;
+            loop: Array<HttpFlow | WebSocketFlow>;
             whileTrue?: string;
           } & (FixedLoop | DynamicLoop))
       >;

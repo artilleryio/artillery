@@ -62,6 +62,11 @@ scenarios:
           url: /resource
       - think: 500
       - send: "hello"
+      - loop:
+          - post:
+              url: /resource
+          - send: "world"
+        count: 5
 `);
 
   tap.same(errors, []);
