@@ -47,3 +47,23 @@ config:
   tap.same(errors.length, 1);
   tap.end();
 });
+
+tap.test('supports HTTP flow properties for "websockets" engine', (tap) => {
+  const errors = validateTestScript(`
+config:
+  target: http://localhost:3000
+  phases:
+    - duration: 10
+      rampTo: 50
+scenarios:
+  - engine: websocket
+    flow:
+      - get:
+          url: /resource
+      - think: 500
+      - send: "hello"
+`);
+
+  tap.same(errors, []);
+  tap.end();
+});

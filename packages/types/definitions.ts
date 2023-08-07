@@ -253,6 +253,7 @@ export type Scenario = {
        * @title Scenario flow
        */
       flow: Array<
+        | HttpFlow
         | WebSocketFlow
         | ({
             loop: Array<WebSocketFlow>;
