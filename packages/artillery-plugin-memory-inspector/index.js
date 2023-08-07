@@ -43,15 +43,15 @@ function ArtilleryPluginMemoryInspector(script, events) {
     return next();
   }
 
-  if (!script.config.processor) {
-    script.config.processor = {};
-  }
-
   script.scenarios = script.scenarios.map((scenario) => {
     scenario.beforeScenario = [].concat(scenario.beforeScenario || []);
     scenario.beforeScenario.push('memoryInspectorHandler');
     return scenario;
   });
+
+  if (!script.config.processor) {
+    script.config.processor = {};
+  }
 
   script.config.processor.memoryInspectorHandler = memoryInspectorHandler;
 
