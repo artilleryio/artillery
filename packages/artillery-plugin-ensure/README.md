@@ -4,7 +4,7 @@ With this plugin Artillery can validate if a metric meets a predefined threshold
 
 If an `ensure` check fails Artillery will exit with a non-zero exit code. This is useful in CI/CD pipelines for automatic quality checks and as a way to check that SLOs are met.
 
-Docs: https://www.artillery.io/docs/guides/guides/test-script-reference#ensure---slo-checks
+Docs: https://www.artillery.io/docs/reference/extensions/ensure
 
 ## Example
 
