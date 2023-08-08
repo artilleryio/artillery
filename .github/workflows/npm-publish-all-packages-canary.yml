@@ -15,6 +15,7 @@ on:
       - 'packages/commons/**'
       - 'packages/core/**'
       - 'packages/skytrace/**'
+      - 'packages/artillery-plugin-memory-inspector/**'
       
 jobs:
   build:
