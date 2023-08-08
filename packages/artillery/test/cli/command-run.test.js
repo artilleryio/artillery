@@ -51,9 +51,11 @@ tap.test(
       '--config',
       'test/scripts/scenario-config-different-folder/config/config-processor-backward-compatibility.yml'
     ]);
-    console.log(output)
 
-    t.ok(exitCode === 0 && output.stdout.includes('Successfully ran with id myTestId123'));
+    t.ok(
+      exitCode === 0 &&
+        output.stdout.includes('Successfully ran with id myTestId123')
+    );
   }
 );
 
@@ -66,9 +68,11 @@ tap.test(
       '--config',
       'test/scripts/scenario-config-different-folder/config/config.yml'
     ]);
-    console.log(output)
 
-    t.ok(exitCode === 0 && output.stdout.includes('Successfully ran with id myTestId123'));
+    t.ok(
+      exitCode === 0 &&
+        output.stdout.includes('Successfully ran with id myTestId123')
+    );
   }
 );
 
@@ -146,6 +150,75 @@ tap.test('Run a script overwriting default options (output)', async (t) => {
       output.stdout.includes('Log file: artillery_report_custom.json')
   );
 });
+
+tap.test(
+  'Run a script with overwriting variables in config with cli variables',
+  async (t) => {
+    const variableOverride = {
+      bar: 'this is me',
+      myVar: 3
+    };
+    const [exitCode, output] = await execute([
+      'run',
+      'test/scripts/scenario-cli-variables/scenario-with-variables.yml',
+      '--variables',
+      JSON.stringify(variableOverride)
+    ]);
+
+    t.ok(exitCode === 0);
+    t.ok(
+      output.stdout.includes(`foo is ${variableOverride.myVar}`),
+      'Templated foo nested config variable is not showing'
+    );
+    t.ok(
+      output.stdout.includes(`other is ${variableOverride.myVar}`),
+      'other variable from config variable not showing'
+    );
+    t.ok(
+      output.stdout.includes(`bar is ${variableOverride.bar}`),
+      'bar variable from --variables not showing'
+    );
+    t.ok(
+      output.stdout.includes(`myVar is ${variableOverride.myVar}`),
+      'myVar variable from --variables not showing'
+    );
+  }
+);
+
+tap.test(
+  'Run a script with overwriting variables in other nested config with cli variables',
+  async (t) => {
+    const variableOverride = {
+      myVar: 3,
+      defaultCookie: 'abc123',
+      anotherCookie: 'hellothere'
+    };
+    const [exitCode, output] = await execute([
+      'run',
+      'test/scripts/scenario-cli-variables/scenario-with-other-nested-config.yml',
+      '--variables',
+      JSON.stringify(variableOverride)
+    ]);
+
+    t.ok(exitCode === 0);
+    t.ok(
+      output.stdout.includes(`other is ${variableOverride.myVar}`),
+      'other variable from config variable not showing'
+    );
+    t.ok(
+      output.stdout.includes(`HTTP timeout is: ${variableOverride.myVar}`),
+      'Templated variable in other nested config (http) is not showing'
+    );
+    t.ok(
+      output.stdout.includes('Has default cookie: true'),
+      'Templated variable in other nested config (cookie) is not showing'
+    );
+    t.ok(
+      output.stdout.includes('Has cookie from flow: true'),
+      'Templated variable in nested scenario option is not showing'
+    );
+  }
+);
 
 tap.test('Script using hook functions', async (t) => {
   const [exitCode, output] = await execute([

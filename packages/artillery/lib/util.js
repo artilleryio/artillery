@@ -70,17 +70,22 @@ async function addVariables(script, flags) {
   for (const [k, v] of Object.entries(variables)) {
     script.config.variables[k] = v;
   }
+
   return script;
 }
 
 async function resolveConfigTemplates(script, flags) {
+  const cliVariables = flags.variables ? JSON.parse(flags.variables) : {};
+
   script.config = engineUtil.template(script.config, {
     vars: {
       $processEnvironment: process.env,
-      $environment: flags.environment
+      $environment: flags.environment,
+      ...cliVariables
     },
     funcs: contextFuncs
   });
+
   return script;
 }
 
