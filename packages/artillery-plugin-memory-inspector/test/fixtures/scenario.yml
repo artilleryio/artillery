@@ -1,0 +1,13 @@
+config:
+  target: "http://localhost:{{ $processEnvironment.TEST_PORT }}"
+  phases:
+    - duration: 10
+      arrivalRate: 1
+      name: "Phase 1"
+  processor: "./myProcessor.js"
+
+scenarios:
+  - beforeScenario: "myBeforeScenarioHandler"
+    flow:
+      - get:
+          url: "/"

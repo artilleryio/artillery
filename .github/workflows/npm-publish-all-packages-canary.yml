@@ -49,3 +49,4 @@ jobs:
       - run: npm install -w skytrace
       - run: npm run build -w skytrace
       - run: npm -w skytrace publish --tag canary
+      - run: npm -w artillery-plugin-memory-inspector publish --tag canary
