@@ -16,3 +16,6 @@ scenarios:
     flow:
       - function: "createRandomScore"
       - send: "{{ data }}"
+      - function: "sendStream"
+      - sendBytes: "{{ byteData }}"
+      - sendBytes: "ABC" # It will turn the string into bytes automatically
