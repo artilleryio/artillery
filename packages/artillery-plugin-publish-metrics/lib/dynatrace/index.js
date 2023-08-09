@@ -35,7 +35,7 @@ class DynatraceReporter {
         endTime: 0,
         properties: {
           target: script.config.target,
-          ...this.parseDimensions(this.eventConfig.properties, 'object')
+          ...this.parseProperties(this.eventConfig.properties)
         }
       };
 
@@ -104,20 +104,32 @@ class DynatraceReporter {
     }
   }
 
-  parseDimensions(dimensionList, returnValue = 'list') {
+  parseDimensions(dimensionList) {
     if (!dimensionList || (dimensionList && dimensionList.length === 0)) {
       return false;
     }
-    const parsedDimensions = returnValue === 'object' ? {} : [];
+    const parsedDimensions = [];
 
     for (const item of dimensionList) {
       const [name, value] = item.split(':');
-      returnValue === 'object'
-        ? (parsedDimensions[name] = value)
-        : parsedDimensions.push(`${name}="${value}"`);
+      parsedDimensions.push(`${name}="${value}"`);
     }
 
     return parsedDimensions;
+  }
+
+  parseProperties(propertyList) {
+    if (!propertyList || (propertyList && propertyList.length === 0)) {
+      return false;
+    }
+    const parsedProperties = {};
+
+    for (const item of propertyList) {
+      const [name, value] = item.split(':');
+      parsedProperties[name] = value;
+    }
+
+    return parsedProperties;
   }
 
   shouldSendMetric(metricName, excluded, includeOnly) {
