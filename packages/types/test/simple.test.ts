@@ -48,7 +48,7 @@ config:
   tap.end();
 });
 
-tap.test('supports HTTP flow properties for "websockets" engine', (tap) => {
+tap.test('supports HTTP flow properties for "socketio" engine', (tap) => {
   const errors = validateTestScript(`
 config:
   target: http://localhost:3000
@@ -56,16 +56,20 @@ config:
     - duration: 10
       rampTo: 50
 scenarios:
-  - engine: websocket
+  - engine: socketio
     flow:
       - get:
           url: /resource
       - think: 500
-      - send: "hello"
+      - emit:
+          channel: "echoResponse"
+          data: "hello"
       - loop:
           - post:
               url: /resource
-          - send: "world"
+          - emit:
+              channel: "anotherChannel"
+              data: "world"
         count: 5
 `);
 

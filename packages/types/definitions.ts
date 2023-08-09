@@ -253,10 +253,9 @@ export type Scenario = {
        * @title Scenario flow
        */
       flow: Array<
-        | HttpFlow
         | WebSocketFlow
         | ({
-            loop: Array<HttpFlow | WebSocketFlow>;
+            loop: Array<WebSocketFlow>;
             whileTrue?: string;
           } & (FixedLoop | DynamicLoop))
       >;
@@ -270,9 +269,10 @@ export type Scenario = {
        * @title Scenario flow
        */
       flow: Array<
+        | HttpFlow
         | SocketIoFlow
         | ({
-            loop: Array<SocketIoFlow>;
+            loop: Array<HttpFlow | SocketIoFlow>;
             whileTrue?: string;
           } & (FixedLoop | DynamicLoop))
       >;
