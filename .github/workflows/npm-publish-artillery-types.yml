@@ -20,6 +20,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
       - run: npm ci
-      - run: npm -w '@artilleryio/types' publish
+      - run: npm -w '@artilleryio/types' publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
