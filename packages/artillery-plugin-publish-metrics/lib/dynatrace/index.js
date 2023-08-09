@@ -34,7 +34,7 @@ class DynatraceReporter {
         startTime: 0,
         endTime: 0,
         properties: {
-          target: script.config.target,
+          Target: script.config.target,
           ...this.parseProperties(this.eventConfig.properties)
         }
       };
