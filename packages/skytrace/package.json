@@ -72,7 +72,7 @@
     "lint": "exit 0",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "npm -w skytrace run lint",
-    "prepack": "npm -w skytrace run build && oclif manifest && oclif readme",
+    "prepack": "npm -w skytrace run build && oclif manifest",
     "test": "exit 0",
     "version": "oclif readme && git add README.md"
   },
