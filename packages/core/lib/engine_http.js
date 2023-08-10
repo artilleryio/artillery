@@ -27,6 +27,7 @@ const decompressResponse = require('decompress-response');
 const { promisify } = require('node:util');
 
 const crypto = require('node:crypto');
+const { URLSearchParams } = require('url');
 
 module.exports = HttpEngine;
 
@@ -350,9 +351,29 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         // Request.js -> Got.js translation
         if (params.qs) {
-          requestParams.searchParams = new URLSearchParams(
-            template(params.qs, context)
+          const searchParams = template(params.qs, context);
+          const listValues = Object.values(searchParams).filter((v) =>
+            Array.isArray(v)
           );
+
+          // If one of the keys in qs object has an array for a value in order to set it properly as query strings we need to reformat it and pass it into a `URLSearchParams` instance
+          // e.g {a: foo, b: [1, 2, 3]}, we need to format into an array like [[a,foo], [b,1], [b,2], [b,3]]
+          if (listValues.length === 0) {
+            requestParams.searchParams = searchParams;
+          } else {
+            const searchParamsList = [];
+
+            for (const [key, value] of Object.entries(searchParams)) {
+              if (!Array.isArray(value)) {
+                searchParamsList.push([key, value]);
+              } else {
+                for (const v of value) {
+                  searchParamsList.push([key, v]);
+                }
+              }
+            }
+            requestParams.searchParams = new URLSearchParams(searchParamsList);
+          }
         }
 
         if (typeof params.gzip === 'boolean') {
@@ -685,10 +706,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           .on('error', function (err, body, res) {
             ee.emit('trace:http:error', err, uuid);
             if (err.name === 'HTTPError') {
+              console.log('HERE?');
               return;
             }
             // this is an ENOTFOUND, ECONNRESET etc
             debug(err);
+            console.log('HELLO BEAUTIFUL ERROR');
+            console.log(err);
             // Run onError hooks and end the scenario:
             runOnErrorHooks(
               onErrorHandlers,
