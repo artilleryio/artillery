@@ -481,6 +481,72 @@ test('HTTP engine', function (tap) {
     });
   });
 
+  tap.test('Query string', function (t) {
+    const target = nock('http://localhost:8888')
+      .get('/blah?hello=world&ids=1&ids=2&ids=3')
+      .reply(200, 'ok');
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        processor: {
+          printQuery: function (_req, res, vuContext, _events, next) {
+            console.log(_req.searchParams.toString());
+            return next();
+          }
+        }
+      },
+      scenarios: [
+        {
+          // test for https://github.com/artilleryio/artillery/issues/2034
+          name: 'qs',
+          flow: [
+            {
+              get: {
+                uri: '/blah',
+                qs: {
+                  hello: 'world',
+                  ids: [1, 2, 3]
+                },
+                afterResponse: 'printQuery'
+              }
+            }
+          ]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const spy = sinon.spy(console, 'log');
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    const initialContext = {
+      vars: {}
+    };
+
+    runScenario(initialContext, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), 'Should have made a request to /blah');
+
+      const expectedLog = 'hello=world&ids=1&ids=2&ids=3';
+      let seen = false;
+      spy.args.forEach(function (args) {
+        if (args[0] === expectedLog) {
+          t.comment(`string: "${args[0]}" found`);
+          seen = true;
+        }
+      });
+      t.ok(seen, 'Query string properly encoded');
+      console.log.restore(); // unwrap the spy
+
+      t.end();
+    });
+  });
+
   tap.test('hooks - afterResponse', (t) => {
     const answer = 'the answer is 42';
 
