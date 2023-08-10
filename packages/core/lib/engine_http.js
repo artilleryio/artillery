@@ -27,7 +27,6 @@ const decompressResponse = require('decompress-response');
 const { promisify } = require('node:util');
 
 const crypto = require('node:crypto');
-const { URLSearchParams } = require('url');
 
 module.exports = HttpEngine;
 
@@ -706,13 +705,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           .on('error', function (err, body, res) {
             ee.emit('trace:http:error', err, uuid);
             if (err.name === 'HTTPError') {
-              console.log('HERE?');
               return;
             }
             // this is an ENOTFOUND, ECONNRESET etc
             debug(err);
-            console.log('HELLO BEAUTIFUL ERROR');
-            console.log(err);
             // Run onError hooks and end the scenario:
             runOnErrorHooks(
               onErrorHandlers,
