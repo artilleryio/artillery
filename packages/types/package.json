@@ -5,6 +5,7 @@
     "./definitions.ts",
     "./schema.json"
   ],
+  "license": "MPL-2.0",
   "scripts": {
     "test": "tap --ts --no-coverage --color test/**/*.test.ts",
     "build": "typescript-json-schema ./tsconfig.schema.json \"TestScript\" --required --noExtraProps -o ./schema.json",
