@@ -482,16 +482,36 @@ test('HTTP engine', function (tap) {
   });
 
   tap.test('Query string', function (t) {
-    const target = nock('http://localhost:8888')
-      .get('/blah?hello=world&ids=1&ids=2&ids=3')
-      .reply(200, 'ok');
+    let endpoint = '';
 
     const script = {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          printQuery: function (_req, res, vuContext, _events, next) {
-            console.log(_req.searchParams.toString());
+          checkArrayValueQuery: function (_req, res, vuContext, _events, next) {
+            t.equal(
+              _req.searchParams.toString(),
+              'hello=world&ids=1&ids=2&ids=3',
+              'Array value properly formated into query string'
+            );
+            return next();
+          },
+          checkTemplateValueQuery: function (
+            _req,
+            res,
+            vuContext,
+            _events,
+            next
+          ) {
+            t.equal(
+              _req.searchParams.toString(),
+              'hello=world&ids=1&ids=2&ids=3&name=Nalini',
+              'Query string properly formatted'
+            );
+            return next();
+          },
+          getName: function (req, context, ee, next) {
+            context.vars.name = 'Nalini';
             return next();
           }
         }
@@ -508,17 +528,33 @@ test('HTTP engine', function (tap) {
                   hello: 'world',
                   ids: [1, 2, 3]
                 },
-                afterResponse: 'printQuery'
+                afterResponse: 'checkArrayValueQuery'
+              }
+            },
+            {
+              get: {
+                beforeRequest: 'getName',
+                uri: '/blah',
+                qs: {
+                  hello: 'world',
+                  ids: [1, 2, 3],
+                  name: '{{ name }}'
+                },
+                afterResponse: 'checkTemplateValueQuery'
               }
             }
           ]
         }
       ]
     };
+    const target = nock(script.config.target)
+      .get('/blah?hello=world&ids=1&ids=2&ids=3')
+      .reply(200, 'ok')
+      .get('/blah?hello=world&ids=1&ids=2&ids=3&name=Nalini')
+      .reply(200, 'ok');
 
     const engine = new HttpEngine(script);
     const ee = new EventEmitter();
-    const spy = sinon.spy(console, 'log');
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
     const initialContext = {
@@ -531,18 +567,6 @@ test('HTTP engine', function (tap) {
       }
 
       t.ok(target.isDone(), 'Should have made a request to /blah');
-
-      const expectedLog = 'hello=world&ids=1&ids=2&ids=3';
-      let seen = false;
-      spy.args.forEach(function (args) {
-        if (args[0] === expectedLog) {
-          t.comment(`string: "${args[0]}" found`);
-          seen = true;
-        }
-      });
-      t.ok(seen, 'Query string properly encoded');
-      console.log.restore(); // unwrap the spy
-
       t.end();
     });
   });
