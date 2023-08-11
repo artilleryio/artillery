@@ -122,7 +122,10 @@ class ArtilleryCloudPlugin {
     global.artillery.ext({
       ext: 'onShutdown',
       method: async (opts) => {
-        await this._event('testrun:end', { ts: testEndInfo.endTime });
+        await this._event('testrun:end', {
+          ts: testEndInfo.endTime,
+          suggestedExitCode: global.artillery.suggestedExitCode || opts.exitCode
+        });
         await this._event('testrun:changestatus', {
           status: opts.earlyStop ? 'EARLY_STOP' : 'COMPLETED'
         });
