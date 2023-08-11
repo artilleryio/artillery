@@ -5,7 +5,8 @@
     "es6": true
   },
   "globals": {
-    "expect": true
+    "expect": true,
+    "fetch": true
   },
   "parserOptions": {
     "ecmaVersion": "latest",

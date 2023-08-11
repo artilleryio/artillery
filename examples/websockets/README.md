@@ -13,7 +13,7 @@ npm install
 After installing the dependencies, start the WebSockets server:
 
 ```
-node app.js
+npm run server
 ```
 
 This command will start a WebSockets server listening at ws://localhost:8888.

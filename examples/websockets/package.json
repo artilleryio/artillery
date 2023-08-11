@@ -4,9 +4,9 @@
   "description": "Artillery.io - WebSockets example",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "server": "node app.js",
+    "test": "artillery run test.yml"
   },
-  "author": "",
   "license": "ISC",
   "dependencies": {
     "artillery": "^1.7.2",
