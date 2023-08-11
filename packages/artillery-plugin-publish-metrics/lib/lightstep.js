@@ -13,6 +13,11 @@ const { URL } = require('url');
 
 class LightstepReporter {
   constructor(config, events, script) {
+    if (!config.accessToken || !config.componentName) {
+      throw new Error(
+        'Lightstep access token or component name not specified. In order to send traces to Lightstep `accessToken` and `componentName` must be provided'
+      );
+    }
     this.lightstepOpts = {
       accessToken: config.accessToken,
       componentName: config.componentName,
@@ -45,6 +50,7 @@ class LightstepReporter {
       component_name: this.lightstepOpts.componentName,
       access_token: this.lightstepOpts.accessToken
     });
+
     opentracing.initGlobalTracer(this.tracer);
 
     attachScenarioHooks(script, [

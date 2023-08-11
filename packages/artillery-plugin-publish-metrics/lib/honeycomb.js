@@ -10,6 +10,11 @@ const { URL } = require('url');
 
 class HoneycombReporter {
   constructor(config, events, script) {
+    if (!config.apiKey || !config.writeKey) {
+      throw new Error(
+        'Honeycomb API/write Key not specified. In order to send traces to Honeycomb `apiKey` or `writeKey` must be provided'
+      );
+    }
     this.hnyOpts = {
       writeKey: config.apiKey || config.writeKey,
       dataset: config.dataset,
