@@ -93,7 +93,7 @@ export type PayloadConfig = {
    * @title Path
    */
   path: string;
-  fields: object;
+  fields: Array<string>;
   /**
    * Controls how the CSV rows are selected for each virtual user.
    * @title Order
@@ -128,12 +128,13 @@ export type PayloadConfig = {
    * @default true
    */
   skipEmptyLines?: boolean;
-  loadAll?: boolean;
-  name?: string;
-} & {
-  loadAll: true;
-  name: string;
-};
+} & (
+  | { loadAll?: never; name?: never }
+  | {
+      loadAll: true;
+      name: string;
+    }
+);
 
 export type Scenarios = Array<Scenario>;
 

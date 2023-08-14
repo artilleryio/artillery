@@ -162,3 +162,67 @@ scenarios:
 
   tap.end();
 });
+
+tap.test('expects "payload.fields" to be an array', (tap) => {
+  tap.same(
+    validateTestScript(`
+config:
+  target: http://127.0.0.1/api
+  payload:
+    path: ./file.csv
+    fields:
+      - "username"
+      - "password"
+scenarios:
+  - engine: http
+    flow:
+      - get:
+          url: /two
+    `),
+    []
+  );
+
+  tap.end();
+});
+
+tap.test('requires "name" if "payload.loadAll" is set to true', (tap) => {
+  tap.same(
+    validateTestScript(`
+config:
+  target: http://127.0.0.1/api
+  payload:
+    path: ./file.csv
+    fields:
+      - "username"
+    loadAll: true
+    name: "variable"
+scenarios:
+  - engine: http
+    flow:
+      - get:
+          url: /two
+    `),
+    []
+  );
+
+  const errors = validateTestScript(`
+  config:
+    target: http://127.0.0.1/api
+    payload:
+      path: ./file.csv
+      fields:
+        - "username"
+      loadAll: true
+  scenarios:
+    - engine: http
+      flow:
+        - get:
+            url: /two
+      `);
+  tap.same(
+    errors.find((error) => error.params?.missingProperty === 'name')?.message,
+    `must have required property 'name'`
+  );
+
+  tap.end();
+});
