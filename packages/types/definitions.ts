@@ -39,7 +39,7 @@ export type Config = {
    * https://www.artillery.io/docs/reference/test-script#phases---load-phases
    * @title Phases
    */
-  phases: Array<TestPhase>;
+  phases?: Array<TestPhase>;
   /**
    * Map of variables to expose to the test run.
    * https://www.artillery.io/docs/reference/test-script#variables---inline-variables

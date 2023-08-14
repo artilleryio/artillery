@@ -145,3 +145,20 @@ scenarios:
 
   tap.end();
 });
+
+tap.test('treats "config.phases" as optional', (tap) => {
+  tap.same(
+    validateTestScript(`
+config:
+  target: http://127.0.0.1/api
+scenarios:
+  - engine: http
+    flow:
+      - get:
+          url: /two
+    `),
+    []
+  );
+
+  tap.end();
+});
