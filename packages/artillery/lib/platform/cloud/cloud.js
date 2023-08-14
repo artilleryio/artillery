@@ -124,7 +124,7 @@ class ArtilleryCloudPlugin {
       method: async (opts) => {
         await this._event('testrun:end', {
           ts: testEndInfo.endTime,
-          suggestedExitCode: global.artillery.suggestedExitCode || opts.exitCode
+          exitCode: global.artillery.suggestedExitCode || opts.exitCode
         });
         await this._event('testrun:changestatus', {
           status: opts.earlyStop ? 'EARLY_STOP' : 'COMPLETED'
