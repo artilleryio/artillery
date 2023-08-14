@@ -3,6 +3,21 @@ export type TestScript = {
    * @title Configuration
    */
   config?: Config;
+
+  /**
+   * Optional scenarios to run once per test definition
+   * before the main `scenarios` section.
+   * @title Before
+   */
+  before?: Scenarios;
+
+  /**
+   * Optional scenarios to run once per test definition
+   * after the main `scenarios` section.
+   * @title After
+   */
+  after?: Scenarios;
+
   /**
    * @title Scenarios
    */

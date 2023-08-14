@@ -76,3 +76,72 @@ scenarios:
   tap.same(errors, []);
   tap.end();
 });
+
+tap.test('supports top-level "before" and "after" scenarios', (tap) => {
+  tap.same(
+    validateTestScript(`
+before:
+  - engine: http
+    flow:
+      - post:
+          url: /one
+  - engine: ws
+    flow:
+      - send: Hello world
+scenarios:
+  - engine: http
+    flow:
+      - get:
+          url: /two
+    `),
+    []
+  );
+
+  tap.same(
+    validateTestScript(`
+after:
+  - engine: http
+    flow:
+      - post:
+          url: /one
+  - engine: ws
+    flow:
+      - send: Hello world
+scenarios:
+  - engine: http
+    flow:
+      - get:
+          url: /two
+    `),
+    []
+  );
+
+  tap.same(
+    validateTestScript(`
+before:
+  - engine: http
+    flow:
+      - post:
+          url: /one
+  - engine: ws
+    flow:
+      - send: Hello world
+after:
+  - engine: http
+    flow:
+      - post:
+          url: /one
+  - engine: ws
+    flow:
+      - send: Hello world
+scenarios:
+  - engine: http
+    flow:
+      - get:
+          url: /two
+    `),
+    []
+  );
+
+  tap.end();
+});
