@@ -262,3 +262,27 @@ scenarios:
 
   tap.end();
 });
+
+tap.test('supports non-object plugin options', (tap) => {
+  tap.same(
+    validateTestScript(`
+config:
+  target: http://127.0.0.1/api
+  plugins:
+    publish-metrics:
+      - one
+      - two
+    another-plugin:
+      object: true
+      nested:
+        why: "not"
+scenarios:
+  - name: Blog
+    engine: playwright
+    testFunction: "helloFlow"
+  `),
+    []
+  );
+
+  tap.end();
+});

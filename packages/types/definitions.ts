@@ -54,7 +54,7 @@ export type Config = {
    * @title Plugins
    */
   plugins?: {
-    [key: string]: object;
+    [key: string]: any;
   };
   ensure?: {
     [key: string]: any;
