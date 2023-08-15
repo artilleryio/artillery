@@ -226,3 +226,16 @@ scenarios:
 
   tap.end();
 });
+
+tap.test('supports custom scenario properties', (tap) => {
+  tap.same(
+    validateTestScript(`
+scenarios:
+  - engine: playwright
+    flowFunction: checkPage
+    flow: []
+  `),
+    []
+  );
+  tap.end();
+});

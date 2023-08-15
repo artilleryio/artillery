@@ -246,7 +246,7 @@ export type Scenario = {
 } & (
   | {
       /**
-       * @title Engine
+       * @title HTTP engine
        */
       engine: 'http';
       /**
@@ -262,7 +262,7 @@ export type Scenario = {
     }
   | {
       /**
-       * @title Engine
+       * @title WebSocket engine
        */
       engine: 'websocket' | 'ws';
       /**
@@ -278,7 +278,7 @@ export type Scenario = {
     }
   | {
       /**
-       * @title Engine
+       * @title Socket.io engine
        */
       engine: 'socketio';
       /**
@@ -295,9 +295,17 @@ export type Scenario = {
     }
   | {
       /**
-       * @title Engine
+       * @title Playwright engine
        */
       engine: 'playwright';
+      /**
+       * @title Test function
+       */
+      testFunction?: string;
+      /**
+       * @title Flow function
+       */
+      flowFunction?: string;
       /**
        * @title Scenario flow
        */
