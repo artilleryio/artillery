@@ -233,9 +233,32 @@ tap.test('supports custom scenario properties', (tap) => {
 scenarios:
   - engine: playwright
     flowFunction: checkPage
-    flow: []
   `),
     []
   );
+  tap.end();
+});
+
+tap.test('supports playwright engine configuration', (tap) => {
+  // Must not error on known options.
+  tap.same(
+    validateTestScript(`
+config:
+  target: http://127.0.0.1/api
+  engines:
+    playwright:
+      launchOptions:
+        headless: true
+      contextOptions:
+        extraHTTPHeaders:
+          x-my-header: true
+scenarios:
+  - name: Blog
+    engine: playwright
+    testFunction: "helloFlow"
+  `),
+    []
+  );
+
   tap.end();
 });
