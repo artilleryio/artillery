@@ -2,7 +2,6 @@ import { test, afterEach } from 'tap';
 import { $ } from 'zx';
 
 afterEach(async () => {
-  //cleanup output file after each test
   delete process.env.ARTILLERY_DISABLE_ENSURE;
 });
 
