@@ -21,13 +21,12 @@ function silent(requestExpectation, req, res, userContext) {
 
 function prettyPrint(requestExpectations, req, res, userContext) {
   debug('prettyPrint formatter');
-  const printValue =
-    userContext.expectationsPlugin.useRequestNames && req.name
-      ? chalk.blue('*', req.name)
-      : chalk.blue('*', `${req.method} ${urlparse(req.url).path}`) +
-        `${req.name ? ' - ' + req.name : ''}`;
   if (requestExpectations.results.length > 0) {
-    console.log(printValue, '\n');
+    console.log(
+      `${chalk.blue('*', req.method, urlparse(req.url).path)} ${
+        req.name ? '- ' + req.name : ''
+      }\n`
+    );
   }
 
   let hasFailedExpectations = false;
