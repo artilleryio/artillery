@@ -5,7 +5,7 @@ class SplunkReporter {
   constructor(config, events, script) {
     if (!config.accessToken) {
       throw new Error(
-        'Splunk Access Token not specified. In order to send metrics to Splunk `accessToken` must be provided'
+        'Splunk reporter: accessToken must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#splunk)'
       );
     }
 

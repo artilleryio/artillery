@@ -12,7 +12,7 @@ class HoneycombReporter {
   constructor(config, events, script) {
     if (!config.apiKey || !config.writeKey) {
       throw new Error(
-        'Honeycomb API/write Key not specified. In order to send traces to Honeycomb `apiKey` or `writeKey` must be provided'
+        'Honeycomb reporter: apiKey or writeKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#honeycomb)'
       );
     }
     this.hnyOpts = {

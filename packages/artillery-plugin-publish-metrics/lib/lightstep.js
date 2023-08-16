@@ -15,7 +15,7 @@ class LightstepReporter {
   constructor(config, events, script) {
     if (!config.accessToken || !config.componentName) {
       throw new Error(
-        'Lightstep access token or component name not specified. In order to send traces to Lightstep `accessToken` and `componentName` must be provided'
+        'Lightstep reporter: accessToken and componentName must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#lightstep)'
       );
     }
     this.lightstepOpts = {

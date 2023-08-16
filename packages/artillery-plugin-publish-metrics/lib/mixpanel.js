@@ -6,7 +6,7 @@ class MixPanelReporter {
   constructor(config, events, script) {
     if (!config.projectToken) {
       throw new Error(
-        'Mixpanel project token not specified. In order to send metrics to Mixpanel `projectToken` must be provided'
+        'Mixpanel reporter: projectToken must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#mixpanel)'
       );
     }
     this.mixPanelOpts = {

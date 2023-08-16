@@ -13,7 +13,7 @@ class PrometheusReporter {
   constructor(config, events) {
     if (!config.pushgateway) {
       throw new Error(
-        'URL of the Pushgateway instance not specified. In order to send metrics to Prometheus `pushgateway` must be provided'
+        'Prometheus reporter: pushgateway must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#prometheus-pushgateway)'
       );
     }
     this.hasPendingRequest = false;

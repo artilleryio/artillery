@@ -5,7 +5,7 @@ class NewRelicReporter {
   constructor(config, events, script) {
     if (!config.licenseKey) {
       throw new Error(
-        'New Relic License Key not specified. In order to send metrics to New Relic `licenseKey` must be provided'
+        'New Relic reporter: licenseKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#newrelic)'
       );
     }
 

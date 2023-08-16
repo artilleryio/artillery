@@ -7,7 +7,7 @@ class DynatraceReporter {
   constructor(config, events, script) {
     if (!config.apiToken || !config.envUrl) {
       throw new Error(
-        'Dynatrace API Access Token or Environment URL not specified. In order to send metrics to Dynatrace both `apiToken` and `envUrl` must be set'
+        'Dynatrace reporter: both apiToken and envUrl must be set. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace)'
       );
     }
 
