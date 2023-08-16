@@ -3,6 +3,21 @@ export type TestScript = {
    * @title Configuration
    */
   config?: Config;
+
+  /**
+   * Optional scenarios to run once per test definition
+   * before the main `scenarios` section.
+   * @title Before
+   */
+  before?: Scenarios;
+
+  /**
+   * Optional scenarios to run once per test definition
+   * after the main `scenarios` section.
+   * @title After
+   */
+  after?: Scenarios;
+
   /**
    * @title Scenarios
    */
@@ -19,12 +34,15 @@ export type Config = {
    * @examples ["https://example.com", "ws://127.0.0.1"]
    */
   target: string;
+  engines?: {
+    playwright?: PlaywrightEngineConfig;
+  };
   /**
    * A load phase defines how Artillery generates new virtual users (VUs) in a specified time period.
    * https://www.artillery.io/docs/reference/test-script#phases---load-phases
    * @title Phases
    */
-  phases: Array<TestPhase>;
+  phases?: Array<TestPhase>;
   /**
    * Map of variables to expose to the test run.
    * https://www.artillery.io/docs/reference/test-script#variables---inline-variables
@@ -36,7 +54,7 @@ export type Config = {
    * @title Plugins
    */
   plugins?: {
-    [key: string]: object;
+    [key: string]: any;
   };
   ensure?: {
     [key: string]: any;
@@ -72,13 +90,48 @@ export type Config = {
   ws?: WebSocketConfig;
 };
 
+export type PlaywrightEngineConfig = {
+  /**
+   * Arguments for the `browser.launch()` call in Playwright.
+   * https://playwright.dev/docs/api/class-browsertype#browser-type-launch
+   * @title Playwright launch options
+   */
+  launchOptions?: object;
+  /**
+   * Arguments for the `browser.newContext()` call in Playwright.
+   * https://playwright.dev/docs/api/class-browser#browser-new-context
+   * @title Playwright context options
+   */
+  contextOptions?: object;
+  /**
+   * Default maximum time (in seconds) for all Playwright methods
+   * accepting the `timeout` option.
+   * https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout
+   * @title Default timeout
+   */
+  defaultTimeout?: number;
+  /**
+   * Default maximum navigation time (in seconds)
+   * for Playwright navigation methods, like `page.goto()`.
+   * https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout
+   * @title Default navigation timeout
+   */
+  defaultNavigationTimeout?: number;
+  /**
+   * Aggregate Artillery metrics by test scenario name.
+   * https://www.artillery.io/docs/reference/engines/playwright#aggregate-metrics-by-scenario-name
+   * @title Aggregate by name
+   */
+  aggregateByName?: boolean;
+};
+
 export type PayloadConfig = {
   /**
    * Path to the CSV file.
    * @title Path
    */
   path: string;
-  fields: object;
+  fields: Array<string>;
   /**
    * Controls how the CSV rows are selected for each virtual user.
    * @title Order
@@ -113,12 +166,13 @@ export type PayloadConfig = {
    * @default true
    */
   skipEmptyLines?: boolean;
-  loadAll?: boolean;
-  name?: string;
-} & {
-  loadAll: true;
-  name: string;
-};
+} & (
+  | { loadAll?: never; name?: never }
+  | {
+      loadAll: true;
+      name: string;
+    }
+);
 
 export type Scenarios = Array<Scenario>;
 
@@ -230,7 +284,7 @@ export type Scenario = {
 } & (
   | {
       /**
-       * @title Engine
+       * @title HTTP engine
        */
       engine: 'http';
       /**
@@ -246,7 +300,7 @@ export type Scenario = {
     }
   | {
       /**
-       * @title Engine
+       * @title WebSocket engine
        */
       engine: 'websocket' | 'ws';
       /**
@@ -262,7 +316,7 @@ export type Scenario = {
     }
   | {
       /**
-       * @title Engine
+       * @title Socket.io engine
        */
       engine: 'socketio';
       /**
@@ -279,19 +333,17 @@ export type Scenario = {
     }
   | {
       /**
-       * @title Engine
+       * @title Playwright engine
        */
       engine: 'playwright';
       /**
-       * @title Scenario flow
+       * @title Test function
        */
-      flow: Array<
-        | any
-        | ({
-            loop: Array<any>;
-            whileTrue?: string;
-          } & (FixedLoop | DynamicLoop))
-      >;
+      testFunction?: string;
+      /**
+       * @title Flow function
+       */
+      flowFunction?: string;
     }
 );
 
