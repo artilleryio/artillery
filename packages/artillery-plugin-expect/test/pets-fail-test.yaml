@@ -1,0 +1,16 @@
+config:
+  target: http://localhost:9090
+  phases:
+    - duration: 1
+      arrivalCount: 1
+  plugins:
+    expect:
+      reportFailuresAsErrors: true
+      useOnlyRequestNames: true
+scenarios:
+  - flow:
+      - get:
+          name: 'unicorns'
+          url: '/pets/2'
+          expect:
+            - statusCode: 200

@@ -66,6 +66,9 @@ function ExpectationsPlugin(script, events) {
       script.config.plugins.expect.expectDefault200 === 'true';
     userContext.expectationsPlugin.reportFailuresAsErrors =
       script.config.plugins.expect.reportFailuresAsErrors;
+    userContext.expectationsPlugin.useOnlyRequestNames =
+      script.config.plugins.expect.useOnlyRequestNames === true ||
+      script.config.plugins.expect.useOnlyRequestNames === 'true';
 
     return done();
   };
@@ -166,18 +169,25 @@ function expectationsPluginCheckExpectations(
 
   const failedExpectations = results.filter((res) => !res.ok).length > 0;
 
-  if (failedExpectations) {
-    if (global.artillery) {
-      global.artillery.suggestedExitCode = 1;
-    }
-    if (userContext.expectationsPlugin.reportFailuresAsErrors) {
-      return done(new Error(`Failed expectations for request ${req.url}`));
-    } else {
-      return done();
-    }
-  } else {
+  if (!failedExpectations) {
     return done();
   }
+
+  if (global.artillery) {
+    global.artillery.suggestedExitCode = 1;
+  }
+
+  if (userContext.expectationsPlugin.reportFailuresAsErrors) {
+    const filteredRequestName =
+      userContext.expectationsPlugin.useOnlyRequestNames && req.name
+        ? req.name
+        : req.url;
+    return done(
+      new Error(`Failed expectations for request ${filteredRequestName}`)
+    );
+  }
+
+  return done();
 }
 
 function maybeParseBody(res) {

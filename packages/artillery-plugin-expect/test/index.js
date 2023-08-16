@@ -368,3 +368,21 @@ test('Produce metrics', async (t) => {
   t.equal(output.indexOf('expect.ok') > -1, true);
   t.equal(result.code, 0);
 });
+
+test('Report failures as errors by request name', async (t) => {
+  shelljs.env['ARTILLERY_PLUGIN_PATH'] = path.resolve(__dirname, '..', '..');
+  shelljs.env['PATH'] = process.env.PATH;
+  const result = shelljs.exec(
+    `${__dirname}/../../../node_modules/.bin/artillery run --solo ${__dirname}/pets-fail-test.yaml`,
+    {
+      silent: false
+    }
+  );
+
+  const output = result.stdout;
+
+  t.true(
+    output.indexOf('errors.Failed expectations for request unicorns') > -1
+  );
+  t.true(result.code !== 0);
+});

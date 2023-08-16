@@ -606,7 +606,7 @@ function extractRegExp(doc, expr, opts) {
   if (!match) {
     return '';
   }
-  
+
   if (group && match.groups) {
     return match.groups[group];
   } else if (match[0]) {
