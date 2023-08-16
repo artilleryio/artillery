@@ -1,3 +1,5 @@
+import { ExpectPluginConfig, ExpectPluginMetrics } from './plugins/expect';
+
 export type TestScript = {
   /**
    * @title Configuration
@@ -55,6 +57,7 @@ export type Config = {
    */
   plugins?: {
     [key: string]: any;
+    expect?: ExpectPluginConfig;
   };
   ensure?: {
     [key: string]: any;
@@ -533,6 +536,16 @@ export type DefaultHttpRequest = {
    * @title Request condition
    */
   ifTrue?: string;
+
+  /**
+   * Plugin-specific properties.
+   */
+
+  /**
+   * https://www.artillery.io/docs/reference/extensions/expect#expectations
+   * @title Expect plugin expectations
+   */
+  expect?: ExpectPluginMetrics;
 };
 
 export type HttpRequestWithBody = DefaultHttpRequest &

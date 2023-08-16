@@ -16,7 +16,24 @@ function fromExample(exampleAndTestScriptPath: string) {
 
 tap.test('using-cookies', fromExample('using-cookies/cookies.yml'));
 
-tap.skip(
+tap.test(
   'scenario-weights',
   fromExample('scenario-weights/scenario-weights.yml')
+);
+
+tap.test(
+  'multiple-scenario-specs (common config)',
+  fromExample('multiple-scenario-specs/common-config.yml')
+);
+tap.test(
+  'multiple-scenario-specs (armadillo)',
+  fromExample('multiple-scenario-specs/scenarios/armadillo.yml')
+);
+tap.test(
+  'multiple-scenario-specs (dino)',
+  fromExample('multiple-scenario-specs/scenarios/dino.yml')
+);
+tap.test(
+  'multiple-scenario-specs (pony)',
+  fromExample('multiple-scenario-specs/scenarios/pony.yml')
 );
