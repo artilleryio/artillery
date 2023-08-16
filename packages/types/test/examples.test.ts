@@ -21,6 +21,9 @@ tap.test(
   fromExample('scenario-weights/scenario-weights.yml')
 );
 
+/**
+ * multiple-scenario-specs
+ */
 tap.test(
   'multiple-scenario-specs (common config)',
   fromExample('multiple-scenario-specs/common-config.yml')
@@ -36,4 +39,28 @@ tap.test(
 tap.test(
   'multiple-scenario-specs (pony)',
   fromExample('multiple-scenario-specs/scenarios/pony.yml')
+);
+
+tap.test(
+  'http-metrics-by-endpoint',
+  fromExample('http-metrics-by-endpoint/endpoint-metrics.yml')
+);
+
+/**
+ * browser-load-testing-playwright
+ */
+tap.test(
+  'browser-load-testing-playwright',
+  fromExample(
+    'browser-load-testing-playwright/advanced-custom-metric-for-subflow.yml'
+  )
+);
+tap.test(
+  'browser-load-testing-playwright',
+  fromExample('browser-load-testing-playwright/browser-load-test.yml')
+);
+
+tap.test(
+  'browser-load-testing-playwright',
+  fromExample('browser-load-testing-playwright/browser-smoke-test.yml')
 );
