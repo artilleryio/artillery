@@ -474,7 +474,9 @@ export type DefaultHttpRequest = {
   /**
    * @title Cookie
    */
-  cookie?: Record<string, string>;
+  cookie?: {
+    [name: string]: string;
+  };
   /**
    * @title Query string
    */
@@ -489,6 +491,11 @@ export type DefaultHttpRequest = {
    * @title Capture
    */
   capture?: TestPhaseCapture | Array<TestPhaseCapture>;
+  /**
+   * Response validation criteria.
+   * @title Match
+   */
+  match?: HttpResponseMatch;
   /**
    * Automatically set the "Accept-Encoding" request header
    * and decode compressed responses encoded with gzip.
