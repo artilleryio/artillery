@@ -124,6 +124,50 @@ test('default cookies', function (t) {
   });
 });
 
+test('default cookies from config.http.defaults instead', function (t) {
+  const script = l.cloneDeep(require('./scripts/defaults_cookies.json'));
+  const cookie = script.config.defaults.cookie;
+  delete script.config.defaults;
+  script.config.http = { defaults: { cookie } };
+
+  runner(script).then(function (ee) {
+    ee.on('done', function (nr) {
+      const report = SSMS.legacyReport(nr).report();
+      t.ok(
+        report.codes[200] && report.codes[200] > 0,
+        'There should be some 200s'
+      );
+      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      ee.stop().then(() => {
+        t.end();
+      });
+    });
+    ee.run();
+  });
+});
+
+test('default cookies from config.http.defaults should take precedence', function (t) {
+  const script = l.cloneDeep(require('./scripts/defaults_cookies.json'));
+  const cookie = script.config.defaults.cookie;
+  script.config.http = { defaults: { cookie } };
+  script.config.defaults.cookie = 'rubbishcookie';
+
+  runner(script).then(function (ee) {
+    ee.on('done', function (nr) {
+      const report = SSMS.legacyReport(nr).report();
+      t.ok(
+        report.codes[200] && report.codes[200] > 0,
+        'There should be some 200s'
+      );
+      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      ee.stop().then(() => {
+        t.end();
+      });
+    });
+    ee.run();
+  });
+});
+
 test('no default cookie', function (t) {
   var script = require('./scripts/defaults_cookies.json');
   delete script.config.defaults.cookie;
