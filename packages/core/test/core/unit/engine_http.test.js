@@ -481,6 +481,96 @@ test('HTTP engine', function (tap) {
     });
   });
 
+  tap.test('Query string', function (t) {
+    let endpoint = '';
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        processor: {
+          checkArrayValueQuery: function (_req, res, vuContext, _events, next) {
+            t.equal(
+              _req.searchParams.toString(),
+              'hello=world&ids=1&ids=2&ids=3',
+              'Array value properly formated into query string'
+            );
+            return next();
+          },
+          checkTemplateValueQuery: function (
+            _req,
+            res,
+            vuContext,
+            _events,
+            next
+          ) {
+            t.equal(
+              _req.searchParams.toString(),
+              'hello=world&ids=1&ids=2&ids=3&name=Nalini',
+              'Query string properly formatted'
+            );
+            return next();
+          },
+          getName: function (req, context, ee, next) {
+            context.vars.name = 'Nalini';
+            return next();
+          }
+        }
+      },
+      scenarios: [
+        {
+          // test for https://github.com/artilleryio/artillery/issues/2034
+          name: 'qs',
+          flow: [
+            {
+              get: {
+                uri: '/blah',
+                qs: {
+                  hello: 'world',
+                  ids: [1, 2, 3]
+                },
+                afterResponse: 'checkArrayValueQuery'
+              }
+            },
+            {
+              get: {
+                beforeRequest: 'getName',
+                uri: '/blah',
+                qs: {
+                  hello: 'world',
+                  ids: [1, 2, 3],
+                  name: '{{ name }}'
+                },
+                afterResponse: 'checkTemplateValueQuery'
+              }
+            }
+          ]
+        }
+      ]
+    };
+    const target = nock(script.config.target)
+      .get('/blah?hello=world&ids=1&ids=2&ids=3')
+      .reply(200, 'ok')
+      .get('/blah?hello=world&ids=1&ids=2&ids=3&name=Nalini')
+      .reply(200, 'ok');
+
+    const engine = new HttpEngine(script);
+    const ee = new EventEmitter();
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    const initialContext = {
+      vars: {}
+    };
+
+    runScenario(initialContext, function userDone(err) {
+      if (err) {
+        t.fail();
+      }
+
+      t.ok(target.isDone(), 'Should have made a request to /blah');
+      t.end();
+    });
+  });
+
   tap.test('hooks - afterResponse', (t) => {
     const answer = 'the answer is 42';
 

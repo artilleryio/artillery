@@ -350,8 +350,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         // Request.js -> Got.js translation
         if (params.qs) {
-          requestParams.searchParams = template(params.qs, context);
+          requestParams.searchParams = qs.stringify(
+            template(params.qs, context)
+          );
         }
+
         if (typeof params.gzip === 'boolean') {
           requestParams.decompress = params.gzip;
         } else {
