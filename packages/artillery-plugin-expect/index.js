@@ -66,9 +66,9 @@ function ExpectationsPlugin(script, events) {
       script.config.plugins.expect.expectDefault200 === 'true';
     userContext.expectationsPlugin.reportFailuresAsErrors =
       script.config.plugins.expect.reportFailuresAsErrors;
-    userContext.expectationsPlugin.useRequestNames =
-      script.config.plugins.expect.useRequestNames === true ||
-      script.config.plugins.expect.useRequestNames === 'true';
+    userContext.expectationsPlugin.useOnlyRequestNames =
+      script.config.plugins.expect.useOnlyRequestNames === true ||
+      script.config.plugins.expect.useOnlyRequestNames === 'true';
 
     return done();
   };
@@ -179,7 +179,7 @@ function expectationsPluginCheckExpectations(
 
   if (userContext.expectationsPlugin.reportFailuresAsErrors) {
     const filteredRequestName =
-      userContext.expectationsPlugin.useRequestNames && req.name
+      userContext.expectationsPlugin.useOnlyRequestNames && req.name
         ? req.name
         : req.url;
     return done(

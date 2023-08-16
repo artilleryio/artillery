@@ -6,7 +6,7 @@ config:
   plugins:
     expect:
       reportFailuresAsErrors: true
-      useRequestNames: true
+      useOnlyRequestNames: true
 scenarios:
   - flow:
       - get:
