@@ -6,16 +6,6 @@ const NS = 'plugin:publish-metrics';
 const debug = require('debug')(NS);
 const A = require('async');
 
-const { createDatadogReporter } = require('./lib/datadog');
-const { createSplunkReporter } = require('./lib/splunk');
-const { createHoneycombReporter } = require('./lib/honeycomb');
-const { createLightstepReporter } = require('./lib/lightstep');
-const { createMixPanelReporter } = require('./lib/mixpanel');
-const { createPrometheusReporter } = require('./lib/prometheus');
-const { createCloudWatchReporter } = require('./lib/cloudwatch');
-const { createNewRelicReporter } = require('./lib/newrelic');
-const { createDynatraceReporter } = require('./lib/dynatrace');
-
 module.exports = {
   Plugin,
   LEGACY_METRICS_FORMAT: false
@@ -32,22 +22,31 @@ function Plugin(script, events) {
       config.type === 'statsd' ||
       config.type === 'influxdb-statsd'
     ) {
+      const { createDatadogReporter } = require('./lib/datadog');
       this.reporters.push(createDatadogReporter(config, events, script));
     } else if (config.type === 'splunk') {
+      const { createSplunkReporter } = require('./lib/splunk');
       this.reporters.push(createSplunkReporter(config, events, script));
     } else if (config.type === 'honeycomb') {
+      const { createHoneycombReporter } = require('./lib/honeycomb');
       this.reporters.push(createHoneycombReporter(config, events, script));
     } else if (config.type === 'lightstep') {
+      const { createLightstepReporter } = require('./lib/lightstep');
       this.reporters.push(createLightstepReporter(config, events, script));
     } else if (config.type === 'mixpanel') {
+      const { createMixPanelReporter } = require('./lib/mixpanel');
       this.reporters.push(createMixPanelReporter(config, events, script));
     } else if (config.type === 'prometheus') {
+      const { createPrometheusReporter } = require('./lib/prometheus');
       this.reporters.push(createPrometheusReporter(config, events, script));
     } else if (config.type === 'cloudwatch') {
+      const { createCloudWatchReporter } = require('./lib/cloudwatch');
       this.reporters.push(createCloudWatchReporter(config, events, script));
     } else if (config.type === 'newrelic') {
+      const { createNewRelicReporter } = require('./lib/newrelic');
       this.reporters.push(createNewRelicReporter(config, events, script));
     } else if (config.type === 'dynatrace') {
+      const { createDynatraceReporter } = require('./lib/dynatrace');
       this.reporters.push(createDynatraceReporter(config, events, script));
     } else {
       events.emit(
