@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "exit 0"
+    "test": "tap ./test/*.spec.mjs --timeout 300 --no-coverage --color"
   },
   "keywords": [],
   "author": "Artillery.io <team@artillery.io>",
@@ -12,5 +12,9 @@
   "dependencies": {
     "debug": "^4.3.3",
     "filtrex": "^2.2.3"
+  },
+  "devDependencies": {
+    "tap": "^16.3.8",
+    "zx": "^7.2.3"
   }
 }
