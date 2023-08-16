@@ -21,7 +21,7 @@ export type TestScript = {
   /**
    * @title Scenarios
    */
-  scenarios: Scenarios;
+  scenarios?: Scenarios;
 };
 
 export type Config = {

@@ -32,19 +32,17 @@ scenarios:
   tap.end();
 });
 
-tap.test('errors when the "scenarios" are missing', (tap) => {
-  const errors = validateTestScript(`
-config:
-  target: http://localhost:3000
-  phases:
-    - duration: 10
-      rampTo: 50
-  `);
-
-  tap.same(errors[0]?.params, {
-    missingProperty: 'scenarios'
-  });
-  tap.same(errors.length, 1);
+tap.test('supports base configurations (without scenarios)', (tap) => {
+  tap.same(
+    validateTestScript(`
+  config:
+    target: http://localhost:3000
+    phases:
+      - duration: 10
+        rampTo: 50
+    `),
+    []
+  );
   tap.end();
 });
 
