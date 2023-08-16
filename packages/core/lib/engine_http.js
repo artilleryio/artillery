@@ -85,6 +85,10 @@ function HttpEngine(script) {
     this.config.http = {};
   }
 
+  if (typeof this.config.http.defaults === 'undefined') {
+    this.config.http.defaults = {};
+  }
+
   if (typeof this.config.http.cookieJarOptions === 'undefined') {
     this.config.http.cookieJarOptions = {};
   }
@@ -197,7 +201,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   if (typeof requestSpec.think !== 'undefined') {
-    return engineUtil.createThink(requestSpec, self.config.defaults.think);
+    return engineUtil.createThink(
+      requestSpec,
+      self.config.http.defaults.think || self.config.defaults.think
+    );
   }
 
   if (typeof requestSpec.log !== 'undefined') {
@@ -387,7 +394,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         // Assign default headers then overwrite as needed
         let defaultHeaders = lowcaseKeys(
-          config.defaults.headers || { 'user-agent': USER_AGENT }
+          config.http.defaults.headers ||
+            config.defaults.headers || { 'user-agent': USER_AGENT }
         );
         const combinedHeaders = _.extend(
           defaultHeaders,
@@ -811,7 +819,9 @@ function lastRequest(res, requestParams) {
 HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
 
-  initialContext._defaultStrictCapture = this.config.defaults.strictCapture;
+  initialContext._defaultStrictCapture =
+    this.config.http.defaults.strictCapture ||
+    this.config.defaults.strictCapture;
   initialContext._jar = new tough.CookieJar(
     null,
     this.config.http.cookieJarOptions
@@ -819,8 +829,12 @@ HttpEngine.prototype.setInitialContext = function (initialContext) {
 
   initialContext._enableCookieJar = false;
   // If a default cookie is set, we will use the jar straightaway:
-  if (typeof this.config.defaults.cookie === 'object') {
-    initialContext._defaultCookie = this.config.defaults.cookie;
+  if (
+    typeof this.config.http.defaults.cookie === 'object' ||
+    typeof this.config.defaults.cookie === 'object'
+  ) {
+    initialContext._defaultCookie =
+      this.config.http.defaults.cookie || this.config.defaults.cookie;
     initialContext._enableCookieJar = true;
   }
 
