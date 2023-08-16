@@ -286,7 +286,7 @@ export type Scenario = {
       /**
        * @title HTTP engine
        */
-      engine: 'http';
+      engine?: 'http';
       /**
        * @title Scenario flow
        */
