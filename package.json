@@ -35,6 +35,14 @@
     "semi": true,
     "singleQuote": true,
     "useTabs": false,
-    "trailingComma": "none"
+    "trailingComma": "none",
+    "overrides": [
+      {
+        "files": "*.(yaml|yml)",
+        "options": {
+          "singleQuote": false
+        }
+      }
+    ]
   }
 }
