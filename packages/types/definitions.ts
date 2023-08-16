@@ -492,7 +492,10 @@ export type DefaultHttpRequest = {
    */
   capture?: TestPhaseCapture | Array<TestPhaseCapture>;
   /**
-   * Response validation criteria.
+   * (Deprecated) Response validation criteria.
+   * Please use the expectations plugin instead:
+   * https://www.artillery.io/docs/reference/extensions/expect
+   * @deprecated true
    * @title Match
    */
   match?: HttpResponseMatch;
