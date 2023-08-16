@@ -4,6 +4,11 @@ const debug = require('debug')('plugin:publish-metrics:mixpanel');
 
 class MixPanelReporter {
   constructor(config, events, script) {
+    if (!config.projectToken) {
+      throw new Error(
+        'Mixpanel reporter: projectToken must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#mixpanel)'
+      );
+    }
     this.mixPanelOpts = {
       projectToken: config.projectToken
     };
@@ -15,9 +20,7 @@ class MixPanelReporter {
         })`
       );
     }
-    if (!this.mixPanelOpts.projectToken) {
-      console.error('mix panel project token not specified');
-    }
+
     this.mixpanel = Mixpanel.init(this.mixPanelOpts.projectToken);
     this.sendToMixPanel(config, events, script);
     debug('init done');

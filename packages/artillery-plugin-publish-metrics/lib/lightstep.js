@@ -13,6 +13,11 @@ const { URL } = require('url');
 
 class LightstepReporter {
   constructor(config, events, script) {
+    if (!config.accessToken || !config.componentName) {
+      throw new Error(
+        'Lightstep reporter: accessToken and componentName must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#lightstep)'
+      );
+    }
     this.lightstepOpts = {
       accessToken: config.accessToken,
       componentName: config.componentName,
@@ -45,6 +50,7 @@ class LightstepReporter {
       component_name: this.lightstepOpts.componentName,
       access_token: this.lightstepOpts.accessToken
     });
+
     opentracing.initGlobalTracer(this.tracer);
 
     attachScenarioHooks(script, [

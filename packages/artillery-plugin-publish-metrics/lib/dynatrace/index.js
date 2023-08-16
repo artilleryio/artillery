@@ -5,6 +5,12 @@ const debug = require('debug')('plugin:publish-metrics:dynatrace');
 
 class DynatraceReporter {
   constructor(config, events, script) {
+    if (!config.apiToken || !config.envUrl) {
+      throw new Error(
+        'Dynatrace reporter: both apiToken and envUrl must be set. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace)'
+      );
+    }
+
     this.config = {
       apiToken: config.apiToken,
       envUrl: config.envUrl,
@@ -13,12 +19,6 @@ class DynatraceReporter {
       includeOnly: config.includeOnly || [],
       dimensions: this.parseDimensions(config.dimensions)
     };
-
-    if (!config.apiToken || !config.envUrl) {
-      throw new Error(
-        'Dynatrace API Access Token or Environment URL not specified. In order to send metrics to Dynatrace both `apiToken` and `envUrl` must be set'
-      );
-    }
 
     // Configure event if set - if event key is set but its value isn't we use defaults
     if (config.hasOwnProperty('event')) {

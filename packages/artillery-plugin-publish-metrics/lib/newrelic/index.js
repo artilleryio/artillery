@@ -3,6 +3,12 @@ const debug = require('debug')('plugin:publish-metrics:newrelic');
 
 class NewRelicReporter {
   constructor(config, events, script) {
+    if (!config.licenseKey) {
+      throw new Error(
+        'New Relic reporter: licenseKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#newrelic)'
+      );
+    }
+
     // Set each config value as matching user config if exists, else default values
     this.config = {
       region: config.region || 'us',
@@ -12,12 +18,6 @@ class NewRelicReporter {
       attributes: config.attributes || [],
       licenseKey: config.licenseKey
     };
-
-    if (!config.licenseKey) {
-      throw new Error(
-        'New Relic License Key not specified. In order to send metrics to New Relic `licenseKey` must be provided'
-      );
-    }
 
     if (config.hasOwnProperty('event') && !config.event?.accountId) {
       throw new Error(

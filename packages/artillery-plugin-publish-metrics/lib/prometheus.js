@@ -11,6 +11,11 @@ const COUNTERS_STATS = 'counters', // counters stats
 
 class PrometheusReporter {
   constructor(config, events) {
+    if (!config.pushgateway) {
+      throw new Error(
+        'Prometheus reporter: pushgateway must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#prometheus-pushgateway)'
+      );
+    }
     this.hasPendingRequest = false;
     this.workerID = process.env.WORKER_ID || uuid.v4();
     this.config = Object.assign(
@@ -25,11 +30,6 @@ class PrometheusReporter {
       pushgatewayUrl: config.pushgateway,
       ca: config.ca
     };
-
-    debug('ensuring pushgatewayUrl is configured');
-    if (!this.prometheusOpts.pushgatewayUrl) {
-      console.error(`the prometheus [pushgateway] url was not specified`);
-    }
 
     debug('setting default labels');
     PromClient.register.setDefaultLabels(this.tagsToLabels(this.config.tags));

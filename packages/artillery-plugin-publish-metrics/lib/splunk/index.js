@@ -3,6 +3,12 @@ const debug = require('debug')('plugin:publish-metrics:splunk');
 
 class SplunkReporter {
   constructor(config, events, script) {
+    if (!config.accessToken) {
+      throw new Error(
+        'Splunk reporter: accessToken must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#splunk)'
+      );
+    }
+
     this.config = {
       realm: config.realm || 'us0',
       prefix: config.prefix || 'artillery.',
@@ -18,7 +24,7 @@ class SplunkReporter {
       // Event API endpoint requires request payload to be an array of objects
       this.eventOpts = [
         {
-          eventType: config.event.eventType || `Artillery_io_Test`,
+          eventType: config.event.eventType || 'Artillery_io_Test',
           dimensions: {
             target: script.config.target,
             ...this.parseDimensions(config.event.dimensions)
@@ -217,7 +223,7 @@ class SplunkReporter {
     if (this.startedEventSent) {
       const timestamp = Date.now();
       this.eventOpts[0].timestamp = timestamp;
-      this.eventOpts[0].dimensions.phase = `Test-Finished`;
+      this.eventOpts[0].dimensions.phase = 'Test-Finished';
 
       this.sendRequest(this.ingestAPIEventEndpoint, this.eventOpts, 'event');
     }
