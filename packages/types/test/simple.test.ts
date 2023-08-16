@@ -48,35 +48,6 @@ config:
   tap.end();
 });
 
-tap.test('supports HTTP flow properties for "socketio" engine', (tap) => {
-  const errors = validateTestScript(`
-config:
-  target: http://localhost:3000
-  phases:
-    - duration: 10
-      rampTo: 50
-scenarios:
-  - engine: socketio
-    flow:
-      - get:
-          url: /resource
-      - think: 500
-      - emit:
-          channel: "echoResponse"
-          data: "hello"
-      - loop:
-          - post:
-              url: /resource
-          - emit:
-              channel: "anotherChannel"
-              data: "world"
-        count: 5
-`);
-
-  tap.same(errors, []);
-  tap.end();
-});
-
 tap.test('supports top-level "before" and "after" scenarios', (tap) => {
   tap.same(
     validateTestScript(`

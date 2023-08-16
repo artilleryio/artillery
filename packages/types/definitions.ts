@@ -387,6 +387,11 @@ export type BaseFlow =
       function: string;
     };
 
+export type HttpResponseMatch = {
+  json: any;
+  value: string;
+};
+
 export type HttpFlow =
   | BaseFlow
   | {
@@ -452,10 +457,7 @@ export type SocketIoFlow =
         };
         acknowledge?: {
           data?: string;
-          match?: {
-            json: any;
-            value: string;
-          };
+          match?: HttpResponseMatch;
         };
       };
     };
