@@ -38,14 +38,14 @@ class EnsurePlugin {
     this.script = script;
     this.events = events;
 
-    const checks =
+    const checksConfig =
       this.script.config?.ensure || this.script.config?.plugins?.ensure;
 
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (data) => {
         if (
-          !checks ||
+          !checksConfig ||
           typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
         ) {
           return;
@@ -59,24 +59,28 @@ class EnsurePlugin {
         );
         debug({ vars });
 
-        const checkTests = EnsurePlugin.runChecks(checks, vars);
-
-        global.artillery.globalEvents.emit('checks', checkTests);
-
-        checkTests.forEach((check) => {
-          if (check.result !== 1) {
-            global.artillery.log(
-              `fail: ${check.original}${check.strict ? '' : ' (optional)'}`
-            );
-            if (check.strict) {
-              global.artillery.suggestedExitCode = 1;
-            }
-          } else {
-            global.artillery.log(`ok: ${check.original}`);
-          }
-        });
+        EnsurePlugin.applyChecksToRunResult(checksConfig, vars)
       }
     });
+  }
+
+  static applyChecksToRunResult(checksConfig, vars) {
+    const checkResults = this.runChecks(checksConfig, vars);
+
+    global.artillery.globalEvents.emit('checks', checkResults);
+
+    checkResults.forEach((check) => {
+      if (check.result !== 1) {
+        global.artillery.log(`fail: ${check.original}${check.strict ? '' : ' (optional)'}`);
+        if (check.strict) {
+          global.artillery.suggestedExitCode = 1;
+        }
+      } else {
+        global.artillery.log(`ok: ${check.original}`);
+      }
+    });
+
+    return checkResults
   }
 
   // Combine counters/rates/summaries into a flat key->value object for filtrex
