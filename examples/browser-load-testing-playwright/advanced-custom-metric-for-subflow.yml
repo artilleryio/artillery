@@ -10,4 +10,3 @@ scenarios:
   - name: "A flow with multiple steps"
     engine: playwright
     flowFunction: "multistepWithCustomMetrics"
-    flow: []
