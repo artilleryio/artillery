@@ -85,7 +85,7 @@ function DatadogReporter(config, events, script) {
     if (this.reportingType === 'api') {
       this.dogapi.initialize({
         api_key: config.apiKey,
-        app_Key: config.appKey
+        app_key: config.appKey
       });
     }
 
