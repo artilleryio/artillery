@@ -1,5 +1,5 @@
 config:
-  target: http://localhost:9090
+  target: http://localhost:9099
   phases:
     - duration: 1
       arrivalCount: 1
