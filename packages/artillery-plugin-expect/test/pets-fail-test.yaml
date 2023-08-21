@@ -1,5 +1,5 @@
 config:
-  target: http://localhost:9090
+  target: http://localhost:9099
   phases:
     - duration: 1
       arrivalCount: 1
@@ -10,7 +10,7 @@ config:
 scenarios:
   - flow:
       - get:
-          name: 'unicorns'
-          url: '/pets/2'
+          name: "unicorns"
+          url: "/pets/2"
           expect:
             - statusCode: 200
