@@ -14,10 +14,10 @@ class OTelReporter {
   constructor(config, events, script) {
     this.script = script;
     this.events = events;
-    this.protocols = [
-      ['http-proto', 'proto'],
-      ['http-json', 'http']
-    ];
+    this.protocols = {
+      'http-proto': 'proto',
+      'http-json': 'http'
+    };
 
     this.resource = Resource.default().merge(
       new Resource({
@@ -82,7 +82,8 @@ class OTelReporter {
 
     const protocol = !config.protocol
       ? 'http'
-      : this.protocols.filter((p) => p[0] === config.protocol)[0][1];
+      : this.protocols[config.protocol];
+
     const {
       OTLPTraceExporter
     } = require(`@opentelemetry/exporter-trace-otlp-${protocol}`);
@@ -154,6 +155,7 @@ class OTelReporter {
     } catch (err) {
       debug(err);
     }
+    debug('TracerProvider shutdown completed');
     return true;
   }
 
