@@ -7,6 +7,7 @@
   ],
   "license": "MPL-2.0",
   "scripts": {
+    "pretest": "npm run build",
     "test": "tap --ts --no-coverage --color --timeout 60 test/**/*.test.ts",
     "build": "typescript-json-schema ./tsconfig.schema.json \"TestScript\" --required --noExtraProps -o ./schema.json",
     "prepare": "npm run build",
