@@ -28,19 +28,20 @@ export type ExpectPluginConfig = {
 export type ExpectPluginMetrics = {
   /**
    * Check that the response status code.
-   * If the list of status codes is provided, checks that the response
+   * If the list of status codes is provided, check that the response
    * status code is present in the list.
    * https://www.artillery.io/docs/reference/extensions/expect#statuscode
    * @title Status code
    */
   statusCode?: number | Array<number>;
   /**
-   * Check that the response status code is not present
-   * in the given list.
+   * Check that the response status code does not equal the given status.
+   * If the list of status codes is provided, check that the response
+   * status code is not present in the list.
    * https://www.artillery.io/docs/reference/extensions/expect#notstatuscode
    * @title Not status code
    */
-  notStatusCode?: Array<number>;
+  notStatusCode?: number | Array<number>;
   /**
    * Check that the value of the `Content-Type` response header.
    * https://www.artillery.io/docs/reference/extensions/expect#contenttype
