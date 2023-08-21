@@ -118,8 +118,9 @@ class OTelReporter {
 
     const span = userContext.vars['__otlpSpan'];
     let endTime;
+
     if (res.timings && res.timings.phases) {
-      span.setAttribute('timeToFirstByte', res.timings.phases.firstByte);
+      span.setAttribute('responseTimeMs', res.timings.phases.firstByte);
       endTime =
         userContext.vars['__otlStartTime'] + res.timings.phases.firstByte;
       span.addEvent('http_request_ended', endTime);
@@ -136,12 +137,9 @@ class OTelReporter {
     });
 
     if (this.tracesConfig?.attributes) {
-      try {
-        span.setAttributes(this.tracesConfig.attributes);
-      } catch (err) {
-        debug('There has been an error in setting attributes:\n', err);
-      }
+      span.setAttributes(this.tracesConfig.attributes);
     }
+
     span.end(endTime || Date.now);
 
     debug('Span finished');
