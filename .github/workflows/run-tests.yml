@@ -27,7 +27,7 @@ jobs:
         env:
           FORCE_COLOR: 1
       - name: Notify about failures
-        if: failure()
+        if: failure() && github.ref == 'refs/heads/main'
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
