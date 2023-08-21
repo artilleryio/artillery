@@ -299,9 +299,17 @@ function runScenario(script, metrics, runState, contextVars) {
 
     runState.compiledScenarios = _.map(
       script.scenarios,
-      function (scenarioSpec) {
+      function (scenarioSpec, scenarioIndex) {
         const name = scenarioSpec.engine || script.config.engine || 'http';
         const engine = runState.engines.find((e) => e.__name === name);
+
+        if (typeof engine === 'undefined') {
+          const scenarioNameOrIndex = scenarioSpec.name || scenarioIndex;
+          throw new Error(
+            `Failed to run scenario "${scenarioNameOrIndex}": unknown engine "${name}". Did you forget to include it in "config.engines.${name}"?`
+          );
+        }
+
         return engine.createScenario(scenarioSpec, runState.scenarioEvents);
       }
     );
