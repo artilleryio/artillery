@@ -18,6 +18,12 @@ export type ExpectPluginConfig = {
    */
   reportFailuresAsErrors?: boolean;
   /**
+   * Use request name instead of the URL path when
+   * logging requests.
+   * @title Use only request names
+   */
+  useOnlyRequestNames?: boolean;
+  /**
    * Sets a 200 OK status code expectation for all requests.
    * @default false
    * @title Expect 200 by default
