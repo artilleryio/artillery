@@ -10,7 +10,7 @@ const { URL } = require('url');
 
 class HoneycombReporter {
   constructor(config, events, script) {
-    if (!config.apiKey || !config.writeKey) {
+    if (!config.apiKey && !config.writeKey) {
       throw new Error(
         'Honeycomb reporter: apiKey or writeKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#honeycomb)'
       );
