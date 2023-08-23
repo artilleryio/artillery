@@ -3,7 +3,7 @@
 const debug = require('debug')('plugin:publish-metrics:otel');
 const { attachScenarioHooks } = require('../util');
 
-const { trace } = require('@opentelemetry/api');
+const { SpanKind, SpanStatusCode, trace } = require('@opentelemetry/api');
 
 const { Resource } = require('@opentelemetry/resources');
 const {
@@ -103,10 +103,23 @@ class OTelReporter {
     userContext.vars['__otlStartTime'] = startTime;
     const span = trace
       .getTracer('artillery-tracer')
-      .startSpan('http_request', { startTime });
-    span.setAttribute('kind', 'client');
+      .startSpan(req.method.toLowerCase(), {
+        startTime,
+        kind: SpanKind.CLIENT
+      });
+
     span.addEvent('http_request_started', startTime);
     userContext.vars['__otlpSpan'] = span;
+
+    events.on('error', (err) => {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err.message || err
+      });
+      debug('Span status set as error due to the following error: \n', err);
+      span.end(Date.now);
+      debug('Span finished');
+    });
 
     return done();
   }
@@ -115,7 +128,7 @@ class OTelReporter {
     if (!userContext.vars['__otlpSpan']) {
       return done();
     }
-
+    // TODO check status code. if status code is 1xx, 2xx or 3xx do nothing, unless there was an error, then set span status to error. if s code is in 4xx set status as error
     const span = userContext.vars['__otlpSpan'];
     let endTime;
 
@@ -130,12 +143,17 @@ class OTelReporter {
 
     const url = new URL(req.url);
     span.setAttributes({
-      url: url.href,
-      'url.host': url.host,
+      'url.full': url.href,
+      'server.address': url.hostname,
+      // We set the port if it is specified, if not we set to a default port based on the protocol
+      'server.port': url.port || (url.protocol === 'http' ? 80 : 443),
       'http.request.method': req.method,
       'http.response.status_code': res.statusCode
     });
 
+    if (res.statusCode >= 400) {
+      span.setStatus({ code: SpanStatusCode.ERROR });
+    }
     if (this.tracesConfig?.attributes) {
       span.setAttributes(this.tracesConfig.attributes);
     }
