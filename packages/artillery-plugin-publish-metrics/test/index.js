@@ -21,7 +21,8 @@ test('Basic interface checks', async (t) => {
         'publish-metrics': [
           {
             type: 'datadog',
-            apiKey: '123'
+            apiKey: '123',
+            appKey: '456'
           }
         ]
       }
