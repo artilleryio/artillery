@@ -10,6 +10,7 @@
   "author": "Artillery.io <team@artillery.io>",
   "license": "MPL-2.0",
   "dependencies": {
+    "chalk": "^2.4.2",
     "debug": "^4.3.3",
     "filtrex": "^2.2.3"
   },
