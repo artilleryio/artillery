@@ -162,9 +162,14 @@ class ArtilleryCloudPlugin {
       });
 
       if (res.statusCode != 200) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
-
+        if (res.statusCode == 401) {
+          console.log(
+            'Error: API key is invalid. Could not send test data to Artillery Cloud.'
+          );
+        } else {
+          console.log('Error: error sending test data to Artillery Cloud');
+          console.log('Test report may be incomplete');
+        }
         let body;
         try {
           body = JSON.parse(res.body);
