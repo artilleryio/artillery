@@ -41,3 +41,24 @@ scenarios:
 
   tap.end();
 });
+
+tap.test('supports array of expectations', (tap) => {
+  tap.same(
+    validateTestScript(`
+scenarios:
+  - flow:
+      - post:
+          url: /resource
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: title
+            - equals:
+                - "From Dusk Till Dawn"
+                - "{{ title }}"
+  `),
+    []
+  );
+
+  tap.end();
+});
