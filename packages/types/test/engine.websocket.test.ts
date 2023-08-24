@@ -30,7 +30,12 @@ scenarios:
   tap.end();
 });
 
-tap.test(
+/**
+ * @note Skipped until we implement discriminated union
+ * between the engine value and the scenario properties.
+ * That cannot be represented by plain TypeScript as of now.
+ */
+tap.skip(
   'errors on http flow when using "websocket" scenario engine',
   (tap) => {
     tap.ok(

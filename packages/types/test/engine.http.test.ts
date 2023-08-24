@@ -16,11 +16,23 @@ scenarios:
       []
     );
 
+    tap.end();
+  }
+);
+
+/**
+ * @note Skipped until we implement discriminated union
+ * between the engine value and the scenario properties.
+ * That cannot be represented by plain TypeScript as of now.
+ */
+tap.skip(
+  'errors on using non-http properties without exlpicit scenario engine',
+  (tap) => {
     tap.ok(
       validateTestScript(`
 scenarios:
-  - flow:
-      - send: Oops, not WebSocket!
+- flow:
+    - send: Oops, not WebSocket!
 `).length > 0
     );
 

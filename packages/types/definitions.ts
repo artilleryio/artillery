@@ -37,6 +37,7 @@ export type Config = {
    */
   target: string;
   engines?: {
+    [engineName: string]: any;
     playwright?: PlaywrightEngineConfig;
   };
   /**
@@ -262,10 +263,16 @@ export type TestPhase = {
 );
 
 export type Scenario = {
+  [key: string]: any;
+
   /**
    * @title Scenario name
    */
   name?: string;
+  /**
+   * @title Engine
+   */
+  engine?: 'http' | 'websocket' | 'ws' | 'socketio' | 'playwright' | string;
   /**
    * Functions to run before each scenario.
    * @title `beforeScenario` hook
@@ -284,71 +291,7 @@ export type Scenario = {
    * @default 1
    */
   weight?: number;
-} & (
-  | {
-      /**
-       * @title HTTP engine
-       */
-      engine?: 'http';
-      /**
-       * @title Scenario flow
-       */
-      flow: Array<
-        | HttpFlow
-        | ({
-            loop: Array<HttpFlow>;
-            whileTrue?: string;
-          } & (FixedLoop | DynamicLoop))
-      >;
-    }
-  | {
-      /**
-       * @title WebSocket engine
-       */
-      engine: 'websocket' | 'ws';
-      /**
-       * @title Scenario flow
-       */
-      flow: Array<
-        | WebSocketFlow
-        | ({
-            loop: Array<WebSocketFlow>;
-            whileTrue?: string;
-          } & (FixedLoop | DynamicLoop))
-      >;
-    }
-  | {
-      /**
-       * @title Socket.io engine
-       */
-      engine: 'socketio';
-      /**
-       * @title Scenario flow
-       */
-      flow: Array<
-        | HttpFlow
-        | SocketIoFlow
-        | ({
-            loop: Array<HttpFlow | SocketIoFlow>;
-            whileTrue?: string;
-          } & (FixedLoop | DynamicLoop))
-      >;
-    }
-  | {
-      /**
-       * @title Playwright engine
-       */
-      engine: 'playwright';
-      /**
-       * @title Test function
-       */
-      testFunction?: string;
-      /**
-       * @title Flow function
-       */
-      flowFunction?: string;
-    }
-);
+};
 
 export type FixedLoop = {
   /**
