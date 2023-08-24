@@ -12,6 +12,7 @@ const arrivals = require('arrivals');
 const debug = require('debug')('phases');
 const { randomUUID } = require('crypto');
 const driftless = require('driftless');
+const ms = require('ms');
 
 module.exports = phaser;
 
@@ -25,7 +26,6 @@ function phaser(phaseSpecs) {
   let ee = new EventEmitter();
 
   let tasks = _.map(phaseSpecs, function (spec, i) {
-    // Cast defined but non-number (eg: from ENV) values
     [
       'arrivalRate',
       'arrivalCount',
@@ -34,9 +34,27 @@ function phaser(phaseSpecs) {
       'duration',
       'maxVusers'
     ].forEach(function (k) {
-      if (!isUndefined(spec[k]) && typeof spec[k] !== 'number') {
-        spec[k] = _.toNumber(spec[k]);
+      if (isUndefined(spec[k]) || spec[k] == 'number') {
+        return;
       }
+
+      if (k == 'duration' || k == 'pause') {
+        //if it's already a number in string format, don't apply ms, as it's the default behaviour, so we don't want to do ms calculations
+        //otherwise, ms returns the value in milliseconds, so we need to convert to seconds
+        const convertedDuration = Number.isInteger(_.toNumber(spec[k]))
+          ? spec[k]
+          : ms(spec[k]) / 1000;
+
+        //throw error if invalid time format to prevent test from running infinitely
+        if (!convertedDuration) {
+          throw new Error(`Invalid ${k} for phase: ${spec[k]}`);
+        }
+
+        spec[k] = convertedDuration;
+      }
+
+      // Cast defined but non-number (eg: from ENV) values
+      spec[k] = _.toNumber(spec[k]);
     });
 
     if (isUndefined(spec.index)) {

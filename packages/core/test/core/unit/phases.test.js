@@ -80,6 +80,43 @@ test('arrivalRate set to 0 stays at 0', function (t) {
   phaser.run();
 });
 
+test('modifies duration in phase as expected', async function (t) {
+  const phaseSpec = { duration: '5s', arrivalRate: 3 };
+
+  const phaser = createPhaser([phaseSpec]);
+
+  phaser.on('phaseStarted', function (spec) {
+    t.ok(spec.duration == 5, 'duration should be 5');
+  });
+
+  phaser.run();
+});
+
+test('modifies pause in phase as expected', async function (t) {
+  const phaseSpec = { pause: '2s' };
+
+  const phaser = createPhaser([phaseSpec]);
+
+  phaser.on('phaseStarted', function (spec) {
+    t.ok(spec.pause == 2, 'pause should be 2');
+  });
+
+  phaser.run();
+});
+
+test('throws when duration is invalid', async function (t) {
+  const phaseSpec = { duration: '5 potatoes', arrivalRate: 3 };
+
+  let phaserError;
+  try {
+    createPhaser([phaseSpec]);
+  } catch (error) {
+    phaserError = error;
+  }
+
+  t.equal(phaserError.message, 'Invalid duration for phase: 5 potatoes');
+});
+
 test('arrivalCount', function (t) {
   const phaseSpec = {
     duration: 10,
@@ -229,7 +266,7 @@ function testRamp(t, phaseSpec) {
 
     t.ok(
       Math.abs(arrivals - expected) <= expected * 0.2, // large allowance
-      'seen arrivals within expected bounds'
+      `seen arrivals within expected bounds: ${arrivals} vs ${expected}`
     );
 
     t.end();
