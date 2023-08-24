@@ -230,34 +230,34 @@ export type TestPhase = {
        * Test phase duration (in seconds).
        * @title Duration
        */
-      duration: number;
+      duration: number | string;
       /**
        * Constant arrival rate.
        * The number of virtual users generated every second.
        * @title Arrival rate
        */
-      arrivalRate?: number;
+      arrivalRate?: number | string;
       /**
        * Fixed number of virtual users.
        * @title Arrival count
        */
-      arrivalCount?: number;
+      arrivalCount?: number | string;
       /**
        * @title Ramp rate
        */
-      rampTo?: number;
+      rampTo?: number | string;
       /**
        * Maximum number of virtual users generated at any given time.
        * @title Maximum virtual users
        */
-      maxVusers?: number;
+      maxVusers?: number | string;
     }
   | {
       /**
        * Pause the test phase execution for given duration (in seconds).
        * @title Pause
        */
-      pause: number;
+      pause: number | string;
     }
 );
 
