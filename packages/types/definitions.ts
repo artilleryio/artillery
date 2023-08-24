@@ -228,6 +228,7 @@ export type TestPhase = {
   | {
       /**
        * Test phase duration (in seconds).
+       * Can also be any valid [human-readable duration](https://www.npmjs.com/package/ms).
        * @title Duration
        */
       duration: number | string;
@@ -255,6 +256,7 @@ export type TestPhase = {
   | {
       /**
        * Pause the test phase execution for given duration (in seconds).
+       * Can also be any valid [human-readable duration](https://www.npmjs.com/package/ms).
        * @title Pause
        */
       pause: number | string;
