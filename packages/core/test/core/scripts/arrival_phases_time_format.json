@@ -1,0 +1,33 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:3003",
+    "phases": [
+      {
+        "duration": "10s",
+        "arrivalCount": 10
+      },
+      {
+        "pause": "0.5 min"
+      },
+      {
+        "duration": "1",
+        "arrivalCount": 1
+      },
+      {
+        "duration": "9 seconds",
+        "arrivalCount": 50
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        {
+          "get": {
+            "url": "/"
+          }
+        }
+      ]
+    }
+  ]
+}
