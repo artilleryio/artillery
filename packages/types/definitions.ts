@@ -545,7 +545,7 @@ export type DefaultHttpRequest = {
    * https://www.artillery.io/docs/reference/extensions/expect#expectations
    * @title Expect plugin expectations
    */
-  expect?: ExpectPluginMetrics;
+  expect?: ExpectPluginMetrics | Array<ExpectPluginMetrics>;
 };
 
 export type HttpRequestWithBody = DefaultHttpRequest &
