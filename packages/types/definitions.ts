@@ -491,7 +491,7 @@ export type DefaultHttpRequest = {
    * Set this option to `false` to stop following redirects.
    * @title Disable redirect following
    */
-  followRedirects?: false;
+  followRedirect?: false;
   /**
    * @title Capture
    */
