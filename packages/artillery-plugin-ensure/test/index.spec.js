@@ -1,5 +1,6 @@
 const { test, afterEach } = require('tap');
 const { $ } = require('zx');
+const chalk = require('chalk');
 
 afterEach(async () => {
   delete process.env.ARTILLERY_DISABLE_ENSURE;
@@ -26,11 +27,11 @@ test('works with multiple thresholds set', async (t) => {
   // Assert
   t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
   t.ok(
-    output.stdout.includes('ok: vusers.created < 3'),
+    output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
     'Console did not include vusers.created check'
   );
   t.ok(
-    output.stdout.includes('ok: http.response_time.p99 < 10000'),
+    output.stdout.includes(`${chalk.green('ok')}: http.response_time.p99 < 10000`),
     'Console did not include http.response_time.p99 check'
   );
 });
@@ -57,11 +58,11 @@ test('works with config under config.plugins.ensure instead', async (t) => {
   // Assert
   t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
   t.ok(
-    output.stdout.includes('ok: vusers.created < 3'),
+    output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
     'Console did not include vusers.created check'
   );
   t.ok(
-    output.stdout.includes('ok: http.response_time.p99 < 10000'),
+    output.stdout.includes(`${chalk.green('ok')}: http.response_time.p99 < 10000`),
     'Console did not include http.response_time.p99 check'
   );
 });
@@ -85,11 +86,11 @@ test('fails thresholds correctly', async (t) => {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
     t.ok(
-      output.stdout.includes('ok: vusers.created < 3'),
+      output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
       'Console did not include vusers.created check'
     );
     t.ok(
-      output.stdout.includes('fail: http.response_time.p99 < 1'),
+      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`),
       'Console did not include http.response_time.p99 failed check'
     );
   }
@@ -115,11 +116,11 @@ test('disables plugin correctly when process.env.ARTILLERY_DISABLE_ENSURE is set
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
   t.ok(!output.stdout.includes('Checks:'), 'Console did not include Checks');
   t.ok(
-    !output.stdout.includes('ok: vusers.created < 3'),
+    !output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
     'Console did not include vusers.created check'
   );
   t.ok(
-    !output.stdout.includes('fail: http.response_time.p99 < 1'),
+    !output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`),
     'Console did not include http.response_time.p99 failed check'
   );
 });
@@ -150,21 +151,21 @@ test('passes and fails correctly multiple conditions and thresholds', async (t) 
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
     t.ok(
-      output.stdout.includes('fail: http.response_time.p99 < 1'),
+      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`),
       'Console did not include http.response_time.p99 threshold check'
     );
     t.ok(
-      output.stdout.includes(`fail: ${failingExpression}`),
+      output.stdout.includes(`${chalk.red('fail')}: ${failingExpression}`),
       'Console did not include failing expression check'
     );
     t.ok(
-      output.stdout.includes(`ok: ${passingExpression}`),
+      output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`),
       'Console did not include passing expression check'
     );
   }
 });
 
-test('strict: false does not fail conditions correctly', async (t) => {
+test('strict set to false correctly does not fail conditions', async (t) => {
   //Arrange: Plugin overrides
   const failingExpression = 'vusers.created < 2 and vusers.failed == 0';
   const passingExpression =
@@ -189,11 +190,11 @@ test('strict: false does not fail conditions correctly', async (t) => {
   t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
 
   t.ok(
-    output.stdout.includes(`fail: ${failingExpression} (optional)`),
+    output.stdout.includes(`${chalk.red('fail')}: ${failingExpression} (optional)`),
     'Console did not include failing expression check with optional from strict'
   );
   t.ok(
-    output.stdout.includes(`ok: ${passingExpression}`),
+    output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`),
     'Console did not include passing expression check'
   );
 });
@@ -219,15 +220,15 @@ test('works with legacy thresholds (passing and failing) together with new thres
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
     t.ok(
-      output.stdout.includes('ok: p99 < 10000'),
+      output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`),
       'Console did not p99 check'
     );
     t.ok(
-      output.stdout.includes('fail: http.response_time.p95 < 1'),
+      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p95 < 1`),
       'Console did not include p95 check'
     );
     t.ok(
-      output.stdout.includes('fail: max < 1'),
+      output.stdout.includes(`${chalk.red('fail')}: max < 1`),
       'Console did not include max check'
     );
   }
@@ -253,8 +254,48 @@ test('works with legacy maxErrorRate', async (t) => {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
     t.ok(
-      output.stdout.includes('fail: maxErrorRate < 0'),
+      output.stdout.includes(`${chalk.red('fail')}: maxErrorRate < 0`),
       'Console did not include maxErrorRate check'
+    );
+  }
+});
+
+test('checks are grouped in the correct order (ok first, fail after)', async (t) => {
+  //Arrange: Plugin overrides
+  const override = JSON.stringify({
+    config: {
+      plugins: { ensure: {} },
+      ensure: {
+        p99: 10000,
+        max: 1,
+        thresholds: [{ 'http.response_time.p95': 1 }],
+        maxErrorRate: 0
+      }
+    }
+  });
+
+  try {
+    //Act: run the test
+    await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
+  } catch (output) {
+    const startIndex = output.stdout.indexOf('Checks:');
+    // Get the relevant logs (the first 4 lines after the Checks: line)
+    const relevantLogs = output.stdout.slice(startIndex).split('\n').slice(1, 5)
+
+    // Assert
+    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
+    t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
+    t.ok(relevantLogs[0] == `${chalk.green('ok')}: maxErrorRate < 0` || relevantLogs[0] == `${chalk.green('ok')}: p99 < 10000`,
+      'First check should be a passed expectation'
+    );
+    t.ok(relevantLogs[1] == `${chalk.green('ok')}: maxErrorRate < 0` || relevantLogs[1] == `${chalk.green('ok')}: p99 < 10000`,
+      'Second check should be a passed expectation'
+    );
+    t.ok(relevantLogs[2] == `${chalk.red('fail')}: max < 1` || relevantLogs[2] == `${chalk.red('fail')}: http.response_time.p95 < 1`,
+      'Third check should be a failed expectation'
+    );
+    t.ok(relevantLogs[3] == `${chalk.red('fail')}: max < 1` || relevantLogs[3] == `${chalk.red('fail')}: http.response_time.p95 < 1`,
+      'Fourth check should be a failed expectation'
     );
   }
 });

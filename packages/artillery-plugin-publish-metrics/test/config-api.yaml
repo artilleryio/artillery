@@ -7,6 +7,7 @@ config:
     publish-metrics:
       - type: datadog
         apiKey: "{{ $processEnvironment.DD_API_KEY }}"
+        appKey: "{{ $processEnvironment.DD_APP_KEY }}"
         prefix: 'artillery.publish_metrics_plugin.'
         tags:
           - "testId:{{ $processEnvironment.TEST_ID }}"

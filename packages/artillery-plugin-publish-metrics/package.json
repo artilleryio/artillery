@@ -1,6 +1,6 @@
 {
   "name": "artillery-plugin-publish-metrics",
-  "version": "2.5.1",
+  "version": "2.6.0",
   "description": "Publish metrics from your Artillery.io tests to external monitoring & observability systems",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
     "debug": "^4.1.1",
     "dogapi": "^2.8.4",
     "hot-shots": "^6.0.1",
-    "libhoney": "^4.0.1",
+    "libhoney": "^4.1.0",
     "lightstep-tracer": "^0.31.0",
     "mixpanel": "^0.13.0",
     "opentracing": "^0.14.5",

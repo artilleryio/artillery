@@ -16,7 +16,7 @@ export function validateTestScript(scriptText: string) {
   }
 
   const script = yaml.load(scriptText);
-  const isValid = ajv.validate(schema, script);
+  ajv.validate(schema, script);
 
   return ajv.errors || [];
 }

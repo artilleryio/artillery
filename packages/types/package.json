@@ -1,12 +1,13 @@
 {
   "name": "@artilleryio/types",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "files": [
     "./definitions.ts",
     "./schema.json"
   ],
   "license": "MPL-2.0",
   "scripts": {
+    "pretest": "npm run build",
     "test": "tap --ts --no-coverage --color --timeout 60 test/**/*.test.ts",
     "build": "typescript-json-schema ./tsconfig.schema.json \"TestScript\" --required --noExtraProps -o ./schema.json",
     "prepare": "npm run build",

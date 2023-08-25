@@ -348,7 +348,7 @@ tap.test(
 );
 
 tap.test(
-  'Ramp to script throughput behaves as expected running on multiple workers',
+  'Ramp to script throughput behaves as expected running on multiple workers vs single worker',
   async (t) => {
     // This would cause older versions of artillery to generate much more traffic than expected
     // We compare them to the max amount of arrivals we expect from the script # Note: v2.0.0-22 generates 20+ arrivals, almost double
@@ -387,7 +387,7 @@ tap.test(
 );
 
 tap.test(
-  'Ramp to script throughput behaves as expected running on multiple workers 1s duration',
+  'Ramp to script throughput behaves as expected running on multiple workers vs single worker (1s duration)',
   async (t) => {
     // amount of workers was still affecting ramps with duration = 1s
     // check single worker and multiple workers now generate same throughput
@@ -431,7 +431,7 @@ tap.test(
 );
 
 tap.test(
-  'Ramp to script throughput behaves as expected running on multiple workers',
+  'Ramp to script throughput behaves as expected running on multiple workers (1s duration)',
   async (t) => {
     // Ramp to 2.0.0-24 regression #1682
     // This would cause older versions of artillery to use Infinity as tick duration

@@ -1,3 +1,5 @@
+import { ExpectPluginConfig, ExpectPluginMetrics } from './plugins/expect';
+
 export type TestScript = {
   /**
    * @title Configuration
@@ -21,7 +23,7 @@ export type TestScript = {
   /**
    * @title Scenarios
    */
-  scenarios: Scenarios;
+  scenarios?: Scenarios;
 };
 
 export type Config = {
@@ -55,6 +57,7 @@ export type Config = {
    */
   plugins?: {
     [key: string]: any;
+    expect?: ExpectPluginConfig;
   };
   ensure?: {
     [key: string]: any;
@@ -225,36 +228,38 @@ export type TestPhase = {
   | {
       /**
        * Test phase duration (in seconds).
+       * Can also be any valid [human-readable duration](https://www.npmjs.com/package/ms).
        * @title Duration
        */
-      duration: number;
+      duration: number | string;
       /**
        * Constant arrival rate.
        * The number of virtual users generated every second.
        * @title Arrival rate
        */
-      arrivalRate?: number;
+      arrivalRate?: number | string;
       /**
        * Fixed number of virtual users.
        * @title Arrival count
        */
-      arrivalCount?: number;
+      arrivalCount?: number | string;
       /**
        * @title Ramp rate
        */
-      rampTo?: number;
+      rampTo?: number | string;
       /**
        * Maximum number of virtual users generated at any given time.
        * @title Maximum virtual users
        */
-      maxVusers?: number;
+      maxVusers?: number | string;
     }
   | {
       /**
        * Pause the test phase execution for given duration (in seconds).
+       * Can also be any valid [human-readable duration](https://www.npmjs.com/package/ms).
        * @title Pause
        */
-      pause: number;
+      pause: number | string;
     }
 );
 
@@ -286,7 +291,7 @@ export type Scenario = {
       /**
        * @title HTTP engine
        */
-      engine: 'http';
+      engine?: 'http';
       /**
        * @title Scenario flow
        */
@@ -387,6 +392,11 @@ export type BaseFlow =
       function: string;
     };
 
+export type HttpResponseMatch = {
+  json: any;
+  value: string;
+};
+
 export type HttpFlow =
   | BaseFlow
   | {
@@ -452,10 +462,7 @@ export type SocketIoFlow =
         };
         acknowledge?: {
           data?: string;
-          match?: {
-            json: any;
-            value: string;
-          };
+          match?: HttpResponseMatch;
         };
       };
     };
@@ -472,7 +479,9 @@ export type DefaultHttpRequest = {
   /**
    * @title Cookie
    */
-  cookie?: Record<string, string>;
+  cookie?: {
+    [name: string]: string;
+  };
   /**
    * @title Query string
    */
@@ -487,6 +496,14 @@ export type DefaultHttpRequest = {
    * @title Capture
    */
   capture?: TestPhaseCapture | Array<TestPhaseCapture>;
+  /**
+   * (Deprecated) Response validation criteria.
+   * Please use the expectations plugin instead:
+   * https://www.artillery.io/docs/reference/extensions/expect
+   * @deprecated true
+   * @title Match
+   */
+  match?: HttpResponseMatch;
   /**
    * Automatically set the "Accept-Encoding" request header
    * and decode compressed responses encoded with gzip.
@@ -521,6 +538,16 @@ export type DefaultHttpRequest = {
    * @title Request condition
    */
   ifTrue?: string;
+
+  /**
+   * Plugin-specific properties.
+   */
+
+  /**
+   * https://www.artillery.io/docs/reference/extensions/expect#expectations
+   * @title Expect plugin expectations
+   */
+  expect?: ExpectPluginMetrics | Array<ExpectPluginMetrics>;
 };
 
 export type HttpRequestWithBody = DefaultHttpRequest &

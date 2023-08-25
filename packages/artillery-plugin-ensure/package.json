@@ -1,6 +1,6 @@
 {
   "name": "artillery-plugin-ensure",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,7 @@
   "author": "Artillery.io <team@artillery.io>",
   "license": "MPL-2.0",
   "dependencies": {
+    "chalk": "^2.4.2",
     "debug": "^4.3.3",
     "filtrex": "^2.2.3"
   },
