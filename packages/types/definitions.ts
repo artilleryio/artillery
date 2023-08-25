@@ -220,7 +220,7 @@ export type HttpConfig = {
      * @default false
      * @title Strict capture
      */
-    strictCapture?: boolean;
+    strictCapture?: boolean | string;
     /**
      * Sets jitter to simulate real-world random variance
      * into think time pauses. Accepts both number and percentage.
