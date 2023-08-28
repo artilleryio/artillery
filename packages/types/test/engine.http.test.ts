@@ -40,6 +40,36 @@ scenarios:
   }
 );
 
+tap.test(
+  'errors when providing incorrect values to known properties',
+  (tap) => {
+    const errors = validateTestScript(`
+scenarios:
+  - flow:
+      - get:
+          # Intentionally incorrect "url" value.
+          url: 123
+  `);
+
+    const urlError = errors.find((error) => {
+      return error.instancePath === '/scenarios/0/flow/0/get/url';
+    });
+
+    /**
+     * @note Although there's no discrimination of scenario properties
+     * based on the "engine" used, the known properties are still
+     * validated against their expected types.
+     */
+    tap.ok(urlError);
+    tap.same(urlError.params, {
+      type: 'string'
+    });
+    tap.same(urlError.message, 'must be string');
+
+    tap.end();
+  }
+);
+
 tap.test('understands explicit "http" scenario engine', (tap) => {
   tap.same(
     validateTestScript(`

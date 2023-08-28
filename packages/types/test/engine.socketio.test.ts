@@ -63,3 +63,34 @@ scenarios:
   tap.same(errors, []);
   tap.end();
 });
+
+tap.test(
+  'errors when providing incorrect values to known properties',
+  (tap) => {
+    const errors = validateTestScript(`
+scenarios:
+  - engine: socketio
+    flow:
+      - emit:
+          # Intentionally incorrect "channel" value.
+          channel: 123
+  `);
+
+    const connectTargetError = errors.find((error) => {
+      return error.instancePath === '/scenarios/0/flow/0/emit/channel';
+    });
+
+    /**
+     * @note Although there's no discrimination of scenario properties
+     * based on the "engine" used, the known properties are still
+     * validated against their expected types.
+     */
+    tap.ok(connectTargetError);
+    tap.same(connectTargetError.params, {
+      type: 'string'
+    });
+    tap.same(connectTargetError.message, 'must be string');
+
+    tap.end();
+  }
+);

@@ -291,7 +291,46 @@ export type Scenario = {
    * @default 1
    */
   weight?: number;
+
+  /**
+   * @title Scenario flow
+   */
+  flow?: HttpBetterNameFlow | WebSocketBetterNameFlow | SocketIoBetterNameFlow;
+
+  /**
+   * @title Test function (Playwright)
+   */
+  testFunction?: string;
+  /**
+   * @title Flow function (Playwright)
+   */
+  flowFunction?: string;
 };
+
+type HttpBetterNameFlow = Array<
+  | HttpFlow
+  | ({
+      loop: Array<HttpFlow>;
+      whileTrue?: string;
+    } & (FixedLoop | DynamicLoop))
+>;
+
+type WebSocketBetterNameFlow = Array<
+  | WebSocketFlow
+  | ({
+      loop: Array<WebSocketFlow>;
+      whileTrue?: string;
+    } & (FixedLoop | DynamicLoop))
+>;
+
+type SocketIoBetterNameFlow = Array<
+  | HttpFlow
+  | SocketIoFlow
+  | ({
+      loop: Array<HttpFlow | SocketIoFlow>;
+      whileTrue?: string;
+    } & (FixedLoop | DynamicLoop))
+>;
 
 export type FixedLoop = {
   /**
