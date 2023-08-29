@@ -50,13 +50,10 @@ tap.test('supports top-level "before" and "after" scenarios', (tap) => {
   tap.same(
     validateTestScript(`
 before:
-  - engine: http
-    flow:
-      - post:
-          url: /one
-  - engine: ws
-    flow:
-      - send: Hello world
+  engine: http
+  flow:
+    - post:
+        url: /one
 scenarios:
   - engine: http
     flow:
@@ -69,13 +66,9 @@ scenarios:
   tap.same(
     validateTestScript(`
 after:
-  - engine: http
-    flow:
-      - post:
-          url: /one
-  - engine: ws
-    flow:
-      - send: Hello world
+  engine: ws
+  flow:
+    - send: Hello world
 scenarios:
   - engine: http
     flow:
@@ -88,21 +81,14 @@ scenarios:
   tap.same(
     validateTestScript(`
 before:
-  - engine: http
-    flow:
-      - post:
-          url: /one
-  - engine: ws
-    flow:
-      - send: Hello world
+  engine: http
+  flow:
+    - post:
+        url: /one
 after:
-  - engine: http
-    flow:
-      - post:
-          url: /one
-  - engine: ws
-    flow:
-      - send: Hello world
+  engine: ws
+  flow:
+    - send: Hello world
 scenarios:
   - engine: http
     flow:

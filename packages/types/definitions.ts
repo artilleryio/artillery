@@ -11,14 +11,14 @@ export type TestScript = {
    * before the main `scenarios` section.
    * @title Before
    */
-  before?: Scenarios;
+  before?: Scenario;
 
   /**
    * Optional scenarios to run once per test definition
    * after the main `scenarios` section.
    * @title After
    */
-  after?: Scenarios;
+  after?: Scenario;
 
   /**
    * @title Scenarios
