@@ -4,6 +4,7 @@ import * as yaml from 'js-yaml';
 const schema = require('../schema.json');
 
 const ajv = new Ajv({
+  allowUnionTypes: true,
   validateSchema: true,
   allErrors: true
 });

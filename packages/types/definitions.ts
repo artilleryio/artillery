@@ -57,7 +57,6 @@ export type Config = {
    * @title Plugins
    */
   plugins?: {
-    [key: string]: any;
     expect?: ExpectPluginConfig;
   };
   ensure?: {
@@ -263,8 +262,6 @@ export type TestPhase = {
 );
 
 export type Scenario = {
-  [key: string]: any;
-
   /**
    * @title Scenario name
    */
@@ -295,7 +292,7 @@ export type Scenario = {
   /**
    * @title Scenario flow
    */
-  flow?: HttpBetterNameFlow | WebSocketBetterNameFlow | SocketIoBetterNameFlow;
+  flow?: TopLevelHttpFlow | TopLevelWebSocketFlow | TopLevelSocketIoFlow;
 
   /**
    * @title Test function (Playwright)
@@ -307,7 +304,7 @@ export type Scenario = {
   flowFunction?: string;
 };
 
-type HttpBetterNameFlow = Array<
+type TopLevelHttpFlow = Array<
   | HttpFlow
   | ({
       loop: Array<HttpFlow>;
@@ -315,7 +312,7 @@ type HttpBetterNameFlow = Array<
     } & (FixedLoop | DynamicLoop))
 >;
 
-type WebSocketBetterNameFlow = Array<
+type TopLevelWebSocketFlow = Array<
   | WebSocketFlow
   | ({
       loop: Array<WebSocketFlow>;
@@ -323,7 +320,7 @@ type WebSocketBetterNameFlow = Array<
     } & (FixedLoop | DynamicLoop))
 >;
 
-type SocketIoBetterNameFlow = Array<
+type TopLevelSocketIoFlow = Array<
   | HttpFlow
   | SocketIoFlow
   | ({
@@ -337,7 +334,7 @@ export type FixedLoop = {
    * Exact number of times to loop through the scenario.
    * @title Count
    */
-  count: number;
+  count: number | string;
 };
 
 export type DynamicLoop = {
@@ -413,6 +410,9 @@ export type HttpFlow =
 export type WebSocketFlow =
   | BaseFlow
   | {
+      /**
+       * @title WebSocket connection
+       */
       connect:
         | string
         | {

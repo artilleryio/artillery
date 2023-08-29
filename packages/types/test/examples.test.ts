@@ -14,6 +14,11 @@ function fromExample(exampleAndTestScriptPath: string) {
   };
 }
 
+tap.test(
+  'artillery-engine-example',
+  fromExample('artillery-engine-example/example.yaml')
+);
+
 tap.test('using-cookies', fromExample('using-cookies/cookies.yml'));
 
 tap.test(

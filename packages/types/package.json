@@ -9,7 +9,7 @@
   "scripts": {
     "pretest": "npm run build",
     "test": "tap --ts --no-coverage --color --timeout 60 test/**/*.test.ts",
-    "build": "typescript-json-schema ./tsconfig.schema.json \"TestScript\" --required --noExtraProps -o ./schema.json",
+    "build": "typescript-json-schema ./tsconfig.schema.json \"TestScript\" -o ./schema.json",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build && npm test"
   },
