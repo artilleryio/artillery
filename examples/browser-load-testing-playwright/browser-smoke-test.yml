@@ -2,7 +2,9 @@ config:
   target: "https://www.artillery.io"
   payload:
     - path: ./pages.csv
-      fields: ["url"]
+      fields:
+        - "url"
+        - "title"
   engines:
     playwright: {}
   processor: ./flows.js

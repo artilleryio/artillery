@@ -19,12 +19,21 @@ async function cloudWaitlistSignupFlow(page) {
 //
 async function checkPage(page, userContext, events) {
   const url = userContext.vars.url;
+  const title = userContext.vars.title;
   const response = await page.goto(url);
   if (response.status() !== 200) {
     events.emit('counter', `user.status_check_failed.${url}`, 1);
   } else {
     events.emit('counter', `user.status_check_ok.${url}`, 1);
   }
+
+  const isElementVisible = await page.getByText(title).isVisible();
+
+  if (!isElementVisible) {
+    events.emit('counter', `user.element_check_failed.${title}`, 1);
+  }
+
+  await page.reload();
 }
 
 async function multistepWithCustomMetrics(page, userContext, events) {
