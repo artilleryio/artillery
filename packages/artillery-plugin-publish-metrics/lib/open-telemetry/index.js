@@ -4,7 +4,6 @@ const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../util');
 
 const { SpanKind, SpanStatusCode, trace } = require('@opentelemetry/api');
-
 const { Resource } = require('@opentelemetry/resources');
 const {
   SemanticResourceAttributes
@@ -14,9 +13,19 @@ class OTelReporter {
   constructor(config, events, script) {
     this.script = script;
     this.events = events;
-    this.protocols = {
-      'http-proto': 'proto',
-      'http-json': 'http'
+    this.traceExporters = {
+      'otlp-proto'(options) {
+        const {
+          OTLPTraceExporter
+        } = require('@opentelemetry/exporter-trace-otlp-proto');
+        return new OTLPTraceExporter(options);
+      },
+      'otlp-http'(options) {
+        const {
+          OTLPTraceExporter
+        } = require('@opentelemetry/exporter-trace-otlp-http');
+        return new OTLPTraceExporter(options);
+      }
     };
 
     this.resource = Resource.default().merge(
@@ -80,14 +89,9 @@ class OTelReporter {
       this.traceExporterOpts.headers = config.headers;
     }
 
-    const protocol = !config.protocol
-      ? 'http'
-      : this.protocols[config.protocol];
-
-    const {
-      OTLPTraceExporter
-    } = require(`@opentelemetry/exporter-trace-otlp-${protocol}`);
-    this.exporter = new OTLPTraceExporter(this.traceExporterOpts);
+    this.exporter = this.traceExporters[config.exporter](
+      this.traceExporterOpts
+    );
 
     this.tracerProvider.addSpanProcessor(
       new BatchSpanProcessor(this.exporter, {
