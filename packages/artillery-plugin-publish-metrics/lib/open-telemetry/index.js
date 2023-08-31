@@ -98,7 +98,6 @@ class OTelReporter {
   }
 
   startOTelSpan(req, userContext, events, done) {
-    debug('Starting span');
     const startTime = Date.now();
     userContext.vars['__otlStartTime'] = startTime;
     const spanName =
@@ -120,7 +119,6 @@ class OTelReporter {
       });
       debug('Span status set as error due to the following error: \n', err);
       span.end(Date.now);
-      debug('Span finished');
     });
 
     return done();
@@ -162,7 +160,6 @@ class OTelReporter {
 
     span.end(endTime || Date.now);
 
-    debug('Span finished');
     return done();
   }
 
