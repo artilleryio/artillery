@@ -28,21 +28,9 @@ jobs:
           FORCE_COLOR: 1
       - name: Notify about failures
         if: failure() && github.ref == 'refs/heads/main'
-        uses: slackapi/slack-github-action@v1
+        uses: 8398a7/action-slack@v3.15.1
         with:
-          payload: |
-            {
-              "text": "",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "Workflow \"${{ github.workflow }}\" failed: https://github.com/${{ github.repository}}/actions/runs/${{ github.run_id }}"
-                  }
-                }
-              ]
-            }
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,eventName,job,took,pullRequest
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
