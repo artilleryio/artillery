@@ -25,6 +25,10 @@ class OTelReporter {
           OTLPTraceExporter
         } = require('@opentelemetry/exporter-trace-otlp-http');
         return new OTLPTraceExporter(options);
+      },
+      zipkin(options) {
+        const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
+        return new ZipkinExporter(options);
       }
     };
 
