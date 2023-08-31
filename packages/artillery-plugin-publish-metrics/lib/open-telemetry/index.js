@@ -1,6 +1,6 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:otel');
+const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../util');
 
 const { SpanKind, SpanStatusCode, trace } = require('@opentelemetry/api');
@@ -101,12 +101,14 @@ class OTelReporter {
     debug('Starting span');
     const startTime = Date.now();
     userContext.vars['__otlStartTime'] = startTime;
-    const span = trace
-      .getTracer('artillery-tracer')
-      .startSpan(req.method.toLowerCase(), {
-        startTime,
-        kind: SpanKind.CLIENT
-      });
+    const spanName =
+      this.traceConfig.useRequestNames && req.name
+        ? req.name
+        : req.method.toLowerCase();
+    const span = trace.getTracer('artillery-tracer').startSpan(spanName, {
+      startTime,
+      kind: SpanKind.CLIENT
+    });
 
     span.addEvent('http_request_started', startTime);
     userContext.vars['__otlpSpan'] = span;
