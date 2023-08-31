@@ -197,6 +197,39 @@ export type HttpConfig = {
    * @title Extended metrics
    */
   extendedMetrics?: boolean;
+
+  /**
+   * https://www.artillery.io/docs/reference/engines/http#default-configuration
+   * @title Default HTTP engine configuration
+   */
+  defaults?: {
+    /**
+     * Default headers to be used in all requests.
+     * @title Headers
+     */
+    headers?: object;
+    /**
+     * Default cookies to be used in all requests.
+     * @title Cookie
+     */
+    cookie?: object;
+    /**
+     * Whether to turn on strict capture by default
+     * for all captures.
+     * https://www.artillery.io/docs/reference/engines/http#turn-off-strict-capture
+     * @default false
+     * @title Strict capture
+     */
+    strictCapture?: boolean | string;
+    /**
+     * Sets jitter to simulate real-world random variance
+     * into think time pauses. Accepts both number and percentage.
+     * @title Think
+     */
+    think?: {
+      jitter: number | string;
+    };
+  };
 };
 
 export type WebSocketConfig = {
@@ -491,7 +524,7 @@ export type DefaultHttpRequest = {
    * Set this option to `false` to stop following redirects.
    * @title Disable redirect following
    */
-  followRedirects?: false;
+  followRedirect?: false;
   /**
    * @title Capture
    */
