@@ -9,6 +9,7 @@ on:
 env:
   ARTILLERY_BINARY_PATH: ${{ github.workspace }}/packages/artillery/bin/run
   CLI_TAGS: repo:${{ github.repository }},actor:${{ github.actor }},type:smoke,owner:artilleryio/dev
+  CLI_NOTE: Running&nbsp;from&nbsp;the&nbsp;Official&nbsp;Artillery&nbsp;Github&nbsp;Action!&nbsp;😀
 
 jobs:
   http-metrics-by-endpoint:
@@ -29,7 +30,7 @@ jobs:
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
-          command: run ./endpoint-metrics.yml --record --key $CLOUD_KEY --tags ${{ env.CLI_TAGS }}
+          command: run ./endpoint-metrics.yml --record --key $CLOUD_KEY --tags ${{ env.CLI_TAGS }} --note ${{ env.CLI_NOTE }}
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
@@ -54,7 +55,7 @@ jobs:
       - name: Run armadillo scenario
         uses: artilleryio/action-cli@v1
         with:
-          command: run --config ./common-config.yml ./scenarios/armadillo.yml --record --tags ${{ env.CLI_TAGS }}
+          command: run --config ./common-config.yml ./scenarios/armadillo.yml --record --tags ${{ env.CLI_TAGS }} --note ${{ env.CLI_NOTE }}
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
@@ -64,7 +65,7 @@ jobs:
       - name: Run dino scenario
         uses: artilleryio/action-cli@v1
         with:
-          command: run --config ./common-config.yml ./scenarios/dino.yml --record --tags ${{ env.CLI_TAGS }}
+          command: run --config ./common-config.yml ./scenarios/dino.yml --record --tags ${{ env.CLI_TAGS }} --note ${{ env.CLI_NOTE }}
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
@@ -89,7 +90,7 @@ jobs:
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
-          command: run ./website-test.yml --record --tags ${{ env.CLI_TAGS }}
+          command: run ./website-test.yml --record --tags ${{ env.CLI_TAGS }} --note ${{ env.CLI_NOTE }}
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
