@@ -40,8 +40,24 @@ class OTelReporter {
     );
 
     if (config.traces) {
-      this.tracing = true;
       this.traceConfig = config.traces;
+      const supported = Object.keys(this.traceExporters).reduce(
+        (acc, k, i) =>
+          acc +
+          k +
+          (i === Object.keys(this.traceExporters).length - 1 ? '.' : ', '),
+        ''
+      );
+
+      if (
+        this.traceConfig.exporter &&
+        !this.traceExporters[this.traceConfig.exporter]
+      ) {
+        throw new Error(
+          `Open-telemetry reporter: Exporter ${this.traceConfig.exporter} is not supported. Currently supported exporters are ${supported}`
+        );
+      }
+      this.tracing = true;
 
       this.configureTrace(this.traceConfig);
 
@@ -93,7 +109,7 @@ class OTelReporter {
       this.traceExporterOpts.headers = config.headers;
     }
 
-    this.exporter = this.traceExporters[config.exporter](
+    this.exporter = this.traceExporters[config.exporter || 'otlp-http'](
       this.traceExporterOpts
     );
 
@@ -162,8 +178,8 @@ class OTelReporter {
     if (res.statusCode >= 400) {
       span.setStatus({ code: SpanStatusCode.ERROR });
     }
-    if (this.tracesConfig?.attributes) {
-      span.setAttributes(this.tracesConfig.attributes);
+    if (this.traceConfig?.attributes) {
+      span.setAttributes(this.traceConfig.attributes);
     }
 
     span.end(endTime || Date.now);
