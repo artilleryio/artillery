@@ -8,6 +8,7 @@ on:
 
 env:
   ARTILLERY_BINARY_PATH: ${{ github.workspace }}/packages/artillery/bin/run
+  CLI_TAGS: repo:${{ github.repository }},actor:${{ github.actor }},type:smoke,owner:artilleryio/dev
 
 jobs:
   http-metrics-by-endpoint:
@@ -28,10 +29,12 @@ jobs:
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
-          command: run ./endpoint-metrics.yml
+          command: run ./endpoint-metrics.yml --record --key $CLOUD_KEY --tags $CLI_TAGS
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
+          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+          CLOUD_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
 
   multiple-scenarios-spec:
     runs-on: ubuntu-latest
@@ -51,7 +54,7 @@ jobs:
       - name: Run armadillo scenario
         uses: artilleryio/action-cli@v1
         with:
-          command: run --config ./common-config.yml ./scenarios/armadillo.yml --record
+          command: run --config ./common-config.yml ./scenarios/armadillo.yml --record --tags $CLI_TAGS
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
@@ -61,7 +64,7 @@ jobs:
       - name: Run dino scenario
         uses: artilleryio/action-cli@v1
         with:
-          command: run --config ./common-config.yml ./scenarios/dino.yml --record
+          command: run --config ./common-config.yml ./scenarios/dino.yml --record --tags $CLI_TAGS
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
@@ -86,7 +89,7 @@ jobs:
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
-          command: run ./website-test.yml --record
+          command: run ./website-test.yml --record --tags $CLI_TAGS
           working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
