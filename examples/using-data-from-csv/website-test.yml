@@ -1,8 +1,8 @@
 config:
   target: http://asciiart.artillery.io:8080
   phases:
-    - arrivalCount: 40
-      duration: 20
+    - arrivalCount: 300
+      duration: 300
   payload:
     - path: "./csv/urls.csv"
       fields:
@@ -12,7 +12,7 @@ config:
       maxErrorRate: 0
     expect:
       reportFailuresAsErrors: true
-      
+
 scenarios:
   - flow:
       - loop:
@@ -21,4 +21,4 @@ scenarios:
             expect:
               statusCode: 200
         - think: 1
-        count: 5
+        count: 100
