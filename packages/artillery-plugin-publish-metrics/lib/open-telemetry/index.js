@@ -29,6 +29,12 @@ class OTelReporter {
           OTLPMetricExporter
         } = require('@opentelemetry/exporter-metrics-otlp-http');
         return new OTLPMetricExporter(options);
+      },
+      'otlp-grpc'(options) {
+        const {
+          OTLPMetricExporter
+        } = require('@opentelemetry/exporter-metrics-otlp-grpc');
+        return new OTLPMetricExporter(options);
       }
     };
 
