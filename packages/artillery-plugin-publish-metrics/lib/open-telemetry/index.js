@@ -1,3 +1,5 @@
+'use strict';
+
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../util');
 
