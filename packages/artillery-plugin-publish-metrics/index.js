@@ -48,6 +48,9 @@ function Plugin(script, events) {
     } else if (config.type === 'dynatrace') {
       const { createDynatraceReporter } = require('./lib/dynatrace');
       this.reporters.push(createDynatraceReporter(config, events, script));
+    } else if (config.type === 'open-telemetry') {
+      const { createOTelReporter } = require('./lib/open-telemetry');
+      this.reporters.push(createOTelReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',
