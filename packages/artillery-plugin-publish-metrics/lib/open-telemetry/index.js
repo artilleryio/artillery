@@ -78,7 +78,6 @@ class OTelReporter {
     this.metricsConfig = {
       exporter: config.exporter || 'otlp-http',
       meterName: config.meterName || 'Artillery.io_metrics',
-      prefix: config.prefix || 'artillery.',
       includeOnly: config.includeOnly || [],
       exclude: config.exclude || [],
       attributes: config.attributes || {}
