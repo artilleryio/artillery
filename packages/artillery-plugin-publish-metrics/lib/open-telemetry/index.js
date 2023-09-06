@@ -66,6 +66,11 @@ class OTelReporter {
 
     // Metrics
     if (config.metrics) {
+      this.validateExporter(
+        this.metricExporters,
+        config.metrics.exporter,
+        'metric'
+      );
       this.metrics = true;
       this.configureMetrics(config.metrics);
 
@@ -94,22 +99,11 @@ class OTelReporter {
 
     if (config.traces) {
       this.traceConfig = config.traces;
-      const supported = Object.keys(this.traceExporters).reduce(
-        (acc, k, i) =>
-          acc +
-          k +
-          (i === Object.keys(this.traceExporters).length - 1 ? '.' : ', '),
-        ''
+      this.validateExporter(
+        this.traceExporters,
+        this.traceConfig.exporter,
+        'trace'
       );
-
-      if (
-        this.traceConfig.exporter &&
-        !this.traceExporters[this.traceConfig.exporter]
-      ) {
-        throw new Error(
-          `Open-telemetry reporter: Trace exporter ${this.traceConfig.exporter} is not supported. Currently supported exporters for traces are ${supported}`
-        );
-      }
       this.tracing = true;
 
       this.configureTrace(this.traceConfig);
@@ -356,6 +350,24 @@ class OTelReporter {
     span.end(endTime || Date.now);
 
     return done();
+  }
+
+  validateExporter(supportedExporters, exporter, type) {
+    const supported = Object.keys(supportedExporters).reduce(
+      (acc, k, i) =>
+        acc +
+        k +
+        (i === Object.keys(supportedExporters).length - 1 ? '.' : ', '),
+      ''
+    );
+
+    if (exporter && !supportedExporters[exporter]) {
+      throw new Error(
+        `Open-telemetry reporter: ${
+          type[0].toUpperCase() + type.slice(1)
+        } exporter ${exporter} is not supported. Currently supported exporters for ${type}s are ${supported}`
+      );
+    }
   }
 
   async shutDown() {
