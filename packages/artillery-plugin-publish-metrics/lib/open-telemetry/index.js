@@ -225,8 +225,8 @@ class OTelReporter {
         continue;
       }
 
-      for (const [agreggation, value] of Object.entries(values)) {
-        const metricName = `${name}.${agreggation}`;
+      for (const [aggregation, value] of Object.entries(values)) {
+        const metricName = `${name}.${aggregation}`;
         if (!this.gauges[metricName]) {
           this.meter
             .createObservableGauge(metricName)
