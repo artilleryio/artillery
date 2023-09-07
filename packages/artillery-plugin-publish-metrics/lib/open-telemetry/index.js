@@ -204,14 +204,10 @@ class OTelReporter {
   }
 
   recordRates(rates, config) {
-    for (const [ratename, value] of Object.entries(rates || {})) {
-      // console.log('name: ', ratename, '\nvalue: ', value);
-      if (
-        !this.shouldSendMetric(ratename, config.exclude, config.includeOnly)
-      ) {
+    for (const [name, value] of Object.entries(rates || {})) {
+      if (!this.shouldSendMetric(name, config.exclude, config.includeOnly)) {
         continue;
       }
-      const name = config.prefix + ratename;
       if (!this.gauges[name]) {
         this.meter
           .createObservableGauge(name)
@@ -230,7 +226,7 @@ class OTelReporter {
       }
 
       for (const [agreggation, value] of Object.entries(values)) {
-        const metricName = `${name}.${agreggation}`; // probably remove prefix for convention reasons
+        const metricName = `${name}.${agreggation}`;
         if (!this.gauges[metricName]) {
           this.meter
             .createObservableGauge(metricName)
@@ -319,7 +315,7 @@ class OTelReporter {
     if (!userContext.vars['__otlpSpan']) {
       return done();
     }
-    // TODO check status code. if status code is 1xx, 2xx or 3xx do nothing, unless there was an error, then set span status to error. if s code is in 4xx set status as error
+
     const span = userContext.vars['__otlpSpan'];
     let endTime;
 
