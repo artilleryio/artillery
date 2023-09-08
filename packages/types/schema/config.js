@@ -3,6 +3,7 @@ const Joi = require('joi').defaults((schema) =>
 );
 const { ExpectPluginConfigSchema } = require('./plugins/expect');
 const { EnsurePluginConfigSchema } = require('./plugins/ensure');
+const { ApdexPluginConfigSchema } = require('./plugins/apdex');
 
 const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
 
@@ -137,7 +138,8 @@ const ReplaceableConfig = {
 
 const ArtilleryBuiltInPlugins = {
   expect: ExpectPluginConfigSchema,
-  ensure: EnsurePluginConfigSchema
+  ensure: EnsurePluginConfigSchema,
+  apdex: ApdexPluginConfigSchema
 };
 
 const ConfigSchema = Joi.object({
