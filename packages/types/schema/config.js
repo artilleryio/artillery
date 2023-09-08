@@ -130,7 +130,7 @@ const ConfigSchema = Joi.object({
     .meta({ title: 'Plugins' })
     .description(
       'List of Artillery plugins to use (official or third-party) and their configuration'
-    ), //TODO: add a few like expect here
+    ),
   engines: Joi.object()
     .meta({ title: 'Engines' })
     .description('Configuration for specific engines used'), //TODO: add config for a few engines like Playwright

@@ -77,7 +77,7 @@ const SplunkReporterSchema = Joi.object({
   .unknown(false)
   .meta({ title: 'Splunk Reporter' });
 
-const PrometheusSchema = Joi.object({
+const PrometheusReporterSchema = Joi.object({
   type: Joi.string().valid('prometheus').required(),
   pushgateway: Joi.string().required(),
   tags: Joi.array().items(Joi.string())
@@ -125,14 +125,14 @@ const LightstepReporterSchema = Joi.object({
   .unknown(false)
   .meta({ title: 'Lightstep (Tracing) Reporter' });
 
-const MixpanelSchema = Joi.object({
+const MixpanelReporterSchema = Joi.object({
   type: Joi.string().valid('mixpanel').required(),
   projectToken: Joi.string().required()
 })
   .unknown(false)
   .meta({ title: 'Mixpanel Reporter' });
 
-const StatsDSchema = Joi.object({
+const StatsdReporterSchema = Joi.object({
   type: Joi.string().valid('statsd').required(),
   host: Joi.string(),
   port: artilleryStringNumber,
@@ -141,7 +141,7 @@ const StatsDSchema = Joi.object({
   .unknown(false)
   .meta({ title: 'StatsD Reporter' });
 
-const InfluxStatsDSchema = Joi.object({
+const InfluxReporterSchema = Joi.object({
   type: Joi.string().valid('influxdb-statsd').required(),
   prefix: Joi.string(),
   tags: Joi.array().items(Joi.string()),
@@ -160,13 +160,13 @@ const PublishMetricsPluginConfigSchema = Joi.array().items(
       DatadogReporterSchema,
       NewRelicReporterSchema,
       SplunkReporterSchema,
-      PrometheusSchema,
+      PrometheusReporterSchema,
       DynatraceReporterSchema,
       HoneycombReporterSchema,
       LightstepReporterSchema,
-      MixpanelSchema,
-      StatsDSchema,
-      InfluxStatsDSchema
+      MixpanelReporterSchema,
+      StatsdReporterSchema,
+      InfluxReporterSchema
     )
     .match('one')
 );
