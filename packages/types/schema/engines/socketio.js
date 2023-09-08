@@ -29,7 +29,10 @@ const BaseWithSocketio = [
       }),
       acknowledge: Joi.object({
         data: Joi.string(),
-        match: Joi.string()
+        match: Joi.object({
+          json: Joi.any(),
+          value: Joi.string()
+        })
       })
     })
   })

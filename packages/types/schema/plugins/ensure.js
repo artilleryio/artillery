@@ -11,13 +11,13 @@ const EnsureLegacyOptions = {
 };
 
 const EnsurePluginConfigSchema = Joi.object({
-  thresholds: Joi.array().items(Joi.object()),
+  thresholds: Joi.array().items(Joi.object()), //TODO: this is typed wrong
   conditions: Joi.array().items(
     Joi.object({
       expression: Joi.string(),
       strict: Joi.boolean()
     })
-  ),
+  ), //TODO: check that conditions are typed right
   ...EnsureLegacyOptions
 }).unknown(false);
 

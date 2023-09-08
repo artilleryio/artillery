@@ -7,7 +7,7 @@ const Joi = require('joi').defaults((schema) =>
 
 const schema = Joi.object({
   config: ConfigSchema,
-  scenarios: Joi.array().items(ScenarioSchema).required()
+  scenarios: Joi.array().items(ScenarioSchema).required() //TODO make this optional?
   // before: ScenarioSchema
 });
 

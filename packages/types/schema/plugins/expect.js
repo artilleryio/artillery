@@ -28,12 +28,20 @@ const ExpectPluginConfigSchema = Joi.object({
 }).unknown(false);
 
 const ExpectPluginImplementationSchema = {
-  statusCode: Joi.alternatives(Joi.number(), Joi.array().items(Joi.number()))
+  statusCode: Joi.alternatives(
+    Joi.number(),
+    Joi.string(),
+    Joi.array().items(Joi.alternatives(Joi.number(), Joi.string()))
+  )
     .meta({ title: 'Expectation: Status Code' })
     .description(
       'Check the response status code.\nIf a list of status codes is provided, check that the response status code is present in the list.\nhttps://www.artillery.io/docs/reference/extensions/expect#statuscode'
     ),
-  notStatusCode: Joi.alternatives(Joi.number(), Joi.array().items(Joi.number()))
+  notStatusCode: Joi.alternatives(
+    Joi.number(),
+    Joi.string(),
+    Joi.array().items(Joi.alternatives(Joi.number(), Joi.string()))
+  )
     .meta({ title: 'Expectation: Not Status Code' })
     .description(
       'Check the response status code does not equal given status code.\nIf a list of status codes is provided, check that the response status code is not present in the list.\nhttps://www.artillery.io/docs/reference/extensions/expect#notstatuscode'

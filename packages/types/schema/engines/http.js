@@ -21,7 +21,7 @@ const HttpMethodProperties = Joi.object({
   followRedirect: Joi.boolean(),
   qs: Joi.object(),
   gzip: Joi.boolean(),
-  capture: Joi.object(), //TODO: add capture here
+  capture: Joi.alternatives(Joi.object(), Joi.array().items(Joi.object())), //TODO: add capture here
   auth: Joi.object({
     user: Joi.string(),
     pass: Joi.string()

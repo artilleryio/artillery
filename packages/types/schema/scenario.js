@@ -84,7 +84,7 @@ const ScenarioSchema = Joi.object({
       then: Joi.object({
         engine: Joi.string(),
         // flow: Joi.array().items(Joi.any()).required().meta({title: 'Generic Engine Flow'})
-        flow: Joi.any().required().meta({ title: 'Generic Engine Flow' })
+        flow: Joi.any().meta({ title: 'Generic Engine Flow' }) //TODO: decide if flow should be required here? probably not
       })
     }
   );
