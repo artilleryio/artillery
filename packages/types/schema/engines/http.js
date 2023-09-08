@@ -143,5 +143,6 @@ const HttpConfigSchema = Joi.object({
 
 module.exports = {
   HttpFlowItemSchema,
+  BaseWithHttp,
   HttpConfigSchema
 };

@@ -3,6 +3,7 @@ const Joi = require('joi').defaults((schema) =>
 );
 const { HttpConfigSchema } = require('./engines/http');
 const { WsConfigSchema } = require('./engines/websocket');
+const { SocketIoConfigSchema } = require('./engines/socketio');
 const { ExpectPluginConfigSchema } = require('./plugins/expect');
 const { EnsurePluginConfigSchema } = require('./plugins/ensure');
 const { ApdexPluginConfigSchema } = require('./plugins/apdex');
@@ -104,6 +105,7 @@ const ConfigSchema = Joi.object({
   ...ReplaceableConfig,
   http: HttpConfigSchema.meta({ title: 'HTTP Configuration' }),
   ws: WsConfigSchema.meta({ title: 'Websocket Configuration' }),
+  socketio: SocketIoConfigSchema.meta({ title: 'SocketIo Configuration' }),
   environments: Joi.object()
     // .rename(/\w\d/, 'something')
     // .pattern(/\w\d/, Joi.object(ReplaceableConfig))//TODO: this isn't working well. Probably a limitation of https://github.com/kenspirit/joi-to-json#known-limitation. Find alternative?

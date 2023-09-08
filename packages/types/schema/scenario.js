@@ -4,12 +4,13 @@ const Joi = require('joi').defaults((schema) =>
 
 const { HttpFlowItemSchema } = require('./engines/http');
 const { WsFlowItemSchema } = require('./engines/websocket');
+const { SocketIoFlowItemSchema } = require('./engines/socketio');
 
 const ScenarioSchema = Joi.object({
   name: Joi.string(),
   // engine: Joi.alternatives().conditional('engine', { is: Joi.alternatives('socketio', 'ws', 'http'), then: Joi.alternatives('socketio', 'ws', 'http'), otherwise: Joi.string().invalid('socketio', 'ws', 'http')}),//TODO:maybe improve this?
   // flow: Joi.array().items(Joi.object()),
-  engine: Joi.alternatives('http', 'ws', 'socketio', Joi.string()),
+  engine: Joi.alternatives('http', 'ws', 'websocket', 'socketio', Joi.string()),
   beforeScenario: Joi.array().items(Joi.string()).single(), //TODO:review this
   afterScenario: Joi.array().items(Joi.string()).single() //TODO:review this
 })
@@ -53,6 +54,15 @@ const ScenarioSchema = Joi.object({
         .meta({ title: 'Websocket Engine Flow' })
     })
   })
+  .when(Joi.object({ engine: Joi.string().valid('socketio') }), {
+    then: Joi.object({
+      engine: Joi.string().valid('socketio'),
+      flow: Joi.array()
+        .items(SocketIoFlowItemSchema)
+        .required()
+        .meta({ title: 'SocketIo Engine Flow' })
+    })
+  })
   .when(Joi.object({ engine: Joi.any().valid(null, '') }), {
     then: Joi.object({
       engine: Joi.any().valid(null, ''),
@@ -66,13 +76,18 @@ const ScenarioSchema = Joi.object({
     //     flow: Joi.array().items(Joi.alternatives(HttpFlowItemSchema, HttpLoopSchema)).required().meta({title: "HTTP Flow"})
     // }),
   })
-  .when(Joi.object({ engine: Joi.string().not('ws', 'websocket', 'http') }), {
-    then: Joi.object({
-      engine: Joi.string(),
-      // flow: Joi.array().items(Joi.any()).required().meta({title: 'Generic Engine Flow'})
-      flow: Joi.any().required().meta({ title: 'Generic Engine Flow' })
-    })
-  });
+  .when(
+    Joi.object({
+      engine: Joi.string().not('ws', 'websocket', 'socketio', 'http')
+    }),
+    {
+      then: Joi.object({
+        engine: Joi.string(),
+        // flow: Joi.array().items(Joi.any()).required().meta({title: 'Generic Engine Flow'})
+        flow: Joi.any().required().meta({ title: 'Generic Engine Flow' })
+      })
+    }
+  );
 
 // TODO: PR in joi-to-json repo for converting deprecated and default
 
