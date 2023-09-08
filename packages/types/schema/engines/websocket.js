@@ -53,6 +53,18 @@ const WsFlowItemSchema = Joi.alternatives()
   .match('all')
   .id('WsFlowItemSchema');
 
+//TODO: add info here that you can configure underlying ws client
+const WsConfigSchema = Joi.object({
+  subprotocols: Joi.array()
+    .items(Joi.string().valid('json', 'soap', 'wamp', 'xmpp'))
+    .meta({ title: 'Websocket sub-protocols' }),
+  headers: Joi.object().meta({ title: 'Headers' }),
+  proxy: Joi.object({
+    url: Joi.string().required().meta({ title: 'URL' })
+  }).meta({ title: 'Proxy' })
+});
+
 module.exports = {
-  WsFlowItemSchema
+  WsFlowItemSchema,
+  WsConfigSchema
 };

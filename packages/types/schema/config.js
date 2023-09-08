@@ -1,6 +1,8 @@
 const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
+const { HttpConfigSchema } = require('./engines/http');
+const { WsConfigSchema } = require('./engines/websocket');
 const { ExpectPluginConfigSchema } = require('./plugins/expect');
 const { EnsurePluginConfigSchema } = require('./plugins/ensure');
 const { ApdexPluginConfigSchema } = require('./plugins/apdex');
@@ -12,58 +14,6 @@ const {
 } = require('./plugins/publish-metrics');
 
 const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
-
-const HttpDefaultsConfig = Joi.object({
-  headers: Joi.object()
-    .meta({ title: 'Request Headers' })
-    .description(
-      'Default headers to be used in all requests.\nhttps://www.artillery.io/docs/reference/engines/http#default-configuration'
-    ),
-  cookie: Joi.object()
-    .meta({ title: 'Request Cookies' })
-    .description('Default cookies to be used in all requests.'),
-  strictCapture: Joi.alternatives(Joi.boolean(), Joi.string())
-    .meta({ title: 'Strict capture' })
-    .description(
-      'Whether to turn on strict capture by default for all captures.\nhttps://www.artillery.io/docs/reference/engines/http#turn-off-strict-capture'
-    ),
-  think: Joi.object({
-    jitter: artilleryStringNumber
-      .meta('Jitter')
-      .description(
-        'Sets jitter to simulate real-world random variance into think time pauses. Accepts both number and percentage.'
-      )
-  }).meta({ title: 'Think Options' })
-});
-
-const HttpConfig = Joi.object({
-  timeout: artilleryStringNumber
-    .meta({ title: 'Request Timeout' })
-    .description('Increase or decrease request timeout'),
-  maxSockets: artilleryStringNumber
-    .meta({ title: 'Maximum Sockets' })
-    .description(
-      'Maximum amount of TCP connections per virtual user.\nhttps://www.artillery.io/docs/reference/engines/http#max-sockets-per-virtual-user'
-    ),
-  extendedMetrics: Joi.boolean()
-    .meta({ title: 'Enable Extended Metrics' })
-    .description(
-      'Enable tracking of additional HTTP metrics.\nhttps://www.artillery.io/docs/reference/engines/http#additional-performance-metrics'
-    ),
-  defaults: HttpDefaultsConfig.meta({
-    title: 'Configure Default Settings for all requests'
-  })
-});
-
-const WsConfig = Joi.object({
-  subprotocols: Joi.array()
-    .items(Joi.alternatives('json', 'soap', 'wamp'))
-    .meta({ title: 'Websocket sub-protocols' }),
-  headers: Joi.object().meta({ title: 'Headers' }),
-  proxy: Joi.object({
-    url: Joi.string().meta({ title: 'URL' })
-  }).meta({ title: 'Proxy' })
-});
 
 const TlsConfig = Joi.object({
   rejectUnauthorized: Joi.boolean().meta({
@@ -152,8 +102,8 @@ const ArtilleryBuiltInPlugins = {
 
 const ConfigSchema = Joi.object({
   ...ReplaceableConfig,
-  http: HttpConfig.meta({ title: 'HTTP Configuration' }),
-  ws: WsConfig.meta({ title: 'Websocket Configuration' }),
+  http: HttpConfigSchema.meta({ title: 'HTTP Configuration' }),
+  ws: WsConfigSchema.meta({ title: 'Websocket Configuration' }),
   environments: Joi.object()
     // .rename(/\w\d/, 'something')
     // .pattern(/\w\d/, Joi.object(ReplaceableConfig))//TODO: this isn't working well. Probably a limitation of https://github.com/kenspirit/joi-to-json#known-limitation. Find alternative?

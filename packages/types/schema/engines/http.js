@@ -99,6 +99,49 @@ const HttpFlowItemSchema = Joi.alternatives()
 //     over: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
 // })
 
+const HttpDefaultsConfigSchema = Joi.object({
+  headers: Joi.object()
+    .meta({ title: 'Request Headers' })
+    .description(
+      'Default headers to be used in all requests.\nhttps://www.artillery.io/docs/reference/engines/http#default-configuration'
+    ),
+  cookie: Joi.object()
+    .meta({ title: 'Request Cookies' })
+    .description('Default cookies to be used in all requests.'),
+  strictCapture: Joi.alternatives(Joi.boolean(), Joi.string())
+    .meta({ title: 'Strict capture' })
+    .description(
+      'Whether to turn on strict capture by default for all captures.\nhttps://www.artillery.io/docs/reference/engines/http#turn-off-strict-capture'
+    ),
+  think: Joi.object({
+    jitter: artilleryStringNumber
+      .meta('Jitter')
+      .description(
+        'Sets jitter to simulate real-world random variance into think time pauses. Accepts both number and percentage.'
+      )
+  }).meta({ title: 'Think Options' })
+});
+
+const HttpConfigSchema = Joi.object({
+  timeout: artilleryStringNumber
+    .meta({ title: 'Request Timeout' })
+    .description('Increase or decrease request timeout'),
+  maxSockets: artilleryStringNumber
+    .meta({ title: 'Maximum Sockets' })
+    .description(
+      'Maximum amount of TCP connections per virtual user.\nhttps://www.artillery.io/docs/reference/engines/http#max-sockets-per-virtual-user'
+    ),
+  extendedMetrics: Joi.boolean()
+    .meta({ title: 'Enable Extended Metrics' })
+    .description(
+      'Enable tracking of additional HTTP metrics.\nhttps://www.artillery.io/docs/reference/engines/http#additional-performance-metrics'
+    ),
+  defaults: HttpDefaultsConfigSchema.meta({
+    title: 'Configure Default Settings for all requests'
+  })
+});
+
 module.exports = {
-  HttpFlowItemSchema
+  HttpFlowItemSchema,
+  HttpConfigSchema
 };
