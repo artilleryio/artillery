@@ -5,12 +5,20 @@ const Joi = require('joi').defaults((schema) =>
 const { HttpFlowItemSchema } = require('./engines/http');
 const { WsFlowItemSchema } = require('./engines/websocket');
 const { SocketIoFlowItemSchema } = require('./engines/socketio');
+const { PlaywrightSchemaObject } = require('./engines/playwright');
 
 const ScenarioSchema = Joi.object({
   name: Joi.string(),
   // engine: Joi.alternatives().conditional('engine', { is: Joi.alternatives('socketio', 'ws', 'http'), then: Joi.alternatives('socketio', 'ws', 'http'), otherwise: Joi.string().invalid('socketio', 'ws', 'http')}),//TODO:maybe improve this?
   // flow: Joi.array().items(Joi.object()),
-  engine: Joi.alternatives('http', 'ws', 'websocket', 'socketio', Joi.string()),
+  engine: Joi.alternatives(
+    'http',
+    'ws',
+    'websocket',
+    'socketio',
+    'playwright',
+    Joi.string()
+  ),
   beforeScenario: Joi.array().items(Joi.string()).single(), //TODO:review this
   afterScenario: Joi.array().items(Joi.string()).single() //TODO:review this
 })
@@ -52,6 +60,7 @@ const ScenarioSchema = Joi.object({
         .items(WsFlowItemSchema)
         .required()
         .meta({ title: 'Websocket Engine Flow' })
+      //TODO: make afterscenario forbidden?
     })
   })
   .when(Joi.object({ engine: Joi.string().valid('socketio') }), {
@@ -61,6 +70,14 @@ const ScenarioSchema = Joi.object({
         .items(SocketIoFlowItemSchema)
         .required()
         .meta({ title: 'SocketIo Engine Flow' })
+    })
+  })
+  .when(Joi.object({ engine: Joi.string().valid('playwright') }), {
+    then: Joi.object({
+      engine: Joi.string()
+        .valid('playwright')
+        .meta({ title: 'Playwright Engine' }),
+      ...PlaywrightSchemaObject
     })
   })
   .when(Joi.object({ engine: Joi.any().valid(null, '') }), {
@@ -78,7 +95,13 @@ const ScenarioSchema = Joi.object({
   })
   .when(
     Joi.object({
-      engine: Joi.string().not('ws', 'websocket', 'socketio', 'http')
+      engine: Joi.string().not(
+        'ws',
+        'websocket',
+        'socketio',
+        'http',
+        'playwright'
+      )
     }),
     {
       then: Joi.object({

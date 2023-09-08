@@ -4,6 +4,7 @@ const Joi = require('joi').defaults((schema) =>
 const { HttpConfigSchema } = require('./engines/http');
 const { WsConfigSchema } = require('./engines/websocket');
 const { SocketIoConfigSchema } = require('./engines/socketio');
+const { PlaywrightConfigSchema } = require('./engines/playwright');
 const { ExpectPluginConfigSchema } = require('./plugins/expect');
 const { EnsurePluginConfigSchema } = require('./plugins/ensure');
 const { ApdexPluginConfigSchema } = require('./plugins/apdex');
@@ -131,7 +132,9 @@ const ConfigSchema = Joi.object({
     .description(
       'List of Artillery plugins to use (official or third-party) and their configuration'
     ),
-  engines: Joi.object()
+  engines: Joi.object({
+    playwright: PlaywrightConfigSchema
+  })
     .meta({ title: 'Engines' })
     .description('Configuration for specific engines used'), //TODO: add config for a few engines like Playwright
   ...ArtilleryBuiltInPlugins
