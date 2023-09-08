@@ -7,6 +7,9 @@ const { ApdexPluginConfigSchema } = require('./plugins/apdex');
 const {
   MetricsByEndpointPluginConfigSchema
 } = require('./plugins/metrics-by-endpoint');
+const {
+  PublishMetricsPluginConfigSchema
+} = require('./plugins/publish-metrics');
 
 const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
 
@@ -143,7 +146,8 @@ const ArtilleryBuiltInPlugins = {
   expect: ExpectPluginConfigSchema,
   ensure: EnsurePluginConfigSchema,
   apdex: ApdexPluginConfigSchema,
-  'metrics-by-endpoint': MetricsByEndpointPluginConfigSchema
+  'metrics-by-endpoint': MetricsByEndpointPluginConfigSchema,
+  'publish-metrics': PublishMetricsPluginConfigSchema
 };
 
 const ConfigSchema = Joi.object({
