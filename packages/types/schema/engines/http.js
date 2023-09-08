@@ -6,53 +6,86 @@ const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
 
 const BaseFlowItemAlternatives = [
-  Joi.object({ function: Joi.string() }),
-  Joi.object({ log: Joi.string().meta({ title: 'Log from inside' }) }).meta({
-    title: 'Logging'
+  Joi.object({
+    function: Joi.string()
+      .meta({ title: 'Function' })
+      .description('Function name to run.')
   }),
-  Joi.object({ think: artilleryStringNumber })
+  Joi.object({
+    log: Joi.string()
+      .meta({ title: 'Log' })
+      .description('Print given message to the console.')
+  }),
+  Joi.object({
+    think: artilleryStringNumber
+      .meta({ title: 'Think time' })
+      .description('Pause virtual user for the given duration (in seconds).')
+  })
 ];
 
 //TODO: add request with body properties
 const HttpMethodProperties = Joi.object({
-  url: Joi.string().required(),
-  headers: Joi.object(),
-  cookie: Joi.object(), //TODO: make them strings only,
-  followRedirect: Joi.boolean(),
-  qs: Joi.object(),
-  gzip: Joi.boolean(),
-  capture: Joi.alternatives(Joi.object(), Joi.array().items(Joi.object())), //TODO: add capture here
+  url: Joi.string().required().meta({ title: 'URL' }),
+  headers: Joi.object().meta({ title: 'Headers' }),
+  cookie: Joi.object() //TODO: maybe make this a [name: string]: string
+    .meta({ title: 'Cookies' }), //TODO: make them strings only,
+  followRedirect: Joi.boolean()
+    .meta({ title: 'Disable redirect following' })
+    .description(
+      'Artillery follows redirects by default.\nSet this option to `false` to stop following redirects.'
+    ),
+  qs: Joi.object().meta({ title: 'Query string object' }),
+  gzip: Joi.boolean()
+    .meta({ title: 'Compression' })
+    .description(
+      "Automatically set the 'Accept-Encoding' request header and decode compressed responses encoded with gzip."
+    ),
+  capture: Joi.alternatives(Joi.object(), Joi.array().items(Joi.object()))
+    .meta({ title: 'Capture' })
+    .description(
+      'Capture and reuse parts of a response\nhttps://www.artillery.io/docs/reference/engines/http#extracting-and-re-using-parts-of-a-response-request-chaining'
+    ), //TODO: add capture here
   auth: Joi.object({
-    user: Joi.string(),
-    pass: Joi.string()
-  }),
-  beforeRequest: Joi.alternatives(
-    Joi.string(),
-    Joi.array().items(Joi.string())
-  ), //TODO: this is likely different on a resolved config
-  afterResponse: Joi.alternatives(
-    Joi.string(),
-    Joi.array().items(Joi.string())
-  ), //TODO: this is likely different on a resolved config
-  ifTrue: Joi.string(),
-  //match TODO: add match here (deprecated)
+    user: Joi.string().meta({ title: 'Username' }),
+    pass: Joi.string().meta({ title: 'Password' })
+  }).meta({ title: 'Basic authentication' }),
+  beforeRequest: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+    .meta({ title: 'Before Request' })
+    .description('Functions to run before every request is sent.'), //TODO: this is likely different on a resolved config
+  afterResponse: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+    .meta({ title: 'After Response' })
+    .description('Functions to run after every response is received.'), //TODO: this is likely different on a resolved config
+  ifTrue: Joi.string()
+    .meta({ title: 'Request Condition' })
+    .description('Expression that controls when to execute this request.'),
+  //TODO: add match here (deprecated)
   expect: Joi.alternatives(
     ExpectPluginImplementationSchema,
     Joi.array().items(ExpectPluginImplementationSchema)
   )
+    .meta({ title: 'Expect plugin expectations' })
+    .description(
+      'More information: https://www.artillery.io/docs/reference/extensions/expect#expectations'
+    )
 });
 
 const BaseWithHttp = [
   ...BaseFlowItemAlternatives,
   Joi.object({
-    get: HttpMethodProperties.description('hi there still me').meta({
-      title: 'GET REQUEST'
-    })
+    get: HttpMethodProperties.meta({ title: 'Perform a GET request' })
   }),
-  Joi.object({ post: HttpMethodProperties }), //TODO: add body options
-  Joi.object({ put: HttpMethodProperties }),
-  Joi.object({ patch: HttpMethodProperties }),
-  Joi.object({ delete: HttpMethodProperties }) //TODO: do we need head and options methods?
+  Joi.object({
+    post: HttpMethodProperties.meta({ title: 'Perform a POST request' })
+  }), //TODO: add body options
+  Joi.object({
+    put: HttpMethodProperties.meta({ title: 'Perform a PUT request' })
+  }),
+  Joi.object({
+    patch: HttpMethodProperties.meta({ title: 'Perform a PATCH request' })
+  }),
+  Joi.object({
+    delete: HttpMethodProperties.meta({ title: 'Perform a DELETE request' })
+  }) //TODO: do we need head and options methods?
 ];
 
 const HttpFlowItemSchema = Joi.alternatives()
