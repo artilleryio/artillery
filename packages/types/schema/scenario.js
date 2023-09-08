@@ -3,7 +3,7 @@ const Joi = require('joi').defaults((schema) =>
 );
 
 const { HttpFlowItemSchema } = require('./engines/http');
-// const { WsFlowItemSchema } = require('./engines/websocket');
+const { WsFlowItemSchema } = require('./engines/websocket');
 
 const ScenarioSchema = Joi.object({
   name: Joi.string(),
@@ -48,7 +48,7 @@ const ScenarioSchema = Joi.object({
     then: Joi.object({
       engine: Joi.string().valid('ws', 'websocket'),
       flow: Joi.array()
-        .items(Joi.object())
+        .items(WsFlowItemSchema)
         .required()
         .meta({ title: 'Websocket Engine Flow' })
     })
