@@ -1,7 +1,10 @@
 const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
-const { artilleryNumberOrString } = require('./joi.helpers');
+const {
+  artilleryNumberOrString,
+  artilleryBooleanOrString
+} = require('./joi.helpers');
 const { HttpConfigSchema } = require('./engines/http');
 const { WsConfigSchema } = require('./engines/websocket');
 const { SocketIoConfigSchema } = require('./engines/socketio');
@@ -68,13 +71,42 @@ const TestPhase = Joi.alternatives(
 
 //TODO: review this one
 const PayloadConfig = Joi.object({
-  path: Joi.string(),
-  fields: Joi.array().items(Joi.string()),
-  random: Joi.alternatives('random', 'sequence'),
-  skipHeader: Joi.boolean(),
-  delimiter: Joi.string(),
-  cast: Joi.boolean(),
-  skipEmptyLines: Joi.boolean()
+  path: Joi.string().meta({ title: 'CSV Path' }),
+  fields: Joi.array()
+    .items(Joi.string())
+    .meta({ title: 'CSV Fields' })
+    .description(
+      'List of names of fields to be used in the test to load the data'
+    ),
+  order: Joi.alternatives('random', 'sequence')
+    .meta({ title: 'Order' })
+    .description(
+      'Controls how the CSV rows are selected for each virtual user.'
+    ),
+  skipHeader: artilleryBooleanOrString
+    .meta({ title: 'Skip Header?' })
+    .description(
+      'Set to `true` to make Artillery skip the first row in the CSV file (typically the header row)'
+    ), //TODO: add default
+  delimiter: Joi.string()
+    .meta({ title: 'Delimiter' })
+    .description('Custom delimiter character to use in the payload.'), //TODO: add default
+  cast: artilleryBooleanOrString
+    .meta({ title: 'Cast?' })
+    .description(
+      'Controls whether Artillery converts fields to native types (e.g. numbers or booleans). To keep those fields as strings, set this option to `false`.'
+    ),
+  skipEmptyLines: artilleryBooleanOrString
+    .meta({ title: 'Skip empty lines?' })
+    .description(
+      'Controls whether Artillery should skip empty lines in the payload.'
+    ),
+  loadAll: artilleryBooleanOrString
+    .meta({ title: 'Load all data' })
+    .description('Set loadAll to true to provide all rows to each VU'),
+  name: Joi.string()
+    .meta({ title: 'Data Name' })
+    .description('Name of loadAll data') //TODO: loadAll and name used conditionally
 });
 
 const ReplaceableConfig = {
