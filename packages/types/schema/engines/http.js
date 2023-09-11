@@ -4,9 +4,66 @@ const Joi = require('joi').defaults((schema) =>
 const { BaseFlowItemAlternatives, LoopOptions } = require('./common');
 const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 
-const { artilleryNumberOrString } = require('../joi.helpers');
+const {
+  artilleryNumberOrString,
+  artilleryBooleanOrString
+} = require('../joi.helpers');
 
-//TODO: add request with body properties
+const SharedCaptureProperties = {
+  as: Joi.string().meta({ title: 'Name your capture' }),
+  strict: artilleryBooleanOrString
+    .meta({ title: 'Strict?' })
+    .description(
+      'Captures are strict by default, so if a capture fails (no match), no subsequent request will run. You can configure that behaviour with this option.'
+    )
+};
+
+const CaptureSchema = Joi.alternatives()
+  .try(
+    Joi.object({
+      json: Joi.string().required().meta({ title: 'Jsonpath expression' }),
+      ...SharedCaptureProperties
+    }).meta({ title: 'JSON Capture' }),
+    Joi.object({
+      xpath: Joi.string().meta({ title: 'Xpath expression' }).required(),
+      ...SharedCaptureProperties
+    }).meta({ title: 'XPath Capture' }),
+    Joi.object({
+      regexp: Joi.string().meta({ title: 'Regular expression' }).required(),
+      group: artilleryNumberOrString
+        .meta({ title: 'Regex Group' })
+        .description('Named or Integer Index capturing group'),
+      flags: Joi.object()
+        .meta('RegExp Flags')
+        .description('Flags for the regular expression'),
+      ...SharedCaptureProperties
+    }).meta({ title: 'RegExp Capture' }),
+    Joi.object({
+      header: Joi.string()
+        .meta({ title: 'Header name' })
+        .required()
+        .description(
+          'Allows you to set the name of the response header whose value you want to capture.'
+        ),
+      ...SharedCaptureProperties
+    }).meta({ title: 'Header Capture' }),
+    Joi.object({
+      selector: Joi.string()
+        .meta({ title: 'Cheerio element selector' })
+        .required(),
+      attr: Joi.string().meta({ title: 'Attribute Name' }),
+      index: Joi.alternatives(
+        artilleryNumberOrString,
+        Joi.string().valid('last', 'random')
+      )
+        .meta({ title: 'Desired Index' })
+        .description(
+          'Grap element at specific index, last index or at random (otherwise, first one found).'
+        ),
+      ...SharedCaptureProperties
+    }).meta({ title: 'Selector (Cheerio) Capture' })
+  )
+  .match('one');
 
 const SharedHttpMethodProperties = {
   url: Joi.string().required().meta({ title: 'URL' }),
@@ -17,7 +74,7 @@ const SharedHttpMethodProperties = {
     ),
   headers: Joi.object().meta({ title: 'Headers' }),
   cookie: Joi.object() //TODO: maybe make this a [name: string]: string
-    .meta({ title: 'Cookies' }), //TODO: make them strings only,
+    .meta({ title: 'Cookies' }),
   followRedirect: Joi.boolean()
     .meta({ title: 'Disable redirect following' })
     .description(
@@ -29,7 +86,7 @@ const SharedHttpMethodProperties = {
     .description(
       "Automatically set the 'Accept-Encoding' request header and decode compressed responses encoded with gzip."
     ),
-  capture: Joi.alternatives(Joi.object(), Joi.array().items(Joi.object()))
+  capture: Joi.alternatives(CaptureSchema, Joi.array().items(CaptureSchema))
     .meta({ title: 'Capture' })
     .description(
       'Capture and reuse parts of a response\nhttps://www.artillery.io/docs/reference/engines/http#extracting-and-re-using-parts-of-a-response-request-chaining'

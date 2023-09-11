@@ -69,7 +69,6 @@ const TestPhase = Joi.alternatives(
   TestPhaseWithPause
 ).meta({ title: 'Test Phase' });
 
-//TODO: review this one
 const PayloadConfig = Joi.object({
   path: Joi.string().meta({ title: 'CSV Path' }),
   fields: Joi.array()
@@ -167,7 +166,7 @@ const ConfigSchema = Joi.object({
     playwright: PlaywrightConfigSchema
   })
     .meta({ title: 'Engines' })
-    .description('Configuration for specific engines used'), //TODO: add config for a few engines like Playwright
+    .description('Configuration for specific engines used'),
   ...ArtilleryBuiltInPlugins
 });
 
