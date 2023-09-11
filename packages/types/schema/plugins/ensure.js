@@ -1,37 +1,37 @@
 const Joi = require('joi');
 
 const {
-  artilleryStringNumber,
-  artilleryStringBoolean
+  artilleryNumberOrString,
+  artilleryBooleanOrString
 } = require('../joi.helpers');
 
 const EnsureLegacyOptions = {
-  min: artilleryStringNumber
+  min: artilleryNumberOrString
     .meta({ title: 'Min' })
     .description(
       'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
     ),
-  max: artilleryStringNumber
+  max: artilleryNumberOrString
     .meta({ title: 'Max' })
     .description(
       'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
     ),
-  median: artilleryStringNumber
+  median: artilleryNumberOrString
     .meta({ title: 'Median' })
     .description(
       'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
     ),
-  p95: artilleryStringNumber
+  p95: artilleryNumberOrString
     .meta({ title: 'P95' })
     .description(
       'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
     ),
-  p99: artilleryStringNumber
+  p99: artilleryNumberOrString
     .meta({ title: 'P99' })
     .description(
       'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
     ),
-  maxErrorRate: artilleryStringNumber
+  maxErrorRate: artilleryNumberOrString
     .meta({ title: 'Max Error Rate' })
     .description(
       'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
@@ -49,7 +49,7 @@ const EnsurePluginConfigSchema = Joi.object({
     .items(
       Joi.object({
         expression: Joi.string().meta({ title: 'Conditional Expression' }),
-        strict: artilleryStringBoolean.meta({ title: 'Strict?' })
+        strict: artilleryBooleanOrString.meta({ title: 'Strict?' })
       })
     )
     .meta({ title: 'Conditional Checks' })

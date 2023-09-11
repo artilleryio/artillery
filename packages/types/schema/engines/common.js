@@ -2,7 +2,7 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
-const { artilleryStringNumber } = require('../joi.helpers');
+const { artilleryNumberOrString } = require('../joi.helpers');
 
 const BaseFlowItemAlternatives = [
   Joi.object({
@@ -16,7 +16,7 @@ const BaseFlowItemAlternatives = [
       .description('Print given message to the console.')
   }),
   Joi.object({
-    think: artilleryStringNumber
+    think: artilleryNumberOrString
       .meta({ title: 'Think time' })
       .description('Pause virtual user for the given duration (in seconds).')
   })

@@ -2,7 +2,7 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
-const { artilleryStringNumber } = require('../joi.helpers');
+const { artilleryNumberOrString } = require('../joi.helpers');
 const { BaseWithHttp } = require('./http');
 
 const BaseWithSocketio = [
@@ -42,7 +42,7 @@ const SocketIoFlowItemSchema = Joi.alternatives()
         )
         .meta({ title: 'Loop (SocketIo)' }),
       whileTrue: Joi.string(),
-      count: artilleryStringNumber,
+      count: artilleryNumberOrString,
       over: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
     })
   )

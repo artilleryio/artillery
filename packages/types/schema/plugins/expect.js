@@ -4,6 +4,8 @@
 
 const Joi = require('joi');
 
+const { artilleryBooleanOrString } = require('../joi.helpers');
+
 const ExpectPluginConfigSchema = Joi.object({
   outputFormat: Joi.string()
     .valid('pretty', 'json', 'prettyError', 'silent')
@@ -12,17 +14,17 @@ const ExpectPluginConfigSchema = Joi.object({
     .valid('pretty', 'json', 'prettyError', 'silent')
     .meta({ title: '(Deprecated) Formatter' }) //TODO: add deprecated status
     .description('Please use the `outputFormat` option instead.'),
-  reportFailuresAsErrors: Joi.boolean()
+  reportFailuresAsErrors: artilleryBooleanOrString
     .meta({ title: 'Report Failures as Errors' })
     .description(
       'Reports failures from expect plugin as errors in Artillery Report'
     ), //TODO: add default value
-  useOnlyRequestNames: Joi.boolean()
+  useOnlyRequestNames: artilleryBooleanOrString
     .meta({ title: 'Use Only Request Names' })
     .description(
       'Use request name instead of the URL path when logging requests in console and report'
     ),
-  expectDefault200: Joi.boolean()
+  expectDefault200: artilleryBooleanOrString
     .meta({ title: 'Expect 200 by default' })
     .description('Sets a 200 OK status code expectation for all requests.') //TODO: add default value
 }).unknown(false);
@@ -83,7 +85,7 @@ const ExpectPluginImplementationSchema = {
     .description(
       'Check that the response matches a regular expression.\nhttps://www.artillery.io/docs/reference/extensions/expect#matchesregexp'
     ),
-  cdnHit: Joi.boolean()
+  cdnHit: artilleryBooleanOrString
     .meta({ title: 'Expectation: Is CDN Hit' })
     .description(
       'Check the presence of a cache hit/miss header from a CDN.\nhttps://www.artillery.io/docs/reference/extensions/expect#cdnhit'

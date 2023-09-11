@@ -1,7 +1,7 @@
 const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
-const { artilleryStringNumber } = require('./joi.helpers');
+const { artilleryNumberOrString } = require('./joi.helpers');
 const { HttpConfigSchema } = require('./engines/http');
 const { WsConfigSchema } = require('./engines/websocket');
 const { SocketIoConfigSchema } = require('./engines/socketio');
@@ -25,27 +25,27 @@ const TlsConfig = Joi.object({
 
 const TestPhaseWithArrivals = Joi.object({
   name: Joi.string().meta({ title: 'Test Phase Name' }),
-  duration: artilleryStringNumber
+  duration: artilleryNumberOrString
     .meta({ title: 'Test Phase Duration' })
     .description(
       'Test phase duration (in seconds).\nCan also be any valid human-readable duration: https://www.npmjs.com/package/ms .'
     ),
-  arrivalRate: artilleryStringNumber
+  arrivalRate: artilleryNumberOrString
     .meta({ title: 'Arrival Rate' })
     .description(
       'Constant arrival rate.\nThe number of virtual users generated every second.'
     ),
-  arrivalCount: artilleryStringNumber
+  arrivalCount: artilleryNumberOrString
     .meta({ title: 'Arrival Count' })
     .description(
       'Fixed number of virtual users over that time period.\nhttps://www.artillery.io/docs/reference/test-script#fixed-number-of-arrivals-per-second'
     ),
-  rampTo: artilleryStringNumber
+  rampTo: artilleryNumberOrString
     .meta({ title: 'Ramp up rate' })
     .description(
       'Ramp from initial arrivalRate to this value over time period.\nhttps://www.artillery.io/docs/reference/test-script#ramp-up-rate'
     ),
-  maxVusers: artilleryStringNumber
+  maxVusers: artilleryNumberOrString
     .meta({ title: 'Maximum virtual users' })
     .description(
       'Cap the number of concurrent virtual users at any given time.'
@@ -54,7 +54,7 @@ const TestPhaseWithArrivals = Joi.object({
 
 const TestPhaseWithPause = Joi.object({
   name: Joi.string().meta({ title: 'Test Phase Name' }),
-  pause: artilleryStringNumber
+  pause: artilleryNumberOrString
     .meta({ title: 'Pause' })
     .description(
       'Pause the test phase execution for given duration (in seconds).\nCan also be any valid human-readable duration: https://www.npmjs.com/package/ms.'

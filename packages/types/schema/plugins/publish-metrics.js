@@ -1,8 +1,8 @@
 const Joi = require('joi');
 
 const {
-  artilleryStringNumber,
-  artilleryStringBoolean
+  artilleryNumberOrString,
+  artilleryBooleanOrString
 } = require('../joi.helpers');
 
 const CloudwatchReporterSchema = Joi.object({
@@ -37,7 +37,7 @@ const DatadogReporterSchema = Joi.object({
     priority: Joi.string().valid('normal', 'low'),
     tags: Joi.array().items(Joi.string()),
     alertType: Joi.string().valid('error', 'warning', 'info', 'success'),
-    send: artilleryStringBoolean
+    send: artilleryBooleanOrString
   })
 })
   .unknown(false)
@@ -55,7 +55,7 @@ const NewRelicReporterSchema = Joi.object({
     accountId: Joi.string().required(),
     eventType: Joi.string(),
     attributes: Joi.array().items(Joi.string()),
-    send: artilleryStringBoolean
+    send: artilleryBooleanOrString
   })
 })
   .unknown(false)
@@ -73,7 +73,7 @@ const SplunkReporterSchema = Joi.object({
     eventType: Joi.string(),
     dimensions: Joi.array().items(Joi.string()),
     properties: Joi.array().items(Joi.string()),
-    send: artilleryStringBoolean
+    send: artilleryBooleanOrString
   })
 })
   .unknown(false)
@@ -99,8 +99,8 @@ const DynatraceReporterSchema = Joi.object({
     eventType: Joi.string(),
     title: Joi.string(),
     properties: Joi.array().items(Joi.string()),
-    entitySelector: artilleryStringBoolean,
-    send: artilleryStringBoolean
+    entitySelector: artilleryBooleanOrString,
+    send: artilleryBooleanOrString
   })
 })
   .unknown(false)
@@ -111,8 +111,8 @@ const HoneycombReporterSchema = Joi.object({
   apiKey: Joi.string(), //TODO: add required between these
   writeKey: Joi.string(),
   dataset: Joi.string(),
-  sampleRate: artilleryStringNumber,
-  enabled: artilleryStringBoolean
+  sampleRate: artilleryNumberOrString,
+  enabled: artilleryBooleanOrString
 })
   .unknown(false)
   .meta({ title: 'Honeycomb (Tracing) Reporter' });
@@ -122,7 +122,7 @@ const LightstepReporterSchema = Joi.object({
   accessToken: Joi.string().required(),
   componentName: Joi.string().required(),
   tags: Joi.object(),
-  enabled: artilleryStringBoolean
+  enabled: artilleryBooleanOrString
 })
   .unknown(false)
   .meta({ title: 'Lightstep (Tracing) Reporter' });
@@ -137,7 +137,7 @@ const MixpanelReporterSchema = Joi.object({
 const StatsdReporterSchema = Joi.object({
   type: Joi.string().valid('statsd').required(),
   host: Joi.string(),
-  port: artilleryStringNumber,
+  port: artilleryNumberOrString,
   prefix: Joi.string()
 })
   .unknown(false)

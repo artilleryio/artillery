@@ -2,7 +2,7 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
-const { artilleryStringNumber } = require('../joi.helpers');
+const { artilleryNumberOrString } = require('../joi.helpers');
 
 const PlaywrightSchemaObject = {
   testFunction: Joi.string()
@@ -19,12 +19,12 @@ const PlaywrightConfigSchema = Joi.object({
     .description(
       'Aggregate Artillery metrics by test scenario name.\nhttps://www.artillery.io/docs/reference/engines/playwright#aggregate-metrics-by-scenario-name'
     ),
-  defaultTimeout: artilleryStringNumber
+  defaultTimeout: artilleryNumberOrString
     .meta({ title: 'Default timeout' })
     .description(
       'Default maximum time (in seconds) for all Playwright methods accepting the `timeout` option.\nhttps://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout'
     ),
-  defaultNavigationTimeout: artilleryStringNumber
+  defaultNavigationTimeout: artilleryNumberOrString
     .meta({ title: 'Default navigation timeout' })
     .description(
       'Default maximum navigation time (in seconds) for Playwright navigation methods, like `page.goto()`.\nhttps://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout'

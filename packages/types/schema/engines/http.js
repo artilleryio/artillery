@@ -4,7 +4,7 @@ const Joi = require('joi').defaults((schema) =>
 const { BaseFlowItemAlternatives } = require('./common');
 const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 
-const { artilleryStringNumber } = require('../joi.helpers');
+const { artilleryNumberOrString } = require('../joi.helpers');
 
 //TODO: add request with body properties
 const HttpMethodProperties = Joi.object({
@@ -135,7 +135,7 @@ const HttpDefaultsConfigSchema = Joi.object({
       'Whether to turn on strict capture by default for all captures.\nhttps://www.artillery.io/docs/reference/engines/http#turn-off-strict-capture'
     ),
   think: Joi.object({
-    jitter: artilleryStringNumber
+    jitter: artilleryNumberOrString
       .meta('Jitter')
       .description(
         'Sets jitter to simulate real-world random variance into think time pauses. Accepts both number and percentage.'
@@ -144,10 +144,10 @@ const HttpDefaultsConfigSchema = Joi.object({
 });
 
 const HttpConfigSchema = Joi.object({
-  timeout: artilleryStringNumber
+  timeout: artilleryNumberOrString
     .meta({ title: 'Request Timeout' })
     .description('Increase or decrease request timeout'),
-  maxSockets: artilleryStringNumber
+  maxSockets: artilleryNumberOrString
     .meta({ title: 'Maximum Sockets' })
     .description(
       'Maximum amount of TCP connections per virtual user.\nhttps://www.artillery.io/docs/reference/engines/http#max-sockets-per-virtual-user'

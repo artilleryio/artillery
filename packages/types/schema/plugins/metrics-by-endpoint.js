@@ -1,9 +1,11 @@
 const Joi = require('joi');
 
+const { artilleryBooleanOrString } = require('../joi.helpers');
+
 const MetricsByEndpointPluginConfigSchema = Joi.object({
-  useOnlyRequestNames: Joi.boolean(),
-  stripQueryString: Joi.boolean(),
-  ignoreUnnamedRequests: Joi.boolean(),
+  useOnlyRequestNames: artilleryBooleanOrString,
+  stripQueryString: artilleryBooleanOrString,
+  ignoreUnnamedRequests: artilleryBooleanOrString,
   metricsPrefix: Joi.string()
 }).unknown(false);
 
