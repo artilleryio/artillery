@@ -1,5 +1,5 @@
 const { ConfigSchema } = require('./config');
-const { ScenarioSchema } = require('./scenario');
+const { ScenarioSchema, BeforeAfterScenarioSchema } = require('./scenario');
 
 const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
@@ -7,8 +7,9 @@ const Joi = require('joi').defaults((schema) =>
 
 const schema = Joi.object({
   config: ConfigSchema,
-  scenarios: Joi.array().items(ScenarioSchema).required() //TODO make this optional?
-  // before: ScenarioSchema
+  scenarios: Joi.array().items(ScenarioSchema).required(), //TODO make this optional?
+  before: BeforeAfterScenarioSchema,
+  after: BeforeAfterScenarioSchema
 });
 
 module.exports = {
