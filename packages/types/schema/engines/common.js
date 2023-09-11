@@ -22,6 +22,25 @@ const BaseFlowItemAlternatives = [
   })
 ];
 
+const LoopOptions = {
+  whileTrue: Joi.string()
+    .meta({ title: 'Loop While True' })
+    .description(
+      'Control the loop using custom logic:\nhttps://www.artillery.io/docs/reference/engines/http#looping-through-an-array'
+    ),
+  count: artilleryNumberOrString
+    .meta({ title: 'Loop N times' })
+    .description(
+      'https://www.artillery.io/docs/reference/engines/http#looping-through-an-array'
+    ),
+  over: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+    .meta({ title: 'Loop over array' })
+    .description(
+      'https://www.artillery.io/docs/reference/engines/http#looping-through-an-array'
+    )
+};
+
 module.exports = {
-  BaseFlowItemAlternatives
+  BaseFlowItemAlternatives,
+  LoopOptions
 };

@@ -2,7 +2,7 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
-const { BaseFlowItemAlternatives } = require('./common');
+const { BaseFlowItemAlternatives, LoopOptions } = require('./common');
 
 const BaseWithWs = [
   ...BaseFlowItemAlternatives,
@@ -37,9 +37,7 @@ const WsFlowItemSchema = Joi.alternatives()
             .required()
         )
         .meta({ title: 'Loop (Websocket)' }),
-      whileTrue: Joi.string(),
-      count: Joi.alternatives(Joi.string(), Joi.number()),
-      over: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+      ...LoopOptions
     })
   )
   .match('all')
