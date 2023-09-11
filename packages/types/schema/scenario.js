@@ -114,7 +114,13 @@ const ScenarioSchema = Joi.object({
 
 //TODO: type this with engine flows
 const BeforeAfterScenarioSchema = Joi.object({
-  flow: Joi.array().items(Joi.any())
+  flow: Joi.array()
+    .items(Joi.any())
+    .required()
+    .meta({ title: 'Flow object' })
+    .description(
+      'https://www.artillery.io/docs/reference/test-script#before-and-after-sections'
+    )
 });
 
 module.exports = {

@@ -6,10 +6,24 @@ const Joi = require('joi').defaults((schema) =>
 );
 
 const schema = Joi.object({
-  config: ConfigSchema,
-  scenarios: Joi.array().items(ScenarioSchema).required(), //TODO make this optional?
-  before: BeforeAfterScenarioSchema,
-  after: BeforeAfterScenarioSchema
+  config: ConfigSchema.meta({ title: 'Config Section' }).description(
+    'https://www.artillery.io/docs/reference/test-script#config-section'
+  ),
+  scenarios: Joi.array()
+    .items(ScenarioSchema)
+    .required()
+    .meta({ title: 'Scenarios Section' })
+    .description(
+      'Definition of scenarios for your VUs to run:\nhttps://www.artillery.io/docs/reference/test-script#scenarios-section'
+    ), //TODO make this optional?
+  before: BeforeAfterScenarioSchema.meta({
+    title: 'Before Section'
+  }).description(
+    "Optional scenario to run once per test before the main scenarios section (in distributed mode, it's once per worker).\nhttps://www.artillery.io/docs/reference/test-script#before-and-after-sections"
+  ),
+  after: BeforeAfterScenarioSchema.meta({ title: 'After Section' }).description(
+    "Optional scenario to run once per test after the main scenarios section (in distributed mode, it's once per worker).\nhttps://www.artillery.io/docs/reference/test-script#before-and-after-sections"
+  )
 });
 
 module.exports = {
