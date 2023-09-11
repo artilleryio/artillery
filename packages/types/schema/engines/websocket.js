@@ -2,15 +2,7 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
-const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
-
-const BaseFlowItemAlternatives = [
-  Joi.object({ function: Joi.string() }),
-  Joi.object({ log: Joi.string().meta({ title: 'Log from inside' }) }).meta({
-    title: 'Logging'
-  }),
-  Joi.object({ think: artilleryStringNumber })
-];
+const { BaseFlowItemAlternatives } = require('./common');
 
 const BaseWithWs = [
   ...BaseFlowItemAlternatives,

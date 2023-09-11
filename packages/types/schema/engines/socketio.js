@@ -6,18 +6,10 @@ const { BaseWithHttp } = require('./http');
 
 const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
 
-const BaseFlowItemAlternatives = [
-  Joi.object({ function: Joi.string() }),
-  Joi.object({ log: Joi.string().meta({ title: 'Log from inside' }) }).meta({
-    title: 'Logging'
-  }),
-  Joi.object({ think: artilleryStringNumber })
-];
-
 const BaseWithSocketio = [
   // ...BaseFlowItemAlternatives,
   ...BaseWithHttp,
-  //TODO: review this schema.
+  //TODO: review this schema and if it should also import base flow item.
   Joi.object({
     emit: Joi.object({
       channel: Joi.string(),
