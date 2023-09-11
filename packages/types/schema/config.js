@@ -1,6 +1,7 @@
 const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
+const { artilleryStringNumber } = require('./joi.helpers');
 const { HttpConfigSchema } = require('./engines/http');
 const { WsConfigSchema } = require('./engines/websocket');
 const { SocketIoConfigSchema } = require('./engines/socketio');
@@ -14,8 +15,6 @@ const {
 const {
   PublishMetricsPluginConfigSchema
 } = require('./plugins/publish-metrics');
-
-const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
 
 const TlsConfig = Joi.object({
   rejectUnauthorized: Joi.boolean().meta({

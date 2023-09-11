@@ -2,9 +2,8 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
+const { artilleryStringNumber } = require('../joi.helpers');
 const { BaseWithHttp } = require('./http');
-
-const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
 
 const BaseWithSocketio = [
   // ...BaseFlowItemAlternatives,

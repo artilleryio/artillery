@@ -4,7 +4,7 @@ const Joi = require('joi').defaults((schema) =>
 const { BaseFlowItemAlternatives } = require('./common');
 const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 
-const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
+const { artilleryStringNumber } = require('../joi.helpers');
 
 //TODO: add request with body properties
 const HttpMethodProperties = Joi.object({

@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
+const { artilleryStringNumber } = require('../joi.helpers');
 
 const ApdexPluginConfigSchema = Joi.object({
   threshold: artilleryStringNumber

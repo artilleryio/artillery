@@ -1,7 +1,9 @@
 const Joi = require('joi');
 
-const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
-const artilleryStringBoolean = Joi.alternatives(Joi.boolean(), Joi.string());
+const {
+  artilleryStringNumber,
+  artilleryStringBoolean
+} = require('../joi.helpers');
 
 const CloudwatchReporterSchema = Joi.object({
   type: Joi.string().valid('cloudwatch').required(),
