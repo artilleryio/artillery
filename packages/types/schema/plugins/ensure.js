@@ -1,23 +1,59 @@
 const Joi = require('joi');
 
 const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
+const artilleryStringBoolean = Joi.alternatives(Joi.boolean(), Joi.string());
+
 const EnsureLegacyOptions = {
-  min: artilleryStringNumber,
-  max: artilleryStringNumber,
-  median: artilleryStringNumber,
-  p95: artilleryStringNumber,
-  p99: artilleryStringNumber,
+  min: artilleryStringNumber
+    .meta({ title: 'Min' })
+    .description(
+      'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
+    ),
+  max: artilleryStringNumber
+    .meta({ title: 'Max' })
+    .description(
+      'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
+    ),
+  median: artilleryStringNumber
+    .meta({ title: 'Median' })
+    .description(
+      'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
+    ),
+  p95: artilleryStringNumber
+    .meta({ title: 'P95' })
+    .description(
+      'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
+    ),
+  p99: artilleryStringNumber
+    .meta({ title: 'P99' })
+    .description(
+      'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
+    ),
   maxErrorRate: artilleryStringNumber
+    .meta({ title: 'Max Error Rate' })
+    .description(
+      'Legacy Basic Check\nhttps://www.artillery.io/docs/reference/extensions/ensure#basic-checks'
+    )
 };
 
 const EnsurePluginConfigSchema = Joi.object({
-  thresholds: Joi.array().items(Joi.object()), //TODO: this is typed wrong
-  conditions: Joi.array().items(
-    Joi.object({
-      expression: Joi.string(),
-      strict: Joi.boolean()
-    })
-  ), //TODO: check that conditions are typed right
+  thresholds: Joi.array()
+    .items(Joi.any())
+    .meta({ title: 'Threshold Checks' })
+    .description(
+      'Ensure that a metric is under some threshold value.\nhttps://www.artillery.io/docs/reference/extensions/ensure#threshold-checks'
+    ), //TODO: for now this is typed with any as arbitrary key:value pairs are hard to achieve in Joi
+  conditions: Joi.array()
+    .items(
+      Joi.object({
+        expression: Joi.string().meta({ title: 'Conditional Expression' }),
+        strict: artilleryStringBoolean.meta({ title: 'Strict?' })
+      })
+    )
+    .meta({ title: 'Conditional Checks' })
+    .description(
+      'Set more complex expressions for additional checks.\nhttps://www.artillery.io/docs/reference/extensions/ensure#advanced-conditional-checks'
+    ),
   ...EnsureLegacyOptions
 }).unknown(false);
 
