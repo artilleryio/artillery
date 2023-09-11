@@ -7,7 +7,8 @@ const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 const { artilleryNumberOrString } = require('../joi.helpers');
 
 //TODO: add request with body properties
-const HttpMethodProperties = Joi.object({
+
+const SharedHttpMethodProperties = {
   url: Joi.string().required().meta({ title: 'URL' }),
   name: Joi.string()
     .meta({ title: 'URL name' })
@@ -55,24 +56,50 @@ const HttpMethodProperties = Joi.object({
     .description(
       'More information: https://www.artillery.io/docs/reference/extensions/expect#expectations'
     )
-});
+};
+
+const HttpMethodPropertiesWithBody = {
+  ...SharedHttpMethodProperties,
+  json: Joi.any().meta({ title: 'JSON response body' }),
+  body: Joi.any().meta({ title: 'Raw response body' }),
+  form: Joi.object()
+    .meta({ title: 'Url-encoded Form' })
+    .description(
+      'https://www.artillery.io/docs/reference/engines/http#url-encoded-forms-applicationx-www-form-urlencoded'
+    ),
+  formData: Joi.object()
+    .meta({ title: 'Multipart Forms' })
+    .description(
+      'https://www.artillery.io/docs/reference/engines/http#multipart-forms-multipartform-data'
+    )
+};
 
 const BaseWithHttp = [
   ...BaseFlowItemAlternatives,
   Joi.object({
-    get: HttpMethodProperties.meta({ title: 'Perform a GET request' })
+    get: Joi.object(SharedHttpMethodProperties).meta({
+      title: 'Perform a GET request'
+    })
   }),
   Joi.object({
-    post: HttpMethodProperties.meta({ title: 'Perform a POST request' })
-  }), //TODO: add body options
-  Joi.object({
-    put: HttpMethodProperties.meta({ title: 'Perform a PUT request' })
+    post: Joi.object(HttpMethodPropertiesWithBody).meta({
+      title: 'Perform a POST request'
+    })
   }),
   Joi.object({
-    patch: HttpMethodProperties.meta({ title: 'Perform a PATCH request' })
+    put: Joi.object(HttpMethodPropertiesWithBody).meta({
+      title: 'Perform a PUT request'
+    })
   }),
   Joi.object({
-    delete: HttpMethodProperties.meta({ title: 'Perform a DELETE request' })
+    patch: Joi.object(HttpMethodPropertiesWithBody).meta({
+      title: 'Perform a PATCH request'
+    })
+  }),
+  Joi.object({
+    delete: Joi.object(HttpMethodPropertiesWithBody).meta({
+      title: 'Perform a DELETE request'
+    })
   }) //TODO: do we need head and options methods?
 ];
 
