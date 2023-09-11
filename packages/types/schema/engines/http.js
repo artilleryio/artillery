@@ -9,6 +9,11 @@ const artilleryStringNumber = Joi.alternatives(Joi.number(), Joi.string());
 //TODO: add request with body properties
 const HttpMethodProperties = Joi.object({
   url: Joi.string().required().meta({ title: 'URL' }),
+  name: Joi.string()
+    .meta({ title: 'URL name' })
+    .description(
+      'Descriptive name for your URL. Certain plugins and features use this name instead of the full URL due to dynamic request urls.'
+    ),
   headers: Joi.object().meta({ title: 'Headers' }),
   cookie: Joi.object() //TODO: maybe make this a [name: string]: string
     .meta({ title: 'Cookies' }), //TODO: make them strings only,

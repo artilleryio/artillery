@@ -11,16 +11,20 @@ const ScenarioSchema = Joi.object({
   name: Joi.string().meta({ title: 'Scenario Name' }),
   // engine: Joi.alternatives().conditional('engine', { is: Joi.alternatives('socketio', 'ws', 'http'), then: Joi.alternatives('socketio', 'ws', 'http'), otherwise: Joi.string().invalid('socketio', 'ws', 'http')}),//TODO:maybe improve this?
   // flow: Joi.array().items(Joi.object()),
-  //   engine: Joi.alternatives(
-  //     'http',
-  //     'ws',
-  //     'websocket',
-  //     'socketio',
-  //     'playwright',
-  //     null,
-  //     Joi.string()
-  //   ),
-  weight: Joi.alternatives(Joi.string(), Joi.number()),
+  // engine: Joi.alternatives(
+  //   'http',
+  //   'ws',
+  //   'websocket',
+  //   'socketio',
+  //   'playwright',
+  //   // null,
+  //   Joi.string()
+  // ),
+  weight: Joi.alternatives(Joi.string(), Joi.number())
+    .meta({ title: 'Scenario weight' })
+    .description(
+      'Use this to specify that some scenarios should be picked more often than others.\nhttps://www.artillery.io/docs/reference/test-script#scenario-weights'
+    ),
   beforeScenario: Joi.alternatives(
     Joi.string(),
     Joi.array().items(Joi.string()).single()
@@ -63,7 +67,7 @@ const ScenarioSchema = Joi.object({
   .when(Joi.object({ engine: Joi.string().valid('ws', 'websocket') }), {
     then: Joi.object({
       engine: Joi.string()
-        .valid('ws', 'websocket')
+        .valid('ws', 'websocket') //TODO: figure out why this doesnt autocomplete when doing space engine
         .meta({ title: 'Websocket Engine' }),
       flow: Joi.array()
         .items(WsFlowItemSchema)
