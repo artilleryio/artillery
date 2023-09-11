@@ -11,11 +11,11 @@ const schema = Joi.object({
   ),
   scenarios: Joi.array()
     .items(ScenarioSchema)
-    .required()
+    // .required() //TODO: conditionally make this required for runtime schema validation
     .meta({ title: 'Scenarios Section' })
     .description(
       'Definition of scenarios for your VUs to run:\nhttps://www.artillery.io/docs/reference/test-script#scenarios-section'
-    ), //TODO make this optional?
+    ),
   before: BeforeAfterScenarioSchema.meta({
     title: 'Before Section'
   }).description(
