@@ -7,6 +7,25 @@ const { WsFlowItemSchema } = require('./engines/websocket');
 const { SocketIoFlowItemSchema } = require('./engines/socketio');
 const { PlaywrightSchemaObject } = require('./engines/playwright');
 
+const BeforeAfterScenarioProperties = {
+  beforeScenario: Joi.alternatives(
+    Joi.string(),
+    Joi.array().items(Joi.string()).single()
+  )
+    .meta({ title: 'beforeScenario hook' })
+    .description(
+      'Custom Javascript functions to run before each scenario\nhttps://www.artillery.io/docs/reference/engines/http#function-actions-and-beforescenario--afterscenario-hooks'
+    ), //TODO:review this
+  afterScenario: Joi.alternatives(
+    Joi.string(),
+    Joi.array().items(Joi.string()).single()
+  )
+    .meta({ title: 'afterScenario hook' })
+    .description(
+      'Custom Javascript functions to run after each scenario\nhttps://www.artillery.io/docs/reference/engines/http#function-actions-and-beforescenario--afterscenario-hooks'
+    ) //TODO:review this
+};
+
 const ScenarioSchema = Joi.object({
   name: Joi.string().meta({ title: 'Scenario Name' }),
   // engine: Joi.alternatives().conditional('engine', { is: Joi.alternatives('socketio', 'ws', 'http'), then: Joi.alternatives('socketio', 'ws', 'http'), otherwise: Joi.string().invalid('socketio', 'ws', 'http')}),//TODO:maybe improve this?
@@ -24,27 +43,12 @@ const ScenarioSchema = Joi.object({
     .meta({ title: 'Scenario weight' })
     .description(
       'Use this to specify that some scenarios should be picked more often than others.\nhttps://www.artillery.io/docs/reference/test-script#scenario-weights'
-    ),
-  beforeScenario: Joi.alternatives(
-    Joi.string(),
-    Joi.array().items(Joi.string()).single()
-  )
-    .meta({ title: 'beforeScenario hook' })
-    .description(
-      'Custom Javascript functions to run before each scenario\nhttps://www.artillery.io/docs/reference/engines/http#function-actions-and-beforescenario--afterscenario-hooks'
-    ), //TODO:review this
-  afterScenario: Joi.alternatives(
-    Joi.string(),
-    Joi.array().items(Joi.string()).single()
-  )
-    .meta({ title: 'afterScenario hook' })
-    .description(
-      'Custom Javascript functions to run after each scenario\nhttps://www.artillery.io/docs/reference/engines/http#function-actions-and-beforescenario--afterscenario-hooks'
-    ) //TODO:review this
+    )
 })
   .when(Joi.object({ engine: Joi.string().valid(null, '') }), {
     then: Joi.object({
       //   engine: Joi.string().valid(null, ''),
+      ...BeforeAfterScenarioProperties,
       flow: Joi.array()
         .items(HttpFlowItemSchema)
         .required()
@@ -58,6 +62,7 @@ const ScenarioSchema = Joi.object({
   .when(Joi.object({ engine: Joi.string().valid('http') }), {
     then: Joi.object({
       engine: Joi.string().valid('http').meta({ title: 'HTTP Engine' }),
+      ...BeforeAfterScenarioProperties,
       flow: Joi.array()
         .items(HttpFlowItemSchema)
         .required()
@@ -117,7 +122,7 @@ const ScenarioSchema = Joi.object({
 //TODO: Lets do all the descriptions
 
 //TODO: type this with engine flows
-const BeforeAfterScenarioSchema = Joi.object({
+const BeforeAfterSchema = Joi.object({
   flow: Joi.array()
     .items(Joi.any())
     .required()
@@ -129,5 +134,5 @@ const BeforeAfterScenarioSchema = Joi.object({
 
 module.exports = {
   ScenarioSchema,
-  BeforeAfterScenarioSchema
+  BeforeAfterSchema
 };
