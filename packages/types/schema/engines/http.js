@@ -90,7 +90,15 @@ const SharedHttpMethodProperties = {
     .meta({ title: 'Capture' })
     .description(
       'Capture and reuse parts of a response\nhttps://www.artillery.io/docs/reference/engines/http#extracting-and-re-using-parts-of-a-response-request-chaining'
-    ), //TODO: add capture here
+    ),
+  match: Joi.object({
+    json: Joi.any(),
+    value: Joi.string()
+  })
+    .meta({ title: 'Match' })
+    .description(
+      '(Deprecated) Response validation criteria. Use capture and expect instead'
+    ), //TODO: add proper deprecated when available
   auth: Joi.object({
     user: Joi.string().meta({ title: 'Username' }),
     pass: Joi.string().meta({ title: 'Password' })
