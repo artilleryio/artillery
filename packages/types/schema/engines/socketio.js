@@ -5,8 +5,9 @@ const Joi = require('joi').defaults((schema) =>
 const { LoopOptions } = require('./common');
 const { BaseWithHttp } = require('./http');
 
+//TODO: add metadata
+
 const BaseWithSocketio = [
-  // ...BaseFlowItemAlternatives,
   ...BaseWithHttp,
   //TODO: review this schema and if it should also import base flow item.
   Joi.object({

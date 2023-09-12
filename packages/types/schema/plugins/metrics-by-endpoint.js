@@ -2,6 +2,8 @@ const Joi = require('joi');
 
 const { artilleryBooleanOrString } = require('../joi.helpers');
 
+//TODO: type internal properties of this plugin
+
 const MetricsByEndpointPluginConfigSchema = Joi.object({
   useOnlyRequestNames: artilleryBooleanOrString,
   stripQueryString: artilleryBooleanOrString,

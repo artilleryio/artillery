@@ -5,6 +5,8 @@ const {
   artilleryBooleanOrString
 } = require('../joi.helpers');
 
+//TODO: type internal properties of each reporter
+
 const CloudwatchReporterSchema = Joi.object({
   type: Joi.string().valid('cloudwatch').required(),
   region: Joi.string(),

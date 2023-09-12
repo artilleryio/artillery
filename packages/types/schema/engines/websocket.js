@@ -4,6 +4,8 @@ const Joi = require('joi').defaults((schema) =>
 
 const { BaseFlowItemAlternatives, LoopOptions } = require('./common');
 
+//TODO: add metadata
+
 const BaseWithWs = [
   ...BaseFlowItemAlternatives,
   Joi.object({

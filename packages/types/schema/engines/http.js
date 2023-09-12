@@ -112,7 +112,6 @@ const SharedHttpMethodProperties = {
   ifTrue: Joi.string()
     .meta({ title: 'Request Condition' })
     .description('Expression that controls when to execute this request.'),
-  //TODO: add match here (deprecated)
   expect: Joi.alternatives(
     ExpectPluginImplementationSchema,
     Joi.array().items(ExpectPluginImplementationSchema)
@@ -171,20 +170,11 @@ const BaseWithHttp = [
 const HttpFlowItemSchema = Joi.alternatives()
   .try(
     ...BaseWithHttp,
-    // ...BaseFlowItemAlternatives,
-    // Joi.object({get: HttpMethodProperties.description("hi there still me").meta({title: "GET REQUEST"})}),
-    // Joi.object({post: HttpMethodProperties}),//TODO: add body options
-    // Joi.object({put: HttpMethodProperties}),
-    // Joi.object({patch: HttpMethodProperties}),
-    // Joi.object({delete: HttpMethodProperties}),//TODO: do we need head and options methods?
     Joi.object({
       loop: Joi.array()
         .items(
           Joi.alternatives()
-            .try(
-              // Joi.link('#HttpFlowItemSchema')
-              ...BaseWithHttp
-            )
+            .try(...BaseWithHttp)
             .match('all')
             .required()
         )
@@ -194,21 +184,6 @@ const HttpFlowItemSchema = Joi.alternatives()
   )
   .match('all')
   .id('HttpFlowItemSchema');
-
-// const HttpFlowItemSchema2 = Joi.object({
-//     function: Joi.string(),
-//     think: Joi.alternatives(Joi.number(), Joi.string()),
-//     log: Joi.string().meta({title: "Logging"}),
-//     get: HttpMethodProperties.description("hi there still me").meta({title: "GET REQUEST"}),
-//     post: HttpMethodProperties
-// })
-
-// const HttpLoopSchema = Joi.object({
-//     loop: Joi.array().items(HttpFlowItemSchema).meta({title: "Http Loop"}),
-//     whileTrue: Joi.string(),
-//     count: Joi.alternatives(Joi.string(), Joi.boolean()),
-//     over: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
-// })
 
 const HttpDefaultsConfigSchema = Joi.object({
   headers: Joi.object()
