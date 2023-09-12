@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import * as yaml from 'js-yaml';
 
-const schema = require('../../../schema.json');
+const schema = require('../schema.json');
 
 const ajv = new Ajv({
   validateSchema: true,
