@@ -2,6 +2,7 @@
 
 const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:dynatrace');
+const path = require('path');
 
 class DynatraceReporter {
   constructor(config, events, script) {
@@ -44,14 +45,12 @@ class DynatraceReporter {
       }
 
       this.ingestEventsEndpoint = new URL(
-        '/api/v2/events/ingest',
-        this.config.envUrl
+        path.join(this.config.envUrl, '/api/v2/events/ingest')
       );
     }
 
     this.ingestMetricsEndpoint = new URL(
-      '/api/v2/metrics/ingest',
-      this.config.envUrl
+      path.join(this.config.envUrl, '/api/v2/metrics/ingest')
     );
 
     this.pendingRequests = 0;
