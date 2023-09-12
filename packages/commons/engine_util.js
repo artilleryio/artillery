@@ -22,6 +22,8 @@ try {
   xmlCapture = null;
 }
 
+// TODO Write tests
+
 module.exports = {
   createThink: createThink,
   createLoopWithCount: createLoopWithCount,
@@ -609,6 +611,8 @@ function extractRegExp(doc, expr, opts) {
 
   if (group && match.groups) {
     return match.groups[group];
+  } else if (group && match[group]) {
+    return match[group];
   } else if (match[0]) {
     return match[0];
   } else {
