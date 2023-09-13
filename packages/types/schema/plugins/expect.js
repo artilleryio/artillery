@@ -27,7 +27,9 @@ const ExpectPluginConfigSchema = Joi.object({
   expectDefault200: artilleryBooleanOrString
     .meta({ title: 'Expect 200 by default' })
     .description('Sets a 200 OK status code expectation for all requests.') //TODO: add default value
-}).unknown(false);
+})
+  .unknown(false)
+  .meta({ title: 'Expect Plugin' });
 
 const ExpectPluginImplementationSchema = {
   statusCode: Joi.alternatives(

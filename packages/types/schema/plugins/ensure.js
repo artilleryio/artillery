@@ -57,7 +57,9 @@ const EnsurePluginConfigSchema = Joi.object({
       'Set more complex expressions for additional checks.\nhttps://www.artillery.io/docs/reference/extensions/ensure#advanced-conditional-checks'
     ),
   ...EnsureLegacyOptions
-}).unknown(false);
+})
+  .unknown(false)
+  .meta({ title: 'Ensure Plugin' });
 
 module.exports = {
   EnsurePluginConfigSchema
