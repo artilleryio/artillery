@@ -9,7 +9,9 @@ const MetricsByEndpointPluginConfigSchema = Joi.object({
   stripQueryString: artilleryBooleanOrString,
   ignoreUnnamedRequests: artilleryBooleanOrString,
   metricsPrefix: Joi.string()
-}).unknown(false);
+})
+  .unknown(false)
+  .meta({ title: 'Metrics by Endpoint Plugin' });
 
 module.exports = {
   MetricsByEndpointPluginConfigSchema

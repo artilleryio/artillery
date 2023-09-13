@@ -187,24 +187,26 @@ const OpenTelemetryReporterSchema = Joi.object({
   .unknown(false)
   .meta({ title: 'OpenTelemetry Reporter' });
 
-const PublishMetricsPluginConfigSchema = Joi.array().items(
-  Joi.alternatives()
-    .try(
-      CloudwatchReporterSchema,
-      DatadogReporterSchema,
-      NewRelicReporterSchema,
-      SplunkReporterSchema,
-      PrometheusReporterSchema,
-      DynatraceReporterSchema,
-      HoneycombReporterSchema,
-      LightstepReporterSchema,
-      MixpanelReporterSchema,
-      StatsdReporterSchema,
-      InfluxReporterSchema,
-      OpenTelemetryReporterSchema
-    )
-    .match('one')
-);
+const PublishMetricsPluginConfigSchema = Joi.array()
+  .items(
+    Joi.alternatives()
+      .try(
+        CloudwatchReporterSchema,
+        DatadogReporterSchema,
+        NewRelicReporterSchema,
+        SplunkReporterSchema,
+        PrometheusReporterSchema,
+        DynatraceReporterSchema,
+        HoneycombReporterSchema,
+        LightstepReporterSchema,
+        MixpanelReporterSchema,
+        StatsdReporterSchema,
+        InfluxReporterSchema,
+        OpenTelemetryReporterSchema
+      )
+      .match('one')
+  )
+  .meta({ title: 'Publish Metrics Plugin' });
 
 module.exports = {
   PublishMetricsPluginConfigSchema

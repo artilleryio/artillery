@@ -132,6 +132,11 @@ const ArtilleryBuiltInPlugins = {
   'publish-metrics': PublishMetricsPluginConfigSchema
 };
 
+const ArtilleryBuiltInPluginsInRootConfig = (({ ensure, apdex }) => ({
+  ensure,
+  apdex
+}))(ArtilleryBuiltInPlugins);
+
 const ConfigSchema = Joi.object({
   ...ReplaceableConfig,
   http: HttpConfigSchema.meta({ title: 'HTTP Configuration' }),
@@ -167,7 +172,7 @@ const ConfigSchema = Joi.object({
   })
     .meta({ title: 'Engines' })
     .description('Configuration for specific engines used'),
-  ...ArtilleryBuiltInPlugins
+  ...ArtilleryBuiltInPluginsInRootConfig
 });
 
 module.exports = {

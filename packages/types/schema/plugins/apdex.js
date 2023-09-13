@@ -6,7 +6,9 @@ const { artilleryNumberOrString } = require('../joi.helpers');
 
 const ApdexPluginConfigSchema = Joi.object({
   threshold: artilleryNumberOrString
-}).unknown(false);
+})
+  .unknown(false)
+  .meta({ title: 'Apdex Plugin' });
 
 module.exports = {
   ApdexPluginConfigSchema
