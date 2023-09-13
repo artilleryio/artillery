@@ -159,7 +159,7 @@ const InfluxReporterSchema = Joi.object({
 
 const OtelCommonOptions = {
   endpoint: Joi.string(),
-  headers: Joi.object()
+  headers: Joi.object().unknown()
 };
 
 const OpenTelemetryReporterSchema = Joi.object({
@@ -172,7 +172,7 @@ const OpenTelemetryReporterSchema = Joi.object({
       .default('otlp-http'),
     includeOnly: Joi.array().items(Joi.string()),
     excluded: Joi.array().items(Joi.string()),
-    attributes: Joi.object()
+    attributes: Joi.object().unknown()
   }),
   traces: Joi.object({
     ...OtelCommonOptions,
@@ -181,7 +181,7 @@ const OpenTelemetryReporterSchema = Joi.object({
       .default('otlp-http'),
     sampleRate: artilleryNumberOrString,
     useRequestNames: artilleryBooleanOrString,
-    attributes: Joi.object()
+    attributes: Joi.object().unknown()
   })
 })
   .unknown(false)
