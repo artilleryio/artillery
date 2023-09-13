@@ -4,6 +4,9 @@ const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../util');
 
 const {
+  diag,
+  DiagConsoleLogger,
+  DiagLogLevel,
   SpanKind,
   SpanStatusCode,
   trace,
@@ -18,7 +21,12 @@ class OTelReporter {
   constructor(config, events, script) {
     this.script = script;
     this.events = events;
-
+    if (
+      process.env.DEBUG &&
+      process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
+    ) {
+      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+    }
     this.metricExporters = {
       'otlp-proto'(options) {
         const {
