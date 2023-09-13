@@ -95,10 +95,10 @@ const SharedHttpMethodProperties = {
     json: Joi.any(),
     value: Joi.string()
   })
-    .meta({ title: 'Match' })
+    .meta({ title: 'Match', deprecated: true })
     .description(
       '(Deprecated) Response validation criteria. Use capture and expect instead'
-    ), //TODO: add proper deprecated when available
+    ),
   auth: Joi.object({
     user: Joi.string().meta({ title: 'Username' }),
     pass: Joi.string().meta({ title: 'Password' })
@@ -197,8 +197,9 @@ const HttpDefaultsConfigSchema = Joi.object({
   strictCapture: Joi.alternatives(Joi.boolean(), Joi.string())
     .meta({ title: 'Strict capture' })
     .description(
-      'Whether to turn on strict capture by default for all captures.\nhttps://www.artillery.io/docs/reference/engines/http#turn-off-strict-capture'
-    ),
+      'Whether to turn on/off strict capture by default for all captures.\nhttps://www.artillery.io/docs/reference/engines/http#turn-off-strict-capture'
+    )
+    .default(true),
   think: Joi.object({
     jitter: artilleryNumberOrString
       .meta('Jitter')
@@ -211,7 +212,8 @@ const HttpDefaultsConfigSchema = Joi.object({
 const HttpConfigSchema = Joi.object({
   timeout: artilleryNumberOrString
     .meta({ title: 'Request Timeout' })
-    .description('Increase or decrease request timeout'),
+    .description('Increase or decrease request timeout')
+    .default(10),
   maxSockets: artilleryNumberOrString
     .meta({ title: 'Maximum Sockets' })
     .description(

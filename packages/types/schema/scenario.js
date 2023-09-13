@@ -33,6 +33,7 @@ const ScenarioSchema = Joi.object({
     .description(
       'Use this to specify that some scenarios should be picked more often than others.\nhttps://www.artillery.io/docs/reference/test-script#scenario-weights'
     )
+    .default(1)
 })
   .when(Joi.object({ engine: Joi.string().valid(null, '') }), {
     then: Joi.object({

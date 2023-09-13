@@ -20,10 +20,12 @@ const {
 } = require('./plugins/publish-metrics');
 
 const TlsConfig = Joi.object({
-  rejectUnauthorized: Joi.boolean().meta({
-    title:
-      'Set this setting to `false` to tell Artillery to accept self-signed TLS certificates.'
-  })
+  rejectUnauthorized: Joi.boolean()
+    .meta({
+      title:
+        'Set this setting to `false` to tell Artillery to accept self-signed TLS certificates.'
+    })
+    .default(true)
 });
 
 const TestPhaseWithArrivals = Joi.object({
@@ -81,25 +83,30 @@ const PayloadConfig = Joi.object({
     .meta({ title: 'Order' })
     .description(
       'Controls how the CSV rows are selected for each virtual user.'
-    ),
+    )
+    .default('random'),
   skipHeader: artilleryBooleanOrString
     .meta({ title: 'Skip Header?' })
     .description(
       'Set to `true` to make Artillery skip the first row in the CSV file (typically the header row)'
-    ), //TODO: add default
+    )
+    .default(false), //TODO: add default
   delimiter: Joi.string()
     .meta({ title: 'Delimiter' })
-    .description('Custom delimiter character to use in the payload.'), //TODO: add default
+    .description('Custom delimiter character to use in the payload.')
+    .default(','), //TODO: add default
   cast: artilleryBooleanOrString
     .meta({ title: 'Cast?' })
     .description(
       'Controls whether Artillery converts fields to native types (e.g. numbers or booleans). To keep those fields as strings, set this option to `false`.'
-    ),
+    )
+    .default(true),
   skipEmptyLines: artilleryBooleanOrString
     .meta({ title: 'Skip empty lines?' })
     .description(
       'Controls whether Artillery should skip empty lines in the payload.'
-    ),
+    )
+    .default(true),
   loadAll: artilleryBooleanOrString
     .meta({ title: 'Load all data' })
     .description('Set loadAll to true to provide all rows to each VU'),
