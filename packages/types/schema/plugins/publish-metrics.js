@@ -157,6 +157,36 @@ const InfluxReporterSchema = Joi.object({
   .unknown(false)
   .meta({ title: 'InfluxDB/Telegraf Reporter' });
 
+const OtelCommonOptions = {
+  endpoint: Joi.string(),
+  headers: Joi.object()
+};
+
+const OpenTelemetryReporterSchema = Joi.object({
+  type: Joi.string().valid('open-telemetry').required(),
+  serviceName: Joi.string(),
+  metrics: Joi.object({
+    ...OtelCommonOptions,
+    exporter: Joi.string()
+      .valid('otlp-http', 'otlp-proto', 'otlp-grpc')
+      .default('otlp-http'),
+    includeOnly: Joi.array().items(Joi.string()),
+    excluded: Joi.array().items(Joi.string()),
+    attributes: Joi.object()
+  }),
+  traces: Joi.object({
+    ...OtelCommonOptions,
+    exporter: Joi.string()
+      .valid('otlp-http', 'otlp-proto', 'otlp-grpc', 'zipkin')
+      .default('otlp-http'),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    attributes: Joi.object()
+  })
+})
+  .unknown(false)
+  .meta({ title: 'OpenTelemetry Reporter' });
+
 const PublishMetricsPluginConfigSchema = Joi.array().items(
   Joi.alternatives()
     .try(
@@ -170,7 +200,8 @@ const PublishMetricsPluginConfigSchema = Joi.array().items(
       LightstepReporterSchema,
       MixpanelReporterSchema,
       StatsdReporterSchema,
-      InfluxReporterSchema
+      InfluxReporterSchema,
+      OpenTelemetryReporterSchema
     )
     .match('one')
 );
