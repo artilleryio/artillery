@@ -609,12 +609,16 @@ function extractRegExp(doc, expr, opts) {
     return '';
   }
 
+  // Captures named group (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Regular_expressions/Named_capturing_group)
   if (group && match.groups) {
     return match.groups[group];
+    // Captures integer index defined group since those don't show up in match.groups
   } else if (group && match[group]) {
     return match[group];
+    // Defaults to first match if found and no group defined
   } else if (match[0]) {
     return match[0];
+    // If no match returns empty string
   } else {
     return '';
   }
