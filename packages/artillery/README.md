@@ -37,11 +37,11 @@ Follow our 5-minute guide to run your first load test - https://www.artillery.io
 
 ### Docs and guides
 
-- [Distributed load testing with Artillery on AWS Lambda](https://docs.art/lambda)
-- [Distributed load testing on Fargate](https://docs.art/fargate)
-- Set [API response expectations](https://docs.art/expect), automate [SLO checks](https://docs.art/ensure), and report [Apdex scores](https://docs.art/apdex)
-- [Running tests using real headless browsers](https://docs.art/playwright) with Artillery's Playwright integration
-- [Publishing metrics](https://docs.art/o11y) to Datadog, Honeycomb, Lightstep, and more
+- [Distributed load testing with Artillery on AWS Lambda](https://www.artillery.io/docs/load-testing-at-scale/aws-lambda)
+- [Distributed load testing on Fargate](https://www.artillery.io/docs/load-testing-at-scale/aws-fargate)
+- Set [API response expectations](https://www.artillery.io/docs/reference/extensions/expect), automate [SLO checks](https://www.artillery.io/docs/reference/extensions/ensure), and report [Apdex scores](https://www.artillery.io/docs/reference/extensions/apdex)
+- [Running tests using real headless browsers](https://www.artillery.io/docs/reference/engines/playwright) with Artillery's Playwright integration
+- [Publishing metrics](https://www.artillery.io/docs/reference/extensions/publish-metrics) to Datadog, Honeycomb, Lightstep, and more
 
 ### Integrations and plugins
 
