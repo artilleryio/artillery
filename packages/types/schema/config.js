@@ -1,10 +1,8 @@
 const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
-const {
-  artilleryNumberOrString,
-  artilleryBooleanOrString
-} = require('./joi.helpers');
+
+const { artilleryBooleanOrString } = require('./joi.helpers');
 const { HttpConfigSchema } = require('./engines/http');
 const { WsConfigSchema } = require('./engines/websocket');
 const { SocketIoConfigSchema } = require('./engines/socketio');
@@ -18,6 +16,7 @@ const {
 const {
   PublishMetricsPluginConfigSchema
 } = require('./plugins/publish-metrics');
+const { TestPhase } = require('./config/phases');
 
 const TlsConfig = Joi.object({
   rejectUnauthorized: Joi.boolean().meta({
@@ -25,49 +24,6 @@ const TlsConfig = Joi.object({
       'Set this setting to `false` to tell Artillery to accept self-signed TLS certificates.'
   })
 });
-
-const TestPhaseWithArrivals = Joi.object({
-  name: Joi.string().meta({ title: 'Test Phase Name' }),
-  duration: artilleryNumberOrString
-    .meta({ title: 'Test Phase Duration' })
-    .description(
-      'Test phase duration (in seconds).\nCan also be any valid human-readable duration: https://www.npmjs.com/package/ms .'
-    ),
-  arrivalRate: artilleryNumberOrString
-    .meta({ title: 'Arrival Rate' })
-    .description(
-      'Constant arrival rate.\nThe number of virtual users generated every second.'
-    ),
-  arrivalCount: artilleryNumberOrString
-    .meta({ title: 'Arrival Count' })
-    .description(
-      'Fixed number of virtual users over that time period.\nhttps://www.artillery.io/docs/reference/test-script#fixed-number-of-arrivals-per-second'
-    ),
-  rampTo: artilleryNumberOrString
-    .meta({ title: 'Ramp up rate' })
-    .description(
-      'Ramp from initial arrivalRate to this value over time period.\nhttps://www.artillery.io/docs/reference/test-script#ramp-up-rate'
-    ),
-  maxVusers: artilleryNumberOrString
-    .meta({ title: 'Maximum virtual users' })
-    .description(
-      'Cap the number of concurrent virtual users at any given time.'
-    )
-});
-
-const TestPhaseWithPause = Joi.object({
-  name: Joi.string().meta({ title: 'Test Phase Name' }),
-  pause: artilleryNumberOrString
-    .meta({ title: 'Pause' })
-    .description(
-      'Pause the test phase execution for given duration (in seconds).\nCan also be any valid human-readable duration: https://www.npmjs.com/package/ms.'
-    )
-});
-
-const TestPhase = Joi.alternatives(
-  TestPhaseWithArrivals,
-  TestPhaseWithPause
-).meta({ title: 'Test Phase' });
 
 const PayloadConfig = Joi.object({
   path: Joi.string().meta({ title: 'CSV Path' }),

@@ -7,6 +7,7 @@ tap.test('validates a script with 1 phase and 1 http scenario', (tap) => {
     target: http://localhost:3000
     phases:
       - duration: 10
+        arrivalRate: 5
         rampTo: 50
   scenarios:
     - engine: http
@@ -39,6 +40,7 @@ tap.test('supports base configurations (without scenarios)', (tap) => {
     target: http://localhost:3000
     phases:
       - duration: 10
+        arrivalRate: 5
         rampTo: 50
     `),
     []

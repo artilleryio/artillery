@@ -41,6 +41,7 @@ config:
   target: http://localhost:3000
   phases:
     - duration: 10
+      arrivalRate: 10
       rampTo: 50
 scenarios:
   - engine: socketio
