@@ -13,7 +13,7 @@ async function execute(args, options) {
     const result = await c;
     return [0, result];
   } catch (err) {
-    return [err.code, err.stderr];
+    return [err.code, err];
   }
 }
 async function deleteFile(path) {
