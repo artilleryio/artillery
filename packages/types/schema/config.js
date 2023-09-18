@@ -26,46 +26,63 @@ const TlsConfig = Joi.object({
   })
 });
 
-const TestPhaseWithArrivals = Joi.object({
-  name: Joi.string().meta({ title: 'Test Phase Name' }),
+const CommonPhaseProperties = {
+  name: Joi.string().meta({ title: 'Test Phase Name' })
+};
+
+const CommonArrivalPhaseProperties = {
+  ...CommonPhaseProperties,
   duration: artilleryNumberOrString
+    .required()
     .meta({ title: 'Test Phase Duration' })
     .description(
       'Test phase duration (in seconds).\nCan also be any valid human-readable duration: https://www.npmjs.com/package/ms .'
-    ),
-  arrivalRate: artilleryNumberOrString
-    .meta({ title: 'Arrival Rate' })
-    .description(
-      'Constant arrival rate.\nThe number of virtual users generated every second.'
-    ),
-  arrivalCount: artilleryNumberOrString
-    .meta({ title: 'Arrival Count' })
-    .description(
-      'Fixed number of virtual users over that time period.\nhttps://www.artillery.io/docs/reference/test-script#fixed-number-of-arrivals-per-second'
-    ),
-  rampTo: artilleryNumberOrString
-    .meta({ title: 'Ramp up rate' })
-    .description(
-      'Ramp from initial arrivalRate to this value over time period.\nhttps://www.artillery.io/docs/reference/test-script#ramp-up-rate'
     ),
   maxVusers: artilleryNumberOrString
     .meta({ title: 'Maximum virtual users' })
     .description(
       'Cap the number of concurrent virtual users at any given time.'
     )
-});
+};
+
+const TestPhaseWithArrivalCount = Joi.object({
+  ...CommonArrivalPhaseProperties,
+  arrivalCount: artilleryNumberOrString
+    .required()
+    .meta({ title: 'Arrival Count' })
+    .description(
+      'Fixed number of virtual users over that time period.\nhttps://www.artillery.io/docs/reference/test-script#fixed-number-of-arrivals-per-second'
+    )
+}).meta({ title: 'Arrival Count Phase' });
+
+const TestPhaseWithArrivalRate = Joi.object({
+  ...CommonArrivalPhaseProperties,
+  arrivalRate: artilleryNumberOrString
+    .required()
+    .meta({ title: 'Arrival Rate' })
+    .description(
+      'Constant arrival rate.\nThe number of virtual users generated every second.'
+    ),
+  rampTo: artilleryNumberOrString
+    .meta({ title: 'Ramp up rate' })
+    .description(
+      'Ramp from initial arrivalRate to this value over time period.\nhttps://www.artillery.io/docs/reference/test-script#ramp-up-rate'
+    )
+}).meta({ title: 'Arrival Rate Phase' });
 
 const TestPhaseWithPause = Joi.object({
-  name: Joi.string().meta({ title: 'Test Phase Name' }),
+  ...CommonPhaseProperties,
   pause: artilleryNumberOrString
+    .required()
     .meta({ title: 'Pause' })
     .description(
       'Pause the test phase execution for given duration (in seconds).\nCan also be any valid human-readable duration: https://www.npmjs.com/package/ms.'
     )
-});
+}).meta({ title: 'Pause Phase' });
 
 const TestPhase = Joi.alternatives(
-  TestPhaseWithArrivals,
+  TestPhaseWithArrivalRate,
+  TestPhaseWithArrivalCount,
   TestPhaseWithPause
 ).meta({ title: 'Test Phase' });
 
