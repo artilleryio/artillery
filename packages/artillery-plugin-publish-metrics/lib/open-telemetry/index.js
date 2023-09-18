@@ -2,6 +2,7 @@
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../util');
+const grpc = require('@grpc/grpc-js');
 
 const {
   diag,
@@ -166,7 +167,13 @@ class OTelReporter {
     }
 
     if (config.headers) {
-      this.metricsExporterOpts.headers = config.headers;
+      if (config.exporter === 'otlp-grpc') {
+        const metadata = new grpc.Metadata();
+        Object.entries(config.headers).forEach(([k, v]) => metadata.set(k, v));
+        this.metricsExporterOpts.metadata = metadata;
+      } else {
+        this.metricsExporterOpts.headers = config.headers;
+      }
     }
 
     this.metricsExporter = this.metricExporters[
