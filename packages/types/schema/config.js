@@ -61,7 +61,7 @@ const TestPhaseWithArrivalRate = Joi.object({
     .required()
     .meta({ title: 'Arrival Rate' })
     .description(
-      'Constant arrival rate.\nThe number of virtual users generated every second.'
+      'Constant arrival rate - i.e. the number of virtual users generated every second.\nhttps://www.artillery.io/docs/reference/test-script#constant-arrival-rate'
     ),
   rampTo: artilleryNumberOrString
     .meta({ title: 'Ramp up rate' })
