@@ -11,22 +11,26 @@ const BaseWithSocketio = [
   ...BaseWithHttp,
   //TODO: review this schema and if it should also import base flow item.
   Joi.object({
-    emit: Joi.object({
-      channel: Joi.string(),
-      data: Joi.string(),
-      namespace: Joi.string(),
-      response: Joi.object({
+    emit: Joi.alternatives(
+      Joi.object({
         channel: Joi.string(),
         data: Joi.string()
       }),
-      acknowledge: Joi.object({
-        data: Joi.string(),
-        match: Joi.object({
-          json: Joi.any(),
-          value: Joi.string()
-        })
+      Joi.array().items(Joi.string())
+    ),
+    response: Joi.object({
+      channel: Joi.string(),
+      data: Joi.string()
+      //TODO add capture and match
+    }),
+    acknowledge: Joi.object({
+      data: Joi.string(),
+      match: Joi.object({
+        json: Joi.any(),
+        value: Joi.string()
       })
-    })
+    }),
+    namespace: Joi.string()
   })
 ];
 
