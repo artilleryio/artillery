@@ -52,6 +52,57 @@ scenarios:
   tap.end();
 });
 
+tap.test(
+  'supports response with its options at the same level as emit',
+  (tap) => {
+    tap.same(
+      validateTestScript(`
+scenarios:
+  - engine: socketio
+    flow:
+      - namespace: "myOwnNamespace"
+        emit:
+          channel: myChannel
+          data: Hello world
+        response:
+          channel: "myChannel"
+          data: "hello world"
+          match:
+            json: "$.something"
+            value: "abc"
+    `),
+      []
+    );
+
+    tap.end();
+  }
+);
+
+tap.test(
+  'supports acknowledge with its options at the same level as emit',
+  (tap) => {
+    tap.same(
+      validateTestScript(`
+scenarios:
+  - engine: socketio
+    flow:
+      - namespace: "myOwnNamespace"
+        emit:
+          channel: myChannel
+          data: Hello world
+        acknowledge:
+          data: "hello world"
+          capture:
+            json: "$"
+            as: "myJson"
+    `),
+      []
+    );
+
+    tap.end();
+  }
+);
+
 tap.test('allows general flow properties', (tap) => {
   tap.same(
     validateTestScript(`
