@@ -83,7 +83,7 @@ const flowItemSchema = Joi.object({
   }),
   otherwise: Joi.when('...engine', {
     is: Joi.exist().valid('socketio'),
-    then: Joi.object().max(2),
+    then: Joi.object().max(3),
     otherwise: Joi.object().length(1)
   })
 });

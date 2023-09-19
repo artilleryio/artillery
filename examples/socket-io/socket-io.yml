@@ -1,5 +1,5 @@
 config:
-  target: "http://localhost:8080/"
+  target: "http://localhost:8080"
   phases:
     - duration: 60
       arrivalRate: 25
@@ -8,7 +8,8 @@ scenarios:
   - name: "Emit and validate response"
     engine: socketio
     flow:
-      - emit:
+      - namespace: /personalised
+        emit:
           channel: "echo"
           data: "Hello from Artillery"
         response:
@@ -18,7 +19,8 @@ scenarios:
   - name: "Emit and validate acknowledgement"
     engine: socketio
     flow:
-      - emit:
+      - namespace: /personalised
+        emit:
           channel: "userDetails"
         acknowledge:
           match:
