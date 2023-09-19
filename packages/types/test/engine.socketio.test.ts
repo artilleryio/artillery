@@ -17,6 +17,23 @@ scenarios:
   tap.end();
 });
 
+tap.test('supports emit as an array', (tap) => {
+  tap.same(
+    validateTestScript(`
+scenarios:
+  - engine: socketio
+    flow:
+      - emit:
+          - "myChannel"
+          - "hello"
+          - "world"
+    `),
+    []
+  );
+
+  tap.end();
+});
+
 tap.test('allows general flow properties', (tap) => {
   tap.same(
     validateTestScript(`
