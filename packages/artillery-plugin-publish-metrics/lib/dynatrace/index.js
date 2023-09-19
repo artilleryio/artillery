@@ -170,7 +170,7 @@ class DynatraceReporter {
       unsupportedCharRegex.test(metric)
     ) {
       debug(
-        `Dynatrace reporter: WARNING Metric key '${metric}' does not fulfill Dynatrace's Ingest API requirements and will be dropped. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace). `
+        `Dynatrace reporter: WARNING Metric key '${metric}' does not meet Dynatrace Ingest API's requirements and will be dropped. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace). `
       );
     }
   }
