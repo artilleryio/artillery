@@ -34,6 +34,24 @@ scenarios:
   tap.end();
 });
 
+tap.test('supports namespace at same level as emit', (tap) => {
+  tap.same(
+    validateTestScript(`
+scenarios:
+  - engine: socketio
+    flow:
+      - namespace: "myOwnNamespace"
+        emit:
+          - "myChannel"
+          - "hello"
+          - "world"
+    `),
+    []
+  );
+
+  tap.end();
+});
+
 tap.test('allows general flow properties', (tap) => {
   tap.same(
     validateTestScript(`
