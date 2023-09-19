@@ -7,6 +7,8 @@ const { BaseWithHttp } = require('./http');
 
 //TODO: add metadata
 
+const SocketioDataSchema = Joi.alternatives(Joi.string(), Joi.object());
+
 const BaseWithSocketio = [
   ...BaseWithHttp,
   //TODO: review this schema and if it should also import base flow item.
@@ -14,18 +16,18 @@ const BaseWithSocketio = [
     emit: Joi.alternatives(
       Joi.object({
         channel: Joi.string(),
-        data: Joi.string()
+        data: SocketioDataSchema
       }),
-      Joi.array().items(Joi.string())
+      Joi.array().items(SocketioDataSchema)
     ),
     response: Joi.object({
       channel: Joi.string(),
-      data: Joi.string(),
+      data: SocketioDataSchema,
       match: MatchSchema,
       capture: JsonCaptureSchema
     }),
     acknowledge: Joi.object({
-      data: Joi.string(),
+      data: SocketioDataSchema,
       match: MatchSchema,
       capture: JsonCaptureSchema
     }),
