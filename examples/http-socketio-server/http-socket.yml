@@ -1,0 +1,40 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 5
+
+before:
+  flow:
+    - post:
+        url: /login
+        json:
+          username: doesnt
+          password: matter
+
+
+scenarios:
+  - engine: socketio
+    flow:
+      - get:
+          url: /movies
+          capture:
+            json: "$[{{ $randomNumber(1, 150) }}]" #pick a random movie from array of 150
+            as: chosenMovie
+      - get:
+          url: /movies/{{ chosenMovie.id }}
+          capture:
+            json: "$.title"
+            as: chosenMovieTitle
+      - emit:
+          channel: "echo"
+          data: "{{ chosenMovieTitle }}"
+        response:
+          channel: "echoResponse"
+          data: "{{ chosenMovieTitle }}"
+
+
+after:
+  flow:
+    - post:
+        url: /logout
