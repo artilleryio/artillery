@@ -290,7 +290,7 @@ class OTelReporter {
     }
 
     if (config.headers) {
-      if (config.exporter === 'otlp-grpc') {
+      if (config.exporter && config.exporter === 'otlp-grpc') {
         const metadata = new grpc.Metadata();
         Object.entries(config.headers).forEach(([k, v]) => metadata.set(k, v));
         this.traceExporterOpts.metadata = metadata;
