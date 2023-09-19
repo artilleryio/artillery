@@ -38,7 +38,6 @@ const TestPhaseWithArrivalCount = Joi.object({
 const TestPhaseWithArrivalRate = Joi.object({
   ...CommonArrivalPhaseProperties,
   arrivalRate: artilleryNumberOrString
-    .required()
     .meta({ title: 'Arrival Rate' })
     .description(
       'Constant arrival rate - i.e. the number of virtual users generated every second.\nhttps://www.artillery.io/docs/reference/test-script#constant-arrival-rate'
@@ -49,6 +48,7 @@ const TestPhaseWithArrivalRate = Joi.object({
       'Ramp from initial arrivalRate to this value over time period.\nhttps://www.artillery.io/docs/reference/test-script#ramp-up-rate'
     )
 })
+  .or('arrivalRate', 'rampTo')
   .meta({ title: 'Arrival Rate Phase' })
   .unknown(false);
 
