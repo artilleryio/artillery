@@ -74,7 +74,7 @@ jobs:
 
   using-data-from-csv:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       CWD: ./examples/using-data-from-csv
     defaults:
