@@ -6,9 +6,27 @@ const path = require('path');
 
 class DynatraceReporter {
   constructor(config, events, script) {
+    if (
+      global.artillery &&
+      Number(global.artillery.version.slice(0, 1)) > 1 &&
+      typeof process.env.LOCAL_WORKER_ID !== 'undefined'
+    ) {
+      debug('Running in a worker, nothing to do');
+      return;
+    }
+
     if (!config.apiToken || !config.envUrl) {
       throw new Error(
         'Dynatrace reporter: both apiToken and envUrl must be set. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace)'
+      );
+    }
+
+    if (
+      script.config.plugins['metrics-by-endpoint'] &&
+      !script.config.plugins['metrics-by-endpoint'].useOnlyRequestNames
+    ) {
+      console.warn(
+        'Dynatrace reporter: WARNING Some metrics will be dropped. `useOnlyRequestNames` needs to be set to `true` within `metrics-by-endpoint` config and valid `name` needs to be set for each request in order to successfully send all metrics. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace).'
       );
     }
 
@@ -143,6 +161,20 @@ class DynatraceReporter {
     return true;
   }
 
+  warnIfMetricNameNotValid(metric) {
+    const unsupportedCharRegex = /[^\w-.]/g;
+    const startsWithDigitRegex = /^[\d-]/;
+    if (
+      metric.includes('.-') ||
+      startsWithDigitRegex.test(metric) ||
+      unsupportedCharRegex.test(metric)
+    ) {
+      debug(
+        `Dynatrace reporter: WARNING Metric key '${metric}' does not fulfill Dynatrace's Ingest API requirements and will be dropped. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace). `
+      );
+    }
+  }
+
   formatCountersForDynatrace(counters, config, timestamp) {
     debug('Formating counters for Dynatrace');
     const statCounts = [];
@@ -152,6 +184,7 @@ class DynatraceReporter {
         continue;
       }
 
+      this.warnIfMetricNameNotValid(name);
       const count = `${config.prefix}${name},${config.dimensions.join(
         ','
       )} count,delta=${value} ${timestamp}`;
@@ -169,6 +202,8 @@ class DynatraceReporter {
         continue;
       }
 
+      this.warnIfMetricNameNotValid(name);
+
       const gauge = `${config.prefix + name},${config.dimensions.join(
         ','
       )} gauge,${value} ${timestamp}`;
@@ -184,6 +219,9 @@ class DynatraceReporter {
       if (!this.shouldSendMetric(name, config.excluded, config.includeOnly)) {
         continue;
       }
+
+      this.warnIfMetricNameNotValid(name);
+
       for (const [agreggation, value] of Object.entries(values)) {
         const gauge = `${
           config.prefix
