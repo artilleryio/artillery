@@ -2,7 +2,7 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
-const { LoopOptions } = require('./common');
+const { LoopOptions, MatchSchema, JsonCaptureSchema } = require('./common');
 const { BaseWithHttp } = require('./http');
 
 //TODO: add metadata
@@ -20,15 +20,14 @@ const BaseWithSocketio = [
     ),
     response: Joi.object({
       channel: Joi.string(),
-      data: Joi.string()
-      //TODO add capture and match
+      data: Joi.string(),
+      match: MatchSchema,
+      capture: JsonCaptureSchema
     }),
     acknowledge: Joi.object({
       data: Joi.string(),
-      match: Joi.object({
-        json: Joi.any(),
-        value: Joi.string()
-      })
+      match: MatchSchema,
+      capture: JsonCaptureSchema
     }),
     namespace: Joi.string()
   })
