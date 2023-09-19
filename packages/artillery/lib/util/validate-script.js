@@ -81,7 +81,11 @@ const flowItemSchema = Joi.object({
     count: Joi.alternatives(Joi.number(), Joi.string()),
     over: Joi.alternatives(Joi.array(), Joi.string())
   }),
-  otherwise: Joi.object().length(1)
+  otherwise: Joi.when('...engine', {
+    is: Joi.exist().valid('socketio'),
+    then: Joi.object().max(2),
+    otherwise: Joi.object().length(1)
+  })
 });
 
 const scenarioItem = Joi.object({
