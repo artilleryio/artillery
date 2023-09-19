@@ -3,7 +3,9 @@ const io = require('socket.io')(8080, {
   serveClient: false
 });
 
-io.on('connection', (socket) => {
+const personalisedNamespace = io.of('/personalised');
+
+personalisedNamespace.on('connection', (socket) => {
   socket.on('echo', (msg) => {
     socket.emit('echoResponse', msg);
   });
