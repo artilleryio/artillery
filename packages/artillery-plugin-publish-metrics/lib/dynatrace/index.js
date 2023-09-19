@@ -162,15 +162,19 @@ class DynatraceReporter {
   }
 
   warnIfMetricNameNotValid(metric) {
+    // Dynatrace allows only latin letters (both uppercase and lowercase), digits, hyphens, underscores and dots(dots usually divide name into sections).
     const unsupportedCharRegex = /[^\w-.]/g;
     const startsWithDigitRegex = /^[\d-]/;
+
     if (
+      // Sections(parts of metric key/name separated by dots e.g. `first.second.third` is 3 sections) can not start with hyphens
       metric.includes('.-') ||
+      // Metric key/name can not start with a digit
       startsWithDigitRegex.test(metric) ||
       unsupportedCharRegex.test(metric)
     ) {
       debug(
-        `Dynatrace reporter: WARNING Metric key '${metric}' does not meet Dynatrace Ingest API's requirements and will be dropped. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace). `
+        `Dynatrace reporter: WARNING Metric key '${metric}' does not meet Dynatrace Ingest API's requirements and will be dropped. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace).`
       );
     }
   }
@@ -185,6 +189,7 @@ class DynatraceReporter {
       }
 
       this.warnIfMetricNameNotValid(name);
+
       const count = `${config.prefix}${name},${config.dimensions.join(
         ','
       )} count,delta=${value} ${timestamp}`;
