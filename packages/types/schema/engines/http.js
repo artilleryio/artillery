@@ -1,29 +1,20 @@
 const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
-const { BaseFlowItemAlternatives, LoopOptions } = require('./common');
+const {
+  BaseFlowItemAlternatives,
+  LoopOptions,
+  SharedCaptureProperties,
+  JsonCaptureSchema,
+  MatchSchema
+} = require('./common');
 const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 
-const {
-  artilleryNumberOrString,
-  artilleryBooleanOrString
-} = require('../joi.helpers');
-
-const SharedCaptureProperties = {
-  as: Joi.string().meta({ title: 'Name your capture' }),
-  strict: artilleryBooleanOrString
-    .meta({ title: 'Strict?' })
-    .description(
-      'Captures are strict by default, so if a capture fails (no match), no subsequent request will run. You can configure that behaviour with this option.'
-    )
-};
+const { artilleryNumberOrString } = require('../joi.helpers');
 
 const CaptureSchema = Joi.alternatives()
   .try(
-    Joi.object({
-      json: Joi.string().required().meta({ title: 'Jsonpath expression' }),
-      ...SharedCaptureProperties
-    }).meta({ title: 'JSON Capture' }),
+    JsonCaptureSchema,
     Joi.object({
       xpath: Joi.string().meta({ title: 'Xpath expression' }).required(),
       ...SharedCaptureProperties
@@ -91,14 +82,9 @@ const SharedHttpMethodProperties = {
     .description(
       'Capture and reuse parts of a response\nhttps://www.artillery.io/docs/reference/engines/http#extracting-and-re-using-parts-of-a-response-request-chaining'
     ),
-  match: Joi.object({
-    json: Joi.any(),
-    value: Joi.string()
-  })
-    .meta({ title: 'Match' })
-    .description(
-      '(Deprecated) Response validation criteria. Use capture and expect instead'
-    ), //TODO: add proper deprecated when available
+  match: MatchSchema.description(
+    '(Deprecated) Response validation criteria. Use capture and expect instead'
+  ), //TODO: add proper deprecated when available
   auth: Joi.object({
     user: Joi.string().meta({ title: 'Username' }),
     pass: Joi.string().meta({ title: 'Password' })

@@ -2,7 +2,29 @@ const Joi = require('joi').defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
 );
 
-const { artilleryNumberOrString } = require('../joi.helpers');
+const {
+  artilleryNumberOrString,
+  artilleryBooleanOrString
+} = require('../joi.helpers');
+
+const SharedCaptureProperties = {
+  as: Joi.string().meta({ title: 'Name your capture' }),
+  strict: artilleryBooleanOrString
+    .meta({ title: 'Strict?' })
+    .description(
+      'Captures are strict by default, so if a capture fails (no match), no subsequent request will run. You can configure that behaviour with this option.'
+    )
+};
+
+const JsonCaptureSchema = Joi.object({
+  json: Joi.string().required().meta({ title: 'Jsonpath expression' }),
+  ...SharedCaptureProperties
+}).meta({ title: 'JSON Capture' });
+
+const MatchSchema = Joi.object({
+  json: Joi.any(),
+  value: Joi.string()
+}).meta({ title: 'Match' });
 
 const BaseFlowItemAlternatives = [
   Joi.object({
@@ -42,5 +64,8 @@ const LoopOptions = {
 
 module.exports = {
   BaseFlowItemAlternatives,
-  LoopOptions
+  LoopOptions,
+  SharedCaptureProperties,
+  JsonCaptureSchema,
+  MatchSchema
 };
