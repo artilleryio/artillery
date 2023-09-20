@@ -62,6 +62,12 @@ class OTelReporter {
         } = require('@opentelemetry/exporter-trace-otlp-http');
         return new OTLPTraceExporter(options);
       },
+      'otlp-grpc'(options) {
+        const {
+          OTLPTraceExporter
+        } = require('@opentelemetry/exporter-trace-otlp-grpc');
+        return new OTLPTraceExporter(options);
+      },
       zipkin(options) {
         const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
         return new ZipkinExporter(options);
@@ -284,7 +290,13 @@ class OTelReporter {
     }
 
     if (config.headers) {
-      this.traceExporterOpts.headers = config.headers;
+      if (config.exporter && config.exporter === 'otlp-grpc') {
+        const metadata = new grpc.Metadata();
+        Object.entries(config.headers).forEach(([k, v]) => metadata.set(k, v));
+        this.traceExporterOpts.metadata = metadata;
+      } else {
+        this.traceExporterOpts.headers = config.headers;
+      }
     }
 
     this.exporter = this.traceExporters[config.exporter || 'otlp-http'](
