@@ -167,7 +167,7 @@ HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
     });
   });
 
-  return self.compile(tasks, scenarioSpec.flow, ee);
+  return self.compile(tasks, scenarioSpec, ee);
 };
 
 HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
@@ -867,7 +867,10 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
 
   return async function scenario(initialContext, callback) {
-    initialContext = self.setInitialContext(initialContext);
+    initialContext = {
+      ...self.setInitialContext(initialContext),
+      scenario: scenarioSpec
+    };
     ee.emit('started');
     let context = initialContext;
     for (const task of tasks) {

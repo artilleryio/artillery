@@ -627,6 +627,11 @@ test('HTTP engine', function (tap) {
         target: 'http://localhost:8888',
         processor: {
           setEndpoint: function (context, ee, next) {
+            t.equal(
+              context.scenario.name,
+              'beforeScenarioTest',
+              'beforeScenario hook should have scenario info'
+            );
             t.same(context.vars, {}, 'it receives the context object');
             t.ok(
               ee instanceof EventEmitter,
@@ -643,6 +648,7 @@ test('HTTP engine', function (tap) {
       scenarios: [
         {
           beforeScenario: 'setEndpoint',
+          name: 'beforeScenarioTest',
           flow: [
             {
               get: {
@@ -690,6 +696,11 @@ test('HTTP engine', function (tap) {
         processor: {
           checkProductsCount: function (context, _ee, next) {
             t.equal(
+              context.scenario.name,
+              'afterScenarioTest',
+              'afterScenario hook should have scenario info'
+            );
+            t.equal(
               context.vars.count,
               productsCount,
               'it can access variables set by the scenario'
@@ -702,6 +713,7 @@ test('HTTP engine', function (tap) {
       scenarios: [
         {
           afterScenario: 'checkProductsCount',
+          name: 'afterScenarioTest',
           flow: [
             {
               get: {
