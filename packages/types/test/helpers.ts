@@ -5,7 +5,8 @@ const schema = require('../schema.json');
 
 const ajv = new Ajv({
   validateSchema: true,
-  allErrors: true
+  allErrors: true,
+  allowUnionTypes: true
 });
 
 export function validateTestScript(scriptText: string) {
@@ -16,7 +17,7 @@ export function validateTestScript(scriptText: string) {
   }
 
   const script = yaml.load(scriptText);
-  const isValid = ajv.validate(schema, script);
+  ajv.validate(schema, script);
 
   return ajv.errors || [];
 }

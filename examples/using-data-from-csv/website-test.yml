@@ -1,5 +1,5 @@
 config:
-  target: https://artillery.io
+  target: http://asciiart.artillery.io:8080
   phases:
     - arrivalCount: 300
       duration: 300
@@ -7,10 +7,18 @@ config:
     - path: "./csv/urls.csv"
       fields:
         - url
+  plugins:
+    ensure:
+      maxErrorRate: 0
+    expect:
+      reportFailuresAsErrors: true
+
 scenarios:
   - flow:
       - loop:
         - get:
             url: "{{ url }}"
+            expect:
+              statusCode: 200
         - think: 1
         count: 100

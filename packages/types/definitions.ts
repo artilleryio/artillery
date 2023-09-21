@@ -1,3 +1,5 @@
+import { ExpectPluginConfig, ExpectPluginMetrics } from './plugins/expect';
+
 export type TestScript = {
   /**
    * @title Configuration
@@ -21,7 +23,7 @@ export type TestScript = {
   /**
    * @title Scenarios
    */
-  scenarios: Scenarios;
+  scenarios?: Scenarios;
 };
 
 export type Config = {
@@ -55,6 +57,7 @@ export type Config = {
    */
   plugins?: {
     [key: string]: any;
+    expect?: ExpectPluginConfig;
   };
   ensure?: {
     [key: string]: any;
@@ -194,6 +197,39 @@ export type HttpConfig = {
    * @title Extended metrics
    */
   extendedMetrics?: boolean;
+
+  /**
+   * https://www.artillery.io/docs/reference/engines/http#default-configuration
+   * @title Default HTTP engine configuration
+   */
+  defaults?: {
+    /**
+     * Default headers to be used in all requests.
+     * @title Headers
+     */
+    headers?: object;
+    /**
+     * Default cookies to be used in all requests.
+     * @title Cookie
+     */
+    cookie?: object;
+    /**
+     * Whether to turn on strict capture by default
+     * for all captures.
+     * https://www.artillery.io/docs/reference/engines/http#turn-off-strict-capture
+     * @default false
+     * @title Strict capture
+     */
+    strictCapture?: boolean | string;
+    /**
+     * Sets jitter to simulate real-world random variance
+     * into think time pauses. Accepts both number and percentage.
+     * @title Think
+     */
+    think?: {
+      jitter: number | string;
+    };
+  };
 };
 
 export type WebSocketConfig = {
@@ -225,36 +261,38 @@ export type TestPhase = {
   | {
       /**
        * Test phase duration (in seconds).
+       * Can also be any valid [human-readable duration](https://www.npmjs.com/package/ms).
        * @title Duration
        */
-      duration: number;
+      duration: number | string;
       /**
        * Constant arrival rate.
        * The number of virtual users generated every second.
        * @title Arrival rate
        */
-      arrivalRate?: number;
+      arrivalRate?: number | string;
       /**
        * Fixed number of virtual users.
        * @title Arrival count
        */
-      arrivalCount?: number;
+      arrivalCount?: number | string;
       /**
        * @title Ramp rate
        */
-      rampTo?: number;
+      rampTo?: number | string;
       /**
        * Maximum number of virtual users generated at any given time.
        * @title Maximum virtual users
        */
-      maxVusers?: number;
+      maxVusers?: number | string;
     }
   | {
       /**
        * Pause the test phase execution for given duration (in seconds).
+       * Can also be any valid [human-readable duration](https://www.npmjs.com/package/ms).
        * @title Pause
        */
-      pause: number;
+      pause: number | string;
     }
 );
 
@@ -286,7 +324,7 @@ export type Scenario = {
       /**
        * @title HTTP engine
        */
-      engine: 'http';
+      engine?: 'http';
       /**
        * @title Scenario flow
        */
@@ -387,6 +425,11 @@ export type BaseFlow =
       function: string;
     };
 
+export type HttpResponseMatch = {
+  json: any;
+  value: string;
+};
+
 export type HttpFlow =
   | BaseFlow
   | {
@@ -452,10 +495,7 @@ export type SocketIoFlow =
         };
         acknowledge?: {
           data?: string;
-          match?: {
-            json: any;
-            value: string;
-          };
+          match?: HttpResponseMatch;
         };
       };
     };
@@ -472,7 +512,9 @@ export type DefaultHttpRequest = {
   /**
    * @title Cookie
    */
-  cookie?: Record<string, string>;
+  cookie?: {
+    [name: string]: string;
+  };
   /**
    * @title Query string
    */
@@ -482,11 +524,19 @@ export type DefaultHttpRequest = {
    * Set this option to `false` to stop following redirects.
    * @title Disable redirect following
    */
-  followRedirects?: false;
+  followRedirect?: false;
   /**
    * @title Capture
    */
   capture?: TestPhaseCapture | Array<TestPhaseCapture>;
+  /**
+   * (Deprecated) Response validation criteria.
+   * Please use the expectations plugin instead:
+   * https://www.artillery.io/docs/reference/extensions/expect
+   * @deprecated true
+   * @title Match
+   */
+  match?: HttpResponseMatch;
   /**
    * Automatically set the "Accept-Encoding" request header
    * and decode compressed responses encoded with gzip.
@@ -521,6 +571,16 @@ export type DefaultHttpRequest = {
    * @title Request condition
    */
   ifTrue?: string;
+
+  /**
+   * Plugin-specific properties.
+   */
+
+  /**
+   * https://www.artillery.io/docs/reference/extensions/expect#expectations
+   * @title Expect plugin expectations
+   */
+  expect?: ExpectPluginMetrics | Array<ExpectPluginMetrics>;
 };
 
 export type HttpRequestWithBody = DefaultHttpRequest &

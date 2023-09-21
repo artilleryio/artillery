@@ -39,8 +39,11 @@ function DatadogReporter(config, events, script) {
 
   debug('creating DatadogReporter with config');
   debug(
-    config.apiKey
-      ? Object.assign({ apiKey: sanitize(config.apiKey) }, config)
+    (config.apiKey || config.appKey)
+      ? Object.assign(
+        { apiKey: sanitize(config.apiKey),
+          appKey: sanitize(config.appKey)
+        }, config)
       : config
   );
 
@@ -50,6 +53,7 @@ function DatadogReporter(config, events, script) {
 
     this.metrics = new datadogMetrics.BufferedMetricsLogger({
       apiKey: config.apiKey,
+      appKey: config.appKey,
       apiHost: config.apiHost,
       prefix: config.prefix,
       defaultTags: config.tags,
@@ -80,7 +84,8 @@ function DatadogReporter(config, events, script) {
   if (config.event && String(config.event.send) !== 'false') {
     if (this.reportingType === 'api') {
       this.dogapi.initialize({
-        api_key: config.apiKey
+        api_key: config.apiKey,
+        app_key: config.appKey
       });
     }
 
@@ -236,6 +241,9 @@ function createDatadogReporter(config, events, script) {
 }
 
 function sanitize(str) {
+  if(!str){
+    return str;
+  }
   return `${str.substring(0, 3)}********************${str.substring(
     str.length - 3,
     str.length

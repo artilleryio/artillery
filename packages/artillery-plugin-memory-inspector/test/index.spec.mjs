@@ -11,7 +11,7 @@ afterEach(async () => {
   childProcess.kill()
 });
 
-test('cpu and memory metrics display in the aggregate report with the correct name', async (t) => {
+test('cpu and memory metrics display in the aggregate report with the correct name and unit', async (t) => {
   //Arrange: Test Server and Plugin overrides
   const testServer = await startTestServer();
   childProcess = testServer.childProcess
@@ -19,7 +19,7 @@ test('cpu and memory metrics display in the aggregate report with the correct na
   const override = JSON.stringify({
     config: {
       plugins: {
-        'memory-inspector': [{ pid: testServer.currentPid, name: 'express-example' }]
+        'memory-inspector': [{ pid: testServer.currentPid, name: 'express-example', unit: 'kb' }]
       }
     }
   });
@@ -65,9 +65,19 @@ test('cpu and memory metrics display in the aggregate report with the correct na
     'express-example.memory',
     "Aggregate Histograms doesn't have Memory metric"
   );
+
+    //assert that kb unit is used
+    for (const [metric, value] of Object.entries(report.aggregate.summaries['express-example.memory'])) {
+      if (metric == 'count') {
+        continue;
+      }
+
+      const lengthOfValue = Math.round(value).toString().length;
+      t.ok(lengthOfValue > 3 && lengthOfValue <= 6, `Length of value ${value} should be in KB (more than mb unit, less than byte unit)`)
+    }
 });
 
-test('cpu and memory metrics display in the aggregate report with a default name when no name is given', async (t) => {
+test('cpu and memory metrics display in the aggregate report with a default name and unit when no name is given', async (t) => {
   //Arrange: Test Server and Plugin overrides
   const testServer = await startTestServer();
   childProcess = testServer.childProcess;
@@ -112,6 +122,16 @@ test('cpu and memory metrics display in the aggregate report with a default name
     `process_${testServer.currentPid}.memory`,
     "Aggregate Histograms doesn't have Memory metric"
   );
+
+  //assert that mb unit is used by default
+  for (const [metric, value] of Object.entries(report.aggregate.summaries[`process_${testServer.currentPid}.memory`])) {
+    if (metric == 'count') {
+      continue;
+    }
+
+    const lengthOfValue = Math.round(value).toString().length;
+    t.ok(lengthOfValue <= 3, `Length of value ${value} in MB should be less than 4`)
+  }
 });
 
 test('cpu and memory metrics also display in the aggregate report for artillery internals', async (t) => {
@@ -202,4 +222,14 @@ test('cpu and memory metrics also display in the aggregate report for artillery 
     'artillery_internal.heap_total',
     "Aggregate Histograms doesn't have Artillery Heap Total metric"
   );
+
+   //assert that mb unit is used by default
+   for (const [metric, value] of Object.entries(report.aggregate.summaries['artillery_internal.memory'])) {
+    if (metric == 'count') {
+      continue;
+    }
+
+    const lengthOfValue = Math.round(value).toString().length;
+    t.ok(lengthOfValue <= 3, `Length of value ${value} in MB should be less than 4`)
+  }
 });

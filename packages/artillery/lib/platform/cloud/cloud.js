@@ -31,13 +31,16 @@ class ArtilleryCloudPlugin {
       'x-auth-token': this.apiKey
     };
 
+    let testEndInfo = {};
     global.artillery.globalEvents.on('test:init', async (testInfo) => {
       debug('test:init', testInfo);
 
       this.testRunId = testInfo.testRunId;
+      const testRunUrl = `${this.baseUrl}/load-tests/${this.testRunId}`;
+      testEndInfo.testRunUrl = testRunUrl;
 
       console.log('Artillery Cloud reporting is configured for this test run');
-      console.log(`Run URL: ${this.baseUrl}/load-tests/${this.testRunId}`);
+      console.log(`Run URL: ${testRunUrl}`);
 
       await this._event('testrun:init', {
         metadata: testInfo.metadata
@@ -108,12 +111,14 @@ class ArtilleryCloudPlugin {
       });
     });
 
-    let testEndInfo;
     global.artillery.ext({
       ext: 'beforeExit',
       method: async ({ testInfo }) => {
         debug('beforeExit');
-        testEndInfo = testInfo;
+        testEndInfo = {
+          ...testEndInfo,
+          ...testInfo
+        };
       }
     });
 
@@ -129,6 +134,8 @@ class ArtilleryCloudPlugin {
         await this._event('testrun:changestatus', {
           status: opts.earlyStop ? 'EARLY_STOP' : 'COMPLETED'
         });
+
+        console.log(`\nRun URL: ${testEndInfo.testRunUrl}`);
       }
     });
 
@@ -155,9 +162,14 @@ class ArtilleryCloudPlugin {
       });
 
       if (res.statusCode != 200) {
-        console.log('Error: error sending test data to Artillery Cloud');
-        console.log('Test report may be incomplete');
-
+        if (res.statusCode == 401) {
+          console.log(
+            'Error: API key is invalid. Could not send test data to Artillery Cloud.'
+          );
+        } else {
+          console.log('Error: error sending test data to Artillery Cloud');
+          console.log('Test report may be incomplete');
+        }
         let body;
         try {
           body = JSON.parse(res.body);

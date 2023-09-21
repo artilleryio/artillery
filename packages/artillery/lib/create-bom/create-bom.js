@@ -36,7 +36,9 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       getCustomEngines,
       getCustomJsDependencies,
       getVariableDataFiles,
+      // getFileUploadPluginFiles,
       getExtraFiles
+      // expandDirectories
     ],
 
     function (err, context) {
@@ -62,6 +64,7 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
           context.localFilePaths[0].length -
             path.basename(context.localFilePaths[0]).length
         );
+
         // This may still be an empty string if the script path is just 'hello.yml':
         prefix = prefix.length === 0 ? context.localFilePaths[0] : prefix;
       } else {
@@ -251,24 +254,46 @@ function getExtraFiles(context, next) {
   }
 }
 
-function commonPrefix(strings) {
-  if (!Array.isArray(strings)) {
-    throw new Error('common-prefix expects an array of strings');
+function commonPrefix(paths, separator) {
+  if (
+    !paths ||
+    paths.length === 0 ||
+    paths.filter((s) => typeof s !== 'string').length > 0
+  ) {
+    return '';
   }
 
-  var first = strings[0] || '';
-  var commonLength = first.length;
+  if (paths.includes('/')) {
+    return '/';
+  }
 
-  for (var i = 1; i < strings.length; ++i) {
-    for (var j = 0; j < commonLength; ++j) {
-      if (strings[i].charAt(j) !== first.charAt(j)) {
-        commonLength = j;
+  const sep = separator ? separator : path.sep;
+
+  const splitPaths = paths.map((p) => p.split(sep));
+  const shortestPath = splitPaths.reduce((a, b) => {
+    return a.length < b.length ? a : b;
+  }, splitPaths[0]);
+
+  let furthestIndex = shortestPath.length;
+
+  for (const p of splitPaths) {
+    for (let i = 0; i < furthestIndex; i++) {
+      if (p[i] !== shortestPath[i]) {
+        furthestIndex = i;
         break;
       }
     }
   }
 
-  return first.slice(0, commonLength);
+  const joined = shortestPath.slice(0, furthestIndex).join(sep);
+
+  if (joined.length > 0) {
+    // Check if joined path already ends with separator which
+    // will happen when input is a root drive on Windows, e.g. "C:\"
+    return joined.endsWith(sep) ? joined : joined + sep;
+  } else {
+    return '';
+  }
 }
 
 function prettyPrint(manifest) {

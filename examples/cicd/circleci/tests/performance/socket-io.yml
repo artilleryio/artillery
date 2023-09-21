@@ -17,6 +17,6 @@ scenarios:
       - emit:
           channel: "echo"
           data: "Hello from Artillery"
-          response:
-            channel: "echoResponse"
-            data: "Hello from Artillery"
+        response:
+          channel: "echoResponse"
+          data: "Hello from Artillery"

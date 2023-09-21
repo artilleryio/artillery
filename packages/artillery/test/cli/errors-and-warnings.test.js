@@ -41,7 +41,7 @@ tap.test(
 
 tap.test('Suggest similar commands if unknown command is used', async (t) => {
   const [exitCode, output] = await execute(['helpp']);
-  t.ok(exitCode === 127 && output.includes('Did you mean'));
+  t.ok(exitCode === 127 && output.stderr.includes('Did you mean'));
 });
 
 /*

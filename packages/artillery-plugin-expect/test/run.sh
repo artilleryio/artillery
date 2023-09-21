@@ -17,7 +17,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-docker run --name mockingjay -p 9090:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml &
+docker run --name mockingjay -p 9099:9090 -v "$DIR":/data "quii/mockingjay-server:$MOCKINGJAY_VERSION" --config /data/mock-pets-server.yaml &
 
 sleep 10
 

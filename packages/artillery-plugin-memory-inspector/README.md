@@ -23,6 +23,10 @@ You can set more than one `pid` to be watched by the plugin, so that you can wat
 
 _Optional_. The name of the process to display in the custom metrics report. It is the name that will show up in the custom metrics, otherwise defaults to `process_${pid}`.
 
+### `unit`
+
+_Optional_. The unit to convert memory metrics to. Accepts `mb`/`megabyte` or `kb`/`kilobyte`. Defaults to `mb` if not specified.
+
 ### Example Usage
 
 ```yaml
@@ -60,3 +64,5 @@ This will emit the following additional metrics from [`process.memoryUsage`](htt
 - artillery_internal.external
 - artillery_internal.heap_total
 - artillery_internal.heap_used
+
+__Note: These extended Artillery metrics cannot have their unit configured and default to using mb as the unit.__

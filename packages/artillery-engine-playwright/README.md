@@ -47,21 +47,9 @@ Summarized in the table below:
 
 All of those factors combined make load testing web apps with traditional approaches very frustrating and time consuming. 😞
 
-## Usage ⌨️
+## Quickstart
 
-### Installation
-
-Install Artillery and this engine:
-
-```sh
-npm install -g artillery artillery-engine-playwright
-```
-
-(See [Use in Docker/CI](#use-in-dockerci) if running tests in Docker/CI)
-
-### Running a test
-
-Create an Artillery script:
+Create an Artillery script using the engine:
 
 `hello-world.yml`:
 
@@ -74,8 +62,7 @@ config:
   processor: "./flows.js"
 scenarios:
   - engine: playwright
-    flowFunction: "helloFlow"
-    flow: []
+    testFunction: "helloFlow"
 ```
 
 Use a Playwright script to describe virtual user scenario:
@@ -170,96 +157,9 @@ browser.page.LCP.https://artillery.io/pro/:
   p99: ...................................................... 206.5
 ```
 
-## Configuration
+## Documentation
 
-The underlying Playwright instance may be configured through `config.engines.playwright`.
-
-You can pass the following options in:
-
-- `launchOptions` - an object containing arguments to [`browserType.launch()`](https://playwright.dev/docs/api/class-browsertype#browser-type-launch) method
-- `contextOptions` - an object containing arguments to [`browser.newContext()`](https://playwright.dev/docs/api/class-browser#browser-new-context) method
-- `defaultNavigationTimeout` and `defaultTimeout` - a number in seconds. These values are shorthands for [`browserContext.setDefaultNavigationTimeout()`](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout) and [`browserContext.setDefaultTimeout`](https://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-timeout)
-
-### Example 1: turn off headless mode
-
-You can turn off the default headless mode to see the browser window for local debugging by setting the [`headless`](https://playwright.dev/docs/api/class-browsertype#browser-type-launch-option-headless) option.
-
-```yaml
-config:
-  engines:
-    playwright:
-      launchOptions:
-        headless: false
-```
-
-### Example 2: set extra HTTP headers
-
-This example sets the [`extraHTTPHeaders`](https://playwright.dev/docs/api/class-browser#browser-new-context-option-extra-http-headers) option for the browser context that is created by the engine.
-
-```yaml
-config:
-  engines:
-    playwright:
-      contextOptions:
-        extraHTTPHeaders:
-          x-my-header: my-value
-```
-
-### Aggregate metrics by scenario name
-
-By default metrics are aggregated separately for each unique URL. When load testing the same endpoint with different/randomized query params, it can be hepful to group metrics by a common name. 
-
-To enable the option pass `aggregateByName: true` to the playwright engine and give a name to your scenarios:
-```
-config:
-  target: https://artillery.io
-  engines:
-    playwright: { aggregateByName: true } 
-  processor: "./flows.js"
-scenarios:
-  - name: blog
-    engine: playwright
-    flowFunction: "helloFlow"
-    flow: []
-```
-`flows.js`
-```
-module.exports = { helloFlow };
-
-function helloFlow(page) {
-  await page.goto(`https://artillery.io/blog/${getRandomSlug()}`);
-}
-```
-
-This serves a similar purpose to the `useOnlyRequestNames` option from the [metrics-by-endpoint](https://github.com/artilleryio/artillery-plugin-metrics-by-endpoint) artillery plugin.
-
-## Flow function API
-
-By default, only the `page` argument (see Playwright's [`page` API](https://playwright.dev/docs/api/class-page/)) is required for functions that implement Playwright scenarios, e.g.:
-
-```js
-module.exports = { helloFlow };
-
-async function helloFlow(page) {
-  // Go to https://artillery.io/
-  await page.goto('https://artillery.io/');
-}
-```
-
-The functions also have access to virtual user context and events arguments, which can be used to access scenario variables for different virtual users, or to [track custom metrics](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics).
-
-```js
-module.exports = { helloFlow };
-
-async function helloFlow(page, vuContext, events) {
-  // Increment custom counter:
-  events.emit('counter', 'user.page_loads', 1);
-  // Go to https://artillery.io/
-  await page.goto('https://artillery.io/');
-}
-```
-
-
+📖 Please see the docs on [https://www.artillery.io/docs/reference/engines/playwright](https://www.artillery.io/docs/reference/engines/playwright)
 
 ## More examples
 
