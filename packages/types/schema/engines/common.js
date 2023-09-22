@@ -22,8 +22,12 @@ const JsonCaptureSchema = Joi.object({
 }).meta({ title: 'JSON Capture' });
 
 const MatchSchema = Joi.object({
-  json: Joi.any(),
+  json: Joi.any()
+    .meta({ title: 'JSON' })
+    .description('The part of the response to compare.'),
   value: Joi.string()
+    .meta({ title: 'Value' })
+    .description('The expected value.')
 }).meta({ title: 'Match' });
 
 const BaseFlowItemAlternatives = [
