@@ -21,14 +21,19 @@ const JsonCaptureSchema = Joi.object({
   ...SharedCaptureProperties
 }).meta({ title: 'JSON Capture' });
 
-const MatchSchema = Joi.object({
-  json: Joi.any()
+const MatchSchemaObject = Joi.object({
+  json: Joi.string()
     .meta({ title: 'JSON' })
     .description('The part of the response to compare.'),
   value: Joi.string()
     .meta({ title: 'Value' })
     .description('The expected value.')
-}).meta({ title: 'Match' });
+});
+
+const MatchSchema = Joi.alternatives(
+  MatchSchemaObject,
+  Joi.array().items(MatchSchemaObject)
+).meta({ title: 'Match' });
 
 const BaseFlowItemAlternatives = [
   Joi.object({
