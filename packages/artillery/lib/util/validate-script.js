@@ -50,10 +50,13 @@ const httpItems = {
 const socketioItems = {
   emit: Joi.any().when(Joi.ref('....engine'), {
     is: 'socketio',
-    then: Joi.object({
-      channel: Joi.string(),
-      data: Joi.any()
-    }),
+    then: Joi.alternatives(
+      Joi.object({
+        channel: Joi.string(),
+        data: Joi.any()
+      }),
+      Joi.array().items(Joi.string())
+    ),
     otherwise: Joi.any()
   })
 };
