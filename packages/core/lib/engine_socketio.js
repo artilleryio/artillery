@@ -52,7 +52,9 @@ function markEndTime(ee, _, startedAt) {
 }
 
 function isResponseRequired(spec) {
-  return spec.emit && spec.response && spec.response.channel;
+  return (
+    spec.emit && spec.response && (spec.response.channel || spec.response.on)
+  );
 }
 
 function isAcknowledgeRequired(spec) {
@@ -60,8 +62,15 @@ function isAcknowledgeRequired(spec) {
 }
 
 function processResponse(ee, data, response, context, callback) {
+  function isValid() {
+    if (!Array.isArray(response.data)) {
+      return deepEqual(data[0], response.data);
+    }
+
+    return deepEqual(data, response.data);
+  }
   // Do we have supplied data to validate?
-  if (response.data && !deepEqual(data, response.data)) {
+  if (response.data && !isValid()) {
     debug('data is not valid:');
     debug(data);
     debug(response);
@@ -186,9 +195,12 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
       }
 
       if (isAcknowledgeRequired(requestSpec)) {
-        const ackCallback = function () {
+        const ackCallback = function (...args) {
           const response = {
-            data: template(requestSpec.acknowledge.data, context),
+            data: template(
+              requestSpec.acknowledge.data || requestSpec.acknowledge.args,
+              context
+            ),
             capture: template(requestSpec.acknowledge.capture, context),
             match: template(requestSpec.acknowledge.match, context)
           };
@@ -198,8 +210,9 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
               r.json = '$.0'; // Default to the first callback argument
             }
           });
+
           // Acknowledge data can take up multiple arguments of the emit callback
-          processResponse(ee, arguments, response, context, function (err) {
+          processResponse(ee, args, response, context, function (err) {
             if (!err) {
               markEndTime(ee, context, startedAt);
             }
@@ -225,8 +238,14 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
     if (isResponseRequired(requestSpec)) {
       const response = {
-        channel: template(requestSpec.response.channel, context),
-        data: template(requestSpec.response.data, context),
+        channel: template(
+          requestSpec.response.channel || requestSpec.response.on,
+          context
+        ),
+        data: template(
+          requestSpec.response.data || requestSpec.response.args,
+          context
+        ),
         capture: template(requestSpec.response.capture, context),
         match: template(requestSpec.response.match, context)
       };
@@ -234,9 +253,9 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
       // Listen for the socket.io response on the specified channel
       let done = false;
 
-      socketio.on(response.channel, function receive(data) {
+      socketio.on(response.channel, function receive(...args) {
         done = true;
-        processResponse(ee, data, response, context, function (err) {
+        processResponse(ee, args, response, context, function (err) {
           if (!err) {
             markEndTime(ee, context, startedAt);
           }

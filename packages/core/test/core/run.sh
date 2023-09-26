@@ -8,6 +8,7 @@ SILENT=true node $DIR/targets/simple.js &
 node $DIR/targets/simple_ws.js &
 node $DIR/targets/simple_socketio.js &
 node $DIR/targets/express_socketio.js &
+node $DIR/targets/socketio_args.js &
 node $DIR/targets/ws_tls.js &
 node $DIR/targets/ws_proxy.js &
 
@@ -16,6 +17,7 @@ cleanup() {
     kill $(ps aux|grep simple_ws.js|grep node|awk '{print $2}') || true
     kill $(ps aux|grep simple_socketio.js|grep node|awk '{print $2}') || true
     kill $(ps aux|grep express_socketio.js|grep node|awk '{print $2}') || true
+    kill $(ps aux|grep socketio_args.js|grep node|awk '{print $2}') || true
     kill $(ps aux|grep ws_tls.js|grep node|awk '{print $2}') || true
     kill $(ps aux|grep ws_proxy.js|grep node|awk '{print $2}') || true
 }
