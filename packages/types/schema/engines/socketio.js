@@ -33,12 +33,18 @@ const BaseWithSocketio = [
         'Supports emitting action as an array, or by providing channel and data.\nMore information: https://www.artillery.io/docs/reference/engines/socketio#scenario-actions-and-configuration'
       ),
     response: Joi.object({
+      on: Joi.string()
+        .meta({ title: 'Event Name' })
+        .description('The name of the event to listen to.'),
       channel: Joi.string()
         .meta({ title: 'Channel' })
         .description('The name of the channel where the response is received.'),
       data: SocketioDataSchema.meta({ title: 'Data' }).description(
         'The data to verify is in the response.'
       ),
+      args: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+        .meta({ title: 'Response Arguments' })
+        .description('Assert that the response emits these arguments.'),
       match: MatchSchema.meta({ title: 'Match' }).description(
         'Match the response exactly to the value provided.'
       ),
@@ -48,6 +54,11 @@ const BaseWithSocketio = [
       data: SocketioDataSchema.meta({ title: 'Data' }).description(
         'The data to verify is in the acknowledge.'
       ),
+      args: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+        .meta({ title: 'Acknowledge Arguments' })
+        .description(
+          'Assert that the acknowledge callback was sent with these arguments.'
+        ),
       match: MatchSchema.meta({ title: 'Match' }).description(
         'Match the response exactly to the value provided.'
       ),
