@@ -11,6 +11,7 @@ const {
   SpanKind,
   SpanStatusCode,
   trace,
+  context,
   metrics
 } = require('@opentelemetry/api');
 const { Resource } = require('@opentelemetry/resources');
@@ -26,7 +27,7 @@ class OTelReporter {
       process.env.DEBUG &&
       process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
     ) {
-      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
     }
     this.metricExporters = {
       'otlp-proto'(options) {
@@ -115,6 +116,7 @@ class OTelReporter {
     }
 
     if (config.traces) {
+      // Set basics needed regardless of the engine 
       this.traceConfig = config.traces;
       this.validateExporter(
         this.traceExporters,
@@ -122,25 +124,44 @@ class OTelReporter {
         'trace'
       );
       this.tracing = true;
-
       this.configureTrace(this.traceConfig);
+      // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible, same amount of work
+      this.engines = new Set()
+      const scenarios = this.script.scenarios || []
+      scenarios.forEach((scenario)=> {
+        scenario.engine ? this.engines.add(scenario.engine) : this.engines.add('http')
+      })
+      
+      // Set hooks for tracing HTTP engine based scenarios
+      if (this.engines.has('http')){
+        
+        attachScenarioHooks(script, [
+          {
+            type: 'beforeRequest',
+            name: 'startOTelSpan',
+            hook: this.startOTelSpan.bind(this)
+          },
+          {
+            type: 'afterResponse',
+            name: 'exportOTelSpan',
+            hook: this.exportOTelSpan.bind(this)
+          }
+        ]);
+      }
 
-      attachScenarioHooks(script, [
-        {
-          type: 'beforeRequest',
-          name: 'startOTelSpan',
-          hook: this.startOTelSpan.bind(this)
-        }
-      ]);
-
-      attachScenarioHooks(script, [
-        {
-          type: 'afterResponse',
-          name: 'exportOTelSpan',
-          hook: this.exportOTelSpan.bind(this)
-        }
-      ]);
+      // Set hooks for tracing Playwright engine based scenarios
+      if (this.engines.has('playwright')){
+        attachScenarioHooks(script, [
+          {
+            engine: 'playwright',
+            type: 'beforeScenario',
+            name: 'runPlaywrightTracing',
+            hook: this.runOtelTracingForPlaywright.bind(this)
+          }
+        ]);
+      }
     }
+
   }
 
   configureMetrics(config) {
@@ -394,7 +415,44 @@ class OTelReporter {
       );
     }
   }
+  
+  async runOtelTracingForPlaywright(page, vuContext, events, userProcessor, specName, target){
+    const playwrightTracer = trace.getTracer("artillery-playwright");
 
+    // Start a new active span for the scenario
+    return await playwrightTracer.startActiveSpan(specName || 'Scenario execution',{kind: SpanKind.CLIENT}, async (span)=> {
+      try {
+        // Attach traceStep function to the context
+        vuContext.funcs.traceStep = await this.traceStep(span, playwrightTracer)
+        // Execute the user-provided processor function within the context of the new span
+        await userProcessor(page, vuContext, events);
+      } catch (err) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err.message,
+        });
+        debug(err)
+      } finally {
+        // End the scenario span
+        span.end();
+      }
+    });
+  }
+
+  // Allows users to wrap a span around a step or set of steps  (transaction) and add attributes to it. It also sends the span into the callback so users have ability to set additional attributes, events etc.
+  async traceStep(parent, tracer){
+    return async function(name, attributes, callback){
+      const ctx = trace.setSpan(context.active(), parent)
+      const span = tracer.startSpan(name,undefined, ctx)
+      await callback(span)
+      if (attributes){
+        span.setAttributes(attributes)
+      }
+      span.end()
+    }
+
+  }
+  
   async shutDown() {
     if (this.metrics) {
       while (this.pendingRequests > 0) {

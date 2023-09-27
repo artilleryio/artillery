@@ -5,6 +5,11 @@ class PlaywrightEngine {
   constructor(script) {
     debug('constructor');
     this.target = script.config.target;
+    this.tracing = (script.config?.plugins['publish-metrics'] || []).some(
+      (config) => {
+        return config.type === 'open-telemetry' && config.traces;
+      }
+    );
 
     this.config = script.config?.engines?.playwright || {};
     this.processor = script.config.processor || {};
@@ -186,7 +191,18 @@ class PlaywrightEngine {
         const fn =
           self.processor[spec.testFunction] ||
           self.processor[spec.flowFunction];
-        await fn(page, initialContext, events);
+
+        if (self.tracing) {
+          await self.processor[spec.beforeScenario](
+            page,
+            initialContext,
+            events,
+            fn,
+            spec.name || undefined
+          );
+        } else {
+          await fn(page, initialContext, events);
+        }
 
         await page.close();
 
