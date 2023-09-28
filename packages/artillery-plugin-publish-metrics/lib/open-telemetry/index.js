@@ -27,7 +27,7 @@ class OTelReporter {
       process.env.DEBUG &&
       process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
     ) {
-      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
+      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
     }
     this.metricExporters = {
       'otlp-proto'(options) {
