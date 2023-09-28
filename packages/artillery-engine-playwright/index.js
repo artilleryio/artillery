@@ -5,7 +5,7 @@ class PlaywrightEngine {
   constructor(script) {
     debug('constructor');
     this.target = script.config.target;
-    this.tracing = (script.config?.plugins['publish-metrics'] || []).some(
+    this.tracing = (script.config?.plugins?.['publish-metrics'] || []).some(
       (config) => {
         return config.type === 'open-telemetry' && config.traces;
       }
