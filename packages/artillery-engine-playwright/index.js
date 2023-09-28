@@ -196,7 +196,7 @@ class PlaywrightEngine {
           self.processor[spec.flowFunction];
 
         initialContext.funcs.step = step;
-        await fn(page, contextWithAdditionalFuncs, events);
+        await fn(page, initialContext, events);
 
         await page.close();
 
