@@ -195,13 +195,7 @@ class PlaywrightEngine {
           self.processor[spec.testFunction] ||
           self.processor[spec.flowFunction];
 
-        const contextWithAdditionalFuncs = {
-          ...initialContext,
-          funcs: {
-            ...initialContext.funcs,
-            step
-          }
-        };
+        initialContext.funcs.step = step;
         await fn(page, contextWithAdditionalFuncs, events);
 
         await page.close();
