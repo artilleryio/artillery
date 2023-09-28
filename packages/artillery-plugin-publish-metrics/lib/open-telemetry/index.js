@@ -458,7 +458,7 @@ class OTelReporter {
 
   // Allows users to wrap a span around a step or set of steps  (transaction) and add attributes to it. It also sends the span into the callback so users have ability to set additional attributes, events etc.
   async traceStep(parent, tracer, configAttributes) {
-    return async function (name, attributes, callback) {
+    return async function (name, callback, attributes) {
       const ctx = trace.setSpan(context.active(), parent);
       const span = tracer.startSpan(name, undefined, ctx);
       if (configAttributes) {
