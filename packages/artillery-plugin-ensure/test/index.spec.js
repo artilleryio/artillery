@@ -326,16 +326,16 @@ test('checks are grouped in the correct order (ok first, fail after)', async (t)
 test('works with custom metrics including weird characters like urls', async (t) => {
   //Arrange: Plugin overrides
   const failingExpression =
-    'browser.page.browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.min < 1 and vusers.created == 2';
+    'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.min < 1 and vusers.created == 2';
   const passingExpression =
-    'browser.page.browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.p99 < 20 or browser.page.browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.max < 200';
+    'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.p99 < 20 or browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.max < 200';
   const override = JSON.stringify({
     config: {
       plugins: { ensure: {} },
       ensure: {
         thresholds: [
           {
-            'browser.page.browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median': 100
+            'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median': 100
           }
         ],
         conditions: [
@@ -357,9 +357,9 @@ test('works with custom metrics including weird characters like urls', async (t)
       output.stdout.includes(
         `${chalk.green(
           'ok'
-        )}: browser.page.browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median < 100`
+        )}: browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median < 100`
       ),
-      'Console did not include browser.page.browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check'
+      'Console did not include browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check'
     );
     t.ok(
       output.stdout.includes(`${chalk.red('fail')}: ${failingExpression}`),
