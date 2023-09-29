@@ -27,7 +27,7 @@ class OTelReporter {
       process.env.DEBUG &&
       process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
     ) {
-      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
     }
     this.metricExporters = {
       'otlp-proto'(options) {
@@ -435,9 +435,10 @@ class OTelReporter {
         }
         try {
           // Attach traceStep function to the context
-          vuContext.funcs.traceStep = await this.traceStep(
+          vuContext.funcs.step = await this.step(
             span,
             playwrightTracer,
+            events,
             this.traceConfig.attributes
           );
           // Execute the user-provided processor function within the context of the new span
@@ -457,18 +458,31 @@ class OTelReporter {
   }
 
   // Allows users to wrap a span around a step or set of steps  (transaction) and add attributes to it. It also sends the span into the callback so users have ability to set additional attributes, events etc.
-  async traceStep(parent, tracer, configAttributes) {
-    return async function (name, callback, attributes) {
+  async step(parent, tracer, events, configAttributes) {
+    return async function (stepName, callback, attributes) {
       const ctx = trace.setSpan(context.active(), parent);
-      const span = tracer.startSpan(name, undefined, ctx);
+      const span = tracer.startSpan(stepName, undefined, ctx);
+      const startTime = Date.now();
       if (configAttributes) {
         span.setAttributes(configAttributes);
       }
-      await callback(span);
-      if (attributes) {
-        span.setAttributes(attributes);
+      try {
+        if (attributes) {
+          span.setAttributes(attributes);
+        }
+        await callback(span);
+      } catch (err) {
+        debug('There has been an error during step execution: ', err);
+        span.recordException(err);
+        span.setStatus({
+          code: SpanKind.ERROR,
+          message: err.message
+        });
+      } finally {
+        span.end();
+        const difference = Date.now() - startTime;
+        events.emit('histogram', `browser.step.${stepName}`, difference);
       }
-      span.end();
     };
   }
 
