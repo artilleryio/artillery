@@ -7,6 +7,7 @@
 const debug = require('debug')('plugin:ensure');
 const filtrex = require('filtrex').compileExpression;
 const chalk = require('chalk');
+const { returnExpressionWithHashes, hashString } = require('./utils');
 
 class EnsurePlugin {
   constructor(script, events) {
@@ -65,29 +66,45 @@ class EnsurePlugin {
         global.artillery.globalEvents.emit('checks', checkTests);
 
         checkTests
-          .sort((a, b) => (a.result < b.result) ? 1 : -1)
+          .sort((a, b) => (a.result < b.result ? 1 : -1))
           .forEach((check) => {
-          if (check.result !== 1) {
-            global.artillery.log(
-              `${chalk.red('fail')}: ${check.original}${check.strict ? '' : ' (optional)'}`
-            );
-            if (check.strict) {
-              global.artillery.suggestedExitCode = 1;
+            if (check.result !== 1) {
+              global.artillery.log(
+                `${chalk.red('fail')}: ${check.original}${
+                  check.strict ? '' : ' (optional)'
+                }`
+              );
+              if (check.strict) {
+                global.artillery.suggestedExitCode = 1;
+              }
+            } else {
+              global.artillery.log(`${chalk.green('ok')}: ${check.original}`);
             }
-          } else {
-            global.artillery.log(`${chalk.green('ok')}: ${check.original}`);
-          }
-        });
+          });
       }
     });
   }
 
   // Combine counters/rates/summaries into a flat key->value object for filtrex
   static statsToVars(data) {
-    const vars = Object.assign({}, data.report.counters, data.report.rates);
+    const vars = {};
+
+    // Function to hash and assign keys from a given object to the vars object
+    const hashAndAssign = (obj) => {
+      for (const [key, value] of Object.entries(obj)) {
+        const hashedKey = hashString(key);
+        vars[hashedKey] = value;
+      }
+    };
+
+    // Hash and assign keys from data.report.counters and data.report.rates
+    hashAndAssign(data.report.counters);
+    hashAndAssign(data.report.rates);
+
+    //handle data.report.summaries individually, so we can flatten aggregations
     for (const [name, values] of Object.entries(data.report.summaries || {})) {
       for (const [aggregation, value] of Object.entries(values)) {
-        vars[`${name}.${aggregation}`] = value;
+        vars[hashString(`${name}.${aggregation}`)] = value;
       }
     }
 
@@ -103,10 +120,14 @@ class EnsurePlugin {
         if (typeof o === 'object') {
           const metricName = Object.keys(o)[0]; // only one metric check per array entry
           const maxValue = o[metricName];
+
           const expr = `${metricName} < ${maxValue}`;
+          const expressionWithHashes = `'${hashString(
+            metricName
+          )}' < ${maxValue}`; //additional quotes used due to filtrex
           let f = () => {};
           try {
-            f = filtrex(expr);
+            f = filtrex(expressionWithHashes);
           } catch (err) {
             global.artillery.log(err);
           }
@@ -121,11 +142,12 @@ class EnsurePlugin {
       checks.conditions.forEach((o) => {
         if (typeof o === 'object') {
           const expression = o.expression;
+          const expressionWithHashes = returnExpressionWithHashes(expression);
           const strict = typeof o.strict === 'boolean' ? o.strict : true;
 
           let f = () => {};
           try {
-            f = filtrex(expression);
+            f = filtrex(expressionWithHashes);
           } catch (err) {
             global.artillery.log(err);
           }
@@ -139,10 +161,14 @@ class EnsurePlugin {
       .filter((k) => LEGACY_CONDITIONS.indexOf(k) > -1)
       .forEach((k) => {
         const metricName = `http.response_time.${k}`;
-        const maxValue = parseInt(checks[k]);
+        const maxValue = parseInt(checks[k]); // eslint-disable-line radix
+
+        const expressionWithHashes = `'${hashString(
+          metricName
+        )}' < ${maxValue}`; //additional quotes used due to filtrex
         let f = () => {};
         try {
-          f = filtrex(`${metricName} < ${maxValue}`);
+          f = filtrex(expressionWithHashes);
         } catch (err) {
           global.artillery.log(err);
         }
@@ -153,10 +179,12 @@ class EnsurePlugin {
 
     if (typeof checks.maxErrorRate !== 'undefined') {
       const maxValue = Number(checks.maxErrorRate);
-      const expression = `((vusers.created - vusers.completed)/vusers.created * 100) <= ${maxValue}`;
+      const expression = `( ( vusers.created - vusers.completed ) / vusers.created * 100 ) <= ${maxValue}`;
+
+      const expressionWithHashes = returnExpressionWithHashes(expression);
       let f = () => {};
       try {
-        f = filtrex(expression);
+        f = filtrex(expressionWithHashes);
       } catch (err) {
         global.artillery.log(err);
       }
