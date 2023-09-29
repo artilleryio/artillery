@@ -9,7 +9,7 @@ function runFibonacci(req, context, ee, next) {
   const difference = Date.now() - time;
   ee.emit(
     'histogram',
-    'browser.page.browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-',
+    'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-',
     difference
   );
   next();
