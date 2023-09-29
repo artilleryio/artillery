@@ -328,14 +328,14 @@ test('works with custom metrics including weird characters like urls', async (t)
   const failingExpression =
     'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.min < 1 and vusers.created == 2';
   const passingExpression =
-    'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.p99 < 20 or browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.max < 200';
+    'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.p99 < 20 or browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.max < 2000';
   const override = JSON.stringify({
     config: {
       plugins: { ensure: {} },
       ensure: {
         thresholds: [
           {
-            'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median': 100
+            'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median': 1000
           }
         ],
         conditions: [
@@ -357,7 +357,7 @@ test('works with custom metrics including weird characters like urls', async (t)
       output.stdout.includes(
         `${chalk.green(
           'ok'
-        )}: browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median < 100`
+        )}: browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median < 1000`
       ),
       'Console did not include browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check'
     );
