@@ -80,7 +80,6 @@ function getMetricNames(expression) {
   }
 
   const metricNames = returnMetricNamesAfterFilters(tmpExpression);
-  console.log(metricNames);
 
   return { metricNames, urlPlaceholders };
 }
