@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tap ./test/*.spec.js --timeout 300 --no-coverage --color"
+    "test:unit": "tap ./test/*.unit.js --timeout 300 --no-coverage --color",
+    "test:acceptance": "tap ./test/*.spec.js --timeout 300 --no-coverage --color",
+    "test": "npm run test:unit && npm run test:acceptance"
   },
   "keywords": [],
   "author": "Artillery.io <team@artillery.io>",

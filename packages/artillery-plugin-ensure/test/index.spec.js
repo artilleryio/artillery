@@ -371,3 +371,52 @@ test('works with custom metrics including weird characters like urls', async (t)
     );
   }
 });
+
+test('works with templated values used in metrics', async (t) => {
+  //Arrange: Plugin overrides
+  const passingExpression =
+    'http.downloaded_bytes >= {{ conditionVar }} or http.response_time.min >= {{ conditionVar }}';
+  const override = JSON.stringify({
+    config: {
+      plugins: { ensure: {} },
+      ensure: {
+        thresholds: [
+          {
+            'browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median':
+              '{{ thresholdVar }}'
+          }
+        ],
+        conditions: [{ expression: passingExpression }]
+      }
+    }
+  });
+
+  const variables = JSON.stringify({
+    conditionVar: 0,
+    thresholdVar: 1000
+  });
+
+  //Act: run the test
+  const output =
+    await $`../artillery/bin/run run ./test/fixtures/scenario-custom-metrics.yml --overrides ${override} --variables ${variables}`;
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
+
+  t.ok(
+    output.stdout.includes(
+      `${chalk.green(
+        'ok'
+      )}: browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median < 1000`
+    ),
+    'Console did not include browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check'
+  );
+
+  t.ok(
+    output.stdout.includes(
+      `${chalk.green(
+        'ok'
+      )}: http.downloaded_bytes >= 0 or http.response_time.min >= 0`
+    ),
+    'Console did not include passing expression check'
+  );
+});
