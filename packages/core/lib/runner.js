@@ -200,7 +200,13 @@ function run(script, ee, options, runState, contextVars) {
     if (runState.pendingScenarios >= spec.maxVusers) {
       metrics.counter('vusers.skipped', 1);
     } else {
-      scenarioContext = runScenario(script, metrics, runState, contextVars);
+      scenarioContext = runScenario(
+        script,
+        metrics,
+        runState,
+        contextVars,
+        options
+      );
     }
   });
   phaser.on('phaseStarted', function (spec) {
@@ -242,7 +248,7 @@ function run(script, ee, options, runState, contextVars) {
   phaser.run();
 }
 
-function runScenario(script, metrics, runState, contextVars) {
+function runScenario(script, metrics, runState, contextVars, options) {
   const start = process.hrtime();
 
   //
@@ -263,7 +269,7 @@ function runScenario(script, metrics, runState, contextVars) {
         const w = engineUtil.template(scenario.weight, {
           vars: variableValues
         });
-        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w);
+        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w); //eslint-disable-line radix
         debug(
           `scenario ${scenario.name} weight has been set to ${scenario.weight}`
         );
@@ -307,8 +313,29 @@ function runScenario(script, metrics, runState, contextVars) {
     );
   }
 
+  //default to randomly picked scenario
   let i = runState.picker()[0];
 
+  if (options.scenarioName) {
+    let foundIndex;
+    const foundScenario = script.scenarios.filter((scenario, index) => {
+      foundIndex = index;
+      return new RegExp(options.scenarioName).test(scenario.name);
+    });
+
+    if (!foundScenario) {
+      debug(
+        `scenario ${options.scenarioName} not found in script. Choosing random scenario instead.`
+      );
+    } else if (foundScenario.length > 1) {
+      debug(
+        `multiple scenarios found for ${options.scenarioName}. Choosing random scenario instead.`
+      );
+    } else {
+      debug(`scenario ${options.scenarioName} found in script. running it!`);
+      i = foundIndex;
+    }
+  }
   debug(
     'picking scenario %s (%s) weight = %s',
     i,

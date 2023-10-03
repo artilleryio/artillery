@@ -88,6 +88,32 @@ tap.test('Environment specified with -e should be used', async (t) => {
   t.ok(exitCode === 0 && !output.stdout.includes('ECONNREFUSED'));
 });
 
+tap.test('Can specify scenario to run by name', async (t) => {
+  const reportFile = 'report-with-scenario-by-name.json';
+  const reportFilePath = await getRootPath(reportFile);
+
+  const [exitCode, output] = await execute([
+    'run',
+    '-n',
+    'Test Scenario 2',
+    '-o',
+    `${reportFilePath}`,
+    'test/scripts/scenario-named/scenario.yml'
+  ]);
+  console.log(output.stdout);
+
+  // Here if the right environment is not picked up, we'll get ECONNREFUSED errors in the report
+  t.ok(
+    exitCode === 0 && output.stdout.includes('Successfully running scenario 2')
+  );
+  const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+  t.ok(
+    deleteFile(reportFilePath) &&
+      json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6
+  );
+});
+
 tap.test('Run a script with one payload command line', async (t) => {
   const [, output] = await execute([
     'run',
