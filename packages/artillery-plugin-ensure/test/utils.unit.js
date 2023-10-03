@@ -14,13 +14,13 @@ test('works with boolean operators', async (t) => {
   t.equal(result, modifiedExpression);
 });
 
-test('works with built-in functions', async (t) => {
+test('works with built-in functions, even if a metric name includes it', async (t) => {
   const metricA = 'someMetricA';
-  const metricB = 'someMetricB';
-  const originalExpression = `ceil(${metricA}) < 20 or random(${metricB}) == 30`;
-  const modifiedExpression = `ceil('${hashString(
+  const metricB = 'vusers.random.ceil';
+  const originalExpression = `(ceil(${metricA}) < 20) or random(${metricB}) == 30`;
+  const modifiedExpression = `(ceil('${hashString(
     metricA
-  )}') < 20 or random('${hashString(metricB)}') == 30`;
+  )}') < 20) or random('${hashString(metricB)}') == 30`;
 
   const result = returnExpressionWithHashes(originalExpression);
 
@@ -106,6 +106,23 @@ test('works with space in name', async (t) => {
   const modifiedExpression = `'${hashString(metricA)}' /'${hashString(
     metricB
   )}' > 20 or '${hashString(metricB)}'>= 30`;
+
+  const result = returnExpressionWithHashes(originalExpression);
+
+  t.equal(result, modifiedExpression);
+});
+
+test('works when metric names include special named operators and we use those special operators', async (t) => {
+  const metricA = 'vusers.created_by_name.andy'; //relevant because andy includes "and" in the name
+  const metricB = 'vusers.created_by_name.nottinghill'; //relevant because nottinghill includes "not" in the name
+  const metricC = 'custom.orders'; //relevant because orders includes "or" in the name
+
+  const originalExpression = `(not ${metricA} < 100 and not ${metricB} < 100) or ${metricC} >= 300`;
+  const modifiedExpression = `(not '${hashString(
+    metricA
+  )}' < 100 and not '${hashString(metricB)}' < 100) or '${hashString(
+    metricC
+  )}' >= 300`;
 
   const result = returnExpressionWithHashes(originalExpression);
 
