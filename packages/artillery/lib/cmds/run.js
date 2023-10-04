@@ -211,7 +211,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       // TODO: This should be an array of files, like inputFiles above
       absoluteScriptPath: path.resolve(process.cwd(), args.script),
       plugins: [],
-      scenarioName: flags.name
+      scenarioName: flags['scenario-name']
     };
 
     // Set "name" tag if not set explicitly
