@@ -94,7 +94,7 @@ tap.test('Can specify scenario to run by name', async (t) => {
 
   const [exitCode, output] = await execute([
     'run',
-    '-n',
+    '--scenario-name',
     'Test Scenario 2',
     '-o',
     `${reportFilePath}`,

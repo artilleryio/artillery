@@ -156,9 +156,8 @@ RunCommand.flags = {
   key: Flags.string({
     description: 'API key for Artillery Cloud'
   }),
-  name: Flags.string({
-    description: 'Name of the specific scenario to run',
-    char: 'n'
+  'scenario-name': Flags.string({
+    description: 'Name of the specific scenario to run'
   })
 };
 
