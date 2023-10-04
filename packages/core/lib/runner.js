@@ -313,7 +313,7 @@ function runScenario(script, metrics, runState, contextVars, options) {
     );
   }
 
-  //default to randomly picked scenario
+  //default to weighted picked scenario
   let i = runState.picker()[0];
 
   if (options.scenarioName) {
@@ -325,11 +325,11 @@ function runScenario(script, metrics, runState, contextVars, options) {
 
     if (!foundScenario) {
       debug(
-        `scenario ${options.scenarioName} not found in script. Choosing random scenario instead.`
+        `scenario ${options.scenarioName} not found in script. Choosing scenario by weight instead (at random).`
       );
     } else if (foundScenario.length > 1) {
       debug(
-        `multiple scenarios found for ${options.scenarioName}. Choosing random scenario instead.`
+        `multiple scenarios found for ${options.scenarioName}. Choosing scenario by weight instead (at random).`
       );
     } else {
       debug(`scenario ${options.scenarioName} found in script. running it!`);

@@ -100,7 +100,6 @@ tap.test('Can specify scenario to run by name', async (t) => {
     `${reportFilePath}`,
     'test/scripts/scenario-named/scenario.yml'
   ]);
-  console.log(output.stdout);
 
   // Here if the right environment is not picked up, we'll get ECONNREFUSED errors in the report
   t.ok(
