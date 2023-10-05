@@ -8,6 +8,10 @@ const debug = require('debug')('plugin:ensure');
 const filtrex = require('filtrex').compileExpression;
 const chalk = require('chalk');
 
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
+
 class EnsurePlugin {
   constructor(script, events) {
     // If running in Artillery v1, do nothing
@@ -42,8 +46,27 @@ class EnsurePlugin {
     const checks =
       this.script.config?.ensure || this.script.config?.plugins?.ensure;
 
+    events.on('stats', async (stats) => {
+      // TODO: review this. atm, small hack to get stats to be shown in the console before checks.
+      await delay(100);
+      
+      const vars = EnsurePlugin.statsToVars({report: {counters: stats.counters, rates: stats.rates, summaries: stats.summaries}});
+      const checkTests = EnsurePlugin.runChecks(checks, vars, true);
+      global.artillery.globalEvents.emit('intermediate_checks', checkTests);
+      
+      const isFailed = EnsurePlugin.applyLogsAndExitCodes(checkTests)
+
+      if (isFailed) { 
+        console.log("Failed intermediate checks! Early shutdown from ensure plugin.")
+        //TODO: OPEN QUESTION: how would this work with fargate implementation?
+        global.artillery.shutdown({exclusionList: 'ensure'})
+      }
+
+    });
+
     global.artillery.ext({
       ext: 'beforeExit',
+      name: 'ensure',
       method: async (data) => {
         if (
           !checks ||
@@ -64,22 +87,32 @@ class EnsurePlugin {
 
         global.artillery.globalEvents.emit('checks', checkTests);
 
-        checkTests
-          .sort((a, b) => (a.result < b.result) ? 1 : -1)
-          .forEach((check) => {
-          if (check.result !== 1) {
-            global.artillery.log(
-              `${chalk.red('fail')}: ${check.original}${check.strict ? '' : ' (optional)'}`
-            );
-            if (check.strict) {
-              global.artillery.suggestedExitCode = 1;
-            }
-          } else {
-            global.artillery.log(`${chalk.green('ok')}: ${check.original}`);
-          }
-        });
+        EnsurePlugin.applyLogsAndExitCodes(checkTests)
       }
     });
+  }
+
+  static applyLogsAndExitCodes(checkTests) {
+    let failCount = 0;
+    checkTests
+          .sort((a, b) => (a.result < b.result ? 1 : -1))
+          .forEach((check) => {
+            if (check.result !== 1) {
+              failCount++;
+              global.artillery.log(
+                `${chalk.red('fail')}: ${check.original}${
+                  check.strict ? '' : ' (optional)'
+                }`
+              );
+              if (check.strict) {
+                global.artillery.suggestedExitCode = 1;
+              }
+            } else {
+              global.artillery.log(`${chalk.green('ok')}: ${check.original}`);
+            }
+          });
+    
+    return failCount > 0;
   }
 
   // Combine counters/rates/summaries into a flat key->value object for filtrex
@@ -94,14 +127,20 @@ class EnsurePlugin {
     return vars;
   }
 
-  static runChecks(checks, vars) {
+  static runChecks(checks, vars, isIntermediateCheck = false) {
     const LEGACY_CONDITIONS = ['min', 'max', 'median', 'p95', 'p99'];
     const checkTests = [];
 
     if (Array.isArray(checks.thresholds)) {
       checks.thresholds.forEach((o) => {
         if (typeof o === 'object') {
-          const metricName = Object.keys(o)[0]; // only one metric check per array entry
+          
+          if (isIntermediateCheck && !o['failEarly']) {
+            console.log("Skipping intermediate check")
+            return;
+          }
+          const keys = Object.keys(o).filter(k => k !== 'failEarly');
+          const metricName = keys[0]; // only one metric check per array entry
           const maxValue = o[metricName];
           const expr = `${metricName} < ${maxValue}`;
           let f = () => {};
@@ -120,6 +159,11 @@ class EnsurePlugin {
     if (Array.isArray(checks.conditions)) {
       checks.conditions.forEach((o) => {
         if (typeof o === 'object') {
+          if (isIntermediateCheck && !o['failEarly']) {
+            console.log("Skipping intermediate check")
+            return;
+          }
+
           const expression = o.expression;
           const strict = typeof o.strict === 'boolean' ? o.strict : true;
 
@@ -169,7 +213,8 @@ class EnsurePlugin {
     }
 
     if (checkTests.length > 0) {
-      global.artillery.log('\nChecks:');
+      const message = (isIntermediateCheck ? '\nIntermediate Checks:' : '\nFinal Checks:');
+      global.artillery.log(message);
     }
 
     checkTests.forEach((check) => {
@@ -182,5 +227,6 @@ class EnsurePlugin {
 }
 
 module.exports = {
-  Plugin: EnsurePlugin
+  Plugin: EnsurePlugin,
+  LEGACY_METRICS_FORMAT: false
 };
