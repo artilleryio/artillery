@@ -367,6 +367,11 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       gracefulShutdown({ earlyStop: true, exclusionList: ['ensure'] });
     });
 
+    //OPTION 2: implement a process listener, which is something more easily duplicated in Fargate for now
+    process.on('EARLY_SHUTDOWN', async(data) => {
+      gracefulShutdown({ earlyStop: true, exclusionList: data.exclusionList });
+    })
+
     async function gracefulShutdown(opts = { exitCode: 0, exclusionList: [] }) {
       debug('shutting down 🦑');
       if (shuttingDown) {
@@ -422,7 +427,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       })();
     }
 
-    global.artillery.shutdown = gracefulShutdown;
+    //OPTION 1: use global.artillery.shutdown 
+    //global.artillery.shutdown = gracefulShutdown;
   } catch (err) {
     throw err;
   }

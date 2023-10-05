@@ -58,8 +58,14 @@ class EnsurePlugin {
 
       if (isFailed) { 
         console.log("Failed intermediate checks! Early shutdown from ensure plugin.")
-        //TODO: OPEN QUESTION: how would this work with fargate implementation?
-        global.artillery.shutdown({exclusionList: 'ensure'})
+        //TODO: how would this work with fargate implementation? an option below!
+
+        //OPTION 1: use global.artillery.shutdown API
+        // global.artillery.shutdown({exclusionList: 'ensure'})
+
+        //OPTION 2: use process.emit API instead: with this alternative API we can simply implement a listener for this in Fargate
+        //and have it do Fargate cleanup there + duplicate exclusionList logic on beforeExit hooks. Should work.
+        process.emit('EARLY_SHUTDOWN', { exclusionList: 'ensure' })
       }
 
     });
