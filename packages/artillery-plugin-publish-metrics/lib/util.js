@@ -24,9 +24,12 @@ function attachScenarioHooks(script, specs) {
   scenarios.forEach((scenario) => {
     specs.forEach((spec) => {
       // console.log(spec.engine, scenario.engine);
-      // if (spec.engine && spec.engine !== scenario.engine) {
-      //   return;
-      // }
+      if (
+        (spec.engine && spec.engine !== scenario.engine) ||
+        (!spec.engine && scenario.engine && scenario.engine !== 'http')
+      ) {
+        return;
+      }
 
       scenario[spec.type] = [].concat(scenario[spec.type] || []);
       scenario[spec.type].push(spec.name);

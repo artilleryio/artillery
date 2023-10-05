@@ -11,8 +11,17 @@ const {
   SpanKind,
   SpanStatusCode,
   trace,
+  context,
   metrics
 } = require('@opentelemetry/api');
+
+const {
+  AsyncHooksContextManager
+} = require('@opentelemetry/context-async-hooks');
+const contextManager = new AsyncHooksContextManager();
+contextManager.enable();
+context.setGlobalContextManager(contextManager);
+
 const { Resource } = require('@opentelemetry/resources');
 const {
   SemanticResourceAttributes
@@ -115,6 +124,7 @@ class OTelReporter {
     }
 
     if (config.traces) {
+      // Set basics needed regardless of the engine
       this.traceConfig = config.traces;
       this.validateExporter(
         this.traceExporters,
@@ -122,24 +132,43 @@ class OTelReporter {
         'trace'
       );
       this.tracing = true;
-
       this.configureTrace(this.traceConfig);
+      // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible, same amount of work
+      this.engines = new Set();
+      const scenarios = this.script.scenarios || [];
+      scenarios.forEach((scenario) => {
+        scenario.engine
+          ? this.engines.add(scenario.engine)
+          : this.engines.add('http');
+      });
 
-      attachScenarioHooks(script, [
-        {
-          type: 'beforeRequest',
-          name: 'startOTelSpan',
-          hook: this.startOTelSpan.bind(this)
-        }
-      ]);
+      // Set hooks for tracing HTTP engine based scenarios
+      if (this.engines.has('http')) {
+        attachScenarioHooks(script, [
+          {
+            type: 'beforeRequest',
+            name: 'startOTelSpan',
+            hook: this.startOTelSpan.bind(this)
+          },
+          {
+            type: 'afterResponse',
+            name: 'exportOTelSpan',
+            hook: this.exportOTelSpan.bind(this)
+          }
+        ]);
+      }
 
-      attachScenarioHooks(script, [
-        {
-          type: 'afterResponse',
-          name: 'exportOTelSpan',
-          hook: this.exportOTelSpan.bind(this)
-        }
-      ]);
+      // Set hooks for tracing Playwright engine based scenarios
+      if (this.engines.has('playwright')) {
+        attachScenarioHooks(script, [
+          {
+            engine: 'playwright',
+            type: 'traceFlowFunction',
+            name: 'tracePerformanceFlow',
+            hook: this.tracePerformanceFlow.bind(this)
+          }
+        ]);
+      }
     }
   }
 
@@ -393,6 +422,117 @@ class OTelReporter {
         } exporter ${exporter} is not supported. Currently supported exporters for ${type}s are ${supported}`
       );
     }
+  }
+
+  tracePerformanceFlow(performanceEntries, specName, userFlowFunc) {
+    // Set all timing events we are interested in and map their start and end to their respective property names in the performanceEntry object
+    // We can then use this map to set spans for each of these events if their start and end times are present
+    const timingEventsMap = {
+      redirect: { start: 'redirectStart', end: 'redirectEnd' },
+      fetch: { start: 'fetchStart', end: 'responseEnd' },
+      DNS_lookup: { start: 'domainLookupStart', end: 'domainLookupEnd' },
+      TCP_handshake: { start: 'connectStart', end: 'connectEnd' },
+      TLS_negotiation: { start: 'secureConnectionStart', end: 'requestStart' },
+      Request: { start: 'requestStart', end: 'responseStart' },
+      Response: { start: 'responseStart', end: 'responseEnd' },
+      'DOM.content_loaded.event': {
+        start: 'domContentLoadedEventStart',
+        end: 'domContentLoadedEventEnd'
+      },
+      'load.event': { start: 'loadEventStart', end: 'loadEventEnd' }
+    };
+    // Set tracer for playwright
+    this.playwrightTracer = trace.getTracer('artillery-playwright');
+    debug('Tracer set');
+
+    // Set parent span startTime as first available timestamp
+    const firstAction = performanceEntries[0];
+    const parentStartTime =
+      firstAction.startTime ||
+      firstAction.redirectStart ||
+      firstAction.fetchStart ||
+      firstAction.requestStart;
+
+    // Start Parent Span
+    this.playwrightTracer.startActiveSpan(
+      specName || 'Scenario execution',
+      { kind: SpanKind.CLIENT, startTime: parentStartTime },
+      (parent) => {
+        performanceEntries.forEach((entry) => {
+          if (
+            entry.entryType != 'resource' &&
+            entry.entryType != 'navigation'
+          ) {
+            return;
+          }
+          // Start entry span
+          const startTime =
+            entry.startTime ||
+            entry.redirectStart ||
+            entry.fetchStart ||
+            entry.requestStart;
+
+          this.playwrightTracer.startActiveSpan(
+            entry.name,
+            {
+              startTime: startTime,
+              kind: SpanKind.CLIENT
+            },
+            (span) => {
+              const url = new URL(entry.name);
+              span.setAttributes({
+                'url.full': url.href,
+                'server.address': url.hostname,
+                // We set the port if it is specified, if not we set to a default port based on the protocol
+                'server.port': url.port || (url.protocol === 'http' ? 80 : 443),
+                'url.path': url.pathname,
+                'url.query': url.search,
+                'http.response.status_code': entry.responseStatus,
+                'next.hop.protocol': entry.nextHopProtocol,
+                'render.blocking.status': entry.renderBlockingStatus,
+                duration: entry.duration,
+                'redirect.count': entry.redirectCount
+              });
+              if (entry.domInteractive) {
+                span.addEvent('DOM.Interactive', entry.domInteractive);
+              }
+              if (entry.domComplete) {
+                span.addEvent('DOM.Complete', entry.domComplete);
+              }
+
+              // This is where we create the spans for the timing events that we have the data for
+              for (const [name, value] of Object.entries(timingEventsMap)) {
+                if (entry[value.start] && entry[value.end]) {
+                  this.playwrightTracer
+                    .startSpan(name, {
+                      kind: SpanKind.CLIENT,
+                      startTime: entry[value.start]
+                    })
+                    .end(entry[value.end]);
+                }
+              }
+
+              // Set span status as error for respons status codes that are over 400
+              if (entry.responseStatus >= 400) {
+                span.setStatus({ code: SpanStatusCode.ERROR });
+              }
+              // End the entry span
+              span.end(
+                entry.loadEventEnd ||
+                  entry.domComplete ||
+                  entry.responseEnd ||
+                  Date.now()
+              );
+            }
+          );
+        });
+        // End the parent span
+        const lastAction = performanceEntries[performanceEntries.length - 1];
+        parent.end(
+          lastAction.loadEventEnd || lastAction.responseEnd || Date.now()
+        );
+      }
+    );
   }
 
   async shutDown() {
