@@ -5,6 +5,8 @@ class PlaywrightEngine {
   constructor(script) {
     debug('constructor');
     this.target = script.config.target;
+    this.tracing = (script.config?.plugins?.['publish-metrics'] || []).some((config) => {
+      return (config.type === 'open-telemetry') && config.traces})
 
     this.config = script.config?.engines?.playwright || {};
     this.processor = script.config.processor || {};
@@ -84,6 +86,21 @@ class PlaywrightEngine {
         const page = await context.newPage();
 
         debug('page created');
+        // For tracing we need the performance entry array from the last frame navigated (when all the performanceEntry objects have been added)
+        // The 'entries' variable is set outside the emitter and updated with each 'framenavigated' event
+        let entries
+        page.on('framenavigated', async(page)=> {
+          if(self.tracing){
+            try{
+              const perfEntriesJSON = await page.evaluate(() => JSON.stringify(window.performance.getEntries()))
+              entries = JSON.parse(
+                perfEntriesJSON
+              )
+            }catch(err){
+              throw new Error(err)
+            }
+          }
+        })
 
         page.on('domcontentloaded', async (page) => {
           if (!self.extendedMetrics) {
@@ -186,9 +203,14 @@ class PlaywrightEngine {
         const fn =
           self.processor[spec.testFunction] ||
           self.processor[spec.flowFunction];
+
         await fn(page, initialContext, events);
 
+        // After the user flow function has finished we will have all the performance entries needed to set the spans
+        const tracePerformanceEntries = self.processor[spec.traceFlowFunction]
+        tracePerformanceEntries(entries, spec.name)
         await page.close();
+
 
         if (cb) {
           cb(null, initialContext);
@@ -202,6 +224,7 @@ class PlaywrightEngine {
           throw err;
         }
       } finally {
+
         await context.close();
         await browser.close();
       }
