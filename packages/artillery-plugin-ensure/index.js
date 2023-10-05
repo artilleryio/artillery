@@ -104,13 +104,13 @@ class EnsurePlugin {
           .sort((a, b) => (a.result < b.result ? 1 : -1))
           .forEach((check) => {
             if (check.result !== 1) {
-              failCount++;
               global.artillery.log(
                 `${chalk.red('fail')}: ${check.original}${
                   check.strict ? '' : ' (optional)'
                 }`
               );
               if (check.strict) {
+                failCount++;
                 global.artillery.suggestedExitCode = 1;
               }
             } else {
