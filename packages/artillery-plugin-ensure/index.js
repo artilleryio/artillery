@@ -118,6 +118,7 @@ class EnsurePlugin {
             }
           });
     
+    global.artillery.log("")
     return failCount > 0;
   }
 
@@ -219,7 +220,7 @@ class EnsurePlugin {
     }
 
     if (checkTests.length > 0) {
-      const message = (isIntermediateCheck ? '\nIntermediate Checks:' : '\nFinal Checks:');
+      const message = (isIntermediateCheck ? 'Intermediate Checks:' : '\nFinal Checks:');
       global.artillery.log(message);
     }
 
