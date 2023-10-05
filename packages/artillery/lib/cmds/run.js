@@ -361,13 +361,13 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     let finalReport = {};
     let shuttingDown = false;
     process.on('SIGINT', async () => {
-      gracefulShutdown({ earlyStop: true });
+      gracefulShutdown({ earlyStop: true, exclusionList: ['ensure'] });
     });
     process.on('SIGTERM', async () => {
-      gracefulShutdown({ earlyStop: true });
+      gracefulShutdown({ earlyStop: true, exclusionList: ['ensure'] });
     });
 
-    async function gracefulShutdown(opts = { exitCode: 0 }) {
+    async function gracefulShutdown(opts = { exitCode: 0, exclusionList: [] }) {
       debug('shutting down 🦑');
       if (shuttingDown) {
         return;
@@ -383,7 +383,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       const ps = [];
       for (const e of global.artillery.extensionEvents) {
         const testInfo = { endTime: Date.now() };
-        if (e.ext === 'beforeExit') {
+        if (e.ext === 'beforeExit' && !opts.exclusionList?.includes(e.name)) {
           ps.push(
             e.method({
               report: finalReport,
@@ -421,6 +421,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         process.exit(artillery.suggestedExitCode || opts.exitCode);
       })();
     }
+
+    global.artillery.shutdown = gracefulShutdown;
   } catch (err) {
     throw err;
   }
