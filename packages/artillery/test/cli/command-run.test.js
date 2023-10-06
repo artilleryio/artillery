@@ -112,6 +112,25 @@ tap.test('Can specify scenario to run by name', async (t) => {
   );
 });
 
+tap.test(
+  'Errors correctly when specifying a non-existing scenario by name',
+  async (t) => {
+    const [exitCode, output] = await execute([
+      'run',
+      '--scenario-name',
+      'Test Scenario 3',
+      'test/scripts/scenario-named/scenario.yml'
+    ]);
+
+    t.equal(exitCode, 11);
+    t.ok(
+      output.stdout.includes(
+        'Error: Scenario Test Scenario 3 not found in script. Make sure your chosen scenario matches the one in your script exactly.'
+      )
+    );
+  }
+);
+
 tap.test('Run a script with one payload command line', async (t) => {
   const [, output] = await execute([
     'run',

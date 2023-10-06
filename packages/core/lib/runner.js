@@ -331,16 +331,16 @@ function runScenario(script, metrics, runState, contextVars, options) {
       return new RegExp(options.scenarioName).test(scenario.name);
     });
 
-    if (!foundScenario) {
-      debug(
-        `scenario ${options.scenarioName} not found in script. Choosing scenario by weight instead (at random).`
+    if (foundScenario?.length === 0) {
+      throw new Error(
+        `Scenario ${options.scenarioName} not found in script. Make sure your chosen scenario matches the one in your script exactly.`
       );
     } else if (foundScenario.length > 1) {
-      debug(
-        `multiple scenarios found for ${options.scenarioName}. Choosing scenario by weight instead (at random).`
+      throw new Error(
+        `Multiple scenarios for ${options.scenarioName} found in script. Make sure you give unique names to your scenarios in your script.`
       );
     } else {
-      debug(`scenario ${options.scenarioName} found in script. running it!`);
+      debug(`Scenario ${options.scenarioName} found in script. running it!`);
       i = foundIndex;
     }
   }
