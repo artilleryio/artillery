@@ -1,6 +1,29 @@
 const pidusage = require('pidusage');
 const debug = require('debug')('plugin:memory-inspector');
 
+const fromBytesToUnit = (value, unit) => {
+  const allowedUnits = {
+    kb: ['kb', 'kilobyte'],
+    mb: ['mb', 'megabyte']
+  };
+
+  if (!unit) {
+    debug('No unit specified. Defaulting to mb.');
+    return value / 1024 / 1024;
+  }
+
+  if (allowedUnits.kb.includes(unit)) {
+    return value / 1024;
+  }
+
+  if (allowedUnits.mb.includes(unit)) {
+    return value / 1024 / 1024;
+  }
+
+  debug(`Unit ${unit} is not an allowed unit! Defaulting to mb`);
+  return value / 1024 / 1024;
+};
+
 function ArtilleryPluginMemoryInspector(script, events) {
   this.script = script;
   this.events = events;
@@ -13,13 +36,29 @@ function ArtilleryPluginMemoryInspector(script, events) {
     if (typeof process.env.ARTILLERY_INTROSPECT_MEMORY !== 'undefined') {
       //https://nodejs.org/api/process.html#processmemoryusage
       const { rss, heapUsed, heapTotal, external } = process.memoryUsage();
-      ee.emit('histogram', 'artillery_internal.memory', rss);
-      ee.emit('histogram', 'artillery_internal.external', external);
-      ee.emit('histogram', 'artillery_internal.heap_used', heapUsed);
-      ee.emit('histogram', 'artillery_internal.heap_total', heapTotal);
+      ee.emit(
+        'histogram',
+        'artillery_internal.memory',
+        fromBytesToUnit(rss, 'mb')
+      );
+      ee.emit(
+        'histogram',
+        'artillery_internal.external',
+        fromBytesToUnit(external, 'mb')
+      );
+      ee.emit(
+        'histogram',
+        'artillery_internal.heap_used',
+        fromBytesToUnit(heapUsed, 'mb')
+      );
+      ee.emit(
+        'histogram',
+        'artillery_internal.heap_total',
+        fromBytesToUnit(heapTotal, 'mb')
+      );
     }
 
-    for (let { pid, name } of inspectorConfig) {
+    for (let { pid, name, unit } of inspectorConfig) {
       if (!pid) {
         debug(`No pid (${pid}) found. Skipping!`);
         continue;
@@ -32,7 +71,7 @@ function ArtilleryPluginMemoryInspector(script, events) {
         ee.emit(
           'histogram',
           `${name || `process_${pid}`}.memory`,
-          stats.memory
+          fromBytesToUnit(stats.memory, unit)
         );
       } catch (error) {
         debug(`Could not get usage stats for pid ${pid}.\n${error}`);

@@ -26,7 +26,7 @@ tap.test(
       '-o',
       'totally/bogus/path'
     ]);
-    t.ok(exitCode !== 0 && output.includes('Path does not exist'));
+    t.ok(exitCode !== 0 && output.stderr.includes('Path does not exist'));
   }
 );
 
@@ -38,7 +38,7 @@ tap.test(
       'test/scripts/environments.yaml'
     ]);
 
-    t.ok(exitCode !== 0 && output.includes('No target specified'));
+    t.ok(exitCode !== 0 && output.stderr.includes('No target specified'));
   }
 );
 
