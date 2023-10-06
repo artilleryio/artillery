@@ -195,8 +195,10 @@ class PlaywrightEngine {
           self.processor[spec.testFunction] ||
           self.processor[spec.flowFunction];
 
-        initialContext.funcs.step = step;
-        await fn(page, initialContext, events);
+        //we inject a test object to allow certain playwright-like functions to be used. only step allowed right now.
+        const test = { step };
+
+        await fn(page, initialContext, events, test);
 
         await page.close();
 
