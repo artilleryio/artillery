@@ -15,6 +15,53 @@ class ApdexPlugin {
   constructor(script, _events) {
     this.script = script;
 
+    if (
+      global.artillery &&
+      Number(global.artillery.version.slice(0, 1)) > 1 &&
+      typeof process.env.LOCAL_WORKER_ID === 'undefined'
+    ) {
+      debug('Running in a worker, registering apdex beforeExit hook');
+      global.artillery.ext({
+        ext: 'beforeExit',
+        method: async (testInfo) => {
+          if (
+            typeof this.script?.config?.apdex === 'undefined' ||
+            typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
+          ) {
+            return;
+          }
+
+          const s = testInfo.report.counters[METRICS.satisfied] || 0;
+          const t = testInfo.report.counters[METRICS.tolerated] || 0;
+          const f = testInfo.report.counters[METRICS.frustrated] || 0;
+          const total = s + t + f;
+          if (total > 0) {
+            const apdexScore = (s + t / 2) / total;
+            let ranking = '';
+            if (apdexScore >= 0.94) {
+              ranking = 'excellent';
+            } else if (apdexScore >= 0.85) {
+              ranking = 'good';
+            } else if (apdexScore >= 0.7) {
+              ranking = 'fair';
+            } else if (apdexScore >= 0.49) {
+              ranking = 'poor';
+            } else {
+              ranking = 'unacceptable';
+            }
+
+            global.artillery.apdexPlugin = {
+              apdex: apdexScore,
+              ranking
+            };
+
+            console.log(`\nApdex score: ${apdexScore} (${ranking})`);
+          }
+        }
+      });
+      return;
+    }
+
     const t =
       script.config.apdex?.threshold ||
       script.config.plugins.apdex?.threshold ||
@@ -43,45 +90,6 @@ class ApdexPlugin {
     }
 
     script.config.processor.apdexAfterResponse = apdexAfterResponse;
-
-    global.artillery.ext({
-      ext: 'beforeExit',
-      method: async (testInfo) => {
-        if (
-          typeof this.script?.config?.apdex === 'undefined' ||
-          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
-        ) {
-          return;
-        }
-
-        const s = testInfo.report.counters[METRICS.satisfied] || 0;
-        const t = testInfo.report.counters[METRICS.tolerated] || 0;
-        const f = testInfo.report.counters[METRICS.frustrated] || 0;
-        const total = s + t + f;
-        if (total > 0) {
-          const apdexScore = (s + t / 2) / total;
-          let ranking = '';
-          if (apdexScore >= 0.94) {
-            ranking = 'excellent';
-          } else if (apdexScore >= 0.85) {
-            ranking = 'good';
-          } else if (apdexScore >= 0.7) {
-            ranking = 'fair';
-          } else if (apdexScore >= 0.49) {
-            ranking = 'poor';
-          } else {
-            ranking = 'unacceptable';
-          }
-
-          global.artillery.apdexPlugin = {
-            apdex: apdexScore,
-            ranking
-          };
-
-          console.log(`\nApdex score: ${apdexScore} (${ranking})`);
-        }
-      }
-    });
   }
 }
 
