@@ -4,7 +4,7 @@
   "description": "Calculate and report Apdex scores",
   "main": "index.js",
   "scripts": {
-    "test": "exit 0"
+    "test": "tap ./test/*.spec.js --timeout 300 --no-coverage --color"
   },
   "keywords": [],
   "author": "",
