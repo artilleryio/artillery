@@ -31,6 +31,6 @@ test('apdex plugin works when other after response hooks are set', async (t) => 
   t.equal(
     afterResponseOccurrences,
     5,
-    'After Response Handler did not run three times'
+    'After Response Handler did not run five times'
   );
 });

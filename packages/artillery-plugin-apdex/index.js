@@ -20,7 +20,7 @@ class ApdexPlugin {
       Number(global.artillery.version.slice(0, 1)) > 1 &&
       typeof process.env.LOCAL_WORKER_ID === 'undefined'
     ) {
-      debug('Running in a worker, registering apdex beforeExit hook');
+      debug('Running in parent thread. Registering apdex beforeExit hook.');
       global.artillery.ext({
         ext: 'beforeExit',
         method: async (testInfo) => {
