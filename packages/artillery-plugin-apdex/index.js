@@ -18,78 +18,78 @@ class ApdexPlugin {
     if (
       global.artillery &&
       Number(global.artillery.version.slice(0, 1)) > 1 &&
-      typeof process.env.LOCAL_WORKER_ID === 'undefined'
+      typeof process.env.LOCAL_WORKER_ID !== 'undefined'
     ) {
-      debug('Running in parent thread. Registering apdex beforeExit hook.');
-      global.artillery.ext({
-        ext: 'beforeExit',
-        method: async (testInfo) => {
-          if (
-            typeof this.script?.config?.apdex === 'undefined' ||
-            typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
-          ) {
-            return;
-          }
+      const t =
+        script.config.apdex?.threshold ||
+        script.config.plugins.apdex?.threshold ||
+        500;
 
-          const s = testInfo.report.counters[METRICS.satisfied] || 0;
-          const t = testInfo.report.counters[METRICS.tolerated] || 0;
-          const f = testInfo.report.counters[METRICS.frustrated] || 0;
-          const total = s + t + f;
-          if (total > 0) {
-            const apdexScore = (s + t / 2) / total;
-            let ranking = '';
-            if (apdexScore >= 0.94) {
-              ranking = 'excellent';
-            } else if (apdexScore >= 0.85) {
-              ranking = 'good';
-            } else if (apdexScore >= 0.7) {
-              ranking = 'fair';
-            } else if (apdexScore >= 0.49) {
-              ranking = 'poor';
-            } else {
-              ranking = 'unacceptable';
-            }
+      if (!script.config.processor) {
+        script.config.processor = {};
+      }
 
-            global.artillery.apdexPlugin = {
-              apdex: apdexScore,
-              ranking
-            };
-
-            console.log(`\nApdex score: ${apdexScore} (${ranking})`);
-          }
-        }
+      script.scenarios.forEach(function (scenario) {
+        scenario.afterResponse = [].concat(scenario.afterResponse || []);
+        scenario.afterResponse.push('apdexAfterResponse');
       });
+
+      function apdexAfterResponse(req, res, userContext, events, done) {
+        const total = res.timings.phases.total;
+        if (total <= t) {
+          events.emit('counter', METRICS.satisfied, 1);
+        } else if (total <= 4 * t) {
+          events.emit('counter', METRICS.tolerated, 1);
+        } else {
+          events.emit('counter', METRICS.frustrated, 1);
+        }
+
+        return done();
+      }
+
+      script.config.processor.apdexAfterResponse = apdexAfterResponse;
+
       return;
     }
 
-    const t =
-      script.config.apdex?.threshold ||
-      script.config.plugins.apdex?.threshold ||
-      500;
+    global.artillery.ext({
+      ext: 'beforeExit',
+      method: async (testInfo) => {
+        if (
+          typeof this.script?.config?.apdex === 'undefined' ||
+          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
+        ) {
+          return;
+        }
 
-    if (!script.config.processor) {
-      script.config.processor = {};
-    }
+        const s = testInfo.report.counters[METRICS.satisfied] || 0;
+        const t = testInfo.report.counters[METRICS.tolerated] || 0;
+        const f = testInfo.report.counters[METRICS.frustrated] || 0;
+        const total = s + t + f;
+        if (total > 0) {
+          const apdexScore = (s + t / 2) / total;
+          let ranking = '';
+          if (apdexScore >= 0.94) {
+            ranking = 'excellent';
+          } else if (apdexScore >= 0.85) {
+            ranking = 'good';
+          } else if (apdexScore >= 0.7) {
+            ranking = 'fair';
+          } else if (apdexScore >= 0.49) {
+            ranking = 'poor';
+          } else {
+            ranking = 'unacceptable';
+          }
 
-    script.scenarios.forEach(function (scenario) {
-      scenario.afterResponse = [].concat(scenario.afterResponse || []);
-      scenario.afterResponse.push('apdexAfterResponse');
-    });
+          global.artillery.apdexPlugin = {
+            apdex: apdexScore,
+            ranking
+          };
 
-    function apdexAfterResponse(req, res, userContext, events, done) {
-      const total = res.timings.phases.total;
-      if (total <= t) {
-        events.emit('counter', METRICS.satisfied, 1);
-      } else if (total <= 4 * t) {
-        events.emit('counter', METRICS.tolerated, 1);
-      } else {
-        events.emit('counter', METRICS.frustrated, 1);
+          console.log(`\nApdex score: ${apdexScore} (${ranking})`);
+        }
       }
-
-      return done();
-    }
-
-    script.config.processor.apdexAfterResponse = apdexAfterResponse;
+    });
   }
 }
 
