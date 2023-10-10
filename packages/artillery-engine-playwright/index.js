@@ -82,7 +82,7 @@ class PlaywrightEngine {
                   name: metric.name,
                   value: metric.value,
                   metric: metric,
-                  url: window.location.href // eslint-disable-line
+                  url: window.location.href // eslint-disable-line  no-undef
                 })
               );
             });
@@ -100,7 +100,7 @@ class PlaywrightEngine {
 
           try {
             const performanceTimingJson = await page.evaluate(
-              () => JSON.stringify(window.performance.timing) // eslint-disable-line
+              () => JSON.stringify(window.performance.timing) // eslint-disable-line  no-undef
             );
             const performanceTiming = JSON.parse(performanceTimingJson);
 
@@ -170,7 +170,7 @@ class PlaywrightEngine {
             const { usedJSHeapSize } = JSON.parse(
               await page.evaluate(() =>
                 JSON.stringify({
-                  usedJSHeapSize: window.performance.memory.usedJSHeapSize // eslint-disable-line
+                  usedJSHeapSize: window.performance.memory.usedJSHeapSize // eslint-disable-line  no-undef
                 })
               )
             );
@@ -195,7 +195,6 @@ class PlaywrightEngine {
           self.processor[spec.testFunction] ||
           self.processor[spec.flowFunction];
 
-        //we inject a test object to allow certain playwright-like functions to be used. only step allowed right now.
         const test = { step };
 
         await fn(page, initialContext, events, test);
