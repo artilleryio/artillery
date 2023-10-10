@@ -1,0 +1,14 @@
+config:
+  target: "http://asciiart.artillery.io:8080"
+  processor: "./processor.js"
+  phases:
+    - duration: 5
+      arrivalRate: 1
+      name: "Phase 1"
+
+scenarios:
+  - name: apdexPluginTest
+    flow:
+      - get:
+          afterResponse: myAfterResponseHandler
+          url: "/"
