@@ -88,14 +88,17 @@ class PlaywrightEngine {
         debug('page created');
         // For tracing we need the performance entry array from the last frame navigated (when all the performanceEntry objects have been added)
         // The 'entries' variable is set outside the emitter and updated with each 'framenavigated' event
-        let entries
+        // perfTimeOrigin is used to get absolute timestamp values needed to set spans as values in entries represent time elapsed from timeOrigin
+        let entries, perfTimeOrigin
         page.on('framenavigated', async(page)=> {
           if(self.tracing){
             try{
-              const perfEntriesJSON = await page.evaluate(() => JSON.stringify(window.performance.getEntries()))
-              entries = JSON.parse(
+              const perfEntriesJSON = await page.evaluate(() => JSON.stringify([window.performance.getEntries(), window.performance.timeOrigin]))
+              const parsedEntries= JSON.parse(
                 perfEntriesJSON
               )
+              entries = parsedEntries[0]
+              perfTimeOrigin = Number(parsedEntries[1])
             }catch(err){
               throw new Error(err)
             }

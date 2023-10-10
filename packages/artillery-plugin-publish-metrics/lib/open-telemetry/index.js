@@ -424,7 +424,7 @@ class OTelReporter {
     }
   }
 
-  tracePerformanceFlow(performanceEntries, specName, userFlowFunc) {
+  tracePerformanceFlow(performanceEntries, specName, timeOrigin) {
     // Set all timing events we are interested in and map their start and end to their respective property names in the performanceEntry object
     // We can then use this map to set spans for each of these events if their start and end times are present
     const timingEventsMap = {
@@ -446,12 +446,8 @@ class OTelReporter {
     debug('Tracer set');
 
     // Set parent span startTime as first available timestamp
-    const firstAction = performanceEntries[0];
-    const parentStartTime =
-      firstAction.startTime ||
-      firstAction.redirectStart ||
-      firstAction.fetchStart ||
-      firstAction.requestStart;
+    const parentStartTime = timeOrigin
+    let parentEndTime = 0
 
     // Start Parent Span
     this.playwrightTracer.startActiveSpan(
@@ -465,17 +461,17 @@ class OTelReporter {
           ) {
             return;
           }
-          // Start entry span
-          const startTime =
-            entry.startTime ||
-            entry.redirectStart ||
-            entry.fetchStart ||
-            entry.requestStart;
 
+          // Create absolute timestamps by including timeOrigin (all values in the entries are times relative to the timeOrigin)
+          const absoluteStartTime = entry.startTime + timeOrigin
+          const absoluteEndTime = absoluteStartTime + entry.duration
+          parentEndTime = absoluteEndTime > parentEndTime ? absoluteEndTime : parentEndTime
+
+          // Start entry span
           this.playwrightTracer.startActiveSpan(
             entry.name,
             {
-              startTime: startTime,
+              startTime: absoluteStartTime,
               kind: SpanKind.CLIENT
             },
             (span) => {
@@ -499,10 +495,10 @@ class OTelReporter {
                 span.setAttribute('type', entry.type)
               }
               if (entry.domInteractive) {
-                span.addEvent('dom_interactive', entry.domInteractive);
+                span.addEvent('dom_interactive', this.getTimestamp(timeOrigin, entry.domInteractive));
               }
               if (entry.domComplete) {
-                span.addEvent('dom_complete', entry.domComplete);
+                span.addEvent('dom_complete', this.getTimestamp(timeOrigin, entry.domComplete));
               }
 
               // This is where we create the spans for the timing events that we have the data for
@@ -511,33 +507,31 @@ class OTelReporter {
                   this.playwrightTracer
                     .startSpan(name, {
                       kind: SpanKind.CLIENT,
-                      startTime: entry[value.start]
+                      startTime: this.getTimestamp(timeOrigin, entry[value.start])
                     })
-                    .end(entry[value.end]);
+                    .end(this.getTimestamp(timeOrigin, entry[value.end]));
                 }
               }
 
-              // Set span status as error for respons status codes that are over 400
+              // Set span status as error for response status codes that are over 400
               if (entry.responseStatus >= 400) {
                 span.setStatus({ code: SpanStatusCode.ERROR });
               }
               // End the entry span
-              span.end(
-                entry.loadEventEnd ||
-                  entry.domComplete ||
-                  entry.responseEnd ||
-                  Date.now()
-              );
+              span.end(absoluteEndTime || Date.now())
             }
           );
         });
         // End the parent span
-        const lastAction = performanceEntries[performanceEntries.length - 1];
         parent.end(
-          lastAction.loadEventEnd || lastAction.responseEnd || Date.now()
+          parentEndTime || Date.now()
         );
       }
     );
+  }
+
+  getTimestamp(originTime, delta){
+    return originTime + delta
   }
 
   async shutDown() {
@@ -548,7 +542,7 @@ class OTelReporter {
       }
       debug('Pending requests done');
       debug('Shutting the Reader down');
-      await this.theReader.shutdown(); //check if shutdown successfull
+      await this.theReader.shutdown();
       debug('Shut down sucessfull');
     }
     if (this.tracing) {
