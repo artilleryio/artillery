@@ -207,10 +207,12 @@ class PlaywrightEngine {
         await fn(page, initialContext, events);
 
         // After the user flow function has finished we will have all the performance entries needed to set the spans
-        const tracePerformanceEntries = self.processor[spec.traceFlowFunction]
-        tracePerformanceEntries(entries, spec.name)
-        await page.close();
+        if (self.tracing){
+          const tracePerformanceEntries = self.processor[spec.traceFlowFunction]
+          tracePerformanceEntries(entries, spec.name)
+        }
 
+        await page.close();
 
         if (cb) {
           cb(null, initialContext);

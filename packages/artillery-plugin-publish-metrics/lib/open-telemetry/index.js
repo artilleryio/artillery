@@ -430,16 +430,16 @@ class OTelReporter {
     const timingEventsMap = {
       redirect: { start: 'redirectStart', end: 'redirectEnd' },
       fetch: { start: 'fetchStart', end: 'responseEnd' },
-      DNS_lookup: { start: 'domainLookupStart', end: 'domainLookupEnd' },
-      TCP_handshake: { start: 'connectStart', end: 'connectEnd' },
-      TLS_negotiation: { start: 'secureConnectionStart', end: 'requestStart' },
-      Request: { start: 'requestStart', end: 'responseStart' },
-      Response: { start: 'responseStart', end: 'responseEnd' },
-      'DOM.content_loaded.event': {
+      dns_lookup: { start: 'domainLookupStart', end: 'domainLookupEnd' },
+      tcp_handshake: { start: 'connectStart', end: 'connectEnd' },
+      tls_negotiation: { start: 'secureConnectionStart', end: 'requestStart' },
+      request: { start: 'requestStart', end: 'responseStart' },
+      response: { start: 'responseStart', end: 'responseEnd' },
+      dom_content_loaded: {
         start: 'domContentLoadedEventStart',
         end: 'domContentLoadedEventEnd'
       },
-      'load.event': { start: 'loadEventStart', end: 'loadEventEnd' }
+      load: { start: 'loadEventStart', end: 'loadEventEnd' }
     };
     // Set tracer for playwright
     this.playwrightTracer = trace.getTracer('artillery-playwright');
@@ -491,13 +491,18 @@ class OTelReporter {
                 'next.hop.protocol': entry.nextHopProtocol,
                 'render.blocking.status': entry.renderBlockingStatus,
                 duration: entry.duration,
-                'redirect.count': entry.redirectCount
+                'redirect.count': entry.redirectCount,
+                'initiator.type': entry.initiatorType,
+                'content.compressed': entry.decodedBodySize != entry.encodedBodySize
               });
+              if(entry.type){
+                span.setAttribute('type', entry.type)
+              }
               if (entry.domInteractive) {
-                span.addEvent('DOM.Interactive', entry.domInteractive);
+                span.addEvent('dom_interactive', entry.domInteractive);
               }
               if (entry.domComplete) {
-                span.addEvent('DOM.Complete', entry.domComplete);
+                span.addEvent('dom_complete', entry.domComplete);
               }
 
               // This is where we create the spans for the timing events that we have the data for
