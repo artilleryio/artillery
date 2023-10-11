@@ -15,34 +15,42 @@ class ApdexPlugin {
   constructor(script, _events) {
     this.script = script;
 
-    const t =
-      script.config.apdex?.threshold ||
-      script.config.plugins.apdex?.threshold ||
-      500;
+    if (
+      global.artillery &&
+      Number(global.artillery.version.slice(0, 1)) > 1 &&
+      typeof process.env.LOCAL_WORKER_ID !== 'undefined'
+    ) {
+      const t =
+        script.config.apdex?.threshold ||
+        script.config.plugins.apdex?.threshold ||
+        500;
 
-    if (!script.config.processor) {
-      script.config.processor = {};
-    }
-
-    script.scenarios.forEach(function (scenario) {
-      scenario.afterResponse = [].concat(scenario.afterResponse || []);
-      scenario.afterResponse.push('apdexAfterResponse');
-    });
-
-    function apdexAfterResponse(req, res, userContext, events, done) {
-      const total = res.timings.phases.total;
-      if (total <= t) {
-        events.emit('counter', METRICS.satisfied, 1);
-      } else if (total <= 4 * t) {
-        events.emit('counter', METRICS.tolerated, 1);
-      } else {
-        events.emit('counter', METRICS.frustrated, 1);
+      if (!script.config.processor) {
+        script.config.processor = {};
       }
 
-      return done();
-    }
+      script.scenarios.forEach(function (scenario) {
+        scenario.afterResponse = [].concat(scenario.afterResponse || []);
+        scenario.afterResponse.push('apdexAfterResponse');
+      });
 
-    script.config.processor.apdexAfterResponse = apdexAfterResponse;
+      function apdexAfterResponse(req, res, userContext, events, done) {
+        const total = res.timings.phases.total;
+        if (total <= t) {
+          events.emit('counter', METRICS.satisfied, 1);
+        } else if (total <= 4 * t) {
+          events.emit('counter', METRICS.tolerated, 1);
+        } else {
+          events.emit('counter', METRICS.frustrated, 1);
+        }
+
+        return done();
+      }
+
+      script.config.processor.apdexAfterResponse = apdexAfterResponse;
+
+      return;
+    }
 
     global.artillery.ext({
       ext: 'beforeExit',

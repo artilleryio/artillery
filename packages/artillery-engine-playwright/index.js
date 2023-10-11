@@ -45,6 +45,14 @@ class PlaywrightEngine {
       return self.aggregateByName && spec.name ? spec.name : url;
     }
 
+    const step = async (stepName, userActions) => {
+      const startedTime = Date.now();
+      await userActions();
+      const difference = Date.now() - startedTime;
+
+      events.emit('histogram', `browser.step.${stepName}`, difference);
+    };
+
     return async function scenario(initialContext, cb) {
       events.emit('started');
       const launchOptions = Object.assign(
@@ -79,7 +87,7 @@ class PlaywrightEngine {
                   name: metric.name,
                   value: metric.value,
                   metric: metric,
-                  url: window.location.href
+                  url: window.location.href // eslint-disable-line  no-undef
                 })
               );
             });
@@ -96,8 +104,8 @@ class PlaywrightEngine {
           }
 
           try {
-            const performanceTimingJson = await page.evaluate(() =>
-              JSON.stringify(window.performance.timing)
+            const performanceTimingJson = await page.evaluate(
+              () => JSON.stringify(window.performance.timing) // eslint-disable-line  no-undef
             );
             const performanceTiming = JSON.parse(performanceTimingJson);
 
@@ -167,7 +175,7 @@ class PlaywrightEngine {
             const { usedJSHeapSize } = JSON.parse(
               await page.evaluate(() =>
                 JSON.stringify({
-                  usedJSHeapSize: window.performance.memory.usedJSHeapSize
+                  usedJSHeapSize: window.performance.memory.usedJSHeapSize // eslint-disable-line  no-undef
                 })
               )
             );
@@ -201,8 +209,11 @@ class PlaywrightEngine {
             spec.name || undefined
           );
         } else {
-          await fn(page, initialContext, events);
+          const test = { step };
+
+          await fn(page, initialContext, events, test);
         }
+
 
         await page.close();
 
