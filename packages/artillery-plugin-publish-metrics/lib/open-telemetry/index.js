@@ -156,8 +156,20 @@ class OTelReporter {
           {
             engine: 'playwright',
             type: 'beforeScenario',
-            name: 'runPlaywrightTracing',
-            hook: this.runOtelTracingForPlaywright.bind(this)
+            name: 'startScenarioSpan',
+            hook: this.startScenarioSpan('playwright').bind(this)
+          },
+          {
+            engine: 'playwright',
+            type: 'traceStepFunction',
+            name: 'step',
+            hook: this.step.bind(this)
+          },
+          {
+            engine: 'playwright',
+            type: 'afterScenario',
+            name: 'endScenarioSpan',
+            hook: this.endScenarioSpan('playwright').bind(this)
           }
         ]);
       }
@@ -416,55 +428,44 @@ class OTelReporter {
     }
   }
 
-  async runOtelTracingForPlaywright(
-    page,
-    vuContext,
-    events,
-    userProcessor,
-    specName
-  ) {
-    const playwrightTracer = trace.getTracer('artillery-playwright');
-
-    // Start a new active span for the scenario
-    return await playwrightTracer.startActiveSpan(
-      specName || 'Scenario execution',
-      { kind: SpanKind.CLIENT },
-      async (span) => {
-        if (this.traceConfig.attributes) {
-          span.setAttributes(this.traceConfig.attributes);
-        }
-        try {
-          // Attach traceStep function to the context
-          vuContext.funcs.step = await this.step(
-            span,
-            playwrightTracer,
-            events,
-            this.traceConfig.attributes
-          );
-          // Execute the user-provided processor function within the context of the new span
-          await userProcessor(page, vuContext, events);
-        } catch (err) {
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: err.message
-          });
-          debug(err);
-        } finally {
-          // End the scenario span
-          span.end();
-        }
+  // Sets the tracer by engine type, starts the scenario span and adds it to the VU context 
+  startScenarioSpan(engine){
+    return function (userContext, ee, next){
+      // get and set the tracer by engine
+      const tracerName = engine + 'Tracer'
+      this[tracerName] = trace.getTracer(`Artillery-${engine}`)
+      const span = this[tracerName].startSpan(userContext.scenario?.name || `artillery ${engine} scenario`, Date.now())
+      debug('Scenario span created')
+      userContext[engine + 'scenarioSpan'] = span
+      if (engine === 'http'){
+        next()
+      } else {
+        return span
       }
-    );
+    }
   }
 
-  // Allows users to wrap a span around a step or set of steps  (transaction) and add attributes to it. It also sends the span into the callback so users have ability to set additional attributes, events etc.
-  async step(parent, tracer, events, configAttributes) {
+
+  endScenarioSpan(engine){
+    return function (userContext, ee, next){
+      const span = userContext[engine + 'scenarioSpan']
+      span.end(userContext.scenarioSpanEndTime || Date.now())
+      if (engine === 'http'){
+        next()
+      } else {
+        return 
+      }
+    }
+  }
+
+  // Allows users to wrap a span around a step or set of steps and add attributes to it. It also sends the span into the callback so users have ability to set additional attributes, events etc.
+  step(parent, events) {
     return async function (stepName, callback, attributes) {
       const ctx = trace.setSpan(context.active(), parent);
-      const span = tracer.startSpan(stepName, undefined, ctx);
+      const span = this.playwrightTracer.startSpan(stepName, {kind: SpanKind.CLIENT}, ctx);
       const startTime = Date.now();
-      if (configAttributes) {
-        span.setAttributes(configAttributes);
+      if (this.traceConfig.attributes) {
+        span.setAttributes(this.traceConfig.attributes);
       }
       try {
         if (attributes) {
@@ -483,7 +484,7 @@ class OTelReporter {
         const difference = Date.now() - startTime;
         events.emit('histogram', `browser.step.${stepName}`, difference);
       }
-    };
+    }.bind(this)
   }
 
   async shutDown() {

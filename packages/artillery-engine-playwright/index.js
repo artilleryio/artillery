@@ -201,13 +201,16 @@ class PlaywrightEngine {
           self.processor[spec.flowFunction];
 
         if (self.tracing) {
-          await self.processor[spec.beforeScenario](
-            page,
-            initialContext,
-            events,
-            fn,
-            spec.name || undefined
-          );
+          // The following hook function starts the scenario span and returns it
+          const scenarioSpan = self.processor[spec.beforeScenario](initialContext)
+          // Returns the step function ready for the user to activate
+          const traceStep = self.processor[spec.traceStepFunction](scenarioSpan, events)
+          const test = { step: traceStep }
+
+          await fn(page, initialContext, events, test)
+
+          const endScenarioSpan = self.processor[spec.afterScenario]
+          endScenarioSpan(initialContext)
         } else {
           const test = { step };
 
