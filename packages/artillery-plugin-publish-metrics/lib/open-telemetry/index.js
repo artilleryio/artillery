@@ -11,6 +11,7 @@ const {
   SpanKind,
   SpanStatusCode,
   trace,
+  context,
   metrics
 } = require('@opentelemetry/api');
 const { Resource } = require('@opentelemetry/resources');
@@ -129,15 +130,22 @@ class OTelReporter {
         {
           type: 'beforeRequest',
           name: 'startOTelSpan',
-          hook: this.startOTelSpan.bind(this)
-        }
-      ]);
-
-      attachScenarioHooks(script, [
+          hook: this.startHTTPRequestSpan.bind(this)
+        },
         {
           type: 'afterResponse',
           name: 'exportOTelSpan',
-          hook: this.exportOTelSpan.bind(this)
+          hook: this.endHTTPRequestSpan.bind(this)
+        },
+        {
+          type: 'beforeScenario',
+          name: 'startScenarioSpan',
+          hook: this.startScenarioSpan('http').bind(this)
+        },
+        {
+          type: 'afterScenario',
+          name: 'endScenarioSpan',
+          hook: this.endScenarioSpan('http').bind(this)
         }
       ]);
     }
@@ -311,20 +319,59 @@ class OTelReporter {
     this.tracerProvider.register();
   }
 
-  startOTelSpan(req, userContext, events, done) {
+  // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
+  startScenarioSpan(engine) {
+    return function (userContext, ee, next) {
+      // get and set the tracer by engine
+      const tracerName = engine + 'Tracer';
+      this[tracerName] = trace.getTracer(`Artillery-${engine}`);
+      const span = this[tracerName].startSpan(
+        userContext.scenario?.name || `artillery ${engine} scenario`,
+        Date.now()
+      );
+      debug('Scenario span created');
+      userContext.vars[`__${engine}ScenarioSpan`] = span;
+      if (engine === 'http') {
+        next();
+      } else {
+        return span;
+      }
+    };
+  }
+
+  endScenarioSpan(engine) {
+    return function (userContext, ee, next) {
+      const span = userContext.vars[`__${engine}ScenarioSpan`];
+      span.end(Date.now());
+      if (engine === 'http') {
+        next();
+      } else {
+        return;
+      }
+    };
+  }
+
+  startHTTPRequestSpan(req, userContext, events, done) {
     const startTime = Date.now();
-    userContext.vars['__otlStartTime'] = startTime;
+    userContext.vars['__otlHTTPRequestStartTime'] = startTime;
     const spanName =
       this.traceConfig.useRequestNames && req.name
         ? req.name
         : req.method.toLowerCase();
-    const span = trace.getTracer('artillery-tracer').startSpan(spanName, {
-      startTime,
-      kind: SpanKind.CLIENT
-    });
+
+    const scenarioSpan = userContext.vars['__httpScenarioSpan'];
+    const ctx = trace.setSpan(context.active(), scenarioSpan);
+    const span = this.httpTracer.startSpan(
+      spanName,
+      {
+        startTime,
+        kind: SpanKind.CLIENT
+      },
+      ctx
+    );
 
     span.addEvent('http_request_started', startTime);
-    userContext.vars['__otlpSpan'] = span;
+    userContext.vars['__otlpHTTPRequestSpan'] = span;
 
     events.on('error', (err) => {
       span.setStatus({
@@ -338,18 +385,19 @@ class OTelReporter {
     return done();
   }
 
-  exportOTelSpan(req, res, userContext, events, done) {
-    if (!userContext.vars['__otlpSpan']) {
+  endHTTPRequestSpan(req, res, userContext, events, done) {
+    if (!userContext.vars['__otlpHTTPRequestSpan']) {
       return done();
     }
 
-    const span = userContext.vars['__otlpSpan'];
+    const span = userContext.vars['__otlpHTTPRequestSpan'];
     let endTime;
 
     if (res.timings && res.timings.phases) {
       span.setAttribute('responseTimeMs', res.timings.phases.firstByte);
       endTime =
-        userContext.vars['__otlStartTime'] + res.timings.phases.firstByte;
+        userContext.vars['__otlHTTPRequestStartTime'] +
+        res.timings.phases.firstByte;
       span.addEvent('http_request_ended', endTime);
     } else {
       span.addEvent('http_request_ended');
@@ -371,7 +419,6 @@ class OTelReporter {
     if (this.traceConfig?.attributes) {
       span.setAttributes(this.traceConfig.attributes);
     }
-
     span.end(endTime || Date.now);
 
     return done();
