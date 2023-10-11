@@ -263,7 +263,7 @@ function runScenario(script, metrics, runState, contextVars) {
         const w = engineUtil.template(scenario.weight, {
           vars: variableValues
         });
-        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w);
+        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w); //eslint-disable-line radix
         debug(
           `scenario ${scenario.name} weight has been set to ${scenario.weight}`
         );
@@ -320,7 +320,7 @@ function runScenario(script, metrics, runState, contextVars) {
   metrics.counter('vusers.created', 1);
 
   const scenarioStartedAt = process.hrtime();
-  const scenarioContext = createContext(script, contextVars);
+  const scenarioContext = createContext(script, contextVars, i);
 
   const finish = process.hrtime(start);
   const runScenarioDelta = finish[0] * 1e9 + finish[1];
@@ -383,7 +383,7 @@ function inlineVariables(script) {
 /**
  * Create initial context for a scenario.
  */
-function createContext(script, contextVars) {
+function createContext(script, contextVars, scenarioIndex) {
   const INITIAL_CONTEXT = {
     vars: Object.assign(
       {
@@ -398,7 +398,11 @@ function createContext(script, contextVars) {
       $randomNumber: $randomNumber,
       $randomString: $randomString,
       $template: (input) => engineUtil.template(input, { vars: result.vars })
-    }
+    },
+    scenario:
+      scenarioIndex === undefined
+        ? script.scenarios[0] //if it's undefined, it's a before/after hook, so we have only one scenario
+        : script.scenarios[scenarioIndex] //otherwise, choose by index
   };
 
   let result = INITIAL_CONTEXT;

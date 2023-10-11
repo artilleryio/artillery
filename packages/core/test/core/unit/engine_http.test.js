@@ -667,7 +667,8 @@ test('HTTP engine', function (tap) {
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
     const initialContext = {
-      vars: {}
+      vars: {},
+      scenario: script.scenarios[0]
     };
 
     runScenario(initialContext, function userDone(err, finalContext) {
@@ -749,7 +750,8 @@ test('HTTP engine', function (tap) {
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
     const initialContext = {
-      vars: {}
+      vars: {},
+      scenario: script.scenarios[0]
     };
 
     runScenario(initialContext, function userDone(err) {

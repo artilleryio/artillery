@@ -867,10 +867,8 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
   let self = this;
 
   return async function scenario(initialContext, callback) {
-    initialContext = {
-      ...self.setInitialContext(initialContext),
-      scenario: scenarioSpec
-    };
+    initialContext = self.setInitialContext(initialContext);
+
     ee.emit('started');
     let context = initialContext;
     for (const task of tasks) {
