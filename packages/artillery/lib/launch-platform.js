@@ -97,11 +97,18 @@ class Launcher {
         typeof this.phaseStartedEventsSeen[message.phase.index] === 'undefined'
       ) {
         this.phaseStartedEventsSeen[message.phase.index] = Date.now();
-        this.events.emit('phaseStarted', message.phase);
-        this.pluginEvents.emit('phaseStarted', message.phase);
-        this.pluginEventsLegacy.emit('phaseStarted', message.phase);
+        const fullPhase = {
+          //get back original phase without any splitting for workers
+          ...this.script.config.phases[message.phase.index],
+          id: message.phase.id,
+          startTime: this.phaseStartedEventsSeen[message.phase.index]
+        };
 
-        global.artillery.globalEvents.emit('phaseStarted', message.phase);
+        this.events.emit('phaseStarted', fullPhase);
+        this.pluginEvents.emit('phaseStarted', fullPhase);
+        this.pluginEventsLegacy.emit('phaseStarted', fullPhase);
+
+        global.artillery.globalEvents.emit('phaseStarted', fullPhase);
       }
     });
 
@@ -111,10 +118,18 @@ class Launcher {
         'undefined'
       ) {
         this.phaseCompletedEventsSeen[message.phase.index] = Date.now();
-        this.events.emit('phaseCompleted', message.phase);
-        this.pluginEvents.emit('phaseCompleted', message.phase);
-        this.pluginEventsLegacy.emit('phaseCompleted', message.phase);
-        global.artillery.globalEvents.emit('phaseCompleted', message.phase);
+        const fullPhase = {
+          //get back original phase without any splitting for workers
+          ...this.script.config.phases[message.phase.index],
+          id: message.phase.id,
+          startTime: this.phaseStartedEventsSeen[message.phase.index],
+          endTime: message.phase.endTime
+        };
+
+        this.events.emit('phaseCompleted', fullPhase);
+        this.pluginEvents.emit('phaseCompleted', fullPhase);
+        this.pluginEventsLegacy.emit('phaseCompleted', fullPhase);
+        global.artillery.globalEvents.emit('phaseCompleted', fullPhase);
       }
     });
 
