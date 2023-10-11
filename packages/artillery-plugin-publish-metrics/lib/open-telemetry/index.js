@@ -428,41 +428,47 @@ class OTelReporter {
     }
   }
 
-  // Sets the tracer by engine type, starts the scenario span and adds it to the VU context 
-  startScenarioSpan(engine){
-    return function (userContext, ee, next){
+  // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
+  startScenarioSpan(engine) {
+    return function (userContext, ee, next) {
       // get and set the tracer by engine
-      const tracerName = engine + 'Tracer'
-      this[tracerName] = trace.getTracer(`Artillery-${engine}`)
-      const span = this[tracerName].startSpan(userContext.scenario?.name || `artillery ${engine} scenario`, Date.now())
-      debug('Scenario span created')
-      userContext[engine + 'scenarioSpan'] = span
-      if (engine === 'http'){
-        next()
+      const tracerName = engine + 'Tracer';
+      this[tracerName] = trace.getTracer(`Artillery-${engine}`);
+      const span = this[tracerName].startSpan(
+        userContext.scenario?.name || `artillery ${engine} scenario`,
+        Date.now()
+      );
+      debug('Scenario span created');
+      userContext.vars[`__${engine}ScenarioSpan`] = span;
+      if (engine === 'http') {
+        next();
       } else {
-        return span
+        return span;
       }
-    }
+    };
   }
 
-
-  endScenarioSpan(engine){
-    return function (userContext, ee, next){
-      const span = userContext[engine + 'scenarioSpan']
-      span.end(userContext.scenarioSpanEndTime || Date.now())
-      if (engine === 'http'){
-        next()
+  endScenarioSpan(engine) {
+    return function (userContext, ee, next) {
+      const span = userContext.vars[`__${engine}ScenarioSpan`];
+      span.end(Date.now());
+      if (engine === 'http') {
+        next();
       } else {
-        return 
+        return;
       }
-    }
+    };
   }
 
   // Allows users to wrap a span around a step or set of steps and add attributes to it. It also sends the span into the callback so users have ability to set additional attributes, events etc.
   step(parent, events) {
     return async function (stepName, callback, attributes) {
       const ctx = trace.setSpan(context.active(), parent);
-      const span = this.playwrightTracer.startSpan(stepName, {kind: SpanKind.CLIENT}, ctx);
+      const span = this.playwrightTracer.startSpan(
+        stepName,
+        { kind: SpanKind.CLIENT },
+        ctx
+      );
       const startTime = Date.now();
       if (this.traceConfig.attributes) {
         span.setAttributes(this.traceConfig.attributes);
@@ -484,7 +490,7 @@ class OTelReporter {
         const difference = Date.now() - startTime;
         events.emit('histogram', `browser.step.${stepName}`, difference);
       }
-    }.bind(this)
+    }.bind(this);
   }
 
   async shutDown() {
