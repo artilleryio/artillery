@@ -373,7 +373,7 @@ class OTelReporter {
       const span = this.httpTracer.startSpan(spanName, {
         startTime,
         kind: SpanKind.CLIENT,
-        attributes: { vuId: userContext.$uuid }
+        attributes: { 'vu.uuid': userContext.$uuid }
       });
       userContext.vars['__otlpHTTPRequestSpan'] = span;
 
@@ -399,10 +399,10 @@ class OTelReporter {
     let endTime;
 
     if (res.timings && res.timings.phases) {
-      span.setAttribute('responseTimeMs', res.timings.phases.firstByte);
+      span.setAttribute('response.time.ms', res.timings.phases.firstByte);
 
-      // Child spans are created for each part of request from the timings object and named accordingly. More info here: https://github.com/sindresorhus/got/blob/main/source/core/response.ts
-      // Map names of parts of request that we are going to create spans for, to the timings parameters representing their start and end times for easier span creation
+      // Child spans are created for each phase of the request from the timings object and named accordingly. More info here: https://github.com/sindresorhus/got/blob/main/source/core/response.ts
+      // Map names of request phases to the timings parameters representing their start and end times for easier span creation
       const timingsMap = {
         dns_lookup: { start: 'socket', end: 'lookup' },
         tcp_handshake: { start: 'lookup', end: 'connect' },
@@ -412,10 +412,10 @@ class OTelReporter {
           end: 'upload'
         },
         download: { start: 'response', end: 'end' },
-        firstByte: { start: 'upload', end: 'response' }
+        first_byte: { start: 'upload', end: 'response' }
       };
 
-      // Create child spans within the request span context
+      // Create phase spans within the request span context
       context.with(trace.setSpan(context.active(), span), () => {
         for (const [name, value] of Object.entries(timingsMap)) {
           if (res.timings[value.start] && res.timings[value.end]) {
