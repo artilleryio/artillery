@@ -100,6 +100,7 @@ class Launcher {
         const fullPhase = {
           //get back original phase without any splitting for workers
           ...this.script.config.phases[message.phase.index],
+          index: message.phase.index,
           id: message.phase.id,
           startTime: this.phaseStartedEventsSeen[message.phase.index]
         };
@@ -122,6 +123,7 @@ class Launcher {
           //get back original phase without any splitting for workers
           ...this.script.config.phases[message.phase.index],
           id: message.phase.id,
+          index: message.phase.index,
           startTime: this.phaseStartedEventsSeen[message.phase.index],
           endTime: message.phase.endTime
         };
