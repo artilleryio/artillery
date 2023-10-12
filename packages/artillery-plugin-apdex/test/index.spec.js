@@ -35,7 +35,7 @@ test('apdex plugin works when other after response hooks are set', async (t) => 
   );
 });
 
-// Related to the following discussion: https://github.com/artilleryio/artillery/discussions/2209#discussion-5729379
+// Related to the following discussion: https://github.com/artilleryio/artillery/discussions/2209
 test('apdex plugin reports all apdex metrics even if they never occured', async (t) => {
   //Arrange: Plugin overrides
   const override = JSON.stringify({
