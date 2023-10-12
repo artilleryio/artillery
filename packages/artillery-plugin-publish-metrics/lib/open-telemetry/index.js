@@ -19,6 +19,13 @@ const {
   SemanticResourceAttributes
 } = require('@opentelemetry/semantic-conventions');
 
+const {
+  AsyncHooksContextManager
+} = require('@opentelemetry/context-async-hooks');
+const contextManager = new AsyncHooksContextManager();
+contextManager.enable();
+context.setGlobalContextManager(contextManager);
+
 class OTelReporter {
   constructor(config, events, script) {
     this.script = script;
@@ -324,11 +331,15 @@ class OTelReporter {
     return function (userContext, ee, next) {
       // get and set the tracer by engine
       const tracerName = engine + 'Tracer';
-      this[tracerName] = trace.getTracer(`Artillery-${engine}`);
+      this[tracerName] = trace.getTracer(`artillery-${engine}`);
       const span = this[tracerName].startSpan(
-        userContext.scenario?.name || `artillery ${engine} scenario`,
-        Date.now()
+        userContext.scenario?.name || `artillery-${engine}-scenario`,
+        {
+          startTime: Date.now(),
+          kind: SpanKind.CLIENT
+        }
       );
+
       debug('Scenario span created');
       userContext.vars[`__${engine}ScenarioSpan`] = span;
       if (engine === 'http') {
@@ -353,35 +364,29 @@ class OTelReporter {
 
   startHTTPRequestSpan(req, userContext, events, done) {
     const startTime = Date.now();
-    userContext.vars['__otlHTTPRequestStartTime'] = startTime;
-    const spanName =
-      this.traceConfig.useRequestNames && req.name
-        ? req.name
-        : req.method.toLowerCase();
-
     const scenarioSpan = userContext.vars['__httpScenarioSpan'];
-    const ctx = trace.setSpan(context.active(), scenarioSpan);
-    const span = this.httpTracer.startSpan(
-      spanName,
-      {
+    context.with(trace.setSpan(context.active(), scenarioSpan), () => {
+      const spanName =
+        this.traceConfig.useRequestNames && req.name
+          ? req.name
+          : req.method.toLowerCase();
+      const span = this.httpTracer.startSpan(spanName, {
         startTime,
-        kind: SpanKind.CLIENT
-      },
-      ctx
-    );
-
-    span.addEvent('http_request_started', startTime);
-    userContext.vars['__otlpHTTPRequestSpan'] = span;
-
-    events.on('error', (err) => {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: err.message || err
+        kind: SpanKind.CLIENT,
+        attributes: { vuId: userContext.$uuid }
       });
-      debug('Span status set as error due to the following error: \n', err);
-      span.end(Date.now);
-    });
+      userContext.vars['__otlpHTTPRequestSpan'] = span;
 
+      events.on('error', (err) => {
+        span.recordException(err);
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err.message || err
+        });
+        debug('Span status set as error due to the following error: \n', err);
+        span.end(Date.now);
+      });
+    });
     return done();
   }
 
@@ -395,32 +400,59 @@ class OTelReporter {
 
     if (res.timings && res.timings.phases) {
       span.setAttribute('responseTimeMs', res.timings.phases.firstByte);
-      endTime =
-        userContext.vars['__otlHTTPRequestStartTime'] +
-        res.timings.phases.firstByte;
-      span.addEvent('http_request_ended', endTime);
-    } else {
-      span.addEvent('http_request_ended');
+
+      // Child spans are created for each part of request from the timings object and named accordingly. More info here: https://github.com/sindresorhus/got/blob/main/source/core/response.ts
+      // Map names of parts of request that we are going to create spans for, to the timings parameters representing their start and end times for easier span creation
+      const timingsMap = {
+        dns_lookup: { start: 'socket', end: 'lookup' },
+        tcp_handshake: { start: 'lookup', end: 'connect' },
+        tls_negotiation: { start: 'connect', end: 'secureConnect' },
+        request: {
+          start: res.timings.secureConnect ? 'secureConnect' : 'connect',
+          end: 'upload'
+        },
+        download: { start: 'response', end: 'end' },
+        firstByte: { start: 'upload', end: 'response' }
+      };
+
+      // Create child spans within the request span context
+      context.with(trace.setSpan(context.active(), span), () => {
+        for (const [name, value] of Object.entries(timingsMap)) {
+          if (res.timings[value.start] && res.timings[value.end]) {
+            this.httpTracer
+              .startSpan(name, {
+                kind: SpanKind.CLIENT,
+                startTime: res.timings[value.start]
+              })
+              .end(res.timings[value.end]);
+          }
+        }
+      });
+      endTime = res.timings.end || res.timings.error || res.timings.abort;
     }
 
-    const url = new URL(req.url);
-    span.setAttributes({
-      'url.full': url.href,
-      'server.address': url.hostname,
-      // We set the port if it is specified, if not we set to a default port based on the protocol
-      'server.port': url.port || (url.protocol === 'http' ? 80 : 443),
-      'http.request.method': req.method,
-      'http.response.status_code': res.statusCode
-    });
+    try {
+      const url = new URL(req.url);
+      span.setAttributes({
+        'url.full': url.href,
+        'url.path': url.pathname,
+        'server.address': url.hostname,
+        // We set the port if it is specified, if not we set to a default port based on the protocol
+        'server.port': url.port || (url.protocol === 'http' ? 80 : 443),
+        'http.request.method': req.method,
+        'http.response.status_code': res.statusCode
+      });
 
-    if (res.statusCode >= 400) {
-      span.setStatus({ code: SpanStatusCode.ERROR });
+      if (res.statusCode >= 400) {
+        span.setStatus({ code: SpanStatusCode.ERROR });
+      }
+      if (this.traceConfig?.attributes) {
+        span.setAttributes(this.traceConfig.attributes);
+      }
+      span.end(endTime || Date.now());
+    } catch (err) {
+      // We don't do anything, if error occurs at this point it will be due to us already ending the span in beforeRequest hook in case of an error.
     }
-    if (this.traceConfig?.attributes) {
-      span.setAttributes(this.traceConfig.attributes);
-    }
-    span.end(endTime || Date.now);
-
     return done();
   }
 
@@ -450,7 +482,7 @@ class OTelReporter {
       }
       debug('Pending requests done');
       debug('Shutting the Reader down');
-      await this.theReader.shutdown(); //check if shutdown successfull
+      await this.theReader.shutdown();
       debug('Shut down sucessfull');
     }
     if (this.tracing) {
