@@ -108,7 +108,10 @@ tap.test('Can specify scenario to run by name', async (t) => {
 
   t.ok(
     deleteFile(reportFilePath) &&
-      json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6
+      json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6 &&
+      typeof json.aggregate.counters[
+        'vusers.created_by_name.Test Scenario 1'
+      ] === 'undefined'
   );
 });
 
