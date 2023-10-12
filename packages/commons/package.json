@@ -2,6 +2,7 @@
   "name": "@artilleryio/int-commons",
   "version": "2.0.1",
   "main": "./index.js",
+  "license": "MPL-2.0",
   "dependencies": {
     "async": "^2.6.4",
     "cheerio": "^1.0.0-rc.10",

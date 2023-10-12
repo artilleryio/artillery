@@ -2,6 +2,7 @@
   "name": "@artilleryio/int-core",
   "version": "2.1.0",
   "main": "./index.js",
+  "license": "MPL-2.0",
   "dependencies": {
     "@artilleryio/int-commons": "*",
     "@artilleryio/sketches-js": "^2.1.1",
