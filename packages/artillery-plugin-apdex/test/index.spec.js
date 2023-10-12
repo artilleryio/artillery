@@ -34,3 +34,28 @@ test('apdex plugin works when other after response hooks are set', async (t) => 
     'After Response Handler did not run five times'
   );
 });
+
+// Related to the following discussion: https://github.com/artilleryio/artillery/discussions/2209#discussion-5729379
+test('apdex plugin reports all apdex metrics even if they never occured', async (t) => {
+  //Arrange: Plugin overrides
+  const override = JSON.stringify({
+    config: {
+      plugins: { apdex: {} },
+      apdex: {
+        threshold: 100
+      }
+    }
+  });
+
+  //Act: run the test
+  const output =
+    await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
+  const allMetricsReported =
+    output.stdout.includes('apdex.satisfied:') &&
+    output.stdout.includes('apdex.tolerated:') &&
+    output.stdout.includes('apdex.frustrated:');
+  t.ok(
+    allMetricsReported,
+    'All Apdex metrics counters are displayed in the report'
+  );
+});
