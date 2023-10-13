@@ -36,13 +36,17 @@ class ApdexPlugin {
 
       function apdexAfterResponse(req, res, userContext, events, done) {
         const total = res.timings.phases.total;
+        const counts = {};
         if (total <= t) {
-          events.emit('counter', METRICS.satisfied, 1);
+          counts.satisfied = 1;
         } else if (total <= 4 * t) {
-          events.emit('counter', METRICS.tolerated, 1);
+          counts.tolerated = 1;
         } else {
-          events.emit('counter', METRICS.frustrated, 1);
+          counts.frustrated = 1;
         }
+        events.emit('counter', METRICS.satisfied, counts.satisfied);
+        events.emit('counter', METRICS.tolerated, counts.tolerated);
+        events.emit('counter', METRICS.frustrated, counts.frustrated);
 
         return done();
       }
