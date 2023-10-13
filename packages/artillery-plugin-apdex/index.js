@@ -36,6 +36,10 @@ class ApdexPlugin {
 
       function apdexAfterResponse(req, res, userContext, events, done) {
         const total = res.timings.phases.total;
+        events.emit('counter', METRICS.satisfied, 0);
+        events.emit('counter', METRICS.tolerated, 0);
+        events.emit('counter', METRICS.frustrated, 0);
+
         if (total <= t) {
           events.emit('counter', METRICS.satisfied, 1);
         } else if (total <= 4 * t) {
