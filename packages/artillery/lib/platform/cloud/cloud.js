@@ -6,6 +6,8 @@
 
 const debug = require('debug')('cloud');
 const request = require('got');
+const awaitOnEE = require('../../util/await-on-ee');
+const sleep = require('../../util/sleep');
 const util = require('node:util');
 
 class ArtilleryCloudPlugin {
@@ -30,6 +32,7 @@ class ArtilleryCloudPlugin {
     this.defaultHeaders = {
       'x-auth-token': this.apiKey
     };
+    this.unprocessedLogs = [];
 
     let testEndInfo = {};
     global.artillery.globalEvents.on('test:init', async (testInfo) => {
@@ -86,6 +89,7 @@ class ArtilleryCloudPlugin {
 
     global.artillery.globalEvents.on('logLines', async (lines, ts) => {
       debug('logLines event', ts);
+      this.unprocessedLogs.push({ lines, ts });
 
       let text = '';
 
@@ -99,7 +103,13 @@ class ArtilleryCloudPlugin {
         text += util.format(...Object.keys(args).map((k) => args[k])) + '\n';
       }
 
-      await this._event('testrun:textlog', { lines: text, ts });
+      try {
+        await this._event('testrun:textlog', { lines: text, ts });
+      } catch (err) {
+        debug(err);
+      } finally {
+        this.unprocessedLogs.pop({ lines, ts });
+      }
 
       debug('last 100 characters:');
       debug(text.slice(text.length - 100, text.length));
@@ -127,6 +137,18 @@ class ArtilleryCloudPlugin {
     global.artillery.ext({
       ext: 'onShutdown',
       method: async (opts) => {
+        const waitTimeInMs = 11000; //at most wait more than 10 seconds (report interval is 10s)
+        const pollInMs = 500;
+
+        // Wait for the last logLines events to be processed, as they can sometimes finish processing after shutdown has finished
+        await awaitOnEE(
+          global.artillery.globalEvents,
+          'logLines',
+          pollInMs,
+          waitTimeInMs
+        );
+        await this.waitOnUnprocessedLogs(waitTimeInMs); //just waiting for ee is not enough, as the api call takes time
+
         await this._event('testrun:end', {
           ts: testEndInfo.endTime,
           exitCode: global.artillery.suggestedExitCode || opts.exitCode
@@ -140,6 +162,16 @@ class ArtilleryCloudPlugin {
     });
 
     return this;
+  }
+
+  async waitOnUnprocessedLogs(maxWaitTime) {
+    let waitedTime = 0;
+    while (this.unprocessedLogs.length > 0 && waitedTime < maxWaitTime) {
+      debug('waiting on unprocessed logs');
+      await sleep(500);
+      waitedTime += 500;
+    }
+    return true;
   }
 
   async _event(eventName, eventPayload) {
