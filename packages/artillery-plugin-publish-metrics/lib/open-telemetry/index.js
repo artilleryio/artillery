@@ -132,22 +132,64 @@ class OTelReporter {
       );
       this.tracing = true;
       this.configureTrace(this.traceConfig);
+      // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible, same amount of work
+      this.engines = new Set();
+      const scenarios = this.script.scenarios || [];
+      scenarios.forEach((scenario) => {
+        scenario.engine
+          ? this.engines.add(scenario.engine)
+          : this.engines.add('http');
+      });
 
-      attachScenarioHooks(script, [
-        {
-          type: 'beforeRequest',
-          name: 'startOTelSpan',
-          hook: this.startOTelSpan.bind(this)
-        }
-      ]);
+      // Set hooks for tracing HTTP engine based scenarios
+      if (this.engines.has('http')) {
+        attachScenarioHooks(script, [
+          {
+            type: 'beforeRequest',
+            name: 'startOTelSpan',
+            hook: this.startHTTPRequestSpan.bind(this)
+          },
+          {
+            type: 'afterResponse',
+            name: 'exportOTelSpan',
+            hook: this.endHTTPRequestSpan.bind(this)
+          },
+          {
+            type: 'beforeScenario',
+            name: 'startScenarioSpan',
+            hook: this.startScenarioSpan('http').bind(this)
+          },
+          {
+            type: 'afterScenario',
+            name: 'endScenarioSpan',
+            hook: this.endScenarioSpan('http').bind(this)
+          }
+        ]);
+      }
 
-      attachScenarioHooks(script, [
-        {
-          type: 'afterResponse',
-          name: 'exportOTelSpan',
-          hook: this.exportOTelSpan.bind(this)
-        }
-      ]);
+      // Set hooks for tracing Playwright engine based scenarios
+      if (this.engines.has('playwright')) {
+        attachScenarioHooks(script, [
+          {
+            engine: 'playwright',
+            type: 'beforeScenario',
+            name: 'startScenarioSpan',
+            hook: this.startScenarioSpan('playwright').bind(this)
+          },
+          {
+            engine: 'playwright',
+            type: 'traceStepFunction',
+            name: 'step',
+            hook: this.step.bind(this)
+          },
+          {
+            engine: 'playwright',
+            type: 'afterScenario',
+            name: 'endScenarioSpan',
+            hook: this.endScenarioSpan('playwright').bind(this)
+          }
+        ]);
+      }
     }
   }
 
@@ -465,38 +507,6 @@ class OTelReporter {
         } exporter ${exporter} is not supported. Currently supported exporters for ${type}s are ${supported}`
       );
     }
-  }
-
-  // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
-  startScenarioSpan(engine) {
-    return function (userContext, ee, next) {
-      // get and set the tracer by engine
-      const tracerName = engine + 'Tracer';
-      this[tracerName] = trace.getTracer(`Artillery-${engine}`);
-      const span = this[tracerName].startSpan(
-        userContext.scenario?.name || `artillery ${engine} scenario`,
-        Date.now()
-      );
-      debug('Scenario span created');
-      userContext.vars[`__${engine}ScenarioSpan`] = span;
-      if (engine === 'http') {
-        next();
-      } else {
-        return span;
-      }
-    };
-  }
-
-  endScenarioSpan(engine) {
-    return function (userContext, ee, next) {
-      const span = userContext.vars[`__${engine}ScenarioSpan`];
-      span.end(Date.now());
-      if (engine === 'http') {
-        next();
-      } else {
-        return;
-      }
-    };
   }
 
   // Allows users to wrap a span around a step or set of steps and add attributes to it. It also sends the span into the callback so users have ability to set additional attributes, events etc.
