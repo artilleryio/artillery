@@ -137,17 +137,14 @@ class ArtilleryCloudPlugin {
     global.artillery.ext({
       ext: 'onShutdown',
       method: async (opts) => {
-        const waitTimeInMs = 11000; //at most wait more than 10 seconds (report interval is 10s)
-        const pollInMs = 500;
-
         // Wait for the last logLines events to be processed, as they can sometimes finish processing after shutdown has finished
         await awaitOnEE(
           global.artillery.globalEvents,
           'logLines',
-          pollInMs,
-          waitTimeInMs
+          200,
+          1 * 1000 //wait at most 1 second for a final log lines event emitter to be fired
         );
-        await this.waitOnUnprocessedLogs(waitTimeInMs); //just waiting for ee is not enough, as the api call takes time
+        await this.waitOnUnprocessedLogs(2 * 1000); //just waiting for ee is not enough, as the api call takes time
 
         await this._event('testrun:end', {
           ts: testEndInfo.endTime,
