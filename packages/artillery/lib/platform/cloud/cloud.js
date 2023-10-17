@@ -32,7 +32,7 @@ class ArtilleryCloudPlugin {
     this.defaultHeaders = {
       'x-auth-token': this.apiKey
     };
-    this.unprocessedLogs = [];
+    this.unprocessedLogsCounter = 0;
 
     let testEndInfo = {};
     global.artillery.globalEvents.on('test:init', async (testInfo) => {
@@ -89,7 +89,7 @@ class ArtilleryCloudPlugin {
 
     global.artillery.globalEvents.on('logLines', async (lines, ts) => {
       debug('logLines event', ts);
-      this.unprocessedLogs.push({ lines, ts });
+      this.unprocessedLogsCounter += 1;
 
       let text = '';
 
@@ -108,7 +108,7 @@ class ArtilleryCloudPlugin {
       } catch (err) {
         debug(err);
       } finally {
-        this.unprocessedLogs.pop({ lines, ts });
+        this.unprocessedLogsCounter -= 1;
       }
 
       debug('last 100 characters:');
@@ -163,7 +163,7 @@ class ArtilleryCloudPlugin {
 
   async waitOnUnprocessedLogs(maxWaitTime) {
     let waitedTime = 0;
-    while (this.unprocessedLogs.length > 0 && waitedTime < maxWaitTime) {
+    while (this.unprocessedLogsCounter > 0 && waitedTime < maxWaitTime) {
       debug('waiting on unprocessed logs');
       await sleep(500);
       waitedTime += 500;
