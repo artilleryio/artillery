@@ -408,6 +408,7 @@ function printSummaries(summaries, report) {
     result.push(`${n}:`);
     result.push(padded('  min:', r.min));
     result.push(padded('  max:', r.max));
+    result.push(padded('  mean:', r.mean));
     result.push(padded('  median:', r.median));
     result.push(padded('  p95:', r.p95));
     result.push(padded('  p99:', r.p99));
