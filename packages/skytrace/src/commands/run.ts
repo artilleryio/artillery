@@ -16,20 +16,23 @@ class RunCommand extends Command {
   static aliases = ['test'];
   static strict = false;
 
-  async runFlow(flowFilePath: string) {
+  async runFlow(flowFilePath: string, opts: any) {
     const HttpEngine = Core.engine_http;
     const contents: any[] = YAML.loadAll(fs.readFileSync(flowFilePath, 'utf8'));
 
-    const showHttpTimings = contents[0].http?.timings === true;
+    const showHttpTimings = opts.showHTTPTimings || contents[0].http?.timings === true;
 
     let script;
+
     if (
-      typeof contents[0]['config']?.target !== 'undefined' &&
       typeof contents[0]['scenarios'] !== 'undefined'
     ) {
+      // This is a classic Artillery script with config and scenario in the same file
+      const target = contents[0]['config']?.target || opts.target;
+
       script = {
         config: {
-          target: contents[0]['config'].target,
+          target,
           plugins: {
             expect: {
               formatter: 'silent',
@@ -40,6 +43,7 @@ class RunCommand extends Command {
         scenarios: [contents[0]['scenarios'][0]]
       };
     } else {
+      // This is a Skytrace scenario - just steps with metadata at the top
       script = {
         config: {
           target: contents[0].target,
@@ -65,7 +69,13 @@ class RunCommand extends Command {
     const engine = new HttpEngine(script);
     const vu = promisify(engine.createScenario(script.scenarios[0], events));
     const initialContext = {
-      vars: {}
+      vars: {
+          target: script.config?.target || script.target,
+          $environment: script._environment,
+          $processEnvironment: process.env, // TODO: deprecate
+          $env: process.env,
+          $testRunId: global.artillery.testRunId,
+      }
     };
 
     events.on('error', (errCode, uuid) => {});
@@ -110,10 +120,12 @@ SKYTRACE ──━━★
     console.log(gradientString.vice(banner));
     console.log();
 
+    const opts = { target: flags.target, showHTTPTimings: flags.timings };
+
     if (flags.reload) {
       console.log('> Running flow (reload mode on)');
       console.log();
-      this.runFlow(flowFilePaths[0]);
+      this.runFlow(flowFilePaths[0], opts);
       let prevMtime = new Date(0);
       let rerunning = false;
       fs.watch(flowFilePaths[0], {}, (eventType, fn) => {
@@ -138,7 +150,7 @@ SKYTRACE ──━━★
         console.log('> Rerunning flow');
         console.log(' ', new Date());
         console.log('  --------------');
-        this.runFlow(flowFilePaths[0]);
+        this.runFlow(flowFilePaths[0], opts);
         console.log();
 
         rerunning = false;
@@ -147,7 +159,7 @@ SKYTRACE ──━━★
       console.log('> Running flow');
       // console.log('source:', flowFilePath);
       console.log('');
-      await this.runFlow(flowFilePaths[0]);
+      await this.runFlow(flowFilePaths[0], opts);
     }
   }
 }
@@ -157,6 +169,13 @@ RunCommand.flags = {
   reload: flags.boolean({
     char: 'r',
     description: 'reload and rerun flow automatically'
+  }),
+  target: flags.string({
+    char: 't',
+    description: 'target endpoint, e.g. https://api.example-pet-store.com'
+  }),
+  timings: flags.boolean({
+    description: 'show HTTP timing information for each request'
   })
 };
 RunCommand.args = [
