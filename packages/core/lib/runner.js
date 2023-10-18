@@ -263,7 +263,7 @@ function runScenario(script, metrics, runState, contextVars) {
         const w = engineUtil.template(scenario.weight, {
           vars: variableValues
         });
-        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w);
+        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w); //eslint-disable-line radix
         debug(
           `scenario ${scenario.name} weight has been set to ${scenario.weight}`
         );
@@ -328,7 +328,9 @@ function runScenario(script, metrics, runState, contextVars) {
   metrics.counter('vusers.created', 1);
 
   const scenarioStartedAt = process.hrtime();
-  const scenarioContext = createContext(script, contextVars);
+  const scenarioContext = createContext(script, contextVars, {
+    scenario: script.scenarios[i]
+  });
 
   const finish = process.hrtime(start);
   const runScenarioDelta = finish[0] * 1e9 + finish[1];
@@ -391,7 +393,13 @@ function inlineVariables(script) {
 /**
  * Create initial context for a scenario.
  */
-function createContext(script, contextVars) {
+function createContext(script, contextVars, additionalProperties = {}) {
+  //allow for additional properties to be passed in, but not override vars and funcs
+  const additionalPropertiesWithoutOverride = _.omit(additionalProperties, [
+    'vars',
+    'funcs'
+  ]);
+
   const INITIAL_CONTEXT = {
     vars: Object.assign(
       {
@@ -406,7 +414,8 @@ function createContext(script, contextVars) {
       $randomNumber: $randomNumber,
       $randomString: $randomString,
       $template: (input) => engineUtil.template(input, { vars: result.vars })
-    }
+    },
+    ...additionalPropertiesWithoutOverride
   };
 
   let result = INITIAL_CONTEXT;
@@ -453,7 +462,10 @@ function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
     const name = script[hook].engine || 'http';
     const engine = engines.find((e) => e.__name === name);
     const hookScenario = engine.createScenario(script[hook], ee);
-    const hookContext = createContext(script, contextVars);
+    const hookContext = createContext(script, contextVars, {
+      scenario: script[hook]
+    });
+
     hookScenario(hookContext, function (err, context) {
       if (err) {
         debug(err);
