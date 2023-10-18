@@ -155,6 +155,9 @@ RunCommand.flags = {
   }),
   key: Flags.string({
     description: 'API key for Artillery Cloud'
+  }),
+  'scenario-name': Flags.string({
+    description: 'Name of the specific scenario to run'
   })
 };
 
@@ -207,7 +210,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       scriptPath: args.script,
       // TODO: This should be an array of files, like inputFiles above
       absoluteScriptPath: path.resolve(process.cwd(), args.script),
-      plugins: []
+      plugins: [],
+      scenarioName: flags['scenario-name']
     };
 
     // Set "name" tag if not set explicitly

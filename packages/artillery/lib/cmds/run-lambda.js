@@ -115,6 +115,9 @@ RunLambdaCommand.flags = {
   key: Flags.string({
     description: 'API key for Artillery Cloud'
   }),
+  'scenario-name': Flags.string({
+    description: 'Name of the specific scenario to run'
+  }),
   architecture: Flags.string({
     description: 'Architecture of the Lambda function',
     default: 'arm64'

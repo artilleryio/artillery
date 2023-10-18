@@ -200,7 +200,13 @@ function run(script, ee, options, runState, contextVars) {
     if (runState.pendingScenarios >= spec.maxVusers) {
       metrics.counter('vusers.skipped', 1);
     } else {
-      scenarioContext = runScenario(script, metrics, runState, contextVars);
+      scenarioContext = runScenario(
+        script,
+        metrics,
+        runState,
+        contextVars,
+        options
+      );
     }
   });
   phaser.on('phaseStarted', function (spec) {
@@ -242,7 +248,7 @@ function run(script, ee, options, runState, contextVars) {
   phaser.run();
 }
 
-function runScenario(script, metrics, runState, contextVars) {
+function runScenario(script, metrics, runState, contextVars, options) {
   const start = process.hrtime();
 
   //
@@ -315,8 +321,29 @@ function runScenario(script, metrics, runState, contextVars) {
     );
   }
 
+  //default to weighted picked scenario
   let i = runState.picker()[0];
 
+  if (options.scenarioName) {
+    let foundIndex;
+    const foundScenario = script.scenarios.filter((scenario, index) => {
+      foundIndex = index;
+      return new RegExp(options.scenarioName).test(scenario.name);
+    });
+
+    if (foundScenario?.length === 0) {
+      throw new Error(
+        `Scenario ${options.scenarioName} not found in script. Make sure your chosen scenario matches the one in your script exactly.`
+      );
+    } else if (foundScenario.length > 1) {
+      throw new Error(
+        `Multiple scenarios for ${options.scenarioName} found in script. Make sure you give unique names to your scenarios in your script.`
+      );
+    } else {
+      debug(`Scenario ${options.scenarioName} found in script. running it!`);
+      i = foundIndex;
+    }
+  }
   debug(
     'picking scenario %s (%s) weight = %s',
     i,

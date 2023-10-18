@@ -189,6 +189,11 @@ class PlatformLambda {
       this.artilleryArgs.push(path.basename(this.platformOpts.cliArgs.dotenv));
     }
 
+    if (this.platformOpts.cliArgs['scenario-name']) {
+      this.artilleryArgs.push('--scenario-name');
+      this.artilleryArgs.push(this.platformOpts.cliArgs['scenario-name']);
+    }
+
     if (this.platformOpts.cliArgs.config) {
       this.artilleryArgs.push('--config');
       const p = bom.files.filter(

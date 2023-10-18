@@ -88,6 +88,52 @@ tap.test('Environment specified with -e should be used', async (t) => {
   t.ok(exitCode === 0 && !output.stdout.includes('ECONNREFUSED'));
 });
 
+tap.test('Can specify scenario to run by name', async (t) => {
+  const reportFile = 'report-with-scenario-by-name.json';
+  const reportFilePath = await getRootPath(reportFile);
+
+  const [exitCode, output] = await execute([
+    'run',
+    '--scenario-name',
+    'Test Scenario 2',
+    '-o',
+    `${reportFilePath}`,
+    'test/scripts/scenario-named/scenario.yml'
+  ]);
+
+  t.ok(
+    exitCode === 0 && output.stdout.includes('Successfully running scenario 2')
+  );
+  const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+  t.ok(
+    deleteFile(reportFilePath) &&
+      json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6 &&
+      typeof json.aggregate.counters[
+        'vusers.created_by_name.Test Scenario 1'
+      ] === 'undefined'
+  );
+});
+
+tap.test(
+  'Errors correctly when specifying a non-existing scenario by name',
+  async (t) => {
+    const [exitCode, output] = await execute([
+      'run',
+      '--scenario-name',
+      'Test Scenario 3',
+      'test/scripts/scenario-named/scenario.yml'
+    ]);
+
+    t.equal(exitCode, 11);
+    t.ok(
+      output.stdout.includes(
+        'Error: Scenario Test Scenario 3 not found in script. Make sure your chosen scenario matches the one in your script exactly.'
+      )
+    );
+  }
+);
+
 tap.test('Run a script with one payload command line', async (t) => {
   const [, output] = await execute([
     'run',
