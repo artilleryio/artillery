@@ -12,6 +12,8 @@ import { Plugin, formatters } from 'artillery-plugin-expect';
 
 import * as gradientString from 'gradient-string';
 
+import * as telemetry from '../telemetry';
+
 class RunCommand extends Command {
   static aliases = ['test'];
   static strict = false;
@@ -122,6 +124,12 @@ SKYTRACE ──━━★
 
     const opts = { target: flags.target, showHTTPTimings: flags.timings };
 
+    const ping = telemetry.init();
+    await ping.capture('run-flow', {
+      cliTarget: flags.target,
+      cliHTTPTimings: flags.timings,
+    });
+
     if (flags.reload) {
       console.log('> Running flow (reload mode on)');
       console.log();
@@ -161,6 +169,8 @@ SKYTRACE ──━━★
       console.log('');
       await this.runFlow(flowFilePaths[0], opts);
     }
+
+    await ping.shutdown();
   }
 }
 
