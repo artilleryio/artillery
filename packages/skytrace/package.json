@@ -1,6 +1,6 @@
 {
   "name": "skytrace",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Fast & simple e2e testing",
   "author": "@artilleryio",
   "bin": {
