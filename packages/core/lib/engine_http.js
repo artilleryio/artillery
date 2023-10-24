@@ -712,6 +712,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           })
           .catch((gotErr) => {
             // TODO: Handle the error properly with run hooks
+            debug(gotErr);
             return callback(gotErr, context);
           });
       }
