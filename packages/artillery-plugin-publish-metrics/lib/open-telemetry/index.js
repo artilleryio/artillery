@@ -495,7 +495,13 @@ class OTelReporter {
       specName || 'Scenario execution',
       { kind: SpanKind.CLIENT },
       async (scenarioSpan) => {
-        scenarioSpan.setAttribute('vu.uuid', vuContext.vars.$uuid);
+        scenarioSpan.setAttributes({
+          'vu.uuid': vuContext.vars.$uuid,
+          ...(this.traceConfig.attributes || {})
+        });
+        if (this.traceConfig.attributes) {
+          scenarioSpan.setAttributes(this.traceConfig.attributes);
+        }
         // Set variables to track state and context
         const ctx = context.active();
         let lastPageUrl;
@@ -509,7 +515,7 @@ class OTelReporter {
             return;
           }
 
-          // only look for page metrics or memory_used_mb metric. step metrics are handled separately in the step helper itself
+          // Only look for page metrics or memory_used_mb metric. step metrics are handled separately in the step helper itself
           if (
             !name.startsWith('browser.page') &&
             name !== 'browser.memory_used_mb'
@@ -517,7 +523,7 @@ class OTelReporter {
             return;
           }
 
-          // associate only the metrics that belong to the page
+          // Associate only the metrics that belong to the page
           if (metadata.url !== pageSpan.name.replace('Page: ', '')) {
             return;
           }
@@ -563,16 +569,24 @@ class OTelReporter {
               { kind: SpanKind.CLIENT },
               ctx
             );
-            pageSpan.setAttribute('vu.uuid', vuContext.vars.$uuid);
+            pageSpan.setAttributes({
+              'vu.uuid': vuContext.vars.$uuid,
+              ...(this.traceConfig.attributes || {})
+            });
             lastPageUrl = pageUrl;
           }
         });
 
         try {
-          // Set the tracing this.step function to test object which is exposed to the user
+          // Set the tracing 'this.step' function to the 'test' object which is exposed to the user
           const test = {
             step: (
-              await this.step(scenarioSpan, this.playwrightTracer, events, page)
+              await this.step(
+                scenarioSpan,
+                this.playwrightTracer,
+                events,
+                vuContext
+              )
             ).bind(this)
           };
           // Execute the user-provided processor function within the context of the new span
@@ -591,8 +605,8 @@ class OTelReporter {
     );
   }
 
-  async step(parent, tracer, events) {
-    return async function (stepName, callback, attributes) {
+  async step(parent, tracer, events, vuContext) {
+    return async function (stepName, callback) {
       // Set the parent context to be scenarioSpan and within it we create step spans
       return contextManager.with(
         trace.setSpan(context.active(), parent),
@@ -605,9 +619,10 @@ class OTelReporter {
           const startTime = Date.now();
 
           try {
-            if (attributes) {
-              span.setAttributes(attributes);
-            }
+            span.setAttributes({
+              'vu.uuid': vuContext.vars.$uuid,
+              ...(this.traceConfig.attributes || {})
+            });
 
             await callback();
           } catch (err) {
