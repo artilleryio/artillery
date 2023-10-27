@@ -11,6 +11,9 @@ class PlaywrightEngine {
     this.launchOptions = this.config.launchOptions || {};
     this.contextOptions = this.config.contextOptions || {};
 
+    this.tracing = (script.config?.plugins?.['publish-metrics'] || []).some((config) => {
+      return (config.type === 'open-telemetry') && config.traces})
+
     this.defaultNavigationTimeout =
       (parseInt(this.config.defaultNavigationTimeout, 10) || 30) * 1000;
     this.defaultTimeout =
@@ -135,7 +138,8 @@ class PlaywrightEngine {
             events.emit(
               'histogram',
               `browser.page.dominteractive.${getName(page.url())}`,
-              startToInteractive
+              startToInteractive,
+              {url: page.url(), vuId: initialContext.vars.$uuid}
             );
           } catch (err) {}
         });
@@ -152,7 +156,8 @@ class PlaywrightEngine {
                 events.emit(
                   'histogram',
                   `browser.page.${name}.${getName(url)}`,
-                  value
+                  value,
+                  {rating: metric.metric.rating, url, vuId: initialContext.vars.$uuid}
                 );
               }
             } catch (err) {}
@@ -177,7 +182,8 @@ class PlaywrightEngine {
             events.emit(
               'histogram',
               'browser.memory_used_mb',
-              usedJSHeapSize / 1000 / 1000
+              usedJSHeapSize / 1000 / 1000,
+              {url: page.url(), vuId: initialContext.vars.$uuid}
             );
           } catch (err) {}
         });
@@ -197,7 +203,13 @@ class PlaywrightEngine {
 
         const test = { step };
 
-        await fn(page, initialContext, events, test);
+        let traceScenario
+        if (self.tracing){
+          traceScenario = self.processor[spec.traceFlowFunction]
+          await traceScenario(page, initialContext, events, fn, spec.name)
+        } else {
+          await fn(page, initialContext, events, test);
+        }
 
         await page.close();
 
