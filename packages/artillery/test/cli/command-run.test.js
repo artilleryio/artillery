@@ -318,6 +318,66 @@ tap.test('Environment variables can be loaded from dotenv files', async (t) => {
   );
 });
 
+tap.test('Environment variables can be loaded using $env', async (t) => {
+  // test uses these variables (with $env) in scenarios, and in config (nested and root-level)
+  const variables = {
+    URL: 'http://asciiart.artillery.io:8080/',
+    ENVIRONMENT: 'testing',
+    ARRIVAL_RATE: 2,
+    NESTED_HEADER_VALUE: 'abc123'
+  };
+
+  const reportFile = 'report-with-env.json';
+  const reportFilePath = await getRootPath(reportFile);
+  const [exitCode, result] = await execute(
+    ['run', 'test/scripts/with-process-env/with-env.yml', '-o', reportFile],
+    { env: { ...variables } }
+  );
+  const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+  t.ok(
+    deleteFile(reportFilePath) &&
+      exitCode === 0 &&
+      json.aggregate.counters['http.codes.200'] === 2 &&
+      result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
+      result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
+  );
+});
+
+tap.test(
+  'Environment variables can be loaded using legacy $processEnvironment',
+  async (t) => {
+    // test uses these variables (with $processEnvironment) in scenarios, and in config (nested and root-level)
+    const variables = {
+      URL: 'http://asciiart.artillery.io:8080/',
+      ENVIRONMENT: 'testing',
+      ARRIVAL_RATE: 2,
+      NESTED_HEADER_VALUE: 'abc123'
+    };
+
+    const reportFile = 'report-with-processEnvironment.json';
+    const reportFilePath = await getRootPath(reportFile);
+    const [exitCode, result] = await execute(
+      [
+        'run',
+        'test/scripts/with-process-env/with-processEnvironment.yml',
+        '-o',
+        reportFile
+      ],
+      { env: { ...variables } }
+    );
+    const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+    t.ok(
+      deleteFile(reportFilePath) &&
+        exitCode === 0 &&
+        json.aggregate.counters['http.codes.200'] === 2 &&
+        result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
+        result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
+    );
+  }
+);
+
 tap.test('Script using a plugin', async (t) => {
   const abortController = new AbortController();
   // a target is needed for the plugin to output properly
