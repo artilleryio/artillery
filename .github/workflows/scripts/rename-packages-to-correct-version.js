@@ -3,7 +3,6 @@ const path = require('path');
 
 const packageJsonRelativePath = `../../../packages/${process.env.PACKAGE_FOLDER_NAME}/package.json`;
 const packageJsonFullPath = path.join(__dirname, packageJsonRelativePath);
-let package;
 
 if (!fs.existsSync(packageJsonFullPath)) {
   throw new Error(
