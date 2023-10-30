@@ -80,6 +80,7 @@ async function resolveConfigTemplates(script, flags) {
   script.config = engineUtil.template(script.config, {
     vars: {
       $processEnvironment: process.env,
+      $env: process.env,
       $environment: flags.environment,
       ...cliVariables
     },
