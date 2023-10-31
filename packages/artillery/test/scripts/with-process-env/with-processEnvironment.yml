@@ -1,0 +1,18 @@
+config:
+  target: "https://www.wontresolve.none"
+  phases:
+    - duration: 1
+      arrivalRate: "{{ $processEnvironment.ARRIVAL_RATE }}"
+  variables:
+    targetEnv: "{{ $processEnvironment.ENVIRONMENT }}"
+  http:
+    defaults:
+      headers:
+        x-fake-header: "{{ $processEnvironment.NESTED_HEADER_VALUE }}"
+  processor: ./processor.js
+
+scenarios:
+  - flow:
+      - get:
+          afterResponse: myBeforeRequestHandler
+          url: "{{ $processEnvironment.URL }}"
