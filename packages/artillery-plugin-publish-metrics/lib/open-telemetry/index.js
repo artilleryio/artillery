@@ -599,6 +599,9 @@ class OTelReporter {
           });
           throw err;
         } finally {
+          if (pageSpan && !pageSpan._ended) {
+            pageSpan.end();
+          }
           scenarioSpan.end();
         }
       }
