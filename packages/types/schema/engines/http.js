@@ -10,7 +10,10 @@ const {
 } = require('./common');
 const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 
-const { artilleryNumberOrString } = require('../joi.helpers');
+const {
+  artilleryNumberOrString,
+  artilleryBooleanOrString
+} = require('../joi.helpers');
 
 const CaptureSchema = Joi.alternatives()
   .try(
@@ -203,7 +206,7 @@ const HttpConfigSchema = Joi.object({
     .description(
       'Maximum amount of TCP connections per virtual user.\nhttps://www.artillery.io/docs/reference/engines/http#max-sockets-per-virtual-user'
     ),
-  extendedMetrics: Joi.boolean()
+  extendedMetrics: artilleryBooleanOrString
     .meta({ title: 'Enable Extended Metrics' })
     .description(
       'Enable tracking of additional HTTP metrics.\nhttps://www.artillery.io/docs/reference/engines/http#additional-performance-metrics'
