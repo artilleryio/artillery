@@ -1,0 +1,16 @@
+config:
+  target: "http://asciiart.artillery.io:8080"
+  phases:
+    - duration: 31
+      arrivalRate: 5
+      rampTo: 13
+      name: "Phase 1"
+    - duration: 27
+      arrivalRate: 7
+      rampTo: 4
+      name: "Decreasing Phase"
+
+scenarios:
+  - flow:
+      - get:
+          url: "/"

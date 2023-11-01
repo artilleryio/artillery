@@ -48,6 +48,11 @@ class Launcher {
 
     if (launcherOpts.platform === 'local') {
       this.count = this.opts.count || Math.max(1, os.cpus().length - 1);
+
+      // start by setting all workers active to false
+      for (let i = 1; i <= this.count; i++) {
+        global.artillery.workersCurrentActive[i] = false;
+      }
       debug('Worker thread count:', this.count);
     }
 
@@ -112,6 +117,16 @@ class Launcher {
         global.artillery.globalEvents.emit('phaseStarted', fullPhase);
       }
     });
+
+    workerEvents.on('workerActive', (workerId) => {
+      console.log(` HEY THERE worker ${workerId} is active`)
+      global.artillery.workersCurrentActive[workerId] = true;
+    })
+
+    workerEvents.on('workerIdle', (workerId) => {
+      console.log(` HEY THERE worker ${workerId} is idle`)
+      global.artillery.workersCurrentActive[workerId] = false;
+    })
 
     workerEvents.on('phaseCompleted', (workerId, message) => {
       if (
@@ -341,19 +356,33 @@ class Launcher {
     // in batches of 10 and more workers => need to wait longer.
     const MAX_WAIT_FOR_PERIOD_MS = (Math.ceil(this.count / 10) * 3 + 30) * 1000;
 
-    debug({
+    const getCurrentActiveWorkers = () => {
+      return Object.values(global.artillery.workersCurrentActive).filter(value => value === true).length
+    }
+
+
+    console.log({
       now: Date.now(),
       count: this.count,
+      activeCount: getCurrentActiveWorkers(),
       earliestPeriodAvailable,
       earliest,
       MAX_WAIT_FOR_PERIOD_MS,
       numReports: this.metricsByPeriod[earliestPeriodAvailable]?.length,
       periodsReportedFor: this.periodsReportedFor,
-      metricsByPeriod: Object.keys(this.metricsByPeriod)
+      metricsByPeriod: Object.keys(this.metricsByPeriod).map(k => {
+        return {
+          period: k,
+          numReports: this.metricsByPeriod[k]?.length
+        }
+      })
     });
+    
 
+    //this seems to work for ramping up phases. however for ramping down phases, even with reporting idle workers, it seems that the numReports at the end varies.
+    //it's possible that we'll need to change the approach here
     const allWorkersReportedForPeriod =
-      this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
+      this.metricsByPeriod[earliestPeriodAvailable]?.length === getCurrentActiveWorkers() - 1 || this.metricsByPeriod[earliestPeriodAvailable]?.length === getCurrentActiveWorkers();
     const waitedLongEnough =
       Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
     if (

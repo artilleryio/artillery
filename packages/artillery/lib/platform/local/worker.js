@@ -172,6 +172,14 @@ async function prepare(opts) {
 
       runner.on('phaseStarted', onPhaseStarted);
       runner.on('phaseCompleted', onPhaseCompleted);
+      runner.on('workerActive', function onWorkerActive(workerId) {
+        console.log("workerActive event emitted from runner")
+        send({ event: 'workerActive', workerId });
+      });
+      runner.on('workerIdle', function onWorkerIdle(workerId) {
+        console.log("workerIdle event emitted from runner")
+        send({ event: 'workerIdle', workerId });
+      });
       runner.on('stats', onStats);
       runner.on('done', onDone);
 

@@ -46,6 +46,14 @@ class PlatformLocal {
     worker.events.on('phaseCompleted', (message) => {
       this.events.emit('phaseCompleted', workerId, message);
     });
+    worker.events.on('workerActive', (message)=> {
+      console.log("worker events workerActive")
+      this.events.emit('workerActive', workerId, message);
+    })
+    worker.events.on('workerIdle', (message)=> {
+      console.log("worker events workerIdle")
+      this.events.emit('workerIdle', workerId, message);
+    })
     worker.events.on('stats', (message) => {
       this.events.emit('stats', workerId, message);
     });

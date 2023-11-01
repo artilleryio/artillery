@@ -17,6 +17,9 @@ async function createGlobalObject(opts) {
   global.artillery._workerThreadSend =
     global.artillery._workerThreadSend || null;
 
+  // set up global workers currently active. this can perhaps be moved somewhere else, but for now it seemed the easiest way for ssms to know about it
+  global.artillery.workersCurrentActive = {};
+
   // TODO: Refactor these special fields away
   global.artillery.__util = global.artillery.__util || {};
   global.artillery.__util.parseScript = parseScript;

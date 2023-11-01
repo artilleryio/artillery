@@ -44,6 +44,16 @@ class ArtilleryWorker {
           this.events.emit('workerError', message);
           this.workerEvents.emit('workerError', message);
           break;
+        case 'workerActive':
+          console.log("workerActive event emitted")
+          this.events.emit('workerActive', message);
+          this.workerEvents.emit('workerActive', message);
+          break;
+        case 'workerIdle':
+          console.log("workerIdle event emitted")
+          this.events.emit('workerIdle', message);
+          this.workerEvents.emit('workerIdle', message);
+          break;
         case 'phaseStarted':
           this.events.emit('phaseStarted', message);
           this.workerEvents.emit('phaseStarted', message);

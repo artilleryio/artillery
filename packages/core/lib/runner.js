@@ -189,14 +189,45 @@ async function runner(script, payload, options, callback) {
   return promise;
 }
 
+
+
 function run(script, ee, options, runState, contextVars) {
   const metrics = runState.metrics;
   const intermediates = [];
 
   let phaser = createPhaser(script.config.phases);
+  let phaserInterval;
   let scenarioContext;
 
+  function registerSetInterval(workerId) {
+    setInterval(function () {
+      if (global.artillery.thisWorkerActive && Date.now() - global.artillery.thisWorkerActive >= 1500) { 
+        // console.log(`WORKER IS NOW IDLE: ${workerId}`)
+        global.artillery.thisWorkerActive = undefined;
+        
+        ee.emit('workerIdle', { worker: workerId });
+      }
+    }, 500);
+  }
+
+
+
   phaser.on('arrival', function (spec) {
+    // console.log(spec)
+    // if (!global.artillery.thisWorkerActive) {
+    //   global.artillery.thisWorkerActive = true;
+    //   console.log(`WORKER IS NOW ACTIVE: ${spec.worker}}`)
+    //   ee.emit('workerActive', spec);
+    // }
+
+    if(!global.artillery.thisWorkerActive) {
+      global.artillery.thisWorkerActive = Date.now();
+      console.log(`WORKER IS NOW ACTIVE: ${spec.worker}`)
+      ee.emit('workerActive', spec);
+    } else {
+      global.artillery.thisWorkerActive = Date.now();
+    }
+
     if (runState.pendingScenarios >= spec.maxVusers) {
       metrics.counter('vusers.skipped', 1);
     } else {
@@ -205,11 +236,13 @@ function run(script, ee, options, runState, contextVars) {
   });
   phaser.on('phaseStarted', function (spec) {
     ee.emit('phaseStarted', spec);
+    phaserInterval = registerSetInterval(spec.worker);
     if (isIdlePhase(spec)) {
       ee.emit('stats', SSMS.empty());
     }
   });
   phaser.on('phaseCompleted', function (spec) {
+    clearInterval(phaserInterval);
     ee.emit('phaseCompleted', spec);
     if (isIdlePhase(spec)) {
       ee.emit('stats', SSMS.empty());
