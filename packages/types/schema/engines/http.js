@@ -77,8 +77,9 @@ const SharedHttpMethodProperties = {
   qs: Joi.object().meta({ title: 'Query string object' }),
   gzip: Joi.boolean()
     .meta({ title: 'Compression' })
+    .default(true)
     .description(
-      "Automatically set the 'Accept-Encoding' request header and decode compressed responses encoded with gzip."
+      'Control the automatic response decompression that Artillery performs.\nhttps://www.artillery.io/docs/reference/engines/http#compressed-responses-gzip'
     ),
   capture: Joi.alternatives(CaptureSchema, Joi.array().items(CaptureSchema))
     .meta({ title: 'Capture' })
