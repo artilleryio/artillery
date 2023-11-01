@@ -69,13 +69,13 @@ const SharedHttpMethodProperties = {
   headers: Joi.object().meta({ title: 'Headers' }),
   cookie: Joi.object() //TODO: maybe make this a [name: string]: string
     .meta({ title: 'Cookies' }),
-  followRedirect: Joi.boolean()
+  followRedirect: artilleryBooleanOrString
     .meta({ title: 'Disable redirect following' })
     .description(
       'Artillery follows redirects by default.\nSet this option to `false` to stop following redirects.'
     ),
   qs: Joi.object().meta({ title: 'Query string object' }),
-  gzip: Joi.boolean()
+  gzip: artilleryBooleanOrString
     .meta({ title: 'Compression' })
     .default(true)
     .description(
