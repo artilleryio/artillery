@@ -1,6 +1,6 @@
 {
   "name": "artillery-engine-playwright",
-  "version": "0.3.2",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,9 +11,10 @@
   "license": "MPL-2.0",
   "dependencies": {
     "debug": "^4.3.2",
-    "playwright": "1.37.1"
+    "playwright": "1.39.0",
+    "@playwright/browser-chromium": "1.39.0"
   },
   "devDependencies": {
-    "@playwright/test": "1.37.1"
+    "@playwright/test": "1.39.0"
   }
 }

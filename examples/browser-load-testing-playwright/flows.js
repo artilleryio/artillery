@@ -36,32 +36,26 @@ async function checkPage(page, userContext, events) {
   await page.reload();
 }
 
-async function multistepWithCustomMetrics(page, userContext, events) {
-  // Part 1 of our flow
-  await page.goto('https://www.artillery.io');
+async function multistepWithCustomMetrics(page, userContext, events, test) {
+  //1. we get the convenience step() helper from the test object.
+  //More information: https://www.artillery.io/docs/reference/engines/playwright#teststep-argument
+  const { step } = test;
 
-  // Part 2 of our flow - we want to capture response times for this
-  // part separately and report it as a custom metric:
+  //2. We can now wrap parts of our Playwright script in step() calls
+  await step('go_to_artillery_io', async () => {
+    await page.goto('https://www.artillery.io');
+  });
 
-  // First we record the current time:
-  const startedTime = Date.now();
-  // Our test then proceeds with the sequence of actions that we want to
-  // report for specifically.
-  //
-  // NOTE: We only have one action here, but we could have a longer sequence of
-  // actions here which would add up to the time we are tracking as
-  // time_taken_for_part_of_flow metric.
-  await page.goto('https://www.artillery.io/cloud');
-  // We then calculate the amount of time previous actions took and use
-  // Artillery's custom metrics API to record it. The metric will be available
-  // in Artillery's report alongside other metrics.
-  // For more information on custom metrics API please see:
-  // https://www.artillery.io/docs/guides/guides/extension-apis#tracking-custom-metrics
-  const difference = Date.now() - startedTime;
-  events.emit('histogram', 'time_taken_for_part_of_flow', difference);
+  await step('go_to_cloud_page', async () => {
+    await page.goto('https://www.artillery.io/cloud');
+  });
 
-  // Part 3 of our flow:
-  await page.goto('https://www.artillery.io/docs');
+  await step('go_to_docs', async () => {
+    await page.goto('https://www.artillery.io/docs');
+  });
+
+  // 3. latency metrics will be emitted automatically throughout the test for each step.
+  // For more information on custom metrics, please see: https://www.artillery.io/docs/guides/guides/extension-apis#tracking-custom-metrics
 }
 
 module.exports = {

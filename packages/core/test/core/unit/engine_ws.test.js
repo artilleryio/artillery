@@ -21,6 +21,7 @@ const baseScript = {
   scenarios: [
     {
       engine: 'ws',
+      name: 'wsTest',
       flow: [{ send: 'hello' }]
     }
   ]
@@ -161,7 +162,8 @@ test('WebSocket engine - connect action (function)', (t) => {
   const context = {
     vars: {
       target: script.config.target
-    }
+    },
+    scenario: script.scenarios[0]
   };
   const expectedSubProtocol = 'wamp';
 

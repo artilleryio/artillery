@@ -26,8 +26,6 @@ function setupConsoleCapture() {
       debug('onBeforeExit', sendFromIndex, outputLines.length);
       clearInterval(interval);
 
-      await sleep(5 * 1000);
-
       if (!truncated && sendFromIndex < outputLines.length) {
         const ts = Date.now();
         global.artillery.globalEvents.emit(

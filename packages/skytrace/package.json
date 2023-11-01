@@ -1,6 +1,6 @@
 {
   "name": "skytrace",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "description": "Fast & simple e2e testing",
   "author": "@artilleryio",
   "bin": {
@@ -27,6 +27,7 @@
     "artillery-plugin-expect": "*",
     "chalk": "^4.1.2",
     "cheerio": "^1.0.0-rc.10",
+    "ci-info": "^3.9.0",
     "cli-highlight": "^2.1.11",
     "debug": "^4.3.1",
     "gradient-string": "^2.0.2",
@@ -34,6 +35,7 @@
     "jmespath": "^0.16.0",
     "js-yaml": "^3.13.1",
     "mime-types": "2.1.35",
+    "posthog-node": "^3.1.2",
     "sprintf-js": "^1.1.2",
     "temp": "^0.9.4"
   },

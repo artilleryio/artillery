@@ -626,6 +626,7 @@ function summarizeHistogram(h) {
     min: round(h.min, 1),
     max: round(h.max, 1),
     count: h.count,
+    mean: round(h.sum/h.count, 1),
     p50: round(h.getValueAtQuantile(0.5), 1),
     median: round(h.getValueAtQuantile(0.5), 1), // Here for compatibility
     p75: round(h.getValueAtQuantile(0.75), 1),
