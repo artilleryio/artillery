@@ -21,6 +21,7 @@ module.exports = {
   parseScript,
   addOverrides,
   addVariables,
+  addDefaultPlugins,
   resolveConfigTemplates,
   checkConfig,
   renderVariables,
@@ -72,6 +73,26 @@ async function addVariables(script, flags) {
   }
 
   return script;
+}
+
+function addDefaultPlugins(script) {
+  const finalScript = _.cloneDeep(script);
+
+  if (!script.config.plugins) {
+    finalScript.config.plugins = {}
+  }
+
+  const additionalPluginsAndOptions = {
+    'metrics-by-endpoint': { suppressOutput: true, stripQueryString: true }
+  }
+
+  for (const [pluginName, pluginOptions] of Object.entries(additionalPluginsAndOptions)) {
+    if (!finalScript.config.plugins[pluginName]) {
+      finalScript.config.plugins[pluginName] = pluginOptions
+    }
+  }
+
+  return finalScript
 }
 
 async function resolveConfigTemplates(script, flags) {

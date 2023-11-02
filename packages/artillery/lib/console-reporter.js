@@ -29,6 +29,7 @@ function ConsoleReporter(opts) {
   this.outputFormat = opts.outputFormat || process.env.OUTPUT_FORMAT || 'new';
 
   this.quiet = opts.quiet;
+  this.script = opts.script;
   this.spinner = ora({
     spinner: 'dots'
   });
@@ -228,6 +229,10 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
 
     let result = [];
     for (const metricName of sortedAlphabetically) {
+
+      if(suppressedOutputMetric(metricName, opts.script)) {
+        continue;
+      }
       if (typeof report.counters?.[metricName] !== 'undefined') {
         result = result.concat(printCounters([metricName], report));
       }
@@ -417,4 +422,8 @@ function printSummaries(summaries, report) {
     // result.push(padded(`${trimName(n)}:`, `min: ${r.min} | max: ${r.max} | p50: ${r.p50} | p95: ${r.p95} | p99: ${r.p99}`));
   }
   return result;
+}
+
+function suppressedOutputMetric(metricName, script) {
+  return script.config.plugins['metrics-by-endpoint'].suppressOutput && metricName.includes('plugins.metrics-by-endpoint')
 }
