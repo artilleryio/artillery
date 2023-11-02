@@ -3,7 +3,7 @@
     "target": "http://127.0.0.1:3003",
     "phases": [{ "duration": 10, "arrivalRate": 1 }],
     "variables": {
-      "durations": [0, 1, 2, 3, 4, 5]
+      "durations": [0, 1, 2, "3s", 4, 5]
     },
     "defaults": {
       "think": {
@@ -16,6 +16,7 @@
       "name": "Just think",
       "flow": [
         { "think": 2 },
+        { "think": "2s", "jitter": "10%" },
         { "think": "{{ durations }}" },
         { "think": "2", "jitter": 2 },
         { "think": "2", "jitter": "50%" }
