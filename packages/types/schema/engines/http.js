@@ -10,7 +10,10 @@ const {
 } = require('./common');
 const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 
-const { artilleryNumberOrString } = require('../joi.helpers');
+const {
+  artilleryNumberOrString,
+  artilleryBooleanOrString
+} = require('../joi.helpers');
 
 const CaptureSchema = Joi.alternatives()
   .try(
@@ -66,16 +69,17 @@ const SharedHttpMethodProperties = {
   headers: Joi.object().meta({ title: 'Headers' }),
   cookie: Joi.object() //TODO: maybe make this a [name: string]: string
     .meta({ title: 'Cookies' }),
-  followRedirect: Joi.boolean()
+  followRedirect: artilleryBooleanOrString
     .meta({ title: 'Disable redirect following' })
     .description(
       'Artillery follows redirects by default.\nSet this option to `false` to stop following redirects.'
     ),
   qs: Joi.object().meta({ title: 'Query string object' }),
-  gzip: Joi.boolean()
+  gzip: artilleryBooleanOrString
     .meta({ title: 'Compression' })
+    .default(true)
     .description(
-      "Automatically set the 'Accept-Encoding' request header and decode compressed responses encoded with gzip."
+      'Control the automatic response decompression that Artillery performs.\nhttps://www.artillery.io/docs/reference/engines/http#compressed-responses-gzip'
     ),
   capture: Joi.alternatives(CaptureSchema, Joi.array().items(CaptureSchema))
     .meta({ title: 'Capture' })
@@ -203,7 +207,7 @@ const HttpConfigSchema = Joi.object({
     .description(
       'Maximum amount of TCP connections per virtual user.\nhttps://www.artillery.io/docs/reference/engines/http#max-sockets-per-virtual-user'
     ),
-  extendedMetrics: Joi.boolean()
+  extendedMetrics: artilleryBooleanOrString
     .meta({ title: 'Enable Extended Metrics' })
     .description(
       'Enable tracking of additional HTTP metrics.\nhttps://www.artillery.io/docs/reference/engines/http#additional-performance-metrics'

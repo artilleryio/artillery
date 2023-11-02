@@ -37,6 +37,11 @@ const PlaywrightConfigSchema = Joi.object({
     .description(
       'If enabled, Artillery will collect additional metrics from Playwright.\nCheck more information here: https://www.artillery.io/docs/reference/engines/playwright#extended-metrics'
     ),
+  showAllPageMetrics: artilleryBooleanOrString
+    .meta({ title: 'Web Vitals on all Pages' })
+    .description(
+      'If enabled, Artillery will collect Web Vitals for all pages, rather than just ones that start with target URL.\nCheck more information here: https://www.artillery.io/docs/reference/engines/playwright#show-web-vital-metrics-for-all-pages'
+    ),
   launchOptions: Joi.object()
     .meta({ title: 'Playwright launch options' })
     .description(

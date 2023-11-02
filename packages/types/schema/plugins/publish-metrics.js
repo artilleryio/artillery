@@ -109,7 +109,7 @@ const DynatraceReporterSchema = Joi.object({
   .meta({ title: 'Dynatrace Reporter' });
 
 const HoneycombReporterSchema = Joi.object({
-  type: Joi.string().valid('dynatrace').required(),
+  type: Joi.string().valid('honeycomb').required(),
   apiKey: Joi.string(), //TODO: add required between these
   writeKey: Joi.string(),
   dataset: Joi.string(),
@@ -120,7 +120,7 @@ const HoneycombReporterSchema = Joi.object({
   .meta({ title: 'Honeycomb (Tracing) Reporter' });
 
 const LightstepReporterSchema = Joi.object({
-  type: Joi.string().valid('dynatrace').required(),
+  type: Joi.string().valid('lightstep').required(),
   accessToken: Joi.string().required(),
   componentName: Joi.string().required(),
   tags: Joi.object(),
