@@ -33,6 +33,10 @@ const crypto = require('node:crypto');
 const prices = require('./prices');
 const { STATES } = require('../local/artillery-worker-local');
 
+const { SQS_QUEUES_NAME_PREFIX } = require('../aws/constants');
+
+const createSQSQueue = require('../aws/aws-create-sqs-queue');
+
 // https://stackoverflow.com/a/66523153
 function memoryToVCPU(memMB) {
   if (memMB < 832) {
@@ -302,7 +306,14 @@ class PlatformLambda {
     const s3path = await this.uploadLambdaZip(bucketName, zipfile);
     debug({ s3path });
     this.lambdaZipPath = s3path;
-    const sqsQueueUrl = await this.createSQSQueue(this.region);
+
+    // 36 is length of a UUUI v4 string
+    const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
+      0,
+      36
+    )}.fifo`;
+
+    const sqsQueueUrl = await createSQSQueue(this.region, queueName);
     this.sqsQueueUrl = sqsQueueUrl;
 
     if (typeof this.lambdaRoleArn === 'undefined') {
@@ -431,7 +442,7 @@ class PlatformLambda {
     consumer.on('error', (err) => {
       artillery.log(err);
     });
-    consumer.on('empty', (err) => {
+    consumer.on('empty', (_err) => {
       debug('queueEmpty:', queueEmpty);
       queueEmpty++;
     });
@@ -543,7 +554,7 @@ class PlatformLambda {
         this.functionName
       );
       throw new Error(
-        `Timeout waiting for lambda function to be ready for invocation`
+        'Timeout waiting for lambda function to be ready for invocation'
       );
     }
 
@@ -649,67 +660,6 @@ class PlatformLambda {
     const sts = new AWS.STS(stsOpts);
     const awsAccountId = (await sts.getCallerIdentity({}).promise()).Account;
     return awsAccountId;
-  }
-
-  // TODO: Add timestamp to SQS queue name for automatic GC
-  async createSQSQueue() {
-    const sqs = new AWS.SQS({
-      region: this.region
-    });
-
-    const SQS_QUEUES_NAME_PREFIX = 'artilleryio_test_metrics';
-
-    // 36 is length of a UUUI v4 string
-    const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
-      0,
-      36
-    )}.fifo`;
-    const params = {
-      QueueName: queueName,
-      Attributes: {
-        FifoQueue: 'true',
-        ContentBasedDeduplication: 'false',
-        MessageRetentionPeriod: '1800',
-        VisibilityTimeout: '600'
-      }
-    };
-
-    let sqsQueueUrl;
-    try {
-      const result = await sqs.createQueue(params).promise();
-      sqsQueueUrl = result.QueueUrl;
-    } catch (err) {
-      throw err;
-    }
-
-    // Wait for the queue to be available:
-    let waited = 0;
-    let ok = false;
-    while (waited < 120 * 1000) {
-      try {
-        const results = await sqs
-          .listQueues({ QueueNamePrefix: queueName })
-          .promise();
-        if (results.QueueUrls && results.QueueUrls.length === 1) {
-          debug('SQS queue created:', queueName);
-          ok = true;
-          break;
-        } else {
-          await sleep(10 * 1000);
-          waited += 10 * 1000;
-        }
-      } catch (err) {
-        await sleep(10 * 1000);
-        waited += 10 * 1000;
-      }
-    }
-
-    if (!ok) {
-      debug('Time out waiting for SQS queue:', queueName);
-      throw new Error(`SQS queue could not be created`);
-    }
-
-    return sqsQueueUrl;
   }
 
   async createLambdaRole() {
