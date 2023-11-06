@@ -87,9 +87,12 @@ test('buffers - huge buffers are OK', function (t) {
   t.same(b1, b2);
   console.log('# delta:', end - start);
 
-  const expectedMaxTime = (process.env.GITHUB_ACTIONS) ? 15 : 10;
+  const expectedMaxTime = process.env.GITHUB_ACTIONS ? 15 : 10;
   const timeTaken = end - start;
-  t.ok(timeTaken < expectedMaxTime, `expected to be templated in <${expectedMaxTime}ms. took ${timeTaken}ms}`);
+  t.ok(
+    timeTaken < expectedMaxTime,
+    `expected to be templated in <${expectedMaxTime}ms. took ${timeTaken}ms}`
+  );
 
   t.end();
 });
@@ -157,23 +160,28 @@ test('template functions', (t) => {
     vars: { greeting: 'hello', foo: 'bar' }
   };
 
+  const templateRandomString = template('{{ $randomString( ) }}', context);
   t.ok(
-    template('{{ $randomString( ) }}', context).length > 0,
-    'template functions may be used'
+    templateRandomString.length > 0,
+    `templated string should have length > 0. got ${templateRandomString}`
   );
 
+  const templateMultipleFunctions = template(
+    '{{ $randomString(3) }} hello world {{ $randomString(10) }} {{ $randomNumber(   100, 900) }}',
+    context
+  );
   t.ok(
-    template(
-      '{{ $randomString(3) }} hello world {{ $randomString(10) }} {{ $randomNumber(   100, 900) }}',
-      context
-    ).length === 30,
-    'multiple template functions may be used'
+    templateMultipleFunctions.length === 30,
+    `multiple template functions may be used. got ${templateMultipleFunctions} (length ${templateMultipleFunctions.length})`
   );
 
+  const templateFuncAndVarSubstitutions = template(
+    '{{ greeting}} {{ $randomString(5) }}! {{ foo }}',
+    context
+  );
   t.ok(
-    template('{{ greeting}} {{ $randomString(5) }}! {{ foo }}', context)
-      .length === 16,
-    'functions and variable substitutions may be mixed'
+    templateFuncAndVarSubstitutions.length === 16,
+    `functions and variable substitutions may be mixed. got ${templateFuncAndVarSubstitutions} (length ${templateFuncAndVarSubstitutions.length})`
   );
 
   t.end();
