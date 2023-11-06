@@ -33,6 +33,14 @@
           "acknowledge": {
             "args": ["version", "1.2.4"]
           }
+        },
+        {
+          "emit": ["new_server_version_as_object", "1.2.4"],
+          "acknowledge": {
+            "args": {
+              "version": "1.2.4"
+            }
+          }
         }
       ]
     }

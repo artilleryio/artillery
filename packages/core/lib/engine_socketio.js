@@ -62,15 +62,20 @@ function isAcknowledgeRequired(spec) {
 }
 
 function processResponse(ee, data, response, context, callback) {
-  function isValid() {
+  function isValid(data, response) {
     if (!Array.isArray(response.data)) {
-      return deepEqual(data[0], response.data);
+      //`json` key is added at some point to the response.data object, to use with `captureOrMatch` function
+      //we should omit it when comparing the response to the data
+      const responseDataWithoutJson = _.isObject(response.data)
+        ? _.omit(response.data, 'json')
+        : response.data;
+      return deepEqual(data[0], responseDataWithoutJson);
     }
 
     return deepEqual(data, response.data);
   }
   // Do we have supplied data to validate?
-  if (response.data && !isValid()) {
+  if (response.data && !isValid(data, response)) {
     debug('data is not valid:');
     debug(data);
     debug(response);

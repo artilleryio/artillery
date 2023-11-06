@@ -5,7 +5,11 @@ const Joi = require('joi').defaults((schema) =>
 const { LoopOptions, MatchSchema, JsonCaptureSchema } = require('./common');
 const { BaseWithHttp } = require('./http');
 
-const SocketioDataSchema = Joi.alternatives(Joi.string(), Joi.object());
+const SocketioDataSchema = Joi.alternatives(
+  Joi.string(),
+  Joi.object(),
+  Joi.array().items(Joi.string())
+);
 
 const BaseWithSocketio = [
   ...BaseWithHttp,
@@ -42,7 +46,11 @@ const BaseWithSocketio = [
       data: SocketioDataSchema.meta({ title: 'Data' }).description(
         'The data to verify is in the response.'
       ),
-      args: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+      args: Joi.alternatives(
+        Joi.string(),
+        Joi.object(),
+        Joi.array().items(Joi.string())
+      )
         .meta({ title: 'Response Arguments' })
         .description('Assert that the response emits these arguments.'),
       match: MatchSchema.meta({ title: 'Match' }).description(
@@ -54,7 +62,11 @@ const BaseWithSocketio = [
       data: SocketioDataSchema.meta({ title: 'Data' }).description(
         'The data to verify is in the acknowledge.'
       ),
-      args: Joi.alternatives(Joi.string(), Joi.array().items(Joi.string()))
+      args: Joi.alternatives(
+        Joi.string(),
+        Joi.object(),
+        Joi.array().items(Joi.string())
+      )
         .meta({ title: 'Acknowledge Arguments' })
         .description(
           'Assert that the acknowledge callback was sent with these arguments.'

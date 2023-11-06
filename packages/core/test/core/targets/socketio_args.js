@@ -20,6 +20,12 @@ io.on('connection', function (socket) {
   socket.on('new_server_version', (message1, message2, callback) => {
     callback(message1, message2);
   });
+
+  socket.on('new_server_version_as_object', (message1, callback) => {
+    callback({
+      version: message1
+    });
+  });
 });
 
 function handler(req, res) {
