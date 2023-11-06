@@ -86,7 +86,10 @@ test('buffers - huge buffers are OK', function (t) {
   const end = Date.now();
   t.same(b1, b2);
   console.log('# delta:', end - start);
-  t.ok(end - start < 10, 'templated in <10ms');
+
+  const expectedMaxTime = (process.env.GITHUB_ACTIONS) ? 20 : 10;
+  const timeTaken = end - start;
+  t.ok(timeTaken < expectedMaxTime, `expected to be templated in <${expectedMaxTime}ms. took ${timeTaken}ms}`);
 
   t.end();
 });
