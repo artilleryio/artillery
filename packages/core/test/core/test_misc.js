@@ -9,6 +9,7 @@ var SCRIPTS = [
   'hello.json',
   'hello_ws.json',
   'hello_socketio.json',
+  'hello_socketio_with_args.json',
   'express_socketio.json',
   'multiple_phases.json',
   'large_payload.json',

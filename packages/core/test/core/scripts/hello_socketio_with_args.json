@@ -1,0 +1,48 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:9096",
+    "tls": {
+      "rejectUnauthorized": true
+    },
+    "phases": [{ "duration": 1, "arrivalRate": 1 }]
+  },
+  "scenarios": [
+    {
+      "engine": "socketio",
+      "flow": [
+        {
+          "emit": ["join", "chat_room_1"],
+          "response": {
+            "on": "new_user_join",
+            "args": ["Welcome to chat_room_1"]
+          }
+        },
+        {
+          "emit": ["message", "chat_room_1", "I", "am", "a test runner!"],
+          "response": {
+            "on": "message_response",
+            "args": ["chat_room_1", "I", "am", "a test runner!"],
+            "match": [
+              { "json": "$.0", "value": "chat_room_1" },
+              { "json": "$.3", "value": "a test runner!" }
+            ]
+          }
+        },
+        {
+          "emit": ["new_server_version", "version", "1.2.4"],
+          "acknowledge": {
+            "args": ["version", "1.2.4"]
+          }
+        },
+        {
+          "emit": ["new_server_version_as_object", "1.2.4"],
+          "acknowledge": {
+            "args": {
+              "version": "1.2.4"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
