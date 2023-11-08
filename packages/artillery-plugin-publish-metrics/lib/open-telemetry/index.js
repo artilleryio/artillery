@@ -370,11 +370,24 @@ class OTelReporter {
         this.traceConfig.useRequestNames && req.name
           ? req.name
           : req.method.toLowerCase();
+
+      const url = new URL(req.url);
       const span = this.httpTracer.startSpan(spanName, {
         startTime,
         kind: SpanKind.CLIENT,
-        attributes: { 'vu.uuid': userContext.$uuid }
+        attributes: {
+          'vu.uuid': userContext.vars.$uuid,
+          'url.full': url.href,
+          'url.path': url.pathname,
+          'server.address': url.hostname,
+          // We set the port if it is specified, if not we set to a default port based on the protocol
+          'server.port': url.port || (url.protocol === 'http' ? 80 : 443),
+          'http.request.method': req.method,
+          'http.body': req.body,
+          ...(this.traceConfig.attributes || {})
+        }
       });
+
       userContext.vars['__otlpHTTPRequestSpan'] = span;
 
       events.on('error', (err) => {
@@ -422,7 +435,8 @@ class OTelReporter {
             this.httpTracer
               .startSpan(name, {
                 kind: SpanKind.CLIENT,
-                startTime: res.timings[value.start]
+                startTime: res.timings[value.start],
+                attributes: { 'vu.uuid': userContext.vars.$uuid }
               })
               .end(res.timings[value.end]);
           }
@@ -432,23 +446,15 @@ class OTelReporter {
     }
 
     try {
-      const url = new URL(req.url);
-      span.setAttributes({
-        'url.full': url.href,
-        'url.path': url.pathname,
-        'server.address': url.hostname,
-        // We set the port if it is specified, if not we set to a default port based on the protocol
-        'server.port': url.port || (url.protocol === 'http' ? 80 : 443),
-        'http.request.method': req.method,
-        'http.response.status_code': res.statusCode
-      });
+      span.setAttribute('http.response.status_code', res.statusCode);
 
       if (res.statusCode >= 400) {
-        span.setStatus({ code: SpanStatusCode.ERROR });
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: res.statusMessage
+        });
       }
-      if (this.traceConfig?.attributes) {
-        span.setAttributes(this.traceConfig.attributes);
-      }
+
       span.end(endTime || Date.now());
     } catch (err) {
       // We don't do anything, if error occurs at this point it will be due to us already ending the span in beforeRequest hook in case of an error.
