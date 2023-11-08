@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tap ./test/*.spec.js --timeout 300 --no-coverage --color"
+    "test": "npm run test:unit && npm run test:acceptance",
+    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300 --no-coverage --color",
+    "test:unit": "tap ./test/*.unit.js --no-coverage --color"
   },
   "keywords": [],
   "author": "Artillery.io <team@artillery.io>",
