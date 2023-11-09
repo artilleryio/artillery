@@ -61,19 +61,35 @@ function isAcknowledgeRequired(spec) {
   return spec.emit && spec.acknowledge;
 }
 
-function processResponse(ee, data, response, context, callback) {
-  function isValid(data, response) {
-    if (!Array.isArray(response.data)) {
-      //`json` key is added at some point to the response.data object, to use with `captureOrMatch` function
-      //we should omit it when comparing the response to the data
-      const responseDataWithoutJson = _.isObject(response.data)
-        ? _.omit(response.data, 'json')
-        : response.data;
-      return deepEqual(data[0], responseDataWithoutJson);
-    }
-
+function isValid(data, response) {
+  if (_.isArray(response.data)) {
+    //we check if it's an array first (as arrays are objects), and if it's an array, do a deep equality check between both arrays
     return deepEqual(data, response.data);
   }
+
+  if (_.isObject(response.data)) {
+    //`json` key is added at some point to the response.data object, to use with `captureOrMatch` function
+    //we should omit it when comparing the response to the data
+    const expectedResponse = _.omit(response.data, 'json');
+    const actualResponse = data[data.length - 1]; // if response.data is not an array, we compare it to the last element of the actual response
+
+    return deepEqual(actualResponse, expectedResponse);
+  }
+
+  if (_.isString(response.data)) {
+    const expectedResponse = response.data;
+    const actualResponse = data[data.length - 1]; // if response.data is not an array, we compare it to the last element of the actual response
+    debug(
+      `checking if string ${expectedResponse} is a partial match for string ${actualResponse}`
+    );
+    return actualResponse.includes(expectedResponse); //we accept a partial match if it's a string
+  }
+
+  debug(`unexpected data type for response.data: ${typeof response.data}`);
+  return false;
+}
+
+function processResponse(ee, data, response, context, callback) {
   // Do we have supplied data to validate?
   if (response.data && !isValid(data, response)) {
     debug('data is not valid:');
@@ -237,7 +253,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
           socketio.emit(...outgoing);
         }
         markEndTime(ee, context, startedAt);
-        return callback(null, context);
+        return callback(err, context);
       }
     }; // endCallback
 
@@ -257,18 +273,23 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
       // Listen for the socket.io response on the specified channel
       let done = false;
+      let responseData = [];
 
       socketio.on(response.channel, function receive(...args) {
-        done = true;
-        processResponse(ee, args, response, context, function (err) {
-          if (!err) {
-            markEndTime(ee, context, startedAt);
-          }
-          // Stop listening on the response channel
-          socketio.off(response.channel);
+        responseData.push(...args);
+        if (isValid(responseData, response)) {
+          done = true;
 
-          return endCallback(err, context, false);
-        });
+          processResponse(ee, responseData, response, context, function (err) {
+            if (!err) {
+              markEndTime(ee, context, startedAt);
+            }
+            // Stop listening on the response channel
+            socketio.off(response.channel);
+
+            return endCallback(err, context, false);
+          });
+        }
       });
 
       // Send the data on the specified socket.io channel
@@ -278,6 +299,27 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
       setTimeout(function responseTimeout() {
         if (!done) {
+          if (responseData.length) {
+            processResponse(
+              ee,
+              responseData,
+              response,
+              context,
+              function (err) {
+                if (!err) {
+                  markEndTime(ee, context, startedAt);
+                }
+                // Stop listening on the response channel
+                socketio.off(response.channel);
+
+                // called
+                return endCallback(err, context, false);
+              }
+            );
+
+            return;
+          }
+
           const err = 'response timeout';
           ee.emit('error', err);
           return callback(err, context);
@@ -338,6 +380,10 @@ SocketIoEngine.prototype.loadContextSocket = function (namespace, context, cb) {
     });
     socket.once('connect_error', function (err) {
       cb(err, null);
+    });
+
+    socket.once('error', function (err) {
+      cb(err, socket);
     });
   } else {
     return cb(null, context.sockets[namespace]);
