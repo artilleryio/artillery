@@ -16,7 +16,8 @@ const {
 } = require('@opentelemetry/api');
 const { Resource } = require('@opentelemetry/resources');
 const {
-  SemanticResourceAttributes
+  SemanticResourceAttributes,
+  SemanticAttributes
 } = require('@opentelemetry/semantic-conventions');
 
 const {
@@ -34,7 +35,7 @@ class OTelReporter {
       process.env.DEBUG &&
       process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
     ) {
-      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
+      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
     }
     this.metricExporters = {
       'otlp-proto'(options) {
@@ -123,15 +124,14 @@ class OTelReporter {
     }
 
     if (config.traces) {
-      this.traceConfig = config.traces;
       this.validateExporter(
         this.traceExporters,
-        this.traceConfig.exporter,
+        this.config.traces.exporter,
         'trace'
       );
       this.tracing = true;
 
-      this.configureTrace(this.traceConfig);
+      this.configureTrace(this.config.traces);
 
       attachScenarioHooks(script, [
         {
@@ -279,18 +279,31 @@ class OTelReporter {
   }
 
   configureTrace(config) {
+    this.traceConfig = config;
+    this.traceConfig.statusErrThreshold = config.statusCode4xxAsErr
+      ? 400
+      : config.statusCodeOver500AsErr ?? 500;
+
     debug('Configuring Tracer Provider');
     const {
       BasicTracerProvider,
       TraceIdRatioBasedSampler,
-      ParentBasedSampler,
-      BatchSpanProcessor
+      ParentBasedSampler
     } = require('@opentelemetry/sdk-trace-base');
+    const Processor = config.outliers
+      ? require('./outlier').OutlierDetectionBatchSpanProcessor
+      : require('@opentelemetry/sdk-trace-base').BatchSpanProcessor;
+
+    const processorOpts = [{ scheduledDelayMillis: 2000 }];
+    if (config.outliers) {
+      processorOpts.push(config.outliers);
+    }
 
     this.tracerOpts = {
       resource: this.resource
     };
-    if (config.sampleRate) {
+
+    if (config.sampleRate && !config.outliers) {
       this.tracerOpts.sampler = new ParentBasedSampler({
         root: new TraceIdRatioBasedSampler(config.sampleRate)
       });
@@ -319,9 +332,7 @@ class OTelReporter {
     );
 
     this.tracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(this.exporter, {
-        scheduledDelayMillis: 1000
-      })
+      new Processor(this.exporter, ...processorOpts)
     );
     this.tracerProvider.register();
   }
@@ -354,6 +365,7 @@ class OTelReporter {
     return function (userContext, ee, next) {
       const span = userContext.vars[`__${engine}ScenarioSpan`];
       span.end(Date.now());
+      // console.log(`SCENARIO SPAN: `, span);
       if (engine === 'http') {
         next();
       } else {
@@ -400,7 +412,7 @@ class OTelReporter {
 
     if (res.timings && res.timings.phases) {
       span.setAttribute('response.time.ms', res.timings.phases.firstByte);
-
+      span.setAttribute('http.request.duration', res.timings.phases.total);
       // Child spans are created for each phase of the request from the timings object and named accordingly. More info here: https://github.com/sindresorhus/got/blob/main/source/core/response.ts
       // Map names of request phases to the timings parameters representing their start and end times for easier span creation
       const timingsMap = {
@@ -443,13 +455,17 @@ class OTelReporter {
         'http.response.status_code': res.statusCode
       });
 
-      if (res.statusCode >= 400) {
+      if (
+        this.statusErrThreshold &&
+        res.statusCode >= this.statusErrThreshold
+      ) {
         span.setStatus({ code: SpanStatusCode.ERROR });
       }
       if (this.traceConfig?.attributes) {
         span.setAttributes(this.traceConfig.attributes);
       }
       span.end(endTime || Date.now());
+      // console.log(`REQUEST SPAN: `, span);
     } catch (err) {
       // We don't do anything, if error occurs at this point it will be due to us already ending the span in beforeRequest hook in case of an error.
     }
