@@ -425,6 +425,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         process.exit(artillery.suggestedExitCode || opts.exitCode);
       })();
     }
+
+    global.artillery.shutdown = gracefulShutdown;
   } catch (err) {
     throw err;
   }
