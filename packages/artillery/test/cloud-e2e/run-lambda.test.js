@@ -29,6 +29,8 @@ tap.test('Run a test on AWS Lambda', async (t) => {
     'memory-size=3000',
     '--platform-opt',
     'region=eu-west-1',
+    '--platform-opt',
+    'sqs-queue-url="https://sqs.us-east-1.amazonaws.com/177715257436/MyQueue"',
     '--config',
     configPath,
     scenarioPath

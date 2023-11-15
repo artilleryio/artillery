@@ -86,6 +86,8 @@ class PlatformLambda {
     this.lambdaRoleArn =
       platformConfig['lambda-role-arn'] || platformConfig['lambdaRoleArn'];
 
+    this.platformSqsQueueUrl = platformConfig['sqs-queue-url'];
+
     this.platformOpts = platformOpts;
 
     this.artilleryArgs = [];
@@ -302,7 +304,8 @@ class PlatformLambda {
     const s3path = await this.uploadLambdaZip(bucketName, zipfile);
     debug({ s3path });
     this.lambdaZipPath = s3path;
-    const sqsQueueUrl = await this.createSQSQueue(this.region);
+    const sqsQueueUrl = platformSqsQueueUrl ? platformSqsQueueUrl :
+    await this.createSQSQueue(this.region);
     this.sqsQueueUrl = sqsQueueUrl;
 
     if (typeof this.lambdaRoleArn === 'undefined') {
@@ -332,7 +335,7 @@ class PlatformLambda {
         poolSize: Math.min(self.platformOpts.count, 100)
       },
       {
-        queueUrl: process.env.SQS_QUEUE_URL || this.sqsQueueUrl,
+        queueUrl: this.sqsQueueUrl,
         region: this.region,
         waitTimeSeconds: 10,
         messageAttributeNames: ['testId', 'workerId'],
@@ -582,11 +585,14 @@ class PlatformLambda {
         })
         .promise();
 
-      await sqs
-        .deleteQueue({
-          QueueUrl: this.sqsQueueUrl
-        })
-        .promise();
+      
+      if (typeof process.env.RETAIN_SQS_QUEUE === 'undefined' || process.env.RETAIN_SQS_QUEUE == false) {
+        await sqs
+          .deleteQueue({
+            QueueUrl: this.sqsQueueUrl
+          })
+          .promise();
+      }
 
       if (typeof process.env.RETAIN_LAMBDA === 'undefined') {
         await lambda
