@@ -66,6 +66,13 @@ class ApdexPlugin {
           return;
         }
 
+        if (testInfo.earlyStop) {
+          console.log(
+            'WARNING: Test run exited early. Skipping apdex calculation.'
+          );
+          return;
+        }
+
         const s = testInfo.report.counters[METRICS.satisfied] || 0;
         const t = testInfo.report.counters[METRICS.tolerated] || 0;
         const f = testInfo.report.counters[METRICS.frustrated] || 0;
