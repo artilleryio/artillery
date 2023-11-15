@@ -7,6 +7,11 @@
 const debug = require('debug')('plugin:ensure');
 const filtrex = require('filtrex').compileExpression;
 const chalk = require('chalk');
+const {
+  hashString,
+  replaceMetricsWithHashes,
+  getHashedVarToValueMap
+} = require('./utils');
 
 class EnsurePlugin {
   constructor(script, events) {
@@ -65,19 +70,21 @@ class EnsurePlugin {
         global.artillery.globalEvents.emit('checks', checkTests);
 
         checkTests
-          .sort((a, b) => (a.result < b.result) ? 1 : -1)
+          .sort((a, b) => (a.result < b.result ? 1 : -1))
           .forEach((check) => {
-          if (check.result !== 1) {
-            global.artillery.log(
-              `${chalk.red('fail')}: ${check.original}${check.strict ? '' : ' (optional)'}`
-            );
-            if (check.strict) {
-              global.artillery.suggestedExitCode = 1;
+            if (check.result !== 1) {
+              global.artillery.log(
+                `${chalk.red('fail')}: ${check.original}${
+                  check.strict ? '' : ' (optional)'
+                }`
+              );
+              if (check.strict) {
+                global.artillery.suggestedExitCode = 1;
+              }
+            } else {
+              global.artillery.log(`${chalk.green('ok')}: ${check.original}`);
             }
-          } else {
-            global.artillery.log(`${chalk.green('ok')}: ${check.original}`);
-          }
-        });
+          });
       }
     });
   }
@@ -85,9 +92,27 @@ class EnsurePlugin {
   // Combine counters/rates/summaries into a flat key->value object for filtrex
   static statsToVars(data) {
     const vars = Object.assign({}, data.report.counters, data.report.rates);
+
+    // Function to hash and assign keys from a given object to the vars object
+    const hashAndAssign = (obj) => {
+      for (const [key, value] of Object.entries(obj)) {
+        const hashedKey = hashString(key);
+        vars[key] = {
+          value,
+          hash: hashedKey
+        };
+      }
+    };
+
+    hashAndAssign(data.report.counters);
+    hashAndAssign(data.report.rates);
+
     for (const [name, values] of Object.entries(data.report.summaries || {})) {
       for (const [aggregation, value] of Object.entries(values)) {
-        vars[`${name}.${aggregation}`] = value;
+        vars[`${name}.${aggregation}`] = {
+          value,
+          hash: hashString(`${name}.${aggregation}`)
+        };
       }
     }
 
@@ -104,15 +129,25 @@ class EnsurePlugin {
           const metricName = Object.keys(o)[0]; // only one metric check per array entry
           const maxValue = o[metricName];
           const expr = `${metricName} < ${maxValue}`;
+
+          const hashedExpression = replaceMetricsWithHashes(
+            Object.keys(vars),
+            expr
+          );
           let f = () => {};
           try {
-            f = filtrex(expr);
+            f = filtrex(hashedExpression);
           } catch (err) {
             global.artillery.log(err);
           }
 
           // all threshold checks are strict:
-          checkTests.push({ f, strict: true, original: expr });
+          checkTests.push({
+            f,
+            strict: true,
+            original: expr,
+            hashed: hashedExpression
+          });
         }
       });
     }
@@ -123,14 +158,24 @@ class EnsurePlugin {
           const expression = o.expression;
           const strict = typeof o.strict === 'boolean' ? o.strict : true;
 
+          const hashedExpression = replaceMetricsWithHashes(
+            Object.keys(vars),
+            expression
+          );
+
           let f = () => {};
           try {
-            f = filtrex(expression);
+            f = filtrex(hashedExpression);
           } catch (err) {
             global.artillery.log(err);
           }
 
-          checkTests.push({ f, strict, original: expression });
+          checkTests.push({
+            f,
+            strict,
+            original: expression,
+            hashed: hashedExpression
+          });
         }
       });
     }
@@ -139,24 +184,41 @@ class EnsurePlugin {
       .filter((k) => LEGACY_CONDITIONS.indexOf(k) > -1)
       .forEach((k) => {
         const metricName = `http.response_time.${k}`;
-        const maxValue = parseInt(checks[k]);
+        const maxValue = parseInt(checks[k], 10);
+        const expression = `${metricName} < ${maxValue}`;
+
+        const hashedExpression = replaceMetricsWithHashes(
+          Object.keys(vars),
+          expression
+        );
         let f = () => {};
         try {
-          f = filtrex(`${metricName} < ${maxValue}`);
+          f = filtrex(hashedExpression);
         } catch (err) {
           global.artillery.log(err);
         }
 
         // all legacy threshold checks are strict:
-        checkTests.push({ f, strict: true, original: `${k} < ${maxValue}` });
+        checkTests.push({
+          f,
+          strict: true,
+          original: `${k} < ${maxValue}`,
+          hash: hashedExpression
+        });
       });
 
     if (typeof checks.maxErrorRate !== 'undefined') {
       const maxValue = Number(checks.maxErrorRate);
       const expression = `((vusers.created - vusers.completed)/vusers.created * 100) <= ${maxValue}`;
+
+      const hashedExpression = replaceMetricsWithHashes(
+        Object.keys(vars),
+        expression
+      );
+
       let f = () => {};
       try {
-        f = filtrex(expression);
+        f = filtrex(hashedExpression);
       } catch (err) {
         global.artillery.log(err);
       }
@@ -164,7 +226,8 @@ class EnsurePlugin {
       checkTests.push({
         f,
         strict: true,
-        original: `maxErrorRate < ${maxValue}`
+        original: `maxErrorRate < ${maxValue}`,
+        hash: hashedExpression
       });
     }
 
@@ -172,8 +235,10 @@ class EnsurePlugin {
       global.artillery.log('\nChecks:');
     }
 
+    const hashedVarsMap = getHashedVarToValueMap(vars);
+
     checkTests.forEach((check) => {
-      const result = check.f(vars);
+      const result = check.f(hashedVarsMap);
       check.result = result;
       debug(`check ${check.original} -> ${result}`);
     });
