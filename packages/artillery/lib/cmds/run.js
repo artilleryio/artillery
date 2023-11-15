@@ -390,6 +390,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         if (e.ext === 'beforeExit') {
           ps.push(
             e.method({
+              ...opts,
               report: finalReport,
               flags,
               runnerOpts,
