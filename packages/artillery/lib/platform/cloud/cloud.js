@@ -42,6 +42,9 @@ class ArtilleryCloudPlugin {
       const testRunUrl = `${this.baseUrl}/load-tests/${this.testRunId}`;
       testEndInfo.testRunUrl = testRunUrl;
 
+      this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
+      this.setGetLoadTestInterval = this.setGetStatusInterval();
+
       console.log('Artillery Cloud reporting is configured for this test run');
       console.log(`Run URL: ${testRunUrl}`);
 
@@ -137,6 +140,7 @@ class ArtilleryCloudPlugin {
     global.artillery.ext({
       ext: 'onShutdown',
       method: async (opts) => {
+        clearInterval(this.setGetLoadTestInterval);
         // Wait for the last logLines events to be processed, as they can sometimes finish processing after shutdown has finished
         await awaitOnEE(
           global.artillery.globalEvents,
@@ -169,6 +173,44 @@ class ArtilleryCloudPlugin {
       waitedTime += 500;
     }
     return true;
+  }
+
+  setGetStatusInterval() {
+    const interval = setInterval(async () => {
+      const res = await this._getLoadTestStatus();
+
+      if (!res) {
+        debug('No response from Artillery Cloud get status');
+        return;
+      }
+
+      if (res.status != 'CANCELLATION_REQUESTED') {
+        return;
+      }
+
+      console.log(
+        `WARNING: Test run cancellation requested through Artillery Cloud by: ${res.cancelledBy}. Cancelling test run - this may take a few seconds.`
+      );
+      global.artillery.suggestedExitCode = 8;
+      global.artillery.shutdown({ earlyStop: true });
+    }, 5000);
+
+    return interval;
+  }
+
+  async _getLoadTestStatus() {
+    debug('☁️', 'Getting load test status');
+
+    try {
+      const res = await request.get(this.getLoadTestEndpoint, {
+        headers: this.defaultHeaders,
+        throwHttpErrors: false
+      });
+
+      return JSON.parse(res.body);
+    } catch (error) {
+      debug(error);
+    }
   }
 
   async _event(eventName, eventPayload) {
