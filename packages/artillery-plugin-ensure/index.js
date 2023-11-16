@@ -57,13 +57,6 @@ class EnsurePlugin {
           return;
         }
 
-        if (data.earlyStop) {
-          console.log(
-            'WARNING: Test run exited early. Skipping ensure checks.'
-          );
-          return;
-        }
-
         debug(JSON.stringify(data));
         const vars = Object.assign(
           {},
