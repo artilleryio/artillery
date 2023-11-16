@@ -132,6 +132,8 @@ class OTelReporter {
         'trace'
       );
       this.tracing = true;
+      this.pendingRequestSpans = 0;
+      this.pendingScenarioSpans = 0;
 
       this.configureTrace(this.traceConfig);
 
@@ -165,6 +167,11 @@ class OTelReporter {
             type: 'afterScenario',
             name: 'endScenarioSpan',
             hook: this.endScenarioSpan('http').bind(this)
+          },
+          {
+            type: 'onError',
+            name: 'otelTraceOnError',
+            hook: this.otelTraceOnError.bind(this)
           }
         ]);
       }
@@ -366,9 +373,9 @@ class OTelReporter {
           kind: SpanKind.CLIENT
         }
       );
-
       debug('Scenario span created');
       userContext.vars[`__${engine}ScenarioSpan`] = span;
+      this.pendingScenarioSpans++;
       if (engine === 'http') {
         next();
       } else {
@@ -380,7 +387,10 @@ class OTelReporter {
   endScenarioSpan(engine) {
     return function (userContext, ee, next) {
       const span = userContext.vars[`__${engine}ScenarioSpan`];
-      span.end(Date.now());
+      if (!span._ended) {
+        span.end();
+        this.pendingScenarioSpans--;
+      }
       if (engine === 'http') {
         next();
       } else {
@@ -414,18 +424,7 @@ class OTelReporter {
           ...(this.traceConfig.attributes || {})
         }
       });
-
       userContext.vars['__otlpHTTPRequestSpan'] = span;
-
-      events.on('error', (err) => {
-        span.recordException(err);
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: err.message || err
-        });
-        debug('Span status set as error due to the following error: \n', err);
-        span.end(Date.now);
-      });
     });
     return done();
   }
@@ -481,11 +480,51 @@ class OTelReporter {
           message: res.statusMessage
         });
       }
-
-      span.end(endTime || Date.now());
+      if (!span._ended) {
+        span.end(endTime || Date.now());
+        this.pendingRequestSpans--;
+      }
     } catch (err) {
-      // We don't do anything, if error occurs at this point it will be due to us already ending the span in beforeRequest hook in case of an error.
+      debug(err);
     }
+    return done();
+  }
+
+  otelTraceOnError(err, req, userContext, ee, done) {
+    const scenarioSpan = userContext.vars.__httpScenarioSpan;
+    const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
+    // If the error happened during request, we end the request span here, if it happened after the request has finished, the request span will already be handled and closed in afterResponse hook
+    if (!requestSpan._ended) {
+      debug(
+        `OpenTelemetry reporter: Error occured during request to URL: ${
+          req.url
+        }, traceId: ${requestSpan.spanContext().traceId}, spanId: ${
+          requestSpan.spanContext().spanId
+        }\nError: ${err}`
+      );
+      requestSpan.recordException(err);
+      requestSpan.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err.message || err
+      });
+      requestSpan.end();
+      this.pendingRequestSpans--;
+    } else {
+      // We set the exception on the scenario span only if the err happened outside the requests, but set the status to error regardles if for easier querying
+      debug(
+        `OpenTelemetry reporter: Error occured during scenario ${
+          userContext.scenario.name + ' '
+        },traceId: ${requestSpan.spanContext().traceId}\nError: ${err}`
+      );
+      scenarioSpan.recordException(err);
+    }
+
+    scenarioSpan.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: err.message || err
+    });
+    scenarioSpan.end();
+    this.pendingScenarioSpans--;
     return done();
   }
 
@@ -672,15 +711,24 @@ class OTelReporter {
   async shutDown() {
     if (this.metrics) {
       while (this.pendingRequests > 0) {
-        debug('Waiting for pending request ...');
+        debug('Waiting for pending metric requests ...');
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
-      debug('Pending requests done');
+      debug('Pending metric requests done');
       debug('Shutting the Reader down');
-      await this.theReader.shutdown();
+      try {
+        await this.theReader.shutdown();
+      } catch (err) {
+        debug(err);
+      }
       debug('Shut down sucessfull');
     }
     if (this.tracing) {
+      while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
+        debug('Waiting for pending traces ...');
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+      debug('Pending traces done');
       debug('Initiating TracerProvider shutdown');
       try {
         await this.tracerProvider.shutdown();
@@ -691,9 +739,9 @@ class OTelReporter {
     }
   }
 
-  cleanup(done) {
+  async cleanup(done) {
     debug('Cleaning up');
-    return this.shutDown().then(done);
+    return await this.shutDown().then(done);
   }
 }
 
