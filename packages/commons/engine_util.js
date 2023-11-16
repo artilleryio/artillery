@@ -10,6 +10,7 @@ const deepForEach = require('deep-for-each');
 const espree = require('espree');
 const L = require('lodash');
 const vm = require('vm');
+const ms = require('ms');
 const A = require('async');
 const { JSONPath: jsonpath } = require('jsonpath-plus');
 const cheerio = require('cheerio');
@@ -42,7 +43,15 @@ function createThink(requestSpec, opts) {
   let thinkspec = requestSpec.think;
 
   let f = function think(context, callback) {
-    let thinktime = parseFloat(template(thinkspec, context)) * 1000;
+    let templatedThink = template(thinkspec, context);
+    let thinktime = Number.isInteger(L.toNumber(templatedThink))
+      ? ms(`${templatedThink}s`)
+      : ms(templatedThink);
+
+    if (typeof thinktime == 'undefined') {
+      throw new Error(`Invalid think time: ${templatedThink || thinkspec}`);
+    }
+
     if (requestSpec.jitter || opts.jitter) {
       thinktime = jitter(`${thinktime}:${requestSpec.jitter || opts.jitter}`);
     }
