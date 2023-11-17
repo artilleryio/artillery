@@ -146,6 +146,9 @@ class OTelReporter {
       });
 
       if (this.engines.has('http')) {
+        this.pendingRequestSpans = 0;
+        this.pendingScenarioSpans = 0;
+
         attachScenarioHooks(script, [
           {
             type: 'beforeRequest',
@@ -166,6 +169,11 @@ class OTelReporter {
             type: 'afterScenario',
             name: 'endScenarioSpan',
             hook: this.endScenarioSpan('http').bind(this)
+          },
+          {
+            type: 'onError',
+            name: 'otelTraceOnError',
+            hook: this.otelTraceOnError.bind(this)
           }
         ]);
       }
@@ -374,6 +382,7 @@ class OTelReporter {
 
       debug('Scenario span created');
       userContext.vars[`__${engine}ScenarioSpan`] = span;
+      this.pendingScenarioSpans++;
       if (engine === 'http') {
         next();
       } else {
@@ -385,7 +394,11 @@ class OTelReporter {
   endScenarioSpan(engine) {
     return function (userContext, ee, next) {
       const span = userContext.vars[`__${engine}ScenarioSpan`];
-      span.end(Date.now());
+      if (!span._ended) {
+        span.end();
+        this.pendingScenarioSpans--;
+      }
+
       if (engine === 'http') {
         next();
       } else {
@@ -414,7 +427,6 @@ class OTelReporter {
         attributes: {
           'vu.uuid': userContext.vars.$uuid,
           [SemanticAttributes.HTTP_URL]: parsedUrl || url.href,
-
           // We set the port if it is specified, if not we set to a default port based on the protocol
           [SemanticAttributes.HTTP_SCHEME]:
             url.port || (url.protocol === 'http' ? 80 : 443),
@@ -425,16 +437,7 @@ class OTelReporter {
       });
 
       userContext.vars['__otlpHTTPRequestSpan'] = span;
-
-      events.on('error', (err) => {
-        span.recordException(err);
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: err.message || err
-        });
-        debug('Span status set as error due to the following error: \n', err);
-        span.end(Date.now);
-      });
+      this.pendingRequestSpans++;
     });
     return done();
   }
@@ -497,14 +500,46 @@ class OTelReporter {
           message: res.statusMessage
         });
       }
-
-      span.end(endTime || Date.now());
+      if (!span._ended) {
+        span.end(endTime || Date.now());
+        this.pendingRequestSpans--;
+      }
     } catch (err) {
-      // We don't do anything, if error occurs at this point it will be due to us already ending the span in beforeRequest hook in case of an error.
+      debug(err);
     }
     return done();
   }
 
+  otelTraceOnError(err, req, userContext, ee, done) {
+    console.log(`ON ERROR HOOK: Error: ${err}\nRequest: ${req.url}`);
+    const scenarioSpan = userContext.vars.__httpScenarioSpan;
+    console.log('Scenario SPAN traceId: ', scenarioSpan.spanContext().traceId);
+    console.log('Scenario SPAN spanId: ', scenarioSpan.spanContext().spanId);
+    const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
+    console.log('Request SPAN traceId: ', requestSpan.spanContext().traceId);
+    console.log('Request SPAN spanId: ', requestSpan.spanContext().spanId);
+
+    console.log(!!requestSpan._ended);
+    if (!requestSpan._ended) {
+      requestSpan.recordException(err);
+      requestSpan.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err.message || err
+      });
+      requestSpan.end();
+      this.pendingRequestSpans--;
+    } else {
+      scenarioSpan.recordException(err);
+    }
+    scenarioSpan.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: err.message || err
+    });
+
+    scenarioSpan.end();
+    this.pendingScenarioSpans--;
+    return done();
+  }
   async runOtelTracingForPlaywright(
     page,
     vuContext,
