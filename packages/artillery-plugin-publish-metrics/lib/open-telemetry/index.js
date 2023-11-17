@@ -16,7 +16,8 @@ const {
 } = require('@opentelemetry/api');
 const { Resource } = require('@opentelemetry/resources');
 const {
-  SemanticResourceAttributes
+  SemanticResourceAttributes,
+  SemanticAttributes
 } = require('@opentelemetry/semantic-conventions');
 
 const {
@@ -363,7 +364,11 @@ class OTelReporter {
         userContext.scenario?.name || `artillery-${engine}-scenario`,
         {
           startTime: Date.now(),
-          kind: SpanKind.CLIENT
+          kind: SpanKind.CLIENT,
+          attributes: {
+            'vu.uuid': userContext.vars.$uuid,
+            [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
+          }
         }
       );
 
@@ -397,11 +402,28 @@ class OTelReporter {
         this.traceConfig.useRequestNames && req.name
           ? req.name
           : req.method.toLowerCase();
+
+      const url = new URL(req.url);
+      let parsedUrl;
+      if (url.username || url.password) {
+        parsedUrl = url.origin + url.pathname + url.search + url.hash;
+      }
       const span = this.httpTracer.startSpan(spanName, {
         startTime,
         kind: SpanKind.CLIENT,
-        attributes: { 'vu.uuid': userContext.$uuid }
+        attributes: {
+          'vu.uuid': userContext.vars.$uuid,
+          [SemanticAttributes.HTTP_URL]: parsedUrl || url.href,
+
+          // We set the port if it is specified, if not we set to a default port based on the protocol
+          [SemanticAttributes.HTTP_SCHEME]:
+            url.port || (url.protocol === 'http' ? 80 : 443),
+          [SemanticAttributes.HTTP_METHOD]: req.method,
+          [SemanticAttributes.NET_HOST_NAME]: url.hostname,
+          ...(this.traceConfig.attributes || {})
+        }
       });
+
       userContext.vars['__otlpHTTPRequestSpan'] = span;
 
       events.on('error', (err) => {
@@ -449,7 +471,8 @@ class OTelReporter {
             this.httpTracer
               .startSpan(name, {
                 kind: SpanKind.CLIENT,
-                startTime: res.timings[value.start]
+                startTime: res.timings[value.start],
+                attributes: { 'vu.uuid': userContext.vars.$uuid }
               })
               .end(res.timings[value.end]);
           }
@@ -459,23 +482,22 @@ class OTelReporter {
     }
 
     try {
-      const url = new URL(req.url);
       span.setAttributes({
-        'url.full': url.href,
-        'url.path': url.pathname,
-        'server.address': url.hostname,
-        // We set the port if it is specified, if not we set to a default port based on the protocol
-        'server.port': url.port || (url.protocol === 'http' ? 80 : 443),
-        'http.request.method': req.method,
-        'http.response.status_code': res.statusCode
+        [SemanticAttributes.HTTP_STATUS_CODE]: res.statusCode,
+        [SemanticAttributes.HTTP_REQUEST_CONTENT_LENGTH]:
+          res.request.options.headers['content-length'],
+        [SemanticAttributes.HTTP_FLAVOR]: res.httpVersion,
+        [SemanticAttributes.HTTP_USER_AGENT]:
+          res.request.options.headers['user-agent']
       });
 
       if (res.statusCode >= 400) {
-        span.setStatus({ code: SpanStatusCode.ERROR });
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: res.statusMessage
+        });
       }
-      if (this.traceConfig?.attributes) {
-        span.setAttributes(this.traceConfig.attributes);
-      }
+
       span.end(endTime || Date.now());
     } catch (err) {
       // We don't do anything, if error occurs at this point it will be due to us already ending the span in beforeRequest hook in case of an error.
