@@ -1,4 +1,4 @@
-const DEFAULT_IMAGE_TAG = 'latest';
+const DEFAULT_IMAGE_TAG = '1f676ad7a2ecc923e813cdc7ac1bf4a2328daec0';
 
 module.exports = {
   ARTILLERY_CLUSTER_NAME: 'artilleryio-cluster',
