@@ -319,18 +319,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       function done(err) {
         if (err) {
           debug(err);
-          runOnErrorHooks(
-            onErrorHandlers,
-            config.processor,
-            err,
-            requestParams,
-            context,
-            ee,
-            function (asyncErr) {
-              return callback(err, context);
-            }
-          );
-          // return callback(err, context);
+          return callback(err, context);
         }
 
         // Order of precedence: json set in a function, json set in the script, body set in a function, body set in the script.
@@ -629,18 +618,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 function (err) {
                   if (err) {
                     debug(err);
-                    runOnErrorHooks(
-                      onErrorHandlers,
-                      config.processor,
-                      err,
-                      requestParams,
-                      context,
-                      ee,
-                      function (asyncErr) {
-                        return done(err, context);
-                      }
-                    );
-                    // return done(err, context);
+                    return done(err, context);
                   }
 
                   if (haveFailedMatches || haveFailedCaptures) {
@@ -733,18 +711,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             );
           })
           .catch((gotErr) => {
+            // TODO: Handle the error properly with run hooks
             debug(gotErr);
-            runOnErrorHooks(
-              onErrorHandlers,
-              config.processor,
-              gotErr,
-              requestParams,
-              context,
-              ee,
-              function (asyncErr) {
-                return callback(gotErr, context);
-              }
-            );
+            return callback(gotErr, context);
           });
       }
     ); // eachSeries
