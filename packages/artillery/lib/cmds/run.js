@@ -390,6 +390,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         if (e.ext === 'beforeExit') {
           ps.push(
             e.method({
+              ...opts,
               report: finalReport,
               flags,
               runnerOpts,
@@ -425,6 +426,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         process.exit(artillery.suggestedExitCode || opts.exitCode);
       })();
     }
+
+    global.artillery.shutdown = gracefulShutdown;
   } catch (err) {
     throw err;
   }
