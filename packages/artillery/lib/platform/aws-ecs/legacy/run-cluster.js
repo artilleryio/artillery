@@ -347,6 +347,39 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       process.exit(1);
     }
     options.launchConfig = launchConfig;
+  } else {
+    options.launchConfig = {};
+  }
+
+  if (options.cpu) {
+    const n = Number(options.cpu);
+    if (isNaN(n)) {
+      artillery.log('The value of --cpu must be a number');
+      process.exit(1);
+    }
+
+    // Allow specifying 16 vCPU as either "16" or "16384". The actual value is
+    // validated later.
+    const MAX_VCPUS = 16;
+    if (n <= MAX_VCPUS) {
+      options.launchConfig.cpu = n * 1024;
+    } else {
+      options.launchConfig.cpu = n;
+    }
+  }
+
+  if (options.memory) {
+    if (/^[0-9]+gb/gi.test(options.memory)) {
+      // given with gb suffix
+      options.launchConfig.memory = String(parseInt(options.memory, 10) * 1024);
+    } else if (!isNaN(Number(options.memory))) {
+      // just a number
+      options.launchConfig.memory = options.memory;
+    } else {
+      artillery.log(
+        'The value of --memory must be a whole number (in MiB) or a number followed by "gb" (in GB)'
+      );
+    }
   }
 
   // check launch type is valid:
