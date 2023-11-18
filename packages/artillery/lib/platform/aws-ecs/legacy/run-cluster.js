@@ -810,21 +810,24 @@ async function cleanup(context, opts) {
 }
 
 function checkFargateResourceConfig(cpu, memory) {
+  function generateListOfOptionsMiB(minGB, maxGB, incrementGB) {
+    const result = [];
+    for (let i = 0; i <= (maxGB - minGB) / incrementGB; i++) {
+      result.push((minGB + incrementGB * i) * 1024);
+    }
+
+    return result;
+  }
+
+  // Based on https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
   const FARGATE_VALID_CONFIGS = {
     256: [512, 1024, 2048],
     512: [1024, 2048, 3072, 4096],
     1024: [2048, 3072, 4096, 5120, 6144, 7168, 8192],
-    2048: [
-      4096,
-      5120,
-      6144,
-      7168,
-      8192,
-      8192 + 1024 * 2,
-      8192 + 1024 * 3,
-      8192 + 1024 * 4
-    ],
-    4096: [8192, 8192 + 1024, 8192 + 1024 * 2, 8192 + 1024 * 3, 8192 + 1024 * 4]
+    2048: generateListOfOptionsMiB(4, 16, 1),
+    4096: generateListOfOptionsMiB(8, 30, 1),
+    8192: generateListOfOptionsMiB(16, 60, 4),
+    16384: generateListOfOptionsMiB(32, 120, 8)
   };
 
   if (!FARGATE_VALID_CONFIGS[cpu]) {
