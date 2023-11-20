@@ -78,7 +78,13 @@ function isValid(data, response) {
 
   if (_.isString(response.data)) {
     const expectedResponse = response.data;
-    const actualResponse = data[data.length - 1]; // if response.data is not an array, we compare it to the last element of the actual response
+    let actualResponse = data[data.length - 1]; // if response.data is not an array, we compare it to the last element of the actual response
+
+    // unless the user wants to test against the entire response
+    if (response.concat) {
+      actualResponse = data.join('');
+    }
+
     debug(
       `checking if string ${expectedResponse} is a partial match for string ${actualResponse}`
     );
@@ -263,6 +269,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
           requestSpec.response.channel || requestSpec.response.on,
           context
         ),
+        concat: template(requestSpec.response.concat, context),
         data: template(
           requestSpec.response.data || requestSpec.response.args,
           context

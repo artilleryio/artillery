@@ -53,6 +53,7 @@ const socketioItems = {
     then: Joi.alternatives(
       Joi.object({
         channel: Joi.string(),
+        concat: Joi.boolean(),
         data: Joi.any()
       }),
       Joi.array().items(Joi.string())
@@ -86,7 +87,7 @@ const flowItemSchema = Joi.object({
   }),
   otherwise: Joi.when('...engine', {
     is: Joi.exist().valid('socketio'),
-    then: Joi.object().max(3),
+    then: Joi.object().max(4),
     otherwise: Joi.object().length(1)
   })
 });
