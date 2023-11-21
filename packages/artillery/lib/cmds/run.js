@@ -264,10 +264,11 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     );
     let intermediates = [];
 
+    const suppressMetrics = getPluginMetricsToSuppress(script) || []
     // TODO: Wire up workerLog or something like that
     const consoleReporter = createConsoleReporter(launcher.events, {
       quiet: flags.quiet || false,
-      script
+      suppressMetrics: suppressMetrics
     });
 
     let reporters = [consoleReporter];
@@ -687,5 +688,19 @@ function getLogFilename(output, nameFormat) {
 
   return logfile;
 }
+
+function getPluginMetricsToSuppress(script){
+  if (!script.config.plugins){
+    return
+  }
+  const metrics = []
+  for (const [plugin, options] of Object.entries(script.config.plugins)){
+    if (options.suppressOutput){
+      metrics.push(`plugins.${plugin}`)
+    }
+  }
+  return metrics
+}
+
 
 module.exports = RunCommand;
