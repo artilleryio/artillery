@@ -180,6 +180,30 @@ tap.test(
   }
 );
 
+tap.test('Loads metrics-by-endpoint plugin by default, with output supressed', async (t) => {
+  const reportFile = 'report-metrics-by-endpoint.json';
+  const reportFilePath = await getRootPath(reportFile);
+  const [exitCode, output] = await execute([
+    'run',
+    'test/scripts/hello.json',
+    '--config',
+    './test/scripts/hello_config.json',
+    '-o',
+    `${reportFile}`
+  ])
+
+  const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+  const pluginPrefix = 'plugins.metrics-by-endpoint';
+  
+  t.ok(
+    deleteFile(reportFilePath) &&
+    exitCode === 0 &&
+    !output.stdout.includes(pluginPrefix) &&
+    Object.keys(json.aggregate.counters).some(key => key.includes(pluginPrefix)) &&
+    Object.keys(json.aggregate.summaries).some(key => key.includes(pluginPrefix))
+  );
+})
+
 tap.test('Run a script overwriting default options (output)', async (t) => {
   const reportFile = 'artillery_report_custom.json';
   const [exitCode, output] = await execute([

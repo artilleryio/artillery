@@ -5,6 +5,7 @@ const {
   parseScript,
   addOverrides,
   addVariables,
+  addDefaultPlugins,
   resolveConfigTemplates,
   checkConfig
 } = require('../../util');
@@ -263,9 +264,11 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     );
     let intermediates = [];
 
+    const metricsToSuppress = getPluginMetricsToSuppress(script);
     // TODO: Wire up workerLog or something like that
     const consoleReporter = createConsoleReporter(launcher.events, {
-      quiet: flags.quiet || false
+      quiet: flags.quiet || false,
+      metricsToSuppress
     });
 
     let reporters = [consoleReporter];
@@ -495,7 +498,9 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   }
 
   script5.config.statsInterval = script5.config.statsInterval || 30;
-  return script5;
+
+  const script6 = addDefaultPlugins(script5);
+  return script6;
 }
 
 async function readPayload(script) {
@@ -685,6 +690,19 @@ function getLogFilename(output, nameFormat) {
   }
 
   return logfile;
+}
+
+function getPluginMetricsToSuppress(script) {
+  if (!script.config.plugins) {
+    return [];
+  }
+  const metrics = [];
+  for (const [plugin, options] of Object.entries(script.config.plugins)) {
+    if (options.suppressOutput) {
+      metrics.push(`plugins.${plugin}`);
+    }
+  }
+  return metrics;
 }
 
 module.exports = RunCommand;
