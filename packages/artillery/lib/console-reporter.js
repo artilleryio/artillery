@@ -29,7 +29,7 @@ function ConsoleReporter(opts) {
   this.outputFormat = opts.outputFormat || process.env.OUTPUT_FORMAT || 'new';
 
   this.quiet = opts.quiet;
-  this.metricsToSuppress = opts.suppressMetrics;
+  this.metricsToSuppress = opts.metricsToSuppress;
   this.spinner = ora({
     spinner: 'dots'
   });
@@ -230,9 +230,9 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
     let result = [];
     for (const metricName of sortedAlphabetically) {
 
-      if(shouldSuppressOutput(metricName, this.metricsToSuppress)) {
+      if (shouldSuppressOutput(metricName, this.metricsToSuppress)) {
         continue;
-      }
+      };
       if (typeof report.counters?.[metricName] !== 'undefined') {
         result = result.concat(printCounters([metricName], report));
       }
@@ -425,8 +425,8 @@ function printSummaries(summaries, report) {
 }
 
 function shouldSuppressOutput(currMetricName, suppressMetricsList) {
-  if (!suppressMetricsList){
-    return
-  }
-  return suppressMetricsList.some((metric)=> currMetricName.includes(metric))
+  if (!suppressMetricsList) {
+    return;
+  };
+  return suppressMetricsList.some((metric)=> currMetricName.includes(metric));
 }
