@@ -394,7 +394,7 @@ class OTelReporter {
   endScenarioSpan(engine) {
     return function (userContext, ee, next) {
       const span = userContext.vars[`__${engine}ScenarioSpan`];
-      if (!span._ended) {
+      if (!span.endTime[0]) {
         span.end(Date.now());
         this.pendingScenarioSpans--;
       }
@@ -499,7 +499,7 @@ class OTelReporter {
           message: res.statusMessage
         });
       }
-      if (!span._ended) {
+      if (!span.endTime[0]) {
         span.end(endTime || Date.now());
         this.pendingRequestSpans--;
       }
@@ -514,7 +514,7 @@ class OTelReporter {
     const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
     // If the error happened outside the request, the request span will be handled in the afterResponse hook
     // If the error happens on the request we set the exception on the request, otherwise we set it to the scenario span
-    if (!requestSpan._ended) {
+    if (!requestSpan.endTime[0]) {
       requestSpan.recordException(err);
       requestSpan.setStatus({
         code: SpanStatusCode.ERROR,
@@ -651,7 +651,7 @@ class OTelReporter {
           });
           throw err;
         } finally {
-          if (pageSpan && !pageSpan._ended) {
+          if (pageSpan && !pageSpan.endTime[0]) {
             pageSpan.end();
           }
           scenarioSpan.end();
