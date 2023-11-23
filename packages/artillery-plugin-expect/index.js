@@ -83,7 +83,10 @@ function expectationsPluginOnError(
   events,
   done
 ) {
-  if (userContext.expectationsPlugin.outputFormat === 'json') {
+  if (scenarioErr instanceof FailedExpectationError) {
+    return done();
+  }
+  if (userContext.expectationsPlugin.formatter === 'json') {
     artillery.log(JSON.stringify({ ok: false, error: scenarioErr.message }));
   } else {
     artillery.log(`${chalk.red('Error:')} ${scenarioErr.message}`);
@@ -183,7 +186,9 @@ function expectationsPluginCheckExpectations(
         ? req.name
         : req.url;
     return done(
-      new Error(`Failed expectations for request ${filteredRequestName}`)
+      new FailedExpectationError(
+        `Failed expectations for request ${filteredRequestName}`
+      )
     );
   }
 
@@ -208,5 +213,12 @@ function maybeParseBody(res) {
     return body;
   } else {
     return res.body;
+  }
+}
+
+class FailedExpectationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'FailedExpectationError';
   }
 }
