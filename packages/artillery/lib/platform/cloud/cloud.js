@@ -44,7 +44,6 @@ class ArtilleryCloudPlugin {
       testEndInfo.testRunUrl = testRunUrl;
 
       this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
-      this.setGetLoadTestInterval = this.setGetStatusInterval();
 
       console.log('Artillery Cloud reporting is configured for this test run');
       console.log(`Run URL: ${testRunUrl}`);
@@ -52,6 +51,8 @@ class ArtilleryCloudPlugin {
       await this._event('testrun:init', {
         metadata: testInfo.metadata
       });
+      this.setGetLoadTestInterval = this.setGetStatusInterval();
+
       if (typeof testInfo.flags.note !== 'undefined') {
         await this._event('testrun:addnote', { text: testInfo.flags.note });
       }
