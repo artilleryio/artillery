@@ -369,16 +369,17 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   if (options.memory) {
-    if (/^[0-9]+gb/gi.test(options.memory)) {
-      // given with gb suffix
+    const n = Number(options.memory);
+    if (isNaN(n)) {
+      artillery.log('The value of --memory must be a number');
+      process.exit(1);
+    }
+
+    const MAX_MEMORY_IN_GB = 120;
+    if (n <= MAX_MEMORY_IN_GB) {
       options.launchConfig.memory = String(parseInt(options.memory, 10) * 1024);
-    } else if (!isNaN(Number(options.memory))) {
-      // just a number
-      options.launchConfig.memory = options.memory;
     } else {
-      artillery.log(
-        'The value of --memory must be a whole number (in MiB) or a number followed by "gb" (in GB)'
-      );
+      options.launchConfig.memory = options.memory;
     }
   }
 
