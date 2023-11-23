@@ -327,8 +327,13 @@ function runScenario(script, metrics, runState, contextVars, options) {
   if (options.scenarioName) {
     let foundIndex;
     const foundScenario = script.scenarios.filter((scenario, index) => {
-      foundIndex = index;
-      return new RegExp(options.scenarioName).test(scenario.name);
+      const hasScenario = new RegExp(options.scenarioName).test(scenario.name);
+
+      if (hasScenario) {
+        foundIndex = index;
+      }
+
+      return hasScenario;
     });
 
     if (foundScenario?.length === 0) {
