@@ -83,10 +83,13 @@ function expectationsPluginOnError(
   events,
   done
 ) {
-  if (userContext.expectationsPlugin.outputFormat === 'json') {
-    artillery.log(JSON.stringify({ ok: false, error: scenarioErr.message }));
+  if (scenarioErr.message.startsWith('Failed expectations for request')) {
+    return done();
+  }
+  if (userContext.expectationsPlugin.formatter === 'json') {
+    artillery.log(JSON.stringify({ error: scenarioErr.message }));
   } else {
-    artillery.log(`${chalk.red('Error:')} ${scenarioErr.message}`);
+    artillery.log(`\n${chalk.red('Error:')} ${scenarioErr.message}\n`);
   }
   return done();
 }
