@@ -86,6 +86,16 @@ RunCommand.flags = {
     description:
       'Set target endpoint. Overrides the target already set in the test script'
   }),
+  cpu: Flags.string({
+    description:
+      'Set task vCPU on Fargate. May be set as number of vCPUs, e.g. 4, or as vCPU units, e.g. 4096',
+    default: '4'
+  }),
+  memory: Flags.string({
+    description:
+      'Set task memory on Fargate. May be set in GB, e.g. 8gb, or as number of MiB, e.g. 8192',
+    default: '8gb'
+  }),
   output: Flags.string({
     char: 'o',
     description: 'Write a JSON report to file'
