@@ -89,7 +89,7 @@ function expectationsPluginOnError(
   if (userContext.expectationsPlugin.formatter === 'json') {
     artillery.log(JSON.stringify({ error: scenarioErr.message }));
   } else {
-    artillery.log(`\n${chalk.red('Error:')} ${scenarioErr.message}\n`);
+    artillery.log(`${chalk.red('Error:')} ${scenarioErr.message}`);
   }
   return done();
 }
