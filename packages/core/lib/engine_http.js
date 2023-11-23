@@ -713,7 +713,17 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           .catch((gotErr) => {
             // TODO: Handle the error properly with run hooks
             debug(gotErr);
-            return callback(gotErr, context);
+            runOnErrorHooks(
+              onErrorHandlers,
+              config.processor,
+              gotErr,
+              requestParams,
+              context,
+              ee,
+              function (asyncErr) {
+                return callback(gotErr, context);
+              }
+            );
           });
       }
     ); // eachSeries
