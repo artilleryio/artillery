@@ -83,7 +83,7 @@ function expectationsPluginOnError(
   events,
   done
 ) {
-  if (scenarioErr.message.startsWith('Failed expectations for request')) {
+  if (scenarioErr instanceof FailedExpectationError) {
     return done();
   }
   if (userContext.expectationsPlugin.formatter === 'json') {
@@ -186,7 +186,9 @@ function expectationsPluginCheckExpectations(
         ? req.name
         : req.url;
     return done(
-      new Error(`Failed expectations for request ${filteredRequestName}`)
+      new FailedExpectationError(
+        `Failed expectations for request ${filteredRequestName}`
+      )
     );
   }
 
@@ -211,5 +213,12 @@ function maybeParseBody(res) {
     return body;
   } else {
     return res.body;
+  }
+}
+
+class FailedExpectationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'FailedExpectationError';
   }
 }
