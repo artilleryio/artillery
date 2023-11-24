@@ -94,6 +94,7 @@
     "artillery-plugin-apdex": "*",
     "artillery-plugin-ensure": "*",
     "artillery-plugin-expect": "*",
+    "artillery-plugin-fake-data": "*",
     "artillery-plugin-metrics-by-endpoint": "*",
     "artillery-plugin-publish-metrics": "*",
     "async": "^2.6.4",
