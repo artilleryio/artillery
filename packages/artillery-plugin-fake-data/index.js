@@ -6,7 +6,6 @@ function ArtilleryPluginFalso(script, events) {
 
   const falsoConfig = script.config['falso'] || script.config.plugins['falso'];
 
-  console.log(script);
   function falsoHandler(context, ee, next) {
     for (let funcName of Object.keys(falso)) {
       //functions that have the function signature we expect start with rand and aren't == rand (which takes an array
