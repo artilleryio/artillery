@@ -6,7 +6,7 @@ With this plugin, you can add random test data using [falso](https://ngneat.gith
 
 ## Documentation
 
-📖 [Plugin documentation](https://www.artillery.io/docs/reference/extensions/falso)
+📖 [Plugin documentation](https://www.artillery.io/docs/reference/extensions/fake-data)
 
 ## Feedback, Bugs, Issues
 `EXPERIMENTAL`: This plugin is experimental and under active development. Please create an issue if you find something not working or want to propose a change:
