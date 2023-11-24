@@ -4,7 +4,8 @@ function ArtilleryPluginFakeData(script, events) {
   this.script = script;
   this.events = events;
 
-  const pluginConfig = script.config['falso'] || script.config.plugins['falso'];
+  const pluginConfig =
+    script.config['fake-data'] || script.config.plugins['fake-data'];
 
   function falsoHandler(context, ee, next) {
     for (let funcName of Object.keys(falso)) {
