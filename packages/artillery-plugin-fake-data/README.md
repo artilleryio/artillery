@@ -1,4 +1,4 @@
-# artillery-plugin-falso
+# artillery-plugin-fake-data
 
 ## Easy randomised test data leveraging falso
 

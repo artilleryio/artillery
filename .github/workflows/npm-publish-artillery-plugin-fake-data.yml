@@ -1,10 +1,10 @@
-name: Publish artillery-plugin-falso to npm
+name: Publish artillery-plugin-fake-data to npm
 on:
   push:
     branches:
       - main
     paths:
-      - packages/artillery-plugin-falso/package.json
+      - packages/artillery-plugin-fake-data/package.json
 jobs:
   build:
     if: "contains(github.event.head_commit.message, 'ci: release v')"
@@ -19,6 +19,6 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: npm -w artillery-plugin-falso publish
+      - run: npm -w artillery-plugin-fake-data publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
