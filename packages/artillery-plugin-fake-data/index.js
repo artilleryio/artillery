@@ -1,10 +1,10 @@
 const falso = require('@ngneat/falso');
 
-function ArtilleryPluginFalso(script, events) {
+function ArtilleryPluginFakeData(script, events) {
   this.script = script;
   this.events = events;
 
-  const falsoConfig = script.config['falso'] || script.config.plugins['falso'];
+  const pluginConfig = script.config['falso'] || script.config.plugins['falso'];
 
   function falsoHandler(context, ee, next) {
     for (let funcName of Object.keys(falso)) {
@@ -21,8 +21,8 @@ function ArtilleryPluginFalso(script, events) {
       }
 
       context.funcs[`$${funcName}`] = function () {
-        if (falsoConfig[funcName]) {
-          return falso[funcName](falsoConfig[funcName]);
+        if (pluginConfig[funcName]) {
+          return falso[funcName](pluginConfig[funcName]);
         }
         return falso[funcName]();
       };
@@ -47,5 +47,5 @@ function ArtilleryPluginFalso(script, events) {
 }
 
 module.exports = {
-  Plugin: ArtilleryPluginFalso
+  Plugin: ArtilleryPluginFakeData
 };
