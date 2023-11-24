@@ -367,7 +367,9 @@ class OTelReporter {
     return function (userContext, ee, next) {
       // get and set the tracer by engine
       const tracerName = engine + 'Tracer';
-      this[tracerName] = trace.getTracer(`artillery-${engine}`);
+      if (!this[tracerName]) {
+        this[tracerName] = trace.getTracer(`artillery-${engine}`);
+      }
       const span = this[tracerName].startSpan(
         userContext.scenario?.name || `artillery-${engine}-scenario`,
         {
@@ -551,9 +553,7 @@ class OTelReporter {
           'vu.uuid': vuContext.vars.$uuid,
           ...(this.traceConfig.attributes || {})
         });
-        if (this.traceConfig.attributes) {
-          scenarioSpan.setAttributes(this.traceConfig.attributes);
-        }
+
         // Set variables to track state and context
         const ctx = context.active();
         let lastPageUrl;
