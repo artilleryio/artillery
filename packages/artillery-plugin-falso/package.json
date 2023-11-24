@@ -1,0 +1,16 @@
+{
+  "name": "artillery-plugin-falso",
+  "version": "1.0.0",
+  "description": "Add test data easily to your Artillery test scripts",
+  "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "license": "MPL-2.0",
+  "dependencies": {
+    "@ngneat/falso": "^7.1.1"
+  }
+}

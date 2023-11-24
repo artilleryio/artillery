@@ -1,0 +1,19 @@
+# artillery-plugin-falso
+
+## Easy randomised test data leveraging falso
+
+With this plugin, you can add random test data using [falso](https://ngneat.github.io/falso/docs) straight into YAML, giving you hundreds of options to choose from. You'll also be able to use the same functions . Check the documentation for more information
+
+## Documentation
+
+📖 [Plugin documentation](https://www.artillery.io/docs/reference/extensions/falso)
+
+## Feedback, Bugs, Issues
+
+🐞 Please report bugs over at [https://github.com/artilleryio/artillery/issues](https://github.com/artilleryio/artillery/issues)
+💬 Ask for help or propose a new features via [Github Discussions](https://github.com/artilleryio/artillery/discussions)
+🐦 Follow [@artilleryio](https://twitter.com/intent/follow?original_referer=https%3A%2F%2Fartillery.io%2F&ref_src=twsrc%5Etfw&region=follow_link&screen_name=artilleryio&tw_p=followbutton) on Twitter for updates
+
+## License
+
+MPL 2.0
