@@ -551,9 +551,7 @@ class OTelReporter {
           'vu.uuid': vuContext.vars.$uuid,
           ...(this.traceConfig.attributes || {})
         });
-        if (this.traceConfig.attributes) {
-          scenarioSpan.setAttributes(this.traceConfig.attributes);
-        }
+
         // Set variables to track state and context
         const ctx = context.active();
         let lastPageUrl;
