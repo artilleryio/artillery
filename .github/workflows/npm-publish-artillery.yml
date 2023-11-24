@@ -20,6 +20,6 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
       - run: PACKAGE_FOLDER_NAME=artillery node .github/workflows/scripts/rename-packages-to-correct-version.js
-      - run: npm -w artillery publish
+      - run: npm -w artillery publish --tag latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

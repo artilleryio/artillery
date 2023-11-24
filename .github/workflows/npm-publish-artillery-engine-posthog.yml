@@ -19,6 +19,6 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: npm -w artillery-engine-posthog publish
+      - run: npm -w artillery-engine-posthog publish --tag latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
