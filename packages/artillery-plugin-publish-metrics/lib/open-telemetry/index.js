@@ -32,58 +32,16 @@ class OTelReporter {
     this.config = config;
     this.script = script;
     this.events = events;
+
+    // DEBUGGING SETUP
     if (
       process.env.DEBUG &&
       process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
     ) {
       diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
     }
-    this.metricExporters = {
-      'otlp-proto'(options) {
-        const {
-          OTLPMetricExporter
-        } = require('@opentelemetry/exporter-metrics-otlp-proto');
-        return new OTLPMetricExporter(options);
-      },
-      'otlp-http'(options) {
-        const {
-          OTLPMetricExporter
-        } = require('@opentelemetry/exporter-metrics-otlp-http');
-        return new OTLPMetricExporter(options);
-      },
-      'otlp-grpc'(options) {
-        const {
-          OTLPMetricExporter
-        } = require('@opentelemetry/exporter-metrics-otlp-grpc');
-        return new OTLPMetricExporter(options);
-      }
-    };
 
-    this.traceExporters = {
-      'otlp-proto'(options) {
-        const {
-          OTLPTraceExporter
-        } = require('@opentelemetry/exporter-trace-otlp-proto');
-        return new OTLPTraceExporter(options);
-      },
-      'otlp-http'(options) {
-        const {
-          OTLPTraceExporter
-        } = require('@opentelemetry/exporter-trace-otlp-http');
-        return new OTLPTraceExporter(options);
-      },
-      'otlp-grpc'(options) {
-        const {
-          OTLPTraceExporter
-        } = require('@opentelemetry/exporter-trace-otlp-grpc');
-        return new OTLPTraceExporter(options);
-      },
-      zipkin(options) {
-        const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
-        return new ZipkinExporter(options);
-      }
-    };
-
+    // RESOURCES SETUP
     this.resource = Resource.default().merge(
       new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]:
@@ -91,8 +49,12 @@ class OTelReporter {
       })
     );
 
-    // Metrics
+    // HANDLING METRICS
     if (config.metrics) {
+      // Get the metric exporters
+      this.metricExporters = require('./exporters').metricExporters;
+
+      // Validate exporter provided by user
       this.validateExporter(
         this.metricExporters,
         config.metrics.exporter,
@@ -124,9 +86,14 @@ class OTelReporter {
       });
     }
 
-    // Traces
+    // HANDLING TRACES
     if (config.traces) {
       this.traceConfig = config.traces;
+
+      // Get the trace exporters
+      this.traceExporters = require('./exporters').traceExporters;
+
+      // Validate exporter provided by user
       this.validateExporter(
         this.traceExporters,
         this.traceConfig.exporter,
