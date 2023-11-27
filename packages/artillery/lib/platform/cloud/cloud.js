@@ -33,7 +33,7 @@ class ArtilleryCloudPlugin {
       'x-auth-token': this.apiKey
     };
     this.unprocessedLogsCounter = 0;
-    this.hasCancellationRequest = false;
+    this.cancellationRequestedBy = '';
 
     let testEndInfo = {};
     global.artillery.globalEvents.on('test:init', async (testInfo) => {
@@ -160,7 +160,13 @@ class ArtilleryCloudPlugin {
           status: opts.earlyStop ? 'EARLY_STOP' : 'COMPLETED'
         });
 
-        console.log(`\nRun URL: ${testEndInfo.testRunUrl}`);
+        if (this.cancellationRequestedBy) {
+          console.log(
+            `\nTest run stopped by ${this.cancellationRequestedBy}. Run URL: ${testEndInfo.testRunUrl}`
+          );
+        } else {
+          console.log(`\nRun URL: ${testEndInfo.testRunUrl}`);
+        }
       }
     });
 
@@ -179,7 +185,7 @@ class ArtilleryCloudPlugin {
 
   setGetStatusInterval() {
     const interval = setInterval(async () => {
-      if (this.hasCancellationRequest) {
+      if (this.cancellationRequestedBy) {
         return;
       }
       const res = await this._getLoadTestStatus();
@@ -196,7 +202,7 @@ class ArtilleryCloudPlugin {
       console.log(
         `WARNING: Artillery Cloud user ${res.cancelledBy} requested to stop the test. Stopping test run - this may take a few seconds.`
       );
-      this.hasCancellationRequest = true;
+      this.cancellationRequestedBy = res.cancelledBy;
       global.artillery.suggestedExitCode = 8;
       await global.artillery.shutdown({ earlyStop: true });
     }, 5000);
