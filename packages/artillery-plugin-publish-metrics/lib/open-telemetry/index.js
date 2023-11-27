@@ -60,30 +60,15 @@ class OTelReporter {
         config.metrics.exporter,
         'metric'
       );
-      this.metrics = true;
-      this.configureMetrics(config.metrics);
 
-      this.pendingRequests = 0;
-
-      this.events.on('stats', async (stats) => {
-        this.pendingRequests += 1;
-
-        // Set the start and end times
-        let startTime = stats.firstMetricAt;
-        let endTime = stats.lastMetricAt;
-        this.metricsConfig.attributes.startTime = startTime;
-        this.metricsConfig.attributes.endTime = endTime;
-
-        // Record metrics
-        this.recordCounters(stats.counters, this.metricsConfig);
-        this.recordRates(stats.rates, this.metricsConfig);
-        this.recordSummaries(stats.summaries, this.metricsConfig);
-
-        // Collect and export metrics (we call the _runOnce manually since we disabled the internal timer inside configureMetrics)
-        await this.theReader._runOnce();
-
-        this.pendingRequests -= 1;
-      });
+      // Configure and run metrics
+      const { OTelMetricsReporter } = require('./metrics');
+      this.metricReporter = new OTelMetricsReporter(
+        config.metrics,
+        this.events,
+        this.resource,
+        metrics
+      );
     }
 
     // HANDLING TRACES
@@ -157,126 +142,6 @@ class OTelReporter {
             hook: this.runOtelTracingForPlaywright.bind(this)
           }
         ]);
-      }
-    }
-  }
-
-  configureMetrics(config) {
-    this.metricsConfig = {
-      exporter: config.exporter || 'otlp-http',
-      meterName: config.meterName || 'Artillery.io_metrics',
-      includeOnly: config.includeOnly || [],
-      exclude: config.exclude || [],
-      attributes: config.attributes || {}
-    };
-
-    const {
-      AggregationTemporality,
-      MeterProvider,
-      PeriodicExportingMetricReader
-    } = require('@opentelemetry/sdk-metrics');
-
-    this.meterProvider = new MeterProvider({
-      resource: this.resource
-    });
-
-    debug('Configuring Metric Exporter');
-
-    // Setting configuration options for exporter
-    this.metricsExporterOpts = {
-      temporalityPreference: AggregationTemporality.DELTA
-    };
-    if (config.endpoint) {
-      this.metricsExporterOpts.url = config.endpoint;
-    }
-
-    if (config.headers) {
-      if (config.exporter === 'otlp-grpc') {
-        const metadata = new grpc.Metadata();
-        Object.entries(config.headers).forEach(([k, v]) => metadata.set(k, v));
-        this.metricsExporterOpts.metadata = metadata;
-      } else {
-        this.metricsExporterOpts.headers = config.headers;
-      }
-    }
-
-    this.metricsExporter = this.metricExporters[
-      this.metricsConfig.exporter || 'otlp-http'
-    ](this.metricsExporterOpts);
-
-    this.theReader = new PeriodicExportingMetricReader({
-      exporter: this.metricsExporter
-    });
-
-    // Clear the reader's interval so it only collects and exports when we manually call it (otherwise we get duplicated reports causing incorrect aggregated data results)
-    clearInterval(this.theReader._interval);
-
-    this.meterProvider.addMetricReader(this.theReader);
-    metrics.setGlobalMeterProvider(this.meterProvider);
-
-    this.meter = this.meterProvider.getMeter(this.metricsConfig.meterName);
-    this.counters = {};
-    this.gauges = {};
-  }
-
-  shouldSendMetric(metricName, excluded, includeOnly) {
-    if (excluded.includes(metricName)) {
-      return;
-    }
-    if (includeOnly.length > 0 && !includeOnly.includes(metricName)) {
-      return;
-    }
-    return true;
-  }
-
-  recordCounters(counters, config) {
-    for (const [name, value] of Object.entries(counters || {})) {
-      if (!this.shouldSendMetric(name, config.exclude, config.includeOnly)) {
-        continue;
-      }
-
-      if (!this.counters[name]) {
-        this.counters[name] = this.meter.createCounter(name);
-      }
-      this.counters[name].add(value, config.attributes);
-    }
-  }
-
-  recordRates(rates, config) {
-    for (const [name, value] of Object.entries(rates || {})) {
-      if (!this.shouldSendMetric(name, config.exclude, config.includeOnly)) {
-        continue;
-      }
-      if (!this.gauges[name]) {
-        this.meter
-          .createObservableGauge(name)
-          .addCallback((observableResult) => {
-            observableResult.observe(this.gauges[name], config.attributes);
-          });
-      }
-      this.gauges[name] = value;
-    }
-  }
-
-  recordSummaries(summaries, config) {
-    for (const [name, values] of Object.entries(summaries || {})) {
-      if (!this.shouldSendMetric(name, config.exclude, config.includeOnly)) {
-        continue;
-      }
-
-      for (const [aggregation, value] of Object.entries(values)) {
-        const metricName = `${name}.${aggregation}`;
-        if (!this.gauges[metricName]) {
-          this.meter
-            .createObservableGauge(metricName)
-            .addCallback((observableResult) => {
-              observableResult.observe(
-                this.gauges[metricName],
-                config.attributes
-              );
-            });
-        }
-        this.gauges[metricName] = value;
       }
     }
   }
@@ -683,15 +548,8 @@ class OTelReporter {
   }
 
   async shutDown() {
-    if (this.metrics) {
-      while (this.pendingRequests > 0) {
-        debug('Waiting for pending metric request ...');
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
-      debug('Pending metric requests done');
-      debug('Shutting the Reader down');
-      await this.theReader.shutdown();
-      debug('Shut down sucessfull');
+    if (this.metricReporter) {
+      await this.metricReporter.cleanup();
     }
     if (this.tracing) {
       while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
