@@ -55,9 +55,3 @@ You can find a list of ready-to-run Artillery examples under [`examples/`](https
 ## License
 
 **Artillery** is open-source software distributed under the terms of the [MPLv2](https://www.mozilla.org/en-US/MPL/2.0/) license.
-
-----
-
-Enjoying using Artillery? Give us a star for good karma 🌟 (we <a href="https://ecologi.com/artilleryio">plant a tree</a> for every GitHub star)
-
-<a href="https://www.artillery.io/blog/artillery-hiring-product-engineers">We're also hiring</a>. If you love building tools for other developers and want to help make the world's software more performant and reliable, we'd love to hear from you.
