@@ -625,7 +625,8 @@ async function sendTelemetry(script, flags, extraProps) {
         'hls',
         'fuzzer',
         'ensure',
-        'memory-inspector'
+        'memory-inspector',
+        'fake-data'
       ];
       for (const p of OFFICIAL_PLUGINS) {
         if (script.config.plugins[p]) {
