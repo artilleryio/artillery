@@ -821,24 +821,26 @@ async function cleanupResources(context) {
       context.sqsReporter.stop();
     }
 
-    for (const taskArn of context.taskArns) {
-      try {
-        const ecs = new AWS.ECS({
-          apiVersion: '2014-11-13',
-          region: context.region
-        });
-        await ecs
-          .stopTask({
-            task: taskArn,
-            cluster: context.clusterName,
-            reason: 'Test cleanup'
-          })
-          .promise();
-      } catch (err) {
-        // TODO: Retry if appropriate, give the user more information
-        // to be able to fall back to manual intervention if possible.
-        // TODO: Consumer has no idea if this succeeded or not
-        debug(err);
+    if (context.taskArns && context.taskArns.length > 0) {
+      for (const taskArn of context.taskArns) {
+        try {
+          const ecs = new AWS.ECS({
+            apiVersion: '2014-11-13',
+            region: context.region
+          });
+          await ecs
+            .stopTask({
+              task: taskArn,
+              cluster: context.clusterName,
+              reason: 'Test cleanup'
+            })
+            .promise();
+        } catch (err) {
+          // TODO: Retry if appropriate, give the user more information
+          // to be able to fall back to manual intervention if possible.
+          // TODO: Consumer has no idea if this succeeded or not
+          debug(err);
+        }
       }
     }
 
