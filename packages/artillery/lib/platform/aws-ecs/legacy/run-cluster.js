@@ -522,10 +522,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
     let shuttingDown = false;
 
-    async function gracefulShutdown(
-      context,
-      opts = { earlyStop: false, exitCode: 0 }
-    ) {
+    async function gracefulShutdown(opts = { earlyStop: false, exitCode: 0 }) {
       if (shuttingDown) {
         return;
       }
@@ -541,10 +538,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       await cleanupResources(context);
 
       global.artillery.globalEvents.emit('shutdown:start', {
-        exitCode: opts.exitCode
+        exitCode: opts.exitCode,
+        earlyStop: opts.earlyStop
       });
-
-      console.log(global.artillery.extensionEvents);
 
       const ps = [];
       for (const e of global.artillery.extensionEvents) {
@@ -587,11 +583,11 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
     process.on('SIGINT', async () => {
       console.log('Stopping test run (SIGINT received)...');
-      await gracefulShutdown(context, { exitCode: 1, earlyStop: true });
+      await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
     process.on('SIGTERM', async () => {
       console.log('Stopping test run (SIGTERM received)...');
-      await gracefulShutdown(context, { exitCode: 1, earlyStop: true });
+      await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
 
     // Messages from SQS reporter created later will be relayed via this EE
@@ -702,7 +698,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
             artillery.log(
               `Max duration of test run exceeded: ${context.cliOptions.maxDuration}\n`
             );
-            await gracefulShutdown(context, { earlyStop: true });
+            await gracefulShutdown({ earlyStop: true });
           });
         }
 
@@ -804,10 +800,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       if (!testRunCompletedSuccessfully) {
         logProgress('Cleaning up...');
         context.status = TEST_RUN_STATUS.ERROR;
-        await gracefulShutdown(context, { earlyStop: true, exitCode: 1 });
+        await gracefulShutdown({ earlyStop: true, exitCode: 1 });
       } else {
         context.status = TEST_RUN_STATUS.COMPLETED;
-        await gracefulShutdown(context, { earlyStop: false, exitCode: 0 });
+        await gracefulShutdown({ earlyStop: false, exitCode: 0 });
       }
     }
   }
