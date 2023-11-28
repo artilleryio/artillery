@@ -17,6 +17,7 @@ const {
   PublishMetricsPluginConfigSchema
 } = require('./plugins/publish-metrics');
 const { TestPhase } = require('./config/phases');
+const { buildArtilleryKeyValue } = require('./joi.helpers');
 
 const TlsConfig = Joi.object({
   rejectUnauthorized: Joi.boolean().meta({
@@ -64,22 +65,6 @@ const PayloadConfig = Joi.object({
     .description('Name of loadAll data') //TODO: loadAll and name used conditionally
 });
 
-const ReplaceableConfig = {
-  target: Joi.string()
-    .meta({ title: 'Target' })
-    .description(
-      'Endpoint of the system under test, such as a hostname, IP address or a URI.\nhttps://www.artillery.io/docs/reference/test-script#target---target-service'
-    )
-    .example('https://example.com')
-    .example('ws://127.0.0.1'),
-  phases: Joi.array()
-    .items(TestPhase)
-    .meta({ title: 'Phases' })
-    .description(
-      'A load phase defines how Artillery generates new virtual users (VUs) in a specified time period.\nhttps://www.artillery.io/docs/reference/test-script#phases---load-phases'
-    )
-};
-
 const ArtilleryBuiltInPlugins = {
   expect: ExpectPluginConfigSchema,
   ensure: EnsurePluginConfigSchema,
@@ -93,19 +78,23 @@ const ArtilleryBuiltInPluginsInRootConfig = (({ ensure, apdex }) => ({
   apdex
 }))(ArtilleryBuiltInPlugins);
 
-const ConfigSchema = Joi.object({
-  ...ReplaceableConfig,
+const ConfigSchemaWithoutEnvironments = Joi.object({
+  target: Joi.string()
+    .meta({ title: 'Target' })
+    .description(
+      'Endpoint of the system under test, such as a hostname, IP address or a URI.\nhttps://www.artillery.io/docs/reference/test-script#target---target-service'
+    )
+    .example('https://example.com')
+    .example('ws://127.0.0.1'),
+  phases: Joi.array()
+    .items(TestPhase)
+    .meta({ title: 'Phases' })
+    .description(
+      'A load phase defines how Artillery generates new virtual users (VUs) in a specified time period.\nhttps://www.artillery.io/docs/reference/test-script#phases---load-phases'
+    ),
   http: HttpConfigSchema.meta({ title: 'HTTP Configuration' }),
   ws: WsConfigSchema.meta({ title: 'Websocket Configuration' }),
   socketio: SocketIoConfigSchema.meta({ title: 'SocketIo Configuration' }),
-  environments: Joi.object()
-    // .rename(/\w\d/, 'something')
-    // .pattern(/\w\d/, Joi.object(ReplaceableConfig))//TODO: this isn't working well. Probably a limitation of https://github.com/kenspirit/joi-to-json#known-limitation. Find alternative?
-    .meta({ title: 'Environments' })
-    .description(
-      'Define environments to run your load test against different configs:\nhttps://www.artillery.io/docs/reference/test-script#environments---config-profiles'
-    ), //TODO: type this properly
-
   processor: Joi.string()
     .meta({ title: 'Processor Function Path' })
     .description('Path to a CommonJS module to load for this test run.'),
@@ -129,6 +118,14 @@ const ConfigSchema = Joi.object({
     .meta({ title: 'Engines' })
     .description('Configuration for specific engines used'),
   ...ArtilleryBuiltInPluginsInRootConfig
+}).id('BaseConfigSchema');
+
+const ConfigSchema = ConfigSchemaWithoutEnvironments.keys({
+  environments: buildArtilleryKeyValue(ConfigSchemaWithoutEnvironments)
+    .meta({ title: 'Environments' })
+    .description(
+      'Replace /.*/ with the name of an environment to run your load test against different configs:\nhttps://www.artillery.io/docs/reference/test-script#environments---config-profiles'
+    )
 });
 
 module.exports = {
