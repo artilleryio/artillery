@@ -520,28 +520,21 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   async function newWaterfall(artilleryReporter) {
     let testRunCompletedSuccessfully = true;
 
-    async function initCleanup() {
+    async function gracefulShutdown(opts = { earlyStop: false, exitCode: 0 }) {
       artillery.log('Stopping test run...');
-      context.status = TEST_RUN_STATUS.TERMINATING;
-      await sleep(5 * 1000);
-      artillery.log('Cleaning up...');
-      await sleep(5 * 1000);
       context.status = TEST_RUN_STATUS.EARLY_STOP;
-      await cleanup(context, { clean: false });
+      await cleanup(context, { clean: opts.earlyStop });
       process.exit(1);
     }
 
-    let lastCtrlC = Date.now();
+    global.artillery.shutdown = gracefulShutdown;
+
     process.on('SIGINT', async () => {
-      const delta = Date.now() - lastCtrlC;
-      if (delta > 500) {
-        artillery.log('Press Ctrl+C twice to stop the test');
-        lastCtrlC = Date.now();
-      } else {
-        await initCleanup();
-      }
+      await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
-    process.on('SIGTERM', initCleanup);
+    process.on('SIGTERM', async () => {
+      await gracefulShutdown({ exitCode: 1, earlyStop: true });
+    });
 
     // Messages from SQS reporter created later will be relayed via this EE
     context.reporterEvents = artilleryReporter.reporterEvents;
@@ -652,7 +645,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
             artillery.log(
               `Max duration of test run exceeded: ${context.cliOptions.maxDuration}\n`
             );
-            await initCleanup();
+            await gracefulShutdown({ earlyStop: true });
           });
         }
 
