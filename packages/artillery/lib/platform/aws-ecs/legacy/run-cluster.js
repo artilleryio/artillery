@@ -520,20 +520,78 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   async function newWaterfall(artilleryReporter) {
     let testRunCompletedSuccessfully = true;
 
-    async function gracefulShutdown(opts = { earlyStop: false, exitCode: 0 }) {
-      artillery.log('Stopping test run...');
-      context.status = TEST_RUN_STATUS.EARLY_STOP;
-      await cleanup(context, { clean: opts.earlyStop });
-      process.exit(1);
+    let shuttingDown = false;
+
+    async function gracefulShutdown(
+      context,
+      opts = { earlyStop: false, exitCode: 0 }
+    ) {
+      if (shuttingDown) {
+        return;
+      }
+
+      shuttingDown = true;
+
+      if (opts.earlyStop) {
+        if (context.status !== TEST_RUN_STATUS.ERROR) {
+          // Retain ERROR status if already set elsewhere
+          context.status = TEST_RUN_STATUS.EARLY_STOP;
+        }
+      }
+      await cleanupResources(context);
+
+      global.artillery.globalEvents.emit('shutdown:start', {
+        exitCode: opts.exitCode
+      });
+
+      console.log(global.artillery.extensionEvents);
+
+      const ps = [];
+      for (const e of global.artillery.extensionEvents) {
+        const testInfo = { endTime: Date.now() };
+        if (e.ext === 'beforeExit') {
+          ps.push(
+            e.method({
+              report: context.aggregateReport,
+              flags: context.cliOptions,
+              runnerOpts: {
+                environment: context.cliOptions?.environment,
+                scriptPath: '',
+                absoluteScriptPath: ''
+              },
+              testInfo
+            })
+          );
+        }
+      }
+      await Promise.allSettled(ps);
+
+      const ps2 = [];
+      const shutdownOpts = {
+        earlyStop: opts.earlyStop,
+        exitCode: opts.exitCode
+      };
+      for (const e of global.artillery.extensionEvents) {
+        if (e.ext === 'onShutdown') {
+          ps2.push(e.method(shutdownOpts));
+        }
+      }
+      await Promise.allSettled(ps2);
+
+      await global.artillery.telemetry?.shutdown();
+
+      process.exit(global.artillery.suggestedExitCode || opts.exitCode);
     }
 
     global.artillery.shutdown = gracefulShutdown;
 
     process.on('SIGINT', async () => {
-      await gracefulShutdown({ exitCode: 1, earlyStop: true });
+      console.log('Stopping test run (SIGINT received)...');
+      await gracefulShutdown(context, { exitCode: 1, earlyStop: true });
     });
     process.on('SIGTERM', async () => {
-      await gracefulShutdown({ exitCode: 1, earlyStop: true });
+      console.log('Stopping test run (SIGTERM received)...');
+      await gracefulShutdown(context, { exitCode: 1, earlyStop: true });
     });
 
     // Messages from SQS reporter created later will be relayed via this EE
@@ -599,13 +657,12 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       logProgress('Launching workers...');
       await setupDefaultECSParams(context);
 
-      // Set up SQS listener:
-      listen(context, artilleryReporter.reporterEvents);
-
       if (
         context.status !== TEST_RUN_STATUS.EARLY_STOP &&
         context.status !== TEST_RUN_STATUS.TERMINATING
       ) {
+        //  Set up SQS listener:
+        listen(context, artilleryReporter.reporterEvents);
         await launchLeadTask(context);
       }
 
@@ -645,7 +702,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
             artillery.log(
               `Max duration of test run exceeded: ${context.cliOptions.maxDuration}\n`
             );
-            await gracefulShutdown({ earlyStop: true });
+            await gracefulShutdown(context, { earlyStop: true });
           });
         }
 
@@ -670,26 +727,6 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       if (context.ensureSpec) {
         new EnsurePlugin.Plugin({ config: { ensure: context.ensureSpec } });
-      }
-
-      for (const e of global.artillery.extensionEvents) {
-        const ps = [];
-        const testInfo = { endTime: Date.now() };
-        if (e.ext === 'beforeExit') {
-          ps.push(
-            e.method({
-              report: context.aggregateReport,
-              flags: context.cliOptions,
-              runnerOpts: {
-                environment: context.cliOptions?.environment,
-                scriptPath: '',
-                absoluteScriptPath: ''
-              },
-              testInfo
-            })
-          );
-        }
-        await Promise.allSettled(ps);
       }
 
       if (context.cliOptions.output) {
@@ -767,29 +804,18 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       if (!testRunCompletedSuccessfully) {
         logProgress('Cleaning up...');
         context.status = TEST_RUN_STATUS.ERROR;
-        await cleanup(context, { clean: false });
+        await gracefulShutdown(context, { earlyStop: true, exitCode: 1 });
       } else {
-        await cleanup(context, { clean: true });
+        context.status = TEST_RUN_STATUS.COMPLETED;
+        await gracefulShutdown(context, { earlyStop: false, exitCode: 0 });
       }
-
-      const shutdownOpts = { exitCode: global.artillery.suggestedExitCode };
-      global.artillery.globalEvents.emit('shutdown:start', shutdownOpts);
-      for (const e of global.artillery.extensionEvents) {
-        const ps = [];
-        if (e.ext === 'onShutdown') {
-          ps.push(e.method(shutdownOpts));
-        }
-        await Promise.allSettled(ps);
-      }
-
-      process.exit(global.artillery.suggestedExitCode);
     }
   }
 
   await newWaterfall(artilleryReporter);
 }
 
-async function cleanup(context, opts) {
+async function cleanupResources(context) {
   try {
     if (context.sqsReporter) {
       context.sqsReporter.stop();
@@ -822,15 +848,6 @@ async function cleanup(context, opts) {
       deregisterTaskDefinition(context),
       gcQueues(context)
     ]);
-
-    if (opts.clean) {
-      context.status = TEST_RUN_STATUS.COMPLETED;
-    } else {
-      // Retain ERROR status if already set
-      if (context.status !== TEST_RUN_STATUS.ERROR) {
-        context.status = TEST_RUN_STATUS.EARLY_STOP;
-      }
-    }
   } catch (err) {
     artillery.log(err);
   }
