@@ -2,7 +2,6 @@
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../util');
-const grpc = require('@grpc/grpc-js');
 
 const {
   diag,
@@ -16,8 +15,7 @@ const {
 } = require('@opentelemetry/api');
 const { Resource } = require('@opentelemetry/resources');
 const {
-  SemanticResourceAttributes,
-  SemanticAttributes
+  SemanticResourceAttributes
 } = require('@opentelemetry/semantic-conventions');
 
 const {
@@ -98,36 +96,9 @@ class OTelReporter {
       });
 
       if (this.engines.has('http')) {
-        this.pendingRequestSpans = 0;
-        this.pendingScenarioSpans = 0;
-
-        attachScenarioHooks(script, [
-          {
-            type: 'beforeRequest',
-            name: 'startOTelSpan',
-            hook: this.startHTTPRequestSpan.bind(this)
-          },
-          {
-            type: 'afterResponse',
-            name: 'exportOTelSpan',
-            hook: this.endHTTPRequestSpan.bind(this)
-          },
-          {
-            type: 'beforeScenario',
-            name: 'startScenarioSpan',
-            hook: this.startScenarioSpan('http').bind(this)
-          },
-          {
-            type: 'afterScenario',
-            name: 'endScenarioSpan',
-            hook: this.endScenarioSpan('http').bind(this)
-          },
-          {
-            type: 'onError',
-            name: 'otelTraceOnError',
-            hook: this.otelTraceOnError.bind(this)
-          }
-        ]);
+        const { OTelHTTPTraceReporter } = require('./trace-http');
+        this.httpReporter = new OTelHTTPTraceReporter(config.traces, script);
+        this.httpReporter.run();
       }
 
       if (this.engines.has('playwright')) {
@@ -144,180 +115,6 @@ class OTelReporter {
         ]);
       }
     }
-  }
-
-  // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
-  startScenarioSpan(engine) {
-    return function (userContext, ee, next) {
-      // get and set the tracer by engine
-      const tracerName = engine + 'Tracer';
-      if (!this[tracerName]) {
-        this[tracerName] = trace.getTracer(`artillery-${engine}`);
-      }
-      const span = this[tracerName].startSpan(
-        userContext.scenario?.name || `artillery-${engine}-scenario`,
-        {
-          startTime: Date.now(),
-          kind: SpanKind.CLIENT,
-          attributes: {
-            'vu.uuid': userContext.vars.$uuid,
-            [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
-          }
-        }
-      );
-
-      userContext.vars[`__${engine}ScenarioSpan`] = span;
-      this.pendingScenarioSpans++;
-      if (engine === 'http') {
-        next();
-      } else {
-        return span;
-      }
-    };
-  }
-
-  endScenarioSpan(engine) {
-    return function (userContext, ee, next) {
-      const span = userContext.vars[`__${engine}ScenarioSpan`];
-      if (!span.endTime[0]) {
-        span.end(Date.now());
-        this.pendingScenarioSpans--;
-      }
-      if (engine === 'http') {
-        next();
-      } else {
-        return;
-      }
-    };
-  }
-
-  startHTTPRequestSpan(req, userContext, events, done) {
-    const startTime = Date.now();
-    const scenarioSpan = userContext.vars['__httpScenarioSpan'];
-    context.with(trace.setSpan(context.active(), scenarioSpan), () => {
-      const spanName =
-        this.traceConfig.useRequestNames && req.name
-          ? req.name
-          : req.method.toLowerCase();
-
-      const url = new URL(req.url);
-      let parsedUrl;
-      if (url.username || url.password) {
-        parsedUrl = url.origin + url.pathname + url.search + url.hash;
-      }
-      const span = this.httpTracer.startSpan(spanName, {
-        startTime,
-        kind: SpanKind.CLIENT,
-        attributes: {
-          'vu.uuid': userContext.vars.$uuid,
-          [SemanticAttributes.HTTP_URL]: parsedUrl || url.href,
-          // We set the port if it is specified, if not we set to a default port based on the protocol
-          [SemanticAttributes.HTTP_SCHEME]:
-            url.port || (url.protocol === 'http' ? 80 : 443),
-          [SemanticAttributes.HTTP_METHOD]: req.method,
-          [SemanticAttributes.NET_HOST_NAME]: url.hostname,
-          ...(this.traceConfig.attributes || {})
-        }
-      });
-
-      userContext.vars['__otlpHTTPRequestSpan'] = span;
-      this.pendingRequestSpans++;
-    });
-    return done();
-  }
-
-  endHTTPRequestSpan(req, res, userContext, events, done) {
-    if (!userContext.vars['__otlpHTTPRequestSpan']) {
-      return done();
-    }
-
-    const span = userContext.vars['__otlpHTTPRequestSpan'];
-    let endTime;
-
-    if (res.timings && res.timings.phases) {
-      span.setAttribute('response.time.ms', res.timings.phases.firstByte);
-
-      // Child spans are created for each phase of the request from the timings object and named accordingly. More info here: https://github.com/sindresorhus/got/blob/main/source/core/response.ts
-      // Map names of request phases to the timings parameters representing their start and end times for easier span creation
-      const timingsMap = {
-        dns_lookup: { start: 'socket', end: 'lookup' },
-        tcp_handshake: { start: 'lookup', end: 'connect' },
-        tls_negotiation: { start: 'connect', end: 'secureConnect' },
-        request: {
-          start: res.timings.secureConnect ? 'secureConnect' : 'connect',
-          end: 'upload'
-        },
-        download: { start: 'response', end: 'end' },
-        first_byte: { start: 'upload', end: 'response' }
-      };
-
-      // Create phase spans within the request span context
-      context.with(trace.setSpan(context.active(), span), () => {
-        for (const [name, value] of Object.entries(timingsMap)) {
-          if (res.timings[value.start] && res.timings[value.end]) {
-            this.httpTracer
-              .startSpan(name, {
-                kind: SpanKind.CLIENT,
-                startTime: res.timings[value.start],
-                attributes: { 'vu.uuid': userContext.vars.$uuid }
-              })
-              .end(res.timings[value.end]);
-          }
-        }
-      });
-      endTime = res.timings.end || res.timings.error || res.timings.abort;
-    }
-
-    try {
-      span.setAttributes({
-        [SemanticAttributes.HTTP_STATUS_CODE]: res.statusCode,
-        [SemanticAttributes.HTTP_REQUEST_CONTENT_LENGTH]:
-          res.request.options.headers['content-length'],
-        [SemanticAttributes.HTTP_FLAVOR]: res.httpVersion,
-        [SemanticAttributes.HTTP_USER_AGENT]:
-          res.request.options.headers['user-agent']
-      });
-
-      if (res.statusCode >= 400) {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: res.statusMessage
-        });
-      }
-      if (!span.endTime[0]) {
-        span.end(endTime || Date.now());
-        this.pendingRequestSpans--;
-      }
-    } catch (err) {
-      debug(err);
-    }
-    return done();
-  }
-
-  otelTraceOnError(err, req, userContext, ee, done) {
-    const scenarioSpan = userContext.vars.__httpScenarioSpan;
-    const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
-    // If the error happened outside the request, the request span will be handled in the afterResponse hook
-    // If the error happens on the request we set the exception on the request, otherwise we set it to the scenario span
-    if (!requestSpan.endTime[0]) {
-      requestSpan.recordException(err);
-      requestSpan.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: err.message || err
-      });
-      requestSpan.end();
-      this.pendingRequestSpans--;
-    } else {
-      scenarioSpan.recordException(err);
-    }
-    // We set the scenario span status to error regardles of what level the error happened in (scenario or request) for easier querrying
-    scenarioSpan.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: err.message || err
-    });
-    scenarioSpan.end();
-    this.pendingScenarioSpans--;
-    return done();
   }
 
   async runOtelTracingForPlaywright(
@@ -503,14 +300,16 @@ class OTelReporter {
       await this.metricReporter.cleanup();
     }
 
-    if (this.tracing) {
-      while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
-        debug('Waiting for pending traces ...');
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
-      debug('Pending traces done');
-      await this.traceConfig.shutDown();
+    if (!this.httpReporter && !this.playwrightReporter) {
+      return;
     }
+    if (this.httpReporter) {
+      await this.httpReporter.cleanup();
+    }
+    if (this.playwrightReporter) {
+      await this.playwrightReporter.cleanup();
+    }
+    await this.traceConfig.shutDown();
   }
 
   async cleanup(done) {

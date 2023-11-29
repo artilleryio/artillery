@@ -3,12 +3,15 @@
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const grpc = require('@grpc/grpc-js');
 const { traceExporters } = require('./exporters');
+
+const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {
   BasicTracerProvider,
   TraceIdRatioBasedSampler,
   ParentBasedSampler,
   BatchSpanProcessor
 } = require('@opentelemetry/sdk-trace-base');
+const { SpanKind, trace } = require('@opentelemetry/api');
 
 class OTelTraceConfig {
   constructor(config, resource) {
@@ -71,6 +74,73 @@ class OTelTraceConfig {
   }
 }
 
+class OTelTraceBase {
+  constructor(config, script) {
+    this.config = config;
+    this.script = script;
+    this.pendingRequestSpans = 0;
+    this.pendingScenarioSpans = 0;
+  }
+  // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
+  startScenarioSpan(engine) {
+    return function (userContext, ee, next) {
+      // get and set the tracer by engine
+      const tracerName = engine + 'Tracer';
+      if (!this[tracerName]) {
+        this[tracerName] = trace.getTracer(`artillery-${engine}`);
+      }
+      const span = this[tracerName].startSpan(
+        userContext.scenario?.name || `artillery-${engine}-scenario`,
+        {
+          startTime: Date.now(),
+          kind: SpanKind.CLIENT,
+          attributes: {
+            'vu.uuid': userContext.vars.$uuid,
+            [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
+          }
+        }
+      );
+
+      userContext.vars[`__${engine}ScenarioSpan`] = span;
+      this.pendingScenarioSpans++;
+      if (engine === 'http') {
+        next();
+      } else {
+        return span;
+      }
+    };
+  }
+
+  endScenarioSpan(engine) {
+    return function (userContext, ee, next) {
+      const span = userContext.vars[`__${engine}ScenarioSpan`];
+      if (!span.endTime[0]) {
+        span.end(Date.now());
+        this.pendingScenarioSpans--;
+      }
+      if (engine === 'http') {
+        next();
+      } else {
+        return;
+      }
+    };
+  }
+
+  // Placeholder - make onError hook engine agnostic - implement hook for other engines?
+  otelTraceOnError(scenarioErr, req, userContext, ee, done) {
+    done();
+  }
+
+  async cleanup() {
+    while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
+      debug('Waiting for pending traces ...');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    debug('Pending traces done');
+  }
+}
+
 module.exports = {
-  OTelTraceConfig
+  OTelTraceConfig,
+  OTelTraceBase
 };
