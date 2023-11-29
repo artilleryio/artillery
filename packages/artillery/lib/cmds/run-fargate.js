@@ -93,7 +93,7 @@ RunCommand.flags = {
   }),
   memory: Flags.string({
     description:
-      'Set task memory on Fargate. Value be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)',
+      'Set task memory on Fargate. Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)',
     default: '8'
   }),
   output: Flags.string({
