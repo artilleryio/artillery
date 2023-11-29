@@ -407,7 +407,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       const ps2 = [];
       for (const e of global.artillery.extensionEvents) {
         if (e.ext === 'onShutdown') {
-          ps2.push(e.method({ ...opts, report: finalReport }));
+          ps2.push(e.method(opts));
         }
       }
       await Promise.allSettled(ps2);

@@ -128,11 +128,12 @@ class ArtilleryCloudPlugin {
 
     global.artillery.ext({
       ext: 'beforeExit',
-      method: async ({ testInfo }) => {
+      method: async ({ testInfo, report }) => {
         debug('beforeExit');
         testEndInfo = {
           ...testEndInfo,
-          ...testInfo
+          ...testInfo,
+          report
         };
       }
     });
@@ -156,7 +157,7 @@ class ArtilleryCloudPlugin {
           ts: testEndInfo.endTime,
           exitCode: global.artillery.suggestedExitCode || opts.exitCode,
           isEarlyStop: !!opts.earlyStop,
-          report: opts.report
+          report: testEndInfo.report
         });
 
         console.log(`\nRun URL: ${testEndInfo.testRunUrl}`);
