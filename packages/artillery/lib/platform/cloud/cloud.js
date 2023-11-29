@@ -160,13 +160,11 @@ class ArtilleryCloudPlugin {
           status: opts.earlyStop ? 'EARLY_STOP' : 'COMPLETED'
         });
 
-        const runUrlMessage = `Run URL: ${testEndInfo.testRunUrl}`;
+        console.log('\n');
         if (this.cancellationRequestedBy) {
-          console.log(`\nTest run stopped by ${this.cancellationRequestedBy}.`);
-          console.log(runUrlMessage);
-        } else {
-          console.log(`\n${runUrlMessage}}`);
+          console.log(`Test run stopped by ${this.cancellationRequestedBy}.`);
         }
+        console.log(`Run URL: ${testEndInfo.testRunUrl}`);
       }
     });
 
