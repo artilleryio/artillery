@@ -7,8 +7,7 @@ const {
   diag,
   DiagConsoleLogger,
   DiagLogLevel,
-  context,
-  metrics
+  context
 } = require('@opentelemetry/api');
 const { Resource } = require('@opentelemetry/resources');
 const {
@@ -61,8 +60,7 @@ class OTelReporter {
       this.metricReporter = new OTelMetricsReporter(
         config.metrics,
         this.events,
-        this.resource,
-        metrics
+        this.resource
       );
     }
 

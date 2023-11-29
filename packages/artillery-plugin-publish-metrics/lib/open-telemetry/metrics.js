@@ -8,12 +8,12 @@ const {
 } = require('@opentelemetry/sdk-metrics');
 const grpc = require('@grpc/grpc-js');
 const exporters = require('./exporters').metricExporters;
+const { metrics } = require('@opentelemetry/api');
 
 class OTelMetricsReporter {
-  constructor(config, events, resource, otelMetrics) {
+  constructor(config, events, resource) {
     this.events = events;
     this.resource = resource;
-    this.otelMetrics = otelMetrics;
     this.pendingRequests = 0;
 
     this.configure(config);
@@ -85,7 +85,7 @@ class OTelMetricsReporter {
     clearInterval(this.theReader._interval);
 
     this.meterProvider.addMetricReader(this.theReader);
-    this.otelMetrics.setGlobalMeterProvider(this.meterProvider);
+    metrics.setGlobalMeterProvider(this.meterProvider);
 
     this.meter = this.meterProvider.getMeter(this.config.meterName);
     this.counters = {};
