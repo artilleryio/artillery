@@ -25,6 +25,9 @@ class OTelReporter {
     this.config = config;
     this.script = script;
     this.events = events;
+    this.engines = new Set();
+
+    this.getEngines(this.script.scenarios || []);
 
     // DEBUGGING SETUP
     if (
@@ -54,25 +57,19 @@ class OTelReporter {
 
     // HANDLING TRACES
     if (config.traces) {
+      // Shared tracing configuration
       const { OTelTraceConfig } = require('./trace-base');
       this.traceConfig = new OTelTraceConfig(config.traces, this.resource);
       this.traceConfig.configure();
 
-      // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible
-      this.engines = new Set();
-      const scenarios = this.script.scenarios || [];
-      scenarios.forEach((scenario) => {
-        scenario.engine
-          ? this.engines.add(scenario.engine)
-          : this.engines.add('http');
-      });
-
+      // Run HTTP engine tracing
       if (this.engines.has('http')) {
         const { OTelHTTPTraceReporter } = require('./trace-http');
         this.httpReporter = new OTelHTTPTraceReporter(config.traces, script);
         this.httpReporter.run();
       }
 
+      // Run Playwright tracing
       if (this.engines.has('playwright')) {
         const { OTelPlaywrightTraceReporter } = require('./trace-playwright');
         this.playwrightReporter = new OTelPlaywrightTraceReporter(
@@ -84,13 +81,23 @@ class OTelReporter {
     }
   }
 
-  async shutDown() {
+  // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible
+  getEngines(scenarios) {
+    scenarios.forEach((scenario) => {
+      scenario.engine
+        ? this.engines.add(scenario.engine)
+        : this.engines.add('http');
+    });
+  }
+
+  async cleanup(done) {
+    debug('Cleaning up');
     if (this.metricReporter) {
       await this.metricReporter.cleanup();
     }
 
     if (!this.httpReporter && !this.playwrightReporter) {
-      return;
+      return done();
     }
     if (this.httpReporter) {
       await this.httpReporter.cleanup();
@@ -99,11 +106,7 @@ class OTelReporter {
       await this.playwrightReporter.cleanup();
     }
     await this.traceConfig.shutDown();
-  }
-
-  async cleanup(done) {
-    debug('Cleaning up');
-    return await this.shutDown().then(done);
+    return done();
   }
 }
 
