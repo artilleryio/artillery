@@ -57,7 +57,7 @@ class OTelTraceConfig {
 
     this.tracerProvider.addSpanProcessor(
       new BatchSpanProcessor(this.exporter, {
-        scheduledDelayMillis: 4000
+        scheduledDelayMillis: 1000
       })
     );
     this.tracerProvider.register();
