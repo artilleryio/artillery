@@ -81,15 +81,17 @@ class OTelTraceBase {
     this.pendingRequestSpans = 0;
     this.pendingScenarioSpans = 0;
   }
+  setTracer(engine) {
+    // Get and set the tracer by engine
+    const tracerName = engine + 'Tracer';
+    if (!this[tracerName]) {
+      this[tracerName] = trace.getTracer(`artillery-${engine}`);
+    }
+  }
   // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
   startScenarioSpan(engine) {
     return function (userContext, ee, next) {
-      // get and set the tracer by engine
-      const tracerName = engine + 'Tracer';
-      if (!this[tracerName]) {
-        this[tracerName] = trace.getTracer(`artillery-${engine}`);
-      }
-      const span = this[tracerName].startSpan(
+      const span = this[`${engine}Tracer`].startSpan(
         userContext.scenario?.name || `artillery-${engine}-scenario`,
         {
           startTime: Date.now(),

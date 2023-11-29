@@ -17,6 +17,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     super(config, script);
   }
   run() {
+    this.setTracer('http');
     attachScenarioHooks(this.script, [
       {
         type: 'beforeRequest',
