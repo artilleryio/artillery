@@ -7,7 +7,7 @@ const {
   PeriodicExportingMetricReader
 } = require('@opentelemetry/sdk-metrics');
 const grpc = require('@grpc/grpc-js');
-const exporters = require('./exporters').metricExporters;
+const { metricExporters, validateExporter } = require('./exporters');
 const { metrics } = require('@opentelemetry/api');
 
 class OTelMetricsReporter {
@@ -15,6 +15,8 @@ class OTelMetricsReporter {
     this.events = events;
     this.resource = resource;
     this.pendingRequests = 0;
+
+    validateExporter(metricExporters, this.config.exporter, 'metric');
 
     this.configure(config);
 
@@ -73,7 +75,7 @@ class OTelMetricsReporter {
       }
     }
 
-    this.exporter = exporters[this.config.exporter || 'otlp-http'](
+    this.exporter = metricExporters[this.config.exporter || 'otlp-http'](
       this.exporterOpts
     );
 

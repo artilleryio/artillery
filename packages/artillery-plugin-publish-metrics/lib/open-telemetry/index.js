@@ -1,7 +1,6 @@
 'use strict';
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
-const { attachScenarioHooks } = require('../util');
 
 const {
   diag,
@@ -45,17 +44,6 @@ class OTelReporter {
 
     // HANDLING METRICS
     if (config.metrics) {
-      // Get the metric exporters
-      this.metricExporters = require('./exporters').metricExporters;
-
-      // Validate exporter provided by user
-      this.validateExporter(
-        this.metricExporters,
-        config.metrics.exporter,
-        'metric'
-      );
-
-      // Configure and run metrics
       const { OTelMetricsReporter } = require('./metrics');
       this.metricReporter = new OTelMetricsReporter(
         config.metrics,
@@ -66,17 +54,6 @@ class OTelReporter {
 
     // HANDLING TRACES
     if (config.traces) {
-      // Get the trace exporters
-      this.traceExporters = require('./exporters').traceExporters;
-
-      // Validate exporter provided by user
-      this.validateExporter(
-        this.traceExporters,
-        this.config.traces.exporter,
-        'trace'
-      );
-      this.tracing = true;
-
       const { OTelTraceConfig } = require('./trace-base');
       this.traceConfig = new OTelTraceConfig(config.traces, this.resource);
       this.traceConfig.configure();
@@ -104,24 +81,6 @@ class OTelReporter {
         );
         this.playwrightReporter.run();
       }
-    }
-  }
-
-  validateExporter(supportedExporters, exporter, type) {
-    const supported = Object.keys(supportedExporters).reduce(
-      (acc, k, i) =>
-        acc +
-        k +
-        (i === Object.keys(supportedExporters).length - 1 ? '.' : ', '),
-      ''
-    );
-
-    if (exporter && !supportedExporters[exporter]) {
-      throw new Error(
-        `Open-telemetry reporter: ${
-          type[0].toUpperCase() + type.slice(1)
-        } exporter ${exporter} is not supported. Currently supported exporters for ${type}s are ${supported}`
-      );
     }
   }
 

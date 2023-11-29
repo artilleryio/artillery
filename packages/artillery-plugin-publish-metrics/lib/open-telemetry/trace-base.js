@@ -2,7 +2,7 @@
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const grpc = require('@grpc/grpc-js');
-const { traceExporters } = require('./exporters');
+const { traceExporters, validateExporter } = require('./exporters');
 
 const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {
@@ -17,7 +17,9 @@ class OTelTraceConfig {
   constructor(config, resource) {
     this.config = config;
     this.resource = resource;
-    this.exporters = traceExporters;
+
+    // Validate exporter provided by user
+    validateExporter(traceExporters, this.config.exporter, 'trace');
   }
 
   configure() {
@@ -51,7 +53,7 @@ class OTelTraceConfig {
       }
     }
 
-    this.exporter = this.exporters[this.config.exporter || 'otlp-http'](
+    this.exporter = traceExporters[this.config.exporter || 'otlp-http'](
       this.exporterOpts
     );
 

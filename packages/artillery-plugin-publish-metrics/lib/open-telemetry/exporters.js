@@ -46,7 +46,24 @@ const traceExporters = {
   }
 };
 
+function validateExporter(supportedExporters, exporter, type) {
+  const supported = Object.keys(supportedExporters).reduce(
+    (acc, k, i) =>
+      acc + k + (i === Object.keys(supportedExporters).length - 1 ? '.' : ', '),
+    ''
+  );
+
+  if (exporter && !supportedExporters[exporter]) {
+    throw new Error(
+      `Open-telemetry reporter: ${
+        type[0].toUpperCase() + type.slice(1)
+      } exporter ${exporter} is not supported. Currently supported exporters for ${type}s are ${supported}`
+    );
+  }
+}
+
 module.exports = {
   metricExporters,
-  traceExporters
+  traceExporters,
+  validateExporter
 };
