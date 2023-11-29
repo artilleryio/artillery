@@ -73,20 +73,20 @@ class OTelReporter {
 
     // HANDLING TRACES
     if (config.traces) {
-      this.traceConfig = config.traces;
-
       // Get the trace exporters
       this.traceExporters = require('./exporters').traceExporters;
 
       // Validate exporter provided by user
       this.validateExporter(
         this.traceExporters,
-        this.traceConfig.exporter,
+        this.config.traces.exporter,
         'trace'
       );
       this.tracing = true;
 
-      this.configureTrace(this.traceConfig);
+      const { OTelTraceConfig } = require('./trace-base');
+      this.traceConfig = new OTelTraceConfig(config.traces, this.resource);
+      this.traceConfig.configure();
 
       // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible
       this.engines = new Set();
@@ -146,54 +146,6 @@ class OTelReporter {
     }
   }
 
-  configureTrace(config) {
-    debug('Configuring Tracer Provider');
-    const {
-      BasicTracerProvider,
-      TraceIdRatioBasedSampler,
-      ParentBasedSampler,
-      BatchSpanProcessor
-    } = require('@opentelemetry/sdk-trace-base');
-
-    this.tracerOpts = {
-      resource: this.resource
-    };
-    if (config.sampleRate) {
-      this.tracerOpts.sampler = new ParentBasedSampler({
-        root: new TraceIdRatioBasedSampler(config.sampleRate)
-      });
-    }
-
-    this.tracerProvider = new BasicTracerProvider(this.tracerOpts);
-
-    debug('Configuring Exporter');
-    this.traceExporterOpts = {};
-    if (config.endpoint) {
-      this.traceExporterOpts.url = config.endpoint;
-    }
-
-    if (config.headers) {
-      if (config.exporter && config.exporter === 'otlp-grpc') {
-        const metadata = new grpc.Metadata();
-        Object.entries(config.headers).forEach(([k, v]) => metadata.set(k, v));
-        this.traceExporterOpts.metadata = metadata;
-      } else {
-        this.traceExporterOpts.headers = config.headers;
-      }
-    }
-
-    this.exporter = this.traceExporters[config.exporter || 'otlp-http'](
-      this.traceExporterOpts
-    );
-
-    this.tracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(this.exporter, {
-        scheduledDelayMillis: 1000
-      })
-    );
-    this.tracerProvider.register();
-  }
-
   // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
   startScenarioSpan(engine) {
     return function (userContext, ee, next) {
@@ -214,7 +166,6 @@ class OTelReporter {
         }
       );
 
-      debug('Scenario span created');
       userContext.vars[`__${engine}ScenarioSpan`] = span;
       this.pendingScenarioSpans++;
       if (engine === 'http') {
@@ -551,19 +502,14 @@ class OTelReporter {
     if (this.metricReporter) {
       await this.metricReporter.cleanup();
     }
+
     if (this.tracing) {
       while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
         debug('Waiting for pending traces ...');
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
       debug('Pending traces done');
-      debug('Initiating TracerProvider shutdown');
-      try {
-        await this.tracerProvider.shutdown();
-      } catch (err) {
-        debug(err);
-      }
-      debug('TracerProvider shutdown completed');
+      await this.traceConfig.shutDown();
     }
   }
 
