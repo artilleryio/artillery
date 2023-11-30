@@ -257,7 +257,7 @@ run_a9 () {
     export NODE_PATH="$TEST_DATA/node_modules:${NODE_PATH:-""}"
     export DEBUG=${DEBUG:-"debug:mode:off"} # can set via --launch-config if needed
 
-    export ARTILLERY_PLUGIN_PATH=/artillery/lib/plugins
+    export ARTILLERY_PLUGIN_PATH=/artillery/packages/artillery/lib/platform/aws-ecs/legacy/plugins
 
     export ARTILLERY_PLUGINS="{\"sqs-reporter\":{\"region\": \"${aws_region}\"},\"inspect-script\":{}}"
     export SQS_TAGS="[{\"key\": \"testId\", \"value\": \"${test_run_id}\"},{\"key\":\"workerId\", \"value\":\"${worker_id}\"}]"
