@@ -1,0 +1,466 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+DEBUGX=${DEBUGX:-""}
+DEBUG=${DEBUG:-""}
+
+if [[ -n $DEBUGX ]] ; then
+    set -x
+fi
+
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+
+source "$DIR/helpers.sh"
+
+# shellcheck disable=2155
+# declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+
+declare -r ERR_ARGS=10
+declare -r ERR_TEST_DIR_EMPTY=3
+declare -r ERR_SIGNAL_SYNC=4
+declare -r ERR_GO_TIMEOUT=5
+declare -r ERR_CLI_ERROR=6
+declare -r ERR_INTERRUPTED=7
+declare -r ERR_UNKNOWN_PLATFORM=8
+declare -r ERR_DEP=9
+declare -r ERR_DEP_INSTALL=10 # npm install / yarn install failed
+
+ERR_EXTRA_INFO=""
+
+# shellcheck disable=2155
+declare -r TEST_DATA="$(pwd)/test_data"
+
+WAIT_TIMEOUT=${WAIT_TIMEOUT:-600}
+
+declare -t EXIT_CODE=0
+
+CLI_RUNNING="no"
+CLI_STATUS=
+CLI_PID=
+
+CLEANING_UP="no"
+
+#mode="${MODE:-run}" # "run" or "bootstrap"
+s3_test_data_path=
+cli_args=()
+cli_args_encoded=
+aws_region=
+sqs_queue_url=
+test_run_id=
+s3_run_data_base_path=
+s3_run_data_path=
+
+taskArn=$(curl -s "$ECS_CONTAINER_METADATA_URI_V4/task" \
+              | jq -r ".TaskARN" \
+              | cut -d "/" -f 3)
+
+worker_id=${taskArn:-worker-$(pwgen -A 12 1)}
+export WORKER_ID="$worker_id" # make available to Artillery custom scripts/environment
+is_leader=${IS_LEADER:-false} # true or false
+
+progress "Worker starting up, ID = $worker_id, version = ${WORKER_VERSION:-unknown}, leader = $is_leader"
+
+declare -r DEPENDENCIES=(jq aws pwgen node npm yarn)
+
+export ARTILLERY_DISABLE_TELEMETRY=true
+
+send_message () {
+    set +e
+    set +o pipefail
+
+    # NOTE: no quotes to avoid quoting issues
+    local body="$1"
+    local type="$2"
+
+    local sqs_message_body="{\"msg\":\"$body\",\"type\":\"$type\"}"
+    local sqs_message_attributes="{\"testId\": {\"StringValue\": \"${test_run_id}\", \"DataType\": \"String\"}, \"workerId\": {\"StringValue\": \"${worker_id}\", \"DataType\": \"String\"}}"
+
+    >/dev/null aws sqs send-message \
+            --queue-url "${sqs_queue_url}" \
+            --message-body "$sqs_message_body" \
+            --message-attributes "$sqs_message_attributes" \
+            --message-group-id "${test_run_id}" \
+            --message-deduplication-id "$(pwgen -A 32 1)" \
+            --region "$aws_region" || true
+
+    set -e
+    set -o pipefail
+}
+
+install_npm_dependencies () {
+    if [[ -f "$TEST_DATA/package.json" ]] ; then
+        echo "Installing dependencies in package.json"
+        if [[ -f "$TEST_DATA/yarn.lock" ]] ; then
+            # TODO: Test yarn's exit code
+            yarn install
+        else
+            set +e
+            npm install --loglevel=silent
+
+            if [[ -f "npm-debug.log" ]] ; then
+                cat npm-debug.log
+                EXIT_CODE="$ERR_DEP_INSTALL"
+                exit
+            else
+                echo "npm install completed"
+            fi
+            set -e
+        fi
+    else
+        npm init -y --quiet
+    fi
+
+    if [[ $(jq -r .modules "$METADATA_FILE") != "null" ]] ; then
+        echo "Installing required npm dependencies"
+        for dep in $(jq -r '.modules[]' "$METADATA_FILE") ; do
+            echo "installing $dep"
+            npm install --quiet "$dep"
+        done
+    else
+        echo "No npm dependencies to install"
+    fi
+}
+
+check_dependencies () {
+    for dep in "${DEPENDENCIES[@]}" ; do
+        set +e
+        if ! command -v "$dep" > /dev/null ; then
+            echo "Error: could not find $dep in \$PATH. Please install $dep."
+            exit $ERR_DEP
+        fi
+        set -e
+    done
+}
+
+sync_test_data () {
+    mkdir "$TEST_DATA"
+    pushd "$TEST_DATA" >/dev/null
+    aws s3 sync "$s3_test_data_path" . >/dev/null
+
+    debug "$(pwd)"
+    debug "$(ls -a)"
+}
+
+check_test_data () {
+    file_count=$(find . -maxdepth 1 -name "*" | grep -v '^.$' -c)
+    if [[ ! $file_count -gt 0 ]]; then
+        echo "$TEST_DATA seems to be empty"
+        EXIT_CODE=$ERR_TEST_DIR_EMPTY
+        exit
+    fi
+}
+
+install_dependencies () {
+    pushd "$TEST_DATA" >/dev/null
+
+    local METADATA_FILE="metadata.json"
+
+    debug "$(cat $METADATA_FILE || true)"
+
+    # Needed to install all packages to the dir of the test files.
+    export NODE_PATH="$TEST_DATA:${NODE_PATH:-""}"
+
+    generate_npmrc >> ~/.npmrc
+
+    # Leader: pre-install modules for everyone else
+    if [[ "$is_leader" = "true" ]] ; then
+        send_message "leader npm pack start `date +%s`" "debug"
+        install_npm_dependencies
+
+        if [[ ! -d "node_modules" ]] ; then
+            mkdir node_modules
+            touch node_modules/.artillery
+        fi
+
+        zip -r -q - node_modules | aws s3 cp - "$s3_test_data_path/node_modules_stream.zip"
+
+        echo "Modules pre-packaged"
+        aws s3 mv "$s3_test_data_path/node_modules_stream.zip" "$s3_test_data_path/node_modules.zip"
+        send_message "leader npm prepack end `date +%s`" "debug"
+    else
+        # wait until node_modules.zip is available and unzip, or timeout
+        # TODO: use aws s3api wait object-exists with a custom timeout
+        send_message "follower npm prepack wait start `date +%s`" "debug"
+        wait_for_go "$s3_test_data_path/node_modules.zip"
+        unzip -o -q node_modules.zip
+        send_message "follower npm prepack wait end `date +%s`" "debug"
+    fi
+
+    tree -I node_modules
+}
+
+signal_ready () {
+    local synced_filename="synced_${worker_id}.json"
+    echo "{ \"worker_id\": \"${worker_id}\" }" >> "$synced_filename"
+    local synced_dest="${s3_run_data_path}/${synced_filename}"
+    aws s3 cp "$synced_filename" "$synced_dest" 1>/dev/null 2>/dev/null
+    cp_status=$?
+
+    if [[ $cp_status -ne 0 ]]; then
+        echo "could not send synced signal (to: $synced_dest)"
+        EXIT_CODE=$ERR_SIGNAL_SYNC
+        exit
+    else
+        echo "Worker $worker_id synced up & ready"
+    fi
+}
+
+wait_for_go () {
+    local SLEEP=2
+    local slept=0
+    local objpath="${1:-$s3_run_data_path/go.json}"
+
+    echo "Waiting... ($objpath)"
+
+    while true ; do
+        set +e
+        aws s3 cp "$objpath" . 1>/dev/null 2>/dev/null
+
+        local cp_exit_code=$?
+        set -e
+
+        if [[ $cp_exit_code -eq 0 ]]; then
+            echo
+            break
+        else
+            if [[ $slept -ge $WAIT_TIMEOUT ]]; then
+                echo "Timed out waiting for go signal"
+                EXIT_CODE=$ERR_GO_TIMEOUT
+                exit
+            else
+                echo -n "."
+                sleep $SLEEP
+                (( slept = slept + SLEEP ))
+            fi
+        fi
+    done
+}
+
+decode_cli_args () {
+    debug "encoded args $cli_args_encoded"
+    local decoded_args=
+    decoded_args=$(echo "$cli_args_encoded" | base64d)
+    debug "decoded: $decoded_args"
+
+    for an_arg in $(echo "$cli_args_encoded" | base64d | jq -r '.[] | @base64') ; do
+        local decoded_arg=
+        decoded_arg="$(printf -- "%s" "$an_arg" | base64d)"
+        debug "decoded CLI arg: %s" "$decoded_arg"
+        cli_args+=("$decoded_arg")
+    done
+}
+
+run_a9 () {
+    # NOTE: node_modules is required for plugins to be loaded
+    export NODE_PATH="$TEST_DATA/node_modules:${NODE_PATH:-""}"
+    export DEBUG=${DEBUG:-"debug:mode:off"} # can set via --launch-config if needed
+
+    export ARTILLERY_PLUGIN_PATH=/artillery/lib/plugins
+
+    export ARTILLERY_PLUGINS="{\"sqs-reporter\":{\"region\": \"${aws_region}\"},\"inspect-script\":{}}"
+    export SQS_TAGS="[{\"key\": \"testId\", \"value\": \"${test_run_id}\"},{\"key\":\"workerId\", \"value\":\"${worker_id}\"}]"
+    export SQS_QUEUE_URL=$sqs_queue_url
+    export SQS_REGION=$aws_region
+
+    export ARTILLERY_DISABLE_ENSURE=true
+
+    debug "CLI args:"
+    debug "${cli_args[@]}"
+
+    # set max header size to 32KB -- solves the HPE_HEADER_OVERFLOW error
+    # set max old space size to 12GB - max allocatable on Fargate
+    MAX_OLD_SPACE_SIZE=${MAX_OLD_SPACE_SIZE:-12288}
+    export NODE_OPTIONS="--max-http-header-size=32768 --max-old-space-size=$MAX_OLD_SPACE_SIZE ${NODE_OPTIONS:-""}"
+
+    (set +eu ; artillery "${cli_args[@]}" ; echo $? > exitCode ; set -eu) | tee output.txt &
+    debug "node processes:"
+    debug "$(pgrep -lfa node)"
+    sleep 5
+    CLI_PID=$(pgrep -lfa node | grep artillery | awk '{print $1}')
+    CLI_RUNNING="yes"
+
+    debug "CLI pid:"
+    debug "$CLI_PID"
+
+    while kill -0 $CLI_PID 2> /dev/null ; do
+        sleep 5 # signal handler will fire after we wake up
+    done
+
+    CLI_RUNNING="no"
+    CLI_STATUS=$(cat exitCode)
+
+    printf "Finished with code %s\n" "$CLI_STATUS"
+
+    case `grep "inspect-script.config.ensure" "output.txt" >/dev/null; echo $?` in
+        0)
+        # ensure spec found
+            echo "got ensure spec"
+            local ensure_spec=$(grep 'inspect-script.config.ensure' "output.txt" |awk -F 'ensure=' '{print $2}'|head -n 1)
+            send_message "$ensure_spec" "ensure"
+            ;;
+        1)
+            # no ensure spec
+            echo "no ensure spec" >&2
+            ;;
+        *)
+            # error - ignore
+            echo "error while looking for ensure spec, ignoring" >&2
+            ;;
+    esac
+
+    aws s3 cp output.txt "${s3_run_data_path}/worker-log-${worker_id}.txt"
+    echo "log: ${s3_run_data_path}/worker-log-${worker_id}.txt"
+
+    if [[ $CLI_STATUS -eq 0 ]] ; then
+        EXIT_CODE=0
+    else
+        EXIT_CODE=$ERR_CLI_ERROR
+    fi
+
+    exit $EXIT_CODE
+}
+
+main () {
+    debug "$@"
+
+    decode_cli_args
+
+    s3_run_data_path="${s3_run_data_base_path}/${test_run_id}"
+    progress "Test run ID = $test_run_id"
+    progress "Syncing test data"
+    sync_test_data
+    check_test_data
+
+    progress "Installing dependencies"
+    install_dependencies
+
+    progress "Ready to run"
+    signal_ready
+    progress "Waiting for green signal"
+    wait_for_go
+    progress "Off we go!"
+    run_a9
+}
+
+usage () {
+    cat << EOF
+usage: $0 - run worker
+EOF
+}
+
+while getopts "p:a:r:q:i:d:t:h?" OPTION
+do
+    case $OPTION in
+        h)
+            usage
+            exit 0
+            ;;
+        p)
+            s3_test_data_path="$OPTARG"
+            ;;
+        a)
+            cli_args_encoded="$OPTARG"
+            ;;
+        r)
+            aws_region="$OPTARG"
+            ;;
+        q)
+            sqs_queue_url="$OPTARG"
+            ;;
+        i)
+            test_run_id="$OPTARG"
+            ;;
+        d)
+            s3_run_data_base_path="$OPTARG"
+            ;;
+        t)
+            WAIT_TIMEOUT="$OPTARG"
+            ;;
+       \?)
+            usage
+            exit $ERR_ARGS
+            ;;
+       :)
+           echo "Unknown option: -$OPTARG" >&2; exit 1;;
+       *  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
+    esac
+done
+
+# shellcheck disable=2004
+shift $(($OPTIND - 1)) # remove all args processed by getopts
+
+if [[ ! $# -eq 0 ]] ; then
+    usage
+    EXIT_CODE=$ERR_ARGS
+    exit
+fi
+
+if [[ -z $s3_test_data_path || -z $cli_args_encoded || -z $aws_region || -z $test_run_id || -z $s3_run_data_base_path ]] ; then
+    echo "Some required argument(s) not provided, aborting" >&2
+    EXIT_CODE=$ERR_ARGS
+    exit
+fi
+
+cleanup () {
+    local sig="$1"
+
+    debug "cleanup called, signal:"
+    debug "$sig"
+
+    if [[ $CLEANING_UP = "no" ]] ; then
+        CLEANING_UP="yes"
+
+        # Abnormal exit:
+        if [[ $CLI_RUNNING = "yes" ]] ; then
+            printf "Interrupted with %s, stopping\n" "$sig"
+            EXIT_CODE=$ERR_INTERRUPTED
+            kill -TERM $CLI_PID # TODO: Check handling in A9 CLI
+            wait $CLI_PID
+            CLI_STATUS=$(cat exitCode) # TODO: Could be 0, but is not a successful run
+            CLI_RUNNING="no"
+        fi
+
+        local sqs_message_body=
+        if [[ $EXIT_CODE -eq 0 ]] ; then
+            sqs_message_body='{"event": "workerDone"}'
+        else
+            # If 137 then something SIGKILL'ed Artillery
+            local extra_info=$(printf "%s" "$$ERR_EXTRA_INFO" | jq -sR)
+            sqs_message_body="{\"event\": \"workerError\", \"exitCode\": \"$EXIT_CODE\" }"
+        fi
+
+        sqs_message_attributes="{\"testId\": {\"StringValue\": \"${test_run_id}\", \"DataType\": \"String\"}, \"workerId\": {\"StringValue\": \"${worker_id}\", \"DataType\": \"String\"}}"
+
+        >/dev/null aws sqs send-message \
+            --queue-url "${sqs_queue_url}" \
+            --message-body "$sqs_message_body" \
+            --message-attributes "$sqs_message_attributes" \
+            --message-group-id "${test_run_id}" \
+            --message-deduplication-id "$(pwgen -A 32 1)" \
+            --region "$aws_region"
+
+        debug "Message body: $sqs_message_body"
+        debug "Message attributes: $sqs_message_attributes"
+        exit $EXIT_CODE
+    else
+        if [[ ! $sig = "EXIT" ]] ; then
+            # EXIT will always fire after a TERM/INT, so if
+            # that's the case we don't need to print this message.
+            printf "Received %s but cleaning up already\n" "$sig"
+        fi
+    fi
+}
+
+set_trap_with_arg () {
+    func="$1" ; shift
+    for sig ; do
+        # shellcheck disable=2064
+        trap "$func $sig" "$sig"
+    done
+}
+
+set_trap_with_arg cleanup INT TERM EXIT
+
+main "$@"
