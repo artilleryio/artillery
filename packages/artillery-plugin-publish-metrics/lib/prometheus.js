@@ -107,8 +107,9 @@ class PrometheusReporter {
 
   sendMetrics(config, events) {
     let that = this;
+    const eventType = config.sendMetricsAtSummary ? 'done' : 'stats';
 
-    events.on('stats', (stats) => {
+    events.on(eventType, (stats) => {
       debug('On stats event: %O', stats);
 
       if (stats[COUNTERS_STATS]) {
