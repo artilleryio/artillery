@@ -4,13 +4,17 @@ const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { diag } = require('@opentelemetry/api');
 
 class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
-  constructor(exporter, config) {
+  constructor(exporter, config, samplingOpts) {
     super(exporter, config);
+    this.samplingOpts = samplingOpts;
     this._traces = new Map();
   }
 
   onEnd(span) {
-    if (span.instrumentationLibrary.name === 'artillery-playwright') {
+    if (
+      this.samplingOpts.tagOnly ||
+      span.instrumentationLibrary.name === 'artillery-playwright'
+    ) {
       super.onEnd(span);
     } else {
       const traceId = span.spanContext().traceId;
