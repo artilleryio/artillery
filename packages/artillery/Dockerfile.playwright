@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/playwright:v1.39.0
+LABEL maintainer="team@artillery.io"
+
+WORKDIR /home/node/artillery
+
+COPY package*.json ./
+RUN npm --ignore-scripts --production install
+
+#Remove unnecessary firefox and webkit binaries
+RUN rm -rf /ms-playwright/firefox* && \
+        rm -rf /ms-playwright/webkit* && \
+        echo "ok"
+
+COPY . ./
+ENV PATH="/home/node/artillery/bin:${PATH}"
+
+ENTRYPOINT ["/home/node/artillery/bin/run"]
