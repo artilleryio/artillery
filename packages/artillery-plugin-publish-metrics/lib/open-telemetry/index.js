@@ -12,13 +12,22 @@ const { Resource } = require('@opentelemetry/resources');
 const {
   SemanticResourceAttributes
 } = require('@opentelemetry/semantic-conventions');
-
 const {
   AsyncLocalStorageContextManager
 } = require('@opentelemetry/context-async-hooks');
+
+// Setting the contextManager here as it needs to be set globally on the context before anything else
 const contextManager = new AsyncLocalStorageContextManager();
 contextManager.enable();
 context.setGlobalContextManager(contextManager);
+
+// DEBUGGING SETUP - setting the OpenTelemetry's internal diagnostic handler here to run when debug is enabled
+if (
+  process.env.DEBUG &&
+  process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
+) {
+  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
+}
 
 class OTelReporter {
   constructor(config, events, script) {
@@ -29,15 +38,7 @@ class OTelReporter {
 
     this.getEngines(this.script.scenarios || []);
 
-    // DEBUGGING SETUP
-    if (
-      process.env.DEBUG &&
-      process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
-    ) {
-      diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
-    }
-
-    // RESOURCES SETUP
+    // Setting resources here as they are used by both metrics and traces and need to be set in a central place where OTel setup is initialised and before any data is generated
     this.resource = Resource.default().merge(
       new Resource({
         [SemanticResourceAttributes.SERVICE_NAME]:
@@ -57,7 +58,7 @@ class OTelReporter {
 
     // HANDLING TRACES
     if (config.traces) {
-      // Shared tracing configuration
+      // OpenTelemetry trace setup that is shared between engines - it is set in a separate class so it doesn't get duplicated in case both engines are used in a test
       const { OTelTraceConfig } = require('./trace-base');
       this.traceConfig = new OTelTraceConfig(config.traces, this.resource);
       this.traceConfig.configure();
