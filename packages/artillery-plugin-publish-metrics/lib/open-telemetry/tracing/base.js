@@ -2,7 +2,7 @@
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const grpc = require('@grpc/grpc-js');
-const { traceExporters, validateExporter } = require('./exporters');
+const { traceExporters, validateExporter } = require('../exporters');
 
 const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {

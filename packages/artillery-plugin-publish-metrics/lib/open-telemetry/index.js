@@ -59,20 +59,20 @@ class OTelReporter {
     // HANDLING TRACES
     if (config.traces) {
       // OpenTelemetry trace setup that is shared between engines - it is set in a separate class so it doesn't get duplicated in case both engines are used in a test
-      const { OTelTraceConfig } = require('./trace-base');
+      const { OTelTraceConfig } = require('./tracing/base');
       this.traceConfig = new OTelTraceConfig(config.traces, this.resource);
       this.traceConfig.configure();
 
       // Run HTTP engine tracing
       if (this.engines.has('http')) {
-        const { OTelHTTPTraceReporter } = require('./trace-http');
+        const { OTelHTTPTraceReporter } = require('./tracing/http');
         this.httpReporter = new OTelHTTPTraceReporter(config.traces, script);
         this.httpReporter.run();
       }
 
       // Run Playwright tracing
       if (this.engines.has('playwright')) {
-        const { OTelPlaywrightTraceReporter } = require('./trace-playwright');
+        const { OTelPlaywrightTraceReporter } = require('./tracing/playwright');
         this.playwrightReporter = new OTelPlaywrightTraceReporter(
           config.traces,
           script

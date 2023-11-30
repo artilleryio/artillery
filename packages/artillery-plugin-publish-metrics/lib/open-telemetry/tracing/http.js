@@ -1,8 +1,8 @@
 'use strict';
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
-const { attachScenarioHooks } = require('../util');
-const { OTelTraceBase } = require('./trace-base');
+const { attachScenarioHooks } = require('../../util');
+const { OTelTraceBase } = require('./base');
 
 const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {
