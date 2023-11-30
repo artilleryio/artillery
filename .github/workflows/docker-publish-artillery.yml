@@ -35,6 +35,14 @@ jobs:
             type=semver,pattern={{version}},value=${{env.ARTILLERY_VERSION}}
             type=raw,value=latest
 
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta-playwright
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: artilleryio/artillery
+          tags: |
+            type=semver,pattern={{version}},value=${{env.ARTILLERY_VERSION}}-playwright
+
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
@@ -42,3 +50,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: ./packages/artillery
+          file: ./packages/artillery/Dockerfile.playwright
+          push: true
+          tags: ${{ steps.meta-playwright.outputs.tags }}
+          labels: ${{ steps.meta-playwright.outputs.labels }}
