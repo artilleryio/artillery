@@ -1051,13 +1051,22 @@ async function ensureTaskExists(context) {
       process.env.WORKER_IMAGE_URL ||
       `301676560329.dkr.ecr.${context.region}.amazonaws.com/artillery-pro/aws-ecs-node:v2-${IMAGE_VERSION}`;
 
-    // ['NPM_TOKEN', 'NPM_REGISTRY', 'NPM_SCOPE', 'NPM_SCOPE_REGISTRY', 'NPMRC', 'ARTIFACTORY_AUTH', 'ARTIFACTORY_EMAIL']
-    const secrets = [].concat(context.extraSecrets).map((secretName) => {
-      return {
-        name: secretName,
-        valueFrom: `arn:aws:ssm:${context.backendRegion}:${context.accountId}:parameter/artilleryio/${secretName}`
-      };
-    });
+    const secrets = [
+      'NPM_TOKEN',
+      'NPM_REGISTRY',
+      'NPM_SCOPE',
+      'NPM_SCOPE_REGISTRY',
+      'NPMRC',
+      'ARTIFACTORY_AUTH',
+      'ARTIFACTORY_EMAIL'
+    ]
+      .concat(context.extraSecrets)
+      .map((secretName) => {
+        return {
+          name: secretName,
+          valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter/artilleryio/${secretName}`
+        };
+      });
 
     let taskDefinition = {
       family: context.taskName,
@@ -1322,7 +1331,7 @@ async function generateTaskOverrides(context) {
           '-a',
           util.btoa(JSON.stringify(cliArgs)),
           '-r',
-          context.region || context.backendRegion,
+          context.region,
           '-q',
           process.env.SQS_QUEUE_URL || context.sqsQueueUrl,
           '-i',
