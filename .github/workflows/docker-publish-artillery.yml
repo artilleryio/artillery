@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
 
       - name: Get Artillery version
         run: |
@@ -42,6 +45,9 @@ jobs:
           images: artilleryio/artillery
           tags: |
             type=semver,pattern={{version}},value=${{env.ARTILLERY_VERSION}}-playwright
+
+      - name: Rename packages to correct version
+        run: PACKAGE_FOLDER_NAME=artillery node .github/workflows/scripts/rename-packages-to-correct-version.js
 
       - name: Build and push Docker image
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
