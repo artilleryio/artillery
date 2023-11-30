@@ -12,6 +12,7 @@ const { metrics } = require('@opentelemetry/api');
 
 class OTelMetricsReporter {
   constructor(config, events, resource) {
+    this.config = config;
     this.events = events;
     this.resource = resource;
     this.pendingRequests = 0;
