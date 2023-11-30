@@ -3,6 +3,9 @@
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const grpc = require('@grpc/grpc-js');
 const { traceExporters, validateExporter } = require('../exporters');
+const {
+  OutlierDetectionBatchSpanProcessor
+} = require('../outlier-detection-processor');
 
 const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {
@@ -57,8 +60,12 @@ class OTelTraceConfig {
       this.exporterOpts
     );
 
+    const Processor = this.config.smartSampling
+      ? OutlierDetectionBatchSpanProcessor
+      : BatchSpanProcessor;
+
     this.tracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(this.exporter, {
+      new Processor(this.exporter, {
         scheduledDelayMillis: 1000
       })
     );
