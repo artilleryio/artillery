@@ -582,10 +582,16 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     global.artillery.shutdown = gracefulShutdown;
 
     process.on('SIGINT', async () => {
+      if (shuttingDown) {
+        return;
+      }
       console.log('Stopping test run (SIGINT received)...');
       await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
     process.on('SIGTERM', async () => {
+      if (shuttingDown) {
+        return;
+      }
       console.log('Stopping test run (SIGTERM received)...');
       await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
