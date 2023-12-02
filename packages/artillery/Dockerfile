@@ -10,5 +10,3 @@ COPY . ./
 ENV PATH="/home/node/artillery/bin:${PATH}"
 
 ENTRYPOINT ["/home/node/artillery/bin/run"]
-
-CMD ["run", "./test-run/test-msg.yaml"]
