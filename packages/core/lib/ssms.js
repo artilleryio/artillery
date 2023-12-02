@@ -43,12 +43,14 @@ class SSMS extends EventEmitter {
     this._counters = [];
     this._histograms = [];
     this._rates = [];
+    this._customMessages = [];
 
     this._active = true;
 
     this._aggregatedCounters = {};
     this._aggregatedHistograms = {};
     this._aggregatedRates = {};
+    this._aggregatedCustomMessages = {};
   }
 
   stop() {
@@ -397,12 +399,17 @@ class SSMS extends EventEmitter {
     this._rates.push(t || Date.now(), name);
   }
 
+  customMessage(message, t) {
+    this._customMessages.push({ timestamp: t || Date.now(), message });
+  }
+
   getMetrics(period) {
     const result = {};
 
     const counters = this._aggregatedCounters[period];
     const histograms = this._aggregatedHistograms[period];
     const rates = this._aggregatedRates[period];
+    const customMessages = this._aggregatedCustomMessages[period];
 
     if (counters) {
       result.counters = counters;
@@ -414,6 +421,10 @@ class SSMS extends EventEmitter {
 
     if (rates) {
       result.rates = rates;
+    }
+
+    if (customMessages) {
+      result.customMessages = customMessages;
     }
 
     result.period = period;
@@ -559,6 +570,27 @@ class SSMS extends EventEmitter {
     this._rates.splice(0, spliceTo);
   }
 
+  _aggregateCustomMessages(upToTimeslice) {
+    for (let i = 0; i < this._customMessages.length; i++) {
+      const { timestamp, message } = this._customMessages[i];
+      const timeslice = normalizeTs(timestamp);
+  
+      if (timeslice >= upToTimeslice) {
+        this._customMessages.splice(0, i);
+        return;
+      }
+  
+      if (!this._aggregatedCustomMessages[timeslice]) {
+        this._aggregatedCustomMessages[timeslice] = [];
+      }
+  
+      this._aggregatedCustomMessages[timeslice].push(message);
+    }
+  
+    // Clear the messages that have been aggregated
+    this._customMessages.splice(0, this._customMessages.length);
+  }
+
   aggregate(forceAll) {
     const currentTimeslice =
       normalizeTs(Date.now()) + (forceAll ? 30 * 1000 : 0);
@@ -566,6 +598,12 @@ class SSMS extends EventEmitter {
     this._aggregateCounters(currentTimeslice);
     this._aggregateHistograms(currentTimeslice);
     this._aggregateRates(currentTimeslice);
+
+    const customMessages = this._aggregateCustomMessages(currentTimeslice);
+
+    if (customMessages.length > 0) {
+      this.emit('customMessages', customMessages);
+    }
 
     if (forceAll) {
       this._emitPeriods();

@@ -282,6 +282,9 @@ function runScenario(script, metrics, runState, contextVars, options) {
     runState.scenarioEvents.on('counter', function (name, value) {
       metrics.counter(name, value);
     });
+    runState.scenarioEvents.on('customMessage', function (value) {
+      metrics.customMessage(value);
+    });
     // TODO: Deprecate
     runState.scenarioEvents.on('customStat', function (stat) {
       metrics.summary(stat.stat, stat.value);

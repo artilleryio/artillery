@@ -177,6 +177,8 @@ ConsoleReporter.prototype.done = function done(data) {
 
 ConsoleReporter.prototype.printReport = function printReport(report, opts) {
   opts = opts || {};
+  report.customMessages = report.customMessages || {};
+
   if (opts.printPeriod !== false) {
     const timeWindowEnd = moment(
       new Date(Number(report.period) + 10 * 1000)
@@ -199,6 +201,13 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
           underline(txt) +
           '\n'
       );
+
+      if (report.customMessages && report.customMessages.length > 0) {
+        artillery.log('Custom Messages:');
+        report.customMessages.forEach((message, index) => {
+          artillery.log(`  Message ${index + 1}: ${message}`);
+        });
+      }
 
       // artillery.log(padded('time_window:', timeWindowEnd));
     } else {
@@ -241,6 +250,9 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
       }
       if (typeof report.rates?.[metricName] !== 'undefined') {
         result = result.concat(printRates([metricName], report));
+      }
+      if (typeof report.customMessages?.[metricName] !== 'undefined') {
+        result = result.concat(printMessages([metricName], report));
       }
     }
 
@@ -396,6 +408,13 @@ function padded(str1, str2) {
 function printRates(rates, report) {
   return rates.sort().map((name) => {
     return padded(`${name}:`, report.rates[name]) + '/sec';
+  });
+}
+
+// banjo
+function printMessages(values) {
+  return values.sort().map((name) => {
+    return padded(`${name}:`, report.customMessages[name]);
   });
 }
 
