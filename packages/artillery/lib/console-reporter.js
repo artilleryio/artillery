@@ -177,7 +177,7 @@ ConsoleReporter.prototype.done = function done(data) {
 
 ConsoleReporter.prototype.printReport = function printReport(report, opts) {
   opts = opts || {};
-  report.customMessages = report.customMessages || {};
+  // console.log({ report });
 
   if (opts.printPeriod !== false) {
     const timeWindowEnd = moment(
@@ -202,12 +202,12 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
           '\n'
       );
 
-      if (report.customMessages && report.customMessages.length > 0) {
-        artillery.log('Custom Messages:');
-        report.customMessages.forEach((message, index) => {
-          artillery.log(`  Message ${index + 1}: ${message}`);
-        });
-      }
+      // if (report.customMessages && report.customMessages.length > 0) {
+      //   artillery.log('Custom Messages:');
+      //   report.customMessages.forEach((message, index) => {
+      //     artillery.log(`Message ${index + 1}: ${message}`);
+      //   });
+      // }
 
       // artillery.log(padded('time_window:', timeWindowEnd));
     } else {
@@ -219,11 +219,13 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
     report.rates = report.rates || {};
     report.counters = report.counters || {};
     report.summaries = report.summaries || {};
+    report.customMessages = report.customMessages || {};
 
     const sortedByLen = _(
       Object.keys(report.summaries)
         .concat(Object.keys(report.counters))
         .concat(Object.keys(report.rates))
+        .concat(Object.keys(report.customMessages))
     )
       .sortBy([(x) => x.length])
       .value();
@@ -252,7 +254,7 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
         result = result.concat(printRates([metricName], report));
       }
       if (typeof report.customMessages?.[metricName] !== 'undefined') {
-        result = result.concat(printMessages([metricName], report));
+        result = result.concat(printCustomMessages([metricName], report));
       }
     }
 
@@ -411,8 +413,7 @@ function printRates(rates, report) {
   });
 }
 
-// banjo
-function printMessages(values) {
+function printCustomMessages(values) {
   return values.sort().map((name) => {
     return padded(`${name}:`, report.customMessages[name]);
   });

@@ -257,6 +257,7 @@ class Launcher {
         (k) => this.finalReportsByWorker[k]
       );
 
+      // pds does not contain customMessage -- what is it?
       const statsByPeriod = Object.values(SSMS.mergeBuckets(pds));
       const stats = SSMS.pack(statsByPeriod);
 

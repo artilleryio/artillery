@@ -72,6 +72,7 @@ class SSMS extends EventEmitter {
   static empty(ts) {
     const period = normalizeTs(ts || Date.now());
     return {
+      customMessages: {},
       counters: {},
       histograms: {},
       rates: {},
@@ -176,27 +177,42 @@ class SSMS extends EventEmitter {
   }
 
   // Return object indexed by period (as string):
+  // periodData does not contain customMessages --> launch-platform.js
   static mergeBuckets(periodData) {
     debug(`mergeBuckets // timeslices: ${periodData.map((pd) => pd.period)}`);
 
     // Returns result[timestamp] = {histograms:{},counters:{},rates:{}}
     // ie. the result is indexed by timeslice
     const result = {};
+    console.log({ periodData });
 
     for (const pd of periodData) {
       const ts = pd.period;
 
       if (!result[ts]) {
         result[ts] = {
+          customMessages: {},
           counters: {},
           histograms: {},
           rates: {}
         };
       }
 
+      pd.customMessages = pd.customMessages || {};
       pd.counters = pd.counters || {};
       pd.histograms = pd.histograms || {};
       pd.rates = pd.rates || {};
+
+      //
+      // custom messages
+      //
+      for (const [name, value] of Object.entries(pd.customMessages)) {
+        if (!result[ts].customMessages[name]) {
+          result[ts].customMessages[name] = 0;
+        }
+
+        result[ts].customMessages[name] += value;
+      }
 
       //
       // counters
@@ -355,6 +371,7 @@ class SSMS extends EventEmitter {
     return stringify(result);
   }
 
+  // used to generate pds in launch-platform
   static deserializeMetrics(pd) {
     const object = parse(pd);
     for (const [name, buf] of Object.entries(object.histograms)) {
@@ -400,7 +417,7 @@ class SSMS extends EventEmitter {
   }
 
   customMessage(message, t) {
-    this._customMessages.push({ timestamp: t || Date.now(), message });
+    this._customMessages.push(t || Date.now(), message );
   }
 
   getMetrics(period) {
@@ -574,16 +591,16 @@ class SSMS extends EventEmitter {
     for (let i = 0; i < this._customMessages.length; i++) {
       const { timestamp, message } = this._customMessages[i];
       const timeslice = normalizeTs(timestamp);
-  
+
       if (timeslice >= upToTimeslice) {
         this._customMessages.splice(0, i);
         return;
       }
-  
+
       if (!this._aggregatedCustomMessages[timeslice]) {
         this._aggregatedCustomMessages[timeslice] = [];
       }
-  
+
       this._aggregatedCustomMessages[timeslice].push(message);
     }
   
@@ -598,12 +615,7 @@ class SSMS extends EventEmitter {
     this._aggregateCounters(currentTimeslice);
     this._aggregateHistograms(currentTimeslice);
     this._aggregateRates(currentTimeslice);
-
-    const customMessages = this._aggregateCustomMessages(currentTimeslice);
-
-    if (customMessages.length > 0) {
-      this.emit('customMessages', customMessages);
-    }
+    this._aggregateCustomMessages(currentTimeslice);
 
     if (forceAll) {
       this._emitPeriods();

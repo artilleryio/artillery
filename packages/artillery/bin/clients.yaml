@@ -1,0 +1,11 @@
+config:
+  target: https://98y98340923u4.com
+  phases:
+    - duration: 300
+      arrivalRate: 2
+  processor: "./clients.js"
+
+scenarios:
+  - name: "HTTP Request and WebSocket Connection"
+    flow:
+      - function: "setCookieAndConnectWebSocket"
