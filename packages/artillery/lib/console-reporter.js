@@ -177,7 +177,6 @@ ConsoleReporter.prototype.done = function done(data) {
 
 ConsoleReporter.prototype.printReport = function printReport(report, opts) {
   opts = opts || {};
-  // console.log({ report });
 
   if (opts.printPeriod !== false) {
     const timeWindowEnd = moment(
@@ -201,13 +200,6 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
           underline(txt) +
           '\n'
       );
-
-      // if (report.customMessages && report.customMessages.length > 0) {
-      //   artillery.log('Custom Messages:');
-      //   report.customMessages.forEach((message, index) => {
-      //     artillery.log(`Message ${index + 1}: ${message}`);
-      //   });
-      // }
 
       // artillery.log(padded('time_window:', timeWindowEnd));
     } else {
@@ -413,9 +405,9 @@ function printRates(rates, report) {
   });
 }
 
-function printCustomMessages(values) {
-  return values.sort().map((name) => {
-    return padded(`${name}:`, report.customMessages[name]);
+function printCustomMessages(messages, report) {
+  return messages.sort().map((message) => {
+    return `Custom message: ${report.customMessages[message]}`;
   });
 }
 

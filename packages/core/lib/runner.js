@@ -283,7 +283,6 @@ function runScenario(script, metrics, runState, contextVars, options) {
       metrics.counter(name, value);
     });
     runState.scenarioEvents.on('customMessage', function (value) {
-      console.log('### Scenario Events: ', value);
       metrics.customMessage(value);
     });
     // TODO: Deprecate

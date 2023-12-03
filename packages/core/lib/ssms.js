@@ -180,11 +180,10 @@ class SSMS extends EventEmitter {
   // periodData does not contain customMessages --> launch-platform.js
   static mergeBuckets(periodData) {
     debug(`mergeBuckets // timeslices: ${periodData.map((pd) => pd.period)}`);
-
+    console.log(periodData);
     // Returns result[timestamp] = {histograms:{},counters:{},rates:{}}
     // ie. the result is indexed by timeslice
     const result = {};
-    console.log({ periodData });
 
     for (const pd of periodData) {
       const ts = pd.period;
@@ -206,13 +205,7 @@ class SSMS extends EventEmitter {
       //
       // custom messages
       //
-      for (const [name, value] of Object.entries(pd.customMessages)) {
-        if (!result[ts].customMessages[name]) {
-          result[ts].customMessages[name] = 0;
-        }
-
-        result[ts].customMessages[name] += value;
-      }
+      result[ts].customMessages['customMessage'] = pd.customMessages;
 
       //
       // counters
@@ -371,7 +364,6 @@ class SSMS extends EventEmitter {
     return stringify(result);
   }
 
-  // used to generate pds in launch-platform
   static deserializeMetrics(pd) {
     const object = parse(pd);
     for (const [name, buf] of Object.entries(object.histograms)) {
@@ -380,7 +372,6 @@ class SSMS extends EventEmitter {
     }
 
     object.period = object.period;
-
     return object;
   }
 
@@ -417,7 +408,7 @@ class SSMS extends EventEmitter {
   }
 
   customMessage(message, t) {
-    this._customMessages.push(t || Date.now(), message );
+    this._customMessages.push(t || Date.now(), message);
   }
 
   getMetrics(period) {
@@ -588,23 +579,24 @@ class SSMS extends EventEmitter {
   }
 
   _aggregateCustomMessages(upToTimeslice) {
-    for (let i = 0; i < this._customMessages.length; i++) {
-      const { timestamp, message } = this._customMessages[i];
-      const timeslice = normalizeTs(timestamp);
+    for (let i = 0; i < this._customMessages.length; i += 2) {
+      const ts = this._customMessages[i];
+      const timeslice = normalizeTs(ts);
 
       if (timeslice >= upToTimeslice) {
         this._customMessages.splice(0, i);
         return;
       }
 
+      const message = this._customMessages[i + 1];
+
       if (!this._aggregatedCustomMessages[timeslice]) {
-        this._aggregatedCustomMessages[timeslice] = [];
+        this._aggregatedCustomMessages[timeslice] = {};
       }
 
-      this._aggregatedCustomMessages[timeslice].push(message);
+      this._aggregatedCustomMessages[timeslice] = message;
     }
-  
-    // Clear the messages that have been aggregated
+
     this._customMessages.splice(0, this._customMessages.length);
   }
 
