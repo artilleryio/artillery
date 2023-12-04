@@ -180,7 +180,7 @@ class SSMS extends EventEmitter {
   // periodData does not contain customMessages --> launch-platform.js
   static mergeBuckets(periodData) {
     debug(`mergeBuckets // timeslices: ${periodData.map((pd) => pd.period)}`);
-    console.log(periodData);
+
     // Returns result[timestamp] = {histograms:{},counters:{},rates:{}}
     // ie. the result is indexed by timeslice
     const result = {};
@@ -205,7 +205,9 @@ class SSMS extends EventEmitter {
       //
       // custom messages
       //
-      result[ts].customMessages['customMessage'] = pd.customMessages;
+      for (const [name, value] of Object.entries(pd.customMessages)) {
+        result[ts].customMessages[name] = value;
+      }
 
       //
       // counters
@@ -582,19 +584,21 @@ class SSMS extends EventEmitter {
     for (let i = 0; i < this._customMessages.length; i += 2) {
       const ts = this._customMessages[i];
       const timeslice = normalizeTs(ts);
-
+  
       if (timeslice >= upToTimeslice) {
         this._customMessages.splice(0, i);
         return;
       }
-
+  
       const message = this._customMessages[i + 1];
-
+  
+      // Check if the timeslice already exists in _aggregatedCustomMessages
       if (!this._aggregatedCustomMessages[timeslice]) {
-        this._aggregatedCustomMessages[timeslice] = {};
+        this._aggregatedCustomMessages[timeslice] = [];
       }
-
-      this._aggregatedCustomMessages[timeslice] = message;
+  
+      // Append the message to the array of messages for this timeslice
+      this._aggregatedCustomMessages[timeslice].push(message);
     }
 
     this._customMessages.splice(0, this._customMessages.length);

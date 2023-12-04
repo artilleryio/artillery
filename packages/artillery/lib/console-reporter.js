@@ -407,7 +407,7 @@ function printRates(rates, report) {
 
 function printCustomMessages(messages, report) {
   return messages.sort().map((message) => {
-    return `Custom message: ${report.customMessages[message]}`;
+    return `custom_message: ${report.customMessages[message]}`;
   });
 }
 
