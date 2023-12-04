@@ -10,11 +10,11 @@
     "rates": {
       "http.request_rate": 4
     },
-    "firstCounterAt": 1701660324581,
-    "lastCounterAt": 1701660325587,
-    "firstMetricAt": 1701660324581,
-    "lastMetricAt": 1701660325587,
-    "period": 1701660320000,
+    "firstCounterAt": 1701661194820,
+    "lastCounterAt": 1701661195825,
+    "firstMetricAt": 1701661194820,
+    "lastMetricAt": 1701661195825,
+    "period": 1701661190000,
     "summaries": {},
     "customMessages": {},
     "histograms": {}
@@ -33,11 +33,11 @@
         "http.request_rate": 7
       },
       "http.request_rate": null,
-      "firstCounterAt": 1701660324581,
-      "lastCounterAt": 1701660325587,
-      "firstMetricAt": 1701660324581,
-      "lastMetricAt": 1701660325587,
-      "period": "1701660320000",
+      "firstCounterAt": 1701661194820,
+      "lastCounterAt": 1701661195825,
+      "firstMetricAt": 1701661194820,
+      "lastMetricAt": 1701661195825,
+      "period": "1701661190000",
       "summaries": {},
       "histograms": {}
     }

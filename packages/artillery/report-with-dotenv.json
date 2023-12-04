@@ -14,19 +14,19 @@
     "rates": {
       "http.request_rate": 1
     },
-    "firstCounterAt": 1701660307512,
-    "firstHistogramAt": 1701660308173,
-    "lastCounterAt": 1701660308179,
-    "lastHistogramAt": 1701660308179,
-    "firstMetricAt": 1701660307512,
-    "lastMetricAt": 1701660308179,
-    "period": 1701660300000,
+    "firstCounterAt": 1701661177980,
+    "firstHistogramAt": 1701661178690,
+    "lastCounterAt": 1701661178697,
+    "lastHistogramAt": 1701661178697,
+    "firstMetricAt": 1701661177980,
+    "lastMetricAt": 1701661178697,
+    "period": 1701661170000,
     "summaries": {
       "http.response_time": {
-        "min": 308,
-        "max": 308,
+        "min": 307,
+        "max": 307,
         "count": 1,
-        "mean": 308,
+        "mean": 307,
         "p50": 308,
         "median": 308,
         "p75": 308,
@@ -36,10 +36,10 @@
         "p999": 308
       },
       "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
-        "min": 308,
-        "max": 308,
+        "min": 307,
+        "max": 307,
         "count": 1,
-        "mean": 308,
+        "mean": 307,
         "p50": 308,
         "median": 308,
         "p75": 308,
@@ -49,26 +49,26 @@
         "p999": 308
       },
       "vusers.session_length": {
-        "min": 666.7,
-        "max": 666.7,
+        "min": 717.7,
+        "max": 717.7,
         "count": 1,
-        "mean": 666.7,
-        "p50": 671.9,
-        "median": 671.9,
-        "p75": 671.9,
-        "p90": 671.9,
-        "p95": 671.9,
-        "p99": 671.9,
-        "p999": 671.9
+        "mean": 717.7,
+        "p50": 713.5,
+        "median": 713.5,
+        "p75": 713.5,
+        "p90": 713.5,
+        "p95": 713.5,
+        "p99": 713.5,
+        "p999": 713.5
       }
     },
     "customMessages": {},
     "histograms": {
       "http.response_time": {
-        "min": 308,
-        "max": 308,
+        "min": 307,
+        "max": 307,
         "count": 1,
-        "mean": 308,
+        "mean": 307,
         "p50": 308,
         "median": 308,
         "p75": 308,
@@ -78,10 +78,10 @@
         "p999": 308
       },
       "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
-        "min": 308,
-        "max": 308,
+        "min": 307,
+        "max": 307,
         "count": 1,
-        "mean": 308,
+        "mean": 307,
         "p50": 308,
         "median": 308,
         "p75": 308,
@@ -91,17 +91,17 @@
         "p999": 308
       },
       "vusers.session_length": {
-        "min": 666.7,
-        "max": 666.7,
+        "min": 717.7,
+        "max": 717.7,
         "count": 1,
-        "mean": 666.7,
-        "p50": 671.9,
-        "median": 671.9,
-        "p75": 671.9,
-        "p90": 671.9,
-        "p95": 671.9,
-        "p99": 671.9,
-        "p999": 671.9
+        "mean": 717.7,
+        "p50": 713.5,
+        "median": 713.5,
+        "p75": 713.5,
+        "p90": 713.5,
+        "p95": 713.5,
+        "p99": 713.5,
+        "p999": 713.5
       }
     }
   },
@@ -123,19 +123,19 @@
         "http.request_rate": 1
       },
       "http.request_rate": null,
-      "firstCounterAt": 1701660307512,
-      "firstHistogramAt": 1701660308173,
-      "lastCounterAt": 1701660308179,
-      "lastHistogramAt": 1701660308179,
-      "firstMetricAt": 1701660307512,
-      "lastMetricAt": 1701660308179,
-      "period": "1701660300000",
+      "firstCounterAt": 1701661177980,
+      "firstHistogramAt": 1701661178690,
+      "lastCounterAt": 1701661178697,
+      "lastHistogramAt": 1701661178697,
+      "firstMetricAt": 1701661177980,
+      "lastMetricAt": 1701661178697,
+      "period": "1701661170000",
       "summaries": {
         "http.response_time": {
-          "min": 308,
-          "max": 308,
+          "min": 307,
+          "max": 307,
           "count": 1,
-          "mean": 308,
+          "mean": 307,
           "p50": 308,
           "median": 308,
           "p75": 308,
@@ -145,10 +145,10 @@
           "p999": 308
         },
         "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
-          "min": 308,
-          "max": 308,
+          "min": 307,
+          "max": 307,
           "count": 1,
-          "mean": 308,
+          "mean": 307,
           "p50": 308,
           "median": 308,
           "p75": 308,
@@ -158,25 +158,25 @@
           "p999": 308
         },
         "vusers.session_length": {
-          "min": 666.7,
-          "max": 666.7,
+          "min": 717.7,
+          "max": 717.7,
           "count": 1,
-          "mean": 666.7,
-          "p50": 671.9,
-          "median": 671.9,
-          "p75": 671.9,
-          "p90": 671.9,
-          "p95": 671.9,
-          "p99": 671.9,
-          "p999": 671.9
+          "mean": 717.7,
+          "p50": 713.5,
+          "median": 713.5,
+          "p75": 713.5,
+          "p90": 713.5,
+          "p95": 713.5,
+          "p99": 713.5,
+          "p999": 713.5
         }
       },
       "histograms": {
         "http.response_time": {
-          "min": 308,
-          "max": 308,
+          "min": 307,
+          "max": 307,
           "count": 1,
-          "mean": 308,
+          "mean": 307,
           "p50": 308,
           "median": 308,
           "p75": 308,
@@ -186,10 +186,10 @@
           "p999": 308
         },
         "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
-          "min": 308,
-          "max": 308,
+          "min": 307,
+          "max": 307,
           "count": 1,
-          "mean": 308,
+          "mean": 307,
           "p50": 308,
           "median": 308,
           "p75": 308,
@@ -199,17 +199,17 @@
           "p999": 308
         },
         "vusers.session_length": {
-          "min": 666.7,
-          "max": 666.7,
+          "min": 717.7,
+          "max": 717.7,
           "count": 1,
-          "mean": 666.7,
-          "p50": 671.9,
-          "median": 671.9,
-          "p75": 671.9,
-          "p90": 671.9,
-          "p95": 671.9,
-          "p99": 671.9,
-          "p999": 671.9
+          "mean": 717.7,
+          "p50": 713.5,
+          "median": 713.5,
+          "p75": 713.5,
+          "p90": 713.5,
+          "p95": 713.5,
+          "p99": 713.5,
+          "p999": 713.5
         }
       }
     }

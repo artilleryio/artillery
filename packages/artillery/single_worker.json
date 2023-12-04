@@ -10,11 +10,11 @@
     "rates": {
       "http.request_rate": 4
     },
-    "firstCounterAt": 1701660328561,
-    "lastCounterAt": 1701660330397,
-    "firstMetricAt": 1701660328561,
-    "lastMetricAt": 1701660330397,
-    "period": 1701660330000,
+    "firstCounterAt": 1701661198804,
+    "lastCounterAt": 1701661200643,
+    "firstMetricAt": 1701661198804,
+    "lastMetricAt": 1701661200643,
+    "period": 1701661200000,
     "summaries": {},
     "customMessages": {},
     "histograms": {}
@@ -33,11 +33,11 @@
         "http.request_rate": 6
       },
       "http.request_rate": null,
-      "firstCounterAt": 1701660328561,
-      "lastCounterAt": 1701660329395,
-      "firstMetricAt": 1701660328561,
-      "lastMetricAt": 1701660329395,
-      "period": "1701660320000",
+      "firstCounterAt": 1701661198804,
+      "lastCounterAt": 1701661199638,
+      "firstMetricAt": 1701661198804,
+      "lastMetricAt": 1701661199638,
+      "period": "1701661190000",
       "summaries": {},
       "histograms": {}
     },
@@ -54,11 +54,11 @@
         "http.request_rate": 1
       },
       "http.request_rate": null,
-      "firstCounterAt": 1701660330395,
-      "lastCounterAt": 1701660330397,
-      "firstMetricAt": 1701660330395,
-      "lastMetricAt": 1701660330397,
-      "period": "1701660330000",
+      "firstCounterAt": 1701661200638,
+      "lastCounterAt": 1701661200643,
+      "firstMetricAt": 1701661200638,
+      "lastMetricAt": 1701661200643,
+      "period": "1701661200000",
       "summaries": {},
       "histograms": {}
     }
