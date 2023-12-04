@@ -4,6 +4,7 @@ const Joi = require('joi').defaults((schema) =>
 
 const { LoopOptions, MatchSchema, JsonCaptureSchema } = require('./common');
 const { BaseWithHttp } = require('./http');
+const { buildArtilleryKeyValue } = require('../joi.helpers');
 
 const SocketioDataSchema = Joi.alternatives(
   Joi.string(),
@@ -101,13 +102,13 @@ const SocketIoFlowItemSchema = Joi.alternatives()
   .id('SocketIoFlowItemSchema');
 
 const SocketIoConfigSchema = Joi.object({
-  query: Joi.alternatives(Joi.string(), Joi.object())
+  query: Joi.alternatives(Joi.string(), buildArtilleryKeyValue(Joi.string()))
     .meta({ title: 'Query' })
     .description(
       'Query parameters can be specified as a string or dictionary.'
     ),
   path: Joi.string(),
-  extraHeaders: Joi.object()
+  extraHeaders: buildArtilleryKeyValue(Joi.string())
     .meta({ title: 'Extra Headers' })
     .description(
       "Extra headers may be passed with this option. \nThe extraHeaders option only works if the default polling transport is used. When using other transports, extra headers won't be taken into account by the server."
