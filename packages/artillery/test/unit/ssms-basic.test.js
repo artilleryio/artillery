@@ -14,6 +14,7 @@ tap.test('Basic metric collection', async (t) => {
   const tick = Math.floor(durationMs / numWrites);
 
   for (let i = 0; i < numWrites; i++) {
+    mdb.customMessage('my_message');
     mdb.counter('num_sprints', 1);
     mdb.histogram('sprint_duration', Math.floor(Math.random() * 1000));
     mdb.rate('sprints');
@@ -41,4 +42,5 @@ tap.test('Basic metric collection', async (t) => {
   );
   t.ok(metrics.counters['num_sprints'], 'Should have num_sprints counter');
   t.ok(metrics.rates['sprints'], 'Should have sprints rate measurement');
+  t.ok(metrics.customMessages, 'Should have message');
 });

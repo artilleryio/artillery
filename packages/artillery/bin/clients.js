@@ -2,7 +2,6 @@ const fetch = require('node-fetch');
 const msg1 = 'hello world!';
 const msg2 = 'zorbin!';
 
-
 module.exports = {
   healthRequest: async function(context, events, done) {
     try {

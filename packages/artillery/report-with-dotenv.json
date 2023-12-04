@@ -1,0 +1,217 @@
+{
+  "aggregate": {
+    "counters": {
+      "vusers.created_by_name.0": 1,
+      "vusers.created": 1,
+      "http.requests": 1,
+      "http.codes.200": 1,
+      "http.responses": 1,
+      "http.downloaded_bytes": 545,
+      "plugins.metrics-by-endpoint.asciiart.artillery.io:8080/dino.codes.200": 1,
+      "vusers.failed": 0,
+      "vusers.completed": 1
+    },
+    "rates": {
+      "http.request_rate": 1
+    },
+    "firstCounterAt": 1701660307512,
+    "firstHistogramAt": 1701660308173,
+    "lastCounterAt": 1701660308179,
+    "lastHistogramAt": 1701660308179,
+    "firstMetricAt": 1701660307512,
+    "lastMetricAt": 1701660308179,
+    "period": 1701660300000,
+    "summaries": {
+      "http.response_time": {
+        "min": 308,
+        "max": 308,
+        "count": 1,
+        "mean": 308,
+        "p50": 308,
+        "median": 308,
+        "p75": 308,
+        "p90": 308,
+        "p95": 308,
+        "p99": 308,
+        "p999": 308
+      },
+      "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
+        "min": 308,
+        "max": 308,
+        "count": 1,
+        "mean": 308,
+        "p50": 308,
+        "median": 308,
+        "p75": 308,
+        "p90": 308,
+        "p95": 308,
+        "p99": 308,
+        "p999": 308
+      },
+      "vusers.session_length": {
+        "min": 666.7,
+        "max": 666.7,
+        "count": 1,
+        "mean": 666.7,
+        "p50": 671.9,
+        "median": 671.9,
+        "p75": 671.9,
+        "p90": 671.9,
+        "p95": 671.9,
+        "p99": 671.9,
+        "p999": 671.9
+      }
+    },
+    "customMessages": {},
+    "histograms": {
+      "http.response_time": {
+        "min": 308,
+        "max": 308,
+        "count": 1,
+        "mean": 308,
+        "p50": 308,
+        "median": 308,
+        "p75": 308,
+        "p90": 308,
+        "p95": 308,
+        "p99": 308,
+        "p999": 308
+      },
+      "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
+        "min": 308,
+        "max": 308,
+        "count": 1,
+        "mean": 308,
+        "p50": 308,
+        "median": 308,
+        "p75": 308,
+        "p90": 308,
+        "p95": 308,
+        "p99": 308,
+        "p999": 308
+      },
+      "vusers.session_length": {
+        "min": 666.7,
+        "max": 666.7,
+        "count": 1,
+        "mean": 666.7,
+        "p50": 671.9,
+        "median": 671.9,
+        "p75": 671.9,
+        "p90": 671.9,
+        "p95": 671.9,
+        "p99": 671.9,
+        "p999": 671.9
+      }
+    }
+  },
+  "intermediate": [
+    {
+      "customMessages": {},
+      "counters": {
+        "vusers.created_by_name.0": 1,
+        "vusers.created": 1,
+        "http.requests": 1,
+        "http.codes.200": 1,
+        "http.responses": 1,
+        "http.downloaded_bytes": 545,
+        "plugins.metrics-by-endpoint.asciiart.artillery.io:8080/dino.codes.200": 1,
+        "vusers.failed": 0,
+        "vusers.completed": 1
+      },
+      "rates": {
+        "http.request_rate": 1
+      },
+      "http.request_rate": null,
+      "firstCounterAt": 1701660307512,
+      "firstHistogramAt": 1701660308173,
+      "lastCounterAt": 1701660308179,
+      "lastHistogramAt": 1701660308179,
+      "firstMetricAt": 1701660307512,
+      "lastMetricAt": 1701660308179,
+      "period": "1701660300000",
+      "summaries": {
+        "http.response_time": {
+          "min": 308,
+          "max": 308,
+          "count": 1,
+          "mean": 308,
+          "p50": 308,
+          "median": 308,
+          "p75": 308,
+          "p90": 308,
+          "p95": 308,
+          "p99": 308,
+          "p999": 308
+        },
+        "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
+          "min": 308,
+          "max": 308,
+          "count": 1,
+          "mean": 308,
+          "p50": 308,
+          "median": 308,
+          "p75": 308,
+          "p90": 308,
+          "p95": 308,
+          "p99": 308,
+          "p999": 308
+        },
+        "vusers.session_length": {
+          "min": 666.7,
+          "max": 666.7,
+          "count": 1,
+          "mean": 666.7,
+          "p50": 671.9,
+          "median": 671.9,
+          "p75": 671.9,
+          "p90": 671.9,
+          "p95": 671.9,
+          "p99": 671.9,
+          "p999": 671.9
+        }
+      },
+      "histograms": {
+        "http.response_time": {
+          "min": 308,
+          "max": 308,
+          "count": 1,
+          "mean": 308,
+          "p50": 308,
+          "median": 308,
+          "p75": 308,
+          "p90": 308,
+          "p95": 308,
+          "p99": 308,
+          "p999": 308
+        },
+        "plugins.metrics-by-endpoint.response_time.asciiart.artillery.io:8080/dino": {
+          "min": 308,
+          "max": 308,
+          "count": 1,
+          "mean": 308,
+          "p50": 308,
+          "median": 308,
+          "p75": 308,
+          "p90": 308,
+          "p95": 308,
+          "p99": 308,
+          "p999": 308
+        },
+        "vusers.session_length": {
+          "min": 666.7,
+          "max": 666.7,
+          "count": 1,
+          "mean": 666.7,
+          "p50": 671.9,
+          "median": 671.9,
+          "p75": 671.9,
+          "p90": 671.9,
+          "p95": 671.9,
+          "p99": 671.9,
+          "p999": 671.9
+        }
+      }
+    }
+  ]
+}
