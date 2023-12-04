@@ -1,0 +1,55 @@
+name: Build & publish ECS/Fargate worker image to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build_docker_image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Show git ref
+        run: |
+          echo ${{ github.ref }}
+          echo ${{ github.event.pull_request.head.sha }}
+          echo ${{ github.sha }}
+    
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+    
+      - name: Login to Amazon ECR Public
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: public.ecr.aws/d8a4z9o5/artillery-worker
+          tags: |
+            type=semver,pattern={{version}}
+
+      - name: Build the Docker image
+        run: |
+          docker build . --build-arg="WORKER_VERSION=${{ github.sha }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ github.sha }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+    
+      - name: Push Docker image
+        run: |
+          docker push public.ecr.aws/d8a4z9o5/artillery-worker:${{ github.sha }}

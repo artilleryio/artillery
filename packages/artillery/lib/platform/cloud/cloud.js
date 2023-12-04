@@ -33,7 +33,7 @@ class ArtilleryCloudPlugin {
       'x-auth-token': this.apiKey
     };
     this.unprocessedLogsCounter = 0;
-    this.hasCancellationRequest = false;
+    this.cancellationRequestedBy = '';
 
     let testEndInfo = {};
     global.artillery.globalEvents.on('test:init', async (testInfo) => {
@@ -128,11 +128,12 @@ class ArtilleryCloudPlugin {
 
     global.artillery.ext({
       ext: 'beforeExit',
-      method: async ({ testInfo }) => {
+      method: async ({ testInfo, report }) => {
         debug('beforeExit');
         testEndInfo = {
           ...testEndInfo,
-          ...testInfo
+          ...testInfo,
+          report
         };
       }
     });
@@ -154,13 +155,16 @@ class ArtilleryCloudPlugin {
 
         await this._event('testrun:end', {
           ts: testEndInfo.endTime,
-          exitCode: global.artillery.suggestedExitCode || opts.exitCode
-        });
-        await this._event('testrun:changestatus', {
-          status: opts.earlyStop ? 'EARLY_STOP' : 'COMPLETED'
+          exitCode: global.artillery.suggestedExitCode || opts.exitCode,
+          isEarlyStop: !!opts.earlyStop,
+          report: testEndInfo.report
         });
 
-        console.log(`\nRun URL: ${testEndInfo.testRunUrl}`);
+        console.log('\n');
+        if (this.cancellationRequestedBy) {
+          console.log(`Test run stopped by ${this.cancellationRequestedBy}.`);
+        }
+        console.log(`Run URL: ${testEndInfo.testRunUrl}`);
       }
     });
 
@@ -179,7 +183,7 @@ class ArtilleryCloudPlugin {
 
   setGetStatusInterval() {
     const interval = setInterval(async () => {
-      if (this.hasCancellationRequest) {
+      if (this.cancellationRequestedBy) {
         return;
       }
       const res = await this._getLoadTestStatus();
@@ -196,7 +200,7 @@ class ArtilleryCloudPlugin {
       console.log(
         `WARNING: Artillery Cloud user ${res.cancelledBy} requested to stop the test. Stopping test run - this may take a few seconds.`
       );
-      this.hasCancellationRequest = true;
+      this.cancellationRequestedBy = res.cancelledBy;
       global.artillery.suggestedExitCode = 8;
       await global.artillery.shutdown({ earlyStop: true });
     }, 5000);

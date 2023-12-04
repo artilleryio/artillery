@@ -16,6 +16,7 @@ const {
 const {
   PublishMetricsPluginConfigSchema
 } = require('./plugins/publish-metrics');
+const { FakeDataPlugin } = require('./plugins/fake-data');
 const { TestPhase } = require('./config/phases');
 
 const TlsConfig = Joi.object({
@@ -85,7 +86,8 @@ const ArtilleryBuiltInPlugins = {
   ensure: EnsurePluginConfigSchema,
   apdex: ApdexPluginConfigSchema,
   'metrics-by-endpoint': MetricsByEndpointPluginConfigSchema,
-  'publish-metrics': PublishMetricsPluginConfigSchema
+  'publish-metrics': PublishMetricsPluginConfigSchema,
+  'fake-data': FakeDataPlugin
 };
 
 const ArtilleryBuiltInPluginsInRootConfig = (({ ensure, apdex }) => ({
