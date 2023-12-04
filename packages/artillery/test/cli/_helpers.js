@@ -2,6 +2,7 @@ const sh = require('execa');
 const temp = require('temp').track();
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 const { getBinPathSync } = require('get-bin-path');
 const a9path = getBinPathSync();
 
@@ -21,8 +22,12 @@ async function deleteFile(path) {
   return true;
 }
 
+function returnTmpPath(fileName) {
+  return path.resolve(`${os.tmpdir()}/${fileName}`);
+}
+
 async function getRootPath(filename) {
   return path.resolve(__dirname, '..', '..', filename);
 }
 
-module.exports = { execute, deleteFile, getRootPath };
+module.exports = { execute, deleteFile, getRootPath, returnTmpPath };

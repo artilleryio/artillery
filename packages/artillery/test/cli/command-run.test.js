@@ -1,8 +1,23 @@
 const tap = require('tap');
-const { execute, deleteFile, getRootPath } = require('../cli/_helpers.js');
+const {
+  execute,
+  deleteFile,
+  getRootPath,
+  returnTmpPath
+} = require('../cli/_helpers.js');
 const fs = require('fs');
 const path = require('path');
 const execa = require('execa');
+const { createHash } = require('crypto');
+
+let reportFilePath;
+tap.beforeEach(async (t) => {
+  reportFilePath = returnTmpPath(
+    `report-${createHash('md5')
+      .update(t.name)
+      .digest('hex')}-${Date.now()}.json`
+  );
+});
 
 tap.test('Run a simple script', async (t) => {
   const [exitCode, output] = await execute([
@@ -89,9 +104,6 @@ tap.test('Environment specified with -e should be used', async (t) => {
 });
 
 tap.test('Can specify scenario to run by name', async (t) => {
-  const reportFile = 'report-with-scenario-by-name.json';
-  const reportFilePath = await getRootPath(reportFile);
-
   const [exitCode, output] = await execute([
     'run',
     '--scenario-name',
@@ -107,8 +119,7 @@ tap.test('Can specify scenario to run by name', async (t) => {
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
   t.ok(
-    deleteFile(reportFilePath) &&
-      json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6 &&
+    json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6 &&
       typeof json.aggregate.counters[
         'vusers.created_by_name.Test Scenario 1'
       ] === 'undefined'
@@ -183,23 +194,20 @@ tap.test(
 tap.test(
   'Loads metrics-by-endpoint plugin by default, with output supressed',
   async (t) => {
-    const reportFile = 'report-metrics-by-endpoint.json';
-    const reportFilePath = await getRootPath(reportFile);
     const [exitCode, output] = await execute([
       'run',
       'test/scripts/hello.json',
       '--config',
       './test/scripts/hello_config.json',
       '-o',
-      `${reportFile}`
+      `${reportFilePath}`
     ]);
 
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     const pluginPrefix = 'plugins.metrics-by-endpoint';
 
     t.ok(
-      deleteFile(reportFilePath) &&
-        exitCode === 0 &&
+      exitCode === 0 &&
         !output.stdout.includes(pluginPrefix) &&
         Object.keys(json.aggregate.counters).some((key) =>
           key.includes(pluginPrefix)
@@ -212,20 +220,16 @@ tap.test(
 );
 
 tap.test('Run a script overwriting default options (output)', async (t) => {
-  const reportFile = 'artillery_report_custom.json';
   const [exitCode, output] = await execute([
     'run',
     '--config',
     'test/scripts/hello_config.json',
     'test/scripts/hello.json',
     '-o',
-    reportFile
+    reportFilePath
   ]);
 
-  t.ok(
-    exitCode === 0 &&
-      output.stdout.includes('Log file: artillery_report_custom.json')
-  );
+  t.ok(exitCode === 0 && output.stdout.includes(`Log file: ${reportFilePath}`));
 });
 
 tap.test(
@@ -310,43 +314,31 @@ tap.test('Script using hook functions', async (t) => {
 
 tap.test('Hook functions - can rewrite the URL', async (t) => {
   // Ref: https://github.com/shoreditch-ops/artillery/issues/185
-  const reportFile = 'report-hook.json';
-  const reportFilePath = await getRootPath(reportFile);
   const [exitCode] = await execute([
     'run',
     '--config',
     'test/scripts/hello_config.json',
     'test/scripts/hello.json',
     '-o',
-    reportFile
+    reportFilePath
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(
-    deleteFile(reportFilePath) &&
-      exitCode === 0 &&
-      json.aggregate.counters['http.codes.200']
-  );
+  t.ok(exitCode === 0 && json.aggregate.counters['http.codes.200']);
 });
 
 tap.test('Environment variables can be loaded from dotenv files', async (t) => {
-  const reportFile = 'report-with-dotenv.json';
-  const reportFilePath = await getRootPath(reportFile);
   const [exitCode] = await execute([
     'run',
     '--dotenv',
     'test/scripts/with-dotenv/my-vars',
     'test/scripts/with-dotenv/with-dotenv.yml',
     '-o',
-    reportFile
+    reportFilePath
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(
-    deleteFile(reportFilePath) &&
-      exitCode === 0 &&
-      json.aggregate.counters['http.codes.200']
-  );
+  t.ok(exitCode === 0 && json.aggregate.counters['http.codes.200']);
 });
 
 tap.test('Environment variables can be loaded using $env', async (t) => {
@@ -358,17 +350,14 @@ tap.test('Environment variables can be loaded using $env', async (t) => {
     NESTED_HEADER_VALUE: 'abc123'
   };
 
-  const reportFile = 'report-with-env.json';
-  const reportFilePath = await getRootPath(reportFile);
   const [exitCode, result] = await execute(
-    ['run', 'test/scripts/with-process-env/with-env.yml', '-o', reportFile],
+    ['run', 'test/scripts/with-process-env/with-env.yml', '-o', reportFilePath],
     { env: { ...variables } }
   );
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
   t.ok(
-    deleteFile(reportFilePath) &&
-      exitCode === 0 &&
+    exitCode === 0 &&
       json.aggregate.counters['http.codes.200'] === 2 &&
       result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
       result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
@@ -386,22 +375,19 @@ tap.test(
       NESTED_HEADER_VALUE: 'abc123'
     };
 
-    const reportFile = 'report-with-processEnvironment.json';
-    const reportFilePath = await getRootPath(reportFile);
     const [exitCode, result] = await execute(
       [
         'run',
         'test/scripts/with-process-env/with-processEnvironment.yml',
         '-o',
-        reportFile
+        reportFilePath
       ],
       { env: { ...variables } }
     );
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
     t.ok(
-      deleteFile(reportFilePath) &&
-        exitCode === 0 &&
+      exitCode === 0 &&
         json.aggregate.counters['http.codes.200'] === 2 &&
         result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
         result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
@@ -416,15 +402,13 @@ tap.test('Script using a plugin', async (t) => {
     signal: abortController.signal
   });
 
-  const reportFile = 'report-with-plugin.json';
-  const reportFilePath = await getRootPath(reportFile);
   const pluginFile = 'plugin-data.csv';
   const pluginFilePath = await getRootPath(pluginFile);
 
   const pluginPath = path.resolve(__dirname, '..', 'plugins');
 
   const [exitCode] = await execute(
-    ['run', '--output', reportFile, 'test/scripts/hello_plugin.json'],
+    ['run', '--output', reportFilePath, 'test/scripts/hello_plugin.json'],
     { env: { ARTILLERY_PLUGIN_PATH: pluginPath } }
   );
   abortController.abort();
@@ -433,20 +417,14 @@ tap.test('Script using a plugin', async (t) => {
     .aggregate.counters['http.requests'];
   const pluginCount = Number(fs.readFileSync(pluginFilePath, 'utf8'));
 
-  t.ok(
-    deleteFile(reportFilePath) &&
-      deleteFile(pluginFilePath) &&
-      exitCode === 0 &&
-      reportCount === pluginCount
-  );
+  t.ok(deleteFile(pluginFilePath));
+  t.ok(exitCode === 0);
+  t.ok(reportCount === pluginCount);
 });
 
 tap.test(
   'The --overrides option may be used to change the script',
   async (t) => {
-    const reportFile = 'report-with-override.json';
-    const reportFilePath = await getRootPath(reportFile);
-
     const [exitCode] = await execute(
       [
         'run',
@@ -455,7 +433,7 @@ tap.test(
         '--overrides',
         '{"config": {"environments": {"dev":{"target":"http://localhost:3003"}}, "phases": [{"arrivalCount": 1, "duration": 1}]}}',
         '-o',
-        reportFile,
+        reportFilePath,
         'test/scripts/environments.yaml'
       ],
       { env: { ARTILLERY_USE_LEGACY_REPORT_FORMAT: '1' } }
@@ -464,7 +442,7 @@ tap.test(
     const reportCount = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
       .aggregate.scenariosCreated;
 
-    t.ok(deleteFile(reportFilePath) && exitCode === 0 && reportCount === 1);
+    t.ok(exitCode === 0 && reportCount === 1);
   }
 );
 
@@ -491,18 +469,19 @@ tap.test(
     // We compare them to the max amount of arrivals we expect from the script # Note: v2.0.0-22 generates 20+ arrivals, almost double
     const totalRequests = 7;
 
-    const reportMultipleFile = 'multiple_workers.json';
-    const reportMultipleFilePath = await getRootPath(reportMultipleFile);
-
-    const reportSingleFile = 'single_worker.json';
-    const reportSingleFilePath = await getRootPath(reportSingleFile);
+    const reportMultipleFilePath = returnTmpPath(
+      `multiple_workers-${Date.now()}.json`
+    );
+    const reportSingleFilePath = returnTmpPath(
+      `single_worker-${Date.now()}.json`
+    );
 
     const [exitCodeMultiple] = await execute(
-      ['run', '-o', reportMultipleFile, 'test/scripts/ramp.json'],
+      ['run', '-o', reportMultipleFilePath, 'test/scripts/ramp.json'],
       { env: { WORKERS: 7 } }
     );
     const [exitCodeSingle] = await execute(
-      ['run', '-o', reportSingleFile, 'test/scripts/ramp.json'],
+      ['run', '-o', reportSingleFilePath, 'test/scripts/ramp.json'],
       { env: { WORKERS: 1 } }
     );
 
@@ -513,9 +492,7 @@ tap.test(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
     t.ok(
-      deleteFile(reportMultipleFilePath) &&
-        deleteFile(reportSingleFilePath) &&
-        exitCodeMultiple === 0 &&
+      exitCodeMultiple === 0 &&
         exitCodeSingle === 0 &&
         multipleCount === totalRequests &&
         singleCount === totalRequests
@@ -530,23 +507,29 @@ tap.test(
     // check single worker and multiple workers now generate same throughput
     const totalRequests = 10;
 
-    const reportMultipleFile = 'multiple_workers.json';
-    const reportMultipleFilePath = await getRootPath(reportMultipleFile);
-
-    const reportSingleFile = 'single_worker.json';
-    const reportSingleFilePath = await getRootPath(reportSingleFile);
+    const reportMultipleFilePath = returnTmpPath(
+      `multiple_workers-${Date.now()}.json`
+    );
+    const reportSingleFilePath = returnTmpPath(
+      `single_worker-${Date.now()}.json`
+    );
 
     const [exitCodeMultiple] = await execute(
       [
         'run',
         '-o',
-        reportMultipleFile,
+        reportMultipleFilePath,
         'test/scripts/ramp-regression-1682.json'
       ],
       { env: { WORKERS: 7 } }
     );
     const [exitCodeSingle] = await execute(
-      ['run', '-o', reportSingleFile, 'test/scripts/ramp-regression-1682.json'],
+      [
+        'run',
+        '-o',
+        reportSingleFilePath,
+        'test/scripts/ramp-regression-1682.json'
+      ],
       { env: { WORKERS: 1 } }
     );
 
@@ -557,9 +540,7 @@ tap.test(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
     t.ok(
-      deleteFile(reportMultipleFilePath) &&
-        deleteFile(reportSingleFilePath) &&
-        exitCodeMultiple === 0 &&
+      exitCodeMultiple === 0 &&
         exitCodeSingle === 0 &&
         multipleCount === totalRequests &&
         singleCount === totalRequests
