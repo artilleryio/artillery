@@ -177,7 +177,6 @@ class SSMS extends EventEmitter {
   }
 
   // Return object indexed by period (as string):
-  // periodData does not contain customMessages --> launch-platform.js
   static mergeBuckets(periodData) {
     debug(`mergeBuckets // timeslices: ${periodData.map((pd) => pd.period)}`);
 
@@ -374,6 +373,7 @@ class SSMS extends EventEmitter {
     }
 
     object.period = object.period;
+
     return object;
   }
 

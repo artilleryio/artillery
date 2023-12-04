@@ -177,7 +177,6 @@ ConsoleReporter.prototype.done = function done(data) {
 
 ConsoleReporter.prototype.printReport = function printReport(report, opts) {
   opts = opts || {};
-
   if (opts.printPeriod !== false) {
     const timeWindowEnd = moment(
       new Date(Number(report.period) + 10 * 1000)
