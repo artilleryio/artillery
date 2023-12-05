@@ -14,8 +14,11 @@ tap.test('GH #215 regression', async (t) => {
   ]);
   abortController.abort();
 
-  t.ok(exitCode === 0);
-  t.ok(!output.stdout.includes('ECONNREFUSED'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.notOk(
+    output.stdout.includes('ECONNREFUSED'),
+    'Should not have connection refused errors'
+  );
 });
 
 tap.test('Exits with non zero when an unknown command is used', async (t) => {
@@ -25,26 +28,31 @@ tap.test('Exits with non zero when an unknown command is used', async (t) => {
     '--with',
     'cheese'
   ]);
-  t.ok(exitCode !== 0);
+  t.not(exitCode, 0, 'CLI should error with non-zero exit code');
 });
 
 tap.test('Exits with non zero when an unknown option is used', async (t) => {
   const [exitCode] = await execute(['run', '--with', 'cheese']);
-  t.ok(exitCode !== 0);
+
+  t.not(exitCode, 0, 'CLI should error with non-zero exit code');
 });
 
 tap.test(
   'Exits with 0 when a known flag is used with no command',
   async (t) => {
     const [exitCode] = await execute(['run', '-V']);
-    t.ok(exitCode !== 0);
+
+    t.not(exitCode, 0, 'CLI should error with non-zero exit code');
   }
 );
 
 tap.test('Suggest similar commands if unknown command is used', async (t) => {
   const [exitCode, output] = await execute(['helpp']);
-  t.ok(exitCode === 127);
-  t.ok(output.stderr.includes('Did you mean'));
+  t.equal(exitCode, 127, 'CLI should error with exit code 127');
+  t.ok(
+    output.stderr.includes('Did you mean'),
+    'Should suggest similar commands'
+  );
 });
 
 /*

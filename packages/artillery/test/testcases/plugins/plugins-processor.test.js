@@ -43,7 +43,7 @@ function createServer() {
       '/script.json'
     )}`;
 
-    t.match(output, /afterResponse hook/, 'plugin output');
+    t.match(output, /afterResponse hook/, 'plugin should have been called');
 
     server.close(t.end);
   });
