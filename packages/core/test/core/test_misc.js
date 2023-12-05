@@ -40,9 +40,10 @@ l.each(SCRIPTS, function (fn) {
         var scenarios = report.scenariosCompleted;
         console.log('# requests = %s, scenarios = %s', requests, scenarios);
 
-        t.ok(
-          completedPhases === script.config.phases.length,
-          "Should've completed all phases"
+        t.equal(
+          completedPhases,
+          script.config.phases.length,
+          'Should have completed all phases'
         );
         var completedAt = process.hrtime(startedAt);
         var delta = (completedAt[0] * 1e9 + completedAt[1]) / 1e6;
@@ -64,7 +65,11 @@ l.each(SCRIPTS, function (fn) {
         if (report.errors) {
           console.log(`# errors: ${JSON.stringify(report.errors, null, 4)}`);
         }
-        t.ok(Object.keys(report.errors).length === 0, 'Should have no errors');
+        t.equal(
+          Object.keys(report.errors).length,
+          0,
+          'Should have no errors in report'
+        );
 
         ee.stop().then(() => {
           t.end();

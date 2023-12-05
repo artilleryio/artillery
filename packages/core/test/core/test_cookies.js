@@ -90,15 +90,17 @@ test('cookie jar socketio', function (t) {
           const hasUniqueCookies =
             l.size(res.body.cookies) === report.scenariosCompleted;
 
+          if (!hasScenariosCompleted || !hasUniqueCookies) {
+            console.log(res.body);
+            console.log(report);
+          }
+
           t.ok(
             hasScenariosCompleted,
             'There should be some scenarios completed'
           );
           t.ok(hasUniqueCookies, 'Each scenario had a unique cookie');
-          if (!hasScenariosCompleted || !hasUniqueCookies) {
-            console.log(res.body);
-            console.log(report);
-          }
+
           ee.stop().then(() => {
             t.end();
           });

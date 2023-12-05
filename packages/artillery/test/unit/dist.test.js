@@ -273,12 +273,12 @@ tap.test('payload is distributet between workers and does not repeat', (t) => {
   };
 
   const workerScripts = divideWork(script, numWorkers);
-  const palyoadSet = new Set();
+  const payloadSet = new Set();
   for (const script of workerScripts) {
     for (const payload of script.config.payload) {
       for (const data of payload.data) {
-        t.notOk(palyoadSet.has(data), 'payload is not repeated');
-        palyoadSet.add(data);
+        t.ok(!payloadSet.has(data), 'payload is not repeated');
+        payloadSet.add(data);
       }
     }
   }

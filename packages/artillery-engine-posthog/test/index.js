@@ -41,7 +41,7 @@ test('Engine interface', function (t) {
   const events = new EventEmitter();
   const engine = new PosthogEngine(script, events, {});
   const scenario = engine.createScenario(script.scenarios[0], events);
-  t.assert(engine, 'Can construct an engine');
-  t.assert(typeof scenario === 'function', 'Can create a scenario');
+  t.ok(engine, 'Can construct an engine');
+  t.type(scenario, 'function', 'Can create a scenario');
   t.end();
 });

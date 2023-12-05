@@ -10,8 +10,16 @@ test('think', function (t) {
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(Object.keys(report.errors).length === 0, 'no errors');
-      t.ok(Object.keys(report.codes).length === 0, 'stats should be empty');
+      t.equal(
+        Object.keys(report.errors).length,
+        0,
+        'Should have reported no errors'
+      );
+      t.equal(
+        Object.keys(report.codes).length,
+        0,
+        'Should have no http codes reported'
+      );
       ee.stop().then(() => {
         t.end();
       });
@@ -32,7 +40,11 @@ test('think - invalid think time', function (t) {
         Object.keys(report.errors).includes('Invalid think time: 1 potatoe'),
         'should have an error in report'
       );
-      t.ok(Object.keys(report.codes).length === 0, 'stats should be empty');
+      t.equal(
+        Object.keys(report.codes).length,
+        0,
+        'Should have no http codes reported'
+      );
       ee.stop().then(() => {
         t.end();
       });

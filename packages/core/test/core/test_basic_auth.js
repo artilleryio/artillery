@@ -16,12 +16,13 @@ test('HTTP basic auth', (t) => {
 
       t.ok(requests > 0, 'Did not get any requests');
 
-      t.ok(
-        code200 === code401 * 2,
+      t.equal(
+        code200,
+        code401 * 2,
         `Expected twice as many 200s as 401s, got ${code200} 200s and ${code401} 401s`
       );
-      t.ok(report.codes[200] === 20, 'Got twenty 200s');
-      t.ok(report.codes[401] === 10, 'Got ten 401s');
+      t.equal(report.codes[200], 20, 'Should get twenty 200s');
+      t.equal(report.codes[401], 10, 'Should get ten 401s');
       ee.stop().then(() => {
         t.end();
       });

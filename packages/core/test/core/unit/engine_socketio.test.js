@@ -54,10 +54,7 @@ test('SocketIo Engine', function (tap) {
       const runScenario = engine.createScenario(script.scenarios[0], ee);
 
       t.ok(engine, 'Can init the engine');
-      t.ok(
-        typeof runScenario === 'function',
-        'Can create a virtual user function'
-      );
+      t.type(runScenario, 'function', 'Can create a virtual user function');
 
       target.close();
       t.end();
@@ -82,9 +79,10 @@ test('SocketIo Engine', function (tap) {
 
       runScenario(initialContext, function userDone(err, finalContext) {
         t.ok(!err, 'Scenario completed with no errors');
-        t.ok(
-          finalContext.__receivedMessageCount === 1,
-          'Received one message upon connecting'
+        t.equal(
+          finalContext.__receivedMessageCount,
+          1,
+          'Should have received one message upon connecting'
         );
 
         target.close();
