@@ -44,7 +44,7 @@
   },
   "scripts": {
     "test:unit": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 --color test/unit/*.test.js",
-    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 test/cli/*.test.js",
+    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap --no-coverage --color test/testcases/plugins/*.test.js",
     "test": "npm run test:unit && npm run test:acceptance",
     "test:cloud": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/cloud-e2e/*.test.js",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
