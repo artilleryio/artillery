@@ -5,13 +5,17 @@ tap.test(
   'Running with no arguments prints out usage information',
   async (t) => {
     const [exitCode, output] = await execute([]);
-    t.ok(exitCode === 0 && output.stdout.includes('USAGE'));
+
+    t.ok(exitCode === 0);
+    t.ok(output.stdout.includes('USAGE'));
   }
 );
 
 tap.test('artillery -V prints version number', async (t) => {
   const [exitCode, output] = await execute(['-V']);
-  t.ok(exitCode === 0 && output.stdout.includes('VERSION INFO'));
+
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes('VERSION INFO'));
 });
 
 tap.test('Artillery quick run successfully', async (t) => {
@@ -20,5 +24,7 @@ tap.test('Artillery quick run successfully', async (t) => {
     '-c1',
     'https://artillery.io'
   ]);
-  t.ok(exitCode === 0 && output.stdout.includes('All VUs finished'));
+
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes('All VUs finished'));
 });

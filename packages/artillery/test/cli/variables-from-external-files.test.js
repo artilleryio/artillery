@@ -28,11 +28,9 @@ tap.test('Load variables from single CSV successfully', async (t) => {
 
   abortController.abort();
 
-  t.ok(
-    exitCode === 0 &&
-      output.stdout.includes('http.codes.200') &&
-      !output.stdout.includes('http.codes.400')
-  );
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes('http.codes.200'));
+  t.ok(!output.stdout.includes('http.codes.400'));
 });
 
 tap.test(
@@ -47,11 +45,10 @@ tap.test(
       './test/scripts/scenario-payload-with-envs/config/artillery-config.yml'
     ]);
 
+    t.ok(exitCode === 0);
+    t.ok(output.stdout.includes('Successfully ran with id'));
     t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id') &&
-        (output.stdout.includes('abc12345') ||
-          output.stdout.includes('abc56789'))
+      output.stdout.includes('abc12345') || output.stdout.includes('abc56789')
     );
   }
 );

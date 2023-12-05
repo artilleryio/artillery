@@ -34,7 +34,6 @@ tap.test('Run a test on AWS Lambda', async (t) => {
     scenarioPath
   ]);
 
-  t.ok(
-    stdout.indexOf('Summary report') > 0 && stdout.indexOf('http.codes.200') > 0
-  );
+  t.ok(stdout.indexOf('Summary report') > 0);
+  t.ok(stdout.indexOf('http.codes.200') > 0);
 });

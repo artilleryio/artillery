@@ -240,8 +240,9 @@ test('Capture - JSON', (t) => {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
 
+      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
       t.ok(
-        report.codes[201] > 0 && report.codes[200] === report.codes[201],
+        report.codes[200] === report.codes[201],
         'There should be a 200 for every 201'
       );
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -336,8 +337,9 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
 
+      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
       t.ok(
-        report.codes[201] > 0 && report.codes[200] === report.codes[201],
+        report.codes[200] === report.codes[201],
         'There should be a 200 for every 201'
       );
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -635,8 +637,9 @@ test('Capture - RegExp', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
+      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
       t.ok(
-        report.codes[201] > 0 && report.codes[200] === report.codes[201],
+        report.codes[200] === report.codes[201],
         'There should be a 200 for every 201'
       );
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');

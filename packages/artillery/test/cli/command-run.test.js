@@ -27,7 +27,8 @@ tap.test('Run a simple script', async (t) => {
     'test/scripts/hello.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes('Summary report'));
 });
 
 tap.test(
@@ -41,7 +42,8 @@ tap.test(
       '-o',
       'totally/bogus/path'
     ]);
-    t.ok(exitCode !== 0 && output.stderr.includes('Path does not exist'));
+    t.ok(exitCode !== 0);
+    t.ok(output.stderr.includes('Path does not exist'));
   }
 );
 
@@ -53,7 +55,8 @@ tap.test(
       'test/scripts/environments.yaml'
     ]);
 
-    t.ok(exitCode !== 0 && output.stderr.includes('No target specified'));
+    t.ok(exitCode !== 0);
+    t.ok(output.stderr.includes('No target specified'));
   }
 );
 
@@ -67,10 +70,8 @@ tap.test(
       'test/scripts/scenario-config-different-folder/config/config-processor-backward-compatibility.yml'
     ]);
 
-    t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id myTestId123')
-    );
+    t.ok(exitCode === 0);
+    t.ok(output.stdout.includes('Successfully ran with id myTestId123'));
   }
 );
 
@@ -84,10 +85,8 @@ tap.test(
       'test/scripts/scenario-config-different-folder/config/config.yml'
     ]);
 
-    t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id myTestId123')
-    );
+    t.ok(exitCode === 0);
+    t.ok(output.stdout.includes('Successfully ran with id myTestId123'));
   }
 );
 
@@ -100,7 +99,8 @@ tap.test('Environment specified with -e should be used', async (t) => {
   ]);
 
   // Here if the right environment is not picked up, we'll get ECONNREFUSED errors in the report
-  t.ok(exitCode === 0 && !output.stdout.includes('ECONNREFUSED'));
+  t.ok(exitCode === 0);
+  t.ok(!output.stdout.includes('ECONNREFUSED'));
 });
 
 tap.test('Can specify scenario to run by name', async (t) => {
@@ -113,16 +113,14 @@ tap.test('Can specify scenario to run by name', async (t) => {
     'test/scripts/scenario-named/scenario.yml'
   ]);
 
-  t.ok(
-    exitCode === 0 && output.stdout.includes('Successfully running scenario 2')
-  );
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes('Successfully running scenario 2'));
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
+  t.ok(json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6);
   t.ok(
-    json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6 &&
-      typeof json.aggregate.counters[
-        'vusers.created_by_name.Test Scenario 1'
-      ] === 'undefined'
+    typeof json.aggregate.counters['vusers.created_by_name.Test Scenario 1'] ===
+      'undefined'
   );
 });
 
@@ -146,7 +144,7 @@ tap.test(
 );
 
 tap.test('Run a script with one payload command line', async (t) => {
-  const [, output] = await execute([
+  const [exitCode, output] = await execute([
     'run',
     'test/scripts/single_payload.json',
     '-p',
@@ -162,7 +160,8 @@ tap.test('Run a script with one payload json config', async (t) => {
     'test/scripts/single_payload_object.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes('Summary report'));
 });
 
 tap.test(
@@ -173,7 +172,8 @@ tap.test(
       'test/scripts/single_payload_options.json'
     ]);
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.ok(exitCode === 0);
+    t.ok(output.stdout.includes('Summary report'));
   }
 );
 
@@ -187,7 +187,8 @@ tap.test(
       'test/scripts/multiple_payloads.json'
     ]);
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.ok(exitCode === 0);
+    t.ok(output.stdout.includes('Summary report'));
   }
 );
 
@@ -206,15 +207,17 @@ tap.test(
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     const pluginPrefix = 'plugins.metrics-by-endpoint';
 
+    t.ok(exitCode === 0);
+    t.ok(!output.stdout.includes(pluginPrefix));
     t.ok(
-      exitCode === 0 &&
-        !output.stdout.includes(pluginPrefix) &&
-        Object.keys(json.aggregate.counters).some((key) =>
-          key.includes(pluginPrefix)
-        ) &&
-        Object.keys(json.aggregate.summaries).some((key) =>
-          key.includes(pluginPrefix)
-        )
+      Object.keys(json.aggregate.counters).some((key) =>
+        key.includes(pluginPrefix)
+      )
+    );
+    t.ok(
+      Object.keys(json.aggregate.summaries).some((key) =>
+        key.includes(pluginPrefix)
+      )
     );
   }
 );
@@ -229,7 +232,8 @@ tap.test('Run a script overwriting default options (output)', async (t) => {
     reportFilePath
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes(`Log file: ${reportFilePath}`));
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes(`Log file: ${reportFilePath}`));
 });
 
 tap.test(
@@ -309,9 +313,11 @@ tap.test('Script using hook functions', async (t) => {
     'test/scripts/hello.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('hello from processor'));
+  t.ok(exitCode === 0);
+  t.ok(output.stdout.includes('hello from processor'));
 });
 
+//TODO: review these 2 test assertions
 tap.test('Hook functions - can rewrite the URL', async (t) => {
   // Ref: https://github.com/shoreditch-ops/artillery/issues/185
   const [exitCode] = await execute([
@@ -324,7 +330,8 @@ tap.test('Hook functions - can rewrite the URL', async (t) => {
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(exitCode === 0 && json.aggregate.counters['http.codes.200']);
+  t.ok(exitCode === 0);
+  t.ok(json.aggregate.counters['http.codes.200'] == 3);
 });
 
 tap.test('Environment variables can be loaded from dotenv files', async (t) => {
@@ -338,7 +345,8 @@ tap.test('Environment variables can be loaded from dotenv files', async (t) => {
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(exitCode === 0 && json.aggregate.counters['http.codes.200']);
+  t.ok(exitCode === 0);
+  t.ok(json.aggregate.counters['http.codes.200'] == 1);
 });
 
 tap.test('Environment variables can be loaded using $env', async (t) => {
@@ -356,12 +364,10 @@ tap.test('Environment variables can be loaded using $env', async (t) => {
   );
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(
-    exitCode === 0 &&
-      json.aggregate.counters['http.codes.200'] === 2 &&
-      result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
-      result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
-  );
+  t.ok(exitCode === 0);
+  t.ok(json.aggregate.counters['http.codes.200'] === 2);
+  t.ok(result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`));
+  t.ok(result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`));
 });
 
 tap.test(
@@ -386,12 +392,10 @@ tap.test(
     );
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-    t.ok(
-      exitCode === 0 &&
-        json.aggregate.counters['http.codes.200'] === 2 &&
-        result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
-        result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
-    );
+    t.ok(exitCode === 0);
+    t.ok(json.aggregate.counters['http.codes.200'] === 2);
+    t.ok(result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`));
+    t.ok(result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`));
   }
 );
 
@@ -442,7 +446,8 @@ tap.test(
     const reportCount = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
       .aggregate.scenariosCreated;
 
-    t.ok(exitCode === 0 && reportCount === 1);
+    t.ok(exitCode === 0);
+    t.ok(reportCount === 1);
   }
 );
 
@@ -491,12 +496,11 @@ tap.test(
     const singleCount = JSON.parse(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
-    t.ok(
-      exitCodeMultiple === 0 &&
-        exitCodeSingle === 0 &&
-        multipleCount === totalRequests &&
-        singleCount === totalRequests
-    );
+
+    t.ok(exitCodeMultiple === 0);
+    t.ok(exitCodeSingle === 0);
+    t.ok(multipleCount === totalRequests);
+    t.ok(singleCount === totalRequests);
   }
 );
 
@@ -539,12 +543,11 @@ tap.test(
     const singleCount = JSON.parse(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
-    t.ok(
-      exitCodeMultiple === 0 &&
-        exitCodeSingle === 0 &&
-        multipleCount === totalRequests &&
-        singleCount === totalRequests
-    );
+
+    t.ok(exitCodeMultiple === 0);
+    t.ok(exitCodeSingle === 0);
+    t.ok(multipleCount === totalRequests);
+    t.ok(singleCount === totalRequests);
   }
 );
 
@@ -563,6 +566,7 @@ tap.test(
       { env: { WORKERS: 7 } }
     );
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.ok(exitCode === 0);
+    t.ok(output.stdout.includes('Summary report'));
   }
 );

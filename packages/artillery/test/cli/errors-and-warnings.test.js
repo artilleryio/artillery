@@ -13,7 +13,9 @@ tap.test('GH #215 regression', async (t) => {
     'test/scripts/gh_215_add_token.json'
   ]);
   abortController.abort();
-  t.ok(exitCode === 0 && !output.stdout.includes('ECONNREFUSED'));
+
+  t.ok(exitCode === 0);
+  t.ok(!output.stdout.includes('ECONNREFUSED'));
 });
 
 tap.test('Exits with non zero when an unknown command is used', async (t) => {
@@ -41,7 +43,8 @@ tap.test(
 
 tap.test('Suggest similar commands if unknown command is used', async (t) => {
   const [exitCode, output] = await execute(['helpp']);
-  t.ok(exitCode === 127 && output.stderr.includes('Did you mean'));
+  t.ok(exitCode === 127);
+  t.ok(output.stderr.includes('Did you mean'));
 });
 
 /*

@@ -11,5 +11,6 @@ tap.test('Workers should be able to set exit codes', async (t) => {
   );
 
   const [exitCode] = await execute(['run', scenarioPath]);
+
   t.ok(exitCode === 17, 'CLI exited with error code set in a worker thread');
 });
