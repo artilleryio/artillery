@@ -60,9 +60,10 @@ class OTelTraceConfig {
       this.exporterOpts
     );
     let samplingOpts = this.config.smartSampling;
-    const Processor = this.config.smartSampling
-      ? OutlierDetectionBatchSpanProcessor
-      : BatchSpanProcessor;
+    const Processor =
+      this.config.smartSampling && !this.config.smartSampling?.tagOnly
+        ? OutlierDetectionBatchSpanProcessor
+        : BatchSpanProcessor;
 
     this.tracerProvider.addSpanProcessor(
       new Processor(

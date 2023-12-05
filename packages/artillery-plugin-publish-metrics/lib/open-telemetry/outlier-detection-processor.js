@@ -11,10 +11,7 @@ class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
   }
 
   onEnd(span) {
-    if (
-      this.samplingOpts.tagOnly ||
-      span.instrumentationLibrary.name === 'artillery-playwright'
-    ) {
+    if (span.instrumentationLibrary.name === 'artillery-playwright') {
       super.onEnd(span);
     } else {
       const traceId = span.spanContext().traceId;
@@ -52,7 +49,7 @@ class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
       }
     });
     this._traces.clear();
-    // By here all the HTTP engine traces are processed and sent, so we call the parent onShutDown to cover for possible playwright engine traces
+    // By here all the available HTTP engine traces are processed and sent to buffer, the parent onShutDown will cover for possible playwright engine traces and the shutdown process
     super.onShutdown();
   }
 
