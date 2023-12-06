@@ -17,8 +17,8 @@ test('scenarios avoided - arrival rate', function (t) {
     ee.on('done', function (nr) {
       const stats = SSMS.legacyReport(nr).report();
 
-      t.ok(stats.codes['200'] === 1, 'Expected number of requests made');
-      t.ok(stats.scenariosAvoided === 999, 'Expected number of VUs skipped');
+      t.equal(stats.codes['200'], 1, 'Should make expected number of requests');
+      t.equal(stats.scenariosAvoided, 999, 'Should skip all other VUs');
       ee.stop().then(() => {
         t.end();
       });
@@ -39,8 +39,8 @@ test('scenarios avoided - arrival count', function (t) {
 
     ee.on('done', function (nr) {
       const stats = SSMS.legacyReport(nr).report();
-      t.ok(stats.codes['200'] === 1, 'Expected number of requests made');
-      t.ok(stats.scenariosAvoided === 999, 'Expected number of VUs skipped');
+      t.equal(stats.codes['200'], 1, 'Should make expected number of requests');
+      t.equal(stats.scenariosAvoided, 999, 'Should skip all other VUs');
       ee.stop().then(() => {
         t.end();
       });

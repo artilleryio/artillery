@@ -9,6 +9,8 @@ const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
 const setDefaultAWSCredentials = require('../aws/aws-set-default-credentials');
 const AWS = require('aws-sdk');
 
+const { ensureParameterExists } = require('./legacy/aws-util');
+
 const {
   S3_BUCKET_NAME_PREFIX,
   ECS_WORKER_ROLE_NAME
@@ -19,6 +21,8 @@ const getAccountId = require('../aws/aws-get-account-id');
 class PlatformECS {
   constructor(script, payload, opts, platformOpts) {
     this.opts = opts;
+    this.platformOpts = platformOpts;
+
     this.testRunId = platformOpts.testRunId;
     if (!this.testRunId) {
       throw new Error('testRunId is required');
@@ -30,6 +34,7 @@ class PlatformECS {
 
     this.accountId = await getAccountId();
 
+    await ensureSSMParametersExist(this.platformOpts.region);
     await ensureS3BucketExists();
     await createIAMResources(this.accountId);
   }
@@ -43,6 +48,51 @@ class PlatformECS {
   async stopWorker() {}
 
   async shutdown() {}
+}
+
+async function ensureSSMParametersExist(region) {
+  await ensureParameterExists(
+    '/artilleryio/NPM_TOKEN',
+    'null',
+    'SecureString',
+    region
+  );
+  await ensureParameterExists(
+    '/artilleryio/NPM_REGISTRY',
+    'null',
+    'String',
+    region
+  );
+  await ensureParameterExists(
+    '/artilleryio/NPM_SCOPE',
+    'null',
+    'String',
+    region
+  );
+  await ensureParameterExists(
+    '/artilleryio/ARTIFACTORY_AUTH',
+    'null',
+    'SecureString',
+    region
+  );
+  await ensureParameterExists(
+    '/artilleryio/ARTIFACTORY_EMAIL',
+    'null',
+    'String',
+    region
+  );
+  await ensureParameterExists(
+    '/artilleryio/NPMRC',
+    'null',
+    'SecureString',
+    region
+  );
+  await ensureParameterExists(
+    '/artilleryio/NPM_SCOPE_REGISTRY',
+    'null',
+    'String',
+    region
+  );
 }
 
 async function createIAMResources(accountId) {

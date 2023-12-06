@@ -19,11 +19,7 @@ test('parallel requests', (t) => {
         expected,
         'Should have ' + stepCount + ' requests for each completed scenario.'
       );
-      t.notEqual(
-        scenarios,
-        0,
-        'Should have at least 1 scenario successfully run'
-      );
+      t.not(scenarios, 0, 'Should have at least 1 scenario successfully run');
 
       ee.stop().then(() => {
         t.end();

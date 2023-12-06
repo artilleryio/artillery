@@ -31,8 +31,9 @@ tap.test('Basic metric collection', async (t) => {
 
   const metrics = mdb.getMetrics(buckets[0]);
 
-  t.ok(
-    typeof metrics.histograms['sprint_duration'].max === 'number',
+  t.type(
+    metrics.histograms['sprint_duration'].max,
+    'number',
     'Histograms should be objects with readable fields'
   );
   t.ok(

@@ -17,6 +17,7 @@ class RunCommand extends Command {
 
   async run() {
     const { flags, _argv, args } = await this.parse(RunCommand);
+    flags.region = flags.region || 'us-east-1';
 
     flags['platform-opt'] = [`region=${flags.region}`];
 
@@ -24,13 +25,16 @@ class RunCommand extends Command {
 
     new CloudPlugin(null, null, { flags });
 
-    const ECS = new PlatformECS(null, null, {}, { testRunId: 'foo' });
+    const ECS = new PlatformECS(
+      null,
+      null,
+      {},
+      { testRunId: 'foo', region: flags.region }
+    );
     await ECS.init();
 
     flags.taskRoleName = ECS_WORKER_ROLE_NAME;
     process.env.USE_NOOP_BACKEND_STORE = 'true';
-
-    flags.region = flags.region || 'us-east-1';
 
     telemetry.capture('run:fargate', {
       region: flags.region,

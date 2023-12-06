@@ -38,20 +38,14 @@ test('pause', function (t) {
   let phaseStartedTimestamp;
   phaser.on('phaseStarted', function (spec) {
     phaseStartedTimestamp = Date.now();
-    t.ok(
-      _.isEqual(spec, phaseSpec),
-      'phaseStarted event emitted with correct spec'
-    );
+    t.same(spec, phaseSpec, 'phaseStarted event emitted with correct spec');
   });
   phaser.on('phaseCompleted', function (spec) {
     t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
-    t.ok(
-      _.isEqual(spec, phaseSpec),
-      'phaseCompleted event emitted with correct spec'
-    );
+    t.same(spec, phaseSpec, 'phaseCompleted event emitted with correct spec');
   });
   phaser.on('done', function () {
     let delta = Date.now() - startedAt;
@@ -74,7 +68,7 @@ test('arrivalRate set to 0 stays at 0', function (t) {
   t.plan(1);
   let phaser = createPhaser([phaseSpec]);
   phaser.on('phaseStarted', function (spec) {
-    t.ok(_.isEqual(spec.arrivalRate, 0), 'arrivalRate starts as zero');
+    t.equal(spec.arrivalRate, 0, 'arrivalRate should start as zero');
     t.end();
   });
   phaser.run();
@@ -86,7 +80,7 @@ test('modifies duration in phase as expected', async function (t) {
   const phaser = createPhaser([phaseSpec]);
 
   phaser.on('phaseStarted', function (spec) {
-    t.ok(spec.duration == 5, 'duration should be 5');
+    t.equal(spec.duration, 5, 'duration should be 5');
   });
 
   phaser.run();
@@ -98,7 +92,7 @@ test('modifies pause in phase as expected', async function (t) {
   const phaser = createPhaser([phaseSpec]);
 
   phaser.on('phaseStarted', function (spec) {
-    t.ok(spec.pause == 2, 'pause should be 2');
+    t.equal(spec.pause, 2, 'pause should be 2');
   });
 
   phaser.run();
@@ -114,7 +108,11 @@ test('throws when duration is invalid', async function (t) {
     phaserError = error;
   }
 
-  t.equal(phaserError.message, 'Invalid duration for phase: 5 potatoes');
+  t.equal(
+    phaserError.message,
+    'Invalid duration for phase: 5 potatoes',
+    'should throw error'
+  );
 });
 
 test('arrivalCount', function (t) {
@@ -131,20 +129,14 @@ test('arrivalCount', function (t) {
   let arrivals = 0;
   phaser.on('phaseStarted', function (spec) {
     phaseStartedTimestamp = Date.now();
-    t.ok(
-      _.isEqual(spec, phaseSpec),
-      'phaseStarted event emitted with correct spec'
-    );
+    t.same(spec, phaseSpec, 'phaseStarted event emitted with correct spec');
   });
   phaser.on('phaseCompleted', function (spec) {
     t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
-    t.ok(
-      _.isEqual(spec, phaseSpec),
-      'phaseCompleted event emitted with correct spec'
-    );
+    t.same(spec, phaseSpec, 'phaseCompleted event emitted with correct spec');
   });
   phaser.on('arrival', function () {
     arrivals++;
@@ -160,8 +152,9 @@ test('arrivalCount', function (t) {
       )
     );
 
-    t.ok(
-      arrivals === phaseSpec.arrivalCount,
+    t.equal(
+      arrivals,
+      phaseSpec.arrivalCount,
       util.format(
         'saw the expected %s arrivals (expecting %s)',
         arrivals,
@@ -217,11 +210,8 @@ function testRamp(t, phaseSpec) {
   let arrivals = 0;
   phaser.on('phaseStarted', function (spec) {
     phaseStartedTimestamp = Date.now();
-    t.ok(
-      _.isEqual(spec, phaseSpec),
-      'phaseStarted event emitted with correct spec'
-    );
-    t.ok(
+    t.same(spec, phaseSpec, 'phaseStarted event emitted with correct spec');
+    t.equal(
       _.filter(
         [
           'arrivalRate',
@@ -234,8 +224,9 @@ function testRamp(t, phaseSpec) {
         function (k) {
           return !_.isUndefined(spec[k]) && typeof spec[k] != 'number';
         }
-      ).length === 0,
-      'spec numeric values are correctly typed'
+      ).length,
+      0,
+      'spec numeric values should be correctly typed'
     );
   });
   phaser.on('phaseCompleted', function (spec) {
@@ -243,10 +234,7 @@ function testRamp(t, phaseSpec) {
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
-    t.ok(
-      _.isEqual(spec, phaseSpec),
-      'phaseCompleted event emitted with correct spec'
-    );
+    t.same(spec, phaseSpec, 'phaseCompleted event emitted with correct spec');
   });
   phaser.on('arrival', function () {
     arrivals++;

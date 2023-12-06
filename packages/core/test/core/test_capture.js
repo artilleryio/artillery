@@ -65,7 +65,7 @@ test('Capture - headers', (t) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
-      t.ok(report.codes[200] === 2, 'Expected number of requests made');
+      t.equal(report.codes[200], 2, 'Should do expected number of requests');
       ee.stop().then(() => {
         t.end();
       });
@@ -147,9 +147,9 @@ test('Capture - selector', (t) => {
         script.config.phases[0].arrivalRate *
           script.config.phases[0].duration *
           script.scenarios[0].flow.length,
-        'Successful responses'
+        'Number of 200 requests should be equal to arrivalRate*duration*numberOfRequests'
       );
-      t.ok(report.codes[404] === undefined, 'it only hit existing urls');
+      t.ok(report.codes[404] === undefined, 'it should only hit existing urls');
 
       ee.stop().then(() => {
         t.end();
@@ -240,8 +240,10 @@ test('Capture - JSON', (t) => {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(
-        report.codes[201] > 0 && report.codes[200] === report.codes[201],
+      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
+      t.equal(
+        report.codes[200],
+        report.codes[201],
         'There should be a 200 for every 201'
       );
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -336,8 +338,10 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(
-        report.codes[201] > 0 && report.codes[200] === report.codes[201],
+      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
+      t.equal(
+        report.codes[200],
+        report.codes[201],
         'There should be a 200 for every 201'
       );
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -635,8 +639,10 @@ test('Capture - RegExp', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(
-        report.codes[201] > 0 && report.codes[200] === report.codes[201],
+      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
+      t.equal(
+        report.codes[200],
+        report.codes[201],
         'There should be a 200 for every 201'
       );
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -691,8 +697,9 @@ test('Capture WS - JSON', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(
-        Object.keys(report.errors).length === 0,
+      t.equal(
+        Object.keys(report.errors).length,
+        0,
         'There should be no WS errors'
       );
 

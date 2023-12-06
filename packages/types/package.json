@@ -1,6 +1,6 @@
 {
   "name": "@artilleryio/types",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "files": [
     "./definitions.ts",
     "./schema.json"
@@ -22,5 +22,8 @@
     "tap": "^16.3.8",
     "ts-node": "^10.9.1",
     "typescript-json-schema": "^0.59.0"
+  },
+  "dependencies": {
+    "artillery-plugin-fake-data": "*"
   }
 }

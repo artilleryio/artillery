@@ -19,7 +19,7 @@ test('sequence payload reader should read in sequence', function (t) {
   const readElements = readPayloadData(reader);
 
   _.each(readElements, function (el, index) {
-    t.ok(el === payloadData[index], 'read element matches payload element');
+    t.equal(el, payloadData[index], 'read element matches payload element');
   });
   t.end();
 });

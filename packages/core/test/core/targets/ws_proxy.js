@@ -1,9 +1,9 @@
 const WebSocketServer = require('ws').Server;
 const debug = require('debug')('test:target:ws_proxy');
 const http = require('http');
-const proxy = require('proxy');
+const { createProxy } = require('proxy');
 
-const server = proxy(http.createServer());
+const server = createProxy(http.createServer());
 
 const WS_PORT = 9093;
 const PROXY_PORT = 9095;

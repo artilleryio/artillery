@@ -13,12 +13,14 @@ test('ifTrue', (t) => {
       const report = SSMS.legacyReport(nr).report();
       let requests = report.codes[201];
       let expected = 10;
-      t.ok(
-        requests === expected,
+      t.equal(
+        requests,
+        expected,
         'Should have ' + expected + ' 201s (pet created)'
       );
-      t.ok(report.codes[404] === expected, 'Should have ' + expected + '404s');
-      t.ok(!report.codes[200], 'Should not have 200s');
+      t.equal(report.codes[404], expected, 'Should have ' + expected + '404s');
+      t.notOk(report.codes[200], 'Should not have 200s');
+
       ee.stop().then(() => {
         t.end();
       });

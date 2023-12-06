@@ -582,10 +582,16 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     global.artillery.shutdown = gracefulShutdown;
 
     process.on('SIGINT', async () => {
+      if (shuttingDown) {
+        return;
+      }
       console.log('Stopping test run (SIGINT received)...');
       await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
     process.on('SIGTERM', async () => {
+      if (shuttingDown) {
+        return;
+      }
       console.log('Stopping test run (SIGTERM received)...');
       await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
@@ -1049,7 +1055,7 @@ async function ensureTaskExists(context) {
 
     const imageUrl =
       process.env.WORKER_IMAGE_URL ||
-      `301676560329.dkr.ecr.${context.region}.amazonaws.com/artillery-pro/aws-ecs-node:v2-${IMAGE_VERSION}`;
+      `public.ecr.aws/d8a4z9o5/artillery-worker:${IMAGE_VERSION}`;
 
     const secrets = [
       'NPM_TOKEN',

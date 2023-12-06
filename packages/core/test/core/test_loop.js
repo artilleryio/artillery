@@ -17,8 +17,9 @@ test('simple loop', (t) => {
       let requests = report.requestsCompleted;
       let loopCount = script.scenarios[0].flow[0].count;
       let expected = scenarios * loopCount * 2;
-      t.ok(
-        requests === expected,
+      t.equal(
+        requests,
+        expected,
         'Should have ' + expected + ' requests for each completed scenario'
       );
       ee.stop().then(() => {
@@ -42,14 +43,15 @@ test('loop with range', (t) => {
       let code200 = report.codes[200];
       let code404 = report.codes[404];
 
-      t.ok(
-        requests === expected,
+      t.equal(
+        requests,
+        expected,
         'Should have ' + expected + ' requests for each completed scenario'
       );
       t.ok(code200 > 0, 'There should be a non-zero number of 200s');
 
       // If $loopCount breaks, we'll see 404s here.
-      t.ok(!code404, 'There should be no 404s');
+      t.notOk(code404, 'There should be no 404s');
       ee.stop().then(() => {
         t.end();
       });
@@ -71,14 +73,15 @@ test('loop with nested range', (t) => {
       let code200 = report.codes[200];
       let code404 = report.codes[404];
 
-      t.ok(
-        requests === expected,
+      t.equal(
+        requests,
+        expected,
         'Should have ' + expected + ' requests for each completed scenario'
       );
       t.ok(code200 > 0, 'There should be a non-zero number of 200s');
 
       // If $loopCount breaks, we'll see 404s here.
-      t.ok(!code404, 'There should be no 404s');
+      t.notOk(code404, 'There should be no 404s');
       ee.stop().then(() => {
         t.end();
       });

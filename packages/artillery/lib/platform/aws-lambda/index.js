@@ -282,9 +282,20 @@ class PlatformLambda {
       stderr: stderr3,
       status: status3,
       error: error3
-    } = spawn.sync('npm', ['uninstall', '@artilleryio/platform-fargate'], {
-      cwd: a9cwd
-    });
+    } = spawn.sync(
+      'npm',
+      [
+        'uninstall',
+        'dependency-tree',
+        'detective',
+        'is-builtin-module',
+        'try-require',
+        'walk-sync'
+      ],
+      {
+        cwd: a9cwd
+      }
+    );
     if (error3) {
       artillery.log(stdout3?.toString(), stderr3?.toString(), status3, error3);
     } else {
