@@ -20,13 +20,21 @@ class ArtilleryWorker {
   async init(_opts) {
     this.state = STATES.initializing;
 
-    this.worker = new Worker(path.join(__dirname, 'worker.js'));
+    let env = { ...process.env };
+    if (global.artillery.hasTypescriptProcessor) {
+      env['NODE_OPTIONS'] = process.env.NODE_OPTIONS
+        ? `${process.env.NODE_OPTIONS} --enable-source-maps`
+        : '--enable-source-maps';
+    }
+
+    this.worker = new Worker(path.join(__dirname, 'worker.js'), { env });
     this.workerId = this.worker.threadId;
     this.worker.on('error', this.onError.bind(this));
     // TODO:
     this.worker.on('exit', (exitCode) => {
       this.events.emit('exit', exitCode);
     });
+    //eslint-disable-next-line handle-callback-err
     this.worker.on('messageerror', (err) => {});
 
     // TODO: Expose performance metrics via getHeapSnapshot() and performance object.

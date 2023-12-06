@@ -33,6 +33,7 @@ const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
 const { customAlphabet } = require('nanoid');
 const parseTagString = require('../util/parse-tag-string');
+const esbuild = require('esbuild');
 class RunCommand extends Command {
   static aliases = ['run'];
   // Enable multiple args:
@@ -436,6 +437,40 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 };
 
+function replaceProcessorIfTypescript(script, scriptPath) {
+  const relativeProcessorPath = script.config.processor;
+
+  if (!relativeProcessorPath || path.extname(relativeProcessorPath) != '.ts') {
+    return script;
+  }
+
+  global.artillery.hasTypescriptProcessor = true;
+
+  //TODO: take into account -c flag, like code above
+  const actualProcessorPath = path.resolve(
+    path.dirname(scriptPath),
+    relativeProcessorPath
+  );
+
+  const tmpDir = os.tmpdir();
+  const newProcessorPath = path.join(tmpDir, 'processor.js');
+
+  esbuild.buildSync({
+    entryPoints: [actualProcessorPath],
+    outfile: newProcessorPath,
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    sourcemap: 'inline',
+    sourceRoot: '/' //TODO: review this?
+  });
+
+  console.log(`New processor path: ${newProcessorPath}`);
+  script.config.processor = newProcessorPath;
+
+  return script;
+}
+
 async function prepareTestExecutionPlan(inputFiles, flags, args) {
   let script1 = {};
 
@@ -500,7 +535,9 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   script5.config.statsInterval = script5.config.statsInterval || 30;
 
   const script6 = addDefaultPlugins(script5);
-  return script6;
+  const script7 = replaceProcessorIfTypescript(script6, inputFiles[0]);
+
+  return script7;
 }
 
 async function readPayload(script) {
