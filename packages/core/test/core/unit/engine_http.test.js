@@ -78,9 +78,10 @@ test('HTTP engine', function (tap) {
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
     t.ok(engine, 'Can construct an engine');
-    t.ok(
-      typeof runScenario === 'function',
-      'Can use the engine to create virtual user functions'
+    t.type(
+      runScenario,
+      'function',
+      'Should be able to use the engine to create virtual user functions'
     );
     t.end();
   });
@@ -104,11 +105,15 @@ test('HTTP engine', function (tap) {
     const startedAt = Date.now();
     runScenario(initialContext, function userDone(err, finalContext) {
       const finishedAt = Date.now();
-      t.ok(!err, 'Virtual user finished successfully');
-      t.ok(finalContext.vars.newVar === 1234, 'Function spec was executed');
+      t.ok(!err, 'Virtual user should finish successfully');
+      t.equal(
+        finalContext.vars.newVar,
+        1234,
+        'Function spec should execute and set variable'
+      );
       t.ok(
         finishedAt - startedAt >= THINKTIME_SEC * 1000,
-        'User spent some time thinking'
+        'User should have spent some time thinking'
       );
 
       const expectedLog = '# This is printed from the script with "log": 1234';
@@ -122,14 +127,23 @@ test('HTTP engine', function (tap) {
       t.ok(seen, 'log worked');
       console.log.restore(); // unwrap the spy
       // loop count starts at 0, hence 2 rather than 3 here:
-      t.ok(finalContext.vars.inc === 2, 'Function called in a loop');
-      t.ok(
-        finalContext.vars.loopElement === 'world',
-        'loopElement set by custom function'
+      t.equal(
+        finalContext.vars.inc,
+        2,
+        'Function should have been called in a loop'
+      );
+      t.equal(
+        finalContext.vars.loopElement,
+        'world',
+        'loopElement should be set by custom function'
       );
 
       // someCounter is set by a whileTrue hook function:
-      t.ok(finalContext.vars.someCounter === 3, 'whileTrue aborted the loop');
+      t.equal(
+        finalContext.vars.someCounter,
+        3,
+        'whileTrue should have aborted the loop'
+      );
 
       t.end();
     });
@@ -614,7 +628,11 @@ test('HTTP engine', function (tap) {
         t.fail();
       }
 
-      t.ok(finalContext.answer === answer);
+      t.equal(
+        finalContext.answer,
+        answer,
+        'afterResponse hook should run and extract answer'
+      );
 
       t.end();
     });
@@ -632,12 +650,12 @@ test('HTTP engine', function (tap) {
               'beforeScenarioTest',
               'beforeScenario hook should have scenario info'
             );
-            t.same(context.vars, {}, 'it receives the context object');
+            t.same(context.vars, {}, 'it should receive the context object');
             t.ok(
               ee instanceof EventEmitter,
               'processor function should receive an event emitter'
             );
-            t.ok(typeof next === 'function', 'it receives a callback function');
+            t.type(next, 'function', 'it should receive a callback function');
 
             context.vars.endpoint = endpoint;
 
@@ -820,14 +838,14 @@ test('HTTP engine', function (tap) {
 
       t.ok(target.isDone(), 'Should have made a request to both endpoints');
 
-      t.ok(
-        Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1)
-          .length === 2,
+      t.equal(
+        Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1).length,
+        2,
         'Should have seen 2 unique response codes'
       );
 
-      t.ok(counters['http.codes.302'] === 1, 'Should have 1 302 response');
-      t.ok(counters['http.codes.200'] === 1, 'Should have 1 200 response');
+      t.equal(counters['http.codes.302'], 1, 'Should have 1 302 response');
+      t.equal(counters['http.codes.200'], 1, 'Should have 1 200 response');
 
       t.end();
     });
@@ -1086,7 +1104,7 @@ test('HTTP engine', function (tap) {
         t.fail();
       }
 
-      t.ok(counters['http.codes.200'] === 1, 'Should have a 200 response');
+      t.equal(counters['http.codes.200'], 1, 'Should have one 200 response');
 
       t.end();
     });

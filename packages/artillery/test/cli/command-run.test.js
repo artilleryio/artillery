@@ -27,7 +27,8 @@ tap.test('Run a simple script', async (t) => {
     'test/scripts/hello.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
 });
 
 tap.test(
@@ -41,7 +42,9 @@ tap.test(
       '-o',
       'totally/bogus/path'
     ]);
-    t.ok(exitCode !== 0 && output.stderr.includes('Path does not exist'));
+
+    t.not(exitCode, 0, 'CLI should exit with error code (non-zero)');
+    t.ok(output.stderr.includes('Path does not exist'), 'Should log error');
   }
 );
 
@@ -53,7 +56,8 @@ tap.test(
       'test/scripts/environments.yaml'
     ]);
 
-    t.ok(exitCode !== 0 && output.stderr.includes('No target specified'));
+    t.not(exitCode, 0, 'CLI should exit with error code (non-zero)');
+    t.ok(output.stderr.includes('No target specified'), 'Should log error');
   }
 );
 
@@ -67,9 +71,10 @@ tap.test(
       'test/scripts/scenario-config-different-folder/config/config-processor-backward-compatibility.yml'
     ]);
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id myTestId123')
+      output.stdout.includes('Successfully ran with id myTestId123'),
+      'Should log success'
     );
   }
 );
@@ -84,9 +89,10 @@ tap.test(
       'test/scripts/scenario-config-different-folder/config/config.yml'
     ]);
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id myTestId123')
+      output.stdout.includes('Successfully ran with id myTestId123'),
+      'Should log success'
     );
   }
 );
@@ -100,7 +106,11 @@ tap.test('Environment specified with -e should be used', async (t) => {
   ]);
 
   // Here if the right environment is not picked up, we'll get ECONNREFUSED errors in the report
-  t.ok(exitCode === 0 && !output.stdout.includes('ECONNREFUSED'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.notOk(
+    output.stdout.includes('ECONNREFUSED'),
+    'Should not have connection refused errors'
+  );
 });
 
 tap.test('Can specify scenario to run by name', async (t) => {
@@ -113,16 +123,22 @@ tap.test('Can specify scenario to run by name', async (t) => {
     'test/scripts/scenario-named/scenario.yml'
   ]);
 
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
   t.ok(
-    exitCode === 0 && output.stdout.includes('Successfully running scenario 2')
+    output.stdout.includes('Successfully running scenario 2'),
+    'Should log success'
   );
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(
-    json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6 &&
-      typeof json.aggregate.counters[
-        'vusers.created_by_name.Test Scenario 1'
-      ] === 'undefined'
+  t.equal(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario 2'],
+    6,
+    'Should have created 6 vusers for the right scenario'
+  );
+  t.type(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario 1'],
+    'undefined',
+    'Should not have created vusers for the wrong scenario'
   );
 });
 
@@ -140,20 +156,22 @@ tap.test(
     t.ok(
       output.stdout.includes(
         'Error: Scenario Test Scenario 4 not found in script. Make sure your chosen scenario matches the one in your script exactly.'
-      )
+      ),
+      'Should log error when scenario not found'
     );
   }
 );
 
 tap.test('Run a script with one payload command line', async (t) => {
-  const [, output] = await execute([
+  const [exitCode, output] = await execute([
     'run',
     'test/scripts/single_payload.json',
     '-p',
     'test/scripts/pets.csv'
   ]);
 
-  t.ok(output.stdout.includes('Summary report'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
 });
 
 tap.test('Run a script with one payload json config', async (t) => {
@@ -162,7 +180,8 @@ tap.test('Run a script with one payload json config', async (t) => {
     'test/scripts/single_payload_object.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
 });
 
 tap.test(
@@ -173,7 +192,8 @@ tap.test(
       'test/scripts/single_payload_options.json'
     ]);
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
   }
 );
 
@@ -187,7 +207,8 @@ tap.test(
       'test/scripts/multiple_payloads.json'
     ]);
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
   }
 );
 
@@ -206,15 +227,19 @@ tap.test(
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     const pluginPrefix = 'plugins.metrics-by-endpoint';
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(!output.stdout.includes(pluginPrefix), 'Should not log plugin output');
     t.ok(
-      exitCode === 0 &&
-        !output.stdout.includes(pluginPrefix) &&
-        Object.keys(json.aggregate.counters).some((key) =>
-          key.includes(pluginPrefix)
-        ) &&
-        Object.keys(json.aggregate.summaries).some((key) =>
-          key.includes(pluginPrefix)
-        )
+      Object.keys(json.aggregate.counters).some((key) =>
+        key.includes(pluginPrefix)
+      ),
+      'Should have plugin counters in report'
+    );
+    t.ok(
+      Object.keys(json.aggregate.summaries).some((key) =>
+        key.includes(pluginPrefix)
+      ),
+      'Should have plugin summaries in report'
     );
   }
 );
@@ -229,7 +254,11 @@ tap.test('Run a script overwriting default options (output)', async (t) => {
     reportFilePath
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes(`Log file: ${reportFilePath}`));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(
+    output.stdout.includes(`Log file: ${reportFilePath}`),
+    'Should log output file'
+  );
 });
 
 tap.test(
@@ -246,7 +275,7 @@ tap.test(
       JSON.stringify(variableOverride)
     ]);
 
-    t.ok(exitCode === 0);
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
       output.stdout.includes(`foo is ${variableOverride.myVar}`),
       'Templated foo nested config variable is not showing'
@@ -281,7 +310,7 @@ tap.test(
       JSON.stringify(variableOverride)
     ]);
 
-    t.ok(exitCode === 0);
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
       output.stdout.includes(`other is ${variableOverride.myVar}`),
       'other variable from config variable not showing'
@@ -309,9 +338,14 @@ tap.test('Script using hook functions', async (t) => {
     'test/scripts/hello.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('hello from processor'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(
+    output.stdout.includes('hello from processor'),
+    'Should log processor output'
+  );
 });
 
+//TODO: review these 2 test assertions
 tap.test('Hook functions - can rewrite the URL', async (t) => {
   // Ref: https://github.com/shoreditch-ops/artillery/issues/185
   const [exitCode] = await execute([
@@ -324,7 +358,12 @@ tap.test('Hook functions - can rewrite the URL', async (t) => {
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(exitCode === 0 && json.aggregate.counters['http.codes.200']);
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    json.aggregate.counters['http.codes.200'],
+    3,
+    'Should have 3 successful 200 requests'
+  );
 });
 
 tap.test('Environment variables can be loaded from dotenv files', async (t) => {
@@ -338,7 +377,12 @@ tap.test('Environment variables can be loaded from dotenv files', async (t) => {
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(exitCode === 0 && json.aggregate.counters['http.codes.200']);
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    json.aggregate.counters['http.codes.200'],
+    1,
+    'Should have 1 successful 200 requests'
+  );
 });
 
 tap.test('Environment variables can be loaded using $env', async (t) => {
@@ -356,11 +400,19 @@ tap.test('Environment variables can be loaded using $env', async (t) => {
   );
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    json.aggregate.counters['http.codes.200'],
+    2,
+    'Should have 2 successful 200 requests'
+  );
   t.ok(
-    exitCode === 0 &&
-      json.aggregate.counters['http.codes.200'] === 2 &&
-      result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
-      result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
+    result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`),
+    'Should log environment variable from processor func'
+  );
+  t.ok(
+    result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`),
+    'Should log header variable from processor func'
   );
 });
 
@@ -386,11 +438,19 @@ tap.test(
     );
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.equal(
+      json.aggregate.counters['http.codes.200'],
+      2,
+      'Should have 2 successful 200 requests'
+    );
     t.ok(
-      exitCode === 0 &&
-        json.aggregate.counters['http.codes.200'] === 2 &&
-        result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
-        result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
+      result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`),
+      'Should log environment variable from processor func'
+    );
+    t.ok(
+      result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`),
+      'Should log header variable from processor func'
     );
   }
 );
@@ -418,8 +478,12 @@ tap.test('Script using a plugin', async (t) => {
   const pluginCount = Number(fs.readFileSync(pluginFilePath, 'utf8'));
 
   t.ok(deleteFile(pluginFilePath));
-  t.ok(exitCode === 0);
-  t.ok(reportCount === pluginCount);
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    reportCount,
+    pluginCount,
+    'Should have same number of requests in report as plugin'
+  );
 });
 
 tap.test(
@@ -442,7 +506,8 @@ tap.test(
     const reportCount = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
       .aggregate.scenariosCreated;
 
-    t.ok(exitCode === 0 && reportCount === 1);
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.equal(reportCount, 1, 'Should have created 1 scenario');
   }
 );
 
@@ -458,7 +523,7 @@ tap.test(
       'test/scripts.environments.yaml'
     ]);
 
-    t.ok(exitCode === 1);
+    t.equal(exitCode, 1, 'CLI should error with code 1');
   }
 );
 
@@ -491,11 +556,18 @@ tap.test(
     const singleCount = JSON.parse(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
-    t.ok(
-      exitCodeMultiple === 0 &&
-        exitCodeSingle === 0 &&
-        multipleCount === totalRequests &&
-        singleCount === totalRequests
+
+    t.equal(exitCodeMultiple, 0, 'CLI should exit with code 0');
+    t.equal(exitCodeSingle, 0, 'CLI should exit with code 0');
+    t.equal(
+      multipleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
+    );
+    t.equal(
+      singleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
     );
   }
 );
@@ -539,11 +611,18 @@ tap.test(
     const singleCount = JSON.parse(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
-    t.ok(
-      exitCodeMultiple === 0 &&
-        exitCodeSingle === 0 &&
-        multipleCount === totalRequests &&
-        singleCount === totalRequests
+
+    t.equal(exitCodeMultiple, 0, 'CLI should exit with code 0');
+    t.equal(exitCodeSingle, 0, 'CLI should exit with code 0');
+    t.equal(
+      multipleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
+    );
+    t.equal(
+      singleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
     );
   }
 );
@@ -563,6 +642,7 @@ tap.test(
       { env: { WORKERS: 7 } }
     );
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
   }
 );

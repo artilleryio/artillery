@@ -345,12 +345,21 @@ test('Integration with Artillery', async (t) => {
     console.log('Artillery output:');
     console.log(output);
   }
-  t.equal(EXPECTED_EXPECTATION_COUNT, actualCount);
+  t.equal(
+    actualCount,
+    EXPECTED_EXPECTATION_COUNT,
+    'Expectation count should match'
+  );
 
-  t.equal(output.indexOf(`${chalk.green('ok')} contentType json`) > -1, true);
-  t.equal(output.indexOf(`${chalk.green('ok')} statusCode 404`) > -1, true);
-  t.equal(output.indexOf('Errors:') === -1, true);
-  t.equal(result.code, 0);
+  t.equal(
+    output.indexOf(`${chalk.green('ok')} contentType json`) > -1,
+    true,
+    'Should print ok contentType expectation'
+  );
+  t.equal(output.indexOf(`${chalk.green('ok')} statusCode 404`) > -1, true),
+    'Should print ok statusCode expectation';
+  t.equal(output.indexOf('Errors:') === -1, true, 'Should not print errors');
+  t.equal(result.code, 0, 'Should exit with code 0');
 });
 
 test('Produce metrics', async (t) => {
@@ -365,8 +374,12 @@ test('Produce metrics', async (t) => {
 
   const output = result.stdout;
 
-  t.equal(output.indexOf('expect.ok') > -1, true);
-  t.equal(result.code, 0);
+  t.equal(
+    output.indexOf('expect.ok') > -1,
+    true,
+    'Should print expect.ok metrics'
+  );
+  t.equal(result.code, 0, 'Should exit with code 0');
 });
 
 test('Report failures as errors by request name', async (t) => {
@@ -381,8 +394,9 @@ test('Report failures as errors by request name', async (t) => {
 
   const output = result.stdout;
 
-  t.true(
-    output.indexOf('errors.Failed expectations for request unicorns') > -1
+  t.ok(
+    output.indexOf('errors.Failed expectations for request unicorns') > -1,
+    'Should print errors for request unicorns'
   );
-  t.true(result.code !== 0);
+  t.not(result.code, 0, 'Should exit with non-zero code');
 });

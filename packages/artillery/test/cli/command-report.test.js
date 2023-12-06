@@ -11,5 +11,5 @@ tap.test('If we report specifying output, no browser is opened', async (t) => {
     'test/scripts/report.json'
   ]);
 
-  t.ok(exitCode === 0);
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
 });

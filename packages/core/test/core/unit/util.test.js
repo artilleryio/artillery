@@ -10,12 +10,14 @@ const jitter = require('@artilleryio/int-commons').jitter.jitter;
 const util = require('@artilleryio/int-commons').engine_util;
 
 test('jitter', function (t) {
-  t.ok(
-    jitter(1000) === 1000,
+  t.equal(
+    jitter(1000),
+    1000,
     'Number and no other params should return the number'
   );
-  t.ok(
-    jitter('1000') === '1000',
+  t.equal(
+    jitter('1000'),
+    '1000',
     'String that is not a template and no other params should return the string'
   );
 
@@ -87,45 +89,51 @@ test('rendering variables', function (t) {
 
   const render = util._renderVariables;
 
-  t.ok(
-    render(str, vars) === 'Hello Hassy, hope your Friday is going great!',
+  t.equal(
+    render(str, vars),
+    'Hello Hassy, hope your Friday is going great!',
     'Variables are substituted with either double or triple curly braces'
   );
 
-  t.ok(
-    render('{{ s }} - {{ s }} {}', { s: 'foo' }) === 'foo - foo {}',
+  t.equal(
+    render('{{ s }} - {{ s }} {}', { s: 'foo' }),
+    'foo - foo {}',
     'Multiple instances of a variable get replaced'
   );
 
-  t.ok(
-    render(' {{   foo}} ', { foo: 'bar' }) === ' bar ',
+  t.equal(
+    render(' {{   foo}} ', { foo: 'bar' }),
+    ' bar ',
     'Whitespace inside templates is not significant'
   );
 
-  t.ok(
-    render('Hello {{ name }}', { foo: 'bar', day: 'Sunday' }) ===
-      'Hello undefined',
+  t.equal(
+    render('Hello {{ name }}', { foo: 'bar', day: 'Sunday' }),
+    'Hello undefined',
     'Undefined variables get replaced with undefined string'
   );
 
-  t.ok(
-    render('', { foo: 'bar', name: 'Hassy', color: 'red' }) === '',
+  t.equal(
+    render('', { foo: 'bar', name: 'Hassy', color: 'red' }),
+    '',
     'Empty string produces an empty string'
   );
 
-  t.ok(
-    render('Hello world!', { foo: 'bar', name: 'Hassy', color: 'red' }) ===
-      'Hello world!',
+  t.equal(
+    render('Hello world!', { foo: 'bar', name: 'Hassy', color: 'red' }),
+    'Hello world!',
     'String with no templates produces itself'
   );
 
-  t.ok(
-    render('{{ favoriteThings.color }}', vars) === 'red',
+  t.equal(
+    render('{{ favoriteThings.color }}', vars),
+    'red',
     'Object properties may be looked up with dots'
   );
 
-  t.ok(
-    render('{{ favoriteThings.animals[0] }}', vars) === 'dogs',
+  t.equal(
+    render('{{ favoriteThings.animals[0] }}', vars),
+    'dogs',
     'Numeric indexes may be used for property lookups'
   );
 
@@ -134,23 +142,23 @@ test('rendering variables', function (t) {
     'Non-existent property lookup returns undefined'
   );
 
-  t.ok(
-    render('{{ favoriteThings.animals }}', vars) ===
-      vars.favoriteThings.animals,
+  t.equal(
+    render('{{ favoriteThings.animals }}', vars),
+    vars.favoriteThings.animals,
     'Values returned from property lookups retain their type'
   );
 
-  t.ok(
-    render('abc-{{ favoriteThings.animals[1] }}-123-{{ day }} 🐢🚀', vars) ===
-      'abc-cats-123-Friday 🐢🚀',
+  t.equal(
+    render('abc-{{ favoriteThings.animals[1] }}-123-{{ day }} 🐢🚀', vars),
+    'abc-cats-123-Friday 🐢🚀',
     'Values returned from property lookups are interpolated as expected'
   );
 
-  t.ok(render('{{ zeroValue }}', vars) === 0, 'Can render zero values');
+  t.equal(render('{{ zeroValue }}', vars), 0, 'Can render zero values');
 
-  t.ok(render('{{ falseValue }}', vars) === false, 'Can render false values');
+  t.equal(render('{{ falseValue }}', vars), false, 'Can render false values');
 
-  t.ok(render('{{ trueValue }}', vars) === true, 'Can render true values');
+  t.equal(render('{{ trueValue }}', vars), true, 'Can render true values');
 
   t.end();
 });

@@ -86,14 +86,21 @@ test('cookie jar socketio', function (t) {
       const report = SSMS.legacyReport(nr).report();
       request('http://127.0.0.1:9092/_stats', { responseType: 'json' })
         .then((res) => {
-          var ok =
-            report.scenariosCompleted &&
+          const hasScenariosCompleted = report.scenariosCompleted;
+          const hasUniqueCookies =
             l.size(res.body.cookies) === report.scenariosCompleted;
-          t.ok(ok, 'Each scenario had a unique cookie');
-          if (!ok) {
+
+          if (!hasScenariosCompleted || !hasUniqueCookies) {
             console.log(res.body);
             console.log(report);
           }
+
+          t.ok(
+            hasScenariosCompleted,
+            'There should be some scenarios completed'
+          );
+          t.ok(hasUniqueCookies, 'Each scenario had a unique cookie');
+
           ee.stop().then(() => {
             t.end();
           });

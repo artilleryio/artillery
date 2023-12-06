@@ -9,7 +9,7 @@ tap.test(
       'test/scripts/unknown_engine.json'
     ]);
 
-    t.ok(exitCode === 11);
+    t.equal(exitCode, 11, 'CLI should exit with code 11');
     t.ok(
       output.stdout.includes(
         'Failed to run scenario "0": unknown engine "playwright". Did you forget to include it in "config.engines.playwright"?'

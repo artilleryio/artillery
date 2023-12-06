@@ -19,7 +19,7 @@ test('arrival phases', function (t) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(report.codes[200] === 60, 'Got 60 status 200 responses');
+      t.equal(report.codes[200], 60, 'Should get 60 status 200 responses');
 
       ee.stop().then(() => {
         t.end();
@@ -45,7 +45,7 @@ test('arrival phases - with modified time format', function (t) {
       const finalTime = Date.now();
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(report.codes[200] === 61, 'Did not get 61 status 200 responses');
+      t.equal(report.codes[200], 61, 'Did not get 61 status 200 responses');
       t.ok(
         finalTime - initialTime >= 50 * 1000,
         `Took ${
