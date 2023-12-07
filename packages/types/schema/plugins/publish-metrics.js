@@ -181,7 +181,13 @@ const OpenTelemetryReporterSchema = Joi.object({
       .default('otlp-http'),
     sampleRate: artilleryNumberOrString,
     useRequestNames: artilleryBooleanOrString,
-    attributes: Joi.object().unknown()
+    attributes: Joi.object().unknown(),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: Joi.number(),
+        total: Joi.number()
+      })
+    })
   })
 })
   .unknown(false)
