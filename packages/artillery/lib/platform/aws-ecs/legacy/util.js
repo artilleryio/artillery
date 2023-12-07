@@ -28,7 +28,8 @@ const supportedRegions = [
   'ap-southeast-1',
   'ap-southeast-2',
   'ap-northeast-1',
-  'me-south-1'
+  'me-south-1',
+  'sa-east-1'
 ];
 
 const getAccountId = require('../../aws/aws-get-account-id');
