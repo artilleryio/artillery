@@ -4,9 +4,8 @@ const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
 const { diag } = require('@opentelemetry/api');
 
 class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
-  constructor(exporter, config, samplingOpts) {
+  constructor(exporter, config) {
     super(exporter, config);
-    this.samplingOpts = samplingOpts;
     this._traces = new Map();
   }
 

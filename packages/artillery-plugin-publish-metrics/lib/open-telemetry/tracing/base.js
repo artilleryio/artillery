@@ -59,20 +59,15 @@ class OTelTraceConfig {
     this.exporter = traceExporters[this.config.exporter || 'otlp-http'](
       this.exporterOpts
     );
-    let samplingOpts = this.config.smartSampling;
-    const Processor =
-      this.config.smartSampling && !this.config.smartSampling?.tagOnly
-        ? OutlierDetectionBatchSpanProcessor
-        : BatchSpanProcessor;
+
+    const Processor = this.config.smartSampling
+      ? OutlierDetectionBatchSpanProcessor
+      : BatchSpanProcessor;
 
     this.tracerProvider.addSpanProcessor(
-      new Processor(
-        this.exporter,
-        {
-          scheduledDelayMillis: 1000
-        },
-        samplingOpts
-      )
+      new Processor(this.exporter, {
+        scheduledDelayMillis: 1000
+      })
     );
     this.tracerProvider.register();
   }
