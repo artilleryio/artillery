@@ -184,8 +184,8 @@ const OpenTelemetryReporterSchema = Joi.object({
     attributes: Joi.object().unknown(),
     smartSampling: Joi.object({
       thresholds: Joi.object({
-        firstByte: Joi.number(),
-        total: Joi.number()
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
       })
     })
   })
