@@ -8,7 +8,7 @@ install_and_configure_dd_agent() {
     fi
 
     # Download and install the Datadog Agent
-    DD_AGENT_MAJOR_VERSION=7 DD_API_KEY=$DD_API_KEY bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_mac_os.sh)"
+    DD_AGENT_MAJOR_VERSION=7 DD_API_KEY=$DD_API_KEY bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
 
     # Specify the YAML file to modify
     yaml_file="$HOME/.datadog-agent/datadog.yaml"
