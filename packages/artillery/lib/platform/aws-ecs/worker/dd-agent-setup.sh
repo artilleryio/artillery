@@ -8,6 +8,7 @@ install_and_configure_dd_agent() {
     fi
 
     export DD_HOSTNAME=task-$1
+    # export DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT=DD_HOSTNAME:4318
     echo "DD_HOSTNAME set to $DD_HOSTNAME."
 
     # Download and install the Datadog Agent
@@ -27,6 +28,8 @@ install_and_configure_dd_agent() {
     service datadog-agent restart
 
     echo "Restarted datadog-agent."
+
+    cat $yaml_file
 }
 
 # You can now call this function in your script
