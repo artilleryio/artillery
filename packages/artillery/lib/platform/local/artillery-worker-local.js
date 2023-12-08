@@ -10,6 +10,18 @@ const STATES = require('../worker-states');
 
 const awaitOnEE = require('../../util/await-on-ee');
 
+const returnWorkerEnv = (needsSourcemap) => {
+  let env = { ...process.env };
+
+  if (needsSourcemap) {
+    env['NODE_OPTIONS'] = process.env.NODE_OPTIONS
+      ? `${process.env.NODE_OPTIONS} --enable-source-maps`
+      : '--enable-source-maps';
+  }
+
+  return env;
+};
+
 class ArtilleryWorker {
   constructor(opts) {
     this.opts = opts;
@@ -20,13 +32,19 @@ class ArtilleryWorker {
   async init(_opts) {
     this.state = STATES.initializing;
 
-    this.worker = new Worker(path.join(__dirname, 'worker.js'));
+    const workerEnv = returnWorkerEnv(global.artillery.hasTypescriptProcessor);
+
+    this.worker = new Worker(path.join(__dirname, 'worker.js'), {
+      env: workerEnv
+    });
     this.workerId = this.worker.threadId;
     this.worker.on('error', this.onError.bind(this));
     // TODO:
     this.worker.on('exit', (exitCode) => {
       this.events.emit('exit', exitCode);
     });
+
+    //eslint-disable-next-line handle-callback-err
     this.worker.on('messageerror', (err) => {});
 
     // TODO: Expose performance metrics via getHeapSnapshot() and performance object.

@@ -21,6 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
+const esbuild = require('esbuild-wasm');
 const createLauncher = require('../launch-platform');
 const createConsoleReporter = require('../../console-reporter');
 
@@ -435,6 +436,44 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     throw err;
   }
 };
+
+function replaceProcessorIfTypescript(script, scriptPath) {
+  const relativeProcessorPath = script.config.processor;
+
+  if (!relativeProcessorPath || path.extname(relativeProcessorPath) != '.ts') {
+    return script;
+  }
+
+  global.artillery.hasTypescriptProcessor = true;
+
+  //TODO: take into account -c flag, like code above
+  const actualProcessorPath = path.resolve(
+    path.dirname(scriptPath),
+    relativeProcessorPath
+  );
+
+  const tmpDir = os.tmpdir();
+  //TODO: should the name keep the old file name? Probably
+  const newProcessorPath = path.join(tmpDir, 'processor.js');
+
+  //TODO: error handling here
+  esbuild.buildSync({
+    entryPoints: [actualProcessorPath],
+    outfile: newProcessorPath,
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    sourcemap: 'inline',
+    sourceRoot: '/' //TODO: review this?
+  });
+
+  console.log(
+    `Bundled Typescript file into JS. New processor path: ${newProcessorPath}`
+  );
+  script.config.processor = newProcessorPath;
+
+  return script;
+}
 
 async function prepareTestExecutionPlan(inputFiles, flags, args) {
   let script1 = {};
