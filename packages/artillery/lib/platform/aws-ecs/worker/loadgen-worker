@@ -339,7 +339,7 @@ main () {
     install_dependencies
 
     progress "Checking if DD Agent is needed"
-    install_and_configure_dd_agent "$worker_id"
+    install_and_configure_dd_agent "$worker_id" "$CONTAINER_NAME"
 
     progress "Ready to run"
     signal_ready
