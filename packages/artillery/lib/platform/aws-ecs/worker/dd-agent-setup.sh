@@ -7,6 +7,9 @@ install_and_configure_dd_agent() {
         return 0
     fi
 
+    export DD_HOSTNAME=task-$1
+    echo "DD_HOSTNAME set to $DD_HOSTNAME."
+
     # Download and install the Datadog Agent
     DD_AGENT_MAJOR_VERSION=7 DD_SITE="datadoghq.com" DD_API_KEY=$DD_API_KEY bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
 
