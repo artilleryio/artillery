@@ -20,10 +20,9 @@ install_and_configure_dd_agent() {
     printf "%s\n" "$config_to_add" >> "$yaml_file"
 
     echo "Configuration added to $yaml_file."
+    # service datadog-agent restart
 
-    service datadog-agent restart
-
-    echo "Restarted datadog-agent."
+    # echo "Restarted datadog-agent."
 }
 
 # You can now call this function in your script
