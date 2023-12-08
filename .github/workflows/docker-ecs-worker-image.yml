@@ -1,6 +1,7 @@
 name: Build & publish ECS/Fargate worker image to ECR
 
 on:
+  workflow_dispatch: 
   push:
     branches:
       - main
