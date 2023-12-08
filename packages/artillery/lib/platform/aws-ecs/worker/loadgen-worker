@@ -338,7 +338,7 @@ main () {
     install_dependencies
 
     progress "Checking if DD Agent is needed"
-    install_and_configure_dd_agent "taskArn"
+    install_and_configure_dd_agent "$worker_id"
 
     progress "Ready to run"
     signal_ready
