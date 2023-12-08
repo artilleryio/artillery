@@ -8,7 +8,7 @@ install_and_configure_dd_agent() {
     fi
 
     # Download and install the Datadog Agent
-    DD_AGENT_MAJOR_VERSION=7 DD_API_KEY=$DD_API_KEY bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
+    DD_AGENT_MAJOR_VERSION=7 DD_SITE="datadoghq.com" DD_API_KEY=$DD_API_KEY bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script.sh)"
 
     # Specify the YAML file to modify
     yaml_file="$HOME/.datadog-agent/datadog.yaml"
@@ -20,6 +20,10 @@ install_and_configure_dd_agent() {
     printf "%s\n" "$config_to_add" >> "$yaml_file"
 
     echo "Configuration added to $yaml_file."
+
+    service datadog-agent restart
+
+    echo "Restarted datadog-agent."
 }
 
 # You can now call this function in your script
