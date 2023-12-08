@@ -1,5 +1,21 @@
 'use strict';
 
+process.env.DD_TRACE_DEBUG = true;
+process.env['DD_TRACE_OTEL_ENABLED'] = 'true';
+
+// process.env.DD_CIVISIBILITY_AGENTLESS_URL = 'https://api.datadoghq.com/'
+
+// process.env['DD_SITE'] = 'datadoghq.com'
+const tracer = require('dd-trace').init({
+  // url: 'https://datadoghq.com/',
+  experimental: {
+    exporter: 'datadog'
+  }
+});
+const provider = new tracer.TracerProvider();
+provider.register();
+// console.log(provider);
+
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const grpc = require('@grpc/grpc-js');
 const { traceExporters, validateExporter } = require('../exporters');
@@ -11,15 +27,19 @@ const {
   ParentBasedSampler,
   BatchSpanProcessor
 } = require('@opentelemetry/sdk-trace-base');
+
 const { SpanKind, trace } = require('@opentelemetry/api');
 
 class OTelTraceConfig {
   constructor(config, resource) {
     this.config = config;
     this.resource = resource;
+    this.platform = config.platform;
 
-    // Validate exporter provided by user
-    validateExporter(traceExporters, this.config.exporter, 'trace');
+    if (this.platform !== 'datadog') {
+      // Validate exporter provided by user
+      validateExporter(traceExporters, this.config.exporter, 'trace');
+    }
   }
 
   configure() {
@@ -27,42 +47,47 @@ class OTelTraceConfig {
     this.tracerOpts = {
       resource: this.resource
     };
-    if (this.config.sampleRate) {
-      this.tracerOpts.sampler = new ParentBasedSampler({
-        root: new TraceIdRatioBasedSampler(this.config.sampleRate)
-      });
-    }
 
-    this.tracerProvider = new BasicTracerProvider(this.tracerOpts);
-
-    debug('Configuring Exporter');
-    this.exporterOpts = {};
-    if (this.config.endpoint) {
-      this.exporterOpts.url = this.config.endpoint;
-    }
-
-    if (this.config.headers) {
-      if (this.config.exporter && this.config.exporter === 'otlp-grpc') {
-        const metadata = new grpc.Metadata();
-        Object.entries(this.config.headers).forEach(([k, v]) =>
-          metadata.set(k, v)
-        );
-        this.exporterOpts.metadata = metadata;
-      } else {
-        this.exporterOpts.headers = this.config.headers;
+    if (this.platform === 'datadog') {
+      this.tracerProvider = provider;
+    } else {
+      if (this.config.sampleRate) {
+        this.tracerOpts.sampler = new ParentBasedSampler({
+          root: new TraceIdRatioBasedSampler(this.config.sampleRate)
+        });
       }
+
+      this.tracerProvider = new BasicTracerProvider(this.tracerOpts);
+
+      debug('Configuring Exporter');
+      this.exporterOpts = {};
+      if (this.config.endpoint) {
+        this.exporterOpts.url = this.config.endpoint;
+      }
+
+      if (this.config.headers) {
+        if (this.config.exporter && this.config.exporter === 'otlp-grpc') {
+          const metadata = new grpc.Metadata();
+          Object.entries(this.config.headers).forEach(([k, v]) =>
+            metadata.set(k, v)
+          );
+          this.exporterOpts.metadata = metadata;
+        } else {
+          this.exporterOpts.headers = this.config.headers;
+        }
+      }
+
+      this.exporter = traceExporters[this.config.exporter || 'otlp-http'](
+        this.exporterOpts
+      );
+
+      this.tracerProvider.addSpanProcessor(
+        new BatchSpanProcessor(this.exporter, {
+          scheduledDelayMillis: 1000
+        })
+      );
+      this.tracerProvider.register();
     }
-
-    this.exporter = traceExporters[this.config.exporter || 'otlp-http'](
-      this.exporterOpts
-    );
-
-    this.tracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(this.exporter, {
-        scheduledDelayMillis: 1000
-      })
-    );
-    this.tracerProvider.register();
   }
 
   async shutDown() {
@@ -89,6 +114,7 @@ class OTelTraceBase {
     if (!this[tracerName]) {
       this[tracerName] = trace.getTracer(`artillery-${engine}`);
     }
+    // console.log(this[tracerName])
   }
   // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
   startScenarioSpan(engine) {

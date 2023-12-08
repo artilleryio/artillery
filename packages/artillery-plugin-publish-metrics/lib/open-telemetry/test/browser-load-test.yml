@@ -1,0 +1,21 @@
+config:
+  target: "https://www.artillery.io"
+  phases:
+    - arrivalRate: 1
+      duration: 1
+  engines:
+    playwright: {}
+  plugins:
+    publish-metrics:
+      - type: 'open-telemetry'
+        serviceName: 'playwright-test'
+        traces:
+          platform: 'datadog'
+          attributes:
+            reporter: OtelProto-from-playwright
+            helloFrom: PlaywrightEngine
+  processor: ./flow.js
+scenarios:
+  - name: "Cloud waitlist signup"
+    engine: playwright
+    flowFunction: "cloudWaitlistSignupFlow"

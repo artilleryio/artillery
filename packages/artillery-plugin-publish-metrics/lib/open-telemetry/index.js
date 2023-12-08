@@ -17,9 +17,9 @@ const {
 } = require('@opentelemetry/context-async-hooks');
 
 // Setting the contextManager here as it needs to be set globally on the context before anything else
-const contextManager = new AsyncLocalStorageContextManager();
-contextManager.enable();
-context.setGlobalContextManager(contextManager);
+// const contextManager = new AsyncLocalStorageContextManager();
+// contextManager.enable();
+// context.setGlobalContextManager(contextManager);
 
 // DEBUGGING SETUP - setting the OpenTelemetry's internal diagnostic handler here to run when debug is enabled
 if (
@@ -76,6 +76,7 @@ class OTelReporter {
         this.playwrightReporter = new OTelPlaywrightTraceReporter(
           config.traces,
           script
+          // provider
         );
         this.playwrightReporter.run();
       }
@@ -105,6 +106,7 @@ class OTelReporter {
     }
     if (this.playwrightReporter) {
       await this.playwrightReporter.cleanup();
+      // await provider.shutdown()
     }
     await this.traceConfig.shutDown();
     return done();

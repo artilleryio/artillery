@@ -13,8 +13,9 @@ const {
 } = require('@opentelemetry/api');
 
 class OTelPlaywrightTraceReporter extends OTelTraceBase {
-  constructor(config, script) {
+  constructor(config, script, provider) {
     super(config, script);
+    this.provider = provider;
   }
   run() {
     this.setTracer('playwright');
@@ -44,6 +45,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           'vu.uuid': vuContext.vars.$uuid,
           ...(this.config.attributes || {})
         });
+        // console.log(scenarioSpan);
         // Set variables to track state and context
         const ctx = context.active();
         let lastPageUrl;
@@ -141,7 +143,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           });
           throw err;
         } finally {
-          if (pageSpan && !pageSpan.endTime[0]) {
+          if (pageSpan && !pageSpan._ended) {
             pageSpan.end();
           }
           scenarioSpan.end();
