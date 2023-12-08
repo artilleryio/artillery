@@ -29,6 +29,7 @@ RUN cd /artillery && \
  
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/loadgen-worker /artillery/loadgen-worker
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/helpers.sh
+COPY ./packages/artillery/lib/platform/aws-ecs/worker/dd-agent-setup.sh /artillery/dd-agent-setup.sh
 
 RUN chmod +x /artillery/loadgen-worker
 
