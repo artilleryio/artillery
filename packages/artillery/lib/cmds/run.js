@@ -539,7 +539,9 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   script5.config.statsInterval = script5.config.statsInterval || 30;
 
   const script6 = addDefaultPlugins(script5);
-  return script6;
+  const script7 = replaceProcessorIfTypescript(script6, inputFiles[0]);
+
+  return script7;
 }
 
 async function readPayload(script) {
