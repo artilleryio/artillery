@@ -321,7 +321,7 @@ run_a9 () {
         EXIT_CODE=$ERR_CLI_ERROR
     fi
 
-    wait_for_dd_agent_to_flush
+    # wait_for_dd_agent_to_flush
 
     exit $EXIT_CODE
 }
