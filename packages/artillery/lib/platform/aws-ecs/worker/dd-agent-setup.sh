@@ -3,7 +3,6 @@
 install_and_configure_dd_agent() {
     # Check if DD_API_KEY is set in the environment
     if [ -z "${DD_API_KEY}" ]; then
-        echo "DD_API_KEY is not set. Aborting."
         return 0
     fi
 
@@ -37,8 +36,17 @@ EOF
     service datadog-agent restart
 
     echo "Restarted datadog-agent."
+}
 
-    cat $yaml_file
+# https://github.com/DataDog/datadog-agent/issues/3940
+wait_for_dd_agent_to_flush() {
+    if [ -z "${DD_API_KEY}" ]; then
+        return 0
+    fi
+    # Wait for the agent to flush its data
+    echo "Waiting for the agent to flush its data..."
+    sleep 35
+    echo "Done waiting."
 }
 
 # You can now call this function in your script
