@@ -25,6 +25,8 @@ otlp_config:
     protocols:
       http:
         endpoint: $2:4318
+apm_config:
+  trace_buffer: 100
 EOF
     )
 
