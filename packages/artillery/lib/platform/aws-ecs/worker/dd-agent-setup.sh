@@ -27,25 +27,28 @@ start_and_configure_dd_agent() {
     # Configuration to add
     # https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml
     # and ...
-    config_to_add=$(cat <<EOF
+#     config_to_add=$(cat <<EOF
 
-api_key: $DD_API_KEY
-hostname: $hostname
-otlp_config:
-  receiver:
-    protocols:
-      http:
-        endpoint: $2:4318
-apm_config:
-  trace_buffer: 100
-EOF
-    )
+# api_key: $DD_API_KEY
+# hostname: $hostname
+# otlp_config:
+#   receiver:
+#     protocols:
+#       http:
+#         endpoint: $2:4318
+# apm_config:
+#   trace_buffer: 100
+# EOF
+#     )
 
     # Append the configuration to the file
     # echo "$config_to_add" >> "$yaml_file"
 
     # Update API Key in the config file
     yq -i ".api_key = \"$DD_API_KEY\"" "$yaml_file"
+
+    # Add/Update hostname
+    yq -i ".hostname = \"$hostname\"" "$yaml_file"
 
     # Add otlp config
     yq -i ".otlp_config.receiver.protocols.http.endpoint = \"$2:4318\"" "$yaml_file"
