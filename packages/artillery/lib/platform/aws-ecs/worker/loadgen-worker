@@ -59,7 +59,6 @@ taskArn=$(curl -s "$ECS_CONTAINER_METADATA_URI_V4/task" \
 
 worker_id=${taskArn:-worker-$(pwgen -A 12 1)}
 export WORKER_ID="$worker_id" # make available to Artillery custom scripts/environment
-export TASK_ARN="$taskArn" # make available to Artillery custom scripts/environment
 is_leader=${IS_LEADER:-false} # true or false
 
 progress "Worker starting up, ID = $worker_id, version = ${WORKER_VERSION:-unknown}, leader = $is_leader"
@@ -341,7 +340,7 @@ main () {
     install_dependencies
 
     progress "Checking if DD Agent is needed"
-    install_and_configure_dd_agent "$worker_id" "$CONTAINER_NAME"
+    start_and_configure_dd_agent "$worker_id" "$CONTAINER_NAME"
 
     progress "Ready to run"
     signal_ready

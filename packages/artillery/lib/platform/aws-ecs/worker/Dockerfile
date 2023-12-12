@@ -32,5 +32,6 @@ COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/help
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/dd-agent-setup.sh /artillery/dd-agent-setup.sh
 
 RUN chmod +x /artillery/loadgen-worker
+RUN DD_INSTALL_ONLY=true DD_SITE="datadoghq.com" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
 
 ENTRYPOINT ["/artillery/loadgen-worker"]
