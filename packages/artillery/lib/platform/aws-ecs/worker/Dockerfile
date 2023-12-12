@@ -8,7 +8,7 @@ LABEL maintainer="team@artillery.io"
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-        apt-get install -y bash jq pwgen python2-minimal make g++ curl git zip tree awscli
+        apt-get install -y bash jq yq pwgen python2-minimal make g++ curl git zip tree awscli
 
 ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
@@ -32,6 +32,6 @@ COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/help
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/dd-agent-setup.sh /artillery/dd-agent-setup.sh
 
 RUN chmod +x /artillery/loadgen-worker
-RUN DD_INSTALL_ONLY=true DD_SITE="datadoghq.com" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+RUN DD_INSTALL_ONLY=true DD_SITE="datadoghq.com" DD_API_KEY="abc123" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
 
 ENTRYPOINT ["/artillery/loadgen-worker"]

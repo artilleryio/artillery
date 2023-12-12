@@ -42,7 +42,16 @@ EOF
     )
 
     # Append the configuration to the file
-    echo "$config_to_add" >> "$yaml_file"
+    # echo "$config_to_add" >> "$yaml_file"
+
+    # Update API Key in the config file
+    yq -i ".api_key = \"$DD_API_KEY\"" "$yaml_file"
+
+    # Add otlp config
+    yq -i ".otlp_config.receiver.protocols.http.endpoint = \"$2:4318\"" "$yaml_file"
+
+    # Add apm_config trace_buffer
+    yq -i ".apm_config.trace_buffer = 100" "$yaml_file"
 
     echo "Configuration added to $yaml_file."
     echo "Starting datadog-agent..."
