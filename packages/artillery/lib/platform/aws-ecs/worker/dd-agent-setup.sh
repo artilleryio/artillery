@@ -2,6 +2,7 @@
 start_and_configure_dd_agent() {
     # Check if DD_API_KEY is set in the environment
     if [ -z "${DD_API_KEY-}" ]; then
+        echo "DD_API_KEY not set. Not running Datadog Agent."
         return 0
     fi
 
@@ -25,13 +26,11 @@ start_and_configure_dd_agent() {
     # Add apm_config trace_buffer
     yq -i ".apm_config.trace_buffer = 100" "$yaml_file"
 
-    # TODO might need to change max_traces_per_second
+    # TODO investigate if max_traces_per_second needs adjusting 
     # TODO review other config options. Reference https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L1279C1-L1287C30
 
-    echo "Configuration added to $yaml_file."
     echo "Starting datadog-agent..."
-    #TODO check how verbose starting is in terms of logs
     service datadog-agent start
 
-    echo "Started datadog-agent."
+    echo "Started datadog-agent successfully!"
 }

@@ -337,7 +337,7 @@ main () {
     progress "Installing dependencies"
     install_dependencies
 
-    progress "Start DD Agent if needed"
+    progress "Checking if Datadog Agent should run"
     start_and_configure_dd_agent "$worker_id"
 
     progress "Ready to run"
