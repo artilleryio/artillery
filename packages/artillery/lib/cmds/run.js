@@ -461,21 +461,26 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
   const newProcessorPath = path.join(tmpDir, 'processor.js');
 
   //TODO: error handling here
-  esbuild.buildSync({
-    entryPoints: [actualProcessorPath],
-    outfile: newProcessorPath,
-    bundle: true,
-    platform: 'node',
-    format: 'cjs',
-    sourcemap: 'inline',
-    sourceRoot: '/' //TODO: review this?
-  });
+
+  try {
+    esbuild.buildSync({
+      entryPoints: [actualProcessorPath],
+      outfile: newProcessorPath,
+      bundle: true,
+      platform: 'node',
+      format: 'cjs',
+      sourcemap: 'inline',
+      sourceRoot: '/' //TODO: review this?
+    });
+  } catch (error) {
+    throw new Error(`Failed to compile Typescript processor\n${error.message}`);
+  }
 
   console.log(
     `Bundled Typescript file into JS. New processor path: ${newProcessorPath}`
   );
-  script.config.processor = newProcessorPath;
 
+  script.config.processor = newProcessorPath;
   return script;
 }
 
