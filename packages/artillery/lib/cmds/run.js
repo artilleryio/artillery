@@ -439,9 +439,13 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
 function replaceProcessorIfTypescript(script, scriptPath, platform) {
   const relativeProcessorPath = script.config.processor;
+
+  if (!relativeProcessorPath) {
+    return script;
+  }
   const extensionType = path.extname(relativeProcessorPath);
 
-  if (!relativeProcessorPath || extensionType != '.ts') {
+  if (extensionType != '.ts') {
     return script;
   }
 
