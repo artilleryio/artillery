@@ -7,7 +7,6 @@ start_and_configure_dd_agent() {
     fi
 
     # Specify the YAML file to modify
-    # TODO might need to set the path to yaml_file dynamically?
     yaml_file="/etc/datadog-agent/datadog.yaml"
     hostname="task-$1"
 
