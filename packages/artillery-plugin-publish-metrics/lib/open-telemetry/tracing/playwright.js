@@ -174,7 +174,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             code: SpanStatusCode.ERROR,
             message: err.message
           });
-          debug('There has been an error during step execution: ');
+          debug('There has been an error during step execution:');
           throw err;
         } finally {
           const difference = Date.now() - startTime;
