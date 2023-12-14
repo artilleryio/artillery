@@ -8,7 +8,7 @@ const MetricsByEndpointPluginConfigSchema = Joi.object({
   useOnlyRequestNames: artilleryBooleanOrString,
   stripQueryString: artilleryBooleanOrString,
   ignoreUnnamedRequests: artilleryBooleanOrString,
-  metricsPrefix: Joi.string()
+  metricsNamespace: Joi.string()
 })
   .unknown(false)
   .meta({ title: 'Metrics by Endpoint Plugin' });
