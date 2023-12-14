@@ -169,12 +169,13 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
 
           await callback();
         } catch (err) {
-          debug('There has been an error during step execution: ', err);
           span.recordException(err, Date.now());
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: err.message
           });
+          debug('There has been an error during step execution: ');
+          throw err;
         } finally {
           const difference = Date.now() - startTime;
           events.emit('histogram', `browser.step.${stepName}`, difference);
