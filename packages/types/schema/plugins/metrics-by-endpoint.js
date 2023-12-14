@@ -14,7 +14,7 @@ const MetricsByEndpointPluginConfigSchema = Joi.object({
     .description('Strip query strings from the endpoint name automatically.')
     .default(false),
   ignoreUnnamedRequests: artilleryBooleanOrString
-    .meta({ title: 'Strip Query String' })
+    .meta({ title: 'Ignore Unnamed Requests' })
     .description(
       'Ignore per-endpoint metrics for requests without a name property set.'
     )
