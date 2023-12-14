@@ -437,11 +437,15 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 };
 
-function replaceProcessorIfTypescript(script, scriptPath) {
+function replaceProcessorIfTypescript(script, scriptPath, platform) {
   const relativeProcessorPath = script.config.processor;
 
   if (!relativeProcessorPath || path.extname(relativeProcessorPath) != '.ts') {
     return script;
+  }
+
+  if (platform == 'aws:lambda') {
+    throw new Error('Typescript processor is not supported on AWS Lambda');
   }
 
   global.artillery.hasTypescriptProcessor = true;
@@ -539,7 +543,11 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   script5.config.statsInterval = script5.config.statsInterval || 30;
 
   const script6 = addDefaultPlugins(script5);
-  const script7 = replaceProcessorIfTypescript(script6, inputFiles[0]);
+  const script7 = replaceProcessorIfTypescript(
+    script6,
+    inputFiles[0],
+    flags.platform
+  );
 
   return script7;
 }
