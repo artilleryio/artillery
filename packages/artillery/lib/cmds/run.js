@@ -439,8 +439,9 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
 function replaceProcessorIfTypescript(script, scriptPath, platform) {
   const relativeProcessorPath = script.config.processor;
+  const extensionType = path.extname(relativeProcessorPath);
 
-  if (!relativeProcessorPath || path.extname(relativeProcessorPath) != '.ts') {
+  if (!relativeProcessorPath || extensionType != '.ts') {
     return script;
   }
 
@@ -448,19 +449,17 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
     throw new Error('Typescript processor is not supported on AWS Lambda');
   }
 
-  global.artillery.hasTypescriptProcessor = true;
-
-  //TODO: take into account -c flag, like code above
   const actualProcessorPath = path.resolve(
     path.dirname(scriptPath),
     relativeProcessorPath
   );
+  const processorFileName = path.basename(actualProcessorPath, extensionType);
 
   const tmpDir = os.tmpdir();
-  //TODO: should the name keep the old file name? Probably
-  const newProcessorPath = path.join(tmpDir, 'processor.js');
-
-  //TODO: error handling here
+  const newProcessorPath = path.join(
+    tmpDir,
+    `${processorFileName}-${Date.now()}.js`
+  );
 
   try {
     esbuild.buildSync({
@@ -476,6 +475,7 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
     throw new Error(`Failed to compile Typescript processor\n${error.message}`);
   }
 
+  global.artillery.hasTypescriptProcessor = true;
   console.log(
     `Bundled Typescript file into JS. New processor path: ${newProcessorPath}`
   );
