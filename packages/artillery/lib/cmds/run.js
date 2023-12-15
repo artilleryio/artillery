@@ -21,6 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
+const esbuild = require('esbuild-wasm');
 const createLauncher = require('../launch-platform');
 const createConsoleReporter = require('../../console-reporter');
 
@@ -436,6 +437,57 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 };
 
+function replaceProcessorIfTypescript(script, scriptPath, platform) {
+  const relativeProcessorPath = script.config.processor;
+
+  if (!relativeProcessorPath) {
+    return script;
+  }
+  const extensionType = path.extname(relativeProcessorPath);
+
+  if (extensionType != '.ts') {
+    return script;
+  }
+
+  if (platform == 'aws:lambda') {
+    throw new Error('Typescript processor is not supported on AWS Lambda');
+  }
+
+  const actualProcessorPath = path.resolve(
+    path.dirname(scriptPath),
+    relativeProcessorPath
+  );
+  const processorFileName = path.basename(actualProcessorPath, extensionType);
+
+  const tmpDir = os.tmpdir();
+  const newProcessorPath = path.join(
+    tmpDir,
+    `${processorFileName}-${Date.now()}.js`
+  );
+
+  try {
+    esbuild.buildSync({
+      entryPoints: [actualProcessorPath],
+      outfile: newProcessorPath,
+      bundle: true,
+      platform: 'node',
+      format: 'cjs',
+      sourcemap: 'inline',
+      sourceRoot: '/' //TODO: review this?
+    });
+  } catch (error) {
+    throw new Error(`Failed to compile Typescript processor\n${error.message}`);
+  }
+
+  global.artillery.hasTypescriptProcessor = true;
+  console.log(
+    `Bundled Typescript file into JS. New processor path: ${newProcessorPath}`
+  );
+
+  script.config.processor = newProcessorPath;
+  return script;
+}
+
 async function prepareTestExecutionPlan(inputFiles, flags, args) {
   let script1 = {};
 
@@ -500,7 +552,13 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   script5.config.statsInterval = script5.config.statsInterval || 30;
 
   const script6 = addDefaultPlugins(script5);
-  return script6;
+  const script7 = replaceProcessorIfTypescript(
+    script6,
+    inputFiles[0],
+    flags.platform
+  );
+
+  return script7;
 }
 
 async function readPayload(script) {

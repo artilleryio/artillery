@@ -290,7 +290,8 @@ class PlatformLambda {
         'detective',
         'is-builtin-module',
         'try-require',
-        'walk-sync'
+        'walk-sync',
+        'esbuild-wasm'
       ],
       {
         cwd: a9cwd
