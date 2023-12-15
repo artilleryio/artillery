@@ -14,6 +14,7 @@ start_and_configure_dd_agent() {
 
     # Update API Key in the config file
     # yq -i ".api_key = \"$DD_API_KEY\"" "$yaml_file"
+    
 
     # Add/Update hostname
     # yq -i ".hostname = \"$hostname\"" "$yaml_file"
@@ -22,7 +23,7 @@ start_and_configure_dd_agent() {
     # Add otlp config
     # yq -i ".otlp_config.receiver.protocols.http.endpoint = \"localhost:4318\"" "$yaml_file"
     export DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT="0.0.0.0:4318"
-    export DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT="0.0.0.0:4317"
+    # export DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT="0.0.0.0:4317"
 
     # Add apm_config trace_buffer
     # yq -i ".apm_config.trace_buffer = 100" "$yaml_file"
@@ -31,8 +32,10 @@ start_and_configure_dd_agent() {
     # TODO investigate if max_traces_per_second needs adjusting 
     # TODO review other config options. Reference https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L1279C1-L1287C30
 
-    echo "Starting datadog-agent..."
-    service datadog-agent start
+    DD_SITE="datadoghq.com" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+
+    # echo "Starting datadog-agent..."
+    # service datadog-agent restart
 
     echo "Started datadog-agent successfully!"
 }
