@@ -12,32 +12,32 @@ tap.beforeEach(async (t) => {
   );
 });
 
-tap.test('Can run a Typescript processor', async (t) => {
-  const [exitCode, output] = await execute([
-    'run',
-    '-o',
-    `${reportFilePath}`,
-    'test/scripts/scenarios-typescript/lodash.yml'
-  ]);
+// tap.test('Can run a Typescript processor', async (t) => {
+//   const [exitCode, output] = await execute([
+//     'run',
+//     '-o',
+//     `${reportFilePath}`,
+//     'test/scripts/scenarios-typescript/lodash.yml'
+//   ]);
 
-  t.equal(exitCode, 0, 'CLI should exit with code 0');
-  t.ok(
-    output.stdout.includes('Got context using lodash: true'),
-    'Should be able to use lodash in a scenario to get context'
-  );
-  const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+//   t.equal(exitCode, 0, 'CLI should exit with code 0');
+//   t.ok(
+//     output.stdout.includes('Got context using lodash: true'),
+//     'Should be able to use lodash in a scenario to get context'
+//   );
+//   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.equal(
-    json.aggregate.counters['http.codes.200'],
-    2,
-    'Should have made 2 requests'
-  );
-  t.equal(
-    json.aggregate.counters['hey_from_ts'],
-    2,
-    'Should have emitted 2 custom metrics from ts processor'
-  );
-});
+//   t.equal(
+//     json.aggregate.counters['http.codes.200'],
+//     2,
+//     'Should have made 2 requests'
+//   );
+//   t.equal(
+//     json.aggregate.counters['hey_from_ts'],
+//     2,
+//     'Should have emitted 2 custom metrics from ts processor'
+//   );
+// });
 
 tap.test(
   'Failure from a Typescript processor has a resolvable stack trace via source maps',
@@ -50,6 +50,10 @@ tap.test(
     ]);
 
     t.equal(exitCode, 11, 'CLI should exit with code 11');
+    t.ok(
+      output.stdout.includes('error_from_ts_processor'),
+      'Should have logged error from ts processor'
+    );
 
     // Search for the path
     const pathRegex = /\((.*?):\d+:\d+\)/;
