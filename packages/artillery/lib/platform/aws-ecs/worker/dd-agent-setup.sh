@@ -6,7 +6,7 @@ start_and_configure_dd_agent() {
         return 0
     fi
     # Specify the YAML file to modify
-    # yaml_file="/etc/datadog-agent/datadog.yaml"
+    yaml_file="/etc/datadog-agent/datadog.yaml"
     # hostname="task-$1"
 
     # Reference of configuration to add
@@ -36,6 +36,8 @@ start_and_configure_dd_agent() {
 
     # echo "Starting datadog-agent..."
     # service datadog-agent restart
+
+    cat $yamlfile
 
     echo "Started datadog-agent successfully!"
 }
