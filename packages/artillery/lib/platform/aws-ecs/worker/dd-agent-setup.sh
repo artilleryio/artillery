@@ -21,6 +21,7 @@ start_and_configure_dd_agent() {
 
     # Add otlp config
     yq -i ".otlp_config.receiver.protocols.http.endpoint = \"localhost:4318\"" "$yaml_file"
+    yq -i ".otlp_config.receiver.protocols.grpc.endpoint = \"localhost:4317\"" "$yaml_file"
 
     # Add apm_config trace_buffer
     yq -i ".apm_config.trace_buffer = 100" "$yaml_file"
