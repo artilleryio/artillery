@@ -5,40 +5,32 @@ start_and_configure_dd_agent() {
         echo "DD_API_KEY not set. Not running Datadog Agent."
         return 0
     fi
+
     # Specify the YAML file to modify
     yaml_file="/etc/datadog-agent/datadog.yaml"
-    # hostname="task-$1"
+    hostname="task-$1"
 
     # Reference of configuration to add
     # https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml
 
     # Update API Key in the config file
-    # yq -i ".api_key = \"$DD_API_KEY\"" "$yaml_file"
-    
+    yq -i ".api_key = \"$DD_API_KEY\"" "$yaml_file"
 
     # Add/Update hostname
-    # yq -i ".hostname = \"$hostname\"" "$yaml_file"
-    export DD_HOSTNAME="task-$1"
-    export DD_OTLP_CONFIG_TRACES_ENABLED="true"
+    yq -i ".hostname = \"$hostname\"" "$yaml_file"
 
     # Add otlp config
-    # yq -i ".otlp_config.receiver.protocols.http.endpoint = \"localhost:4318\"" "$yaml_file"
-    export DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT="localhost:4318"
-    # export DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT="0.0.0.0:4317"
+    yq -i ".otlp_config.receiver.protocols.http.endpoint = \"localhost:4318\"" "$yaml_file"
+    yq -i ".otlp_config.receiver.protocols.grpc.endpoint = \"localhost:4317\"" "$yaml_file"
 
     # Add apm_config trace_buffer
-    # yq -i ".apm_config.trace_buffer = 100" "$yaml_file"
-    export DD_APM_TRACE_BUFFER=100
+    yq -i ".apm_config.trace_buffer = 100" "$yaml_file"
 
     # TODO investigate if max_traces_per_second needs adjusting 
     # TODO review other config options. Reference https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L1279C1-L1287C30
 
-    DD_SITE="datadoghq.com" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
-
-    # echo "Starting datadog-agent..."
-    # service datadog-agent restart
-
-    cat $yaml_file
+    echo "Starting datadog-agent..."
+    service datadog-agent start
 
     echo "Started datadog-agent successfully!"
 }
