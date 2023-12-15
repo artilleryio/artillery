@@ -320,8 +320,6 @@ run_a9 () {
         EXIT_CODE=$ERR_CLI_ERROR
     fi
 
-    # wait_for_dd_agent_to_flush
-
     exit $EXIT_CODE
 }
 
@@ -339,8 +337,8 @@ main () {
     progress "Installing dependencies"
     install_dependencies
 
-    progress "Checking if DD Agent is needed"
-    start_and_configure_dd_agent "$worker_id" "$CONTAINER_NAME"
+    progress "Checking if Datadog Agent should run"
+    start_and_configure_dd_agent "$worker_id"
 
     progress "Ready to run"
     signal_ready

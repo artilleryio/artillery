@@ -33,9 +33,13 @@ COPY ./packages/artillery/lib/platform/aws-ecs/worker/dd-agent-setup.sh /artille
 
 RUN chmod +x /artillery/loadgen-worker
 
-# install yq to be able to alter the dd-agent config easily later
-RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && \
-    chmod +x /usr/bin/yq
-RUN DD_INSTALL_ONLY=true DD_SITE="datadoghq.com" DD_API_KEY="abc123" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+# Datadog install setup
+
+# Install yq to be able to alter the dd-agent config easily later
+# RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && \
+#     chmod +x /usr/bin/yq
+
+# Datadog will not install without API key so we set a placeholder dummy key and replace it later
+RUN DD_INSTALL_ONLY=true DD_SITE="datadoghq.com" DD_API_KEY="placeholder_key" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
 
 ENTRYPOINT ["/artillery/loadgen-worker"]
