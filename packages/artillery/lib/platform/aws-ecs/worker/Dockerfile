@@ -7,6 +7,7 @@ LABEL maintainer="team@artillery.io"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+
 RUN apt-get update && \
         apt-get install -y bash jq pwgen python2-minimal make g++ curl git zip tree awscli
 
@@ -40,6 +41,6 @@ RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
     chmod +x /usr/bin/yq
 
 # Datadog will not install without API key so we set a placeholder dummy key and replace it later
-RUN DD_INSTALL_ONLY=true DD_SITE="datadoghq.com" DD_API_KEY="placeholder_key" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
+RUN DD_INSTALL_ONLY=true DD_SITE="datadoghq.com" DD_API_KEY="placeholder_key" DD_APM_INSTRUMENTATION_ENABLED="host" bash -c "$(curl -L https://s3.amazonaws.com/dd-agent/scripts/install_script_agent7.sh)"
 
 ENTRYPOINT ["/artillery/loadgen-worker"]
