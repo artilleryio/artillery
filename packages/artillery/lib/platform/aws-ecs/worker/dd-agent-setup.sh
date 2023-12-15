@@ -19,6 +19,7 @@ start_and_configure_dd_agent() {
     # Add/Update hostname
     # yq -i ".hostname = \"$hostname\"" "$yaml_file"
     export DD_HOSTNAME="task-$1"
+    export DD_OTLP_CONFIG_TRACES_ENABLED="true"
 
     # Add otlp config
     # yq -i ".otlp_config.receiver.protocols.http.endpoint = \"localhost:4318\"" "$yaml_file"
@@ -37,7 +38,7 @@ start_and_configure_dd_agent() {
     # echo "Starting datadog-agent..."
     # service datadog-agent restart
 
-    cat $yamlfile
+    cat $yaml_file
 
     echo "Started datadog-agent successfully!"
 }
