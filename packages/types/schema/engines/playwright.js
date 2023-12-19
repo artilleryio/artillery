@@ -51,6 +51,11 @@ const PlaywrightConfigSchema = Joi.object({
     .meta({ title: 'Playwright context options' })
     .description(
       'Arguments for the `browser.newContext()` call in Playwright.\nhttps://playwright.dev/docs/api/class-browser#browser-new-context'
+    ),
+  useSeparateBrowserPerVU: artilleryBooleanOrString
+    .meta({ title: 'Use a separate browser process for each VU' })
+    .description(
+      'If enabled, a new browser process will be created for each VU. By default Artillery uses new browser contexts for new VUs.\nWARNING: Using this option is discouraged as it will increase CPU/memory usage of your tests.\nhttps://www.artillery.io/docs/reference/engines/playwright#configuration'
     )
 });
 
