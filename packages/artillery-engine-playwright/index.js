@@ -30,6 +30,10 @@ class PlaywrightEngine {
       typeof script.config.engines.playwright.showAllPageMetrics !==
       'undefined';
 
+    this.useSeparateBrowserPerVU = 
+      typeof script.config.engines.playwright.useSeparateBrowserPerVU === 'boolean' ? 
+        script.config.engines.playwright.useSeparateBrowserPerVU : false;
+
     return this;
   }
 
@@ -64,8 +68,18 @@ class PlaywrightEngine {
 
       const contextOptions = self.contextOptions || {};
 
-      const browser = await chromium.launch(launchOptions);
-      debug('browser created');
+      let browser;
+      if (self.useSeparateBrowserPerVU) {
+        browser = await chromium.launch(launchOptions);
+        debug('new browser created');
+      } else {
+        if (!global.artillery.__browser) {
+          global.artillery.__browser = await chromium.launch(launchOptions);
+          debug('shared browser created');
+        }
+        browser = global.artillery.__browser;
+      }
+
       const context = await browser.newContext(contextOptions);
 
       context.setDefaultNavigationTimeout(self.defaultNavigationTimeout);
@@ -232,7 +246,10 @@ class PlaywrightEngine {
         }
       } finally {
         await context.close();
-        await browser.close();
+        
+        if (self.useSeparateBrowserPerVU) {
+          await browser.close();
+        }
       }
     };
   }
