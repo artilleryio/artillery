@@ -96,7 +96,13 @@ class PlaywrightEngine {
 
         debug('page created');
 
+        page.on('response', (response) => {
+          const status = response.status();
+          events.emit('counter', 'browser.page.codes.' + status, 1);
+        });
+
         page.on('domcontentloaded', async (page) => {
+
           if (!self.extendedMetrics) {
             return;
           }
