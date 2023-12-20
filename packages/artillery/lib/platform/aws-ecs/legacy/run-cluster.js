@@ -613,6 +613,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       logProgress('Checking cluster...');
       const clusterExists = await checkTargetCluster(context);
+
       if (!clusterExists) {
         if (typeof context.cliOptions.cluster === 'undefined') {
           // User did not specify a cluster with --cluster, and ARTILLERY_CLUSTER_NAME
@@ -1096,6 +1097,54 @@ async function ensureTaskExists(context) {
               mode: 'non-blocking'
             }
           }
+        },
+        {
+          name: 'datadog-agent',
+          image: 'public.ecr.aws/datadog/agent:7',
+          environment: [
+            {
+              name: 'DD_API_KEY',
+              value: ''
+            },
+            {
+              name: 'DD_OTLP_CONFIG_TRACES_ENABLED',
+              value: 'true'
+            },
+            {
+              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT',
+              value: '0.0.0.0:4318'
+            },
+            {
+              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GCPR_ENDPOINT',
+              value: '0.0.0.0:4317'
+            },
+            {
+              name: 'DD_APM_ENABLED',
+              value: 'true'
+            },
+            {
+              name: 'DD_APM_RECEIVER_PORT',
+              value: '8126'
+            },
+            {
+              name: 'DD_APM_TRACE_BUFFER',
+              value: '100'
+            },
+            {
+              name: 'DD_SITE',
+              value: 'datadoghq.com'
+            }
+          ],
+          logConfiguration: {
+            logDriver: 'awslogs',
+            options: {
+              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+              'awslogs-region': context.region,
+              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+              'awslogs-create-group': 'true',
+              mode: 'non-blocking'
+            }
+          }
         }
       ],
       executionRoleArn: context.taskRoleArn
@@ -1353,6 +1402,10 @@ async function generateTaskOverrides(context) {
             value: '1'
           }
         ]
+      },
+      {
+        name: 'datadog-agent',
+        environment: []
       }
     ],
     taskRoleArn: context.taskRoleArn
@@ -1374,6 +1427,8 @@ async function generateTaskOverrides(context) {
     }
     overrides.containerOverrides[0].environment =
       overrides.containerOverrides[0].environment.concat(extraEnv);
+    overrides.containerOverrides[1].environment =
+      overrides.containerOverrides[1].environment.concat(extraEnv);
   }
 
   if (context.cliOptions.launchConfig) {
@@ -1381,6 +1436,8 @@ async function generateTaskOverrides(context) {
     if (lc.environment) {
       overrides.containerOverrides[0].environment =
         overrides.containerOverrides[0].environment.concat(lc.environment);
+      overrides.containerOverrides[1].environment =
+        overrides.containerOverrides[1].environment.concat(lc.environment);
     }
 
     //
