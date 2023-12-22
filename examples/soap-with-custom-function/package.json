@@ -1,0 +1,13 @@
+{
+  "name": "soap-with-custom-function",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "npx artillery run soap.yml"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "soap": "^1.0.0"
+  }
+}
