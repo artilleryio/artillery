@@ -4,7 +4,8 @@
   "description": "Per-endpoint breakdown of latency and response codes for Artillery HTTP tests.",
   "main": "index.js",
   "scripts": {
-    "test": "npm run test:unit",
+    "test": "npm run test:unit && npm run test:acceptance",
+    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300 --no-coverage --color",
     "test:unit": "tap --no-coverage --color test/*.unit.js"
   },
   "keywords": [],
@@ -14,6 +15,7 @@
     "debug": "^4.3.2"
   },
   "devDependencies": {
-    "tap": "^16.3.10"
+    "tap": "^16.3.8",
+    "zx": "^4.3.0"
   }
 }
