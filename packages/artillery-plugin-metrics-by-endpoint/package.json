@@ -4,12 +4,18 @@
   "description": "Per-endpoint breakdown of latency and response codes for Artillery HTTP tests.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "npm run test:unit && npm run test:acceptance",
+    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300 --no-coverage --color",
+    "test:unit": "tap --no-coverage --color test/*.unit.js"
   },
   "keywords": [],
   "author": "Hassy Veldstra <h@artillery.io>",
   "license": "MPL-2.0",
   "dependencies": {
     "debug": "^4.3.2"
+  },
+  "devDependencies": {
+    "tap": "^16.3.8",
+    "zx": "^4.3.0"
   }
 }
