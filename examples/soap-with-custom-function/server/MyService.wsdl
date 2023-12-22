@@ -1,0 +1,44 @@
+<definitions name="AddNumbersService"
+             targetNamespace="http://example.com/addNumbers.wsdl"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://example.com/addNumbers.wsdl"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <message name="addNumbersRequest">
+        <part name="number1" type="xsd:int"/>
+        <part name="number2" type="xsd:int"/>
+    </message>
+
+    <message name="addNumbersResponse">
+        <part name="sum" type="xsd:int"/>
+    </message>
+
+    <portType name="AddNumbersPortType">
+        <operation name="addNumbers">
+            <input message="tns:addNumbersRequest"/>
+            <output message="tns:addNumbersResponse"/>
+        </operation>
+    </portType>
+
+    <binding name="AddNumbersBinding" type="tns:AddNumbersPortType">
+        <soap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <operation name="addNumbers">
+            <soap:operation soapAction="http://example.com/AddNumbers"/>
+            <input>
+                <soap:body use="encoded" namespace="http://example.com/addNumbers.wsdl" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+            </input>
+            <output>
+                <soap:body use="encoded" namespace="http://example.com/addNumbers.wsdl" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"/>
+            </output>
+        </operation>
+    </binding>
+
+    <service name="AddNumbersService">
+        <documentation>This service adds two numbers.</documentation>
+        <port name="AddNumbersPort" binding="tns:AddNumbersBinding">
+            <soap:address location="http://localhost:8000/wsdl"/>
+        </port>
+    </service>
+
+</definitions>
