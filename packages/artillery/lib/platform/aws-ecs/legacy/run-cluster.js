@@ -1365,6 +1365,9 @@ async function generateTaskOverrides(context) {
     context.cliOptions.overrides
       ? ['--overrides', context.cliOptions.overrides]
       : [],
+    context.cliOptions.variables
+      ? ['--variables', context.cliOptions.variables]
+      : [],
     context.configPath ? ['--config', context.configPath] : []
   );
   // NOTE: This MUST come last:
