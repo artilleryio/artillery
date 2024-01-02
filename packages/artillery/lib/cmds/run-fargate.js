@@ -79,14 +79,29 @@ RunCommand.flags = {
     description: runTestDescriptions.region
   }),
   secret: Flags.string({
-    multiple: true
+    multiple: true,
+    description:
+      'Make secrets available to workers. The secret must exist in SSM parameter store for the given region, under /artilleryio/<SECRET_NAME>'
   }),
-  // TODO: Descriptions
-  'launch-type': Flags.string({}),
-  'launch-config': Flags.string({}),
-  'subnet-ids': Flags.string({}),
-  'security-group-ids': Flags.string({}),
-  'task-role-name': Flags.string({}),
+  'launch-type': Flags.string({
+    description: 'The launch type to use for the test. Defaults to Fargate.',
+    options: ['ecs:fargate', 'ecs:ec2']
+  }),
+  'launch-config': Flags.string({
+    description:
+      'JSON to customize launch configuration of ECS/Fargate tasks (see https://www.artillery.io/docs/reference/cli/run-fargate#using---launch-config)'
+  }),
+  'subnet-ids': Flags.string({
+    description:
+      'Comma-separated list of AWS VPC subnet IDs to launch Fargate tasks in'
+  }),
+  'security-group-ids': Flags.string({
+    description:
+      'Comma-separated list of AWS VPC security group IDs to launch Fargate tasks in'
+  }),
+  'task-role-name': Flags.string({
+    description: 'Custom IAM role name for Fargate containers to assume'
+  }),
   cpu: Flags.string({
     description:
       'Set task vCPU on Fargate. Value may be set as a number of vCPUs between 1-16 (e.g. 4), or as number of vCPU units (e.g. 4096)',
