@@ -71,11 +71,6 @@ RunCommand.flags = {
   count: Flags.integer({
     description: runTestDescriptions.count
   }),
-  variables: Flags.string({
-    char: 'v',
-    description:
-      'Set variables available to vusers during the test; a JSON object'
-  }),
   cluster: Flags.string({
     description: runTestDescriptions.cluster
   }),
