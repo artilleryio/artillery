@@ -108,9 +108,6 @@ RunCommand.flags = {
   }),
   'max-duration': Flags.string({
     description: 'Maximum duration of the test run'
-  }),
-  dotenv: Flags.string({
-    description: 'Path to a .env file to load environment variables from'
   })
 };
 
