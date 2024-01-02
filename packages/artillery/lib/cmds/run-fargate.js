@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Command, Flags, Args } = require('@oclif/core');
+const { CommonRunFlags } = require('../cli/common-flags');
 const telemetry = require('../telemetry').init();
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
@@ -66,6 +67,7 @@ Examples:
 `;
 
 RunCommand.flags = {
+  ...CommonRunFlags,
   count: Flags.integer({
     description: runTestDescriptions.count
   }),
@@ -85,11 +87,6 @@ RunCommand.flags = {
   'subnet-ids': Flags.string({}),
   'security-group-ids': Flags.string({}),
   'task-role-name': Flags.string({}),
-  target: Flags.string({
-    char: 't',
-    description:
-      'Set target endpoint. Overrides the target already set in the test script'
-  }),
   cpu: Flags.string({
     description:
       'Set task vCPU on Fargate. Value may be set as a number of vCPUs between 1-16 (e.g. 4), or as number of vCPU units (e.g. 4096)',
@@ -100,38 +97,6 @@ RunCommand.flags = {
       'Set task memory on Fargate. Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)',
     default: '8'
   }),
-  output: Flags.string({
-    char: 'o',
-    description: 'Write a JSON report to file'
-  }),
-  insecure: Flags.boolean({
-    char: 'k',
-    description: 'Allow insecure TLS connections; do not use in production'
-  }),
-  environment: Flags.string({
-    char: 'e',
-    description: 'Use one of the environments specified in config.environments'
-  }),
-  config: Flags.string({
-    description: 'Read configuration for the test from the specified file'
-  }),
-  'scenario-name': Flags.string({
-    description: 'Name of the specific scenario to run'
-  }),
-  overrides: Flags.string({
-    description: 'Dynamically override values in the test script; a JSON object'
-  }),
-  input: Flags.string({
-    char: 'i',
-    description: 'Input script file',
-    multiple: true,
-    hidden: true
-  }),
-  tags: Flags.string({
-    description:
-      'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sre,service:foo'
-  }),
-  note: Flags.string({}), // TODO: description
   packages: Flags.string({
     description: runTestDescriptions.packages
   }),
@@ -140,12 +105,6 @@ RunCommand.flags = {
   }),
   dotenv: Flags.string({
     description: runTestDescriptions.dotenv
-  }),
-  record: Flags.boolean({
-    description: 'Record test run to Artillery Cloud'
-  }),
-  key: Flags.string({
-    description: 'API key for Artillery Cloud'
   })
 };
 
