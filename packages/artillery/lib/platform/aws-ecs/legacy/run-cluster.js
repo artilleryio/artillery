@@ -467,18 +467,6 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     taskArns: []
   });
 
-  if (
-    typeof options.region !== 'undefined' &&
-    util.supportedRegions.indexOf(options.region) === -1
-  ) {
-    console.log(
-      `Unsupported region (${
-        options.region
-      }) provided. Please specify one of: ${util.supportedRegions.join(', ')} `
-    );
-    process.exit(1);
-  }
-
   if (typeof options.region !== 'undefined') {
     context.region = options.region;
   }

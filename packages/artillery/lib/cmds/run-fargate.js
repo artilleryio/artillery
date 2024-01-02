@@ -8,6 +8,7 @@ const telemetry = require('../telemetry').init();
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
 const runCluster = require('../platform/aws-ecs/legacy/run-cluster');
+const { supportedRegions } = require('../platform/aws-ecs/legacy/util');
 const PlatformECS = require('../platform/aws-ecs/ecs');
 const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
 
@@ -66,7 +67,8 @@ RunCommand.flags = {
   }),
   region: Flags.string({
     char: 'r',
-    description: 'The AWS region to run in'
+    description: 'The AWS region to run in',
+    options: supportedRegions
   }),
   secret: Flags.string({
     multiple: true,
