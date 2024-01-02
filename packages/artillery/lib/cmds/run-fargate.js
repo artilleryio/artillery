@@ -47,16 +47,6 @@ class RunCommand extends Command {
   }
 }
 
-const runTestDescriptions = {
-  count: 'Number of load generator workers to launch',
-  cluster: 'Name of the Fargate/ECS cluster to run the test on',
-  region: 'The AWS region to run in',
-  packages:
-    'Path to package.json file which lists dependencies for the test script',
-  maxDuration: 'Maximum duration of the test run',
-  dotenv: 'Path to a .env file to load environment variables from'
-};
-
 RunCommand.description = `launch a test using AWS ECS/Fargate
 
 Examples:
@@ -69,14 +59,14 @@ Examples:
 RunCommand.flags = {
   ...CommonRunFlags,
   count: Flags.integer({
-    description: runTestDescriptions.count
+    description: 'Number of load generator workers to launch'
   }),
   cluster: Flags.string({
-    description: runTestDescriptions.cluster
+    description: 'Name of the Fargate/ECS cluster to run the test on'
   }),
   region: Flags.string({
     char: 'r',
-    description: runTestDescriptions.region
+    description: 'The AWS region to run in'
   }),
   secret: Flags.string({
     multiple: true,
@@ -113,13 +103,14 @@ RunCommand.flags = {
     default: '8'
   }),
   packages: Flags.string({
-    description: runTestDescriptions.packages
+    description:
+      'Path to package.json file which lists dependencies for the test script'
   }),
   'max-duration': Flags.string({
-    description: runTestDescriptions.maxDuration
+    description: 'Maximum duration of the test run'
   }),
   dotenv: Flags.string({
-    description: runTestDescriptions.dotenv
+    description: 'Path to a .env file to load environment variables from'
   })
 };
 
