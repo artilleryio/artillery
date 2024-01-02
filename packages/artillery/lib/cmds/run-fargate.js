@@ -19,8 +19,6 @@ class RunCommand extends Command {
 
   async run() {
     const { flags, _argv, args } = await this.parse(RunCommand);
-    flags.region = flags.region || 'us-east-1';
-
     flags['platform-opt'] = [`region=${flags.region}`];
 
     flags.platform = 'aws:ecs';
@@ -68,7 +66,8 @@ RunCommand.flags = {
   region: Flags.string({
     char: 'r',
     description: 'The AWS region to run in',
-    options: supportedRegions
+    options: supportedRegions,
+    default: 'us-east-1'
   }),
   secret: Flags.string({
     multiple: true,

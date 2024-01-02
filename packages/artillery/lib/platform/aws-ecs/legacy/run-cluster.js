@@ -454,6 +454,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     scriptPath: absoluteScriptPath,
     originalScriptPath: scriptPath,
     count: count,
+    region: options.region,
     taskName: `${TASK_NAME}_${
       IS_FARGATE ? 'fargate' : ''
     }_${clusterName}_${IMAGE_VERSION}_${Math.floor(Math.random() * 1e6)}`,
@@ -466,10 +467,6 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     packageJsonPath,
     taskArns: []
   });
-
-  if (typeof options.region !== 'undefined') {
-    context.region = options.region;
-  }
 
   let subnetIds = [];
   if (options.publicSubnetIds) {
