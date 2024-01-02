@@ -25,6 +25,11 @@ const CommonRunFlags = {
   dotenv: Flags.string({
     description: 'Path to a dotenv file to load environment variables from'
   }),
+  variables: Flags.string({
+    char: 'v',
+    description:
+      'Set variables available to vusers during the test; a JSON object'
+  }),
   overrides: Flags.string({
     description: 'Dynamically override values in the test script; a JSON object'
   }),

@@ -52,11 +52,6 @@ Examples:
 `;
 RunLambdaCommand.flags = {
   ...CommonRunFlags,
-  variables: Flags.string({
-    char: 'v',
-    description:
-      'Set variables available to vusers during the test; a JSON object'
-  }),
   payload: Flags.string({
     char: 'p',
     description: 'Specify a CSV file for dynamic data'

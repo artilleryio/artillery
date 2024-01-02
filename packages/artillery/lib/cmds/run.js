@@ -80,11 +80,6 @@ RunCommand.flags = {
     char: 'q',
     description: 'Quiet mode'
   }),
-  variables: Flags.string({
-    char: 'v',
-    description:
-      'Set variables available to vusers during the test; a JSON object'
-  }),
   // TODO: Deprecation notices for commands below:
   payload: Flags.string({
     char: 'p',
