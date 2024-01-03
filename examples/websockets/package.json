@@ -5,11 +5,10 @@
   "main": "app.js",
   "scripts": {
     "server": "node app.js",
-    "test": "artillery run test.yml"
+    "test": "npx artillery run test.yml"
   },
   "license": "ISC",
   "dependencies": {
-    "artillery": "^1.7.2",
     "ws": "^7.4.6"
   }
 }

@@ -20,10 +20,10 @@ This command will start a WebSockets server listening at ws://localhost:8888.
 
 ## Running Artillery test
 
-This directory contains a test script (`websockets.yml`) which demonstrates different test scenarios for load testing a WebSockets implementation.
+This directory contains a test script (`test.yml`) which demonstrates different test scenarios for load testing a WebSockets implementation.
 
 Once the WebSockets server is up and running, execute the test script:
 
 ```
-artillery run websockets.yml
+npx artillery run test.yml
 ```
