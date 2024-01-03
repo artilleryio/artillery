@@ -4,7 +4,7 @@
 
 'use strict';
 
-const test = require('tape');
+const { test } = require('tap');
 const EventEmitter = require('events');
 
 const ExampleEngine = require('..');
@@ -31,11 +31,11 @@ const script = {
   ]
 };
 
-test('Engine interface', function (t) {
+test('Engine interface', async function (t) {
   const events = new EventEmitter();
   const engine = new ExampleEngine(script, events, {});
   const scenario = engine.createScenario(script.scenarios[0], events);
-  t.assert(engine, 'Can construct an engine');
-  t.assert(typeof scenario === 'function', 'Can create a scenario');
-  t.end();
+
+  t.match(engine.script, script, 'Engine constructor sets script');
+  t.type(scenario, 'function', 'Engine.createScenario returns a function');
 });
