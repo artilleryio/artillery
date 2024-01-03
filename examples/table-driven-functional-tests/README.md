@@ -28,7 +28,5 @@ npm run functional-test
 You can also run the Artillery test with:
 
 ```sh
-$(npm bin)/artillery run --solo -q functional-test.yml
+npx artillery run --solo -q functional-test.yml
 ```
-
-⚠️ **NOTE**: this example depends on the most recent preview releases of Artillery and `expect` plugin.

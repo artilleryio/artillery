@@ -5,7 +5,7 @@ config:
       arrivalRate: 25
 
 scenarios:
-  - name: "Create, update, and delete a user from the database"
+  - name: "crud_from_db_scenario"
     flow:
       - post:
           url: "/"

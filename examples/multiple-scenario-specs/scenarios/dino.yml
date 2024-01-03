@@ -1,5 +1,5 @@
 scenarios:
-  - name: Dino
+  - name: dino
     flow:
       - get:
           url: "/dino"

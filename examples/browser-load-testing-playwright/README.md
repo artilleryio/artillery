@@ -21,7 +21,7 @@ npm install
 Run a simple load test using a plain Playwright script (recorded with `playwright codegen` - no Artillery-specific changes required):
 
 ```sh
-$(npm bin)/artillery run browser-load-test.yml
+npx artillery run browser-load-test.yml
 ```
 
 That's it! Artillery will create headless Chrome browsers that will run Playwright scenarios you provide.
@@ -31,7 +31,7 @@ That's it! Artillery will create headless Chrome browsers that will run Playwrig
 This example shows how we can implement a smoke test (or a synthetic check) using a headless browser. We make use of Artillery's [CSV payload](https://artillery.io/docs/guides/guides/test-script-reference.html#Payload-files) feature to specify the URLs we want to check, and [custom metric API](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) to track custom metrics.
 
 ```sh
-$(npm bin)/artillery run browser-smoke-test.yml
+npx artillery run browser-smoke-test.yml
 ```
 
 ## Example 3: Tracking custom metrics for part of the flow

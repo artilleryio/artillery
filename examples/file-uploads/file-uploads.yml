@@ -1,7 +1,7 @@
 config:
   target: "http://localhost:3000"
   phases:
-    - duration: 600
+    - duration: 10min
       arrivalRate: 25
   # Enables the file upload plugin from Artillery Pro.
   plugins:

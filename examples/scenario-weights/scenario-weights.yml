@@ -14,26 +14,26 @@
 config:
   target: "http://localhost:3000"
   phases:
-    - duration: 600
+    - duration: 10min
       arrivalRate: 25
 
 scenarios:
   # Approximately 60% of all VUs will access this scenario.
-  - name: "Access the /common route"
+  - name: "access_common_route"
     weight: 6
     flow:
       - get:
           url: "/common"
 
   # Approximately 30% of all VUs will access this scenario.
-  - name: "Access the /average route"
+  - name: "access_average_route"
     weight: 3
     flow:
       - get:
           url: "/average"
 
   # Approximately 10% of all VUs will access this scenario.
-  - name: "Access the /rare route"
+  - name: "access_rare_route"
     weight: 1
     flow:
       - get:

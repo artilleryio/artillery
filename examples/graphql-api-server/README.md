@@ -37,5 +37,5 @@ This directory contains a test script (`graphql.yml`) which demonstrates how to 
 Once the GraphQL server is up and running, execute the test script:
 
 ```
-artillery run graphql.yml
+npx artillery run graphql.yml
 ```

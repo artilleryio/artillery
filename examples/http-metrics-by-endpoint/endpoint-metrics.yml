@@ -1,5 +1,5 @@
 config:
-  target: https://artillery.io
+  target: http://asciiart.artillery.io:8080
   phases:
     - duration: 20
       arrivalRate: 1
@@ -8,8 +8,8 @@ config:
 scenarios:
   - flow:
       - get:
-          url: "/"
+          url: "/dino"
       - get:
-          url: "/docs"
+          url: "/armadillo"
       - get:
-          url: "/404"
+          url: "/pony"

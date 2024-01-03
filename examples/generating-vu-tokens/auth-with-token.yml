@@ -1,12 +1,14 @@
 config:
-  target: https://www.artillery.io
+  target: http://asciiart.artillery.io:8080
   processor: "./helpers.js"
   phases:
     - arrivalCount: 10
       duration: 1
+      
 before:
   flow:
     - function: "generateSharedToken"
+
 scenarios:
   - flow:
       - function: "generateVUToken"
