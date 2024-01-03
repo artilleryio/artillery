@@ -1115,7 +1115,7 @@ async function ensureTaskExists(context) {
               value: '0.0.0.0:4318'
             },
             {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GCPR_ENDPOINT',
+              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT',
               value: '0.0.0.0:4317'
             },
             {
