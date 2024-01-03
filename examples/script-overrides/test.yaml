@@ -1,5 +1,5 @@
 config:
-  target: https://artillery.io
+  target: http://asciiart.artillery.io:8080
   environments:
     # Informal short run:
     smoke:
