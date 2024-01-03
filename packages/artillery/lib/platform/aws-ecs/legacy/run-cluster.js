@@ -1046,9 +1046,6 @@ async function ensureTaskExists(context) {
       }
     }
 
-    // Check if Datadog Api key present in env. We only run Datadog agent container if DD_API_KEY is configured
-    const shouldRunDatadogAgent =
-      process.env.DD_API_KEY || (context.dotenv && context.dotenv.DD_API_KEY);
     ulimits = Object.keys(defaultUlimits).map((name) => {
       return {
         name: name,
@@ -1101,7 +1098,7 @@ async function ensureTaskExists(context) {
             }
           }
         },
-        ...(shouldRunDatadogAgent
+        ...(shouldRunDatadogAgent(context)
           ? [
               {
                 name: 'datadog-agent',
@@ -1383,9 +1380,6 @@ async function generateTaskOverrides(context) {
     context.namedTest ? context.s3Prefix : context.testId
   }`;
 
-  // Check if Datadog key present in env.
-  const shouldRunDatadogAgent =
-    process.env.DD_API_KEY || (context.dotenv && context.dotenv.DD_API_KEY);
   const overrides = {
     containerOverrides: [
       {
@@ -1413,7 +1407,7 @@ async function generateTaskOverrides(context) {
           }
         ]
       },
-      ...(shouldRunDatadogAgent
+      ...(shouldRunDatadogAgent(context)
         ? [
             {
               name: 'datadog-agent',
@@ -1949,4 +1943,14 @@ function getLogFilename(output, userDefaultFilenameFormat) {
   }
 
   return logfile;
+}
+
+// Check if Datadog Api key present in env. We only run Datadog agent container if DD_API_KEY is configured
+function shouldRunDatadogAgent(context) {
+  return (
+    process.env.DD_API_KEY ||
+    process.env.DATADOG_API_KEY ||
+    (context.dotenv && context.dotenv.DD_API_KEY) ||
+    (context.dotenv && context.dotenv.DATADOG_API_KEY)
+  );
 }
