@@ -8,6 +8,7 @@ const telemetry = require('../telemetry').init();
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
 const runCluster = require('../platform/aws-ecs/legacy/run-cluster');
+const { supportedRegions } = require('../platform/aws-ecs/legacy/util');
 const PlatformECS = require('../platform/aws-ecs/ecs');
 const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
 
@@ -18,8 +19,6 @@ class RunCommand extends Command {
 
   async run() {
     const { flags, _argv, args } = await this.parse(RunCommand);
-    flags.region = flags.region || 'us-east-1';
-
     flags['platform-opt'] = [`region=${flags.region}`];
 
     flags.platform = 'aws:ecs';
@@ -47,16 +46,6 @@ class RunCommand extends Command {
   }
 }
 
-const runTestDescriptions = {
-  count: 'Number of load generator workers to launch',
-  cluster: 'Name of the Fargate/ECS cluster to run the test on',
-  region: 'The AWS region to run in',
-  packages:
-    'Path to package.json file which lists dependencies for the test script',
-  maxDuration: 'Maximum duration of the test run',
-  dotenv: 'Path to a .env file to load environment variables from'
-};
-
 RunCommand.description = `launch a test using AWS ECS/Fargate
 
 Examples:
@@ -69,24 +58,41 @@ Examples:
 RunCommand.flags = {
   ...CommonRunFlags,
   count: Flags.integer({
-    description: runTestDescriptions.count
+    description: 'Number of load generator workers to launch'
   }),
   cluster: Flags.string({
-    description: runTestDescriptions.cluster
+    description: 'Name of the Fargate/ECS cluster to run the test on'
   }),
   region: Flags.string({
     char: 'r',
-    description: runTestDescriptions.region
+    description: 'The AWS region to run in',
+    options: supportedRegions,
+    default: 'us-east-1'
   }),
   secret: Flags.string({
-    multiple: true
+    multiple: true,
+    description:
+      'Make secrets available to workers. The secret must exist in SSM parameter store for the given region, under /artilleryio/<SECRET_NAME>'
   }),
-  // TODO: Descriptions
-  'launch-type': Flags.string({}),
-  'launch-config': Flags.string({}),
-  'subnet-ids': Flags.string({}),
-  'security-group-ids': Flags.string({}),
-  'task-role-name': Flags.string({}),
+  'launch-type': Flags.string({
+    description: 'The launch type to use for the test. Defaults to Fargate.',
+    options: ['ecs:fargate', 'ecs:ec2']
+  }),
+  'launch-config': Flags.string({
+    description:
+      'JSON to customize launch configuration of ECS/Fargate tasks (see https://www.artillery.io/docs/reference/cli/run-fargate#using---launch-config)'
+  }),
+  'subnet-ids': Flags.string({
+    description:
+      'Comma-separated list of AWS VPC subnet IDs to launch Fargate tasks in'
+  }),
+  'security-group-ids': Flags.string({
+    description:
+      'Comma-separated list of AWS VPC security group IDs to launch Fargate tasks in'
+  }),
+  'task-role-name': Flags.string({
+    description: 'Custom IAM role name for Fargate containers to assume'
+  }),
   cpu: Flags.string({
     description:
       'Set task vCPU on Fargate. Value may be set as a number of vCPUs between 1-16 (e.g. 4), or as number of vCPU units (e.g. 4096)',
@@ -98,13 +104,11 @@ RunCommand.flags = {
     default: '8'
   }),
   packages: Flags.string({
-    description: runTestDescriptions.packages
+    description:
+      'Path to package.json file which lists dependencies for the test script'
   }),
   'max-duration': Flags.string({
-    description: runTestDescriptions.maxDuration
-  }),
-  dotenv: Flags.string({
-    description: runTestDescriptions.dotenv
+    description: 'Maximum duration of the test run'
   })
 };
 

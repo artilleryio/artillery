@@ -454,6 +454,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     scriptPath: absoluteScriptPath,
     originalScriptPath: scriptPath,
     count: count,
+    region: options.region,
     taskName: `${TASK_NAME}_${
       IS_FARGATE ? 'fargate' : ''
     }_${clusterName}_${IMAGE_VERSION}_${Math.floor(Math.random() * 1e6)}`,
@@ -466,22 +467,6 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     packageJsonPath,
     taskArns: []
   });
-
-  if (
-    typeof options.region !== 'undefined' &&
-    util.supportedRegions.indexOf(options.region) === -1
-  ) {
-    console.log(
-      `Unsupported region (${
-        options.region
-      }) provided. Please specify one of: ${util.supportedRegions.join(', ')} `
-    );
-    process.exit(1);
-  }
-
-  if (typeof options.region !== 'undefined') {
-    context.region = options.region;
-  }
 
   let subnetIds = [];
   if (options.publicSubnetIds) {

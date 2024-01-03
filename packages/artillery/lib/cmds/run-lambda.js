@@ -56,9 +56,6 @@ RunLambdaCommand.flags = {
     char: 'p',
     description: 'Specify a CSV file for dynamic data'
   }),
-  dotenv: Flags.string({
-    description: 'Path to a dotenv file to load environment variables from'
-  }),
   count: Flags.string({
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
