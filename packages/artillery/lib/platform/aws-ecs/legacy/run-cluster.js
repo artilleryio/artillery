@@ -1098,58 +1098,54 @@ async function ensureTaskExists(context) {
             }
           }
         },
-        ...(shouldRunDatadogAgent(context)
-          ? [
-              {
-                name: 'datadog-agent',
-                image: 'public.ecr.aws/datadog/agent:7',
-                environment: [
-                  {
-                    name: 'DD_API_KEY',
-                    value: ''
-                  },
-                  {
-                    name: 'DD_OTLP_CONFIG_TRACES_ENABLED',
-                    value: 'true'
-                  },
-                  {
-                    name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT',
-                    value: '0.0.0.0:4318'
-                  },
-                  {
-                    name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GCPR_ENDPOINT',
-                    value: '0.0.0.0:4317'
-                  },
-                  {
-                    name: 'DD_APM_ENABLED',
-                    value: 'true'
-                  },
-                  {
-                    name: 'DD_APM_RECEIVER_PORT',
-                    value: '8126'
-                  },
-                  {
-                    name: 'DD_APM_TRACE_BUFFER',
-                    value: '100'
-                  },
-                  {
-                    name: 'DD_SITE',
-                    value: 'datadoghq.com'
-                  }
-                ],
-                logConfiguration: {
-                  logDriver: 'awslogs',
-                  options: {
-                    'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
-                    'awslogs-region': context.region,
-                    'awslogs-stream-prefix': `artilleryio/${context.testId}`,
-                    'awslogs-create-group': 'true',
-                    mode: 'non-blocking'
-                  }
-                }
-              }
-            ]
-          : [])
+        {
+          name: 'datadog-agent',
+          image: 'public.ecr.aws/datadog/agent:7',
+          environment: [
+            {
+              name: 'DD_API_KEY',
+              value: 'placeholder'
+            },
+            {
+              name: 'DD_OTLP_CONFIG_TRACES_ENABLED',
+              value: 'true'
+            },
+            {
+              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT',
+              value: '0.0.0.0:4318'
+            },
+            {
+              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GCPR_ENDPOINT',
+              value: '0.0.0.0:4317'
+            },
+            {
+              name: 'DD_APM_ENABLED',
+              value: 'true'
+            },
+            {
+              name: 'DD_APM_RECEIVER_PORT',
+              value: '8126'
+            },
+            {
+              name: 'DD_APM_TRACE_BUFFER',
+              value: '100'
+            },
+            {
+              name: 'DD_SITE',
+              value: 'datadoghq.com'
+            }
+          ],
+          logConfiguration: {
+            logDriver: 'awslogs',
+            options: {
+              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+              'awslogs-region': context.region,
+              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+              'awslogs-create-group': 'true',
+              mode: 'non-blocking'
+            }
+          }
+        }
       ],
       executionRoleArn: context.taskRoleArn
     };
@@ -1407,14 +1403,10 @@ async function generateTaskOverrides(context) {
           }
         ]
       },
-      ...(shouldRunDatadogAgent(context)
-        ? [
-            {
-              name: 'datadog-agent',
-              environment: []
-            }
-          ]
-        : [])
+      {
+        name: 'datadog-agent',
+        environment: []
+      }
     ],
     taskRoleArn: context.taskRoleArn
   };
@@ -1435,10 +1427,8 @@ async function generateTaskOverrides(context) {
     }
     overrides.containerOverrides[0].environment =
       overrides.containerOverrides[0].environment.concat(extraEnv);
-    if (overrides.containerOverrides[1]) {
-      overrides.containerOverrides[1].environment =
-        overrides.containerOverrides[1].environment.concat(extraEnv);
-    }
+    overrides.containerOverrides[1].environment =
+      overrides.containerOverrides[1].environment.concat(extraEnv);
   }
 
   if (context.cliOptions.launchConfig) {
@@ -1446,8 +1436,6 @@ async function generateTaskOverrides(context) {
     if (lc.environment) {
       overrides.containerOverrides[0].environment =
         overrides.containerOverrides[0].environment.concat(lc.environment);
-    }
-    if (lc.environment && overrides.containerOverrides[1]) {
       overrides.containerOverrides[1].environment =
         overrides.containerOverrides[1].environment.concat(lc.environment);
     }
@@ -1943,14 +1931,4 @@ function getLogFilename(output, userDefaultFilenameFormat) {
   }
 
   return logfile;
-}
-
-// Check if Datadog Api key present in env. We only run Datadog agent container if DD_API_KEY is configured
-function shouldRunDatadogAgent(context) {
-  return (
-    process.env.DD_API_KEY ||
-    process.env.DATADOG_API_KEY ||
-    (context.dotenv && context.dotenv.DD_API_KEY) ||
-    (context.dotenv && context.dotenv.DATADOG_API_KEY)
-  );
 }
