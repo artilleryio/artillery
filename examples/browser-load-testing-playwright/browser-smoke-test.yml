@@ -9,6 +9,6 @@ config:
     playwright: {}
   processor: ./flows.js
 scenarios:
-  - name: Check page
+  - name: smoke_test_page
     engine: playwright
     flowFunction: checkPage
