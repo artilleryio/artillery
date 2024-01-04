@@ -22,7 +22,6 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const os = require('os');
-const esbuild = require('esbuild-wasm');
 const createLauncher = require('../launch-platform');
 const createConsoleReporter = require('../../console-reporter');
 
@@ -405,6 +404,10 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
     tmpDir,
     `${processorFileName}-${Date.now()}.js`
   );
+
+  //TODO: move require to top of file when Lambda bundle size issue is solved
+  //must be conditionally required for now as this package is removed in Lambda for now to avoid bigger package sizes
+  const esbuild = require('esbuild-wasm');
 
   try {
     esbuild.buildSync({
