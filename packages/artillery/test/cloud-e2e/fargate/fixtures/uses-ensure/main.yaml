@@ -1,0 +1,19 @@
+config:
+  target: "https://www.artillery.io"
+  plugins:
+    ensure: {}
+  phases:
+    - duration: 20
+      arrivalRate: 1
+  ensure:
+    p99: 10000
+    thresholds:
+      - "http.response_time.p99": 1
+  defaults:
+    headers:
+      user-agent: mozilla
+scenarios:
+  - name: load homepage
+    flow:
+      - get:
+          url: "/"
