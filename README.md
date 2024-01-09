@@ -18,7 +18,7 @@
 - **Batteries-included.** 20+ integrations for monitoring, observability, and CICD.
 - **Test anything**. HTTP, WebSocket, Socket.io, gRPC, Kinesis, and more.
 - **Playwright support**. Load test with real headless browsers.
-- **Powerful workload modeling**. Emulate complex user behavior with request chains, multiple steps, transactions, and more.
+- **Powerful workload modeling**. Emulate complex user behavior with request chains, correlation, multiple steps, transactions, and more.
 - **Extensible & hackable**. Artillery has a plugin API to allow extending and customization.
 - **Open source**. Permissive open source license to let you build on top of Artillery without worry.
 
