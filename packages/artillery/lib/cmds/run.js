@@ -654,7 +654,7 @@ async function sendTelemetry(script, flags, extraProps) {
         'prometheus'
       ];
 
-      properties.officialReporters = script.config.plugins[
+      properties.officialMonitoringReporters = script.config.plugins[
         'publish-metrics'
       ].map((reporter) => {
         if (OFFICIAL_REPORTERS.includes(reporter.type)) {
