@@ -637,6 +637,30 @@ async function sendTelemetry(script, flags, extraProps) {
       }
     }
 
+    // publish-metrics reporters
+    if (script.config.plugins['publish-metrics']) {
+      const OFFICIAL_REPORTERS = [
+        'datadog',
+        'open-telemetry',
+        'lightstep',
+        'newrelic',
+        'splunk',
+        'dynatrace',
+        'cloudwatch',
+        'honeycomb',
+        'mixpanel',
+        'prometheus'
+      ];
+
+      properties.officialMonitoringReporters = script.config.plugins[
+        'publish-metrics'
+      ].map((reporter) => {
+        if (OFFICIAL_REPORTERS.includes(reporter.type)) {
+          return reporter.type;
+        }
+      });
+    }
+
     // before/after hooks
     if (script.before) {
       properties.beforeHook = true;
