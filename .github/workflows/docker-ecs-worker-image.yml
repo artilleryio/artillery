@@ -5,6 +5,15 @@ on:
   push:
     branches:
       - main
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Branch ref to checkout. Needed for pull_request_target to be able to pull correct ref.'
+        type: string
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN:
+        description: 'ARN of the IAM role to assume to push the image to ECR.'
+        required: true
 
 permissions:
   id-token: write
@@ -16,6 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
+          ref: ${{ inputs.ref || null }}
           fetch-depth: 0
       
       - name: Show git ref
