@@ -1,5 +1,7 @@
 const { test, before } = require('tap');
 const { $ } = require('zx');
+const fs = require('fs');
+const path = require('path');
 
 const A9 = process.env.A9 || 'artillery';
 
@@ -16,4 +18,25 @@ test('Run simple-bom', async (t) => {
   t.match(output, /summary report/i, 'print summary report');
   t.match(output, /p99/i, 'a p99 value is reported');
   t.match(output, /created:.+100/i, 'expected number of vusers is reported');
+});
+
+test('Run mixed-hierarchy', async (t) => {
+  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
+  const output =
+    await $`${A9} run-fargate ${__dirname}/fixtures/mixed-hierarchy/scenarios/dino.yml --config ${__dirname}/fixtures/mixed-hierarchy/config/config.yml -e main --output ${jsonReport}`;
+
+  const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+
+  t.equal(
+    report.aggregate.counters['vusers.completed'],
+    20,
+    'Should have 20 total VUs'
+  );
+  t.equal(
+    report.aggregate.counters['http.codes.200'],
+    20,
+    'Should have 20 "200 OK" responses'
+  );
 });
