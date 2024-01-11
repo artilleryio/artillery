@@ -69,3 +69,7 @@ jobs:
         env:
           FORCE_COLOR: 1
           ECR_IMAGE_VERSION: ${{ github.sha }} # the image is published with the sha of the commit within this repo
+          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+          GITHUB_REPO: ${{ github.repository }}
+          GITHUB_ACTOR: ${{ github.actor }}
