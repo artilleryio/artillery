@@ -197,3 +197,14 @@ test('Run lots-of-output', async (t) => {
   );
   t.match(output.stdout, /p99/i, 'a p99 value is reported');
 });
+
+test('Run memory hog', async (t) => {
+  try {
+    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/test.yml --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
+  } catch (output) {
+    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
+
+    t.match(output, /summary report/i, 'print summary report');
+    t.match(output, /p99/i, 'a p99 value is reported');
+  }
+});
