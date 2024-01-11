@@ -67,3 +67,30 @@ test('Run uses ensure', async (t) => {
     );
   }
 });
+
+test('Ensure (with new interface) should still run when workers exit from expect plugin (non zero exit code)', async (t) => {
+  //Note: this test uses new ensure plugin interface (config.plugins.ensure) to test that indirectly
+  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
+
+  try {
+    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --output ${jsonReport} --count 2`;
+  } catch (output) {
+    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
+    t.ok(
+      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p95 < 1`)
+    );
+    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
+
+    const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+    t.equal(
+      report.aggregate.counters['vusers.completed'],
+      10,
+      'Should have 10 total VUs'
+    );
+    t.equal(
+      report.aggregate.counters['http.codes.200'],
+      10,
+      'Should have 10 "200 OK" responses'
+    );
+  }
+});
