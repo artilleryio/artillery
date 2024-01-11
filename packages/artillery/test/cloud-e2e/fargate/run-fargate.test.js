@@ -1,9 +1,8 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
-const fs = require('fs');
-const path = require('path');
 const chalk = require('chalk');
-const { generateTmpReportPath } = require('../../cli/_helpers.js');
+const fs = require('fs');
+const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
 
 const A9 = process.env.A9 || 'artillery';
 
@@ -11,6 +10,8 @@ before(async () => {
   await $`${A9} -V`;
 });
 
+//NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
+const baseTags = getTestTags(['type:acceptance']);
 let reportFilePath;
 beforeEach(async (t) => {
   $.verbose = true;
@@ -20,7 +21,7 @@ beforeEach(async (t) => {
 
 test('Run simple-bom', async (t) => {
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/test.yml --environment test --region eu-west-1 --count 10`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/test.yml --environment test --region eu-west-1 --count 10 --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -30,8 +31,11 @@ test('Run simple-bom', async (t) => {
 });
 
 test('Run mixed-hierarchy', async (t) => {
+  const scenarioPath = `${__dirname}/fixtures/mixed-hierarchy/scenarios/dino.yml`;
+  const configPath = `${__dirname}/fixtures/mixed-hierarchy/config/config.yml`;
+
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/mixed-hierarchy/scenarios/dino.yml --config ${__dirname}/fixtures/mixed-hierarchy/config/config.yml -e main --output ${reportFilePath}`;
+    await $`${A9} run-fargate ${scenarioPath} --config ${configPath} -e main --record --tags ${baseTags} --output ${reportFilePath}`;
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
@@ -51,7 +55,7 @@ test('Run mixed-hierarchy', async (t) => {
 
 test('Run uses ensure', async (t) => {
   try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/test.yaml --output ${reportFilePath} --count 15`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/test.yaml --record --tags ${baseTags} --output ${reportFilePath} --count 15`;
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(
@@ -77,7 +81,7 @@ test('Ensure (with new interface) should still run when workers exit from expect
   //Note: this test uses new ensure plugin interface (config.plugins.ensure) to test that indirectly
 
   try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --output ${reportFilePath} --count 2`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(
@@ -101,7 +105,7 @@ test('Ensure (with new interface) should still run when workers exit from expect
 
 test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
   try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --output ${reportFilePath} --count 2`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
   } catch (output) {
     t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
 
@@ -120,6 +124,8 @@ test('CLI should exit with non-zero exit code when there are failed expectations
 });
 
 test('Kitchen Sink Test - multiple features together', async (t) => {
+  const scenarioPath = `${__dirname}/fixtures/cli-kitchen-sink/scenario.yml`;
+  const dotEnvPath = `${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink-env`;
   const launchConfig = {
     environment: [
       { name: 'SECRET1', value: '/armadillo' },
@@ -128,7 +134,7 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
   };
 
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/cli-kitchen-sink/scenario.yml --output ${reportFilePath} --dotenv ${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink-env --count 2 --launch-config ${JSON.stringify(
+    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --dotenv ${dotEnvPath} --record --tags ${baseTags} --count 2 --launch-config ${JSON.stringify(
       launchConfig
     )}`;
 
@@ -181,7 +187,7 @@ test('Run lots-of-output', async (t) => {
   $.verbose = false; // we don't want megabytes of output on the console
 
   const output =
-    await $`${A9} run:fargate ${__dirname}/fixtures/large-output/test.yml`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/large-output/test.yml --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -196,7 +202,7 @@ test('Run lots-of-output', async (t) => {
 
 test('Run memory hog', async (t) => {
   try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/test.yml --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/test.yml --record --tags ${baseTags} --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
   } catch (output) {
     t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
 
