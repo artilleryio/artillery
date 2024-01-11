@@ -21,7 +21,7 @@ beforeEach(async (t) => {
 
 test('Run simple-bom', async (t) => {
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/test.yml --environment test --region eu-west-1 --count 10 --record --tags ${baseTags}`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/simple-bom.yml --environment test --region eu-west-1 --count 10 --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -31,7 +31,7 @@ test('Run simple-bom', async (t) => {
 });
 
 test('Run mixed-hierarchy', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/mixed-hierarchy/scenarios/dino.yml`;
+  const scenarioPath = `${__dirname}/fixtures/mixed-hierarchy/scenarios/mixed-hierarchy-dino.yml`;
   const configPath = `${__dirname}/fixtures/mixed-hierarchy/config/config.yml`;
 
   const output =
@@ -55,7 +55,7 @@ test('Run mixed-hierarchy', async (t) => {
 
 test('Run uses ensure', async (t) => {
   try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/test.yaml --record --tags ${baseTags} --output ${reportFilePath} --count 15`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/with-ensure.yaml --record --tags ${baseTags} --output ${reportFilePath} --count 15`;
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(
@@ -124,7 +124,7 @@ test('CLI should exit with non-zero exit code when there are failed expectations
 });
 
 test('Kitchen Sink Test - multiple features together', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/cli-kitchen-sink/scenario.yml`;
+  const scenarioPath = `${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink.yml`;
   const dotEnvPath = `${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink-env`;
   const launchConfig = {
     environment: [
@@ -187,7 +187,7 @@ test('Run lots-of-output', async (t) => {
   $.verbose = false; // we don't want megabytes of output on the console
 
   const output =
-    await $`${A9} run:fargate ${__dirname}/fixtures/large-output/test.yml --record --tags ${baseTags}`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/large-output/lots-of-output.yml --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -202,7 +202,7 @@ test('Run lots-of-output', async (t) => {
 
 test('Run memory hog', async (t) => {
   try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/test.yml --record --tags ${baseTags} --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags} --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
   } catch (output) {
     t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
 
