@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Get User Permission
         id: checkAccess
-        uses: actions-cool/check-user-permission@v2
+        uses: actions-cool/check-user-permission@cd622002ff25c2311d2e7fb82107c0d24be83f9b
         with:
           require: write
           username: ${{ github.actor }}
