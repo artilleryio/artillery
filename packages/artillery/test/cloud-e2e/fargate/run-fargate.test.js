@@ -94,3 +94,25 @@ test('Ensure (with new interface) should still run when workers exit from expect
     );
   }
 });
+
+test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
+  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
+
+  try {
+    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --output ${jsonReport} --count 2`;
+  } catch (output) {
+    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
+
+    const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+    t.equal(
+      report.aggregate.counters['vusers.completed'],
+      10,
+      'Should have 10 total VUs'
+    );
+    t.equal(
+      report.aggregate.counters['http.codes.200'],
+      10,
+      'Should have 10 "200 OK" responses'
+    );
+  }
+});
