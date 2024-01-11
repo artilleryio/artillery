@@ -1,4 +1,4 @@
-const { test, before } = require('tap');
+const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
 const path = require('path');
@@ -8,6 +8,10 @@ const A9 = process.env.A9 || 'artillery';
 
 before(async () => {
   await $`${A9} -V`;
+});
+
+beforeEach(async () => {
+  $.verbose = true;
 });
 
 test('Run simple-bom', async (t) => {
@@ -175,4 +179,21 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
     40,
     'Should have 40 /pony "200 OK" responses'
   );
+});
+
+test('Run lots-of-output', async (t) => {
+  $.verbose = false; // we don't want megabytes of output on the console
+
+  const output =
+    await $`${A9} run:fargate ${__dirname}/fixtures/large-output/test.yml`;
+
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+
+  t.match(output.stdout, /summary report/i, 'print summary report');
+  t.match(
+    output.stdout,
+    /very.very.long.name.for.a.histogram.metric.so.that.we.generate.a.lot.of.console.output/i,
+    'includes custom metric output'
+  );
+  t.match(output.stdout, /p99/i, 'a p99 value is reported');
 });
