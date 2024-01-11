@@ -16,5 +16,5 @@ scenarios:
           - get:
               url: "/armadillo"
               beforeRequest: hogSomeRam
-          - think: 0.5
+          - think: 1
         count: 10
