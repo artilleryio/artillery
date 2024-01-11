@@ -3,6 +3,7 @@ const { $ } = require('zx');
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
+const { generateTmpReportPath } = require('../../cli/_helpers.js');
 
 const A9 = process.env.A9 || 'artillery';
 
@@ -10,8 +11,11 @@ before(async () => {
   await $`${A9} -V`;
 });
 
-beforeEach(async () => {
+let reportFilePath;
+beforeEach(async (t) => {
   $.verbose = true;
+
+  reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
 test('Run simple-bom', async (t) => {
@@ -26,11 +30,10 @@ test('Run simple-bom', async (t) => {
 });
 
 test('Run mixed-hierarchy', async (t) => {
-  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/mixed-hierarchy/scenarios/dino.yml --config ${__dirname}/fixtures/mixed-hierarchy/config/config.yml -e main --output ${jsonReport}`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/mixed-hierarchy/scenarios/dino.yml --config ${__dirname}/fixtures/mixed-hierarchy/config/config.yml -e main --output ${reportFilePath}`;
 
-  const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -47,10 +50,8 @@ test('Run mixed-hierarchy', async (t) => {
 });
 
 test('Run uses ensure', async (t) => {
-  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
-
   try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/test.yaml --output ${jsonReport} --count 15`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/test.yaml --output ${reportFilePath} --count 15`;
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(
@@ -58,7 +59,7 @@ test('Run uses ensure', async (t) => {
     );
     t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
 
-    const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+    const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     t.equal(
       report.aggregate.counters['vusers.completed'],
       300,
@@ -74,10 +75,9 @@ test('Run uses ensure', async (t) => {
 
 test('Ensure (with new interface) should still run when workers exit from expect plugin (non zero exit code)', async (t) => {
   //Note: this test uses new ensure plugin interface (config.plugins.ensure) to test that indirectly
-  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
 
   try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --output ${jsonReport} --count 2`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --output ${reportFilePath} --count 2`;
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(
@@ -85,7 +85,7 @@ test('Ensure (with new interface) should still run when workers exit from expect
     );
     t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
 
-    const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+    const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     t.equal(
       report.aggregate.counters['vusers.completed'],
       10,
@@ -100,14 +100,12 @@ test('Ensure (with new interface) should still run when workers exit from expect
 });
 
 test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
-  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
-
   try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --output ${jsonReport} --count 2`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --output ${reportFilePath} --count 2`;
   } catch (output) {
     t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
 
-    const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+    const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     t.equal(
       report.aggregate.counters['vusers.completed'],
       10,
@@ -122,8 +120,6 @@ test('CLI should exit with non-zero exit code when there are failed expectations
 });
 
 test('Kitchen Sink Test - multiple features together', async (t) => {
-  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
-
   const launchConfig = {
     environment: [
       { name: 'SECRET1', value: '/armadillo' },
@@ -132,7 +128,7 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
   };
 
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/cli-kitchen-sink/scenario.yml --output ${jsonReport} --dotenv ${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink-env --count 2 --launch-config ${JSON.stringify(
+    await $`${A9} run-fargate ${__dirname}/fixtures/cli-kitchen-sink/scenario.yml --output ${reportFilePath} --dotenv ${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink-env --count 2 --launch-config ${JSON.stringify(
       launchConfig
     )}`;
 
@@ -144,7 +140,7 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
   );
   t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
 
-  const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
   t.equal(
     report.aggregate.counters['vusers.completed'],
     40,
