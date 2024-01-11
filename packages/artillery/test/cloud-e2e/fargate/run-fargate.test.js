@@ -116,3 +116,63 @@ test('CLI should exit with non-zero exit code when there are failed expectations
     );
   }
 });
+
+test('Kitchen Sink Test - multiple features together', async (t) => {
+  const jsonReport = path.join(__dirname, `report-${Date.now()}.json`);
+
+  const launchConfig = {
+    environment: [
+      { name: 'SECRET1', value: '/armadillo' },
+      { name: 'SECRET2', value: '/pony' }
+    ]
+  };
+
+  const output =
+    await $`${A9} run-fargate ${__dirname}/fixtures/cli-kitchen-sink/scenario.yml --output ${jsonReport} --dotenv ${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink-env --count 2 --launch-config ${JSON.stringify(
+      launchConfig
+    )}`;
+
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  t.ok(
+    output.stdout.includes(
+      `${chalk.green('ok')}: http.response_time.p99 < 10000`
+    )
+  );
+  t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
+
+  const report = JSON.parse(fs.readFileSync(jsonReport, 'utf8'));
+  t.equal(
+    report.aggregate.counters['vusers.completed'],
+    40,
+    'Should have 40 total VUs'
+  );
+  t.equal(
+    report.aggregate.counters['http.codes.200'],
+    160,
+    'Should have 160 "200 OK" responses'
+  );
+
+  // Check that each endpoint was hit correctly
+  t.equal(
+    report.aggregate.counters['plugins.metrics-by-endpoint./.codes.200'],
+    40,
+    'Should have 40 / "200 OK" responses'
+  );
+  t.equal(
+    report.aggregate.counters['plugins.metrics-by-endpoint./dino.codes.200'],
+    40,
+    'Should have 40 /dino "200 OK" responses'
+  );
+  t.equal(
+    report.aggregate.counters[
+      'plugins.metrics-by-endpoint./armadillo.codes.200'
+    ],
+    40,
+    'Should have 40 /armadillo "200 OK" responses'
+  );
+  t.equal(
+    report.aggregate.counters['plugins.metrics-by-endpoint./pony.codes.200'],
+    40,
+    'Should have 40 /pony "200 OK" responses'
+  );
+});
