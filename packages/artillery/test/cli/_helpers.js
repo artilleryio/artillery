@@ -30,4 +30,18 @@ async function getRootPath(filename) {
   return path.resolve(__dirname, '..', '..', filename);
 }
 
-module.exports = { execute, deleteFile, getRootPath, returnTmpPath };
+function getTestTags(additionalTags) {
+  const actorTag = `actor:${process.env.GITHUB_ACTOR || 'localhost'}`;
+  const repoTag = `repo:${process.env.GITHUB_REPO || 'artilleryio/artillery'}`;
+  const ciTag = `ci:${process.env.GITHUB_ACTIONS ? 'true' : 'false'}`;
+
+  return `${repoTag},${actorTag},${ciTag},${additionalTags.join(',')}`;
+}
+
+module.exports = {
+  execute,
+  deleteFile,
+  getRootPath,
+  returnTmpPath,
+  getTestTags
+};
