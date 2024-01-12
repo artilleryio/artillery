@@ -21,13 +21,13 @@ beforeEach(async (t) => {
 
 test('Run simple-bom', async (t) => {
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/simple-bom.yml --environment test --region eu-west-1 --count 10 --record --tags ${baseTags}`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/simple-bom.yml --environment test --region eu-west-1 --count 51 --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
   t.match(output, /summary report/i, 'print summary report');
   t.match(output, /p99/i, 'a p99 value is reported');
-  t.match(output, /created:.+100/i, 'expected number of vusers is reported');
+  t.match(output, /created:.+510/i, 'expected number of vusers is reported');
 });
 
 test('Run mixed-hierarchy', async (t) => {
