@@ -493,6 +493,12 @@ function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
 
     const name = script[hook].engine || 'http';
     const engine = engines.find((e) => e.__name === name);
+
+    if (typeof engine === 'undefined') {
+      throw new Error(
+        `Failed to run ${hook} hook: unknown engine "${name}". Did you forget to include it in "config.engines.${name}"?`
+      );
+    }
     const hookScenario = engine.createScenario(script[hook], ee);
     const hookContext = createContext(script, contextVars, {
       scenario: script[hook]
