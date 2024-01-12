@@ -15,6 +15,8 @@ const {
 class OTelHTTPTraceReporter extends OTelTraceBase {
   constructor(config, script) {
     super(config, script);
+    this.outlierCriteria = config.smartSampling;
+    this.statusAsErrorThreshold = 400;
   }
   run() {
     this.setTracer('http');
@@ -86,9 +88,13 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     if (!userContext.vars['__otlpHTTPRequestSpan']) {
       return done();
     }
-
     const span = userContext.vars['__otlpHTTPRequestSpan'];
     let endTime;
+
+    const scenarioSpan = userContext.vars['__httpScenarioSpan'];
+    if (this.config.smartSampling) {
+      this.tagResponseOutliers(span, scenarioSpan, res, this.outlierCriteria);
+    }
 
     if (res.timings && res.timings.phases) {
       span.setAttribute('response.time.ms', res.timings.phases.firstByte);
@@ -134,7 +140,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
           res.request.options.headers['user-agent']
       });
 
-      if (res.statusCode >= 400) {
+      if (res.statusCode >= this.statusAsErrorThreshold) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: res.statusMessage
@@ -161,6 +167,14 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         code: SpanStatusCode.ERROR,
         message: err.message || err
       });
+
+      if (this.config.smartSampling) {
+        requestSpan.setAttributes({
+          outlier: 'true',
+          'outlier.type.error': true
+        });
+      }
+
       requestSpan.end();
       this.pendingRequestSpans--;
     } else {
@@ -171,9 +185,49 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       code: SpanStatusCode.ERROR,
       message: err.message || err
     });
+
+    if (this.config.smartSampling) {
+      scenarioSpan.setAttributes({
+        outlier: 'true',
+        'outlier.type.error': true
+      });
+    }
+
     scenarioSpan.end();
     this.pendingScenarioSpans--;
     return done();
+  }
+
+  tagResponseOutliers(span, scenarioSpan, res, criteria) {
+    const types = {};
+    const details = [];
+    if (res.statusCode >= this.statusAsErrorThreshold) {
+      types['outlier.type.status_code'] = true;
+      details.push(`HTTP Status Code >= ${this.statusAsErrorThreshold}`);
+    }
+    if (criteria.thresholds && res.timings?.phases) {
+      Object.entries(criteria.thresholds).forEach(([name, value]) => {
+        if (res.timings.phases[name] >= value) {
+          types[`outlier.type.${name}`] = true;
+          details.push(`'${name}' >= ${value}`);
+        }
+      });
+    }
+
+    if (!details.length) {
+      return;
+    }
+
+    span.setAttributes({
+      outlier: 'true',
+      'outlier.details': details.join(', '),
+      ...types
+    });
+
+    scenarioSpan.setAttributes({
+      outlier: 'true',
+      ...types
+    });
   }
 }
 
