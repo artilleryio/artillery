@@ -34,8 +34,13 @@ function getTestTags(additionalTags) {
   const actorTag = `actor:${process.env.GITHUB_ACTOR || 'localhost'}`;
   const repoTag = `repo:${process.env.GITHUB_REPO || 'artilleryio/artillery'}`;
   const ciTag = `ci:${process.env.GITHUB_ACTIONS ? 'true' : 'false'}`;
+  const baseTags = [repoTag, actorTag, ciTag];
 
-  return `${repoTag},${actorTag},${ciTag},${additionalTags.join(',')}`;
+  if (process.env.GITHUB_SHA) {
+    baseTags.push(`commit:${process.env.GITHUB_SHA}`);
+  }
+
+  return `${[...baseTags, ...additionalTags].join(',')}`;
 }
 
 module.exports = {
