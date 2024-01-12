@@ -1,15 +1,10 @@
 const tap = require('tap');
-const { execute, returnTmpPath } = require('../cli/_helpers.js');
-const { createHash } = require('crypto');
+const { execute, generateTmpReportPath } = require('../cli/_helpers.js');
 const fs = require('fs');
 
 let reportFilePath;
 tap.beforeEach(async (t) => {
-  reportFilePath = returnTmpPath(
-    `report-${createHash('md5')
-      .update(t.name)
-      .digest('hex')}-${Date.now()}.json`
-  );
+  reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
 tap.test('Can run a Typescript processor', async (t) => {

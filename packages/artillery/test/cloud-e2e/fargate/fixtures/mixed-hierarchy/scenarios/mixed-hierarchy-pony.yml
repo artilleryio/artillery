@@ -1,0 +1,5 @@
+scenarios:
+  - name: "dino_scenario"
+    flow:
+      - get:
+          url: "/"

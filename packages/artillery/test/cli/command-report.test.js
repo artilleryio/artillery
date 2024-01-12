@@ -1,8 +1,8 @@
 const tap = require('tap');
-const { execute, returnTmpPath } = require('../cli/_helpers.js');
+const { execute, generateTmpReportPath } = require('../cli/_helpers.js');
 
 tap.test('If we report specifying output, no browser is opened', async (t) => {
-  const outputFilePath = returnTmpPath('report.html');
+  const outputFilePath = generateTmpReportPath(t.name, 'html');
 
   const [exitCode] = await execute([
     'report',

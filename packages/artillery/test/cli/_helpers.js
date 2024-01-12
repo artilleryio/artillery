@@ -5,6 +5,7 @@ const path = require('path');
 const os = require('os');
 const { getBinPathSync } = require('get-bin-path');
 const a9path = getBinPathSync();
+const { createHash } = require('crypto');
 
 async function execute(args, options) {
   try {
@@ -30,4 +31,27 @@ async function getRootPath(filename) {
   return path.resolve(__dirname, '..', '..', filename);
 }
 
-module.exports = { execute, deleteFile, getRootPath, returnTmpPath };
+function generateTmpReportPath(testName, extension) {
+  return returnTmpPath(
+    `report-${createHash('md5')
+      .update(testName)
+      .digest('hex')}-${Date.now()}.${extension}`
+  );
+}
+
+function getTestTags(additionalTags) {
+  const actorTag = `actor:${process.env.GITHUB_ACTOR || 'localhost'}`;
+  const repoTag = `repo:${process.env.GITHUB_REPO || 'artilleryio/artillery'}`;
+  const ciTag = `ci:${process.env.GITHUB_ACTIONS ? 'true' : 'false'}`;
+
+  return `${repoTag},${actorTag},${ciTag},${additionalTags.join(',')}`;
+}
+
+module.exports = {
+  execute,
+  deleteFile,
+  getRootPath,
+  returnTmpPath,
+  generateTmpReportPath,
+  getTestTags
+};
