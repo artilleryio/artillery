@@ -25,9 +25,9 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm run test
-        shell: bash
         env:
           FORCE_COLOR: 1
+          ARTILLERY_TELEMETRY_DEFAULTS: '{\"source\":\"test-suite\"}'
       - name: Notify about failures
         if: failure() && github.ref == 'refs/heads/main'
         uses: 8398a7/action-slack@v3.15.1

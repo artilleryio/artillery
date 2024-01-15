@@ -4,7 +4,7 @@
   "description": "Calculate and report Apdex scores",
   "main": "index.js",
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300 --no-coverage --color"
+    "test": "tap ./test/*.spec.js --timeout 300 --no-coverage --color"
   },
   "keywords": [],
   "author": "",
