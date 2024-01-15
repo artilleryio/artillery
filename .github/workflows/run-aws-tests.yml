@@ -56,7 +56,7 @@ jobs:
           SHOW_STACK_TRACE: true
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.ARTILLERY_AWS_CLI_ROLE_ARN_TEST1 }}
+          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
           role-session-name: OIDCSession
           mask-aws-account-id: true
       - name: Use Node.js 18.x
