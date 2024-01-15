@@ -270,6 +270,7 @@ function commonPrefix(paths, separator) {
   }
 
   const sep = separator ? separator : path.sep;
+  console.log(`sep is ${sep}`);
 
   const splitPaths = paths.map((p) => p.split(sep));
   console.log('splitPaths');
@@ -291,6 +292,8 @@ function commonPrefix(paths, separator) {
       }
     }
   }
+
+  console.log(`furthestIndex is ${furthestIndex}`);
 
   const joined = shortestPath.slice(0, furthestIndex).join(sep);
   console.log('joined');
