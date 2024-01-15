@@ -260,19 +260,26 @@ function commonPrefix(paths, separator) {
     paths.length === 0 ||
     paths.filter((s) => typeof s !== 'string').length > 0
   ) {
+    console.log('CODE PATH A');
     return '';
   }
 
   if (paths.includes('/')) {
+    console.log('CODE PATH B');
     return '/';
   }
 
   const sep = separator ? separator : path.sep;
 
   const splitPaths = paths.map((p) => p.split(sep));
+  console.log('splitPaths');
+  console.log(splitPaths);
   const shortestPath = splitPaths.reduce((a, b) => {
     return a.length < b.length ? a : b;
   }, splitPaths[0]);
+
+  console.log('shortestPath');
+  console.log(shortestPath);
 
   let furthestIndex = shortestPath.length;
 
@@ -286,12 +293,15 @@ function commonPrefix(paths, separator) {
   }
 
   const joined = shortestPath.slice(0, furthestIndex).join(sep);
+  console.log('joined');
+  console.log(joined);
 
   if (joined.length > 0) {
     // Check if joined path already ends with separator which
     // will happen when input is a root drive on Windows, e.g. "C:\"
     return joined.endsWith(sep) ? joined : joined + sep;
   } else {
+    console.log('FINAL CODE PATH');
     return '';
   }
 }
