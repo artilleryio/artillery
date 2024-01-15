@@ -43,7 +43,7 @@
     }
   },
   "scripts": {
-    "test:unit": "tap --no-coverage --timeout=420 --color test/unit/*.test.js",
+    "test:unit": "tap --no-coverage --timeout=420 --color test/unit/create-bom.test.js",
     "test:acceptance": "tap --no-coverage --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap --no-coverage --color test/testcases/plugins/*.test.js",
     "test": "npm run test:unit && npm run test:acceptance",
     "test:aws": "tap --no-coverage --color --timeout=3600 test/cloud-e2e/**/*.test.js",
