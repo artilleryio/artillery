@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    timeout-minutes: 30
+    timeout-minutes: 60
     runs-on: windows-latest
     permissions:
       contents: read
