@@ -40,9 +40,6 @@ function Plugin(script, events) {
     } else if (config.type === 'splunk') {
       const { createSplunkReporter } = require('./lib/splunk');
       this.reporters.push(createSplunkReporter(config, events, script));
-    } else if (config.type === 'honeycomb') {
-      const { createHoneycombReporter } = require('./lib/honeycomb');
-      this.reporters.push(createHoneycombReporter(config, events, script));
     } else if (config.type === 'lightstep') {
       const { createLightstepReporter } = require('./lib/lightstep');
       this.reporters.push(createLightstepReporter(config, events, script));
