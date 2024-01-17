@@ -16,6 +16,10 @@ const Table = require('cli-table3');
 
 // NOTE: Code below presumes that all paths are absolute
 
+function _normaliseToPosixPath(p) {
+  return p.split(path.sep).join(path.posix.sep);
+}
+
 function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   A.waterfall(
     [
@@ -73,6 +77,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         prefix = commonPrefix(context.localFilePaths);
       }
 
+      prefix = _normaliseToPosixPath(prefix);
       console.log('prefix', prefix);
 
       //
@@ -103,7 +108,10 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       });
 
       const files = context.localFilePaths.map((p) => {
-        return { orig: p, noPrefix: p.substring(prefix.length, p.length) };
+        return {
+          orig: _normaliseToPosixPath(p),
+          noPrefix: _normaliseToPosixPath(p).substring(prefix.length, p.length)
+        };
       });
 
       console.log('files');
