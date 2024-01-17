@@ -20,6 +20,8 @@ beforeEach(async (t) => {
 });
 
 test('Run simple-bom', async (t) => {
+  const scenarioPath = `${__dirname}/fixtures/simple-bom/simple-bom.yml`;
+  console.log('scenarioPath', scenarioPath);
   const output =
     await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/simple-bom.yml --environment test --region eu-west-1 --count 9 --record --tags ${baseTags}`;
 
@@ -33,6 +35,8 @@ test('Run simple-bom', async (t) => {
 test('Run mixed-hierarchy', async (t) => {
   const scenarioPath = `${__dirname}/fixtures/mixed-hierarchy/scenarios/mixed-hierarchy-dino.yml`;
   const configPath = `${__dirname}/fixtures/mixed-hierarchy/config/config.yml`;
+  console.log('scenarioPath', scenarioPath);
+  console.log('configPath', configPath);
 
   const output =
     await $`${A9} run-fargate ${scenarioPath} --config ${configPath} -e main --record --tags ${baseTags} --output ${reportFilePath}`;
