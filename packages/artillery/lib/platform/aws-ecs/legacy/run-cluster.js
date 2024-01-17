@@ -1583,9 +1583,11 @@ async function ecsRunTask(context) {
       }
 
       if (runData.tasks?.length > 0) {
-        context.taskArns = context.taskArns.concat(
-          runData.tasks.map((task) => task.taskArn)
-        );
+        const newTaskArns = runData.tasks.map((task) => task.taskArn);
+        context.taskArns = context.taskArns.concat(newTaskArns);
+        artillery.globalEvents.emit('metadata', {
+          platformMetadata: { taskArns: newTaskArns }
+        });
         debug(`Launched ${launchCount} tasks`);
         tasksRemaining -= launchCount;
         await sleep(250);
