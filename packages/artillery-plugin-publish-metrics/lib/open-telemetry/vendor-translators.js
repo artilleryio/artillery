@@ -51,6 +51,21 @@ const vendorTranslators = {
     }
     return otelTemplate(newConfig, datadogTraceSettings);
   },
+  dynatrace: (config) => {
+    const tracePath = '/api/v2/otlp/v1/traces';
+    const endpoint = new URL(config.envUrl);
+    endpoint.pathname = tracePath;
+
+    const dynatraceTraceSettings = {
+      type: 'dynatrace',
+      exporter: 'otlp-proto',
+      endpoint: endpoint.href,
+      headers: {
+        Authorization: `Api-Token ${config.apiToken}`
+      }
+    };
+    return otelTemplate(config, dynatraceTraceSettings);
+  },
   'open-telemetry': (config) => {
     let tracesConfig = config;
     if (config.traces) {

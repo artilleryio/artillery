@@ -11,7 +11,8 @@ const REPORTERS_USING_OTEL = [
   'open-telemetry',
   'honeycomb',
   'newrelic',
-  'datadog'
+  'datadog',
+  'dynatrace'
 ];
 module.exports = {
   Plugin,
