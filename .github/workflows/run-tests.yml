@@ -40,6 +40,7 @@ jobs:
           ARTILLERY_TELEMETRY_DEFAULTS: '{\"source\":\"test-suite\"}'
           ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+          DEBUG: 'bom'
       - name: Notify about failures
         if: failure() && github.ref == 'refs/heads/main'
         uses: 8398a7/action-slack@v3.15.1
