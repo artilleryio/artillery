@@ -109,8 +109,13 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       const files = context.localFilePaths.map((p) => {
         return {
-          orig: _normaliseToPosixPath(p),
-          noPrefix: _normaliseToPosixPath(p).substring(prefix.length, p.length)
+          orig: p,
+          origPosix: _normaliseToPosixPath(p),
+          noPrefix: p.substring(prefix.length, p.length),
+          noPrefixPosix: _normaliseToPosixPath(p).substring(
+            prefix.length,
+            p.length
+          )
         };
       });
 
