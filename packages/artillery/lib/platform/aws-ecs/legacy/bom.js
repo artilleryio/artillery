@@ -48,6 +48,9 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       context.localFilePaths = context.localFilePaths.concat(extraFiles);
 
+      console.log('localFilePaths');
+      console.log(JSON.stringify(context.localFilePaths));
+
       // TODO: Entries in localFilePaths may be directories
 
       // How many entries do we have here? If we have only one entry, the string itself
@@ -70,7 +73,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         prefix = commonPrefix(context.localFilePaths);
       }
 
-      debug('prefix', prefix);
+      console.log('prefix', prefix);
 
       //
       // include package.json / package-lock.json / yarn.lock
@@ -102,6 +105,9 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       const files = context.localFilePaths.map((p) => {
         return { orig: p, noPrefix: p.substring(prefix.length, p.length) };
       });
+
+      console.log('files');
+      console.log(JSON.stringify(files));
 
       const pkgPath = _.find(files, (f) => {
         return f.noPrefix === 'package.json';

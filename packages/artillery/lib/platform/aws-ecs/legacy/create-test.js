@@ -159,7 +159,6 @@ function syncS3(context, callback) {
 
 // create just overwrites an existing test for now
 function writeTestMetadata(context, callback) {
-  console.log(JSON.stringify(context.manifest));
   const metadata = {
     createdOn: Date.now(),
     name: context.name,
