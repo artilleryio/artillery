@@ -137,7 +137,7 @@ check_dependencies () {
 sync_test_data () {
     mkdir "$TEST_DATA"
     pushd "$TEST_DATA" >/dev/null
-    aws s3 sync "$s3_test_data_path" . >/dev/null
+    aws s3 sync --exclude node_modules_stream.zip "$s3_test_data_path" . >/dev/null
 
     debug "$(pwd)"
     debug "$(ls -a)"
