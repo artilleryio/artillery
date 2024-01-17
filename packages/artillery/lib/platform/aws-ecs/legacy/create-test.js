@@ -123,11 +123,15 @@ function syncS3(context, callback) {
         body = fs.readFileSync(item.orig);
       } catch (fsErr) {
         debug(fsErr);
+        console.log('DID WE HAVE AN ERROR?');
+        console.log(fsErr);
       }
 
       if (!body) {
         return eachDone(null, context);
       }
+
+      console.log(`item.noPrefix: ${item.noPrefix}`);
 
       const key = context.s3Prefix + '/' + item.noPrefix;
       plainS3.putObject(
@@ -155,6 +159,7 @@ function syncS3(context, callback) {
 
 // create just overwrites an existing test for now
 function writeTestMetadata(context, callback) {
+  console.log(JSON.stringify(context.manifest));
   const metadata = {
     createdOn: Date.now(),
     name: context.name,
