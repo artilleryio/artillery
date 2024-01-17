@@ -6,6 +6,11 @@ const vendorTranslators = {
     if (config.enabled === false) {
       return {};
     }
+    if (!config.apiKey && !config.writeKey) {
+      throw new Error(
+        'Honeycomb reporter: apiKey or writeKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#honeycomb)'
+      );
+    }
     const honeycombTraceSettings = {
       type: 'honeycomb',
       endpoint: 'https://api.honeycomb.io/v1/traces',
@@ -56,10 +61,9 @@ const vendorTranslators = {
 };
 
 const otelTemplate = function (config, vendorSpecificSettings) {
-  const otelConfig = {
-    serviceName: config.serviceName
-  };
+  const otelConfig = {};
   if (config.traces) {
+    otelConfig.serviceName = config.traces.serviceName || config.serviceName;
     otelConfig.traces = Object.assign(
       {
         sampleRate: 1,

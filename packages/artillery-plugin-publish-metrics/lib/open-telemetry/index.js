@@ -112,7 +112,7 @@ class OTelReporter {
     const tracesConfigs = configList.filter((config) => config.traces);
     if (tracesConfigs.length > 1) {
       console.warn(
-        'OpenTelemetry reporter: Multiple reporters configured for traces, only the first one will be used. Only one reporter at a time for reporting traces is supported at the moment.'
+        'WARNING: Multiple reporters configured for traces. Currently, you can only use one reporter at a time for reporting traces. Only the first reporter will be used.'
       );
     }
   }

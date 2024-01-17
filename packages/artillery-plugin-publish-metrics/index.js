@@ -70,7 +70,7 @@ function Plugin(script, events) {
       );
     }
   });
-  if (this.configsOfReportersUsingOTel[0]) {
+  if (this.configsOfReportersUsingOTel.length > 0) {
     const { createOTelReporter } = require('./lib/open-telemetry');
     this.reporters.push(
       createOTelReporter(this.configsOfReportersUsingOTel, events, script)
