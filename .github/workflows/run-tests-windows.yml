@@ -2,6 +2,9 @@ name: Run Windows tests
 
 on:
   workflow_dispatch:
+    inputs:
+      ECR_IMAGE_VERSION:
+        description: 'ECR image version'
 
 jobs:
   test:
@@ -39,6 +42,7 @@ jobs:
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
           GITHUB_REPO: ${{ github.repository }}
           GITHUB_ACTOR: ${{ github.actor }}
+          ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha}}
       - name: Notify about failures
         if: failure() && github.ref == 'refs/heads/main'
         uses: 8398a7/action-slack@v3.15.1
