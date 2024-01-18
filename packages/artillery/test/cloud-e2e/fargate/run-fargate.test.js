@@ -32,7 +32,7 @@ test('Run simple-bom', async (t) => {
     '--region',
     'eu-west-1',
     '--count',
-    '9',
+    '51',
     '--tags',
     baseTags,
     '--record',
