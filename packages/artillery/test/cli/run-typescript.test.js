@@ -51,7 +51,9 @@ tap.test(
     );
 
     // Search for the path
-    const pathRegex = /\((.*?):\d+:\d+\)/;
+    // const pathRegex = /\((.*?):\d+:\d+\)/;
+    // const pathRegex = /at processorWithError ()/
+    const pathRegex = /\(([^:]+\.ts):[0-9]+:[0-9]+\)/;
     const match = output.stdout.match(pathRegex);
 
     // Extract the path if found
