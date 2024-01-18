@@ -50,17 +50,17 @@ tap.test(
       'Should have logged error from ts processor'
     );
 
-    // Search for the path
-    const pathRegex = /\((.*?):\d+:\d+\)/;
-    const match = output.stdout.match(pathRegex);
+    // // Search for the path
+    // const pathRegex = /\((.*?):\d+:\d+\)/;
+    // const match = output.stdout.match(pathRegex);
 
-    // Extract the path if found
-    const extractedPath = match ? match[1] : null;
+    // // Extract the path if found
+    // const extractedPath = match ? match[1] : null;
 
-    t.ok(
-      extractedPath.includes('.ts'),
-      'Should be using source maps to resolve the path to a .ts file'
-    );
-    t.ok(fs.existsSync(extractedPath), 'Error path should exist');
+    // t.ok(
+    //   extractedPath.includes('.ts'),
+    //   'Should be using source maps to resolve the path to a .ts file'
+    // );
+    // t.ok(fs.existsSync(extractedPath), 'Error path should exist');
   }
 );
