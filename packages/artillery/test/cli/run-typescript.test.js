@@ -64,6 +64,9 @@ tap.test(
       extractedPath.includes('.ts'),
       'Should be using source maps to resolve the path to a .ts file'
     );
+    console.log(`Does ${extractedPath} exist?`, fs.existsSync(extractedPath));
+    console.log(`File Permissions: ${fs.statSync(extractedPath).mode}`);
+    console.log(`File Permission2: ${fs.accessSync(extractedPath)}`);
     t.ok(fs.existsSync(extractedPath), 'Error path should exist');
   }
 );
