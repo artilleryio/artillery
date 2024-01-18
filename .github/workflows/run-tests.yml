@@ -40,7 +40,6 @@ jobs:
         run: npm run test
         env:
           FORCE_COLOR: 1
-          ARTILLERY_TELEMETRY_DEFAULTS: '{\"source\":\"test-suite\"}'
           ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
       - name: Run windows tests
@@ -48,7 +47,13 @@ jobs:
         if: matrix.os == 'windows-latest'
         env:
           FORCE_COLOR: 1
-          ARTILLERY_TELEMETRY_DEFAULTS: '{\"source\":\"test-suite\"}'
+          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      - name: Run AWS windows tests
+        run: npm run test:aws:windows --workspace artillery
+        if: matrix.os == 'windows-latest'
+        env:
+          FORCE_COLOR: 1
           ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
       - name: Notify about failures

@@ -45,8 +45,8 @@
   "scripts": {
     "test:unit": "tap --no-coverage --timeout=420 --color test/unit/*.test.js",
     "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap --no-coverage --color test/testcases/plugins/*.test.js",
-    "test:windows": "$Env:ARTILLERY_TELEMETRY_DEFAULTS = '{\"source\":\"test-suite\"}' && npm run test:unit && tap --no-coverage --timeout=420 --color test/cli/*.test.js",
-    "test:aws:windows": "$Env:ARTILLERY_TELEMETRY_DEFAULTS = '{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 --color test/cloud-e2e/fargate/*.test.js --grep @windows",
+    "test:windows": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & npm run test:unit && tap --no-coverage --timeout=420 --color test/cli/*.test.js",
+    "test:aws:windows": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & tap --no-coverage --timeout=420 --color test/cloud-e2e/fargate/*.test.js --grep @windows",
     "test": "npm run test:unit && npm run test:acceptance",
     "test:aws": "tap --no-coverage --color --timeout=3600 test/cloud-e2e/**/*.test.js",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
