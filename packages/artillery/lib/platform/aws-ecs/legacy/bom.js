@@ -16,6 +16,12 @@ const Table = require('cli-table3');
 
 // NOTE: Code below presumes that all paths are absolute
 
+//Tests in Fargate run on ubuntu, which uses posix paths
+//This function converts a path to posix path, in case the original path was not posix (e.g. windows runs)
+function _convertToPosixPath(p) {
+  return p.split(path.sep).join(path.posix.sep);
+}
+
 function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   A.waterfall(
     [
@@ -70,6 +76,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         prefix = commonPrefix(context.localFilePaths);
       }
 
+      prefix = _convertToPosixPath(prefix);
       debug('prefix', prefix);
 
       //
@@ -100,7 +107,15 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       });
 
       const files = context.localFilePaths.map((p) => {
-        return { orig: p, noPrefix: p.substring(prefix.length, p.length) };
+        return {
+          orig: p,
+          noPrefix: p.substring(prefix.length, p.length),
+          origPosix: _convertToPosixPath(p),
+          noPrefixPosix: _convertToPosixPath(p).substring(
+            prefix.length,
+            p.length
+          )
+        };
       });
 
       const pkgPath = _.find(files, (f) => {
