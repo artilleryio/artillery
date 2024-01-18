@@ -1538,6 +1538,8 @@ async function launchLeadTask(context) {
     throw runErr;
   }
 
+  await awaitOnEE(context.reporterEvents, 'prepack_end', 1000 * 60 * 1);
+
   return context;
 }
 
@@ -1852,6 +1854,10 @@ async function listen(context, ee) {
         } catch (parseErr) {
           console.error('Error processing ensure directive');
         }
+      }
+
+      if (body.type === 'leader' && body.msg === 'prepack_end') {
+        ee.emit('prepack_end');
       }
     });
 
