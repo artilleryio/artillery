@@ -471,8 +471,17 @@ function $randomNumber(min, max) {
   return _.random(min, max);
 }
 
-function $randomString(length) {
-  return Math.random().toString(36).substr(2, length);
+function $randomString(length = 10) {
+  let s = '';
+  const alphabet =
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const alphabetLength = alphabet.length;
+
+  while (s.length < length) {
+    s += alphabet.charAt((Math.random() * alphabetLength) | 0);
+  }
+
+  return s;
 }
 
 function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
