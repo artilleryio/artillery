@@ -40,6 +40,19 @@ const DatadogReporterSchema = Joi.object({
     tags: Joi.array().items(Joi.string()),
     alertType: Joi.string().valid('error', 'warning', 'info', 'success'),
     send: artilleryBooleanOrString
+  }),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    tags: Joi.array().items(Joi.string()),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    })
   })
 })
   .unknown(false)
@@ -58,6 +71,19 @@ const NewRelicReporterSchema = Joi.object({
     eventType: Joi.string(),
     attributes: Joi.array().items(Joi.string()),
     send: artilleryBooleanOrString
+  }),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    attributes: Joi.object().unknown(),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    })
   })
 })
   .unknown(false)
@@ -103,6 +129,19 @@ const DynatraceReporterSchema = Joi.object({
     properties: Joi.array().items(Joi.string()),
     entitySelector: artilleryBooleanOrString,
     send: artilleryBooleanOrString
+  }),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    attributes: Joi.object().unknown(),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    })
   })
 })
   .unknown(false)
@@ -114,7 +153,15 @@ const HoneycombReporterSchema = Joi.object({
   writeKey: Joi.string(),
   dataset: Joi.string(),
   sampleRate: artilleryNumberOrString,
-  enabled: artilleryBooleanOrString
+  enabled: artilleryBooleanOrString,
+  useRequestNames: artilleryBooleanOrString,
+  attributes: Joi.object().unknown(),
+  smartSampling: Joi.object({
+    thresholds: Joi.object({
+      firstByte: artilleryNumberOrString,
+      total: artilleryNumberOrString
+    })
+  })
 })
   .unknown(false)
   .meta({ title: 'Honeycomb (Tracing) Reporter' });
