@@ -57,6 +57,9 @@ tap.test(
     // Extract the path if found
     const extractedPath = match ? match[1] : null;
 
+    console.log('TYPESCRIPT STDOUT <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<');
+    console.log(output.stdout);
+    console.log('extractedPath', extractedPath);
     t.ok(
       extractedPath.includes('.ts'),
       'Should be using source maps to resolve the path to a .ts file'
