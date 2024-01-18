@@ -18,7 +18,8 @@ const vendorTranslators = {
         'x-honeycomb-team': config.apiKey || config.writeKey
       }
     };
-    const newConfig = config;
+    const newConfig = {};
+    newConfig.traces = config;
     newConfig.serviceName = config.dataset;
 
     return otelTemplate(newConfig, honeycombTraceSettings);
