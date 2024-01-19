@@ -2,7 +2,11 @@ const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('fs');
-const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
+const {
+  generateTmpReportPath,
+  getTestTags,
+  execute
+} = require('../../cli/_helpers.js');
 
 const A9 = process.env.A9 || 'artillery';
 
@@ -20,14 +24,30 @@ beforeEach(async (t) => {
 });
 
 test('Run simple-bom', async (t) => {
-  const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/simple-bom/simple-bom.yml --environment test --region eu-west-1 --count 51 --record --tags ${baseTags}`;
+  const scenarioPath = `${__dirname}/fixtures/simple-bom/simple-bom.yml`;
+  const [exitCode, output] = await execute([
+    'run-fargate',
+    '--environment',
+    'test',
+    '--region',
+    'eu-west-1',
+    '--count',
+    '51',
+    '--tags',
+    baseTags,
+    '--record',
+    scenarioPath
+  ]);
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  t.equal(exitCode, 0, 'CLI Exit Code should be 0');
 
-  t.match(output, /summary report/i, 'print summary report');
-  t.match(output, /p99/i, 'a p99 value is reported');
-  t.match(output, /created:.+510/i, 'expected number of vusers is reported');
+  t.match(output.stdout, /summary report/i, 'print summary report');
+  t.match(output.stdout, /p99/i, 'a p99 value is reported');
+  t.match(
+    output.stdout,
+    /created:.+510/i,
+    'expected number of vusers is reported'
+  );
 });
 
 test('Run mixed-hierarchy', async (t) => {

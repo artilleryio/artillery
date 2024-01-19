@@ -1538,6 +1538,8 @@ async function launchLeadTask(context) {
     throw runErr;
   }
 
+  await awaitOnEE(context.reporterEvents, 'prepack_end', 1000 * 60 * 1);
+
   return context;
 }
 
@@ -1583,9 +1585,11 @@ async function ecsRunTask(context) {
       }
 
       if (runData.tasks?.length > 0) {
-        context.taskArns = context.taskArns.concat(
-          runData.tasks.map((task) => task.taskArn)
-        );
+        const newTaskArns = runData.tasks.map((task) => task.taskArn);
+        context.taskArns = context.taskArns.concat(newTaskArns);
+        artillery.globalEvents.emit('metadata', {
+          platformMetadata: { taskArns: newTaskArns }
+        });
         debug(`Launched ${launchCount} tasks`);
         tasksRemaining -= launchCount;
         await sleep(250);
@@ -1850,6 +1854,10 @@ async function listen(context, ee) {
         } catch (parseErr) {
           console.error('Error processing ensure directive');
         }
+      }
+
+      if (body.type === 'leader' && body.msg === 'prepack_end') {
+        ee.emit('prepack_end');
       }
     });
 
