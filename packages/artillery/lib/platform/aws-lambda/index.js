@@ -34,6 +34,8 @@ const prices = require('./prices');
 const { STATES } = require('../local/artillery-worker-local');
 
 const { SQS_QUEUES_NAME_PREFIX } = require('../aws/constants');
+const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
+const getAccountId = require('../aws/aws-get-account-id');
 
 const createSQSQueue = require('../aws/aws-create-sqs-queue');
 
@@ -103,7 +105,7 @@ class PlatformLambda {
     artillery.log('λ Creating AWS Lambda function...');
 
     await setDefaultAWSCredentials(AWS);
-    this.accountId = await this.getAccountId();
+    this.accountId = await getAccountId();
 
     const dirname = temp.mkdirSync(); // TODO: May want a way to override this by the user
     const zipfile = temp.path({ suffix: '.zip' });
@@ -312,7 +314,7 @@ class PlatformLambda {
     await this.createZip(dirname, zipfile);
 
     artillery.log('Preparing AWS environment...');
-    const bucketName = await this.ensureS3BucketExists();
+    const bucketName = await ensureS3BucketExists(this.region);
     this.bucketName = bucketName;
 
     const s3path = await this.uploadLambdaZip(bucketName, zipfile);
@@ -636,42 +638,6 @@ class PlatformLambda {
       stream.on('close', () => resolve());
       archive.finalize();
     });
-  }
-
-  // TODO: Move into reusable platform util
-  async ensureS3BucketExists() {
-    const accountId = await this.getAccountId();
-    // S3 and Lambda have to be in the same region, which means we can't reuse
-    // the bucket created by Pro to store Lambda deployment zips
-    const bucketName = `artilleryio-test-data-${this.region}-${accountId}`;
-    const s3 = new AWS.S3({ region: this.region });
-
-    try {
-      await s3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
-    } catch (s3Err) {
-      if (s3Err.code === 'NoSuchBucket') {
-        const res = await s3.createBucket({ Bucket: bucketName }).promise();
-      } else {
-        throw s3Err;
-      }
-    }
-
-    return bucketName;
-  }
-
-  // TODO: Move into reusable platform util
-  async getAccountId() {
-    let stsOpts = {};
-    if (process.env.ARTILLERY_STS_OPTS) {
-      stsOpts = Object.assign(
-        stsOpts,
-        JSON.parse(process.env.ARTILLERY_STS_OPTS)
-      );
-    }
-
-    const sts = new AWS.STS(stsOpts);
-    const awsAccountId = (await sts.getCallerIdentity({}).promise()).Account;
-    return awsAccountId;
   }
 
   async createLambdaRole() {
