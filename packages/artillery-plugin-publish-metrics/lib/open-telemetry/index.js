@@ -56,6 +56,10 @@ class OTelReporter {
       return translatedConfig;
     });
 
+    if (!this.metricsConfig && !this.tracesConfig) {
+      return this;
+    }
+
     // Warn if traces are configured in multiple reporters
     this.warnIfDuplicateTracesConfigured(this.translatedConfigsList);
 
@@ -130,6 +134,9 @@ class OTelReporter {
 
   async cleanup(done) {
     debug('Cleaning up');
+    if (!this.metricsConfig && !this.tracesConfig) {
+      return done();
+    }
     if (this.metricReporter) {
       await this.metricReporter.cleanup();
     }
