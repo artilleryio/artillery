@@ -93,6 +93,20 @@ class PlatformLambda {
       platformConfig['lambda-role-arn'] || platformConfig['lambdaRoleArn'];
 
     this.platformOpts = platformOpts;
+    this.s3LifecycleConfigurationRules = [
+      {
+        Expiration: { Days: 2 },
+        Filter: { Prefix: '/lambda' },
+        ID: 'RemoveAdHocTestData',
+        Status: 'Enabled'
+      },
+      {
+        Expiration: { Days: 7 },
+        Filter: { Prefix: '/' },
+        ID: 'RemoveTestRunMetadata',
+        Status: 'Enabled'
+      }
+    ];
 
     this.artilleryArgs = [];
   }
@@ -314,7 +328,10 @@ class PlatformLambda {
     await this.createZip(dirname, zipfile);
 
     artillery.log('Preparing AWS environment...');
-    const bucketName = await ensureS3BucketExists(this.region);
+    const bucketName = await ensureS3BucketExists(
+      this.region,
+      this.s3LifecycleConfigurationRules
+    );
     this.bucketName = bucketName;
 
     const s3path = await this.uploadLambdaZip(bucketName, zipfile);
