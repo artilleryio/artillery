@@ -288,7 +288,6 @@ run_a9 () {
     while kill -0 $CLI_PID 2> /dev/null ; do
         sleep 5 # signal handler will fire after we wake up
     done
-
     CLI_RUNNING="no"
     CLI_STATUS=$(cat exitCode)
 
@@ -319,6 +318,8 @@ run_a9 () {
     else
         EXIT_CODE=$ERR_CLI_ERROR
     fi
+
+    sleep 15 # wait for datadog worker to finish flushing metrics
 
     exit $EXIT_CODE
 }
