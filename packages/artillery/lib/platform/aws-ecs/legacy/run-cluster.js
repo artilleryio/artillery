@@ -1118,6 +1118,10 @@ async function ensureTaskExists(context) {
             {
               name: 'DD_SITE',
               value: 'datadoghq.com'
+            },
+            {
+              name: 'DD_LOG_LEVEL',
+              value: 'WARN'
             }
           ],
           logConfiguration: {

@@ -147,6 +147,7 @@ class OTelTraceBase {
       debug('Waiting for pending traces ...');
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
+    await new Promise((resolve) => setTimeout(resolve, 10000));
     debug('Pending traces done');
   }
 }
