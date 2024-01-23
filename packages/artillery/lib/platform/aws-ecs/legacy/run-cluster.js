@@ -1084,54 +1084,22 @@ async function ensureTaskExists(context) {
           }
         },
         {
-          name: 'datadog-agent',
-          image: 'public.ecr.aws/datadog/agent:7',
-          environment: [
-            {
-              name: 'DD_API_KEY',
-              value: 'placeholder'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_TRACES_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT',
-              value: '0.0.0.0:4318'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT',
-              value: '0.0.0.0:4317'
-            },
-            {
-              name: 'DD_APM_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_APM_RECEIVER_PORT',
-              value: '8126'
-            },
-            {
-              name: 'DD_APM_TRACE_BUFFER',
-              value: '100'
-            },
-            {
-              name: 'DD_SITE',
-              value: 'datadoghq.com'
-            }
-          ],
+          name: "adot-collector",
+          image: "amazon/aws-otel-collector",
+          // essential: true,
+          command: ["--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml"],
           logConfiguration: {
-            logDriver: 'awslogs',
+            logDriver: "awslogs",
             options: {
-              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
-              'awslogs-region': context.region,
-              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
-              'awslogs-create-group': 'true',
-              mode: 'non-blocking'
+              "awslogs-group": `${context.logGroupName}/${context.clusterName}`,
+              "awslogs-region": context.region,
+              "awslogs-stream-prefix": `artilleryio/${context.testId}`,
+              "awslogs-create-group": 'true'
             }
           }
-        }
+        },
       ],
+
       executionRoleArn: context.taskRoleArn
     };
     context.taskDefinition = taskDefinition;
