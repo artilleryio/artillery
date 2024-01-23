@@ -319,7 +319,7 @@ run_a9 () {
         EXIT_CODE=$ERR_CLI_ERROR
     fi
 
-    sleep 15 # wait for datadog worker to finish flushing metrics
+    # sleep 15 # wait for datadog worker to finish flushing metrics
 
     exit $EXIT_CODE
 }
