@@ -1360,7 +1360,7 @@ async function generateTaskOverrides(context) {
         ]
       },
       {
-        name: 'datadog-agent',
+        name: 'adot-collector',
         environment: []
       }
     ],
