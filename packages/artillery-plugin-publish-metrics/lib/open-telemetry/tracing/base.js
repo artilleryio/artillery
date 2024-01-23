@@ -160,6 +160,7 @@ class OTelTraceBase {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     debug('Pending Playwright traces done');
+    await new Promise((resolve) => setTimeout(resolve, 10000));
   }
 }
 
