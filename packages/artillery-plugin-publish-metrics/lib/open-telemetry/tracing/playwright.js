@@ -105,7 +105,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             scenarioSpan.addEvent(`navigated to ${page.url()}`);
             if (pageSpan) {
               pageSpan.end();
-              this.pendingPageSpans--;
+              this.pendingPlaywrightSpans--;
             }
 
             pageSpan = this.playwrightTracer.startSpan(
@@ -118,7 +118,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
               ...(this.config.attributes || {})
             });
             lastPageUrl = pageUrl;
-            this.pendingPageSpans++;
+            this.pendingPlaywrightSpans++;
           }
         });
 
@@ -146,7 +146,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
         } finally {
           if (pageSpan && !pageSpan.endTime[0]) {
             pageSpan.end();
-            this.pendingPageSpans--;
+            this.pendingPlaywrightSpans--;
           }
           scenarioSpan.end();
           this.pendingPlaywrightScenarioSpans--;
@@ -164,7 +164,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           { kind: SpanKind.CLIENT },
           context.active()
         );
-        this.pendingStepSpans++;
+        this.pendingPlaywrightSpans++;
         const startTime = Date.now();
 
         try {
@@ -186,7 +186,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           const difference = Date.now() - startTime;
           events.emit('histogram', `browser.step.${stepName}`, difference);
           span.end();
-          this.pendingStepSpans--;
+          this.pendingPlaywrightSpans--;
         }
       });
     };

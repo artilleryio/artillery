@@ -145,22 +145,36 @@ class OTelTraceBase {
   otelTraceOnError(scenarioErr, req, userContext, ee, done) {
     done();
   }
-
-  async cleanup() {
-    while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
-      debug('Waiting for pending HTTP traces ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
-    debug('Pending HTTP traces done');
+  async waitOnPendingSpans(pendingRequests, pendingScenarios, maxWaitTime) {
+    let waitedTime = 0;
     while (
-      this.pendingPageSpans > 0 ||
-      this.pendingStepSpans > 0 ||
-      this.pendingPlaywrightScenarioSpans > 0
+      (pendingRequests > 0 || pendingScenarios > 0) &&
+      waitedTime < maxWaitTime
     ) {
-      debug('Waiting for pending Playwright traces ...');
+      debug('Waiting for pending traces ...');
       await new Promise((resolve) => setTimeout(resolve, 500));
+      waitedTime += 500;
     }
-    debug('Pending Playwright traces done');
+    return true;
+  }
+
+  async cleanup(engines) {
+    if (engines.includes('http')) {
+      await this.waitOnPendingSpans(
+        this.pendingRequestSpans,
+        this.pendingScenarioSpans,
+        5000
+      );
+    }
+    if (engines.includes('playwright')) {
+      await this.waitOnPendingSpans(
+        this.pendingPlaywrightScenarioSpans,
+        this.pendingPlaywrightScenarioSpans,
+        5000
+      );
+    }
+
+    debug('Pending traces done');
     debug('Waiting for flush period to complete');
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
