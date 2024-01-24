@@ -60,15 +60,16 @@ class OTelTraceConfig {
       this.exporterOpts
     );
 
+    this.processorOpts = {
+      scheduledDelayMillis: this.config.scheduledDelayMillis || 5000,
+      maxExportBatchSize: this.config.maxExportBatchSize || 1000,
+      maxQueueSize: this.config.maxQueueSize || 2000
+    };
     const Processor = this.config.smartSampling
       ? OutlierDetectionBatchSpanProcessor
       : BatchSpanProcessor;
 
-    this.tracerProvider.addSpanProcessor(
-      new Processor(this.exporter, {
-        scheduledDelayMillis: 1000
-      })
-    );
+    this.tracerProvider.addSpanProcessor(new Processor(this.exporter));
     this.tracerProvider.register();
   }
 
@@ -160,6 +161,8 @@ class OTelTraceBase {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
     debug('Pending Playwright traces done');
+    debug('Waiting for flush period to complete');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 }
 
