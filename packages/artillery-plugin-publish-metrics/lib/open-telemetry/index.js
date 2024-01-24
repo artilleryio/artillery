@@ -101,10 +101,10 @@ class OTelReporter {
       return done();
     }
     if (this.httpReporter) {
-      await this.httpReporter.cleanup();
+      await this.httpReporter.cleanup('http');
     }
     if (this.playwrightReporter) {
-      await this.playwrightReporter.cleanup();
+      await this.playwrightReporter.cleanup('playwright');
     }
     await this.traceConfig.shutDown();
     return done();
