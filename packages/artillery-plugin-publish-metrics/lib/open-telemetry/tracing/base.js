@@ -89,6 +89,9 @@ class OTelTraceBase {
     this.script = script;
     this.pendingRequestSpans = 0;
     this.pendingScenarioSpans = 0;
+    this.pendingPageSpans = 0;
+    this.pendingStepSpans = 0;
+    this.pendingPlaywrightScenarioSpans = 0;
   }
   setTracer(engine) {
     // Get and set the tracer by engine
@@ -144,10 +147,19 @@ class OTelTraceBase {
 
   async cleanup() {
     while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
-      debug('Waiting for pending traces ...');
+      debug('Waiting for pending HTTP traces ...');
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
-    debug('Pending traces done');
+    debug('Pending HTTP traces done');
+    while (
+      this.pendingPageSpans > 0 ||
+      this.pendingStepSpans > 0 ||
+      this.pendingPlaywrightScenarioSpans > 0
+    ) {
+      debug('Waiting for pending Playwright traces ...');
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    debug('Pending Playwright traces done');
   }
 }
 
