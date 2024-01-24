@@ -1,5 +1,5 @@
 const debug = require('debug')('engine:playwright');
-const { chromium } = require('playwright');
+const { chromium, selectors } = require('playwright');
 
 class PlaywrightEngine {
   constructor(script) {
@@ -21,6 +21,8 @@ class PlaywrightEngine {
         this.config.defaultPageTimeout || this.config.defaultTimeout,
         10
       ) || 30) * 1000;
+    
+    this.testIdAttribute = this.config.testIdAttribute;
 
     this.aggregateByName =
       script.config.engines.playwright.aggregateByName || false;
@@ -84,6 +86,9 @@ class PlaywrightEngine {
 
       context.setDefaultNavigationTimeout(self.defaultNavigationTimeout);
       context.setDefaultTimeout(self.defaultTimeout);
+      if (self.testIdAttribute) {
+        selectors.setTestIdAttribute(self.testIdAttribute);
+      }
       debug('context created');
 
       const uniquePageLoadToTiming = {};
