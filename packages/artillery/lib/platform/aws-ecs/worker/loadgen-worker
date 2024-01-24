@@ -320,8 +320,6 @@ run_a9 () {
         EXIT_CODE=$ERR_CLI_ERROR
     fi
 
-    sleep 10 # wait for datadog worker to finish flushing data
-
     exit $EXIT_CODE
 }
 
