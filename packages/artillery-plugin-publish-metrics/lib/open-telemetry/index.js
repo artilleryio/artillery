@@ -106,6 +106,7 @@ class OTelReporter {
     if (this.playwrightReporter) {
       await this.playwrightReporter.cleanup('playwright');
     }
+    await new Promise((resolve) => setTimeout(resolve, 10000));
     await this.traceConfig.shutDown();
     return done();
   }

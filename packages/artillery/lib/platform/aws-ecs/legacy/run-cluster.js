@@ -1090,7 +1090,7 @@ async function ensureTaskExists(context) {
           command: [
             '--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml'
           ],
-          environment: [
+          secrets: [
             {
               name: 'AOT_CONFIG_CONTENT',
               valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter/artilleryio/OTEL_COLLECTOR_CONFIG`
