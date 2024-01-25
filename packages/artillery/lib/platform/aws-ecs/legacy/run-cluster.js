@@ -1084,20 +1084,28 @@ async function ensureTaskExists(context) {
           }
         },
         {
-          name: "adot-collector",
-          image: "amazon/aws-otel-collector",
+          name: 'adot-collector',
+          image: 'amazon/aws-otel-collector',
           // essential: true,
-          command: ["--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml"],
+          command: [
+            '--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml'
+          ],
+          environment: [
+            {
+              name: 'AOT_CONFIG_CONTENT',
+              valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter/artilleryio/OTEL_COLLECTOR_CONFIG`
+            }
+          ],
           logConfiguration: {
-            logDriver: "awslogs",
+            logDriver: 'awslogs',
             options: {
-              "awslogs-group": `${context.logGroupName}/${context.clusterName}`,
-              "awslogs-region": context.region,
-              "awslogs-stream-prefix": `artilleryio/${context.testId}`,
-              "awslogs-create-group": 'true'
+              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+              'awslogs-region': context.region,
+              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+              'awslogs-create-group': 'true'
             }
           }
-        },
+        }
       ],
 
       executionRoleArn: context.taskRoleArn
