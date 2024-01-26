@@ -106,6 +106,7 @@ class OTelReporter {
     if (this.playwrightReporter) {
       await this.playwrightReporter.cleanup('playwright');
     }
+    debug('Waiting for flush period to complete');
     await new Promise((resolve) => setTimeout(resolve, 5000));
     await this.traceConfig.shutDown();
     return done();
