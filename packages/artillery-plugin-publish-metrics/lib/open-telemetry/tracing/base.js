@@ -175,8 +175,6 @@ class OTelTraceBase {
     }
 
     debug('Pending traces done');
-    debug('Waiting for flush period to complete');
-    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 }
 
