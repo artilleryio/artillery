@@ -9,7 +9,8 @@ const {
   SpanKind,
   SpanStatusCode,
   trace,
-  context
+  context,
+  propagation
 } = require('@opentelemetry/api');
 
 class OTelHTTPTraceReporter extends OTelTraceBase {
@@ -76,6 +77,17 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
           [SemanticAttributes.NET_HOST_NAME]: url.hostname,
           ...(this.config.attributes || {})
         }
+      });
+
+      const output = {};
+      context.with(trace.setSpan(context.active(), span), () => {
+        propagation.inject(context.active(), output);
+        const { traceparent, tracestate } = output;
+        req.headers = {
+          ...req.headers,
+          traceparent,
+          tracestate
+        };
       });
 
       userContext.vars['__otlpHTTPRequestSpan'] = span;
