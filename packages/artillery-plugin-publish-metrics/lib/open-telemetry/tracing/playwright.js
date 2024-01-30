@@ -142,6 +142,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             code: SpanStatusCode.ERROR,
             message: err.message
           });
+          scenarioSpan.setAttribute('outlier', true);
           throw err;
         } finally {
           if (pageSpan && !pageSpan.endTime[0]) {
@@ -180,6 +181,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             code: SpanStatusCode.ERROR,
             message: err.message
           });
+          span.setAttribute('outlier', true);
           debug('There has been an error during step execution:');
           throw err;
         } finally {
