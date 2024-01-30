@@ -15,7 +15,7 @@ const {
 class OTelHTTPTraceReporter extends OTelTraceBase {
   constructor(config, script) {
     super(config, script);
-    this.outlierCriteria = config.smartSampling;
+    this.outlierCriteria = config.smartSampling?.http;
     this.statusAsErrorThreshold = 400;
   }
   run() {
