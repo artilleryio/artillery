@@ -8,6 +8,11 @@ class NewRelicReporter {
         'New Relic reporter: licenseKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#newrelic)'
       );
     }
+    if (config.sendOnlyTraces || config.traces?.sendOnlyTraces) {
+      this.onlyTraces = true;
+      debug('sendOnlyTraces is true, not initializing metrics');
+      return this;
+    }
 
     // Set each config value as matching user config if exists, else default values
     this.config = {
@@ -273,6 +278,10 @@ class NewRelicReporter {
   }
 
   cleanup(done) {
+    if (this.onlyTraces) {
+      return done();
+    }
+
     if (this.startedEventSent) {
       const timestamp = Date.now();
       this.eventOpts.timestamp = timestamp;

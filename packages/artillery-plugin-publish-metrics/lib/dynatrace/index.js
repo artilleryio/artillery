@@ -21,6 +21,12 @@ class DynatraceReporter {
       );
     }
 
+    if (config.sendOnlyTraces || config.traces?.sendOnlyTraces) {
+      this.onlyTraces = true;
+      debug('sendOnlyTraces is true, not initializing metrics');
+      return this;
+    }
+
     if (
       script.config.plugins['metrics-by-endpoint'] &&
       !script.config.plugins['metrics-by-endpoint'].useOnlyRequestNames
@@ -296,6 +302,9 @@ class DynatraceReporter {
   }
 
   cleanup(done) {
+    if (this.onlyTraces) {
+      return done();
+    }
     if (this.startedEventSent) {
       const timestamp = Date.now();
       this.eventOpts.startTime = timestamp;
