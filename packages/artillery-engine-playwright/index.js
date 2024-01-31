@@ -66,6 +66,14 @@ class PlaywrightEngine {
         self.launchOptions
       );
 
+      if (process.env.WORKER_ID) {
+        if (launchOptions.headless) {
+          // Running inside a cloud worker, e.g. on AWS Fargate. Force headless mode
+          console.log('Running inside a cloud worker. Forcing Playwright headless mode to true');
+          launchOptions.headless = true;
+        }
+      }
+
       const contextOptions = self.contextOptions || {};
 
       let browser;
