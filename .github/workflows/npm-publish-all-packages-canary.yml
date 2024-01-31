@@ -18,6 +18,14 @@ on:
       - 'packages/artillery-plugin-memory-inspector/**'
       
 jobs:
+  publish-fargate-worker-image:
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+
   build:
     runs-on: ubuntu-latest
     permissions:
