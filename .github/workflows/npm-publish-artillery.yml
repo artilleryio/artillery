@@ -6,8 +6,18 @@ on:
     paths:
       - packages/artillery/package.json
 jobs:
+  publish-fargate-worker-image:
+    if: "contains( github.event.head_commit.message, 'ci: release v')"
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+  
   build:
     if: "contains(github.event.head_commit.message, 'ci: release v')"
+    needs: publish-fargate-worker-image
     runs-on: ubuntu-latest
     permissions:
       contents: read
