@@ -1538,8 +1538,6 @@ async function launchLeadTask(context) {
     throw runErr;
   }
 
-  await awaitOnEE(context.reporterEvents, 'prepack_end', 1000 * 60 * 1);
-
   return context;
 }
 
