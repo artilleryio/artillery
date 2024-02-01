@@ -102,7 +102,7 @@ function ArtillerySQSPlugin(script, events) {
   events.on('phaseCompleted', (phaseContext) => {
     this.unsent++;
     const body = JSON.stringify({
-      event: 'phaseStarted',
+      event: 'phaseCompleted',
       phase: phaseContext
     });
 
