@@ -16,7 +16,7 @@ async function _putCloudwatchRetentionPolicy(logGroupName, retentionInDays) {
   return cloudwatchlogs.putRetentionPolicy(putRetentionPolicyParams).promise();
 }
 
-function setCloudwatchRetentionOnInterval(
+function setCloudwatchRetention(
   logGroupName,
   retentionInDays,
   options = { maxRetries: 5, waitPerRetry: 1000 }
@@ -68,5 +68,5 @@ function setCloudwatchRetentionOnInterval(
 }
 
 module.exports = {
-  setCloudwatchRetentionOnInterval
+  setCloudwatchRetention
 };

@@ -35,9 +35,7 @@ const { TestBundle } = require('./test-object');
 const createS3Client = require('./create-s3-client');
 const { getBucketName } = require('./util');
 const getAccountId = require('../../aws/aws-get-account-id');
-const {
-  setCloudwatchRetentionOnInterval
-} = require('../../aws/aws-cloudwatch');
+const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 
 const dotenvParse = require('dotenv').parse;
 
@@ -658,7 +656,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         await launchLeadTask(context);
       }
 
-      setCloudwatchRetentionOnInterval(
+      setCloudwatchRetention(
         `${LOGGROUP_NAME}/${context.clusterName}`,
         LOGGROUP_RETENTION_DAYS,
         {
