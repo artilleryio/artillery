@@ -639,6 +639,8 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       await ensureTaskExists(context);
       logProgress('Preparing test bundle...');
       await createTestBundle(context);
+      // console.log(JSON.stringify(context))
+      // process.exit(1)
       await getManifest(context);
       await generateTaskOverrides(context);
 
@@ -966,6 +968,7 @@ async function createTestBundle(context) {
       {
         name: context.testId,
         config: context.cliOptions.config,
+        // flags: context.cliOptions,
         packageJsonPath: context.packageJsonPath
       },
       function (err, _result) {
@@ -1859,6 +1862,22 @@ async function listen(context, ee) {
       if (body.type === 'leader' && body.msg === 'prepack_end') {
         ee.emit('prepack_end');
       }
+    });
+
+    r.on('phaseStarted', (phase) => {
+      console.log('how many phaseStarted events?');
+      console.log(phase);
+      // global.artillery.globalEvents.emit('phaseStarted', phase.phase);
+
+      global.artillery.globalEvents.emit('phaseStarted', phase);
+    });
+
+    r.on('phaseCompleted', (phase) => {
+      console.log('how many phaseCompleted events?');
+      console.log(phase);
+      // global.artillery.globalEvents.emit('phaseStarted', phase.phase);
+
+      global.artillery.globalEvents.emit('phaseCompleted', phase);
     });
 
     r.on('stats', async (stats) => {

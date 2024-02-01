@@ -32,6 +32,9 @@ class SqsReporter extends EventEmitter {
     // Debug info:
     this.messagesProcessed = {};
     this.metricsMessagesFromWorkers = {};
+
+    this.phaseStartedEventsSeen = {};
+    this.phaseCompletedEventsSeen = {};
   }
 
   _allWorkersDone() {
@@ -184,6 +187,28 @@ class SqsReporter extends EventEmitter {
         self.emit(body.event, body, attrs);
 
         debug(workerId, body.event);
+        return;
+      }
+
+      if (body.event === 'phaseStarted') {
+        if (
+          typeof self.phaseStartedEventsSeen[body.phase.index] === 'undefined'
+        ) {
+          self.phaseStartedEventsSeen[body.phase.index] = Date.now();
+          self.emit(body.event, body.phase);
+        }
+
+        return;
+      }
+
+      if (body.event === 'phaseCompleted') {
+        if (
+          typeof self.phaseCompletedEventsSeen[body.phase.index] === 'undefined'
+        ) {
+          self.phaseCompletedEventsSeen[body.phase.index] = Date.now();
+          self.emit(body.event, body.phase);
+        }
+
         return;
       }
 
