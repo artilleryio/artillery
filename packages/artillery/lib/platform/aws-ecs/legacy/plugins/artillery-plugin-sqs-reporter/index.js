@@ -75,6 +75,54 @@ function ArtillerySQSPlugin(script, events) {
     });
   });
 
+  events.on('phaseStarted', (phaseContext) => {
+    this.unsent++;
+    const body = JSON.stringify({
+      event: 'phaseStarted',
+      phase: phaseContext
+    });
+
+    const params = {
+      MessageBody: body,
+      QueueUrl: this.queueUrl,
+      MessageAttributes: this.messageAttributes,
+      MessageDeduplicationId: uuid(),
+      MessageGroupId: this.testId
+    };
+
+    this.sqs.sendMessage(params, (err, data) => {
+      if (err) {
+        console.error(err);
+      }
+
+      this.unsent--;
+    });
+  });
+
+  events.on('phaseCompleted', (phaseContext) => {
+    this.unsent++;
+    const body = JSON.stringify({
+      event: 'phaseStarted',
+      phase: phaseContext
+    });
+
+    const params = {
+      MessageBody: body,
+      QueueUrl: this.queueUrl,
+      MessageAttributes: this.messageAttributes,
+      MessageDeduplicationId: uuid(),
+      MessageGroupId: this.testId
+    };
+
+    this.sqs.sendMessage(params, (err, data) => {
+      if (err) {
+        console.error(err);
+      }
+
+      this.unsent--;
+    });
+  });
+
   events.on('done', (_stats) => {
     this.unsent++;
     const body = JSON.stringify({
