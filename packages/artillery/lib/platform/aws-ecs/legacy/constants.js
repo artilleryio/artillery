@@ -1,3 +1,4 @@
+// NOTE: if changing this, change replace-worker-version-in-js-file.js script in github workflows that looks for a specific pattern here.
 const DEFAULT_IMAGE_TAG = 'f7534a2844b58ee2a851081a3c498e671ad94f17';
 
 module.exports = {
