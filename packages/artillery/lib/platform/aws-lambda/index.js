@@ -291,7 +291,8 @@ class PlatformLambda {
         'is-builtin-module',
         'try-require',
         'walk-sync',
-        'esbuild-wasm'
+        'esbuild-wasm',
+        'artillery-plugin-publish-metrics'
       ],
       {
         cwd: a9cwd
