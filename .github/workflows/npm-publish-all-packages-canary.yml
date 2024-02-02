@@ -30,6 +30,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     if: "!contains( github.event.head_commit.message, 'ci: release v')"
+    needs: publish-fargate-worker-image
     permissions:
       contents: read
       packages: write
@@ -42,7 +43,7 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: node ./github/workflows/scripts/replace-worker-version-in-js-file.js
+      - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
         env:
           COMMIT_SHA: ${{ github.sha }}
       - run: | 
