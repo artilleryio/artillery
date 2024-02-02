@@ -35,6 +35,7 @@ const { TestBundle } = require('./test-object');
 const createS3Client = require('./create-s3-client');
 const { getBucketName } = require('./util');
 const getAccountId = require('../../aws/aws-get-account-id');
+const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 
 const dotenvParse = require('dotenv').parse;
 
@@ -52,6 +53,7 @@ const {
   TASK_NAME,
   SQS_QUEUES_NAME_PREFIX,
   LOGGROUP_NAME,
+  LOGGROUP_RETENTION_DAYS,
   IMAGE_VERSION,
   WAIT_TIMEOUT,
   ARTILLERY_CLUSTER_NAME,
@@ -653,6 +655,15 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         listen(context, artilleryReporter.reporterEvents);
         await launchLeadTask(context);
       }
+
+      setCloudwatchRetention(
+        `${LOGGROUP_NAME}/${context.clusterName}`,
+        LOGGROUP_RETENTION_DAYS,
+        {
+          maxRetries: 10,
+          waitPerRetry: 2 * 1000
+        }
+      );
 
       if (
         context.status !== TEST_RUN_STATUS.EARLY_STOP &&
