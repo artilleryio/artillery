@@ -770,9 +770,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
             .indexOf('no container instances were found') !== -1
         ) {
           artillery.log(
-            chalk.yellow(
-              'The cluster has no active instances. We need some instances.'
-            )
+            chalk.yellow('The ECS cluster has no active EC2 instances')
           );
         } else {
           artillery.log(err);
@@ -1137,7 +1135,14 @@ async function ensureTaskExists(context) {
       ],
       executionRoleArn: context.taskRoleArn
     };
+
     context.taskDefinition = taskDefinition;
+
+    if (!context.isFargate) {
+      // Limits for sidecar have to be set explicitly on ECS EC2
+      taskDefinition.containerDefinitions[1].memory = 1024;
+      taskDefinition.containerDefinitions[1].cpu = 1024;
+    }
 
     if (context.isFargate) {
       taskDefinition.networkMode = 'awsvpc';
@@ -1480,6 +1485,8 @@ async function setupDefaultECSParams(context) {
         subnets: context.fargatePublicSubnetIds
       }
     };
+  } else {
+    defaultParams.launchType = 'EC2';
   }
 
   context.defaultECSParams = defaultParams;
