@@ -129,7 +129,7 @@ function syncS3(context, callback) {
         return eachDone(null, context);
       }
 
-      const key = context.s3Prefix + '/' + item.noPrefix;
+      const key = context.s3Prefix + '/' + item.noPrefixPosix;
       plainS3.putObject(
         {
           Bucket: context.s3Bucket,
@@ -166,13 +166,13 @@ function writeTestMetadata(context, callback) {
     const res = context.manifest.files.filter((o) => {
       return o.orig === context.configPath;
     });
-    const newConfigPath = res[0].noPrefix; // if we have been given a config, we must have an entry
+    const newConfigPath = res[0].noPrefixPosix; // if we have been given a config, we must have an entry
     metadata.configPath = newConfigPath;
   }
 
   const newScriptPath = context.manifest.files.filter((o) => {
     return o.orig === context.scriptPath;
-  })[0].noPrefix;
+  })[0].noPrefixPosix;
   metadata.scriptPath = newScriptPath;
 
   debug('metadata', metadata);
