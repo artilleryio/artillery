@@ -154,7 +154,7 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
   };
 
   const output =
-    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --dotenv ${dotEnvPath} --record --tags ${baseTags} --count 2 --launch-config ${JSON.stringify(
+    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --dotenv ${dotEnvPath} --record --tags ${baseTags} --count 2 --region us-east-2 --spot --launch-config ${JSON.stringify(
       launchConfig
     )}`;
 
