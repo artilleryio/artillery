@@ -890,7 +890,7 @@ async function createArtilleryCluster(context) {
     await ecs
       .createCluster({
         clusterName: ARTILLERY_CLUSTER_NAME,
-        capacityProviders: ['FARGATE']
+        capacityProviders: ['FARGATE_SPOT']
       })
       .promise();
 
