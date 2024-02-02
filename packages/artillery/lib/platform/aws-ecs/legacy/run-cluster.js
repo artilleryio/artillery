@@ -462,6 +462,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     logGroupName: LOGGROUP_NAME,
     cliOptions: options,
     isFargate: IS_FARGATE,
+    isCapacitySpot: typeof options.spot !== 'undefined',
     configTableName: '',
     status: TEST_RUN_STATUS.INITIALIZING,
     packageJsonPath,
@@ -629,7 +630,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   Region:      ${context.region}
   Count:       ${context.count}
   Cluster:     ${context.clusterName}
-  Launch type: ${context.cliOptions.launchType}
+  Launch type: ${context.cliOptions.launchType} ${
+          context.isFargate && context.isCapacitySpot ? '(Spot)' : '(On-demand)'
+        }
 `,
         { showTimestamp: false }
       );
@@ -1455,9 +1458,20 @@ async function setupDefaultECSParams(context) {
   };
 
   if (context.isFargate) {
+    if (context.isCapacitySpot) {
+      defaultParams.capacityProviderStrategy = [
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+          base: 0
+        }
+      ];
+    } else {
+      // On-demand capacity
+      defaultParams.launchType = 'FARGATE';
+    }
     // Networking config: private subnets of the VPC that the ECS cluster
     // is in. Don't need public subnets.
-    defaultParams.launchType = 'FARGATE';
     defaultParams.networkConfiguration = {
       awsvpcConfiguration: {
         // https://github.com/aws/amazon-ecs-agent/issues/1128
@@ -1479,6 +1493,7 @@ async function launchLeadTask(context) {
     cluster: context.clusterName,
     region: context.region,
     launchType: context.cliOptions.launchType,
+    isFargateSpot: context.isCapacitySpot,
     count: context.count,
     sqsQueueUrl: context.sqsQueueUrl,
     tags: context.tags,
