@@ -78,6 +78,10 @@ RunCommand.flags = {
     description: 'The launch type to use for the test. Defaults to Fargate.',
     options: ['ecs:fargate', 'ecs:ec2']
   }),
+  spot: Flags.boolean({
+    description:
+      'Use Fargate Spot (https://docs.art/fargate-spot) Ignored when --launch-type is set to ecs:ec2'
+  }),
   'launch-config': Flags.string({
     description:
       'JSON to customize launch configuration of ECS/Fargate tasks (see https://www.artillery.io/docs/reference/cli/run-fargate#using---launch-config)'
