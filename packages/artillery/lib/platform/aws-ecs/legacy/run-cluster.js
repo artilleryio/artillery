@@ -43,6 +43,8 @@ const util = require('./util');
 
 const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
 
+const { createADOTDefinitionIfNeeded } = require('./adot');
+
 module.exports = runCluster;
 
 let consoleReporter = {
@@ -817,6 +819,12 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
 async function cleanupResources(context) {
   try {
+    if (context.adotSSMParameterPath) {
+      await awsUtil.deleteParameter(
+        context.adotSSMParameterPath,
+        context.region
+      );
+    }
     if (context.sqsReporter) {
       context.sqsReporter.stop();
     }
@@ -1072,6 +1080,8 @@ async function ensureTaskExists(context) {
         };
       });
 
+    const adotDefinition = createADOTDefinitionIfNeeded(context);
+
     let taskDefinition = {
       family: context.taskName,
       containerDefinitions: [
@@ -1095,54 +1105,7 @@ async function ensureTaskExists(context) {
             }
           }
         },
-        {
-          name: 'datadog-agent',
-          image: 'public.ecr.aws/datadog/agent:7',
-          environment: [
-            {
-              name: 'DD_API_KEY',
-              value: 'placeholder'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_TRACES_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT',
-              value: '0.0.0.0:4318'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT',
-              value: '0.0.0.0:4317'
-            },
-            {
-              name: 'DD_APM_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_APM_RECEIVER_PORT',
-              value: '8126'
-            },
-            {
-              name: 'DD_APM_TRACE_BUFFER',
-              value: '100'
-            },
-            {
-              name: 'DD_SITE',
-              value: 'datadoghq.com'
-            }
-          ],
-          logConfiguration: {
-            logDriver: 'awslogs',
-            options: {
-              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
-              'awslogs-region': context.region,
-              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
-              'awslogs-create-group': 'true',
-              mode: 'non-blocking'
-            }
-          }
-        }
+        ...[adotDefinition]
       ],
       executionRoleArn: context.taskRoleArn
     };

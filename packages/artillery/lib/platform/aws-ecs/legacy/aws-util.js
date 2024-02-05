@@ -9,7 +9,8 @@ module.exports = {
   ensureParameterExists,
   parameterExists,
   putParameter,
-  getParameter
+  getParameter,
+  deleteParameter
 };
 
 // Wraps ecs.describeTasks to support more than 100 task ARNs in params.tasks
@@ -116,6 +117,33 @@ async function getParameter(path, region) {
 
     debug({ ssmResponse });
     return ssmResponse.Parameter && ssmResponse.Parameter.Value;
+  } catch (ssmErr) {
+    if (ssmErr.code === 'ParameterNotFound') {
+      return false;
+    } else {
+      throw ssmErr;
+    }
+  }
+}
+
+// NOT SURE IF WE SHOULD REMOVE SSM PARAM OR NOT, IF SOMEONE RUNS MULTIPLE TESTS IN PARALELL MIGHT GET CONFUSING AS THERE NEEDS TO BE AT LEAST 30 SEC AFTER DELETING BEFORE CREATING A PARAM WITH THE SAME NAME...UNLESS WE USE THE TEST ID IN THE NAME
+
+async function deleteParameter(path, region) {
+  if (region) {
+    AWS.config.update({ region });
+  }
+
+  const ssm = new AWS.SSM({ apiVersion: '2014-11-06' });
+
+  try {
+    const ssmResponse = await ssm
+      .deleteParameter({
+        Name: path
+      })
+      .promise();
+
+    debug({ ssmResponse });
+    return ssmResponse;
   } catch (ssmErr) {
     if (ssmErr.code === 'ParameterNotFound') {
       return false;
