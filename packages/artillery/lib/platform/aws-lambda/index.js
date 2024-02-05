@@ -145,6 +145,12 @@ class PlatformLambda {
     };
     global.artillery.globalEvents.emit('metadata', metadata);
 
+    // populate the cliOptions into the `createBomOpts` for template resolution
+    createBomOpts = {
+      ...createBomOpts,
+      ...this.opts
+    };
+
     artillery.log('- Bundling test data');
     const bom = await promisify(createBOM)(
       entryPoint,

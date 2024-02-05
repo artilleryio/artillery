@@ -3,7 +3,7 @@ const telemetry = require('./telemetry').init();
 
 const { updateGlobalObject } = require('@artilleryio/int-core');
 
-const { parseScript, readScript } = require('./util');
+const { parseScript, readScript, resolveConfigTemplates } = require('./util');
 
 async function createGlobalObject(opts) {
   await updateGlobalObject({
@@ -21,6 +21,7 @@ async function createGlobalObject(opts) {
   global.artillery.__util = global.artillery.__util || {};
   global.artillery.__util.parseScript = parseScript;
   global.artillery.__util.readScript = readScript;
+  global.artillery.__util.resolveConfigTemplates = resolveConfigTemplates;
   global.artillery.__createReporter = require('./console-reporter');
 
   global.artillery._exitCode = 0;

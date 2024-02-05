@@ -28,6 +28,12 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       A.constant(absoluteScriptPath),
       global.artillery.__util.readScript,
       global.artillery.__util.parseScript,
+      async (scriptData) => {
+        return await global.artillery.__util.resolveConfigTemplates(
+          scriptData,
+          opts
+        );
+      },
       (scriptData, next) => {
         return next(null, {
           opts: {

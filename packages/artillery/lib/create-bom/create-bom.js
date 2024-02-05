@@ -11,7 +11,7 @@ const debug = require('debug')('bom');
 const _ = require('lodash');
 const Table = require('cli-table3');
 
-const { readScript, parseScript } = require('../util');
+const { readScript, parseScript, resolveConfigTemplates } = require('../util');
 
 const BUILTIN_PLUGINS = require('./built-in-plugins');
 
@@ -22,6 +22,9 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       A.constant(absoluteScriptPath),
       readScript,
       parseScript,
+      async (scriptData) => {
+        return await resolveConfigTemplates(scriptData, opts);
+      },
       (scriptData, next) => {
         return next(null, {
           opts: {
