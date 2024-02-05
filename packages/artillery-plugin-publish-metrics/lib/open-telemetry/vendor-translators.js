@@ -29,28 +29,23 @@ const vendorTranslators = {
       type: 'newrelic',
       // TODO Add options for fed ramp and infinite tracing?
       endpoint:
-        config.region.toLowerCase() === 'eu'
+        config.region?.toLowerCase() === 'eu'
           ? 'https://otlp.eu01.nr-data.net/v1/traces'
           : 'https://otlp.nr-data.net/v1/traces',
       headers: {
         'api-key': config.licenseKey
-      }
+      },
+      attributes: attributeListToObject(config.traces?.attributes, 'newrelic')
     };
+
     return otelTemplate(config, newRelicTraceSettings);
   },
   datadog: (config) => {
     const datadogTraceSettings = {
-      type: 'datadog'
+      type: 'datadog',
+      attributes: attributeListToObject(config.traces?.tags, 'datadog')
     };
-    const newConfig = config;
-    if (config.traces && config.traces.tags) {
-      newConfig.traces.attributes = {};
-      config.traces.tags.forEach((tag) => {
-        const [key, value] = tag.split(':');
-        newConfig.traces.attributes[key] = value;
-      });
-    }
-    return otelTemplate(newConfig, datadogTraceSettings);
+    return otelTemplate(config, datadogTraceSettings);
   },
   dynatrace: (config) => {
     const tracePath = '/api/v2/otlp/v1/traces';
@@ -63,7 +58,8 @@ const vendorTranslators = {
       endpoint: endpoint.href,
       headers: {
         Authorization: `Api-Token ${config.apiToken}`
-      }
+      },
+      attributes: attributeListToObject(config.traces?.attributes, 'dynatrace')
     };
     return otelTemplate(config, dynatraceTraceSettings);
   },
@@ -92,5 +88,28 @@ const otelTemplate = function (config, vendorSpecificSettings) {
   }
   return otelConfig;
 };
+
+function attributeListToObject(attributeList, reporterType) {
+  if (!attributeList || attributeList.length === 0) {
+    return;
+  }
+  const attributes = {};
+  try {
+    attributeList.forEach((attribute) => {
+      const [key, value] = attribute.split(':');
+      attributes[key] = value;
+    });
+  } catch (err) {
+    throw new Error(
+      `${
+        reporterType[0].toUpperCase() + reporterType.slice(1)
+      } reporter: Error parsing ${
+        reporterType === 'datadog' ? 'tags. Tags' : 'attributes. Attributes'
+      } must be a list of strings in the 'key:value' format. More info in the docs (https://docs.artillery.io/reference/extensions/publish-metrics/${reporterType})`
+    );
+  }
+
+  return attributes;
+}
 
 module.exports = vendorTranslators;
