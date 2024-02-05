@@ -60,15 +60,16 @@ class OTelTraceConfig {
       this.exporterOpts
     );
 
+    this.processorOpts = {
+      scheduledDelayMillis: this.config.scheduledDelayMillis || 5000,
+      maxExportBatchSize: this.config.maxExportBatchSize || 1000,
+      maxQueueSize: this.config.maxQueueSize || 2000
+    };
     const Processor = this.config.smartSampling
       ? OutlierDetectionBatchSpanProcessor
       : BatchSpanProcessor;
 
-    this.tracerProvider.addSpanProcessor(
-      new Processor(this.exporter, {
-        scheduledDelayMillis: 1000
-      })
-    );
+    this.tracerProvider.addSpanProcessor(new Processor(this.exporter));
     this.tracerProvider.register();
   }
 
@@ -89,6 +90,9 @@ class OTelTraceBase {
     this.script = script;
     this.pendingRequestSpans = 0;
     this.pendingScenarioSpans = 0;
+    this.pendingPageSpans = 0;
+    this.pendingStepSpans = 0;
+    this.pendingPlaywrightScenarioSpans = 0;
   }
   setTracer(engine) {
     // Get and set the tracer by engine
@@ -141,13 +145,38 @@ class OTelTraceBase {
   otelTraceOnError(scenarioErr, req, userContext, ee, done) {
     done();
   }
-
-  async cleanup() {
-    while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
+  async waitOnPendingSpans(pendingRequests, pendingScenarios, maxWaitTime) {
+    let waitedTime = 0;
+    while (
+      (pendingRequests > 0 || pendingScenarios > 0) &&
+      waitedTime < maxWaitTime
+    ) {
       debug('Waiting for pending traces ...');
       await new Promise((resolve) => setTimeout(resolve, 500));
+      waitedTime += 500;
     }
+    return true;
+  }
+
+  async cleanup(engines) {
+    if (engines.includes('http')) {
+      await this.waitOnPendingSpans(
+        this.pendingRequestSpans,
+        this.pendingScenarioSpans,
+        5000
+      );
+    }
+    if (engines.includes('playwright')) {
+      await this.waitOnPendingSpans(
+        this.pendingPlaywrightScenarioSpans,
+        this.pendingPlaywrightScenarioSpans,
+        5000
+      );
+    }
+
     debug('Pending traces done');
+    debug('Waiting for flush period to complete');
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 }
 

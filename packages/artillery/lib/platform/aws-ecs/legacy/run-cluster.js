@@ -35,6 +35,7 @@ const { TestBundle } = require('./test-object');
 const createS3Client = require('./create-s3-client');
 const { getBucketName } = require('./util');
 const getAccountId = require('../../aws/aws-get-account-id');
+const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 
 const dotenvParse = require('dotenv').parse;
 
@@ -52,6 +53,7 @@ const {
   TASK_NAME,
   SQS_QUEUES_NAME_PREFIX,
   LOGGROUP_NAME,
+  LOGGROUP_RETENTION_DAYS,
   IMAGE_VERSION,
   WAIT_TIMEOUT,
   ARTILLERY_CLUSTER_NAME,
@@ -462,6 +464,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     logGroupName: LOGGROUP_NAME,
     cliOptions: options,
     isFargate: IS_FARGATE,
+    isCapacitySpot: typeof options.spot !== 'undefined',
     configTableName: '',
     status: TEST_RUN_STATUS.INITIALIZING,
     packageJsonPath,
@@ -629,7 +632,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   Region:      ${context.region}
   Count:       ${context.count}
   Cluster:     ${context.clusterName}
-  Launch type: ${context.cliOptions.launchType}
+  Launch type: ${context.cliOptions.launchType} ${
+          context.isFargate && context.isCapacitySpot ? '(Spot)' : '(On-demand)'
+        }
 `,
         { showTimestamp: false }
       );
@@ -653,6 +658,15 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         listen(context, artilleryReporter.reporterEvents);
         await launchLeadTask(context);
       }
+
+      setCloudwatchRetention(
+        `${LOGGROUP_NAME}/${context.clusterName}`,
+        LOGGROUP_RETENTION_DAYS,
+        {
+          maxRetries: 10,
+          waitPerRetry: 2 * 1000
+        }
+      );
 
       if (
         context.status !== TEST_RUN_STATUS.EARLY_STOP &&
@@ -767,9 +781,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
             .indexOf('no container instances were found') !== -1
         ) {
           artillery.log(
-            chalk.yellow(
-              'The cluster has no active instances. We need some instances.'
-            )
+            chalk.yellow('The ECS cluster has no active EC2 instances')
           );
         } else {
           artillery.log(err);
@@ -889,7 +901,7 @@ async function createArtilleryCluster(context) {
     await ecs
       .createCluster({
         clusterName: ARTILLERY_CLUSTER_NAME,
-        capacityProviders: ['FARGATE']
+        capacityProviders: ['FARGATE_SPOT']
       })
       .promise();
 
@@ -1134,7 +1146,14 @@ async function ensureTaskExists(context) {
       ],
       executionRoleArn: context.taskRoleArn
     };
+
     context.taskDefinition = taskDefinition;
+
+    if (!context.isFargate) {
+      // Limits for sidecar have to be set explicitly on ECS EC2
+      taskDefinition.containerDefinitions[1].memory = 1024;
+      taskDefinition.containerDefinitions[1].cpu = 1024;
+    }
 
     if (context.isFargate) {
       taskDefinition.networkMode = 'awsvpc';
@@ -1455,9 +1474,20 @@ async function setupDefaultECSParams(context) {
   };
 
   if (context.isFargate) {
+    if (context.isCapacitySpot) {
+      defaultParams.capacityProviderStrategy = [
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+          base: 0
+        }
+      ];
+    } else {
+      // On-demand capacity
+      defaultParams.launchType = 'FARGATE';
+    }
     // Networking config: private subnets of the VPC that the ECS cluster
     // is in. Don't need public subnets.
-    defaultParams.launchType = 'FARGATE';
     defaultParams.networkConfiguration = {
       awsvpcConfiguration: {
         // https://github.com/aws/amazon-ecs-agent/issues/1128
@@ -1466,6 +1496,8 @@ async function setupDefaultECSParams(context) {
         subnets: context.fargatePublicSubnetIds
       }
     };
+  } else {
+    defaultParams.launchType = 'EC2';
   }
 
   context.defaultECSParams = defaultParams;
@@ -1479,6 +1511,7 @@ async function launchLeadTask(context) {
     cluster: context.clusterName,
     region: context.region,
     launchType: context.cliOptions.launchType,
+    isFargateSpot: context.isCapacitySpot,
     count: context.count,
     sqsQueueUrl: context.sqsQueueUrl,
     tags: context.tags,
@@ -1537,8 +1570,6 @@ async function launchLeadTask(context) {
   } catch (runErr) {
     throw runErr;
   }
-
-  await awaitOnEE(context.reporterEvents, 'prepack_end', 1000 * 60 * 1);
 
   return context;
 }

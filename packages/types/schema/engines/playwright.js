@@ -32,6 +32,11 @@ const PlaywrightConfigSchema = Joi.object({
     .description(
       'Default maximum navigation time (in seconds) for Playwright navigation methods, like `page.goto()`.\nhttps://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout'
     ),
+  testIdAttribute: Joi.string()
+    .meta({ title: 'Test ID Attribute'})
+    .description(
+      'When set, changes the attribute used by locator `page.getByTestId` in Playwright. \n https://playwright.dev/docs/api/class-framelocator#frame-locator-get-by-test-id'
+    ),
   extendedMetrics: artilleryBooleanOrString
     .meta({ title: 'Playwright Extended Metrics' })
     .description(

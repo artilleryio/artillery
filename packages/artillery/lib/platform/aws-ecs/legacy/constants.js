@@ -1,3 +1,4 @@
+// NOTE: if changing this, change replace-worker-version-in-js-file.js script in github workflows that looks for a specific pattern here.
 const DEFAULT_IMAGE_TAG = 'f7534a2844b58ee2a851081a3c498e671ad94f17';
 
 module.exports = {
@@ -6,6 +7,7 @@ module.exports = {
   SQS_QUEUES_NAME_PREFIX: 'artilleryio_test_metrics',
   S3_BUCKET_NAME_PREFIX: 'artilleryio-test-data',
   LOGGROUP_NAME: 'artilleryio-log-group',
+  LOGGROUP_RETENTION_DAYS: process.env.ARTILLERY_LOGGROUP_RETENTION_DAYS || 180,
   IMAGE_VERSION: process.env.ECR_IMAGE_VERSION || DEFAULT_IMAGE_TAG,
   WAIT_TIMEOUT:
     typeof process.env.ECS_WAIT_TIMEOUT === 'undefined'
