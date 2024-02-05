@@ -990,10 +990,11 @@ async function createTestBundle(context) {
         packageJsonPath: context.packageJsonPath,
         flags: context.cliOptions,
       },
-      function (err, _result) {
+      function (err, result) {
         if (err) {
           return reject(err);
         } else {
+          context.fullyResolvedConfig = result.manifest.fullyResolvedConfig;
           return resolve(context);
         }
       }

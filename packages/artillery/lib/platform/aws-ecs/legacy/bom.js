@@ -140,7 +140,8 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       return callback(null, {
         files: _.uniqWith(files, _.isEqual),
         modules: _.uniq(context.npmModules),
-        pkgDeps: context.pkgDeps
+        pkgDeps: context.pkgDeps,
+        fullyResolvedConfig: context.opts.scriptData.config
       });
     }
   );
