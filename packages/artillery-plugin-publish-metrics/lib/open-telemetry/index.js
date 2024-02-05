@@ -1,7 +1,10 @@
 'use strict';
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
-const vendorTranslators = require('./vendor-translators');
+const {
+  vendorTranslators,
+  warnIfMultipleReportersPerSignalTypeSet
+} = require('./vendor-translators');
 const {
   diag,
   DiagConsoleLogger,
@@ -61,7 +64,10 @@ class OTelReporter {
     }
 
     // Warn if traces are configured in multiple reporters
-    this.warnIfDuplicateTracesConfigured(this.translatedConfigsList);
+    warnIfMultipleReportersPerSignalTypeSet(
+      this.translatedConfigsList,
+      'traces'
+    );
 
     // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible
     this.getEngines(this.script.scenarios || []);
@@ -112,14 +118,7 @@ class OTelReporter {
       }
     }
   }
-  warnIfDuplicateTracesConfigured(configList) {
-    const tracesConfigs = configList.filter((config) => config.traces);
-    if (tracesConfigs.length > 1) {
-      console.warn(
-        'WARNING: Multiple reporters configured for traces. Currently, you can only use one reporter at a time for reporting traces. Only the first reporter will be used.'
-      );
-    }
-  }
+
   translateToOtel(config) {
     return vendorTranslators[config.type](config);
   }
@@ -137,6 +136,11 @@ class OTelReporter {
     if (!this.metricsConfig && !this.tracesConfig) {
       return done();
     }
+
+    // Waiting for flush period to complete here rather than in trace/metric reporters
+    debug('Waiting for flush period to end');
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+
     if (this.metricReporter) {
       await this.metricReporter.cleanup();
     }

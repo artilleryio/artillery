@@ -6,6 +6,10 @@ const NS = 'plugin:publish-metrics';
 const debug = require('debug')(NS);
 const A = require('async');
 
+const {
+  assembleCollectorConfigOpts
+} = require('./lib/open-telemetry/vendor-translators');
+
 // List of reporters that use OpenTelemetry
 const REPORTERS_USING_OTEL = [
   'open-telemetry',
@@ -16,7 +20,8 @@ const REPORTERS_USING_OTEL = [
 ];
 module.exports = {
   Plugin,
-  LEGACY_METRICS_FORMAT: false
+  LEGACY_METRICS_FORMAT: false,
+  assembleCollectorConfigOpts
 };
 
 function Plugin(script, events) {
