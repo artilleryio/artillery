@@ -16,6 +16,8 @@ const moment = require('moment');
 
 const EnsurePlugin = require('artillery-plugin-ensure');
 
+const { createADOTDefinitionIfNeeded } = require('./adot');
+
 const EventEmitter = require('events');
 
 const _ = require('lodash');
@@ -821,6 +823,13 @@ async function cleanupResources(context) {
       context.sqsReporter.stop();
     }
 
+    if (context.adotSSMParameterPath) {
+      await awsUtil.deleteParameter(
+        context.adotSSMParameterPath,
+        context.region
+      );
+    }
+
     if (context.taskArns && context.taskArns.length > 0) {
       for (const taskArn of context.taskArns) {
         try {
@@ -992,7 +1001,7 @@ async function createTestBundle(context) {
 }
 
 async function ensureTaskExists(context) {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const ecs = new AWS.ECS({
       apiVersion: '2014-11-13',
       region: context.region
@@ -1072,6 +1081,8 @@ async function ensureTaskExists(context) {
         };
       });
 
+    const adotDefinition = await createADOTDefinitionIfNeeded(context);
+
     let taskDefinition = {
       family: context.taskName,
       containerDefinitions: [
@@ -1095,54 +1106,7 @@ async function ensureTaskExists(context) {
             }
           }
         },
-        {
-          name: 'datadog-agent',
-          image: 'public.ecr.aws/datadog/agent:7',
-          environment: [
-            {
-              name: 'DD_API_KEY',
-              value: 'placeholder'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_TRACES_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT',
-              value: '0.0.0.0:4318'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT',
-              value: '0.0.0.0:4317'
-            },
-            {
-              name: 'DD_APM_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_APM_RECEIVER_PORT',
-              value: '8126'
-            },
-            {
-              name: 'DD_APM_TRACE_BUFFER',
-              value: '100'
-            },
-            {
-              name: 'DD_SITE',
-              value: 'datadoghq.com'
-            }
-          ],
-          logConfiguration: {
-            logDriver: 'awslogs',
-            options: {
-              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
-              'awslogs-region': context.region,
-              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
-              'awslogs-create-group': 'true',
-              mode: 'non-blocking'
-            }
-          }
-        }
+        ...([adotDefinition] || [])
       ],
       executionRoleArn: context.taskRoleArn
     };
@@ -1382,6 +1346,12 @@ async function generateTaskOverrides(context) {
   const s3path = `s3://${context.s3Bucket}/tests/${
     context.namedTest ? context.s3Prefix : context.testId
   }`;
+  const adotOverride = [
+    {
+      name: 'adot-collector',
+      environment: []
+    }
+  ];
 
   const overrides = {
     containerOverrides: [
@@ -1410,10 +1380,7 @@ async function generateTaskOverrides(context) {
           }
         ]
       },
-      {
-        name: 'datadog-agent',
-        environment: []
-      }
+      ...(context.adotSSMParameterPath ? adotOverride : [])
     ],
     taskRoleArn: context.taskRoleArn
   };
@@ -1434,8 +1401,10 @@ async function generateTaskOverrides(context) {
     }
     overrides.containerOverrides[0].environment =
       overrides.containerOverrides[0].environment.concat(extraEnv);
-    overrides.containerOverrides[1].environment =
-      overrides.containerOverrides[1].environment.concat(extraEnv);
+    if (overrides.containerOverrides[1]) {
+      overrides.containerOverrides[1].environment =
+        overrides.containerOverrides[1].environment.concat(extraEnv);
+    }
   }
 
   if (context.cliOptions.launchConfig) {
@@ -1443,8 +1412,10 @@ async function generateTaskOverrides(context) {
     if (lc.environment) {
       overrides.containerOverrides[0].environment =
         overrides.containerOverrides[0].environment.concat(lc.environment);
-      overrides.containerOverrides[1].environment =
-        overrides.containerOverrides[1].environment.concat(lc.environment);
+      if (overrides.containerOverrides[1]) {
+        overrides.containerOverrides[1].environment =
+          overrides.containerOverrides[1].environment.concat(lc.environment);
+      }
     }
 
     //
