@@ -987,7 +987,8 @@ async function createTestBundle(context) {
       {
         name: context.testId,
         config: context.cliOptions.config,
-        packageJsonPath: context.packageJsonPath
+        packageJsonPath: context.packageJsonPath,
+        flags: context.cliOptions,
       },
       function (err, _result) {
         if (err) {
