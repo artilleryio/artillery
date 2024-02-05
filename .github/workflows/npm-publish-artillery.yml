@@ -3,8 +3,8 @@ on:
   push:
     branches:
       - main
-    # paths:
-    #   - packages/artillery/package.json
+    paths:
+      - packages/artillery/package.json
 jobs:
   publish-fargate-worker-image:
     if: "contains( github.event.head_commit.message, 'ci: release v')"
