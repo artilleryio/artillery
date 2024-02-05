@@ -112,4 +112,190 @@ function attributeListToObject(attributeList, reporterType) {
   return attributes;
 }
 
-module.exports = vendorTranslators;
+// ADOT collector translation
+
+const ADOTSupportedTraceReporters = ['datadog', 'cloudwatch'];
+const ADOTSupportedMetricReporters = [];
+
+const collectorConfigTemplate = {
+  receivers: {
+    otlp: {
+      protocols: {
+        http: {
+          endpoint: '0.0.0.0:4318'
+        },
+        grpc: {
+          endpoint: '0.0.0.0:4317'
+        }
+      }
+    }
+  },
+  processors: {},
+  exporters: {},
+  service: {
+    pipelines: {}
+  }
+};
+
+// Gets a list of reporter configurations that use ADOT and options object that holds the dotenv variables and returns an object with the OTel Collector configuration in JSON format and environment variables to set
+function assembleCollectorConfigOpts(configList, options) {
+  if (configList.length === 0) return;
+  // For each vendor config return an object with the config translation and environment variables to set if any needed
+  const collectorOptionsList = configList.map((config) =>
+    vendorToCollectorConfigTranslators[config.type](config, options)
+  );
+
+  // Assemble the final collector config by adding all parts of the config from each vendor
+  const collectorConfig = { ...collectorConfigTemplate };
+  collectorOptionsList.forEach((vendorOpts) => {
+    collectorConfig.processors = Object.assign(
+      collectorConfig.processors,
+      vendorOpts.config.processors
+    );
+    collectorConfig.exporters = Object.assign(
+      collectorConfig.exporters,
+      vendorOpts.config.exporters
+    );
+    collectorConfig.service.pipelines = Object.assign(
+      collectorConfig.service.pipelines,
+      vendorOpts.config.service.pipelines
+    );
+  });
+
+  // Join required vendor specific environment variables into one object
+  const collectorEnvVars = collectorOptionsList.reduce((acc, vendorOpts) => {
+    return Object.assign(acc, vendorOpts.envVars);
+  }, {});
+
+  // We need to stringify the collector config as it needs to be set as a parameter in SSM for ADOT to pick it up
+  return {
+    collectorConfigJSON: JSON.stringify(collectorConfig),
+    collectorEnvVars
+  };
+}
+
+// Map of functions that translate vendor-specific configuration to OpenTelemetry Collector configuration to be used by ADOT
+const vendorToCollectorConfigTranslators = {
+  datadog: (config, options) => {
+    if (!config.traces) return;
+    if (
+      !options.dotenv?.DD_API_KEY &&
+      !config.apiKey &&
+      !config.traces.apiKey
+    ) {
+      throw new Error(
+        "Datadog reporter Error: Missing Datadog API key. Provide it under 'apiKey' setting in your script or under 'DD_API_KEY' environment variable set in your dotenv file."
+      );
+    }
+    const envVars = {};
+    if (!options.dotenv?.DD_API_KEY) {
+      envVars.DD_API_KEY = config.apiKey || config.traces.apiKey;
+    }
+
+    const ddTraceConfig = {
+      processors: {
+        'batch/trace': {
+          timeout: '10s',
+          send_batch_max_size: 1024,
+          send_batch_size: 200,
+          retry_on_failure: true
+        },
+        exporters: {
+          'datadog/api': {
+            traces: {
+              trace_buffer: 100
+            },
+            api: {
+              key: '${env:DD_API_KEY}'
+            }
+          }
+        },
+        service: {
+          pipelines: {
+            traces: {
+              receivers: ['otlp'],
+              processors: ['batch/trace'],
+              exporters: ['datadog/api']
+            }
+          }
+        }
+      }
+    };
+    return { config: ddTraceConfig, envVars };
+  },
+  cloudwatch: (config) => {
+    if (!config.traces) return;
+
+    const cwTraceConfig = {
+      processors: {
+        'batch/trace': {
+          timeout: '2s',
+          send_batch_max_size: 1024,
+          send_batch_size: 200
+        }
+      },
+      exporters: {
+        awsxray: {
+          region: config.region || 'us-east-1'
+        }
+      },
+      service: {
+        pipelines: {
+          traces: {
+            receivers: ['otlp'],
+            processors: ['batch/trace'],
+            exporters: ['awsxray']
+          }
+        }
+      }
+    };
+
+    return { config: cwTraceConfig };
+  }
+};
+
+// Parses the full list of reporter configurations and returns a list with the first ADOT relevant reporter configuration for traces and metrics
+function parseReportersForADOT(configList) {
+  const configs = [];
+  // Get all reporter configurations for tracing supported by ADOT and warn if multiple are set
+  const traceConfigs = configList.filter(
+    (reporterConfig) =>
+      ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
+      reporterConfig.traces
+  );
+  warnIfMultipleReportersPerSignalTypeSet(configList, 'traces');
+
+  // Get all reporter configurations for metrics supported by ADOT and warn if multiple are set
+  const metricConfigs = configList.filter(
+    (reporterConfig) =>
+      ADOTSupportedMetricReporters.includes(reporterConfig.type) &&
+      reporterConfig.metrics
+  );
+  warnIfMultipleReportersPerSignalTypeSet(configList, 'metrics');
+  // Return only the first relevant reporter configuration set per signal type
+  if (traceConfigs[0]) {
+    configs.push(traceConfigs[0]);
+  }
+  if (metricConfigs[0]) {
+    configs.push(metricConfigs[0]);
+  }
+  return configs;
+}
+
+function warnIfMultipleReportersPerSignalTypeSet(configList, signalType) {
+  const signalConfigs = configList.filter(
+    (reporterConfig) => reporterConfig[signalType]
+  );
+  if (signalConfigs.length > 1) {
+    console.warn(
+      `WARNING: Multiple reporters configured for ${signalType}. Currently, you can only use one reporter at a time for reporting ${signalType}. Only the first reporter will be used.`
+    );
+  }
+}
+
+module.exports = {
+  vendorTranslators,
+  assembleCollectorConfigOpts,
+  parseReportersForADOT,
+  warnIfMultipleReportersPerSignalTypeSet
+};

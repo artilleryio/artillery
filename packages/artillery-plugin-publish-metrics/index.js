@@ -5,6 +5,10 @@
 const NS = 'plugin:publish-metrics';
 const debug = require('debug')(NS);
 const A = require('async');
+const {
+  assembleCollectorConfigOpts,
+  parseReportersForADOT
+} = require('./lib/open-telemetry/vendor-translators');
 
 // List of reporters that use OpenTelemetry
 const REPORTERS_USING_OTEL = [
@@ -16,7 +20,9 @@ const REPORTERS_USING_OTEL = [
 ];
 module.exports = {
   Plugin,
-  LEGACY_METRICS_FORMAT: false
+  LEGACY_METRICS_FORMAT: false,
+  assembleCollectorConfigOpts,
+  parseReportersForADOT
 };
 
 function Plugin(script, events) {
@@ -59,7 +65,6 @@ function Plugin(script, events) {
     } else if (config.type === 'dynatrace') {
       const { createDynatraceReporter } = require('./lib/dynatrace');
       this.reporters.push(createDynatraceReporter(config, events, script));
-    } else if (config.type === 'open-telemetry') {
     } else {
       events.emit(
         'userWarning',
