@@ -14,6 +14,7 @@ const BUILTIN_ENGINES = require('./plugins').getOfficialEngines();
 
 const Table = require('cli-table3');
 
+const { resolveConfigTemplates } = require('../../../../util');
 // NOTE: Code below presumes that all paths are absolute
 
 //Tests in Fargate run on ubuntu, which uses posix paths
@@ -39,6 +40,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
           npmModules: []
         });
       },
+      applyScriptChanges,
       getPlugins,
       getCustomEngines,
       getCustomJsDependencies,
@@ -147,6 +149,16 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 function isLocalModule(modName) {
   // NOTE: Absolute paths not supported
   return modName.startsWith('.');
+}
+
+function applyScriptChanges(context, next) {
+  if (context.opts.scriptData.config) {
+    context.opts.scriptData = resolveConfigTemplates(
+      context.opts.scriptData,
+      context.opts.flags
+    );
+  }
+  return next(null, context);
 }
 
 function getPlugins(context, next) {
