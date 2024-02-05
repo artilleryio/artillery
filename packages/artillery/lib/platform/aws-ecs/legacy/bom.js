@@ -32,7 +32,8 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         return next(null, {
           opts: {
             scriptData,
-            absoluteScriptPath
+            absoluteScriptPath,
+            flags: opts.flags
           },
           localFilePaths: [absoluteScriptPath],
           npmModules: []

@@ -37,7 +37,8 @@ async function createTest(scriptPath, options, callback) {
     originalScriptPath: scriptPath,
     name: options.name, // test name, eg simple-bom or aht_$UUID
     manifestPath: options.manifestPath,
-    packageJsonPath: options.packageJsonPath
+    packageJsonPath: options.packageJsonPath,
+    flags: options.flags
   };
 
   if (typeof options.config === 'string') {
@@ -82,7 +83,7 @@ function prepareManifest(context, callback) {
   createBOM(
     fileToAnalyse,
     extraFiles,
-    { packageJsonPath: context.packageJsonPath },
+    { packageJsonPath: context.packageJsonPath, flags: context.flags },
     (err, bom) => {
       debug(err);
       debug(bom);
