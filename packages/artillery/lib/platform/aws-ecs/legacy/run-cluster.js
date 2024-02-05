@@ -643,9 +643,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       await createQueue(context);
       await checkCustomTaskRole(context);
-      await ensureTaskExists(context);
       logProgress('Preparing test bundle...');
       await createTestBundle(context);
+      await ensureTaskExists(context);
       await getManifest(context);
       await generateTaskOverrides(context);
 
