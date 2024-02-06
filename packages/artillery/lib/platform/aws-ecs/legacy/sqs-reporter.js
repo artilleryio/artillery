@@ -29,6 +29,9 @@ class SqsReporter extends EventEmitter {
     this.metricsByPeriod = {}; // individual intermediates by worker
     this.mergedPeriodMetrics = []; // merged intermediates for a period
 
+    this.phaseStartedEventsSeen = {};
+    this.phaseCompletedEventsSeen = {};
+
     // Debug info:
     this.messagesProcessed = {};
     this.metricsMessagesFromWorkers = {};
@@ -184,6 +187,28 @@ class SqsReporter extends EventEmitter {
         self.emit(body.event, body, attrs);
 
         debug(workerId, body.event);
+        return;
+      }
+
+      if (body.event === 'phaseStarted') {
+        if (
+          typeof self.phaseStartedEventsSeen[body.phase.index] === 'undefined'
+        ) {
+          self.phaseStartedEventsSeen[body.phase.index] = Date.now();
+          self.emit(body.event, body.phase);
+        }
+
+        return;
+      }
+
+      if (body.event === 'phaseCompleted') {
+        if (
+          typeof self.phaseCompletedEventsSeen[body.phase.index] === 'undefined'
+        ) {
+          self.phaseCompletedEventsSeen[body.phase.index] = Date.now();
+          self.emit(body.event, body.phase);
+        }
+
         return;
       }
 
