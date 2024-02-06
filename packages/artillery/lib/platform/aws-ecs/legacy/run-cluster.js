@@ -39,7 +39,7 @@ const { getBucketName } = require('./util');
 const getAccountId = require('../../aws/aws-get-account-id');
 const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 
-const dotenvParse = require('dotenv').parse;
+const dotenv = require('dotenv');
 
 const util = require('./util');
 
@@ -226,10 +226,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   if (options.dotenv) {
-    const contents = fs.readFileSync(
-      path.resolve(process.cwd(), options.dotenv)
-    );
-    context.dotenv = dotenvParse(contents);
+    const dotEnvPath = path.resolve(process.cwd(), options.dotenv);
+    const contents = fs.readFileSync(dotEnvPath);
+    context.dotenv = dotenv.parse(contents);
+    dotenv.config({ path: dotEnvPath });
   }
 
   if (options.bundle) {
@@ -988,7 +988,7 @@ async function createTestBundle(context) {
         name: context.testId,
         config: context.cliOptions.config,
         packageJsonPath: context.packageJsonPath,
-        flags: context.cliOptions,
+        flags: context.cliOptions
       },
       function (err, result) {
         if (err) {
