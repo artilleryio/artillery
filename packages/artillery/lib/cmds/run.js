@@ -366,6 +366,23 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
             }
           }
         }
+
+        if (
+          global.artillery.hasTypescriptProcessor &&
+          !process.env.ARTILLERY_TS_KEEP_BUNDLE
+        ) {
+          try {
+            fs.unlinkSync(global.artillery.hasTypescriptProcessor);
+          } catch (err) {
+            console.log(
+              `WARNING: Failed to remove typescript bundled file: ${global.artillery.hasTypescriptProcessor}`
+            );
+            console.log(err);
+          }
+          try {
+            fs.rmdirSync(path.dirname(global.artillery.hasTypescriptProcessor));
+          } catch (err) {}
+        }
         debug('Cleanup finished');
         process.exit(artillery.suggestedExitCode || opts.exitCode);
       })();
@@ -399,10 +416,10 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
   );
   const processorFileName = path.basename(actualProcessorPath, extensionType);
 
-  const tmpDir = os.tmpdir();
+  const processorDir = path.dirname(actualProcessorPath);
   const newProcessorPath = path.join(
-    tmpDir,
-    `${processorFileName}-${Date.now()}.js`
+    processorDir,
+    `dist/${processorFileName}.js`
   );
 
   //TODO: move require to top of file when Lambda bundle size issue is solved
@@ -417,13 +434,13 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
       platform: 'node',
       format: 'cjs',
       sourcemap: 'inline',
-      sourceRoot: '/' //TODO: review this?
+      external: ['@playwright/test']
     });
   } catch (error) {
     throw new Error(`Failed to compile Typescript processor\n${error.message}`);
   }
 
-  global.artillery.hasTypescriptProcessor = true;
+  global.artillery.hasTypescriptProcessor = newProcessorPath;
   console.log(
     `Bundled Typescript file into JS. New processor path: ${newProcessorPath}`
   );
