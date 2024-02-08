@@ -63,6 +63,13 @@ const vendorTranslators = {
     };
     return otelTemplate(config, dynatraceTraceSettings);
   },
+  cloudwatch: (config) => {
+    const cloudwatchTraceSettings = {
+      type: 'cloudwatch',
+      attributes: config.traces?.annotations
+    };
+    return otelTemplate(config, cloudwatchTraceSettings);
+  },
   'open-telemetry': (config) => {
     let tracesConfig = config;
     if (config.traces) {
@@ -114,7 +121,7 @@ function attributeListToObject(attributeList, reporterType) {
 
 // ADOT collector translation
 
-const ADOTSupportedTraceReporters = ['datadog'];
+const ADOTSupportedTraceReporters = ['datadog', 'cloudwatch'];
 const ADOTSupportedMetricReporters = [];
 
 const collectorConfigTemplate = {
@@ -225,6 +232,35 @@ const vendorToCollectorConfigTranslators = {
       }
     };
     return { config: ddTraceConfig, envVars };
+  },
+  cloudwatch: (config) => {
+    if (!config.traces) return;
+
+    const cwTraceConfig = {
+      processors: {
+        'batch/trace': {
+          timeout: '2s',
+          send_batch_max_size: 1024,
+          send_batch_size: 200
+        }
+      },
+      exporters: {
+        awsxray: {
+          region: config.region || 'us-east-1'
+        }
+      },
+      service: {
+        pipelines: {
+          traces: {
+            receivers: ['otlp'],
+            processors: ['batch/trace'],
+            exporters: ['awsxray']
+          }
+        }
+      }
+    };
+
+    return { config: cwTraceConfig, envVars: {} };
   }
 };
 
