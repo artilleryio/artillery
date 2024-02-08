@@ -11,10 +11,9 @@
   "license": "MPL-2.0",
   "dependencies": {
     "@playwright/browser-chromium": "1.41.0",
-    "debug": "^4.3.2",
-    "playwright": "1.41.0"
+    "@playwright/test": "1.41.0",
+    "playwright": "1.41.0",
+    "debug": "^4.3.2"
   },
-  "devDependencies": {
-    "@playwright/test": "1.41.0"
-  }
+  "devDependencies": {}
 }
