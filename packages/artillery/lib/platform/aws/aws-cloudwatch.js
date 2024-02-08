@@ -47,16 +47,36 @@ function setCloudwatchRetention(
         );
         clearInterval(interval);
       } catch (error) {
-        if (error & (error.code != 'ResourceNotFoundException')) {
-          console.log('WARNING: Unexpected error setting retention policy:');
-          console.log(error);
+        const resumeTestMessage =
+          'The test will resume without setting the retention policy.';
+        if (error?.code == 'AccessDeniedException') {
+          console.log(`\n${error.message}`);
+          console.log(
+            '\nWARNING: Missing logs:PutRetentionPolicy permission to set Cloudwatch retention policy. Please ensure the IAM role has the necessary permissions:\nhttps://www.artillery.io/docs/load-testing-at-scale/aws-fargate#iam-permissions'
+          );
+          console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
+          return;
+        }
+
+        if (error?.code != 'ResourceNotFoundException') {
+          console.log(`\n${error.message}`);
+          console.log(
+            '\nWARNING: Unexpected error setting Cloudwatch retention policy\n'
+          );
+          console.log(`${resumeTestMessage}\n`);
+          clearInterval(interval);
+          return;
         }
 
         if (opts.incr >= opts.maxRetries) {
-          console.log('WARNING: Max retries exceeded setting retention policy');
-          console.log(error);
+          console.log(`\n${error.message}`);
+          console.log(
+            '\nWARNING: Cannot find logs group. Max retries exceeded setting Cloudwatch retention policy:\n'
+          );
+          console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
+          return;
         }
       }
     },
