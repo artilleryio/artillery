@@ -177,7 +177,6 @@ function assembleCollectorConfigOpts(reportersConfigList, options) {
   const envVars = collectorOptionsList.reduce((acc, vendorOpts) => {
     return Object.assign(acc, vendorOpts.envVars);
   }, {});
-
   // We need to stringify the collector config as it needs to be set as a parameter value in SSM for ADOT to pick it up
   return {
     configJSON: JSON.stringify(collectorConfig),
@@ -246,7 +245,8 @@ const vendorToCollectorConfigTranslators = {
       },
       exporters: {
         awsxray: {
-          region: config.region || 'us-east-1'
+          region: config.region || 'us-east-1',
+          index_all_attributes: 'true'
         }
       },
       service: {
