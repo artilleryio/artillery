@@ -20,7 +20,7 @@ async function createADOTDefinitionIfNeeded(context) {
   });
   if (!collectorOpts) return;
 
-  context.dotenv = Object.assign(context.dotenv, collectorOpts.envVars);
+  context.dotenv = Object.assign(context.dotenv || {}, collectorOpts.envVars);
   context.adotSSMParameterPath = `/artilleryio/OTEL_CONFIG_${context.testId}`;
 
   await putParameter(
