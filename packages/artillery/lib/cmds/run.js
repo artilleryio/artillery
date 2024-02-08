@@ -396,6 +396,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
 function replaceProcessorIfTypescript(script, scriptPath, platform) {
   const relativeProcessorPath = script.config.processor;
+  const userExternalPackages = script.config.bundling?.external || [];
 
   if (!relativeProcessorPath) {
     return script;
@@ -434,7 +435,7 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
       platform: 'node',
       format: 'cjs',
       sourcemap: 'inline',
-      external: ['@playwright/test']
+      external: ['@playwright/test', ...userExternalPackages]
     });
   } catch (error) {
     throw new Error(`Failed to compile Typescript processor\n${error.message}`);
