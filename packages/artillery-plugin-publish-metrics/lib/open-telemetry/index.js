@@ -1,10 +1,7 @@
 'use strict';
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
-const {
-  vendorTranslators,
-  warnIfMultipleReportersPerSignalTypeSet
-} = require('./vendor-translators');
+const { vendorTranslators } = require('./vendor-translators');
 const {
   diag,
   DiagConsoleLogger,
@@ -62,12 +59,6 @@ class OTelReporter {
     if (!this.metricsConfig && !this.tracesConfig) {
       return this;
     }
-
-    // Warn if traces are configured in multiple reporters
-    warnIfMultipleReportersPerSignalTypeSet(
-      this.translatedConfigsList,
-      'traces'
-    );
 
     // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible
     this.getEngines(this.script.scenarios || []);

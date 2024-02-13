@@ -181,16 +181,6 @@ function assembleCollectorConfigOpts(reportersConfigList, options) {
 // Map of functions that translate vendor-specific configuration to OpenTelemetry Collector configuration to be used by ADOT
 const vendorToCollectorConfigTranslators = {
   datadog: (config, options) => {
-    if (!config.traces) return;
-    if (
-      !options.dotenv?.DD_API_KEY &&
-      !config.apiKey &&
-      !config.traces.apiKey
-    ) {
-      throw new Error(
-        "Datadog reporter Error: Missing Datadog API key. Provide it under 'apiKey' setting in your script or under 'DD_API_KEY' environment variable set in your dotenv file."
-      );
-    }
     const envVars = {};
     if (!options.dotenv?.DD_API_KEY) {
       envVars.DD_API_KEY = config.apiKey || config.traces.apiKey;
@@ -228,47 +218,20 @@ const vendorToCollectorConfigTranslators = {
   }
 };
 
-// Parses the full list of reporter configurations and returns a list with the first ADOT relevant reporter configuration per signal type (currently only one reporter per signal type is supported)
+// Parses the full list of reporter configurations and returns a list of only the relevant ones for ADOT
 function parseReportersForADOT(configList) {
-  const configs = [];
-  // Get all reporter configurations for tracing supported by ADOT and warn if multiple are set
-  const traceConfigs = configList.filter(
+  const configs = configList.filter(
     (reporterConfig) =>
-      ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
-      reporterConfig.traces
+      (ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
+        reporterConfig.traces) ||
+      (ADOTSupportedMetricReporters.includes(reporterConfig.type) &&
+        reporterConfig.metrics)
   );
-  warnIfMultipleReportersPerSignalTypeSet(configList, 'traces');
 
-  // Get all reporter configurations for metrics supported by ADOT and warn if multiple are set
-  const metricConfigs = configList.filter(
-    (reporterConfig) =>
-      ADOTSupportedMetricReporters.includes(reporterConfig.type) &&
-      reporterConfig.metrics
-  );
-  warnIfMultipleReportersPerSignalTypeSet(configList, 'metrics');
-  // Return only the first relevant reporter configuration set per signal type
-  if (traceConfigs[0]) {
-    configs.push(traceConfigs[0]);
-  }
-  if (metricConfigs[0]) {
-    configs.push(metricConfigs[0]);
-  }
-  return configs;
-}
-
-function warnIfMultipleReportersPerSignalTypeSet(configList, signalType) {
-  const signalConfigs = configList.filter(
-    (reporterConfig) => reporterConfig[signalType]
-  );
-  if (signalConfigs.length > 1) {
-    console.warn(
-      `Publish-Metrics: WARNING: Multiple reporters configured for ${signalType}. Currently, you can only use one reporter at a time for reporting ${signalType}. Only the first reporter will be used.`
-    );
-  }
+  return configs.length > 0 ? configs : null;
 }
 
 module.exports = {
   vendorTranslators,
-  assembleCollectorConfigOpts,
-  warnIfMultipleReportersPerSignalTypeSet
+  assembleCollectorConfigOpts
 };
