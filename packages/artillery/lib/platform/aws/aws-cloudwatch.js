@@ -48,11 +48,11 @@ function setCloudwatchRetention(
         clearInterval(interval);
       } catch (error) {
         const resumeTestMessage =
-          'The test will resume without setting the retention policy.';
+          'The test will continue without setting the retention policy.';
         if (error?.code == 'AccessDeniedException') {
           console.log(`\n${error.message}`);
           console.log(
-            '\nWARNING: Missing logs:PutRetentionPolicy permission to set CloudWatch retention policy. Please ensure the IAM role has the necessary permissions:\nhttps://www.artillery.io/docs/load-testing-at-scale/aws-fargate#iam-permissions'
+            '\nWARNING: Missing logs:PutRetentionPolicy permission to set CloudWatch retention policy. Please ensure the IAM role has the necessary permissions:\nhttps://docs.art/fargate#iam-permissions'
           );
           console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
@@ -72,7 +72,7 @@ function setCloudwatchRetention(
         if (opts.incr >= opts.maxRetries) {
           console.log(`\n${error.message}`);
           console.log(
-            '\nWARNING: Cannot find logs group. Max retries exceeded setting CloudWatch retention policy:\n'
+            '\nWARNING: Cannot find log group. Max retries exceeded setting CloudWatch retention policy:\n'
           );
           console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
