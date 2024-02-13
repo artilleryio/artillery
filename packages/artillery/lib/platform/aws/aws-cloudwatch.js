@@ -23,7 +23,7 @@ function setCloudwatchRetention(
 ) {
   if (!allowedRetentionDays.includes(retentionInDays)) {
     console.log(
-      `WARNING: Skipping setting Cloudwatch retention, as invalid value specified: ${retentionInDays}. Allowed values are: ${allowedRetentionDays.join(
+      `WARNING: Skipping setting CloudWatch retention, as invalid value specified: ${retentionInDays}. Allowed values are: ${allowedRetentionDays.join(
         ', '
       )}`
     );
@@ -33,7 +33,7 @@ function setCloudwatchRetention(
   const interval = setInterval(
     async (opts) => {
       debug(
-        `Trying to set Cloudwatch Log group ${logGroupName} retention policy to ${retentionInDays} days`
+        `Trying to set CloudWatch Log group ${logGroupName} retention policy to ${retentionInDays} days`
       );
       opts.incr = (opts.incr || 0) + 1;
 
@@ -43,7 +43,7 @@ function setCloudwatchRetention(
           retentionInDays
         );
         debug(
-          `Successfully set Cloudwatch Logs retention policy to ${retentionInDays} days`
+          `Successfully set CloudWatch Logs retention policy to ${retentionInDays} days`
         );
         clearInterval(interval);
       } catch (error) {
@@ -52,7 +52,7 @@ function setCloudwatchRetention(
         if (error?.code == 'AccessDeniedException') {
           console.log(`\n${error.message}`);
           console.log(
-            '\nWARNING: Missing logs:PutRetentionPolicy permission to set Cloudwatch retention policy. Please ensure the IAM role has the necessary permissions:\nhttps://www.artillery.io/docs/load-testing-at-scale/aws-fargate#iam-permissions'
+            '\nWARNING: Missing logs:PutRetentionPolicy permission to set CloudWatch retention policy. Please ensure the IAM role has the necessary permissions:\nhttps://www.artillery.io/docs/load-testing-at-scale/aws-fargate#iam-permissions'
           );
           console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
@@ -62,7 +62,7 @@ function setCloudwatchRetention(
         if (error?.code != 'ResourceNotFoundException') {
           console.log(`\n${error.message}`);
           console.log(
-            '\nWARNING: Unexpected error setting Cloudwatch retention policy\n'
+            '\nWARNING: Unexpected error setting CloudWatch retention policy\n'
           );
           console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
@@ -72,7 +72,7 @@ function setCloudwatchRetention(
         if (opts.incr >= opts.maxRetries) {
           console.log(`\n${error.message}`);
           console.log(
-            '\nWARNING: Cannot find logs group. Max retries exceeded setting Cloudwatch retention policy:\n'
+            '\nWARNING: Cannot find logs group. Max retries exceeded setting CloudWatch retention policy:\n'
           );
           console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
