@@ -138,12 +138,7 @@ const collectorConfigTemplate = {
 };
 // Gets a list of publish-metrics reporter configurations and dotenv variables; returns an object with the assembled collector config and environment variables to set
 // Reason why we assemble the collector config here is that different vendors can be used for metrics and tracing and we need to merge all the parts of the config from each vendor
-function assembleCollectorConfigOpts(reportersConfigList, options) {
-  if (reportersConfigList.length === 0) return;
-
-  const adotRelevantConfigs = getADOTRelevantConfigs(reportersConfigList);
-  if (adotRelevantConfigs.length === 0) return;
-
+function assembleCollectorConfigOpts(adotRelevantConfigs, options) {
   // For each vendor config return an object with the config translation and environment variables to set if any needed
   const collectorOptionsList = adotRelevantConfigs.map((config) =>
     vendorToCollectorConfigTranslators[config.type](config, options)
@@ -219,7 +214,7 @@ const vendorToCollectorConfigTranslators = {
 };
 
 // Parses the full list of reporter configurations and returns a list of only the relevant ones for ADOT
-function getADOTRelevantConfigs(configList) {
+function getADOTRelevantReporterConfigs(configList) {
   const configs = configList.filter(
     (reporterConfig) =>
       (ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
@@ -233,5 +228,6 @@ function getADOTRelevantConfigs(configList) {
 
 module.exports = {
   vendorTranslators,
-  assembleCollectorConfigOpts
+  assembleCollectorConfigOpts,
+  getADOTRelevantReporterConfigs
 };

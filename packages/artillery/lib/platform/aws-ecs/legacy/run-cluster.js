@@ -17,6 +17,7 @@ const moment = require('moment');
 const EnsurePlugin = require('artillery-plugin-ensure');
 
 const {
+  getADOTRelevantReporterConfigs,
   assembleCollectorConfigOpts
 } = require('artillery-plugin-publish-metrics');
 
@@ -1010,9 +1011,16 @@ async function createADOTDefinitionIfNeeded(context) {
   const publishMetricsConfig = config.plugins?.['publish-metrics'];
   if (!publishMetricsConfig) return;
 
-  const collectorOpts = assembleCollectorConfigOpts(publishMetricsConfig, {
+  const adotRelevantConfigs =
+    getADOTRelevantReporterConfigs(publishMetricsConfig);
+  if (!adotRelevantConfigs) {
+    debug('No ADOT relevant reporter configs set, skipping ADOT configuration');
+    return;
+  }
+  const collectorOpts = assembleCollectorConfigOpts(adotRelevantConfigs, {
     dotenv: { ...context.dotenv }
   });
+
   if (!collectorOpts) return;
 
   context.dotenv = Object.assign(context.dotenv || {}, collectorOpts.envVars);

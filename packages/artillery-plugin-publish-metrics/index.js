@@ -7,7 +7,8 @@ const debug = require('debug')(NS);
 const A = require('async');
 
 const {
-  assembleCollectorConfigOpts
+  assembleCollectorConfigOpts,
+  getADOTRelevantReporterConfigs
 } = require('./lib/open-telemetry/vendor-translators');
 
 // List of reporters that use OpenTelemetry
@@ -21,7 +22,8 @@ const REPORTERS_USING_OTEL = [
 module.exports = {
   Plugin,
   LEGACY_METRICS_FORMAT: false,
-  assembleCollectorConfigOpts
+  assembleCollectorConfigOpts,
+  getADOTRelevantReporterConfigs
 };
 
 function Plugin(script, events) {
