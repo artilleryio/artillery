@@ -141,7 +141,7 @@ const collectorConfigTemplate = {
 function assembleCollectorConfigOpts(reportersConfigList, options) {
   if (reportersConfigList.length === 0) return;
 
-  const adotRelevantConfigs = parseReportersForADOT(reportersConfigList);
+  const adotRelevantConfigs = getADOTRelevantConfigs(reportersConfigList);
   if (adotRelevantConfigs.length === 0) return;
 
   // For each vendor config return an object with the config translation and environment variables to set if any needed
@@ -219,7 +219,7 @@ const vendorToCollectorConfigTranslators = {
 };
 
 // Parses the full list of reporter configurations and returns a list of only the relevant ones for ADOT
-function parseReportersForADOT(configList) {
+function getADOTRelevantConfigs(configList) {
   const configs = configList.filter(
     (reporterConfig) =>
       (ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
