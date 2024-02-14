@@ -16,7 +16,9 @@ const moment = require('moment');
 
 const EnsurePlugin = require('artillery-plugin-ensure');
 
-const { createADOTDefinitionIfNeeded } = require('./adot');
+const {
+  assembleCollectorConfigOpts
+} = require('artillery-plugin-publish-metrics');
 
 const EventEmitter = require('events');
 
@@ -645,6 +647,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       await checkCustomTaskRole(context);
       logProgress('Preparing test bundle...');
       await createTestBundle(context);
+      await createADOTDefinitionIfNeeded(context);
       await ensureTaskExists(context);
       await getManifest(context);
       await generateTaskOverrides(context);
@@ -823,9 +826,9 @@ async function cleanupResources(context) {
       context.sqsReporter.stop();
     }
 
-    if (context.adotSSMParameterPath) {
+    if (context.adot?.SSMParameterPath) {
       await awsUtil.deleteParameter(
-        context.adotSSMParameterPath,
+        context.adot.SSMParameterPath,
         context.region
       );
     }
@@ -1002,6 +1005,54 @@ async function createTestBundle(context) {
   });
 }
 
+async function createADOTDefinitionIfNeeded(context) {
+  const config = context.fullyResolvedConfig;
+  const publishMetricsConfig = config.plugins?.['publish-metrics'];
+  if (!publishMetricsConfig) return;
+
+  const collectorOpts = assembleCollectorConfigOpts(publishMetricsConfig, {
+    dotenv: { ...context.dotenv }
+  });
+  if (!collectorOpts) return;
+
+  context.dotenv = Object.assign(context.dotenv || {}, collectorOpts.envVars);
+
+  context.adot = {
+    SSMParameterPath: `/artilleryio/OTEL_CONFIG_${context.testId}`,
+    taskDefinition: {
+      name: 'adot-collector',
+      image: 'amazon/aws-otel-collector',
+      command: [
+        '--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml'
+      ],
+      secrets: [
+        {
+          name: 'AOT_CONFIG_CONTENT',
+          valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter${context.adot.SSMParameterPath}`
+        }
+      ],
+      logConfiguration: {
+        logDriver: 'awslogs',
+        options: {
+          'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+          'awslogs-region': context.region,
+          'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+          'awslogs-create-group': 'true'
+        }
+      }
+    }
+  };
+
+  await awsUtil.putParameter(
+    context.adot.SSMParameterPath,
+    collectorOpts.configJSON,
+    'String',
+    context.region
+  );
+
+  return context;
+}
+
 async function ensureTaskExists(context) {
   return new Promise(async (resolve, reject) => {
     const ecs = new AWS.ECS({
@@ -1083,8 +1134,6 @@ async function ensureTaskExists(context) {
         };
       });
 
-    const adotDefinition = await createADOTDefinitionIfNeeded(context);
-
     let taskDefinition = {
       family: context.taskName,
       containerDefinitions: [
@@ -1108,7 +1157,7 @@ async function ensureTaskExists(context) {
             }
           }
         },
-        ...([adotDefinition] || [])
+        ...([context.adot?.taskDefinition] || [])
       ],
       executionRoleArn: context.taskRoleArn
     };
@@ -1382,7 +1431,7 @@ async function generateTaskOverrides(context) {
           }
         ]
       },
-      ...(context.adotSSMParameterPath ? adotOverride : [])
+      ...(context.adot ? adotOverride : [])
     ],
     taskRoleArn: context.taskRoleArn
   };
