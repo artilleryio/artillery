@@ -75,6 +75,7 @@ function ArtillerySQSPlugin(script, events) {
     });
   });
 
+  //TODO: reconcile some of this code with how lambda does sqs reporting
   events.on('phaseStarted', (phaseContext) => {
     this.unsent++;
     const body = JSON.stringify({
@@ -99,6 +100,7 @@ function ArtillerySQSPlugin(script, events) {
     });
   });
 
+  //TODO: reconcile some of this code with how lambda does sqs reporting
   events.on('phaseCompleted', (phaseContext) => {
     this.unsent++;
     const body = JSON.stringify({
