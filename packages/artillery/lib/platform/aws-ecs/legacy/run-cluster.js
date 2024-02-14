@@ -1906,6 +1906,14 @@ async function listen(context, ee) {
       ee.emit('stats', stats);
     });
 
+    r.on('phaseStarted', (phase) => {
+      global.artillery.globalEvents.emit('phaseStarted', phase);
+    });
+
+    r.on('phaseCompleted', (phase) => {
+      global.artillery.globalEvents.emit('phaseCompleted', phase);
+    });
+
     r.start();
   });
 }
