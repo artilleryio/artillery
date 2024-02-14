@@ -29,6 +29,7 @@ class SqsReporter extends EventEmitter {
     this.metricsByPeriod = {}; // individual intermediates by worker
     this.mergedPeriodMetrics = []; // merged intermediates for a period
 
+    //TODO: this code is repeated from `launch-platform.js` - refactor later
     this.phaseStartedEventsSeen = {};
     this.phaseCompletedEventsSeen = {};
 
@@ -190,6 +191,7 @@ class SqsReporter extends EventEmitter {
         return;
       }
 
+      //TODO: this code is repeated from `launch-platform.js` - refactor later
       if (body.event === 'phaseStarted') {
         if (
           typeof self.phaseStartedEventsSeen[body.phase.index] === 'undefined'
@@ -201,6 +203,7 @@ class SqsReporter extends EventEmitter {
         return;
       }
 
+      //TODO: this code is repeated from `launch-platform.js` - refactor later
       if (body.event === 'phaseCompleted') {
         if (
           typeof self.phaseCompletedEventsSeen[body.phase.index] === 'undefined'
