@@ -30,10 +30,6 @@ async function createADOTDefinitionIfNeeded(context) {
     context.region
   );
 
-  return configureADOTSidecarDefinition(context);
-}
-
-function configureADOTSidecarDefinition(context) {
   return {
     name: 'adot-collector',
     image: 'amazon/aws-otel-collector',
