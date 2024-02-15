@@ -230,9 +230,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   if (options.dotenv) {
     const dotEnvPath = path.resolve(process.cwd(), options.dotenv);
+    dotenv.config({ path: dotEnvPath });
+
     const contents = fs.readFileSync(dotEnvPath);
     context.dotenv = dotenv.parse(contents);
-    dotenv.config({ path: dotEnvPath });
   }
 
   if (options.bundle) {
