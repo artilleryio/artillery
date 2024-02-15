@@ -112,10 +112,26 @@ function attributeListToObject(attributeList, reporterType) {
   return attributes;
 }
 
-// ADOT collector translation
+//////// ADOT COLLECTOR HANDLING
 
 const ADOTSupportedTraceReporters = ['datadog'];
 const ADOTSupportedMetricReporters = [];
+
+// Getting the relevant configurations for ADOT from the full list of reporter configurations
+
+function getADOTRelevantReporterConfigs(configList) {
+  const configs = configList.filter(
+    (reporterConfig) =>
+      (ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
+        reporterConfig.traces) ||
+      (ADOTSupportedMetricReporters.includes(reporterConfig.type) &&
+        reporterConfig.metrics)
+  );
+
+  return configs.length > 0 ? configs : null;
+}
+
+// Handling relevant environment variables
 
 function getADOTEnvVars(adotRelevantconfigs, dotenv) {
   const envVars = {};
@@ -145,25 +161,7 @@ const vendorSpecificEnvVarsForCollector = {
   }
 };
 
-const collectorConfigTemplate = {
-  receivers: {
-    otlp: {
-      protocols: {
-        http: {
-          endpoint: '0.0.0.0:4318'
-        },
-        grpc: {
-          endpoint: '0.0.0.0:4317'
-        }
-      }
-    }
-  },
-  processors: {},
-  exporters: {},
-  service: {
-    pipelines: {}
-  }
-};
+// Assembling the configuration for ADOT (in OTel Collector format)
 
 // Different vendors can be used for metrics and tracing so we need to merge all the parts of the config from each vendor into one collector config
 function assembleCollectorConfig(adotRelevantConfigs) {
@@ -190,6 +188,26 @@ function assembleCollectorConfig(adotRelevantConfigs) {
   });
   return collectorConfig;
 }
+
+const collectorConfigTemplate = {
+  receivers: {
+    otlp: {
+      protocols: {
+        http: {
+          endpoint: '0.0.0.0:4318'
+        },
+        grpc: {
+          endpoint: '0.0.0.0:4317'
+        }
+      }
+    }
+  },
+  processors: {},
+  exporters: {},
+  service: {
+    pipelines: {}
+  }
+};
 
 // Map of functions that translate vendor-specific configuration to OpenTelemetry Collector configuration to be used by ADOT
 const vendorToCollectorConfigTranslators = {
@@ -218,19 +236,6 @@ const vendorToCollectorConfigTranslators = {
     return collectorConfig;
   }
 };
-
-// Parses the full list of reporter configurations and returns a list of only the relevant ones for ADOT
-function getADOTRelevantReporterConfigs(configList) {
-  const configs = configList.filter(
-    (reporterConfig) =>
-      (ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
-        reporterConfig.traces) ||
-      (ADOTSupportedMetricReporters.includes(reporterConfig.type) &&
-        reporterConfig.metrics)
-  );
-
-  return configs.length > 0 ? configs : null;
-}
 
 // Resolve the configuration settings for ADOT
 
