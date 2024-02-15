@@ -194,35 +194,28 @@ function assembleCollectorConfig(adotRelevantConfigs) {
 // Map of functions that translate vendor-specific configuration to OpenTelemetry Collector configuration to be used by ADOT
 const vendorToCollectorConfigTranslators = {
   datadog: (config) => {
-    const ddTraceConfig = {
-      processors: {
-        'batch/trace': {
-          timeout: '10s',
-          send_batch_max_size: 1024,
-          send_batch_size: 200
+    const collectorConfig = { ...collectorConfigTemplate };
+    if (config.traces) {
+      collectorConfig.processors['batch/trace'] = {
+        timeout: '10s',
+        send_batch_max_size: 1024,
+        send_batch_size: 200
+      };
+      collectorConfig.exporters['datadog/api'] = {
+        traces: {
+          trace_buffer: 100
+        },
+        api: {
+          key: '${env:DD_API_KEY}'
         }
-      },
-      exporters: {
-        'datadog/api': {
-          traces: {
-            trace_buffer: 100
-          },
-          api: {
-            key: '${env:DD_API_KEY}'
-          }
-        }
-      },
-      service: {
-        pipelines: {
-          traces: {
-            receivers: ['otlp'],
-            processors: ['batch/trace'],
-            exporters: ['datadog/api']
-          }
-        }
-      }
-    };
-    return ddTraceConfig;
+      };
+      collectorConfig.service.pipelines.traces = {
+        receivers: ['otlp'],
+        processors: ['batch/trace'],
+        exporters: ['datadog/api']
+      };
+    }
+    return collectorConfig;
   }
 };
 
