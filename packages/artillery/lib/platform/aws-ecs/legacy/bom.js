@@ -153,13 +153,12 @@ function isLocalModule(modName) {
 }
 
 function applyScriptChanges(context, next) {
-  if (context.opts.scriptData.config) {
-    context.opts.scriptData = resolveConfigTemplates(
-      context.opts.scriptData,
-      context.opts.flags
-    );
-  }
-  return next(null, context);
+  resolveConfigTemplates(context.opts.scriptData, context.opts.flags).then(
+    (resolvedConfig) => {
+      context.opts.scriptData = resolvedConfig;
+      return next(null, context);
+    }
+  );
 }
 
 function getPlugins(context, next) {

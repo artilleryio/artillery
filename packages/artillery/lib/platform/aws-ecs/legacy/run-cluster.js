@@ -1069,7 +1069,7 @@ async function createADOTDefinitionIfNeeded(context) {
 }
 
 async function ensureTaskExists(context) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const ecs = new AWS.ECS({
       apiVersion: '2014-11-13',
       region: context.region

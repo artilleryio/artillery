@@ -97,7 +97,7 @@ function addDefaultPlugins(script) {
   return finalScript;
 }
 
-function resolveConfigTemplates(script, flags) {
+async function resolveConfigTemplates(script, flags) {
   const cliVariables = flags.variables ? JSON.parse(flags.variables) : {};
 
   script.config = engineUtil.template(script.config, {
