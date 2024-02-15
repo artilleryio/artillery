@@ -18,7 +18,7 @@ const EnsurePlugin = require('artillery-plugin-ensure');
 
 const {
   getADOTRelevantReporterConfigs,
-  assembleCollectorConfigOpts
+  resolveADOTConfigSettings
 } = require('artillery-plugin-publish-metrics');
 
 const EventEmitter = require('events');
@@ -1007,27 +1007,40 @@ async function createTestBundle(context) {
 }
 
 async function createADOTDefinitionIfNeeded(context) {
-  const config = context.fullyResolvedConfig;
-  const publishMetricsConfig = config.plugins?.['publish-metrics'];
-  if (!publishMetricsConfig) return;
+  const publishMetricsConfig =
+    context.fullyResolvedConfig.plugins?.['publish-metrics'];
+  if (!publishMetricsConfig) {
+    debug('No publish-metrics plugin set, skipping ADOT configuration');
+    return context;
+  }
 
   const adotRelevantConfigs =
     getADOTRelevantReporterConfigs(publishMetricsConfig);
   if (!adotRelevantConfigs) {
     debug('No ADOT relevant reporter configs set, skipping ADOT configuration');
-    return;
+    return context;
   }
-  const collectorOpts = assembleCollectorConfigOpts(adotRelevantConfigs, {
-    dotenv: { ...context.dotenv }
-  });
 
-  if (!collectorOpts) return;
+  try {
+    const { adotEnvVars, adotConfig } = resolveADOTConfigSettings({
+      configList: adotRelevantConfigs,
+      dotenv: { ...context.dotenv }
+    });
 
-  context.dotenv = Object.assign(context.dotenv || {}, collectorOpts.envVars);
+    context.dotenv = Object.assign(context.dotenv || {}, adotEnvVars);
 
-  context.adot = {
-    SSMParameterPath: `/artilleryio/OTEL_CONFIG_${context.testId}`,
-    taskDefinition: {
+    context.adot = {
+      SSMParameterPath: `/artilleryio/OTEL_CONFIG_${context.testId}`
+    };
+
+    await awsUtil.putParameter(
+      context.adot.SSMParameterPath,
+      JSON.stringify(adotConfig),
+      'String',
+      context.region
+    );
+
+    context.adot.taskDefinition = {
       name: 'adot-collector',
       image: 'amazon/aws-otel-collector',
       command: [
@@ -1048,16 +1061,10 @@ async function createADOTDefinitionIfNeeded(context) {
           'awslogs-create-group': 'true'
         }
       }
-    }
-  };
-
-  await awsUtil.putParameter(
-    context.adot.SSMParameterPath,
-    collectorOpts.configJSON,
-    'String',
-    context.region
-  );
-
+    };
+  } catch (err) {
+    throw new Error(err);
+  }
   return context;
 }
 

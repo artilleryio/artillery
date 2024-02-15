@@ -117,6 +117,34 @@ function attributeListToObject(attributeList, reporterType) {
 const ADOTSupportedTraceReporters = ['datadog'];
 const ADOTSupportedMetricReporters = [];
 
+function getADOTEnvVars(adotRelevantconfigs, dotenv) {
+  const envVars = {};
+  try {
+    adotRelevantconfigs.forEach((config) => {
+      const vendorVars = vendorSpecificEnvVarsForCollector[config.type](
+        config,
+        dotenv
+      );
+      Object.assign(envVars, vendorVars);
+    });
+  } catch (err) {
+    throw new Error(err);
+  }
+  return envVars;
+}
+
+const vendorSpecificEnvVarsForCollector = {
+  datadog: (config, dotenv) => {
+    const apiKey = config.apiKey || dotenv?.DD_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        "Datadog reporter Error: Missing Datadog API key. Provide it under 'apiKey' setting in your script or under 'DD_API_KEY' environment variable set in your dotenv file."
+      );
+    }
+    return { DD_API_KEY: apiKey };
+  }
+};
+
 const collectorConfigTemplate = {
   receivers: {
     otlp: {
@@ -136,51 +164,36 @@ const collectorConfigTemplate = {
     pipelines: {}
   }
 };
-// Gets a list of publish-metrics reporter configurations and dotenv variables; returns an object with the assembled collector config and environment variables to set
-// Reason why we assemble the collector config here is that different vendors can be used for metrics and tracing and we need to merge all the parts of the config from each vendor
-function assembleCollectorConfigOpts(adotRelevantConfigs, options) {
-  // For each vendor config return an object with the config translation and environment variables to set if any needed
-  const collectorOptionsList = adotRelevantConfigs.map((config) =>
-    vendorToCollectorConfigTranslators[config.type](config, options)
+
+// Different vendors can be used for metrics and tracing so we need to merge all the parts of the config from each vendor into one collector config
+function assembleCollectorConfig(adotRelevantConfigs) {
+  // Translate each vendor-specific config to OpenTelemetry Collector config
+  const collectorConfigList = adotRelevantConfigs.map((config) =>
+    vendorToCollectorConfigTranslators[config.type](config)
   );
 
-  // Assemble the final collector config by adding all parts of the config from each vendor
   const collectorConfig = { ...collectorConfigTemplate };
-  collectorOptionsList.forEach((vendorOpts) => {
+  // Assemble the final collector config by adding all parts of the config from each vendor
+  collectorConfigList.forEach((config) => {
     collectorConfig.processors = Object.assign(
       collectorConfig.processors,
-      vendorOpts.config.processors
+      config.processors
     );
     collectorConfig.exporters = Object.assign(
       collectorConfig.exporters,
-      vendorOpts.config.exporters
+      config.exporters
     );
     collectorConfig.service.pipelines = Object.assign(
       collectorConfig.service.pipelines,
-      vendorOpts.config.service.pipelines
+      config.service.pipelines
     );
   });
-
-  // Join required vendor specific environment variables into one object
-  const envVars = collectorOptionsList.reduce((acc, vendorOpts) => {
-    return Object.assign(acc, vendorOpts.envVars);
-  }, {});
-
-  // We need to stringify the collector config as it needs to be set as a parameter value in SSM for ADOT to pick it up
-  return {
-    configJSON: JSON.stringify(collectorConfig),
-    envVars
-  };
+  return collectorConfig;
 }
 
 // Map of functions that translate vendor-specific configuration to OpenTelemetry Collector configuration to be used by ADOT
 const vendorToCollectorConfigTranslators = {
-  datadog: (config, options) => {
-    const envVars = {};
-    if (!options.dotenv?.DD_API_KEY) {
-      envVars.DD_API_KEY = config.apiKey || config.traces.apiKey;
-    }
-
+  datadog: (config) => {
     const ddTraceConfig = {
       processors: {
         'batch/trace': {
@@ -209,7 +222,7 @@ const vendorToCollectorConfigTranslators = {
         }
       }
     };
-    return { config: ddTraceConfig, envVars };
+    return ddTraceConfig;
   }
 };
 
@@ -226,8 +239,20 @@ function getADOTRelevantReporterConfigs(configList) {
   return configs.length > 0 ? configs : null;
 }
 
+// Resolve the configuration settings for ADOT
+
+function resolveADOTConfigSettings(options) {
+  try {
+    const adotConfig = assembleCollectorConfig(options.configList);
+    const adotEnvVars = getADOTEnvVars(options.configList, options.dotenv);
+    return { adotConfig, adotEnvVars };
+  } catch (err) {
+    throw new Error(err);
+  }
+}
+
 module.exports = {
   vendorTranslators,
-  assembleCollectorConfigOpts,
-  getADOTRelevantReporterConfigs
+  getADOTRelevantReporterConfigs,
+  resolveADOTConfigSettings
 };
