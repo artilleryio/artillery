@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap test/*.test.js --color --no-coverage --timeout 300"
+    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap test/*.test.js --color --no-coverage --timeout 300",
+    "test:aws": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap test/*.aws.js --color --no-coverage --timeout 420"
   },
   "keywords": [],
   "author": "",
