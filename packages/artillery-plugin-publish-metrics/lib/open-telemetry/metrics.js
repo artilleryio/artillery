@@ -9,6 +9,7 @@ const {
 const grpc = require('@grpc/grpc-js');
 const { metricExporters, validateExporter } = require('./exporters');
 const { metrics } = require('@opentelemetry/api');
+const { sleep } = require('../util');
 
 class OTelMetricsReporter {
   constructor(config, events, resource) {
@@ -160,7 +161,7 @@ class OTelMetricsReporter {
   async cleanup() {
     while (this.pendingRequests > 0) {
       debug('Waiting for pending metric request ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     }
     debug('Pending metric requests done');
     debug('Shutting the Reader down');
