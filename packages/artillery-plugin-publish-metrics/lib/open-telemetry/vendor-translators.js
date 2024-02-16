@@ -170,7 +170,7 @@ function assembleCollectorConfig(adotRelevantConfigs) {
     vendorToCollectorConfigTranslators[config.type](config)
   );
 
-  const collectorConfig = { ...collectorConfigTemplate };
+  const collectorConfig = JSON.parse(JSON.stringify(collectorConfigTemplate));
   // Assemble the final collector config by adding all parts of the config from each vendor
   collectorConfigList.forEach((config) => {
     collectorConfig.processors = Object.assign(
@@ -212,7 +212,7 @@ const collectorConfigTemplate = {
 // Map of functions that translate vendor-specific configuration to OpenTelemetry Collector configuration to be used by ADOT
 const vendorToCollectorConfigTranslators = {
   datadog: (config) => {
-    const collectorConfig = { ...collectorConfigTemplate };
+    const collectorConfig = JSON.parse(JSON.stringify(collectorConfigTemplate));
     if (config.traces) {
       collectorConfig.processors['batch/trace'] = {
         timeout: '10s',
