@@ -32,8 +32,10 @@ const telemetry = require('../telemetry').init();
 const validateScript = require('../util/validate-script');
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
-const { customAlphabet } = require('nanoid');
 const parseTagString = require('../util/parse-tag-string');
+
+const generateId = require('../util/generate-id');
+
 class RunCommand extends Command {
   static aliases = ['run'];
   // Enable multiple args:
@@ -143,6 +145,10 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 
   try {
+    const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+    console.log('Test run id:', testRunId);
+    global.artillery.testRunId = testRunId;
+
     const script = await prepareTestExecutionPlan(inputFiles, flags, args);
 
     const runnerOpts = {
@@ -182,11 +188,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         platformConfig[k] = v;
       }
     }
-
-    const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-    const testRunId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
-
-    console.log('Test run id:', testRunId);
 
     const launcherOpts = {
       platform: flags.platform,

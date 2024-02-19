@@ -106,7 +106,7 @@ class ArtilleryWorker {
     const { script, payload, options } = opts;
     this.worker.postMessage({
       command: 'prepare',
-      opts: { script, payload, options }
+      opts: { script, payload, options, testRunId: global.artillery.testRunId }
     });
 
     await awaitOnEE(this.workerEvents, 'readyWaiting', 50);
