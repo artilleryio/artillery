@@ -6,13 +6,13 @@ module.exports = {
 
 const semver = require('semver');
 
-const sleep = async function (n) {
+async function sleep(n) {
   return new Promise((resolve, _reject) => {
     setTimeout(function () {
       resolve();
     }, n);
   });
-};
+}
 
 // TODO: Extract into a utility function in Artillery itself
 function versionCheck(range) {
