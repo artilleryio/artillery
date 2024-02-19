@@ -9,7 +9,7 @@ const A = require('async');
 const {
   getADOTRelevantReporterConfigs,
   resolveADOTConfigSettings
-} = require('./lib/open-telemetry/vendor-translators');
+} = require('./lib/open-telemetry/translators/vendor-adot');
 
 // List of reporters that use OpenTelemetry
 const REPORTERS_USING_OTEL = [

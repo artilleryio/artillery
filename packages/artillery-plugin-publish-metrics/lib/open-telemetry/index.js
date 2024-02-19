@@ -1,7 +1,7 @@
 'use strict';
 
 const debug = require('debug')('plugin:publish-metrics:open-telemetry');
-const { vendorTranslators } = require('./vendor-translators');
+const { vendorTranslators } = require('./translators/vendor-otel');
 const {
   diag,
   DiagConsoleLogger,
