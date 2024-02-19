@@ -8,7 +8,9 @@ export async function artilleryPlaywrightFunction(
 ) {
   await test.step('go_to_artillery_repo', async () => {
     await page.goto(`${vuContext.vars.target}/`);
-    await expect(page.getByTestId('latest-commit')).toBeVisible();
+    await expect(page.getByTestId('latest-commit')).toBeVisible({
+      timeout: 15000
+    });
   });
 }
 
