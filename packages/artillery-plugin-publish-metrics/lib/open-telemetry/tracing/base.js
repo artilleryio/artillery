@@ -112,6 +112,7 @@ class OTelTraceBase {
           kind: SpanKind.CLIENT,
           attributes: {
             'vu.uuid': userContext.vars.$uuid,
+            test_id: userContext.vars.$testId,
             [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
           }
         }
