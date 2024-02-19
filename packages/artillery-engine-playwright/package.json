@@ -4,17 +4,20 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap test/*.test.js --color --no-coverage --timeout 300",
+    "test:aws": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap test/*.aws.js --color --no-coverage --timeout 420"
   },
   "keywords": [],
   "author": "",
   "license": "MPL-2.0",
   "dependencies": {
-    "@playwright/browser-chromium": "1.41.2",
+    "@playwright/browser-chromium": "1.41.0",
+    "@playwright/test": "1.41.0",
     "debug": "^4.3.2",
     "playwright": "1.41.2"
   },
   "devDependencies": {
-    "@playwright/test": "1.41.2"
+    "tap": "^16.3.10",
+    "zx": "^4.3.0"
   }
 }

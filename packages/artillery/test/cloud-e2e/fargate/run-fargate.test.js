@@ -203,6 +203,27 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
   );
 });
 
+test('Run with typescript processor and external package', async (t) => {
+  const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
+
+  const output =
+    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags},typescript:true`;
+
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+
+  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+  t.equal(
+    report.aggregate.counters['http.codes.200'],
+    2,
+    'Should have made 2 requests'
+  );
+  t.equal(
+    report.aggregate.counters['errors.invalid_address'],
+    2,
+    'Should have emitted 2 errors'
+  );
+});
+
 test('Run lots-of-output', async (t) => {
   $.verbose = false; // we don't want megabytes of output on the console
 

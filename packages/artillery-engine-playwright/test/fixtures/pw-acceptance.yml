@@ -1,0 +1,14 @@
+config:
+  target: "https://github.com/artilleryio/artillery"
+  phases:
+    - duration: 3
+      arrivalRate: 1
+      name: "Phase 1"
+  processor: "./processor.js"
+  engines:
+    playwright:
+      extendedMetrics: true
+
+scenarios:
+  - engine: playwright
+    testFunction: artilleryPlaywrightFunction
