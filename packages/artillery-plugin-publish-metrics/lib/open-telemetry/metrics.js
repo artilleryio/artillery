@@ -50,7 +50,10 @@ class OTelMetricsReporter {
       meterName: config.meterName || 'Artillery.io_metrics',
       includeOnly: config.includeOnly || [],
       exclude: config.exclude || [],
-      attributes: config.attributes || {}
+      attributes: {
+        ...(config.attributes || {}),
+        test_id: global.artillery.testRunId
+      }
     };
 
     this.meterProvider = new MeterProvider({
