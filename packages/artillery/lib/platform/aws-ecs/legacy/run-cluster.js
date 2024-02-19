@@ -1407,6 +1407,10 @@ async function generateTaskOverrides(context) {
           {
             name: 'AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE',
             value: '1'
+          },
+          {
+            name: 'ARTILLERY_TEST_RUN_ID',
+            value: global.artillery.testRunId,
           }
         ]
       },
