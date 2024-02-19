@@ -14,7 +14,6 @@ const {
 const p = require('util').promisify;
 const csv = require('csv-parse');
 const debug = require('debug')('commands:run');
-const ip = require('ip');
 const dotenv = require('dotenv');
 const _ = require('lodash');
 
@@ -585,21 +584,33 @@ async function sendTelemetry(script, flags, extraProps) {
       properties.distinctId = properties.targetHash;
     }
 
-    const ipaddr = ip.address();
     let macaddr;
+    const nonInternalIpv6Interfaces = [];
     for (const [iface, descrs] of Object.entries(os.networkInterfaces())) {
       for (const o of descrs) {
-        if (o.address === ipaddr) {
-          macaddr = o.mac;
-          break;
+        if (o.internal == true) {
+          continue;
         }
+
+        //prefer ipv4 interface when available
+        if (o.family != 'IPv4') {
+          nonInternalIpv6Interfaces.push(o);
+          continue;
+        }
+
+        macaddr = o.mac;
+        break;
       }
+    }
+
+    //default to first ipv6 interface if no ipv4 interface is available
+    if (!macaddr && nonInternalIpv6Interfaces.length > 0) {
+      macaddr = nonInternalIpv6Interfaces[0].mac;
     }
 
     if (macaddr) {
       properties.macHash = hash(macaddr);
     }
-    properties.ipHash = hash(ipaddr);
     properties.hostnameHash = hash(os.hostname());
     properties.usernameHash = hash(os.userInfo().username);
 
