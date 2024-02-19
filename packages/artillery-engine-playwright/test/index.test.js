@@ -17,14 +17,22 @@ test('playwright js test works and reports data', async (t) => {
   const output =
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput}`;
 
-  t.equal(output.exitCode, 0);
+  t.equal(
+    output.exitCode,
+    0,
+    `should have exit code 0, got ${output.exitCode}`
+  );
 
   const jsonReportAggregate = JSON.parse(
     fs.readFileSync(playwrightOutput, 'utf8')
   ).aggregate;
 
   //Assert: should have no failed VUs
-  t.equal(jsonReportAggregate.counters['vusers.failed'], 0);
+  t.equal(
+    jsonReportAggregate.counters['vusers.failed'],
+    0,
+    'should have no failed VUs'
+  );
 
   //Assert: should have done http_requests and reported codes
   t.ok(
@@ -105,7 +113,11 @@ test('playwright js test fails and has correct vu count when expectation fails',
   try {
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride}`;
   } catch (output) {
-    t.equal(output.exitCode, 1);
+    t.equal(
+      output.exitCode,
+      1,
+      `should have exit code 1, got ${output.exitCode}`
+    );
 
     const jsonReportAggregate = JSON.parse(
       fs.readFileSync(playwrightOutput, 'utf8')
@@ -131,14 +143,22 @@ test('playwright typescript test works and reports data', async (t) => {
   const output =
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${configOverride}`;
 
-  t.equal(output.exitCode, 0);
+  t.equal(
+    output.exitCode,
+    0,
+    `should have exit code 0, got ${output.exitCode}`
+  );
 
   const jsonReportAggregate = JSON.parse(
     fs.readFileSync(playwrightOutput, 'utf8')
   ).aggregate;
 
   //Assert: should have no failed VUs
-  t.equal(jsonReportAggregate.counters['vusers.failed'], 0);
+  t.equal(
+    jsonReportAggregate.counters['vusers.failed'],
+    0,
+    'should have no failed VUs'
+  );
 
   //Assert: should have done http_requests and reported codes
   t.ok(
@@ -222,7 +242,11 @@ test('playwright typescript test fails and has correct vu count when expectation
   try {
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride}`;
   } catch (output) {
-    t.equal(output.exitCode, 1);
+    t.equal(
+      output.exitCode,
+      1,
+      `should have exit code 1, got ${output.exitCode}`
+    );
 
     const jsonReportAggregate = JSON.parse(
       fs.readFileSync(playwrightOutput, 'utf8')
