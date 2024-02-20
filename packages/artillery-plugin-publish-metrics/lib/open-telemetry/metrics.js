@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const {
   AggregationTemporality,
   MeterProvider,
@@ -45,6 +44,7 @@ class OTelMetricsReporter {
   }
 
   configure(config) {
+    this.debug = require('debug')(`plugin:publish-metrics:${this.config.type}`);
     this.config = {
       exporter: config.exporter || 'otlp-http',
       meterName: config.meterName || 'Artillery.io_metrics',
@@ -60,7 +60,7 @@ class OTelMetricsReporter {
       resource: this.resource
     });
 
-    debug('Configuring Metric Exporter');
+    this.debug('Configuring Metric Exporter');
 
     // Setting configuration options for exporter
     this.exporterOpts = {
@@ -163,13 +163,13 @@ class OTelMetricsReporter {
 
   async cleanup() {
     while (this.pendingRequests > 0) {
-      debug('Waiting for pending metric request ...');
+      this.debug('Waiting for pending metric request ...');
       await sleep(500);
     }
-    debug('Pending metric requests done');
-    debug('Shutting the Reader down');
+    this.debug('Pending metric requests done');
+    this.debug('Shutting the Reader down');
     await this.theReader.shutdown();
-    debug('Shut down sucessfull');
+    this.debug('Shut down sucessfull');
   }
 }
 
