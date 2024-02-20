@@ -4,7 +4,7 @@ This example shows you how you can reuse a pure Playwright codebase written in T
 
 The `e2e/` folder contains the Playwright test (`e2e/tests/get-issues.spec.ts`). The logic in that test has been abstracted to a helper in `e2e/helpers/index.ts`.
 
-The `performance` folder contains the Artillery/Playwright test. Using the same helper, we can construct an Artillery test by importing it in our processor file (`./performance/processor.ts`) and calling it as the `testFunction` in our test (`./performance/search-for-ts-doc.yml`).
+The `performance` folder contains the Artillery/Playwright test. Using the same helper, we can construct an Artillery test by importing it in our processor file (`./performance/processor.ts`) and calling it as the `testFunction` in our test (`./performance/search-for-ts-doc.yml`). The `target` used matches the `baseURL` from the playwright config in `e2e/playwright.config.ts`.
 
 ## Running the tests
 
