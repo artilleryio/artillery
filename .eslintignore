@@ -1,1 +1,2 @@
 /packages/types
+/packages/artillery-engine-playwright/test/**/*.ts

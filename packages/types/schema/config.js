@@ -84,7 +84,7 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
   target: Joi.string()
     .meta({ title: 'Target' })
     .description(
-      'Endpoint of the system under test, such as a hostname, IP address or a URI.\nhttps://www.artillery.io/docs/reference/test-script#target---target-service'
+      'Endpoint of the system under test, such as a hostname, IP address or a URI.\nIn Playwright tests, this will be used as the baseURL by default.\n\nhttps://www.artillery.io/docs/reference/test-script#target---target-service'
     )
     .example('https://example.com')
     .example('ws://127.0.0.1'),

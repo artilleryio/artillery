@@ -68,6 +68,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         kind: SpanKind.CLIENT,
         attributes: {
           'vu.uuid': userContext.vars.$uuid,
+          test_id: userContext.vars.$testId,
           [SemanticAttributes.HTTP_URL]: parsedUrl || url.href,
           // We set the port if it is specified, if not we set to a default port based on the protocol
           [SemanticAttributes.HTTP_SCHEME]:
@@ -121,7 +122,10 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
               .startSpan(name, {
                 kind: SpanKind.CLIENT,
                 startTime: res.timings[value.start],
-                attributes: { 'vu.uuid': userContext.vars.$uuid }
+                attributes: {
+                  'vu.uuid': userContext.vars.$uuid,
+                  test_id: userContext.vars.$testId
+                }
               })
               .end(res.timings[value.end]);
           }

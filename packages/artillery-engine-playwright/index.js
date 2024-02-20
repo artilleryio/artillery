@@ -76,7 +76,10 @@ class PlaywrightEngine {
         }
       }
 
-      const contextOptions = self.contextOptions || {};
+      const contextOptions = {
+        baseURL: self.target,
+        ...self.contextOptions
+      }
 
       let browser;
       if (self.useSeparateBrowserPerVU) {

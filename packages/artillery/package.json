@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Cloud-scale load testing. https://www.artillery.io",
   "main": "./lib",
   "engines": {
@@ -115,7 +115,6 @@
     "esbuild-wasm": "^0.19.8",
     "eventemitter3": "^4.0.4",
     "fs-extra": "^10.1.0",
-    "ip": "^1.1.8",
     "is-builtin-module": "^2.0.0",
     "joi": "^17.6.0",
     "js-yaml": "^3.13.1",

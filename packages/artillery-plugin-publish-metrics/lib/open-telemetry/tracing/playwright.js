@@ -42,6 +42,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
       async (scenarioSpan) => {
         scenarioSpan.setAttributes({
           'vu.uuid': vuContext.vars.$uuid,
+          test_id: vuContext.vars.$testId,
           ...(this.config.attributes || {})
         });
         this.pendingPlaywrightScenarioSpans++;
@@ -115,6 +116,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             );
             pageSpan.setAttributes({
               'vu.uuid': vuContext.vars.$uuid,
+              test_id: vuContext.vars.$testId,
               ...(this.config.attributes || {})
             });
             lastPageUrl = pageUrl;
@@ -170,6 +172,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
         try {
           span.setAttributes({
             'vu.uuid': vuContext.vars.$uuid,
+            test_id: vuContext.vars.$testId,
             ...(this.config.attributes || {})
           });
 

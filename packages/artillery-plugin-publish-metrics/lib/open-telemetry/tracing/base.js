@@ -15,6 +15,7 @@ const {
   BatchSpanProcessor
 } = require('@opentelemetry/sdk-trace-base');
 const { SpanKind, trace } = require('@opentelemetry/api');
+const { sleep } = require('../../util');
 
 class OTelTraceConfig {
   constructor(config, resource) {
@@ -111,6 +112,7 @@ class OTelTraceBase {
           kind: SpanKind.CLIENT,
           attributes: {
             'vu.uuid': userContext.vars.$uuid,
+            test_id: userContext.vars.$testId,
             [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
           }
         }
@@ -152,7 +154,7 @@ class OTelTraceBase {
       waitedTime < maxWaitTime
     ) {
       debug('Waiting for pending traces ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
       waitedTime += 500;
     }
     return true;
@@ -175,6 +177,8 @@ class OTelTraceBase {
     }
 
     debug('Pending traces done');
+    debug('Waiting for flush period to complete');
+    await sleep(5000);
   }
 }
 

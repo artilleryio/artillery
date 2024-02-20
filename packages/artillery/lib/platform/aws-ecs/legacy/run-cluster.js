@@ -7,7 +7,6 @@ const debug = require('debug')('commands:run-test');
 const debugVerbose = require('debug')('commands:run-test:v');
 const debugErr = require('debug')('commands:run-test:errors');
 const A = require('async');
-const { customAlphabet } = require('nanoid');
 const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
@@ -45,6 +44,8 @@ const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 const dotenv = require('dotenv');
 
 const util = require('./util');
+
+const generateId = require('../../../util/generate-id');
 
 const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
 
@@ -278,8 +279,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   context.extraSecrets = options.secret || [];
 
-  const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-  context.testId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
+  const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+  context.testId = testRunId;
+  global.artillery.testRunId = testRunId;
 
   if (context.namedTest) {
     context.s3Prefix = options.bundle;
@@ -1444,6 +1446,10 @@ async function generateTaskOverrides(context) {
           {
             name: 'AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE',
             value: '1'
+          },
+          {
+            name: 'ARTILLERY_TEST_RUN_ID',
+            value: global.artillery.testRunId
           }
         ]
       },
@@ -1942,6 +1948,14 @@ async function listen(context, ee) {
 
       global.artillery.globalEvents.emit('stats', stats);
       ee.emit('stats', stats);
+    });
+
+    r.on('phaseStarted', (phase) => {
+      global.artillery.globalEvents.emit('phaseStarted', phase);
+    });
+
+    r.on('phaseCompleted', (phase) => {
+      global.artillery.globalEvents.emit('phaseCompleted', phase);
     });
 
     r.start();
