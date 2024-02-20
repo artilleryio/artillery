@@ -117,7 +117,8 @@ function getADOTEnvVars(adotRelevantconfigs, dotenv) {
       Object.assign(envVars, vendorVars);
     });
   } catch (err) {
-    throw new Error(err);
+    // We warn here instead of throwing because in the future we will support providing these variables through secrets
+    console.warn(err.message);
   }
   return envVars;
 }

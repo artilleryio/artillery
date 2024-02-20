@@ -120,17 +120,16 @@ test('when getADOTEnvVars is called with a list of adotRelevantconfigs and a dot
 });
 
 // Maybe remove throwing an error in the function itself as it propagates to the resolveADOTConfigSettings and then we can handle it there
-test('when getADOTEnvVars is called with an unsupported vendor, it throws an error', async (t) => {
+test('if an error happens in getADOTEnvVars it logs the error message and returns the current state of envVars variable ', async (t) => {
   const adotRelevantconfigs = [
     {
-      type: 'unsupportedVendor',
+      type: 'datadog',
       tracing: {}
     }
   ];
-  const dotenv = {
-    DD_API_KEY: '123'
-  };
-  t.throws(() => getADOTEnvVars(adotRelevantconfigs, dotenv));
+  const dotenv = {};
+  const result = getADOTEnvVars(adotRelevantconfigs, dotenv);
+  t.same(result, {});
 });
 
 test('when getADOTEnvVars is called with an empty list of adotRelevantconfigs and an empty dotenv object it returns an empty object', async (t) => {
