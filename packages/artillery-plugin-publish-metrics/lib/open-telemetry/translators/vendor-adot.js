@@ -14,7 +14,7 @@ function getADOTRelevantReporterConfigs(publishMetricsConfig) {
         reporterConfig.metrics)
   );
 
-  return configs.length > 0 ? configs : null;
+  return configs;
 }
 
 // Resolve the configuration settings for ADOT

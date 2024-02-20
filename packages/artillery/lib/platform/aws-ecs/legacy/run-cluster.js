@@ -1017,7 +1017,7 @@ async function createADOTDefinitionIfNeeded(context) {
 
   const adotRelevantConfigs =
     getADOTRelevantReporterConfigs(publishMetricsConfig);
-  if (!adotRelevantConfigs) {
+  if (adotRelevantConfigs.length === 0) {
     debug('No ADOT relevant reporter configs set, skipping ADOT configuration');
     return context;
   }
