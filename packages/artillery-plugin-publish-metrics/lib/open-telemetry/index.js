@@ -24,7 +24,7 @@ context.setGlobalContextManager(contextManager);
 // DEBUGGING SETUP - setting the OpenTelemetry's internal diagnostic handler here to run when debug is enabled
 if (
   process.env.DEBUG &&
-  process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
+  process.env.DEBUG.includes('plugin:publish-metrics:')
 ) {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 }
