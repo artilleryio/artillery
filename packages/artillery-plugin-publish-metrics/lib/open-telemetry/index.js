@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const vendorTranslators = require('./vendor-translators');
 const {
   diag,
@@ -47,11 +46,21 @@ class OTelReporter {
       // Setting traces to first traces configured
       if (translatedConfig.traces && !this.tracesConfig) {
         this.tracesConfig = translatedConfig.traces;
+
+        // Setting debug for traces
+        this.traceDebug = require('debug')(
+          `plugin:publish-metrics:${this.tracesConfig.type}`
+        );
       }
 
       // Setting metrics to first metrics configured
       if (translatedConfig.metrics && !this.metricsConfig) {
         this.metricsConfig = translatedConfig.metrics;
+
+        // Setting debug for metrics
+        this.metricDebug = require('debug')(
+          `plugin:publish-metrics:${this.metricsConfig.type}`
+        );
       }
       return translatedConfig;
     });
@@ -112,6 +121,14 @@ class OTelReporter {
       }
     }
   }
+  debug(msg) {
+    if (this.traceDebug) {
+      this.traceDebug(msg);
+    }
+    if (this.metricDebug) {
+      this.metricDebug(msg);
+    }
+  }
   warnIfDuplicateTracesConfigured(configList) {
     const tracesConfigs = configList.filter((config) => config.traces);
     if (tracesConfigs.length > 1) {
@@ -133,7 +150,7 @@ class OTelReporter {
   }
 
   async cleanup(done) {
-    debug('Cleaning up');
+    this.debug('Cleaning up');
     if (!this.metricsConfig && !this.tracesConfig) {
       return done();
     }
