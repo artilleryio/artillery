@@ -144,5 +144,6 @@ module.exports = {
   getADOTConfig,
   vendorToCollectorConfigTranslators,
   ADOTSupportedTraceReporters,
-  ADOTSupportedMetricReporters
+  ADOTSupportedMetricReporters,
+  collectorConfigTemplate
 };
