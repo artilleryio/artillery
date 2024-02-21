@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const grpc = require('@grpc/grpc-js');
 const { traceExporters, validateExporter } = require('../exporters');
 const {
@@ -21,13 +20,14 @@ class OTelTraceConfig {
   constructor(config, resource) {
     this.config = config;
     this.resource = resource;
+    this.debug = require('debug')(`plugin:publish-metrics:${this.config.type}`);
 
     // Validate exporter provided by user
     validateExporter(traceExporters, this.config.exporter, 'trace');
   }
 
   configure() {
-    debug('Configuring Tracer Provider');
+    this.debug('Configuring Tracer Provider');
     this.tracerOpts = {
       resource: this.resource
     };
@@ -39,7 +39,7 @@ class OTelTraceConfig {
 
     this.tracerProvider = new BasicTracerProvider(this.tracerOpts);
 
-    debug('Configuring Exporter');
+    this.debug('Configuring Exporter');
     this.exporterOpts = {};
     if (this.config.endpoint) {
       this.exporterOpts.url = this.config.endpoint;
@@ -75,13 +75,13 @@ class OTelTraceConfig {
   }
 
   async shutDown() {
-    debug('Initiating TracerProvider shutdown');
+    this.debug('Initiating TracerProvider shutdown');
     try {
       await this.tracerProvider.shutdown();
     } catch (err) {
-      debug(err);
+      this.debug(err);
     }
-    debug('TracerProvider shutdown completed');
+    this.debug('TracerProvider shutdown completed');
   }
 }
 
@@ -89,6 +89,7 @@ class OTelTraceBase {
   constructor(config, script) {
     this.config = config;
     this.script = script;
+    this.debug = require('debug')(`plugin:publish-metrics:${this.config.type}`);
     this.pendingRequestSpans = 0;
     this.pendingScenarioSpans = 0;
     this.pendingPageSpans = 0;
@@ -153,7 +154,7 @@ class OTelTraceBase {
       (pendingRequests > 0 || pendingScenarios > 0) &&
       waitedTime < maxWaitTime
     ) {
-      debug('Waiting for pending traces ...');
+      this.debug('Waiting for pending traces ...');
       await sleep(500);
       waitedTime += 500;
     }
@@ -176,8 +177,8 @@ class OTelTraceBase {
       );
     }
 
-    debug('Pending traces done');
-    debug('Waiting for flush period to complete');
+    this.debug('Pending traces done');
+    this.debug('Waiting for flush period to complete');
     await sleep(5000);
   }
 }

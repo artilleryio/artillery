@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
@@ -183,7 +182,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             code: SpanStatusCode.ERROR,
             message: err.message
           });
-          debug('There has been an error during step execution:');
+          this.debug('There has been an error during step execution:');
           throw err;
         } finally {
           const difference = Date.now() - startTime;
