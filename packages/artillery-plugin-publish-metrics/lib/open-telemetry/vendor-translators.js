@@ -64,11 +64,14 @@ const vendorTranslators = {
     return otelTemplate(config, dynatraceTraceSettings);
   },
   'open-telemetry': (config) => {
-    let tracesConfig = config;
+    let newConfig = config;
     if (config.traces) {
-      tracesConfig.traces.type = 'otel';
+      newConfig.traces.type = 'open-telemetry';
     }
-    return tracesConfig;
+    if (config.metrics) {
+      newConfig.metrics.type = 'open-telemetry';
+    }
+    return newConfig;
   }
 };
 

@@ -5,7 +5,6 @@ const fs = require('fs');
 const nodeCrypto = require('node:crypto');
 
 const os = require('os');
-const ip = require('ip');
 
 const sprintf = require('sprintf-js').sprintf;
 const { Command, flags } = require('@oclif/command');

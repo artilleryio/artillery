@@ -438,7 +438,8 @@ function createContext(script, contextVars, additionalProperties = {}) {
         target: script.config.target,
         $environment: script._environment,
         $processEnvironment: process.env, // TODO: deprecate
-        $env: process.env
+        $env: process.env,
+        $testId: global.artillery.testRunId,
       },
       contextVars || {}
     ),

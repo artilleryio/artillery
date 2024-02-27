@@ -1,1 +1,3 @@
 /packages/types
+/packages/artillery-engine-playwright/test/**/*.ts
+/examples/browser-playwright-reuse-typescript/**/*.ts
