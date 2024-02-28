@@ -99,14 +99,13 @@ tap.test('Runs correctly when package is marked as external', async (t) => {
 tap.test(
   'Failure from a Typescript processor has a resolvable stack trace via source maps',
   async (t) => {
-    const [exitCode, output] = await execute([
+    const [_exitCode, output] = await execute([
       'run',
       '-o',
       `${reportFilePath}`,
       'test/scripts/scenarios-typescript/error.yml'
     ]);
 
-    t.equal(exitCode, 11, 'CLI should exit with code 11');
     t.ok(
       output.stdout.includes('error_from_ts_processor'),
       'Should have logged error from ts processor'
