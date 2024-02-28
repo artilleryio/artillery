@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
@@ -155,7 +154,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         this.pendingRequestSpans--;
       }
     } catch (err) {
-      debug(err);
+      this.debug(err);
     }
     return done();
   }

@@ -36,6 +36,10 @@ class PlaywrightEngine {
       typeof script.config.engines.playwright.useSeparateBrowserPerVU === 'boolean' ? 
         script.config.engines.playwright.useSeparateBrowserPerVU : false;
 
+    if (!this.processor.$rewriteMetricName) {
+      this.processor.$rewriteMetricName = function (name, _type) { return name; }
+    }
+
     return this;
   }
 
@@ -54,7 +58,7 @@ class PlaywrightEngine {
       await userActions();
       const difference = Date.now() - startedTime;
 
-      events.emit('histogram', `browser.step.${stepName}`, difference);
+      events.emit('histogram', self.processor.$rewriteMetricName(`browser.step.${stepName}`, 'histogram'), difference);
     };
 
     return async function scenario(initialContext, cb) {
@@ -128,7 +132,7 @@ class PlaywrightEngine {
 
         page.on('response', (response) => {
           const status = response.status();
-          events.emit('counter', 'browser.page.codes.' + status, 1);
+          events.emit('counter', self.processor.$rewriteMetricName('browser.page.codes.' + status, 'counter'), 1);
         });
 
         page.on('domcontentloaded', async (page) => {
@@ -145,7 +149,7 @@ class PlaywrightEngine {
 
             if (
               uniquePageLoadToTiming[
-                getName(page.url()) + performanceTiming.connectStart
+              getName(page.url()) + performanceTiming.connectStart
               ]
             ) {
               return;
@@ -160,24 +164,24 @@ class PlaywrightEngine {
               performanceTiming.domInteractive -
               performanceTiming.navigationStart;
 
-            events.emit('counter', 'browser.page.domcontentloaded', 1);
+            events.emit('counter', self.processor.$rewriteMetricName('browser.page.domcontentloaded', 'counter'), 1);
             events.emit(
               'counter',
-              `browser.page.domcontentloaded.${getName(page.url())}`,
+              self.processor.$rewriteMetricName(`browser.page.domcontentloaded.${getName(page.url())}`, 'counter'),
               1
             );
             events.emit(
               'histogram',
-              'browser.page.dominteractive',
+              self.processor.$rewriteMetricName('browser.page.dominteractive', 'histogram'),
               startToInteractive
             );
             events.emit(
               'histogram',
-              `browser.page.dominteractive.${getName(page.url())}`,
+              self.processor.$rewriteMetricName(`browser.page.dominteractive.${getName(page.url())}`, 'histogram'),
               startToInteractive,
-              {url: page.url(), vuId: initialContext.vars.$uuid}
+              { url: page.url(), vuId: initialContext.vars.$uuid }
             );
-          } catch (err) {}
+          } catch (err) { }
         });
 
         page.on('console', async (msg) => {
@@ -191,12 +195,12 @@ class PlaywrightEngine {
               if (url.startsWith(self.target) || self.showAllPageMetrics) {
                 events.emit(
                   'histogram',
-                  `browser.page.${name}.${getName(url)}`,
+                  self.processor.$rewriteMetricName(`browser.page.${name}.${getName(url)}`, 'histogram'),
                   value,
-                  {rating: metric.metric.rating, url, vuId: initialContext.vars.$uuid}
+                  { rating: metric.metric.rating, url, vuId: initialContext.vars.$uuid }
                 );
               }
-            } catch (err) {}
+            } catch (err) { }
           }
         });
 
@@ -217,11 +221,11 @@ class PlaywrightEngine {
             );
             events.emit(
               'histogram',
-              'browser.memory_used_mb',
+              self.processor.$rewriteMetricName('browser.memory_used_mb', 'histogram'),
               usedJSHeapSize / 1000 / 1000,
-              {url: page.url(), vuId: initialContext.vars.$uuid}
+              { url: page.url(), vuId: initialContext.vars.$uuid }
             );
-          } catch (err) {}
+          } catch (err) { }
         });
 
         page.on('pageerror', (error) => {
@@ -229,9 +233,9 @@ class PlaywrightEngine {
         });
         page.on('requestfinished', (request) => {
           // const timing = request.timing();
-          events.emit('counter', 'browser.http_requests', 1);
+          events.emit('counter', self.processor.$rewriteMetricName('browser.http_requests', 'counter'), 1);
         });
-        page.on('response', (response) => {});
+        page.on('response', (response) => { });
 
         const fn =
           self.processor[spec.testFunction] ||
@@ -262,7 +266,7 @@ class PlaywrightEngine {
         }
       } finally {
         await context.close();
-        
+
         if (self.useSeparateBrowserPerVU) {
           await browser.close();
         }

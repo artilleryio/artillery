@@ -24,7 +24,7 @@ context.setGlobalContextManager(contextManager);
 // DEBUGGING SETUP - setting the OpenTelemetry's internal diagnostic handler here to run when debug is enabled
 if (
   process.env.DEBUG &&
-  process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
+  process.env.DEBUG.includes('plugin:publish-metrics:')
 ) {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 }
@@ -47,11 +47,21 @@ class OTelReporter {
       // Setting traces to first traces configured
       if (translatedConfig.traces && !this.tracesConfig) {
         this.tracesConfig = translatedConfig.traces;
+
+        // Setting debug for traces
+        this.traceDebug = require('debug')(
+          `plugin:publish-metrics:${this.tracesConfig.type}`
+        );
       }
 
       // Setting metrics to first metrics configured
       if (translatedConfig.metrics && !this.metricsConfig) {
         this.metricsConfig = translatedConfig.metrics;
+
+        // Setting debug for metrics
+        this.metricDebug = require('debug')(
+          `plugin:publish-metrics:${this.metricsConfig.type}`
+        );
       }
       return translatedConfig;
     });
@@ -109,7 +119,6 @@ class OTelReporter {
       }
     }
   }
-
   translateToOtel(config) {
     return vendorTranslators[config.type](config);
   }
@@ -123,7 +132,7 @@ class OTelReporter {
   }
 
   async cleanup(done) {
-    debug('Cleaning up');
+    this.debug('Cleaning up');
     if (!this.metricsConfig && !this.tracesConfig) {
       return done();
     }
