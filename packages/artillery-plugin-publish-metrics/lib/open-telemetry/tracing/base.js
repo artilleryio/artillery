@@ -178,8 +178,6 @@ class OTelTraceBase {
     }
 
     this.debug('Pending traces done');
-    this.debug('Waiting for flush period to complete');
-    await sleep(5000);
   }
 }
 

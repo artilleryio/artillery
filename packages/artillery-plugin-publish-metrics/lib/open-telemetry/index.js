@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { vendorTranslators } = require('./translators/vendor-otel');
 const {
   diag,
@@ -119,6 +118,22 @@ class OTelReporter {
       }
     }
   }
+  debug(msg) {
+    if (this.traceDebug) {
+      this.traceDebug(msg);
+    }
+    if (this.metricDebug) {
+      this.metricDebug(msg);
+    }
+  }
+  warnIfDuplicateTracesConfigured(configList) {
+    const tracesConfigs = configList.filter((config) => config.traces);
+    if (tracesConfigs.length > 1) {
+      console.warn(
+        'WARNING: Multiple reporters configured for traces. Currently, you can only use one reporter at a time for reporting traces. Only the first reporter will be used.'
+      );
+    }
+  }
   translateToOtel(config) {
     return vendorTranslators[config.type](config);
   }
@@ -138,7 +153,7 @@ class OTelReporter {
     }
 
     // Waiting for flush period to complete here rather than in trace/metric reporters
-    debug('Waiting for flush period to end');
+    this.debug('Waiting for flush period to end');
     await new Promise((resolve) => setTimeout(resolve, 10000));
 
     if (this.metricReporter) {
