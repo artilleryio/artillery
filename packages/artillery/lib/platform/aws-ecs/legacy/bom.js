@@ -3,7 +3,7 @@ const fs = require('fs');
 const A = require('async');
 
 const isBuiltinModule = require('is-builtin-module');
-const detective = require('detective');
+const detective = require('detective-es6');
 const depTree = require('dependency-tree');
 
 const walkSync = require('walk-sync');
