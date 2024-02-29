@@ -7,7 +7,6 @@ const debug = require('debug')('commands:run-test');
 const debugVerbose = require('debug')('commands:run-test:v');
 const debugErr = require('debug')('commands:run-test:errors');
 const A = require('async');
-const { customAlphabet } = require('nanoid');
 const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
@@ -40,6 +39,8 @@ const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 const dotenvParse = require('dotenv').parse;
 
 const util = require('./util');
+
+const generateId = require('../../../util/generate-id');
 
 const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
 
@@ -272,8 +273,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   context.extraSecrets = options.secret || [];
 
-  const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-  context.testId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
+  const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+  context.testId = testRunId;
+  global.artillery.testRunId = testRunId;
 
   if (context.namedTest) {
     context.s3Prefix = options.bundle;
@@ -1410,7 +1412,7 @@ async function generateTaskOverrides(context) {
           },
           {
             name: 'ARTILLERY_TEST_RUN_ID',
-            value: global.artillery.testRunId,
+            value: global.artillery.testRunId
           }
         ]
       },

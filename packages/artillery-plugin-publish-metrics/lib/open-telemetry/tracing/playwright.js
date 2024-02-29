@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
@@ -42,6 +41,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
       async (scenarioSpan) => {
         scenarioSpan.setAttributes({
           'vu.uuid': vuContext.vars.$uuid,
+          test_id: vuContext.vars.$testId,
           ...(this.config.attributes || {})
         });
         this.pendingPlaywrightScenarioSpans++;
@@ -115,6 +115,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             );
             pageSpan.setAttributes({
               'vu.uuid': vuContext.vars.$uuid,
+              test_id: vuContext.vars.$testId,
               ...(this.config.attributes || {})
             });
             lastPageUrl = pageUrl;
@@ -170,6 +171,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
         try {
           span.setAttributes({
             'vu.uuid': vuContext.vars.$uuid,
+            test_id: vuContext.vars.$testId,
             ...(this.config.attributes || {})
           });
 
@@ -180,7 +182,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             code: SpanStatusCode.ERROR,
             message: err.message
           });
-          debug('There has been an error during step execution:');
+          this.debug('There has been an error during step execution:');
           throw err;
         } finally {
           const difference = Date.now() - startTime;
