@@ -103,7 +103,7 @@ class PlatformLocal {
       return {};
     }
 
-    const runnableScript = loadProcessor(
+    const runnableScript = await loadProcessor(
       prepareScript(this.script, _.cloneDeep(this.payload)),
       this.opts
     );

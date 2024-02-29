@@ -7,6 +7,7 @@ const {
   getTestTags,
   execute
 } = require('../../cli/_helpers.js');
+const path = require('path');
 
 const A9 = process.env.A9 || 'artillery';
 
@@ -221,6 +222,31 @@ test('Run with typescript processor and external package', async (t) => {
     report.aggregate.counters['errors.invalid_address'],
     2,
     'Should have emitted 2 errors'
+  );
+});
+
+test('Run a test with an ESM processor', async (t) => {
+  // The main thing we're checking here is that ESM + dependencies get bundled correctly by BOM
+  const scenarioPath = path.resolve(
+    `${__dirname}/../../scripts/scenario-async-esm-hooks/test.yml`
+  );
+
+  const output =
+    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags}`;
+
+  t.equal(output.exitCode, 0, 'CLI exit code should be 0');
+
+  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+  t.equal(
+    report.aggregate.counters['http.codes.200'],
+    10,
+    'Should have made 10 requests'
+  );
+
+  t.equal(
+    report.aggregate.counters['hey_from_esm'],
+    10,
+    'Should have emitted 10 custom metrics from ts processor'
   );
 });
 

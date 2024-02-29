@@ -110,7 +110,7 @@
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
     "dependency-tree": "^10.0.9",
-    "detective": "^5.1.0",
+    "detective-es6": "^4.0.1",
     "dotenv": "^16.0.1",
     "esbuild-wasm": "^0.19.8",
     "eventemitter3": "^4.0.4",

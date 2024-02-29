@@ -106,7 +106,7 @@ async function prepare(opts) {
   });
 
   const { script: _script, payload, options } = opts;
-  const script = loadProcessor(_script, options);
+  const script = await loadProcessor(_script, options);
 
   global.artillery.testRunId = opts.testRunId;
 
