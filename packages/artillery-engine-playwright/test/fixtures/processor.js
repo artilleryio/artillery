@@ -1,8 +1,25 @@
 const { expect } = require('@playwright/test');
 
+//this is due to occasional failures in CI due to known unresolved issue: https://github.com/microsoft/playwright/issues/13062
+const retryGoingToPage = async (page, url) => {
+  let retryCount = 0;
+  let error;
+  while (retryCount < 5) {
+    try {
+      await page.goto(url);
+      return;
+    } catch (err) {
+      error = err;
+      retryCount++;
+    }
+  }
+  throw new Error(`Failed to go to page ${url}: ${error}`);
+};
+
 async function artilleryPlaywrightFunction(page, vuContext, events, test) {
   await test.step('go_to_artillery_io', async () => {
-    await page.goto('/');
+    await retryGoingToPage(page, '/');
+
     await expect(page.getByText('The Artillery Manifesto')).toBeVisible();
   });
 
@@ -22,7 +39,7 @@ async function artilleryPlaywrightFunction(page, vuContext, events, test) {
 
 async function playwrightFunctionWithFailure(page, vuContext, events, test) {
   await test.step('go_to_artillery_io', async () => {
-    await page.goto('/');
+    await retryGoingToPage(page, '/');
     await expect(page.getByText('gremlins are here!')).toBeVisible();
   });
   events.emit('counter', 'custom_emitter', 1);
