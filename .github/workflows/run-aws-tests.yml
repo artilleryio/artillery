@@ -41,7 +41,7 @@ jobs:
   run-tests:
     if: contains( github.event.pull_request.labels.*.name, 'run-aws-tests' )
     needs: publish-branch-image
-    timeout-minutes: 40
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
       contents: read
