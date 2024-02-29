@@ -109,6 +109,13 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
       'Load data from CSV to be used during the test run:\nhttps://www.artillery.io/docs/reference/test-script#payload---loading-data-from-csv-files'
     ),
   tls: TlsConfig.meta({ title: 'TLS Settings' }),
+  bundling: Joi.object({
+    external: Joi.array().items(Joi.string())
+      .meta({ title: 'External Packages' })
+      .description('Can be used when using Typescript (.ts) processors. List npm modules to prevent them from being bundled. Use in case there are issues with bundling certain packages.\nhttps://www.artillery.io/docs/reference/test-script#preventing-bundling-of-typescript-packages'),
+  })
+    .meta({ title: 'Bundling'})
+    .description('Configuration for bundling the test script and its dependencies'),
   plugins: Joi.object({ ...ArtilleryBuiltInPlugins })
     .meta({ title: 'Plugins' })
     .description(
