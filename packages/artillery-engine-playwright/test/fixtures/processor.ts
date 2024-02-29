@@ -6,15 +6,9 @@ export async function artilleryPlaywrightFunction(
   events,
   test
 ) {
-  // await test.step('go_to_artillery_repo', async () => {
-  //   await page.goto(`${vuContext.vars.target}/`);
-  //   await expect(page.getByTestId('latest-commit')).toBeVisible({
-  //     timeout: 15000
-  //   });
-  // });
-
   await test.step('go_to_artillery_io', async () => {
     await page.goto('/');
+    await expect(page.getByText('The Artillery Manifesto')).toBeVisible();
   });
 
   await test.step('go_to_docs', async () => {
