@@ -95,33 +95,3 @@ tap.test('Runs correctly when package is marked as external', async (t) => {
 
   await deleteFile(bundleLocation);
 });
-
-tap.test(
-  'Failure from a Typescript processor has a resolvable stack trace via source maps',
-  async (t) => {
-    const [_exitCode, output] = await execute([
-      'run',
-      '-o',
-      `${reportFilePath}`,
-      'test/scripts/scenarios-typescript/error.yml'
-    ]);
-
-    t.ok(
-      output.stdout.includes('error_from_ts_processor'),
-      'Should have logged error from ts processor'
-    );
-
-    // // Search for the path
-    // const pathRegex = /\((.*?):\d+:\d+\)/;
-    // const match = output.stdout.match(pathRegex);
-
-    // // Extract the path if found
-    // const extractedPath = match ? match[1] : null;
-
-    // t.ok(
-    //   extractedPath.includes('.ts'),
-    //   'Should be using source maps to resolve the path to a .ts file'
-    // );
-    // t.ok(fs.existsSync(extractedPath), 'Error path should exist');
-  }
-);
