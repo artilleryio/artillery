@@ -99,7 +99,7 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
   socketio: SocketIoConfigSchema.meta({ title: 'SocketIo Configuration' }),
   processor: Joi.string()
     .meta({ title: 'Processor Function Path' })
-    .description('Path to a CommonJS module to load for this test run.'),
+    .description('Path to a CommonJS (.js), ESM (.mjs) or Typescript (.ts) module to load for this test run.\nhttps://www.artillery.io/docs/reference/test-script#processor---custom-js-code'),
   variables: Joi.object()
     .meta({ title: 'Variables' })
     .description('Map of variables to expose to the test run.'),
