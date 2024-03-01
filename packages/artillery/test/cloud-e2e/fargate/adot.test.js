@@ -3,9 +3,16 @@
 const { test, afterEach, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
-const { generateTmpReportPath, deleteFile } = require('../../cli/_helpers.js');
+const {
+  generateTmpReportPath,
+  deleteFile,
+  getTestTags
+} = require('../../cli/_helpers.js');
 
 const { getDatadogSpans, getTestId } = require('./fixtures/adot/helpers.js');
+
+//NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
+const baseTags = getTestTags(['type:acceptance']);
 
 let reportFilePath;
 beforeEach(async (t) => {
@@ -36,7 +43,7 @@ test('traces succesfully arrive to datadog', async (t) => {
 
   // Act:
   const output =
-    await $`artillery run-fargate ${__dirname}/fixtures/adot/adot-dd-pass.yml --output ${reportFilePath}`;
+    await $`artillery run-fargate ${__dirname}/fixtures/adot/adot-dd-pass.yml --record --tags ${baseTags} --output ${reportFilePath}`;
 
   const testId = getTestId(output.stdout);
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
