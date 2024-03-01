@@ -111,6 +111,7 @@ RunCommand.args = {
   })
 };
 
+let cloud;
 RunCommand.runCommandImplementation = async function (flags, argv, args) {
   // Collect all input files for reading/parsing - via args, --config, or -i
   const inputFiles = argv.concat(flags.input || [], flags.config || []);
@@ -144,6 +145,36 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 
   try {
+    cloud = new CloudPlugin(null, null, { flags });
+
+    if (cloud.enabled) {
+      try {
+        await cloud.init();
+      } catch (err) {
+        if (err.name === 'CloudAPIKeyMissing') {
+          console.error(
+            'Error: API key is required to record test results to Artillery Cloud'
+          );
+          console.error(
+            'See https://docs.art/get-started-cloud for more information'
+          );
+
+          await gracefulShutdown({ exitCode: 7 });
+        } else if (err.name === 'APIKeyUnauthorized') {
+          console.error(
+            'Error: API key is not recognized or is not authorized to record tests'
+          );
+
+          await gracefulShutdown({ exitCode: 7 });
+        } else {
+          console.error(
+            'Error: something went wrong connecting to Artillery Cloud'
+          );
+          console.error('Check https://x.com/artilleryio for status updates');
+        }
+      }
+    }
+
     const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
     console.log('Test run id:', testRunId);
     global.artillery.testRunId = testRunId;
@@ -285,8 +316,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         } catch (_err) {}
       }
     });
-
-    new CloudPlugin(null, null, { flags });
 
     global.artillery.globalEvents.emit('test:init', {
       flags,
@@ -572,6 +601,10 @@ async function sendTelemetry(script, flags, extraProps) {
   if (script.config && script.config.__createdByQuickCommand) {
     properties['quick'] = true;
   }
+  if (cloud && cloud.enabled && cloud.user) {
+    properties.cloud = cloud.user;
+  }
+
   properties['solo'] = flags.solo;
   try {
     // One-way hash of target endpoint:

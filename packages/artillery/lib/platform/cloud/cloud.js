@@ -12,22 +12,20 @@ const util = require('node:util');
 
 class ArtilleryCloudPlugin {
   constructor(_script, _events, { flags }) {
+    this.enabled = false;
+
     if (!flags.record) {
       return this;
     }
 
-    this.apiKey = flags.key || process.env.ARTILLERY_CLOUD_API_KEY;
+    this.enabled = true;
 
-    if (!this.apiKey) {
-      console.log(
-        'An API key is required to record test results to Artillery Cloud. See https://docs.art/get-started-cloud for more information.'
-      );
-      return;
-    }
+    this.apiKey = flags.key || process.env.ARTILLERY_CLOUD_API_KEY;
 
     this.baseUrl =
       process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
     this.eventsEndpoint = `${this.baseUrl}/api/events`;
+    this.whoamiEndpoint = `${this.baseUrl}/api/user/whoami`;
 
     this.defaultHeaders = {
       'x-auth-token': this.apiKey
@@ -143,6 +141,10 @@ class ArtilleryCloudPlugin {
     global.artillery.ext({
       ext: 'onShutdown',
       method: async (opts) => {
+        if (!this.enabled || this.off) {
+          return;
+        }
+
         clearInterval(this.setGetLoadTestInterval);
         // Wait for the last logLines events to be processed, as they can sometimes finish processing after shutdown has finished
         await awaitOnEE(
@@ -169,6 +171,44 @@ class ArtilleryCloudPlugin {
     });
 
     return this;
+  }
+
+  async init() {
+    if (!this.apiKey) {
+      const err = new Error();
+      err.name = 'CloudAPIKeyMissing';
+      this.off = true;
+      throw err;
+    }
+
+    let res;
+    let body;
+    try {
+      res = await request.get(this.whoamiEndpoint, {
+        headers: this.defaultHeaders,
+        throwHttpErrors: false,
+        retry: {
+          limit: 0
+        }
+      });
+
+      body = JSON.parse(res.body);
+    } catch (err) {
+      this.off = true;
+      throw err;
+    }
+
+    if (res.statusCode === 401) {
+      const err = new Error();
+      err.name = 'APIKeyUnauthorized';
+      this.off = true;
+      throw err;
+    }
+
+    this.user = {
+      id: body.id,
+      email: body.email
+    };
   }
 
   async waitOnUnprocessedLogs(maxWaitTime) {

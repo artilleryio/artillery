@@ -5,13 +5,12 @@
 const { Command, Flags, Args } = require('@oclif/core');
 const { CommonRunFlags } = require('../cli/common-flags');
 const telemetry = require('../telemetry').init();
-const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
 const runCluster = require('../platform/aws-ecs/legacy/run-cluster');
 const { supportedRegions } = require('../platform/aws-ecs/legacy/util');
 const PlatformECS = require('../platform/aws-ecs/ecs');
 const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
-
+const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 class RunCommand extends Command {
   static aliases = ['run:fargate'];
   // Enable multiple args:
@@ -23,7 +22,34 @@ class RunCommand extends Command {
 
     flags.platform = 'aws:ecs';
 
-    new CloudPlugin(null, null, { flags });
+    const cloud = new CloudPlugin(null, null, { flags });
+    if (cloud.enabled) {
+      try {
+        await cloud.init();
+      } catch (err) {
+        if (err.name === 'CloudAPIKeyMissing') {
+          console.error(
+            'Error: API key is required to record test results to Artillery Cloud'
+          );
+          console.error(
+            'See https://docs.art/get-started-cloud for more information'
+          );
+
+          process.exit(7);
+        } else if (err.name === 'APIKeyUnauthorized') {
+          console.error(
+            'Error: API key is not recognized or is not authorized to record tests'
+          );
+
+          process.exit(7);
+        } else {
+          console.error(
+            'Error: something went wrong connecting to Artillery Cloud'
+          );
+          console.error('Check https://x.com/artilleryio for status updates');
+        }
+      }
+    }
 
     const ECS = new PlatformECS(
       null,
