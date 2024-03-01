@@ -50,6 +50,8 @@ jobs:
       ECR_IMAGE_VERSION: ${{ github.event.pull_request.head.sha || github.sha }} # the image is published with the sha of the commmit in the branch
       ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
       ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
       GITHUB_REPO: ${{ github.repository }}
       GITHUB_ACTOR: ${{ github.actor }}
     steps:
