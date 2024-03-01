@@ -1,25 +1,27 @@
 'use strict';
 
+const { test, afterEach } = require('tap');
 const { applyScriptChanges } = require('../../lib/platform/aws-ecs/legacy/bom');
 
-const { test } = require('tap');
+// TODO: Add tests for other functions in bom.js
 
 test('applyScriptChanges should resolve config templates with cli variables', async (t) => {
+  // Arrange
   global.artillery.testRunId = 'bombolini_id_1234567890';
   const context = {
     opts: {
       scriptData: {
         config: {
           payload: {
-            path: '{{ myPayloadPath }}'
+            path: '{{ fakePayloadPath }}'
           },
           plugins: {
             'publish-metrics': [
               {
                 type: 'datadog',
-                apiKey: '{{ myKey }}',
+                apiKey: '{{ fakeApiKey }}',
                 traces: {
-                  serviceName: '{{ name }}',
+                  serviceName: '{{ fakeServiceName }}',
                   attributes: {
                     testId: '{{ $testId }}'
                   }
@@ -32,26 +34,30 @@ test('applyScriptChanges should resolve config templates with cli variables', as
       absoluteScriptPath: '/path/to/script.yml',
       flags: {
         variables: JSON.stringify({
-          name: 'Bombolini',
-          myPayloadPath: '/path/to/payload.json',
-          myKey: 'my_bombolini_key_1234567890'
+          fakeServiceName: 'Bombolini',
+          fakePayloadPath: '/path/to/payload.json',
+          fakeApiKey: 'my_bombolini_key_1234567890'
         })
       }
     }
   };
 
-  const next = (err, context) => {
+  // Act
+  applyScriptChanges(context, (err, context) => {
     if (err) {
-      t.fail(err);
+      return t.fail(err);
     }
+
+    // Assert
     t.equal(
       context.opts.scriptData.config.payload.path,
-      '/path/to/payload.json'
+      '/path/to/payload.json',
+      'Should resolve config templates with cli variables'
     );
     t.equal(
       context.opts.scriptData.config.plugins['publish-metrics'][0].apiKey,
       'my_bombolini_key_1234567890',
-      'Should resolve config templates with cli variables'
+      'Should resolve config templates with cli variables on all config depth levels'
     );
     t.equal(
       context.opts.scriptData.config.plugins['publish-metrics'][0].traces
@@ -65,32 +71,31 @@ test('applyScriptChanges should resolve config templates with cli variables', as
       'bombolini_id_1234567890',
       'Should resolve $testId with global.artillery.testRunId'
     );
-  };
-
-  applyScriptChanges(context, next);
+  });
   delete global.artillery.testRunId;
 });
 
 test('applyScriptChanges should resolve config templates with env variables', async (t) => {
-  process.env.BOMBOLINI_PATH_TO_PAYLOAD = '/path/to/payload.json';
-  process.env.MY_BOMBOLINI_KEY = 'my_bombolini_key_1234567890';
-  process.env.BOMBOLINI_TEST_ID = 'bombolini_id_1234567890';
+  // Arrange
+  process.env.FAKE_PATH_TO_PAYLOAD = '/path/to/payload.json';
+  process.env.FAKE_DD_API_KEY = 'my_bombolini_key_1234567890';
+  process.env.FAKE_TEST_ID = 'bombolini_id_1234567890';
   const context = {
     opts: {
       scriptData: {
         config: {
           payload: {
-            path: '{{ $env.BOMBOLINI_PATH_TO_PAYLOAD }}'
+            path: '{{ $env.FAKE_PATH_TO_PAYLOAD }}'
           },
           plugins: {
             'publish-metrics': [
               {
                 type: 'datadog',
-                apiKey: '{{ $processEnvironment.MY_BOMBOLINI_KEY }}',
+                apiKey: '{{ $processEnvironment.FAKE_DD_API_KEY }}',
                 traces: {
-                  serviceName: '{{ $environment.BOMBOLINI_NAME }}',
+                  serviceName: '{{ $environment.FAKE_SERVICE_NAME }}',
                   attributes: {
-                    testId: '{{ $env.BOMBOLINI_TEST_ID }}'
+                    testId: '{{ $env.FAKE_TEST_ID }}'
                   }
                 }
               }
@@ -101,16 +106,19 @@ test('applyScriptChanges should resolve config templates with env variables', as
       absoluteScriptPath: '/path/to/script.yml',
       flags: {
         environment: {
-          BOMBOLINI_NAME: 'Bombolini'
+          FAKE_SERVICE_NAME: 'Bombolini'
         }
       }
     }
   };
 
-  const next = (err, context) => {
+  // Act
+  applyScriptChanges(context, (err, context) => {
     if (err) {
       t.fail(err);
     }
+
+    //Assert
     t.equal(
       context.opts.scriptData.config.payload.path,
       '/path/to/payload.json',
@@ -133,11 +141,9 @@ test('applyScriptChanges should resolve config templates with env variables', as
       'bombolini_id_1234567890',
       'Should resolve env vars on all levels of test script'
     );
-  };
+  });
 
-  applyScriptChanges(context, next);
-
-  delete process.env.BOMBOLINI_PATH_TO_PAYLOAD;
-  delete process.env.MY_BOMBOLINI_KEY;
-  delete process.env.BOMBOLINI_TEST_ID;
+  delete process.env.FAKE_PATH_TO_PAYLOAD;
+  delete process.env.FAKE_DD_API_KEY;
+  delete process.env.FAKE_TEST_ID;
 });
