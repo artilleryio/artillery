@@ -77,15 +77,25 @@ function loadEngines(
   return { loadedEngines, warnings };
 }
 
-function loadProcessor(script, options) {
+async function loadProcessor(script, options) {
+  const absoluteScriptPath = path.resolve(process.cwd(), options.scriptPath);
   if (script.config.processor) {
-    const absoluteScriptPath = path.resolve(process.cwd(), options.scriptPath);
     const processorPath = path.resolve(
       path.dirname(absoluteScriptPath),
       script.config.processor
     );
-    const processor = require(processorPath);
-    script.config.processor = processor;
+
+    if (processorPath.endsWith('.mjs')) {
+      const exports = await import(processorPath);
+      script.config.processor = Object.assign(
+        {},
+        script.config.processor,
+        exports
+      );
+    } else {
+      // CJS (possibly transplied from TS)
+      script.config.processor = require(processorPath);
+    }
   }
 
   return script;
@@ -439,7 +449,7 @@ function createContext(script, contextVars, additionalProperties = {}) {
         $environment: script._environment,
         $processEnvironment: process.env, // TODO: deprecate
         $env: process.env,
-        $testId: global.artillery.testRunId,
+        $testId: global.artillery.testRunId
       },
       contextVars || {}
     ),

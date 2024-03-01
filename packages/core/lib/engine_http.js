@@ -220,9 +220,19 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     return function (context, callback) {
       let processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
-        return processFunc(context, ee, function (hookErr) {
-          return callback(hookErr, context);
-        });
+        if (processFunc.constructor.name === 'Function') {
+          return processFunc(context, ee, function (hookErr) {
+            return callback(hookErr, context);
+          });
+        } else {
+          return processFunc(context, ee)
+            .then(() => {
+              callback(null, context);
+            })
+            .catch((err) => {
+              callback(err, context);
+            });
+        }
       } else {
         debug(`Function "${requestSpec.function}" not defined`);
         debug('processor: %o', self.config.processor);
@@ -309,12 +319,16 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
         }
 
-        processFunc(requestParams, context, ee, function (err) {
-          if (err) {
-            return next(err);
-          }
-          return next(null);
-        });
+        if (processFunc.constructor.name === 'Function') {
+          processFunc(requestParams, context, ee, function (err) {
+            if (err) {
+              return next(err);
+            }
+            return next(null);
+          });
+        } else {
+          processFunc(requestParams, context, ee).then(next).catch(next);
+        }
       },
       function done(err) {
         if (err) {
@@ -608,12 +622,24 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   // Got does not have res.body which Request.js used to have, so we attach it here:
                   res.body = body;
 
-                  processFunc(requestParams, res, context, ee, function (err) {
-                    if (err) {
-                      return next(err);
-                    }
-                    return next(null);
-                  });
+                  if (processFunc.constructor.name === 'Function') {
+                    processFunc(
+                      requestParams,
+                      res,
+                      context,
+                      ee,
+                      function (err) {
+                        if (err) {
+                          return next(err);
+                        }
+                        return next(null);
+                      }
+                    );
+                  } else {
+                    processFunc(requestParams, res, context, ee)
+                      .then(next)
+                      .catch(next);
+                  }
                 },
                 function (err) {
                   if (err) {
