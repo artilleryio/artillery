@@ -99,7 +99,7 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
   socketio: SocketIoConfigSchema.meta({ title: 'SocketIo Configuration' }),
   processor: Joi.string()
     .meta({ title: 'Processor Function Path' })
-    .description('Path to a CommonJS module to load for this test run.'),
+    .description('Path to a CommonJS (.js), ESM (.mjs) or Typescript (.ts) module to load for this test run.\nhttps://www.artillery.io/docs/reference/test-script#processor---custom-js-code'),
   variables: Joi.object()
     .meta({ title: 'Variables' })
     .description('Map of variables to expose to the test run.'),
@@ -109,6 +109,13 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
       'Load data from CSV to be used during the test run:\nhttps://www.artillery.io/docs/reference/test-script#payload---loading-data-from-csv-files'
     ),
   tls: TlsConfig.meta({ title: 'TLS Settings' }),
+  bundling: Joi.object({
+    external: Joi.array().items(Joi.string())
+      .meta({ title: 'External Packages' })
+      .description('Can be used when using Typescript (.ts) processors. List npm modules to prevent them from being bundled. Use in case there are issues with bundling certain packages.\nhttps://www.artillery.io/docs/reference/test-script#preventing-bundling-of-typescript-packages'),
+  })
+    .meta({ title: 'Bundling'})
+    .description('Configuration for bundling the test script and its dependencies'),
   plugins: Joi.object({ ...ArtilleryBuiltInPlugins })
     .meta({ title: 'Plugins' })
     .description(
