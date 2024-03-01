@@ -8,6 +8,11 @@ const Hotshots = require('hot-shots');
 const debug = require('debug')('plugin:publish-metrics:datadog-statsd');
 
 function DatadogReporter(config, events, script) {
+  this.onlyTraces = config.traces?.sendOnlyTraces;
+  if (this.onlyTraces) {
+    debug('sendOnlyTraces is true, not initializing metrics');
+    return this;
+  }
   this.metrics = null;
   this.dogapi = dogapi;
   this.reportingType = ''; // api | agent (DogStatsD, StatsD, Telegraf/StatsD)
@@ -39,11 +44,11 @@ function DatadogReporter(config, events, script) {
 
   debug('creating DatadogReporter with config');
   debug(
-    (config.apiKey || config.appKey)
+    config.apiKey || config.appKey
       ? Object.assign(
-        { apiKey: sanitize(config.apiKey),
-          appKey: sanitize(config.appKey)
-        }, config)
+          { apiKey: sanitize(config.apiKey), appKey: sanitize(config.appKey) },
+          config
+        )
       : config
   );
 
@@ -217,6 +222,9 @@ DatadogReporter.prototype.cleanup = function (done) {
     });
   }
 
+  if (this.onlyTraces) {
+    return done();
+  }
   debug('flushing metrics');
   if (typeof this.metrics.flush === 'function') {
     this.metrics.flush((_err) => {
@@ -241,7 +249,7 @@ function createDatadogReporter(config, events, script) {
 }
 
 function sanitize(str) {
-  if(!str){
+  if (!str) {
     return str;
   }
   return `${str.substring(0, 3)}********************${str.substring(

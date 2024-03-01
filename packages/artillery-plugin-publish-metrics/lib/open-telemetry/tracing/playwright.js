@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
@@ -42,8 +41,10 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
       async (scenarioSpan) => {
         scenarioSpan.setAttributes({
           'vu.uuid': vuContext.vars.$uuid,
+          test_id: vuContext.vars.$testId,
           ...(this.config.attributes || {})
         });
+        this.pendingPlaywrightScenarioSpans++;
         // Set variables to track state and context
         const ctx = context.active();
         let lastPageUrl;
@@ -104,6 +105,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             scenarioSpan.addEvent(`navigated to ${page.url()}`);
             if (pageSpan) {
               pageSpan.end();
+              this.pendingPlaywrightSpans--;
             }
 
             pageSpan = this.playwrightTracer.startSpan(
@@ -113,9 +115,11 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             );
             pageSpan.setAttributes({
               'vu.uuid': vuContext.vars.$uuid,
+              test_id: vuContext.vars.$testId,
               ...(this.config.attributes || {})
             });
             lastPageUrl = pageUrl;
+            this.pendingPlaywrightSpans++;
           }
         });
 
@@ -143,8 +147,10 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
         } finally {
           if (pageSpan && !pageSpan.endTime[0]) {
             pageSpan.end();
+            this.pendingPlaywrightSpans--;
           }
           scenarioSpan.end();
+          this.pendingPlaywrightScenarioSpans--;
         }
       }
     );
@@ -159,11 +165,13 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           { kind: SpanKind.CLIENT },
           context.active()
         );
+        this.pendingPlaywrightSpans++;
         const startTime = Date.now();
 
         try {
           span.setAttributes({
             'vu.uuid': vuContext.vars.$uuid,
+            test_id: vuContext.vars.$testId,
             ...(this.config.attributes || {})
           });
 
@@ -174,12 +182,13 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             code: SpanStatusCode.ERROR,
             message: err.message
           });
-          debug('There has been an error during step execution:');
+          this.debug('There has been an error during step execution:');
           throw err;
         } finally {
           const difference = Date.now() - startTime;
           events.emit('histogram', `browser.step.${stepName}`, difference);
           span.end();
+          this.pendingPlaywrightSpans--;
         }
       });
     };

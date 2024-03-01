@@ -27,6 +27,21 @@ class PlatformECS {
     if (!this.testRunId) {
       throw new Error('testRunId is required');
     }
+
+    this.s3LifecycleConfigurationRules = [
+      {
+        Expiration: { Days: 2 },
+        Filter: { Prefix: 'tests/' },
+        ID: 'RemoveAdHocTestData',
+        Status: 'Enabled'
+      },
+      {
+        Expiration: { Days: 7 },
+        Filter: { Prefix: 'test-runs/' },
+        ID: 'RemoveTestRunMetadata',
+        Status: 'Enabled'
+      }
+    ];
   }
 
   async init() {
@@ -35,7 +50,7 @@ class PlatformECS {
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);
-    await ensureS3BucketExists();
+    await ensureS3BucketExists('global', this.s3LifecycleConfigurationRules);
     await createIAMResources(this.accountId);
   }
 

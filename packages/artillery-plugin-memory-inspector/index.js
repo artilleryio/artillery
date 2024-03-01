@@ -78,8 +78,6 @@ function ArtilleryPluginMemoryInspector(script, events) {
         continue;
       }
     }
-
-    return next();
   }
 
   script.scenarios = script.scenarios.map((scenario) => {

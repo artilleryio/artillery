@@ -3,20 +3,16 @@ const {
   execute,
   deleteFile,
   getRootPath,
-  returnTmpPath
+  returnTmpPath,
+  generateTmpReportPath
 } = require('../cli/_helpers.js');
 const fs = require('fs');
 const path = require('path');
 const execa = require('execa');
-const { createHash } = require('crypto');
 
 let reportFilePath;
 tap.beforeEach(async (t) => {
-  reportFilePath = returnTmpPath(
-    `report-${createHash('md5')
-      .update(t.name)
-      .digest('hex')}-${Date.now()}.json`
-  );
+  reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
 tap.test('Run a simple script', async (t) => {

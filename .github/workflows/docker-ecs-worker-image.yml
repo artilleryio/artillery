@@ -2,9 +2,6 @@ name: Build & publish ECS/Fargate worker image to ECR
 
 on:
   workflow_dispatch: 
-  push:
-    branches:
-      - main
   workflow_call:
     inputs:
       ref:
@@ -22,6 +19,9 @@ permissions:
 jobs:
   build_docker_image:
     runs-on: ubuntu-latest
+    env:
+      # From PR's this is overridden by a head ref by the caller workflow. defaults to commit sha when not passed (e.g. workflow_dispatch or call from main branch)
+      WORKER_VERSION: ${{ inputs.ref || github.sha }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -30,9 +30,10 @@ jobs:
       
       - name: Show git ref
         run: |
-          echo ${{ github.ref }}
-          echo ${{ github.event.pull_request.head.sha }}
-          echo ${{ github.sha }}
+          echo GITHUB REF ${{ github.ref }}
+          echo GITHUB PR HEAD SHA ${{ github.event.pull_request.head.sha }}
+          echo GITHUB SHA ${{ github.sha }}
+          echo WORKER_VERSION ENV ${{ env.WORKER_VERSION }}
     
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -59,8 +60,8 @@ jobs:
 
       - name: Build the Docker image
         run: |
-          docker build . --build-arg="WORKER_VERSION=${{ github.sha }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ github.sha }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+          docker build . --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
     
       - name: Push Docker image
         run: |
-          docker push public.ecr.aws/d8a4z9o5/artillery-worker:${{ github.sha }}
+          docker push public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }}

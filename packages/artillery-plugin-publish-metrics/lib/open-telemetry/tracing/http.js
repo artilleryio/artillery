@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
@@ -15,6 +14,8 @@ const {
 class OTelHTTPTraceReporter extends OTelTraceBase {
   constructor(config, script) {
     super(config, script);
+    this.outlierCriteria = config.smartSampling;
+    this.statusAsErrorThreshold = 400;
   }
   run() {
     this.setTracer('http');
@@ -66,6 +67,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         kind: SpanKind.CLIENT,
         attributes: {
           'vu.uuid': userContext.vars.$uuid,
+          test_id: userContext.vars.$testId,
           [SemanticAttributes.HTTP_URL]: parsedUrl || url.href,
           // We set the port if it is specified, if not we set to a default port based on the protocol
           [SemanticAttributes.HTTP_SCHEME]:
@@ -86,9 +88,13 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     if (!userContext.vars['__otlpHTTPRequestSpan']) {
       return done();
     }
-
     const span = userContext.vars['__otlpHTTPRequestSpan'];
     let endTime;
+
+    const scenarioSpan = userContext.vars['__httpScenarioSpan'];
+    if (this.config.smartSampling) {
+      this.tagResponseOutliers(span, scenarioSpan, res, this.outlierCriteria);
+    }
 
     if (res.timings && res.timings.phases) {
       span.setAttribute('response.time.ms', res.timings.phases.firstByte);
@@ -115,7 +121,10 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
               .startSpan(name, {
                 kind: SpanKind.CLIENT,
                 startTime: res.timings[value.start],
-                attributes: { 'vu.uuid': userContext.vars.$uuid }
+                attributes: {
+                  'vu.uuid': userContext.vars.$uuid,
+                  test_id: userContext.vars.$testId
+                }
               })
               .end(res.timings[value.end]);
           }
@@ -134,7 +143,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
           res.request.options.headers['user-agent']
       });
 
-      if (res.statusCode >= 400) {
+      if (res.statusCode >= this.statusAsErrorThreshold) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: res.statusMessage
@@ -145,7 +154,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         this.pendingRequestSpans--;
       }
     } catch (err) {
-      debug(err);
+      this.debug(err);
     }
     return done();
   }
@@ -161,6 +170,14 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         code: SpanStatusCode.ERROR,
         message: err.message || err
       });
+
+      if (this.config.smartSampling) {
+        requestSpan.setAttributes({
+          outlier: 'true',
+          'outlier.type.error': true
+        });
+      }
+
       requestSpan.end();
       this.pendingRequestSpans--;
     } else {
@@ -171,9 +188,49 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       code: SpanStatusCode.ERROR,
       message: err.message || err
     });
+
+    if (this.config.smartSampling) {
+      scenarioSpan.setAttributes({
+        outlier: 'true',
+        'outlier.type.error': true
+      });
+    }
+
     scenarioSpan.end();
     this.pendingScenarioSpans--;
     return done();
+  }
+
+  tagResponseOutliers(span, scenarioSpan, res, criteria) {
+    const types = {};
+    const details = [];
+    if (res.statusCode >= this.statusAsErrorThreshold) {
+      types['outlier.type.status_code'] = true;
+      details.push(`HTTP Status Code >= ${this.statusAsErrorThreshold}`);
+    }
+    if (criteria.thresholds && res.timings?.phases) {
+      Object.entries(criteria.thresholds).forEach(([name, value]) => {
+        if (res.timings.phases[name] >= value) {
+          types[`outlier.type.${name}`] = true;
+          details.push(`'${name}' >= ${value}`);
+        }
+      });
+    }
+
+    if (!details.length) {
+      return;
+    }
+
+    span.setAttributes({
+      outlier: 'true',
+      'outlier.details': details.join(', '),
+      ...types
+    });
+
+    scenarioSpan.setAttributes({
+      outlier: 'true',
+      ...types
+    });
   }
 }
 

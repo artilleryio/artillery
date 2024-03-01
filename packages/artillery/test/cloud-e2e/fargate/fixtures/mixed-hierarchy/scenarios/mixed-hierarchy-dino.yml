@@ -1,0 +1,4 @@
+scenarios:
+  - flow:
+      - get:
+          url: "/dino"

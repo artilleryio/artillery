@@ -77,15 +77,25 @@ function loadEngines(
   return { loadedEngines, warnings };
 }
 
-function loadProcessor(script, options) {
+async function loadProcessor(script, options) {
+  const absoluteScriptPath = path.resolve(process.cwd(), options.scriptPath);
   if (script.config.processor) {
-    const absoluteScriptPath = path.resolve(process.cwd(), options.scriptPath);
     const processorPath = path.resolve(
       path.dirname(absoluteScriptPath),
       script.config.processor
     );
-    const processor = require(processorPath);
-    script.config.processor = processor;
+
+    if (processorPath.endsWith('.mjs')) {
+      const exports = await import(processorPath);
+      script.config.processor = Object.assign(
+        {},
+        script.config.processor,
+        exports
+      );
+    } else {
+      // CJS (possibly transplied from TS)
+      script.config.processor = require(processorPath);
+    }
   }
 
   return script;
@@ -438,7 +448,8 @@ function createContext(script, contextVars, additionalProperties = {}) {
         target: script.config.target,
         $environment: script._environment,
         $processEnvironment: process.env, // TODO: deprecate
-        $env: process.env
+        $env: process.env,
+        $testId: global.artillery.testRunId
       },
       contextVars || {}
     ),
@@ -471,8 +482,17 @@ function $randomNumber(min, max) {
   return _.random(min, max);
 }
 
-function $randomString(length) {
-  return Math.random().toString(36).substr(2, length);
+function $randomString(length = 10) {
+  let s = '';
+  const alphabet =
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const alphabetLength = alphabet.length;
+
+  while (s.length < length) {
+    s += alphabet.charAt((Math.random() * alphabetLength) | 0);
+  }
+
+  return s;
 }
 
 function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
@@ -493,6 +513,12 @@ function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
 
     const name = script[hook].engine || 'http';
     const engine = engines.find((e) => e.__name === name);
+
+    if (typeof engine === 'undefined') {
+      throw new Error(
+        `Failed to run ${hook} hook: unknown engine "${name}". Did you forget to include it in "config.engines.${name}"?`
+      );
+    }
     const hookScenario = engine.createScenario(script[hook], ee);
     const hookContext = createContext(script, contextVars, {
       scenario: script[hook]

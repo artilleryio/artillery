@@ -14,7 +14,6 @@ const {
 const p = require('util').promisify;
 const csv = require('csv-parse');
 const debug = require('debug')('commands:run');
-const ip = require('ip');
 const dotenv = require('dotenv');
 const _ = require('lodash');
 
@@ -32,8 +31,10 @@ const telemetry = require('../telemetry').init();
 const validateScript = require('../util/validate-script');
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
-const { customAlphabet } = require('nanoid');
 const parseTagString = require('../util/parse-tag-string');
+
+const generateId = require('../util/generate-id');
+
 class RunCommand extends Command {
   static aliases = ['run'];
   // Enable multiple args:
@@ -143,6 +144,10 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 
   try {
+    const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+    console.log('Test run id:', testRunId);
+    global.artillery.testRunId = testRunId;
+
     const script = await prepareTestExecutionPlan(inputFiles, flags, args);
 
     const runnerOpts = {
@@ -182,11 +187,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         platformConfig[k] = v;
       }
     }
-
-    const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-    const testRunId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
-
-    console.log('Test run id:', testRunId);
 
     const launcherOpts = {
       platform: flags.platform,
@@ -366,6 +366,23 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
             }
           }
         }
+
+        if (
+          global.artillery.hasTypescriptProcessor &&
+          !process.env.ARTILLERY_TS_KEEP_BUNDLE
+        ) {
+          try {
+            fs.unlinkSync(global.artillery.hasTypescriptProcessor);
+          } catch (err) {
+            console.log(
+              `WARNING: Failed to remove typescript bundled file: ${global.artillery.hasTypescriptProcessor}`
+            );
+            console.log(err);
+          }
+          try {
+            fs.rmdirSync(path.dirname(global.artillery.hasTypescriptProcessor));
+          } catch (err) {}
+        }
         debug('Cleanup finished');
         process.exit(artillery.suggestedExitCode || opts.exitCode);
       })();
@@ -379,6 +396,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
 function replaceProcessorIfTypescript(script, scriptPath, platform) {
   const relativeProcessorPath = script.config.processor;
+  const userExternalPackages = script.config.bundling?.external || [];
 
   if (!relativeProcessorPath) {
     return script;
@@ -399,10 +417,10 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
   );
   const processorFileName = path.basename(actualProcessorPath, extensionType);
 
-  const tmpDir = os.tmpdir();
+  const processorDir = path.dirname(actualProcessorPath);
   const newProcessorPath = path.join(
-    tmpDir,
-    `${processorFileName}-${Date.now()}.js`
+    processorDir,
+    `dist/${processorFileName}.js`
   );
 
   //TODO: move require to top of file when Lambda bundle size issue is solved
@@ -417,13 +435,13 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
       platform: 'node',
       format: 'cjs',
       sourcemap: 'inline',
-      sourceRoot: '/' //TODO: review this?
+      external: ['@playwright/test', ...userExternalPackages]
     });
   } catch (error) {
     throw new Error(`Failed to compile Typescript processor\n${error.message}`);
   }
 
-  global.artillery.hasTypescriptProcessor = true;
+  global.artillery.hasTypescriptProcessor = newProcessorPath;
   console.log(
     `Bundled Typescript file into JS. New processor path: ${newProcessorPath}`
   );
@@ -567,21 +585,33 @@ async function sendTelemetry(script, flags, extraProps) {
       properties.distinctId = properties.targetHash;
     }
 
-    const ipaddr = ip.address();
     let macaddr;
+    const nonInternalIpv6Interfaces = [];
     for (const [iface, descrs] of Object.entries(os.networkInterfaces())) {
       for (const o of descrs) {
-        if (o.address === ipaddr) {
-          macaddr = o.mac;
-          break;
+        if (o.internal == true) {
+          continue;
         }
+
+        //prefer ipv4 interface when available
+        if (o.family != 'IPv4') {
+          nonInternalIpv6Interfaces.push(o);
+          continue;
+        }
+
+        macaddr = o.mac;
+        break;
       }
+    }
+
+    //default to first ipv6 interface if no ipv4 interface is available
+    if (!macaddr && nonInternalIpv6Interfaces.length > 0) {
+      macaddr = nonInternalIpv6Interfaces[0].mac;
     }
 
     if (macaddr) {
       properties.macHash = hash(macaddr);
     }
-    properties.ipHash = hash(ipaddr);
     properties.hostnameHash = hash(os.hostname());
     properties.usernameHash = hash(os.userInfo().username);
 

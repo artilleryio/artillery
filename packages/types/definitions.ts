@@ -121,6 +121,12 @@ export type PlaywrightEngineConfig = {
    */
   defaultNavigationTimeout?: number;
   /**
+   * When set, changes the attribute used by locator `page.getByTestId` in Playwright.
+   * https://playwright.dev/docs/api/class-framelocator#frame-locator-get-by-test-id
+   * @title Test ID Attribute
+   */
+  testIdAttribute?: string;
+  /**
    * Aggregate Artillery metrics by test scenario name.
    * https://www.artillery.io/docs/reference/engines/playwright#aggregate-metrics-by-scenario-name
    * @title Aggregate by name

@@ -1,8 +1,10 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const grpc = require('@grpc/grpc-js');
 const { traceExporters, validateExporter } = require('../exporters');
+const {
+  OutlierDetectionBatchSpanProcessor
+} = require('../outlier-detection-processor');
 
 const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {
@@ -12,18 +14,20 @@ const {
   BatchSpanProcessor
 } = require('@opentelemetry/sdk-trace-base');
 const { SpanKind, trace } = require('@opentelemetry/api');
+const { sleep } = require('../../util');
 
 class OTelTraceConfig {
   constructor(config, resource) {
     this.config = config;
     this.resource = resource;
+    this.debug = require('debug')(`plugin:publish-metrics:${this.config.type}`);
 
     // Validate exporter provided by user
     validateExporter(traceExporters, this.config.exporter, 'trace');
   }
 
   configure() {
-    debug('Configuring Tracer Provider');
+    this.debug('Configuring Tracer Provider');
     this.tracerOpts = {
       resource: this.resource
     };
@@ -35,7 +39,7 @@ class OTelTraceConfig {
 
     this.tracerProvider = new BasicTracerProvider(this.tracerOpts);
 
-    debug('Configuring Exporter');
+    this.debug('Configuring Exporter');
     this.exporterOpts = {};
     if (this.config.endpoint) {
       this.exporterOpts.url = this.config.endpoint;
@@ -57,22 +61,27 @@ class OTelTraceConfig {
       this.exporterOpts
     );
 
-    this.tracerProvider.addSpanProcessor(
-      new BatchSpanProcessor(this.exporter, {
-        scheduledDelayMillis: 1000
-      })
-    );
+    this.processorOpts = {
+      scheduledDelayMillis: this.config.scheduledDelayMillis || 5000,
+      maxExportBatchSize: this.config.maxExportBatchSize || 1000,
+      maxQueueSize: this.config.maxQueueSize || 2000
+    };
+    const Processor = this.config.smartSampling
+      ? OutlierDetectionBatchSpanProcessor
+      : BatchSpanProcessor;
+
+    this.tracerProvider.addSpanProcessor(new Processor(this.exporter));
     this.tracerProvider.register();
   }
 
   async shutDown() {
-    debug('Initiating TracerProvider shutdown');
+    this.debug('Initiating TracerProvider shutdown');
     try {
       await this.tracerProvider.shutdown();
     } catch (err) {
-      debug(err);
+      this.debug(err);
     }
-    debug('TracerProvider shutdown completed');
+    this.debug('TracerProvider shutdown completed');
   }
 }
 
@@ -80,8 +89,12 @@ class OTelTraceBase {
   constructor(config, script) {
     this.config = config;
     this.script = script;
+    this.debug = require('debug')(`plugin:publish-metrics:${this.config.type}`);
     this.pendingRequestSpans = 0;
     this.pendingScenarioSpans = 0;
+    this.pendingPageSpans = 0;
+    this.pendingStepSpans = 0;
+    this.pendingPlaywrightScenarioSpans = 0;
   }
   setTracer(engine) {
     // Get and set the tracer by engine
@@ -100,6 +113,7 @@ class OTelTraceBase {
           kind: SpanKind.CLIENT,
           attributes: {
             'vu.uuid': userContext.vars.$uuid,
+            test_id: userContext.vars.$testId,
             [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
           }
         }
@@ -134,13 +148,38 @@ class OTelTraceBase {
   otelTraceOnError(scenarioErr, req, userContext, ee, done) {
     done();
   }
-
-  async cleanup() {
-    while (this.pendingRequestSpans > 0 || this.pendingScenarioSpans > 0) {
-      debug('Waiting for pending traces ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+  async waitOnPendingSpans(pendingRequests, pendingScenarios, maxWaitTime) {
+    let waitedTime = 0;
+    while (
+      (pendingRequests > 0 || pendingScenarios > 0) &&
+      waitedTime < maxWaitTime
+    ) {
+      this.debug('Waiting for pending traces ...');
+      await sleep(500);
+      waitedTime += 500;
     }
-    debug('Pending traces done');
+    return true;
+  }
+
+  async cleanup(engines) {
+    if (engines.includes('http')) {
+      await this.waitOnPendingSpans(
+        this.pendingRequestSpans,
+        this.pendingScenarioSpans,
+        5000
+      );
+    }
+    if (engines.includes('playwright')) {
+      await this.waitOnPendingSpans(
+        this.pendingPlaywrightScenarioSpans,
+        this.pendingPlaywrightScenarioSpans,
+        5000
+      );
+    }
+
+    this.debug('Pending traces done');
+    this.debug('Waiting for flush period to complete');
+    await sleep(5000);
   }
 }
 

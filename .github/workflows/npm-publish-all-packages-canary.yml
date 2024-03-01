@@ -18,8 +18,19 @@ on:
       - 'packages/artillery-plugin-memory-inspector/**'
       
 jobs:
+  publish-fargate-worker-image:
+    if: "!contains( github.event.head_commit.message, 'ci: release v')"
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+
   build:
     runs-on: ubuntu-latest
+    if: "!contains( github.event.head_commit.message, 'ci: release v')"
+    needs: publish-fargate-worker-image
     permissions:
       contents: read
       packages: write
@@ -32,6 +43,9 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
+      - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
+        env:
+          COMMIT_SHA: ${{ github.sha }}
       - run: | 
           export COMMIT_SHA=$(git rev-parse --short HEAD)
           node .github/workflows/scripts/replace-package-versions-with-commit-sha.js

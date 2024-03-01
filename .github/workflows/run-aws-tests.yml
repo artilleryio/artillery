@@ -41,11 +41,18 @@ jobs:
   run-tests:
     if: contains( github.event.pull_request.labels.*.name, 'run-aws-tests' )
     needs: publish-branch-image
-    timeout-minutes: 40
+    timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
+    env:
+      ECR_IMAGE_VERSION: ${{ github.event.pull_request.head.sha || github.sha }} # the image is published with the sha of the commmit in the branch
+      ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      GITHUB_REPO: ${{ github.repository }}
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -56,7 +63,7 @@ jobs:
           SHOW_STACK_TRACE: true
         with:
           aws-region: eu-west-1
-          role-to-assume: ${{ secrets.ARTILLERY_AWS_CLI_ROLE_ARN_TEST1 }}
+          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
           role-session-name: OIDCSession
           mask-aws-account-id: true
       - name: Use Node.js 18.x
@@ -68,9 +75,7 @@ jobs:
       - run: npm run test:aws --workspace artillery
         env:
           FORCE_COLOR: 1
-          ECR_IMAGE_VERSION: ${{ github.sha }} # the image is published with the sha of the commit within this repo
-          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
-          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
-          GITHUB_REPO: ${{ github.repository }}
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_SHA: ${{ github.sha }}
+    
+      - run: npm run test:aws --workspace artillery-engine-playwright
+        env:
+          FORCE_COLOR: 1

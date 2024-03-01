@@ -1,0 +1,22 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  processor: "../code/functions.js"
+  environments:
+    main:
+      phases:
+        - duration: 20
+          arrivalRate: 1
+      payload:
+        - path: "../data/variables.csv" # this is resolved relative to the main script for now, NOT this file
+          fields: ["username", "email"]
+      plugins:
+        metrics-by-endpoint: {}
+    stage:
+      plugins:
+        datadog: {}
+  plugins:
+    http-file-uploads:
+      filePaths:
+        - ../data/files
+    publish-metrics:
+      - type: statsd

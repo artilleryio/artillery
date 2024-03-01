@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "2.0.3",
+  "version": "2.0.6",
   "description": "Cloud-scale load testing. https://www.artillery.io",
   "main": "./lib",
   "engines": {
@@ -43,10 +43,12 @@
     }
   },
   "scripts": {
-    "test:unit": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 --color test/unit/*.test.js",
+    "test:unit": "tap --no-coverage --timeout=420 --color test/unit/*.test.js",
     "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap --no-coverage --color test/testcases/plugins/*.test.js",
-    "test": "npm run test:unit && npm run test:acceptance",
-    "test:aws": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --color --timeout=600 test/cloud-e2e/**/*.test.js",
+    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' &&  npm run test:unit && npm run test:acceptance",
+    "test:windows": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & npm run test:unit && tap --no-coverage --timeout=420 --color test/cli/*.test.js",
+    "test:aws": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --color --timeout=3600 test/cloud-e2e/**/*.test.js",
+    "test:aws:windows": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & tap --no-coverage --timeout=420 --color test/cloud-e2e/fargate/*.test.js --grep \"Run simple-bom\"",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix"
   },
@@ -108,12 +110,11 @@
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
     "dependency-tree": "^10.0.9",
-    "detective": "^5.1.0",
+    "detective-es6": "^4.0.1",
     "dotenv": "^16.0.1",
     "esbuild-wasm": "^0.19.8",
     "eventemitter3": "^4.0.4",
     "fs-extra": "^10.1.0",
-    "ip": "^1.1.8",
     "is-builtin-module": "^2.0.0",
     "joi": "^17.6.0",
     "js-yaml": "^3.13.1",

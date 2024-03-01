@@ -1,4 +1,5 @@
 const got = require('got');
+const { sleep } = require('../util');
 const debug = require('debug')('plugin:publish-metrics:newrelic');
 
 class NewRelicReporter {
@@ -7,6 +8,11 @@ class NewRelicReporter {
       throw new Error(
         'New Relic reporter: licenseKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#newrelic)'
       );
+    }
+    if (config.sendOnlyTraces || config.traces?.sendOnlyTraces) {
+      this.onlyTraces = true;
+      debug('sendOnlyTraces is true, not initializing metrics');
+      return this;
     }
 
     // Set each config value as matching user config if exists, else default values
@@ -265,7 +271,7 @@ class NewRelicReporter {
   async waitingForRequest() {
     while (this.pendingRequests > 0) {
       debug('Waiting for pending request...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     }
 
     debug('Pending requests done');
@@ -273,6 +279,10 @@ class NewRelicReporter {
   }
 
   cleanup(done) {
+    if (this.onlyTraces) {
+      return done();
+    }
+
     if (this.startedEventSent) {
       const timestamp = Date.now();
       this.eventOpts.timestamp = timestamp;

@@ -4,6 +4,7 @@ const fs = require('fs');
 const PromClient = require('prom-client');
 const uuid = require('uuid');
 const debug = require('debug')('plugin:publish-metrics:prometheus');
+const { sleep } = require('./util');
 
 const COUNTERS_STATS = 'counters', // counters stats
   RATES_STATS = 'rates', // rates stats
@@ -163,7 +164,7 @@ class PrometheusReporter {
   async waitingForRequest() {
     do {
       debug('Waiting for pending request ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     } while (this.hasPendingRequest);
 
     debug('Pending requests done');
