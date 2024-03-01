@@ -150,7 +150,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
     const script = await prepareTestExecutionPlan(inputFiles, flags, args);
 
-    const runnerOpts = {
+    var runnerOpts = {
       environment: flags.environment,
       // This is used in the worker to resolve
       // the path to the processor module
@@ -197,7 +197,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       testRunId
     };
 
-    let launcher = await createLauncher(
+    var launcher = await createLauncher(
       script,
       script.config.payload,
       runnerOpts,
@@ -212,7 +212,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       metricsToSuppress
     });
 
-    let reporters = [consoleReporter];
+    var reporters = [consoleReporter];
     if (process.env.CUSTOM_REPORTERS) {
       const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
       customReporterNames.forEach(function (name) {
@@ -306,8 +306,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
     launcher.run();
 
-    let finalReport = {};
-    let shuttingDown = false;
+    var finalReport = {};
+    var shuttingDown = false;
     process.on('SIGINT', async () => {
       gracefulShutdown({ earlyStop: true });
     });
@@ -353,16 +353,23 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
       await Promise.allSettled(ps2);
 
-      await telemetry.shutdown();
+      if (telemetry) {
+        await telemetry.shutdown();
+      }
 
-      await launcher.shutdown();
+      if (launcher) {
+        await launcher.shutdown();
+      }
+
       await (async function () {
-        for (const r of reporters) {
-          if (r.cleanup) {
-            try {
-              await p(r.cleanup.bind(r))();
-            } catch (cleanupErr) {
-              debug(cleanupErr);
+        if (reporters) {
+          for (const r of reporters) {
+            if (r.cleanup) {
+              try {
+                await p(r.cleanup.bind(r))();
+              } catch (cleanupErr) {
+                debug(cleanupErr);
+              }
             }
           }
         }
