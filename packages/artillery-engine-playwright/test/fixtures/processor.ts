@@ -1,6 +1,6 @@
 import { expect, Page } from '@playwright/test';
 
-//this is due to occasional failures in CI due to known unresolved issue: https://github.com/microsoft/playwright/issues/13062
+//this is due to occasional failures in CI due to known unresolved issue (ERR_NETWORK_CHANGED): https://github.com/microsoft/playwright/issues/13062
 const retryGoingToPage = async (page, url) => {
   let retryCount = 0;
   let error;
@@ -9,6 +9,8 @@ const retryGoingToPage = async (page, url) => {
       await page.goto(url);
       return;
     } catch (err) {
+      console.log(`ERROR: page.goto in Playwright test - ${err.message}`);
+      console.log(`Retrying...`);
       error = err;
       retryCount++;
     }

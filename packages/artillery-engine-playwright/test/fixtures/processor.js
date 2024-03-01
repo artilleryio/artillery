@@ -9,6 +9,8 @@ const retryGoingToPage = async (page, url) => {
       await page.goto(url);
       return;
     } catch (err) {
+      console.log(`ERROR: page.goto in Playwright test - ${err.message}`);
+      console.log('Retrying...');
       error = err;
       retryCount++;
     }
