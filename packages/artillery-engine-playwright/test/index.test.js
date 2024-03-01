@@ -2,7 +2,7 @@ const { test, afterEach, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
 
-const TEST_URL = 'https://github.com/artilleryio/artillery/';
+const TEST_URL = 'https://www.artillery.io/';
 let playwrightOutput;
 
 beforeEach(() => {
@@ -54,12 +54,21 @@ test('playwright js test works and reports data', async (t) => {
   //Assert: reports steps as histograms
   t.hasProp(
     summaries,
-    'browser.step.go_to_artillery_repo',
-    'should have reported step go_to_artillery_repo as histogram'
+    'browser.step.go_to_artillery_io',
+    'should have reported step go_to_artillery_io as histogram'
   );
   t.ok(
-    Object.keys(summaries['browser.step.go_to_artillery_repo']).includes('p99'),
-    'should have reported step go_to_artillery_repo as histogram with p99 metric'
+    Object.keys(summaries['browser.step.go_to_artillery_io']).includes('p99'),
+    'should have reported step go_to_artillery_io as histogram with p99 metric'
+  );
+  t.hasProp(
+    summaries,
+    'browser.step.go_to_docs',
+    'should have reported step go_to_docs as histogram'
+  );
+  t.ok(
+    Object.keys(summaries['browser.step.go_to_docs']).includes('p99'),
+    'should have reported step go_to_docs as histogram with p99 metric'
   );
 
   //Assert: reports web vital metrics
@@ -180,12 +189,22 @@ test('playwright typescript test works and reports data', async (t) => {
   //Assert: reports steps as histograms
   t.hasProp(
     summaries,
-    'browser.step.go_to_artillery_repo',
-    'should have reported step go_to_artillery_repo as histogram'
+    'browser.step.go_to_artillery_io',
+    'should have reported step go_to_artillery_io as histogram'
   );
   t.ok(
-    Object.keys(summaries['browser.step.go_to_artillery_repo']).includes('p99'),
-    'should have reported step go_to_artillery_repo as histogram with p99 metric'
+    Object.keys(summaries['browser.step.go_to_artillery_io']).includes('p99'),
+    'should have reported step go_to_artillery_io as histogram with p99 metric'
+  );
+
+  t.hasProp(
+    summaries,
+    'browser.step.go_to_docs',
+    'should have reported step go_to_artillery_io as histogram'
+  );
+  t.ok(
+    Object.keys(summaries['browser.step.go_to_docs']).includes('p99'),
+    'should have reported step go_to_docs as histogram with p99 metric'
   );
 
   //Assert: reports web vital metrics
