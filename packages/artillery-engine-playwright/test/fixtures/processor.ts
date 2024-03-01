@@ -23,7 +23,6 @@ export async function artilleryPlaywrightFunction(
   test
 ) {
   await test.step('go_to_artillery_io', async () => {
-    // await page.goto('/');
     await retryGoingToPage(page, '/');
     await expect(page.getByText('The Artillery Manifesto')).toBeVisible();
   });
@@ -46,13 +45,7 @@ export async function playwrightFunctionWithFailure(
   events,
   test
 ) {
-  // await test.step('go_to_artillery_repo', async () => {
-  //   await page.goto(`${vuContext.vars.target}/`);
-  //   await expect(page.getByText('gremlins are here!')).toBeVisible();
-  // });
-
   await test.step('go_to_artillery_io', async () => {
-    // await page.goto('/');
     await retryGoingToPage(page, '/');
     await expect(page.getByText('gremlins are here!')).toBeVisible();
   });
