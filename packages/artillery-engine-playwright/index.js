@@ -11,8 +11,7 @@ class PlaywrightEngine {
     this.launchOptions = this.config.launchOptions || {};
     this.contextOptions = this.config.contextOptions || {};
 
-    this.tracing = (script.config?.plugins?.['publish-metrics'] || []).some((config) => {
-      return (config.type === 'open-telemetry') && config.traces})
+    this.tracing = global.artillery.OTEL_TRACING_ENABLED || false;
 
     this.defaultNavigationTimeout =
       (parseInt(this.config.defaultNavigationTimeout, 10) || 30) * 1000;
