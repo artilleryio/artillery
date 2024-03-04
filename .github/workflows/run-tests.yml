@@ -47,6 +47,13 @@ jobs:
           node-version: 20.x
       - id: generate-matrix
         run: echo "matrix=$(node .github/workflows/scripts/discover-aws-tests.js)" >> $GITHUB_OUTPUT
+      - name: echo output
+        run: echo ${{ steps.generate-matrix.outputs.matrix }}
+      - name: echo names
+        run: echo ${{fromJson(steps.generate-matrix.outputs.matrix.names)}}
+      - name: echo namesToFiles
+        run: echo ${{fromJson(steps.generate-matrix.outputs.matrix.namesToFiles)}}
+        
   test-aws:
     timeout-minutes: 30
     runs-on: ubuntu-latest
