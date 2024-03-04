@@ -56,9 +56,9 @@ jobs:
       - name: echo output
         run: echo ${{ steps.generate-matrix.outputs.matrix }}
       - name: echo names
-        run: echo ${{fromJson(steps.generate-matrix.outputs.matrix.names)}}
+        run: echo ${{steps.generate-matrix.outputs.matrix.names}}
       - name: echo namesToFiles
-        run: echo ${{fromJson(steps.generate-matrix.outputs.matrix.namesToFiles)}}
+        run: echo ${{steps.generate-matrix.outputs.matrix.namesToFiles}}
 
   test-aws:
     timeout-minutes: 30
@@ -68,7 +68,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        testName: ${{fromJson(needs.generate-test-matrix.outputs.matrix.names)}}
+        testName: ${{needs.generate-test-matrix.outputs.matrix.names}}
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js 20.x
