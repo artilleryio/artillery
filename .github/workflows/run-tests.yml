@@ -74,7 +74,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        testName: ${{needs.generate-test-matrix.outputs.matrix.names}}
+        testName: ${{fromJson(needs.generate-test-matrix.outputs.matrix).names}}
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js 20.x
