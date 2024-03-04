@@ -8,30 +8,62 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  # test:
+  #   timeout-minutes: 30
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     contents: read
+  #   strategy:
+  #     matrix:
+  #       node-version: [18.x, 20.x]
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Use Node.js ${{ matrix.node-version }}
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: ${{ matrix.node-version }}
+  #     - run: npm install
+  #     - run: npm run build
+  #     - run: npm run test
+  #       env:
+  #         FORCE_COLOR: 1
+  #     - name: Notify about failures
+  #       if: failure() && github.ref == 'refs/heads/main'
+  #       uses: 8398a7/action-slack@v3.15.1
+  #       with:
+  #         status: ${{ job.status }}
+  #         fields: repo,message,commit,author,eventName,job,took,pullRequest
+  #       env:
+  #         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  generate-test-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+      - id: generate-matrix
+        # run: node .github/workflows/scripts/discover-aws-tests.js > $GITHUB_OUTPUT
+        run: echo "matrix=$(node .github/workflows/scripts/discover-aws-tests.js)" >> $GITHUB_OUTPUT
+  test-aws:
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    needs: generate-test-matrix
     permissions:
       contents: read
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        testName: ${{fromJson(needs.generate-test-matrix.outputs.matrix.names)}}
     steps:
       - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Use Node.js 20.x
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20.x
       - run: npm install
       - run: npm run build
-      - run: npm run test
+      - run: npm run test:special --workspace ${{needs.generate-test-matrix.outputs.matrix.namesToFiles.package}} -- --files ${{ needs.generate-test-matrix.outputs.matrix.namesToFiles.file }}
         env:
           FORCE_COLOR: 1
-      - name: Notify about failures
-        if: failure() && github.ref == 'refs/heads/main'
-        uses: 8398a7/action-slack@v3.15.1
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,eventName,job,took,pullRequest
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
