@@ -45,12 +45,16 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20.x
-      - id: generate-matrix
-        run: echo "matrix=$(node .github/workflows/scripts/discover-aws-tests.js)" >> $GITHUB_OUTPUT
       # - id: generate-matrix
-      #   run: |
-      #     RESULT=$(node .github/workflows/scripts/discover-aws-tests.js)
-      #     echo 
+      #   run: echo "matrix=$(node .github/workflows/scripts/discover-aws-tests.js)" >> $GITHUB_OUTPUT
+      - id: generate-matrix
+        run: |
+          RESULT=$(node .github/workflows/scripts/discover-aws-tests.js)
+          echo "matrix=$RESULT" >> $GITHUB_ENV
+          echo "matrix=$RESULT" >> $GITHUB_OUTPUT
+      ## get the output of the script
+      - name: get output of script
+        run: echo ${{ steps.generate-matrix.outputs.matrix }}
       - name: try to json
         run: echo ${{toJson(steps.generate-matrix.outputs.matrix)}}
       - name: echo output
@@ -59,6 +63,8 @@ jobs:
         run: echo ${{steps.generate-matrix.outputs.matrix.names}}
       - name: echo namesToFiles
         run: echo ${{steps.generate-matrix.outputs.matrix.namesToFiles}}
+      - name: echo with fromJson
+        run: echo ${{fromJson(steps.generate-matrix.outputs.matrix)}}
 
   test-aws:
     timeout-minutes: 30
