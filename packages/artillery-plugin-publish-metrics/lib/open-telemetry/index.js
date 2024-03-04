@@ -1,6 +1,6 @@
 'use strict';
 
-const vendorTranslators = require('./vendor-translators');
+const { vendorTranslators } = require('./translators/vendor-otel');
 const {
   diag,
   DiagConsoleLogger,
@@ -71,6 +71,7 @@ class OTelReporter {
     if (this.tracesConfig) {
       global.artillery.OTEL_TRACING_ENABLED = true;
     }
+
     // Warn if traces are configured in multiple reporters
     this.warnIfDuplicateTracesConfigured(this.translatedConfigsList);
 
@@ -156,6 +157,11 @@ class OTelReporter {
     if (!this.metricsConfig && !this.tracesConfig) {
       return done();
     }
+
+    // Waiting for flush period to complete here rather than in trace/metric reporters
+    this.debug('Waiting for flush period to end');
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+
     if (this.metricReporter) {
       await this.metricReporter.cleanup();
     }

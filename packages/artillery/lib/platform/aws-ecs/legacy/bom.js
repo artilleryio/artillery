@@ -14,6 +14,7 @@ const BUILTIN_ENGINES = require('./plugins').getOfficialEngines();
 
 const Table = require('cli-table3');
 
+const { resolveConfigTemplates } = require('../../../../util');
 // NOTE: Code below presumes that all paths are absolute
 
 //Tests in Fargate run on ubuntu, which uses posix paths
@@ -32,12 +33,14 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         return next(null, {
           opts: {
             scriptData,
-            absoluteScriptPath
+            absoluteScriptPath,
+            flags: opts.flags
           },
           localFilePaths: [absoluteScriptPath],
           npmModules: []
         });
       },
+      applyScriptChanges,
       getPlugins,
       getCustomEngines,
       getCustomJsDependencies,
@@ -137,7 +140,8 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       return callback(null, {
         files: _.uniqWith(files, _.isEqual),
         modules: _.uniq(context.npmModules),
-        pkgDeps: context.pkgDeps
+        pkgDeps: context.pkgDeps,
+        fullyResolvedConfig: context.opts.scriptData.config
       });
     }
   );
@@ -146,6 +150,15 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 function isLocalModule(modName) {
   // NOTE: Absolute paths not supported
   return modName.startsWith('.');
+}
+
+function applyScriptChanges(context, next) {
+  resolveConfigTemplates(context.opts.scriptData, context.opts.flags).then(
+    (resolvedConfig) => {
+      context.opts.scriptData = resolvedConfig;
+      return next(null, context);
+    }
+  );
 }
 
 function getPlugins(context, next) {
@@ -459,4 +472,4 @@ function prettyPrint(manifest) {
   artillery.log();
 }
 
-module.exports = { createBOM, commonPrefix, prettyPrint };
+module.exports = { createBOM, commonPrefix, prettyPrint, applyScriptChanges };
