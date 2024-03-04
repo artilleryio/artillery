@@ -45,8 +45,7 @@ jobs:
         with:
           node-version: 20.x
       - id: generate-matrix
-        # run: node .github/workflows/scripts/discover-aws-tests.js > $GITHUB_OUTPUT
-        run: echo "matrix=$(node .github/workflows/scripts/discover-aws-tests.js)" >> $GITHUB_OUTPUT
+        run: echo "matrix=$(node ./.github/workflows/scripts/discover-aws-tests.js)" >> $GITHUB_OUTPUT
   test-aws:
     timeout-minutes: 30
     runs-on: ubuntu-latest
