@@ -83,6 +83,8 @@ jobs:
           node-version: 20.x
       - run: npm install
       - run: npm run build
-      - run: npm run test:special --workspace ${{needs.generate-test-matrix.outputs.matrix.namesToFiles.package}} -- --files ${{ needs.generate-test-matrix.outputs.matrix.namesToFiles.file }}
+      - name: get workspace with jq
+        run: echo ${{fromJson(needs.generate-test-matrix.outputs.matrix)}} | jq ".namesToFiles.${{ matrix.testName }}"
+      - run: npm run test:special --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
         env:
           FORCE_COLOR: 1
