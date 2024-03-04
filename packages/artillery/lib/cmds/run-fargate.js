@@ -99,13 +99,11 @@ RunCommand.flags = {
   }),
   cpu: Flags.string({
     description:
-      'Set task vCPU on Fargate. Value may be set as a number of vCPUs between 1-16 (e.g. 4), or as number of vCPU units (e.g. 4096)',
-    default: '4'
+      'Set task vCPU on Fargate (defaults to 4 vCPU). Value may be set as a number of vCPUs between 1-16 (e.g. 4), or as number of vCPU units (e.g. 4096).'
   }),
   memory: Flags.string({
     description:
-      'Set task memory on Fargate. Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)',
-    default: '8'
+      'Set task memory on Fargate (defaults 8 GB). Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)'
   }),
   packages: Flags.string({
     description:

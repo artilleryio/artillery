@@ -1,6 +1,5 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
@@ -68,6 +67,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         kind: SpanKind.CLIENT,
         attributes: {
           'vu.uuid': userContext.vars.$uuid,
+          test_id: userContext.vars.$testId,
           [SemanticAttributes.HTTP_URL]: parsedUrl || url.href,
           // We set the port if it is specified, if not we set to a default port based on the protocol
           [SemanticAttributes.HTTP_SCHEME]:
@@ -121,7 +121,10 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
               .startSpan(name, {
                 kind: SpanKind.CLIENT,
                 startTime: res.timings[value.start],
-                attributes: { 'vu.uuid': userContext.vars.$uuid }
+                attributes: {
+                  'vu.uuid': userContext.vars.$uuid,
+                  test_id: userContext.vars.$testId
+                }
               })
               .end(res.timings[value.end]);
           }
@@ -151,7 +154,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         this.pendingRequestSpans--;
       }
     } catch (err) {
-      debug(err);
+      this.debug(err);
     }
     return done();
   }

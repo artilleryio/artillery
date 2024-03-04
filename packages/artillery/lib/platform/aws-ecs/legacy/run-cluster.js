@@ -7,7 +7,6 @@ const debug = require('debug')('commands:run-test');
 const debugVerbose = require('debug')('commands:run-test:v');
 const debugErr = require('debug')('commands:run-test:errors');
 const A = require('async');
-const { customAlphabet } = require('nanoid');
 const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
@@ -16,7 +15,10 @@ const moment = require('moment');
 
 const EnsurePlugin = require('artillery-plugin-ensure');
 
-const { createADOTDefinitionIfNeeded } = require('./adot');
+const {
+  getADOTRelevantReporterConfigs,
+  resolveADOTConfigSettings
+} = require('artillery-plugin-publish-metrics');
 
 const EventEmitter = require('events');
 
@@ -42,6 +44,8 @@ const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 const dotenv = require('dotenv');
 
 const util = require('./util');
+
+const generateId = require('../../../util/generate-id');
 
 const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
 
@@ -227,9 +231,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   if (options.dotenv) {
     const dotEnvPath = path.resolve(process.cwd(), options.dotenv);
+    dotenv.config({ path: dotEnvPath });
+
     const contents = fs.readFileSync(dotEnvPath);
     context.dotenv = dotenv.parse(contents);
-    dotenv.config({ path: dotEnvPath });
   }
 
   if (options.bundle) {
@@ -274,8 +279,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   context.extraSecrets = options.secret || [];
 
-  const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-  context.testId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
+  const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+  context.testId = testRunId;
+  global.artillery.testRunId = testRunId;
 
   if (context.namedTest) {
     context.s3Prefix = options.bundle;
@@ -645,6 +651,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       await checkCustomTaskRole(context);
       logProgress('Preparing test bundle...');
       await createTestBundle(context);
+      await createADOTDefinitionIfNeeded(context);
       await ensureTaskExists(context);
       await getManifest(context);
       await generateTaskOverrides(context);
@@ -823,9 +830,9 @@ async function cleanupResources(context) {
       context.sqsReporter.stop();
     }
 
-    if (context.adotSSMParameterPath) {
+    if (context.adot?.SSMParameterPath) {
       await awsUtil.deleteParameter(
-        context.adotSSMParameterPath,
+        context.adot.SSMParameterPath,
         context.region
       );
     }
@@ -1002,8 +1009,70 @@ async function createTestBundle(context) {
   });
 }
 
+async function createADOTDefinitionIfNeeded(context) {
+  const publishMetricsConfig =
+    context.fullyResolvedConfig.plugins?.['publish-metrics'];
+  if (!publishMetricsConfig) {
+    debug('No publish-metrics plugin set, skipping ADOT configuration');
+    return context;
+  }
+
+  const adotRelevantConfigs =
+    getADOTRelevantReporterConfigs(publishMetricsConfig);
+  if (adotRelevantConfigs.length === 0) {
+    debug('No ADOT relevant reporter configs set, skipping ADOT configuration');
+    return context;
+  }
+
+  try {
+    const { adotEnvVars, adotConfig } = resolveADOTConfigSettings({
+      configList: adotRelevantConfigs,
+      dotenv: { ...context.dotenv }
+    });
+
+    context.dotenv = Object.assign(context.dotenv || {}, adotEnvVars);
+
+    context.adot = {
+      SSMParameterPath: `/artilleryio/OTEL_CONFIG_${context.testId}`
+    };
+
+    await awsUtil.putParameter(
+      context.adot.SSMParameterPath,
+      JSON.stringify(adotConfig),
+      'String',
+      context.region
+    );
+
+    context.adot.taskDefinition = {
+      name: 'adot-collector',
+      image: 'amazon/aws-otel-collector',
+      command: [
+        '--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml'
+      ],
+      secrets: [
+        {
+          name: 'AOT_CONFIG_CONTENT',
+          valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter${context.adot.SSMParameterPath}`
+        }
+      ],
+      logConfiguration: {
+        logDriver: 'awslogs',
+        options: {
+          'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+          'awslogs-region': context.region,
+          'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+          'awslogs-create-group': 'true'
+        }
+      }
+    };
+  } catch (err) {
+    throw new Error(err);
+  }
+  return context;
+}
+
 async function ensureTaskExists(context) {
-  return new Promise(async (resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const ecs = new AWS.ECS({
       apiVersion: '2014-11-13',
       region: context.region
@@ -1083,8 +1152,6 @@ async function ensureTaskExists(context) {
         };
       });
 
-    const adotDefinition = await createADOTDefinitionIfNeeded(context);
-
     let taskDefinition = {
       family: context.taskName,
       containerDefinitions: [
@@ -1108,7 +1175,7 @@ async function ensureTaskExists(context) {
             }
           }
         },
-        ...([adotDefinition] || [])
+        ...([context.adot?.taskDefinition] || [])
       ],
       executionRoleArn: context.taskRoleArn
     };
@@ -1379,10 +1446,14 @@ async function generateTaskOverrides(context) {
           {
             name: 'AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE',
             value: '1'
+          },
+          {
+            name: 'ARTILLERY_TEST_RUN_ID',
+            value: global.artillery.testRunId
           }
         ]
       },
-      ...(context.adotSSMParameterPath ? adotOverride : [])
+      ...(context.adot ? adotOverride : [])
     ],
     taskRoleArn: context.taskRoleArn
   };
@@ -1877,6 +1948,14 @@ async function listen(context, ee) {
 
       global.artillery.globalEvents.emit('stats', stats);
       ee.emit('stats', stats);
+    });
+
+    r.on('phaseStarted', (phase) => {
+      global.artillery.globalEvents.emit('phaseStarted', phase);
+    });
+
+    r.on('phaseCompleted', (phase) => {
+      global.artillery.globalEvents.emit('phaseCompleted', phase);
     });
 
     r.start();

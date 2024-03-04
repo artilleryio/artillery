@@ -3,7 +3,7 @@ const fs = require('fs');
 const A = require('async');
 
 const isBuiltinModule = require('is-builtin-module');
-const detective = require('detective');
+const detective = require('detective-es6');
 const depTree = require('dependency-tree');
 
 const walkSync = require('walk-sync');
@@ -153,13 +153,12 @@ function isLocalModule(modName) {
 }
 
 function applyScriptChanges(context, next) {
-  if (context.opts.scriptData.config) {
-    context.opts.scriptData = resolveConfigTemplates(
-      context.opts.scriptData,
-      context.opts.flags
-    );
-  }
-  return next(null, context);
+  resolveConfigTemplates(context.opts.scriptData, context.opts.flags).then(
+    (resolvedConfig) => {
+      context.opts.scriptData = resolvedConfig;
+      return next(null, context);
+    }
+  );
 }
 
 function getPlugins(context, next) {
@@ -473,4 +472,4 @@ function prettyPrint(manifest) {
   artillery.log();
 }
 
-module.exports = { createBOM, commonPrefix, prettyPrint };
+module.exports = { createBOM, commonPrefix, prettyPrint, applyScriptChanges };

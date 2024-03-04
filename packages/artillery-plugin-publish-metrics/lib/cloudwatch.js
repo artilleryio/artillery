@@ -8,6 +8,8 @@ const {
 } = require('@aws-sdk/client-cloudwatch');
 const debug = require('debug')('plugin:publish-metrics:cloudwatch');
 
+const { sleep } = require('./util');
+
 const COUNTERS_STATS = 'counters'; // counters stats
 const RATES_STATS = 'rates'; // rates stats
 const SUMMARIES_STATS = 'summaries'; // summaries stats
@@ -177,7 +179,7 @@ class CloudWatchReporter {
   async waitingForRequest() {
     do {
       debug('Waiting for pending request ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     } while (this.pendingRequests > 0);
 
     debug('Pending requests done');

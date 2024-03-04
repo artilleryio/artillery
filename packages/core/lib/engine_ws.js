@@ -141,9 +141,19 @@ WSEngine.prototype.step = function (requestSpec, ee) {
     return function (context, callback) {
       const processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
-        processFunc(context, ee, function () {
-          return callback(null, context);
-        });
+        if (processFunc.constructor.name === 'Function') {
+          processFunc(context, ee, function () {
+            return callback(null, context);
+          });
+        } else {
+          return processFunc(context, ee)
+            .then(() => {
+              callback(null, context);
+            })
+            .catch((err) => {
+              callback(err, context);
+            });
+        }
       }
     };
   }

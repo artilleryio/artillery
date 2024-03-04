@@ -1,10 +1,6 @@
 'use strict';
 
-const debug = require('debug')('plugin:publish-metrics:open-telemetry');
-const {
-  vendorTranslators,
-  warnIfMultipleReportersPerSignalTypeSet
-} = require('./vendor-translators');
+const { vendorTranslators } = require('./translators/vendor-otel');
 const {
   diag,
   DiagConsoleLogger,
@@ -27,7 +23,7 @@ context.setGlobalContextManager(contextManager);
 // DEBUGGING SETUP - setting the OpenTelemetry's internal diagnostic handler here to run when debug is enabled
 if (
   process.env.DEBUG &&
-  process.env.DEBUG === 'plugin:publish-metrics:open-telemetry'
+  process.env.DEBUG.includes('plugin:publish-metrics:')
 ) {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 }
@@ -50,11 +46,21 @@ class OTelReporter {
       // Setting traces to first traces configured
       if (translatedConfig.traces && !this.tracesConfig) {
         this.tracesConfig = translatedConfig.traces;
+
+        // Setting debug for traces
+        this.traceDebug = require('debug')(
+          `plugin:publish-metrics:${this.tracesConfig.type}`
+        );
       }
 
       // Setting metrics to first metrics configured
       if (translatedConfig.metrics && !this.metricsConfig) {
         this.metricsConfig = translatedConfig.metrics;
+
+        // Setting debug for metrics
+        this.metricDebug = require('debug')(
+          `plugin:publish-metrics:${this.metricsConfig.type}`
+        );
       }
       return translatedConfig;
     });
@@ -62,12 +68,6 @@ class OTelReporter {
     if (!this.metricsConfig && !this.tracesConfig) {
       return this;
     }
-
-    // Warn if traces are configured in multiple reporters
-    warnIfMultipleReportersPerSignalTypeSet(
-      this.translatedConfigsList,
-      'traces'
-    );
 
     // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible
     this.getEngines(this.script.scenarios || []);
@@ -118,7 +118,22 @@ class OTelReporter {
       }
     }
   }
-
+  debug(msg) {
+    if (this.traceDebug) {
+      this.traceDebug(msg);
+    }
+    if (this.metricDebug) {
+      this.metricDebug(msg);
+    }
+  }
+  warnIfDuplicateTracesConfigured(configList) {
+    const tracesConfigs = configList.filter((config) => config.traces);
+    if (tracesConfigs.length > 1) {
+      console.warn(
+        'WARNING: Multiple reporters configured for traces. Currently, you can only use one reporter at a time for reporting traces. Only the first reporter will be used.'
+      );
+    }
+  }
   translateToOtel(config) {
     return vendorTranslators[config.type](config);
   }
@@ -132,13 +147,13 @@ class OTelReporter {
   }
 
   async cleanup(done) {
-    debug('Cleaning up');
+    this.debug('Cleaning up');
     if (!this.metricsConfig && !this.tracesConfig) {
       return done();
     }
 
     // Waiting for flush period to complete here rather than in trace/metric reporters
-    debug('Waiting for flush period to end');
+    this.debug('Waiting for flush period to end');
     await new Promise((resolve) => setTimeout(resolve, 10000));
 
     if (this.metricReporter) {
