@@ -68,6 +68,12 @@ class OTelReporter {
     if (!this.metricsConfig && !this.tracesConfig) {
       return this;
     }
+    if (this.tracesConfig) {
+      global.artillery.OTEL_TRACING_ENABLED = true;
+    }
+
+    // Warn if traces are configured in multiple reporters
+    this.warnIfDuplicateTracesConfigured(this.translatedConfigsList);
 
     // Create set of all engines used in test -> even though we only support Playwright and HTTP engine for now this is future compatible
     this.getEngines(this.script.scenarios || []);
