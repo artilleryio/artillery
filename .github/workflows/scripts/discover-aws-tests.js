@@ -24,7 +24,7 @@ const testLocations = [
   //   }
   {
     location: 'test/cli',
-    package: 'artillery-engine-playwright',
+    package: 'artillery',
     suffix: '.test.js'
   }
 ];
