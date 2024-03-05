@@ -34,7 +34,7 @@ const tests = {
   namesToFiles: {}
 };
 
-const addTest = (fileName, location, packageName, suffix) => {
+const addTest = (fileName, baseLocation, packageName, suffix) => {
   if (!fileName.endsWith(suffix)) {
     return;
   }
@@ -42,19 +42,19 @@ const addTest = (fileName, location, packageName, suffix) => {
   const jobName = `${packageName}/${testName}`;
   tests.names.push(jobName);
   tests.namesToFiles[jobName] = {
-    file: `${location}/${fileName}`,
+    file: `${baseLocation}/${fileName}`,
     package: packageName
   };
 };
 
 // Recursively scan a directory and add tests to the tests object
-function scanDirectory(location, packageName, suffix) {
+function scanDirectory(location, baseLocation, packageName, suffix) {
   fs.readdirSync(location).forEach((file) => {
     const absolute = path.join(location, file);
     if (fs.statSync(absolute).isDirectory()) {
-      scanDirectory(absolute, packageName, suffix); // Assume packageName is passed or determined some other way
+      scanDirectory(absolute, baseLocation, packageName, suffix);
     } else {
-      addTest(file, location, packageName, suffix);
+      addTest(file, baseLocation, packageName, suffix);
     }
   });
 }
@@ -62,8 +62,8 @@ function scanDirectory(location, packageName, suffix) {
 // Scan all the test locations
 for (const { package, location, suffix } of testLocations) {
   const fullLocation = `packages/${package}/${location}`;
-  scanDirectory(fullLocation, package, suffix);
+  scanDirectory(fullLocation, location, package, suffix);
 }
 
 // Output the tests object as a JSON string to be used by Github Actions
-console.log(JSON.stringify(tests));
+console.log(JSON.stringify(tests, null, 2));
