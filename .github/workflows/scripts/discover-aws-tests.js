@@ -66,4 +66,4 @@ for (const { package, location, suffix } of testLocations) {
 }
 
 // Output the tests object as a JSON string to be used by Github Actions
-console.log(JSON.stringify(tests, null, 2));
+console.log(JSON.stringify(tests));
