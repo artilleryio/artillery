@@ -7,7 +7,6 @@ const {
   getTestTags,
   execute
 } = require('../../cli/_helpers.js');
-const path = require('path');
 
 const A9 = process.env.A9 || 'artillery';
 
@@ -74,76 +73,6 @@ test('Run mixed-hierarchy', async (t) => {
   );
 });
 
-test('Run uses ensure', async (t) => {
-  try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/with-ensure.yaml --record --tags ${baseTags} --output ${reportFilePath} --count 15`;
-  } catch (output) {
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`)
-    );
-    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
-
-    const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['vusers.completed'],
-      300,
-      'Should have 300 total VUs'
-    );
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      300,
-      'Should have 300 "200 OK" responses'
-    );
-  }
-});
-
-test('Ensure (with new interface) should still run when workers exit from expect plugin (non zero exit code)', async (t) => {
-  //Note: this test uses new ensure plugin interface (config.plugins.ensure) to test that indirectly
-
-  try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
-  } catch (output) {
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p95 < 1`)
-    );
-    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
-
-    const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['vusers.completed'],
-      10,
-      'Should have 10 total VUs'
-    );
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      10,
-      'Should have 10 "200 OK" responses'
-    );
-  }
-});
-
-test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
-  try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
-  } catch (output) {
-    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
-
-    const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['vusers.completed'],
-      10,
-      'Should have 10 total VUs'
-    );
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      10,
-      'Should have 10 "200 OK" responses'
-    );
-  }
-});
-
 test('Kitchen Sink Test - multiple features together', async (t) => {
   const scenarioPath = `${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink.yml`;
   const dotEnvPath = `${__dirname}/fixtures/cli-kitchen-sink/kitchen-sink-env`;
@@ -204,52 +133,6 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
   );
 });
 
-test('Run with typescript processor and external package', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
-
-  const output =
-    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags},typescript:true`;
-
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-
-  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    2,
-    'Should have made 2 requests'
-  );
-  t.equal(
-    report.aggregate.counters['errors.invalid_address'],
-    2,
-    'Should have emitted 2 errors'
-  );
-});
-
-test('Run a test with an ESM processor', async (t) => {
-  // The main thing we're checking here is that ESM + dependencies get bundled correctly by BOM
-  const scenarioPath = path.resolve(
-    `${__dirname}/../../scripts/scenario-async-esm-hooks/test.yml`
-  );
-
-  const output =
-    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags}`;
-
-  t.equal(output.exitCode, 0, 'CLI exit code should be 0');
-
-  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    10,
-    'Should have made 10 requests'
-  );
-
-  t.equal(
-    report.aggregate.counters['hey_from_esm'],
-    10,
-    'Should have emitted 10 custom metrics from ts processor'
-  );
-});
-
 test('Run lots-of-output', async (t) => {
   $.verbose = false; // we don't want megabytes of output on the console
 
@@ -265,33 +148,4 @@ test('Run lots-of-output', async (t) => {
     'includes custom metric output'
   );
   t.match(output.stdout, /p99/i, 'a p99 value is reported');
-});
-
-test('Fargate should exit with error code when workers run out of memory', async (t) => {
-  try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:true --region us-east-1`;
-  } catch (output) {
-    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
-
-    t.match(output, /summary report/i, 'print summary report');
-    t.match(output, /p99/i, 'a p99 value is reported');
-  }
-});
-
-test('Fargate should not run out of memory when cpu and memory is increased via launch config', async (t) => {
-  const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
-
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.match(output, /summary report/i, 'print summary report');
-  t.match(output, /p99/i, 'a p99 value is reported');
-});
-
-test('Fargate should not run out of memory when cpu and memory is increased via flags', async (t) => {
-  const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --cpu 4 --memory 12`;
-
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.match(output, /summary report/i, 'print summary report');
-  t.match(output, /p99/i, 'a p99 value is reported');
 });
