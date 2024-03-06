@@ -95,6 +95,6 @@ jobs:
       - run: npm install
       - run: npm run build
       # runs the single test file from `package` workspace in the `file`, as defined in the matrix output
-      - run: npm run test:aws:parallel --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
+      - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
         env:
           FORCE_COLOR: 1
