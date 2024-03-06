@@ -1,0 +1,22 @@
+config:
+  target: "http://asciiart.artillery.io:8080"
+  phases:
+    - duration: 4
+      arrivalRate: 1
+      name: "Phase 1"
+  plugins:
+    publish-metrics:
+      - type: datadog
+        apiKey: "{{ $env.DD_TESTS_API_KEY }}"
+        traces:
+          serviceName: "adot-e2e"
+          tags:
+            - 'testType:e2e'
+
+scenarios:
+  - name: adot-e2e
+    flow:
+      - get:
+          url: "/dino"
+      - get:
+          url: "/pony"

@@ -111,6 +111,7 @@ RunCommand.args = {
   })
 };
 
+let cloud;
 RunCommand.runCommandImplementation = async function (flags, argv, args) {
   // Collect all input files for reading/parsing - via args, --config, or -i
   const inputFiles = argv.concat(flags.input || [], flags.config || []);
@@ -144,13 +145,43 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 
   try {
+    cloud = new CloudPlugin(null, null, { flags });
+
+    if (cloud.enabled) {
+      try {
+        await cloud.init();
+      } catch (err) {
+        if (err.name === 'CloudAPIKeyMissing') {
+          console.error(
+            'Error: API key is required to record test results to Artillery Cloud'
+          );
+          console.error(
+            'See https://docs.art/get-started-cloud for more information'
+          );
+
+          await gracefulShutdown({ exitCode: 7 });
+        } else if (err.name === 'APIKeyUnauthorized') {
+          console.error(
+            'Error: API key is not recognized or is not authorized to record tests'
+          );
+
+          await gracefulShutdown({ exitCode: 7 });
+        } else {
+          console.error(
+            'Error: something went wrong connecting to Artillery Cloud'
+          );
+          console.error('Check https://x.com/artilleryio for status updates');
+        }
+      }
+    }
+
     const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
     console.log('Test run id:', testRunId);
     global.artillery.testRunId = testRunId;
 
     const script = await prepareTestExecutionPlan(inputFiles, flags, args);
 
-    const runnerOpts = {
+    var runnerOpts = {
       environment: flags.environment,
       // This is used in the worker to resolve
       // the path to the processor module
@@ -197,7 +228,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       testRunId
     };
 
-    let launcher = await createLauncher(
+    var launcher = await createLauncher(
       script,
       script.config.payload,
       runnerOpts,
@@ -212,7 +243,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       metricsToSuppress
     });
 
-    let reporters = [consoleReporter];
+    var reporters = [consoleReporter];
     if (process.env.CUSTOM_REPORTERS) {
       const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
       customReporterNames.forEach(function (name) {
@@ -286,8 +317,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
     });
 
-    new CloudPlugin(null, null, { flags });
-
     global.artillery.globalEvents.emit('test:init', {
       flags,
       testRunId,
@@ -306,8 +335,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
     launcher.run();
 
-    let finalReport = {};
-    let shuttingDown = false;
+    var finalReport = {};
+    var shuttingDown = false;
     process.on('SIGINT', async () => {
       gracefulShutdown({ earlyStop: true });
     });
@@ -353,16 +382,23 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
       await Promise.allSettled(ps2);
 
-      await telemetry.shutdown();
+      if (telemetry) {
+        await telemetry.shutdown();
+      }
 
-      await launcher.shutdown();
+      if (launcher) {
+        await launcher.shutdown();
+      }
+
       await (async function () {
-        for (const r of reporters) {
-          if (r.cleanup) {
-            try {
-              await p(r.cleanup.bind(r))();
-            } catch (cleanupErr) {
-              debug(cleanupErr);
+        if (reporters) {
+          for (const r of reporters) {
+            if (r.cleanup) {
+              try {
+                await p(r.cleanup.bind(r))();
+              } catch (cleanupErr) {
+                debug(cleanupErr);
+              }
             }
           }
         }
@@ -565,6 +601,10 @@ async function sendTelemetry(script, flags, extraProps) {
   if (script.config && script.config.__createdByQuickCommand) {
     properties['quick'] = true;
   }
+  if (cloud && cloud.enabled && cloud.user) {
+    properties.cloud = cloud.user;
+  }
+
   properties['solo'] = flags.solo;
   try {
     // One-way hash of target endpoint:

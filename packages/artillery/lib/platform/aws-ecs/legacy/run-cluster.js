@@ -15,6 +15,11 @@ const moment = require('moment');
 
 const EnsurePlugin = require('artillery-plugin-ensure');
 
+const {
+  getADOTRelevantReporterConfigs,
+  resolveADOTConfigSettings
+} = require('artillery-plugin-publish-metrics');
+
 const EventEmitter = require('events');
 
 const _ = require('lodash');
@@ -36,7 +41,7 @@ const { getBucketName } = require('./util');
 const getAccountId = require('../../aws/aws-get-account-id');
 const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 
-const dotenvParse = require('dotenv').parse;
+const dotenv = require('dotenv');
 
 const util = require('./util');
 
@@ -225,10 +230,11 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   if (options.dotenv) {
-    const contents = fs.readFileSync(
-      path.resolve(process.cwd(), options.dotenv)
-    );
-    context.dotenv = dotenvParse(contents);
+    const dotEnvPath = path.resolve(process.cwd(), options.dotenv);
+    dotenv.config({ path: dotEnvPath });
+
+    const contents = fs.readFileSync(dotEnvPath);
+    context.dotenv = dotenv.parse(contents);
   }
 
   if (options.bundle) {
@@ -643,9 +649,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       await createQueue(context);
       await checkCustomTaskRole(context);
-      await ensureTaskExists(context);
       logProgress('Preparing test bundle...');
       await createTestBundle(context);
+      await createADOTDefinitionIfNeeded(context);
+      await ensureTaskExists(context);
       await getManifest(context);
       await generateTaskOverrides(context);
 
@@ -823,6 +830,13 @@ async function cleanupResources(context) {
       context.sqsReporter.stop();
     }
 
+    if (context.adot?.SSMParameterPath) {
+      await awsUtil.deleteParameter(
+        context.adot.SSMParameterPath,
+        context.region
+      );
+    }
+
     if (context.taskArns && context.taskArns.length > 0) {
       for (const taskArn of context.taskArns) {
         try {
@@ -981,17 +995,81 @@ async function createTestBundle(context) {
         name: context.testId,
         config: context.cliOptions.config,
         cliOptions: context.cliOptions,
-        packageJsonPath: context.packageJsonPath
+        packageJsonPath: context.packageJsonPath,
+        flags: context.cliOptions
       },
-      function (err, _result) {
+      function (err, result) {
         if (err) {
           return reject(err);
         } else {
+          context.fullyResolvedConfig = result.manifest.fullyResolvedConfig;
           return resolve(context);
         }
       }
     );
   });
+}
+
+async function createADOTDefinitionIfNeeded(context) {
+  const publishMetricsConfig =
+    context.fullyResolvedConfig.plugins?.['publish-metrics'];
+  if (!publishMetricsConfig) {
+    debug('No publish-metrics plugin set, skipping ADOT configuration');
+    return context;
+  }
+
+  const adotRelevantConfigs =
+    getADOTRelevantReporterConfigs(publishMetricsConfig);
+  if (adotRelevantConfigs.length === 0) {
+    debug('No ADOT relevant reporter configs set, skipping ADOT configuration');
+    return context;
+  }
+
+  try {
+    const { adotEnvVars, adotConfig } = resolveADOTConfigSettings({
+      configList: adotRelevantConfigs,
+      dotenv: { ...context.dotenv }
+    });
+
+    context.dotenv = Object.assign(context.dotenv || {}, adotEnvVars);
+
+    context.adot = {
+      SSMParameterPath: `/artilleryio/OTEL_CONFIG_${context.testId}`
+    };
+
+    await awsUtil.putParameter(
+      context.adot.SSMParameterPath,
+      JSON.stringify(adotConfig),
+      'String',
+      context.region
+    );
+
+    context.adot.taskDefinition = {
+      name: 'adot-collector',
+      image: 'amazon/aws-otel-collector',
+      command: [
+        '--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml'
+      ],
+      secrets: [
+        {
+          name: 'AOT_CONFIG_CONTENT',
+          valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter${context.adot.SSMParameterPath}`
+        }
+      ],
+      logConfiguration: {
+        logDriver: 'awslogs',
+        options: {
+          'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+          'awslogs-region': context.region,
+          'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+          'awslogs-create-group': 'true'
+        }
+      }
+    };
+  } catch (err) {
+    throw new Error(err);
+  }
+  return context;
 }
 
 async function ensureTaskExists(context) {
@@ -1098,54 +1176,7 @@ async function ensureTaskExists(context) {
             }
           }
         },
-        {
-          name: 'datadog-agent',
-          image: 'public.ecr.aws/datadog/agent:7',
-          environment: [
-            {
-              name: 'DD_API_KEY',
-              value: 'placeholder'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_TRACES_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT',
-              value: '0.0.0.0:4318'
-            },
-            {
-              name: 'DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT',
-              value: '0.0.0.0:4317'
-            },
-            {
-              name: 'DD_APM_ENABLED',
-              value: 'true'
-            },
-            {
-              name: 'DD_APM_RECEIVER_PORT',
-              value: '8126'
-            },
-            {
-              name: 'DD_APM_TRACE_BUFFER',
-              value: '100'
-            },
-            {
-              name: 'DD_SITE',
-              value: 'datadoghq.com'
-            }
-          ],
-          logConfiguration: {
-            logDriver: 'awslogs',
-            options: {
-              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
-              'awslogs-region': context.region,
-              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
-              'awslogs-create-group': 'true',
-              mode: 'non-blocking'
-            }
-          }
-        }
+        ...([context.adot?.taskDefinition] || [])
       ],
       executionRoleArn: context.taskRoleArn
     };
@@ -1385,6 +1416,12 @@ async function generateTaskOverrides(context) {
   const s3path = `s3://${context.s3Bucket}/tests/${
     context.namedTest ? context.s3Prefix : context.testId
   }`;
+  const adotOverride = [
+    {
+      name: 'adot-collector',
+      environment: []
+    }
+  ];
 
   const overrides = {
     containerOverrides: [
@@ -1417,10 +1454,7 @@ async function generateTaskOverrides(context) {
           }
         ]
       },
-      {
-        name: 'datadog-agent',
-        environment: []
-      }
+      ...(context.adot ? adotOverride : [])
     ],
     taskRoleArn: context.taskRoleArn
   };
@@ -1441,8 +1475,10 @@ async function generateTaskOverrides(context) {
     }
     overrides.containerOverrides[0].environment =
       overrides.containerOverrides[0].environment.concat(extraEnv);
-    overrides.containerOverrides[1].environment =
-      overrides.containerOverrides[1].environment.concat(extraEnv);
+    if (overrides.containerOverrides[1]) {
+      overrides.containerOverrides[1].environment =
+        overrides.containerOverrides[1].environment.concat(extraEnv);
+    }
   }
 
   if (context.cliOptions.launchConfig) {
@@ -1450,8 +1486,10 @@ async function generateTaskOverrides(context) {
     if (lc.environment) {
       overrides.containerOverrides[0].environment =
         overrides.containerOverrides[0].environment.concat(lc.environment);
-      overrides.containerOverrides[1].environment =
-        overrides.containerOverrides[1].environment.concat(lc.environment);
+      if (overrides.containerOverrides[1]) {
+        overrides.containerOverrides[1].environment =
+          overrides.containerOverrides[1].environment.concat(lc.environment);
+      }
     }
 
     //

@@ -79,20 +79,22 @@ function addDefaultPlugins(script) {
   const finalScript = _.cloneDeep(script);
 
   if (!script.config.plugins) {
-    finalScript.config.plugins = {}
+    finalScript.config.plugins = {};
   }
 
   const additionalPluginsAndOptions = {
     'metrics-by-endpoint': { suppressOutput: true, stripQueryString: true }
-  }
+  };
 
-  for (const [pluginName, pluginOptions] of Object.entries(additionalPluginsAndOptions)) {
+  for (const [pluginName, pluginOptions] of Object.entries(
+    additionalPluginsAndOptions
+  )) {
     if (!finalScript.config.plugins[pluginName]) {
-      finalScript.config.plugins[pluginName] = pluginOptions
+      finalScript.config.plugins[pluginName] = pluginOptions;
     }
   }
 
-  return finalScript
+  return finalScript;
 }
 
 async function resolveConfigTemplates(script, flags) {

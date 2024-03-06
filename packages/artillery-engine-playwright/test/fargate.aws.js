@@ -3,7 +3,7 @@ const { $ } = require('zx');
 const { getTestTags } = require('../../artillery/test/cli/_helpers.js');
 const fs = require('fs');
 
-const TEST_URL = 'https://github.com/artilleryio/artillery/';
+const TEST_URL = 'https://www.artillery.io/';
 const tags = getTestTags(['typescript:true']);
 let playwrightOutput;
 
@@ -20,7 +20,7 @@ test('playwright typescript test works and reports data', async (t) => {
     processor: './processor.ts'
   });
   const output =
-    await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${configOverride} --tags ${tags} --record`;
+    await $`../artillery/bin/run run:fargate ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${configOverride} --tags ${tags} --record`;
 
   t.equal(
     output.exitCode,
@@ -59,12 +59,21 @@ test('playwright typescript test works and reports data', async (t) => {
   //Assert: reports steps as histograms
   t.hasProp(
     summaries,
-    'browser.step.go_to_artillery_repo',
-    'should have reported step go_to_artillery_repo as histogram'
+    'browser.step.go_to_artillery_io',
+    'should have reported step go_to_artillery_io as histogram'
   );
   t.ok(
-    Object.keys(summaries['browser.step.go_to_artillery_repo']).includes('p99'),
-    'should have reported step go_to_artillery_repo as histogram with p99 metric'
+    Object.keys(summaries['browser.step.go_to_artillery_io']).includes('p99'),
+    'should have reported step go_to_artillery_io as histogram with p99 metric'
+  );
+  t.hasProp(
+    summaries,
+    'browser.step.go_to_docs',
+    'should have reported step go_to_docs as histogram'
+  );
+  t.ok(
+    Object.keys(summaries['browser.step.go_to_docs']).includes('p99'),
+    'should have reported step go_to_docs as histogram with p99 metric'
   );
 
   //Assert: reports web vital metrics
@@ -119,7 +128,7 @@ test('playwright typescript test fails and has correct vu count when expectation
   });
 
   try {
-    await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride} --tags ${tags} --record`;
+    await $`../artillery/bin/run run:fargate ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride} --tags ${tags} --record`;
   } catch (output) {
     t.equal(
       output.exitCode,

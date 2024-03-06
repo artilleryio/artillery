@@ -55,6 +55,35 @@ tap.test('Suggest similar commands if unknown command is used', async (t) => {
   );
 });
 
+tap.test('Exit early if Artillery Cloud API is not valid', async (t) => {
+  const [exitCode, output] = await execute([
+    'run',
+    '--record',
+    '--key',
+    '123',
+    'test/scripts/gh_215_add_token.json'
+  ]);
+
+  t.equal(exitCode, 7);
+  t.ok(output.stderr.includes('API key is not recognized'));
+});
+
+tap.test(
+  'Exit early if Artillery Cloud API is not valid - on Fargate',
+  async (t) => {
+    const [exitCode, output] = await execute([
+      'run-fargate',
+      '--record',
+      '--key',
+      '123',
+      'test/scripts/gh_215_add_token.json'
+    ]);
+
+    t.equal(exitCode, 7);
+    t.ok(output.stderr.includes('API key is not recognized'));
+  }
+);
+
 /*
  @test "Running a script that uses XPath capture when libxmljs is not installed produces a warning" {
      if [[ ! -z `find . -name "artillery-xml-capture" -type d` ]]; then

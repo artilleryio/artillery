@@ -38,7 +38,8 @@ async function createTest(scriptPath, options, callback) {
     name: options.name, // test name, eg simple-bom or aht_$UUID
     manifestPath: options.manifestPath,
     packageJsonPath: options.packageJsonPath,
-    cliOptions: options.cliOptions
+    cliOptions: options.cliOptions,
+    flags: options.flags
   };
 
   if (typeof options.config === 'string') {
@@ -85,7 +86,8 @@ function prepareManifest(context, callback) {
     extraFiles,
     {
       packageJsonPath: context.packageJsonPath,
-      ...context.cliOptions
+      ...context.cliOptions,
+      flags: context.flags
     },
     (err, bom) => {
       debug(err);

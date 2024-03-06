@@ -1,6 +1,6 @@
 'use strict';
 
-// Map of functions that translate vendor-specific configuration to OpenTelemetry configuration
+// Map of functions that translate vendor-specific reporter configuration to OpenTelemetry reporter configuration
 const vendorTranslators = {
   honeycomb: (config) => {
     if (config.enabled === false) {
@@ -115,4 +115,6 @@ function attributeListToObject(attributeList, reporterType) {
   return attributes;
 }
 
-module.exports = vendorTranslators;
+module.exports = {
+  vendorTranslators
+};

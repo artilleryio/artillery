@@ -9,13 +9,11 @@ const AddressSchema = z.object({
   country: z.string()
 });
 
-export const checkAddress = async (context, ee, next) => {
+export const checkAddress = async (context, ee) => {
   const address = context.vars.address;
   const result = AddressSchema.safeParse(address);
 
   if (!result.success) {
     ee.emit('error', 'invalid_address');
   }
-
-  next();
 };
