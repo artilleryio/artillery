@@ -20,7 +20,7 @@ test('playwright typescript test works and reports data', async (t) => {
     processor: './processor.ts'
   });
   const output =
-    await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${configOverride} --tags ${tags} --record`;
+    await $`../artillery/bin/run run:fargate ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${configOverride} --tags ${tags} --record`;
 
   t.equal(
     output.exitCode,
@@ -128,7 +128,7 @@ test('playwright typescript test fails and has correct vu count when expectation
   });
 
   try {
-    await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride} --tags ${tags} --record`;
+    await $`../artillery/bin/run run:fargate ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride} --tags ${tags} --record`;
   } catch (output) {
     t.equal(
       output.exitCode,
