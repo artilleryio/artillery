@@ -17,41 +17,11 @@ beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-test('Run uses ensure', async (t) => {
+test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
   try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/with-ensure.yaml --record --tags ${baseTags} --output ${reportFilePath} --count 15`;
+    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
   } catch (output) {
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`)
-    );
-    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
-
-    const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['vusers.completed'],
-      300,
-      'Should have 300 total VUs'
-    );
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      300,
-      'Should have 300 "200 OK" responses'
-    );
-  }
-});
-
-test('Ensure (with new interface) should still run when workers exit from expect plugin (non zero exit code)', async (t) => {
-  //Note: this test uses new ensure plugin interface (config.plugins.ensure) to test that indirectly
-
-  try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
-  } catch (output) {
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p95 < 1`)
-    );
-    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
+    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
 
     const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     t.equal(
@@ -67,11 +37,17 @@ test('Ensure (with new interface) should still run when workers exit from expect
   }
 });
 
-test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
+test('Ensure (with new interface) should still run when workers exit from expect plugin (non zero exit code)', async (t) => {
+  //Note: this test uses new ensure plugin interface (config.plugins.ensure) to test that indirectly
+
   try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
+    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
   } catch (output) {
-    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
+    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
+    t.ok(
+      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p95 < 1`)
+    );
+    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
 
     const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     t.equal(
