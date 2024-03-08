@@ -19,7 +19,21 @@ const CloudwatchReporterSchema = Joi.object({
     })
   ),
   includeOnly: Joi.array().items(Joi.string()),
-  excluded: Joi.array().items(Joi.string())
+  excluded: Joi.array().items(Joi.string()),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    annotations: Joi.object().unknown(),
+    // smartSampling is still technically configured in the reporters so I am adding it here, even though there is an ongoing discussion to move this to the engine level.
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    })
+  })
 })
   .unknown(false)
   .meta({ title: 'Cloudwatch Reporter' });
