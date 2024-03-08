@@ -111,7 +111,8 @@ const vendorToCollectorConfigTranslators = {
         send_batch_size: 200
       };
       collectorConfig.exporters['awsxray'] = {
-        region: config.region || 'us-east-1'
+        region: config.region || 'us-east-1',
+        index_all_attributes: 'true'
       };
 
       collectorConfig.service.pipelines.traces = {
