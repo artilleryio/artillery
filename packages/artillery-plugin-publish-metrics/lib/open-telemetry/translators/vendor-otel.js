@@ -72,6 +72,13 @@ const vendorTranslators = {
       newConfig.metrics.type = 'open-telemetry';
     }
     return newConfig;
+  },
+  cloudwatch: (config) => {
+    const cloudwatchTraceSettings = {
+      type: 'cloudwatch',
+      attributes: config.traces?.annotations
+    };
+    return otelTemplate(config, cloudwatchTraceSettings);
   }
 };
 

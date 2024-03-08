@@ -17,7 +17,8 @@ const REPORTERS_USING_OTEL = [
   'honeycomb',
   'newrelic',
   'datadog',
-  'dynatrace'
+  'dynatrace',
+  'cloudwatch'
 ];
 module.exports = {
   Plugin,
