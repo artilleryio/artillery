@@ -321,9 +321,11 @@ class Launcher {
     }
 
     // We always look at the earliest period available so that reports come in chronological order
-    const earliestPeriodAvailable = Object.keys(this.metricsByPeriod)
+    const unreportedPeriods = Object.keys(this.metricsByPeriod)
       .filter((x) => this.periodsReportedFor.indexOf(x) === -1)
-      .sort()[0];
+      .sort();
+
+    const earliestPeriodAvailable = unreportedPeriods[0];
 
     // TODO: better name. One above is earliestNotAlreadyReported
     const earliest = Object.keys(this.metricsByPeriod).sort()[0];
@@ -356,58 +358,49 @@ class Launcher {
       this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
     const waitedLongEnough =
       Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
-    if (
+
+    if (flushAll) {
+      for (const period of unreportedPeriods) {
+        this.emitIntermediatesForPeriod(period);
+      }
+    } else if (
       typeof earliestPeriodAvailable !== 'undefined' &&
-      (flushAll || allWorkersReportedForPeriod || waitedLongEnough)
+      (allWorkersReportedForPeriod || waitedLongEnough)
     ) {
+      this.emitIntermediatesForPeriod(earliestPeriodAvailable);
       // TODO: autoscaling. Handle workers that drop off or join, and update count
-
-      if (flushAll) {
-        debug('flushAll', earliestPeriodAvailable);
-      } else {
-        if (allWorkersReportedForPeriod) {
-          debug(
-            'Got metrics from all workers for period',
-            earliestPeriodAvailable
-          );
-        }
-        if (waitedLongEnough) {
-          debug('MAX_WAIT_FOR_PERIOD reached', earliestPeriodAvailable);
-        }
-      }
-
-      debug(
-        'Report @',
-        new Date(Number(earliestPeriodAvailable)),
-        'made up of items:',
-        this.metricsByPeriod[String(earliestPeriodAvailable)].length
-      );
-
-      // TODO: Track how many workers provided metrics in the metrics report
-      const stats = SSMS.mergeBuckets(
-        this.metricsByPeriod[String(earliestPeriodAvailable)]
-      )[String(earliestPeriodAvailable)];
-      this.mergedPeriodMetrics.push(stats);
-      // summarize histograms for console reporter
-      stats.summaries = {};
-      for (const [name, value] of Object.entries(stats.histograms || {})) {
-        const summary = SSMS.summarizeHistogram(value);
-        stats.summaries[name] = summary;
-        delete this.metricsByPeriod[String(earliestPeriodAvailable)];
-      }
-
-      this.periodsReportedFor.push(earliestPeriodAvailable);
-
-      debug('Emitting stats event');
-
-      this.pluginEvents.emit('stats', stats);
-      global.artillery.globalEvents.emit('stats', stats);
-      this.pluginEventsLegacy.emit('stats', SSMS.legacyReport(stats));
-
-      this.events.emit('stats', stats);
     } else {
       debug('Waiting for more workerStats before emitting stats event');
     }
+  }
+
+  emitIntermediatesForPeriod(period) {
+    debug(
+      'Report @',
+      new Date(Number(period)),
+      'made up of items:',
+      this.metricsByPeriod[String(period)].length
+    );
+
+    // TODO: Track how many workers provided metrics in the metrics report
+    const stats = SSMS.mergeBuckets(this.metricsByPeriod[String(period)])[
+      String(period)
+    ];
+    this.mergedPeriodMetrics.push(stats);
+    // summarize histograms for console reporter
+    stats.summaries = {};
+    for (const [name, value] of Object.entries(stats.histograms || {})) {
+      const summary = SSMS.summarizeHistogram(value);
+      stats.summaries[name] = summary;
+      delete this.metricsByPeriod[String(period)];
+    }
+
+    this.periodsReportedFor.push(period);
+    this.pluginEvents.emit('stats', stats);
+    global.artillery.globalEvents.emit('stats', stats);
+    this.pluginEventsLegacy.emit('stats', SSMS.legacyReport(stats));
+
+    this.events.emit('stats', stats);
   }
 
   async run() {
