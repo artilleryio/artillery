@@ -5,8 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run test:unit && npm run test:acceptance",
-    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300 --no-coverage --color",
-    "test:unit": "tap --no-coverage --color test/*.unit.js"
+    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300",
+    "test:unit": "tap test/*.unit.js"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true
   },
   "keywords": [],
   "author": "Hassy Veldstra <h@artillery.io>",
@@ -15,7 +20,7 @@
     "debug": "^4.3.2"
   },
   "devDependencies": {
-    "tap": "^16.3.8",
+    "tap": "^18.7.1",
     "zx": "^4.3.0"
   }
 }
