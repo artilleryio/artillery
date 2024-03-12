@@ -4,12 +4,15 @@
   "description": "Inspect the memory of processes running together with your load tests!",
   "main": "index.js",
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.mjs --timeout 300"
+    "test": "tap ./test/*.spec.mjs --timeout 300"
   },
   "tap": {
     "disable-coverage": true,
     "allow-empty-coverage": true,
-    "color": true
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "author": "",
   "license": "MPL-2.0",

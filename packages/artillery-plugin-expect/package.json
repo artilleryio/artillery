@@ -12,7 +12,10 @@
   "tap": {
     "disable-coverage": true,
     "allow-empty-coverage": true,
-    "color": true
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "author": "Hassy Veldstra <h@artillery.io>",
   "license": "SEE LICENSE IN LICENSE.txt",

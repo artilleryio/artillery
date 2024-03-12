@@ -44,19 +44,20 @@
   },
   "scripts": {
     "test:unit": "tap --timeout=420 test/unit/*.test.js",
-    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap test/testcases/plugins/*.test.js",
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' &&  npm run test:unit && npm run test:acceptance",
-    "test:windows": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & npm run test:unit && tap --timeout=420 test/cli/*.test.js",
-    "test:aws": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --timeout=4200 test/cloud-e2e/**/*.test.js",
-    "test:aws:ci": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --timeout=4200",
-    "test:aws:windows": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & tap --timeout=420 test/cloud-e2e/fargate/*.test.js --grep \"Run simple-bom\"",
+    "test:acceptance": "tap --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap test/testcases/plugins/*.test.js",
+    "test": " npm run test:unit && npm run test:acceptance",
+    "test:windows": "npm run test:unit && tap --timeout=420 test/cli/*.test.js",
+    "test:aws": "tap --timeout=4200 test/cloud-e2e/**/*.test.js",
+    "test:aws:ci": "tap --timeout=4200",
+    "test:aws:windows": "tap --timeout=420 test/cloud-e2e/fargate/*.test.js --grep \"Run simple-bom\"",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix"
   },
   "tap": {
     "disable-coverage": true,
     "allow-empty-coverage": true,
-    "color": true
+    "color": true,
+    "test-env": ["ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"]
   },
   "lint-staged": {
     "**/*.{js,ts,tsx}": "eslint --fix"

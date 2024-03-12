@@ -16,7 +16,10 @@
   "tap": {
     "disable-coverage": true,
     "allow-empty-coverage": true,
-    "color": true
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "devDependencies": {
     "@types/tap": "^15.0.8",

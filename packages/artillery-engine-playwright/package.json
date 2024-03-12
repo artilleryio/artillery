@@ -4,14 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap test/*.test.js --timeout 300",
-    "test:aws": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap test/*.aws.js --timeout 420",
-    "test:aws:ci": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --timeout=420"
+    "test": "tap test/*.test.js --timeout 300",
+    "test:aws": "tap test/*.aws.js --timeout 420",
+    "test:aws:ci": "tap --timeout=420"
   },
   "tap": {
     "disable-coverage": true,
     "allow-empty-coverage": true,
-    "color": true
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "keywords": [],
   "author": "",
