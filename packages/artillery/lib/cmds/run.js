@@ -691,6 +691,7 @@ async function sendTelemetry(script, flags, extraProps) {
       properties.plugins = true;
       properties.officialPlugins = [];
       const OFFICIAL_PLUGINS = [
+        'apdex',
         'expect',
         'publish-metrics',
         'metrics-by-endpoint',
