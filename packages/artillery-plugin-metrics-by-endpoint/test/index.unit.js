@@ -39,7 +39,7 @@ test('afterResponse', async (t) => {
   let hookArgs;
   let results;
 
-  beforeEach(() => {
+  t.beforeEach(() => {
     script = baseScript;
     global.artillery = {
       version: '2.0.3'
