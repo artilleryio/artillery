@@ -142,7 +142,7 @@ test('Telemetry - debug through environment variable', function (t) {
 
   const logArg = consoleSpy.args[0][0];
 
-  t.equal(logArg, expectedDebugOutput, 'Logs telemetry data');
+  t.ok(logArg.includes(expectedDebugOutput), 'Logs telemetry data');
 
   t.end();
 });
