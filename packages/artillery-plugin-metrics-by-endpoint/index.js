@@ -53,10 +53,9 @@ function MetricsByEndpoint(script, events) {
   });
 }
 
-function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  const targetUrl =
-    userContext.vars.target && url.parse(userContext.vars.target);
-  const requestUrl = url.parse(req.url);
+function getReqName(target, originalRequestUrl, requestName) {
+  const targetUrl = target && url.parse(target);
+  const requestUrl = url.parse(originalRequestUrl);
 
   let baseUrl = '';
   if (
@@ -72,13 +71,18 @@ function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
   baseUrl += stripQueryString ? requestUrl.pathname : requestUrl.path;
 
   let reqName = '';
-  if (useOnlyRequestNames && req.name) {
-    reqName += req.name;
-  } else if (req.name) {
-    reqName += `${baseUrl} (${req.name})`;
+  if (useOnlyRequestNames && requestName) {
+    reqName += requestName;
+  } else if (requestName) {
+    reqName += `${baseUrl} (${requestName})`;
   } else if (!ignoreUnnamedRequests) {
     reqName += baseUrl;
   }
+
+  return reqName;
+}
+function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
+  const reqName = getReqName(userContext.vars.target, req.url, req.name);
 
   if (reqName === '') {
     return done();
