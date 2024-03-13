@@ -46,17 +46,19 @@ function MetricsByEndpoint(script, events) {
 
   script.config.processor.metricsByEndpoint_afterResponse =
     metricsByEndpoint_afterResponse;
+  script.config.processor.metricsByEndpoint_onError = metricsByEndpoint_onError;
 
   script.scenarios.forEach(function (scenario) {
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('metricsByEndpoint_afterResponse');
+    scenario.onError = [].concat(scenario.onError || []);
+    scenario.onError.push('metricsByEndpoint_onError');
   });
 }
 
-function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  const targetUrl =
-    userContext.vars.target && url.parse(userContext.vars.target);
-  const requestUrl = url.parse(req.url);
+function getReqName(target, originalRequestUrl, requestName) {
+  const targetUrl = target && url.parse(target);
+  const requestUrl = url.parse(originalRequestUrl);
 
   let baseUrl = '';
   if (
@@ -72,13 +74,35 @@ function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
   baseUrl += stripQueryString ? requestUrl.pathname : requestUrl.path;
 
   let reqName = '';
-  if (useOnlyRequestNames && req.name) {
-    reqName += req.name;
-  } else if (req.name) {
-    reqName += `${baseUrl} (${req.name})`;
+  if (useOnlyRequestNames && requestName) {
+    reqName += requestName;
+  } else if (requestName) {
+    reqName += `${baseUrl} (${requestName})`;
   } else if (!ignoreUnnamedRequests) {
     reqName += baseUrl;
   }
+
+  return reqName;
+}
+
+function metricsByEndpoint_onError(err, req, userContext, events, done) {
+  const reqName = getReqName(userContext.vars.target, req.url, req.name);
+
+  if (reqName === '') {
+    return done();
+  }
+
+  events.emit(
+    'counter',
+    `${metricsPrefix}.${reqName}.errors.${err.code || err.name}`,
+    1
+  );
+
+  done();
+}
+
+function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
+  const reqName = getReqName(userContext.vars.target, req.url, req.name);
 
   if (reqName === '') {
     return done();
