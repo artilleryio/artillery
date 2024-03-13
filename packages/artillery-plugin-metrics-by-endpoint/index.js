@@ -46,10 +46,13 @@ function MetricsByEndpoint(script, events) {
 
   script.config.processor.metricsByEndpoint_afterResponse =
     metricsByEndpoint_afterResponse;
+  script.config.processor.metricsByEndpoint_onError = metricsByEndpoint_onError;
 
   script.scenarios.forEach(function (scenario) {
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('metricsByEndpoint_afterResponse');
+    scenario.onError = [].concat(scenario.onError || []);
+    scenario.onError.push('metricsByEndpoint_onError');
   });
 }
 
@@ -81,6 +84,23 @@ function getReqName(target, originalRequestUrl, requestName) {
 
   return reqName;
 }
+
+function metricsByEndpoint_onError(err, req, userContext, events, done) {
+  const reqName = getReqName(userContext.vars.target, req.url, req.name);
+
+  if (reqName === '') {
+    return done();
+  }
+
+  events.emit(
+    'counter',
+    `${metricsPrefix}.${reqName}.errors.${err.code || err.name}`,
+    1
+  );
+
+  done();
+}
+
 function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
   const reqName = getReqName(userContext.vars.target, req.url, req.name);
 
