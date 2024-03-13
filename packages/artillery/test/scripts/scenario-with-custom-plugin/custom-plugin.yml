@@ -1,0 +1,13 @@
+config: {}
+
+before:
+  flow:
+    - post:
+        url: "/"
+        
+scenarios:
+  - flow:
+    - get:
+        url: "/"
+        expect:
+          statusCode: 204
