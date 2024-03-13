@@ -592,14 +592,11 @@ async function readPayload(script) {
 }
 
 async function sendTelemetry(script, flags, extraProps) {
-  if (
-    process.env.WORKER_ID ||
-    typeof process.env.LOCAL_WORKER_ID !== 'undefined'
-  ) {
-    process.env.WORKER_ID
-      ? console.log('Running inside a cloud worker, skipping telemetry')
-      : console.log('Running inside a local worker, skipping telemetry').return;
+  if (process.env.WORKER_ID) {
+    debug('Telemetry: Running in cloud worker, skipping test run event');
+    return;
   }
+
   function hash(str) {
     return crypto.createHash('sha1').update(str).digest('base64');
   }
