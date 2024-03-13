@@ -1,4 +1,4 @@
-const { test } = require('tap');
+const { test, beforeEach, before, afterEach } = require('tap');
 const http = require('http');
 const { $ } = require('zx');
 const path = require('path');
@@ -18,10 +18,16 @@ function createServer() {
   });
 }
 
-(async function () {
-  const server = createServer().listen(0);
+let server;
+let overrides;
 
-  const overrides = JSON.stringify({
+before(async () => {
+  await $`${A9} -V`;
+});
+
+beforeEach(async () => {
+  server = createServer().listen(0);
+  overrides = JSON.stringify({
     config: {
       phases: [{ duration: 2, arrivalRate: 2 }],
       target: `http://localhost:${server.address().port}`,
@@ -31,20 +37,20 @@ function createServer() {
       }
     }
   });
+});
 
-  await $`${A9} -V`;
+afterEach(async () => {
+  server.close();
+});
 
-  test('plugins can attach functions to processor object', async (t) => {
-    const output = await $`ARTILLERY_PLUGIN_PATH=${path.join(
-      __dirname,
-      '../../plugins'
-    )} ${A9} run --quiet --overrides ${overrides} ${path.join(
-      __dirname,
-      '/script.json'
-    )}`;
+test('plugins can attach functions to processor object', async (t) => {
+  const output = await $`ARTILLERY_PLUGIN_PATH=${path.join(
+    __dirname,
+    '../../plugins'
+  )} ${A9} run --quiet --overrides ${overrides} ${path.join(
+    __dirname,
+    '/script.json'
+  )}`;
 
-    t.match(output, /afterResponse hook/, 'plugin should have been called');
-
-    server.close(t.end);
-  });
-})();
+  t.match(output, /afterResponse hook/, 'plugin should have been called');
+});
