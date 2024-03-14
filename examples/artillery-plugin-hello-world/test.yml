@@ -1,5 +1,5 @@
 config:
-  target: "https://artillery.io"
+  target: "http://asciiart.artillery.io:8080"
   phases:
     - arrivalRate: 1
       duration: 10
