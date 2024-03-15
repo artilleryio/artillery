@@ -78,12 +78,16 @@ ConsoleReporter.prototype.phaseStarted = function phaseStarted(phase) {
     return this;
   }
 
+  const phaseDuration = phase.duration || phase.pause;
+  //only append s when phaseDuration is a number or number-like string (like from env variables). otherwise it's a converted unit (e.g. 5min)
+  const durationString = Number.isInteger(_.toNumber(phaseDuration)) ? `${phaseDuration}s` : `${phaseDuration}`;
+
   artillery.log(
     `Phase started: ${chalk.green(
       phase.name ? phase.name : 'unnamed'
     )} (index: ${phase.index}, duration: ${
-      phase.duration || phase.pause
-    }s) ${formatTimestamp(new Date())}\n`
+      durationString
+    }) ${formatTimestamp(new Date())}\n`
   );
 };
 
@@ -92,12 +96,16 @@ ConsoleReporter.prototype.phaseCompleted = function phaseCompleted(phase) {
     return this;
   }
 
+  const phaseDuration = phase.duration || phase.pause;
+  //only append s when phaseDuration is a number or number-like string (like from env variables). otherwise it's a converted unit (e.g. 5min)
+  const durationString = Number.isInteger(_.toNumber(phaseDuration)) ? `${phaseDuration}s` : `${phaseDuration}`;
+
   artillery.log(
     `Phase completed: ${chalk.green(
       phase.name ? phase.name : 'unnamed'
     )} (index: ${phase.index}, duration: ${
-      phase.duration || phase.pause
-    }s) ${formatTimestamp(new Date())}\n`
+      durationString
+    }) ${formatTimestamp(new Date())}\n`
   );
 
   return this;
