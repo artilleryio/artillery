@@ -8,7 +8,7 @@ on:
 
 env:
   ARTILLERY_BINARY_PATH: ${{ github.workspace }}/packages/artillery/bin/run
-  CLI_TAGS: repo:${{ github.repository }},actor:${{ github.actor }},type:smoke,ci:true
+  CLI_TAGS: repo:${{ github.repository }},actor:${{ github.actor }},type:smoke,ci:true,commit:${{ github.sha }}
   CLI_NOTE: Running&nbsp;from&nbsp;the&nbsp;Official&nbsp;Artillery&nbsp;Github&nbsp;Action!&nbsp;😀
 
 jobs:
