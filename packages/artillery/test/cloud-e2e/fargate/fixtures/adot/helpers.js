@@ -2,10 +2,13 @@
 
 const sleep = require('../../../../helpers/sleep.js');
 const got = require('got');
+const AWS = require('aws-sdk');
+const xray = new AWS.XRay({ region: 'us-east-1' });
 
 module.exports = {
   getTestId,
-  getDatadogSpans
+  getDatadogSpans,
+  getXRayTraces
 };
 
 function getTestId(outputString) {
@@ -64,4 +67,57 @@ async function getDatadogSpans(apiKey, appKey, testId, expectedTotalSpans) {
   }
 
   return spanList;
+}
+
+async function getXRayTraces(testId) {
+  const endTime = new Date();
+  const startTime = new Date(endTime.getTime() - 30 * 60 * 1000); // 30 min ago
+  const filterExpression = `annotation.test_id = "${testId}"`;
+
+  let summariesData;
+  try {
+    summariesData = await new Promise((resolve, reject) => {
+      xray.getTraceSummaries(
+        {
+          StartTime: startTime,
+          EndTime: endTime,
+          FilterExpression: filterExpression,
+          TimeRangeType: 'Event'
+        },
+        (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        }
+      );
+    });
+  } catch (err) {
+    console.error('Error fetching trace summaries from AWS X-Ray: ', err);
+  }
+
+  const traceSummaries = summariesData.TraceSummaries;
+  const traceIds = traceSummaries.map((trace) => trace.Id);
+  console.log('TRACE IDS: ', traceIds);
+
+  let fullTraceData;
+  try {
+    fullTraceData = await new Promise((resolve, reject) => {
+      xray.batchGetTraces(
+        {
+          TraceIds: traceIds
+        },
+        (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        }
+      );
+    });
+  } catch (err) {
+    console.error('Error fetching full trace data from AWS X-Ray: ', err);
+  }
+
+  const traceMap = fullTraceData.Traces.map((trace) =>
+    trace.Segments.map((span) => JSON.parse(span.Document))
+  );
+
+  return traceMap;
 }
