@@ -11,6 +11,9 @@ const { supportedRegions } = require('../platform/aws-ecs/legacy/util');
 const PlatformECS = require('../platform/aws-ecs/ecs');
 const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
 class RunCommand extends Command {
   static aliases = ['run:fargate'];
   // Enable multiple args:
@@ -21,6 +24,16 @@ class RunCommand extends Command {
     flags['platform-opt'] = [`region=${flags.region}`];
 
     flags.platform = 'aws:ecs';
+
+    if (flags.dotenv) {
+      const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
+      try {
+        fs.statSync(dotEnvPath);
+      } catch (err) {
+        console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
+      }
+      dotenv.config({ path: dotEnvPath });
+    }
 
     const cloud = new CloudPlugin(null, null, { flags });
     if (cloud.enabled) {
