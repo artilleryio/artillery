@@ -9,7 +9,9 @@ const request = require('got');
 const awaitOnEE = require('../../util/await-on-ee');
 const sleep = require('../../util/sleep');
 const util = require('node:util');
-
+const chokidar = require('chokidar');
+const fs = require('fs');
+const path = require('path');
 class ArtilleryCloudPlugin {
   constructor(_script, _events, { flags }) {
     this.enabled = false;
@@ -26,6 +28,7 @@ class ArtilleryCloudPlugin {
       process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
     this.eventsEndpoint = `${this.baseUrl}/api/events`;
     this.whoamiEndpoint = `${this.baseUrl}/api/user/whoami`;
+    this.getAssetUploadUrls = `${this.baseUrl}/api/asset-upload-urls`;
 
     this.defaultHeaders = {
       'x-auth-token': this.apiKey
@@ -37,7 +40,10 @@ class ArtilleryCloudPlugin {
     global.artillery.globalEvents.on('test:init', async (testInfo) => {
       debug('test:init', testInfo);
 
+      
+
       this.testRunId = testInfo.testRunId;
+
       const testRunUrl = `${this.baseUrl}/load-tests/${this.testRunId}`;
       testEndInfo.testRunUrl = testRunUrl;
 
@@ -54,6 +60,8 @@ class ArtilleryCloudPlugin {
       if (typeof testInfo.flags.note !== 'undefined') {
         await this._event('testrun:addnote', { text: testInfo.flags.note });
       }
+
+      this.uploading = 0;
     });
 
     global.artillery.globalEvents.on('phaseStarted', async (phase) => {
@@ -153,7 +161,7 @@ class ArtilleryCloudPlugin {
           200,
           1 * 1000 //wait at most 1 second for a final log lines event emitter to be fired
         );
-        await this.waitOnUnprocessedLogs(2 * 1000); //just waiting for ee is not enough, as the api call takes time
+        await this.waitOnUnprocessedLogs(20 * 1000); //just waiting for ee is not enough, as the api call takes time
 
         await this._event('testrun:end', {
           ts: testEndInfo.endTime,
@@ -209,11 +217,76 @@ class ArtilleryCloudPlugin {
       id: body.id,
       email: body.email
     };
+
+    const watcher = chokidar.watch(
+      process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR || '/tmp',
+      {
+        ignored: /(^|[\/\\])\../, // ignore dotfiles
+        persistent: true,
+        ignorePermissionErrors: true,
+        ignoreInitial: true
+      }
+    );
+
+    watcher.on('add', (fp) => {
+      if(fp.endsWith('.zip')) {
+        this._uploadAsset(fp); 
+      }
+    });
+
+  }
+
+  async _uploadAsset(localFilename) {
+    this.uploading++; 
+
+    const payload = {
+      testRunId: this.testRunId,
+      filenames: [path.basename(localFilename)]
+    };
+
+    debug(payload);
+
+    let url;
+    try {
+      const res = await request.post(this.getAssetUploadUrls, {
+        headers: this.defaultHeaders,
+        throwHttpErrors: false,
+        json: payload
+      });
+
+      
+      const body = JSON.parse(res.body);
+      debug(body);
+
+      url = body.urls[path.basename(localFilename)];
+    } catch (err) {
+      debug(err);
+    }
+
+    if (!url) { return; }
+
+    const fileStream = fs.createReadStream(localFilename);
+    try {
+      const _response = await request.put(url, {
+        body: fileStream,
+      });
+    } catch (error) {
+      console.error('Failed to upload Playwright trace recording:', error);
+      console.log(error.code, error.name, error.message, error.stack);
+    } finally {
+      this.uploading--;
+      artillery.globalEvents.emit('counter', 'browser.traces.uploaded', 1);
+      try {
+        fs.unlinkSync(localFilename);
+      } catch (err) {
+        debug(err);
+      }
+    }
   }
 
   async waitOnUnprocessedLogs(maxWaitTime) {
     let waitedTime = 0;
-    while (this.unprocessedLogsCounter > 0 && waitedTime < maxWaitTime) {
+    while (this.unprocessedLogsCounter > 0 && this.uploading > 0 && waitedTime < maxWaitTime) {
       debug('waiting on unprocessed logs');
       await sleep(500);
       waitedTime += 500;
