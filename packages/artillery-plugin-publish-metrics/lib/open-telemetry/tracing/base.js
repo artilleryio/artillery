@@ -135,6 +135,7 @@ class OTelTraceBase {
       if (!span.endTime[0]) {
         span.end(Date.now());
         this.pendingScenarioSpans--;
+        ee.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
       }
       if (engine === 'http') {
         next();
@@ -148,6 +149,7 @@ class OTelTraceBase {
   otelTraceOnError(scenarioErr, req, userContext, ee, done) {
     done();
   }
+
   async waitOnPendingSpans(pendingRequests, pendingScenarios, maxWaitTime) {
     let waitedTime = 0;
     while (
@@ -176,7 +178,6 @@ class OTelTraceBase {
         5000
       );
     }
-
     this.debug('Pending traces done');
   }
 }
