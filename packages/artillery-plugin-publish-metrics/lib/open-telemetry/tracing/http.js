@@ -127,6 +127,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
                 }
               })
               .end(res.timings[value.end]);
+            userContext.vars._spanCount++;
           }
         }
       });
@@ -152,6 +153,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       if (!span.endTime[0]) {
         span.end(endTime || Date.now());
         this.pendingRequestSpans--;
+        userContext.vars._spanCount++;
       }
     } catch (err) {
       this.debug(err);
@@ -180,6 +182,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
       requestSpan.end();
       this.pendingRequestSpans--;
+      userContext.vars._spanCount++;
     } else {
       scenarioSpan.recordException(err);
     }
@@ -198,6 +201,8 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
     scenarioSpan.end();
     this.pendingScenarioSpans--;
+    userContext.vars._spanCount++;
+    this.sendTelemetry(userContext.vars._spanCount, this.config.type);
     return done();
   }
 

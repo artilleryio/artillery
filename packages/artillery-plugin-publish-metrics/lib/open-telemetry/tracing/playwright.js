@@ -45,6 +45,9 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           ...(this.config.attributes || {})
         });
         this.pendingPlaywrightScenarioSpans++;
+        if (!vuContext.vars._spanCount) {
+          vuContext.vars._spanCount = 0;
+        }
         // Set variables to track state and context
         const ctx = context.active();
         let lastPageUrl;
@@ -106,6 +109,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             if (pageSpan) {
               pageSpan.end();
               this.pendingPlaywrightSpans--;
+              vuContext.vars._spanCount++;
             }
 
             pageSpan = this.playwrightTracer.startSpan(
@@ -148,9 +152,12 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           if (pageSpan && !pageSpan.endTime[0]) {
             pageSpan.end();
             this.pendingPlaywrightSpans--;
+            vuContext.vars._spanCount++;
           }
           scenarioSpan.end();
           this.pendingPlaywrightScenarioSpans--;
+          vuContext.vars._spanCount++;
+          this.sendTelemetry(vuContext.vars._spanCount, this.config.type);
         }
       }
     );
@@ -189,6 +196,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           events.emit('histogram', `browser.step.${stepName}`, difference);
           span.end();
           this.pendingPlaywrightSpans--;
+          vuContext.vars._spanCount++;
         }
       });
     };

@@ -176,6 +176,7 @@ class OTelReporter {
       await this.playwrightReporter.cleanup('playwright');
     }
     await this.trace.shutDown();
+    await global.artillery.telemetry?.shutdown();
     return done();
   }
 }

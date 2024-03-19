@@ -106,6 +106,9 @@ class OTelTraceBase {
   // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
   startScenarioSpan(engine) {
     return function (userContext, ee, next) {
+      if (!userContext.vars._spanCount) {
+        userContext.vars._spanCount = 0;
+      }
       const span = this[`${engine}Tracer`].startSpan(
         userContext.scenario?.name || `artillery-${engine}-scenario`,
         {
@@ -135,6 +138,8 @@ class OTelTraceBase {
       if (!span.endTime[0]) {
         span.end(Date.now());
         this.pendingScenarioSpans--;
+        userContext.vars._spanCount++;
+        this.sendTelemetry(userContext.vars._spanCount, this.config.type);
       }
       if (engine === 'http') {
         next();
@@ -142,6 +147,36 @@ class OTelTraceBase {
         return;
       }
     };
+  }
+  sendTelemetry(spanCount, reporterType) {
+    const popularDestinations = {
+      'nr-data.net': 'new-relic',
+      lightstep: 'lightstep',
+      honeycomb: 'honeycomb',
+      dynatrace: 'dynatrace',
+      grafana: 'grafana'
+    };
+
+    let destination;
+    if (reporterType !== 'open-telemetry') {
+      destination = reporterType;
+    } else {
+      const destinationFromEndpoint = Object.keys(popularDestinations).find(
+        (key) => this.config.endpoint?.includes(key)
+      );
+      destination = destinationFromEndpoint
+        ? popularDestinations[destinationFromEndpoint]
+        : 'custom';
+    }
+
+    const telemetry = global.artillery?.telemetry;
+    if (telemetry) {
+      telemetry.capture('otel_span_count', {
+        testId: global.artillery.testRunId,
+        spansExported: spanCount,
+        destination
+      });
+    }
   }
 
   // Placeholder - make onError hook engine agnostic - implement hook for other engines?
