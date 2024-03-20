@@ -25,7 +25,7 @@ if (
   process.env.DEBUG &&
   process.env.DEBUG.includes('plugin:publish-metrics:')
 ) {
-  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
+  diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 }
 
 class OTelReporter {

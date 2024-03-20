@@ -43,7 +43,7 @@ test('traces succesfully arrive to datadog', async (t) => {
 
   // Act:
   const output =
-    await $`artillery run-fargate ${__dirname}/fixtures/adot/adot-dd-pass.yml --record --tags ${baseTags} --output ${reportFilePath}`;
+    await $`DEBUG=plugin:publish-metrics:datadog artillery run-fargate ${__dirname}/fixtures/adot/adot-dd-pass.yml --record --tags ${baseTags} --output ${reportFilePath}`;
 
   const testId = getTestId(output.stdout);
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));

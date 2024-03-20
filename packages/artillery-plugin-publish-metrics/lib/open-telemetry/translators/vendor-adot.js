@@ -86,6 +86,9 @@ const vendorToCollectorConfigTranslators = {
         send_batch_max_size: 1024,
         send_batch_size: 200
       };
+      collectorConfig.exporters.logging = {
+        loglevel: 'debug'
+      };
       collectorConfig.exporters['datadog/api'] = {
         traces: {
           trace_buffer: 100
@@ -97,7 +100,7 @@ const vendorToCollectorConfigTranslators = {
       collectorConfig.service.pipelines.traces = {
         receivers: ['otlp'],
         processors: ['batch/trace'],
-        exporters: ['datadog/api']
+        exporters: ['datadog/api', 'logging']
       };
     }
     return collectorConfig;
