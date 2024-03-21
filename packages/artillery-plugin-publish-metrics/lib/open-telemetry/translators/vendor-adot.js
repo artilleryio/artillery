@@ -82,7 +82,7 @@ const vendorToCollectorConfigTranslators = {
     const collectorConfig = JSON.parse(JSON.stringify(collectorConfigTemplate));
     if (config.traces) {
       collectorConfig.processors['batch/trace'] = {
-        timeout: '10s',
+        timeout: '2s',
         send_batch_max_size: 1024,
         send_batch_size: 200
       };
