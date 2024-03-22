@@ -81,11 +81,11 @@ const vendorToCollectorConfigTranslators = {
   datadog: (config) => {
     const collectorConfig = JSON.parse(JSON.stringify(collectorConfigTemplate));
     if (config.traces) {
-      collectorConfig.processors['batch/trace'] = {
-        timeout: '2s',
-        send_batch_max_size: 1024,
-        send_batch_size: 200
-      };
+      // collectorConfig.processors['batch/trace'] = {
+      //   timeout: '2s',
+      //   send_batch_max_size: 1024,
+      //   send_batch_size: 200
+      // };
       collectorConfig.exporters.logging = {
         loglevel: 'debug'
       };
@@ -99,7 +99,7 @@ const vendorToCollectorConfigTranslators = {
       };
       collectorConfig.service.pipelines.traces = {
         receivers: ['otlp'],
-        processors: ['batch/trace'],
+        // processors: ['batch/trace'],
         exporters: ['datadog/api', 'logging']
       };
     }
