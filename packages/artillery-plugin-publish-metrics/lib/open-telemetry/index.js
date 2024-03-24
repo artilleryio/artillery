@@ -122,6 +122,10 @@ class OTelReporter {
         );
         this.playwrightReporter.run();
       }
+      // events.on('workerDone', async() => {
+      //   console.log(`WORKER ${process.env.LOCAL_WORKER_ID} DONE`);
+      //   await this.cleanup(() => {});
+      // });
     }
   }
   debug(msg) {
@@ -153,6 +157,7 @@ class OTelReporter {
   }
 
   async cleanup(done) {
+    console.log('*******OTEL CLEANUP CALLED!!!');
     this.debug('Cleaning up');
     if (!this.metricsConfig && !this.tracesConfig) {
       return done();

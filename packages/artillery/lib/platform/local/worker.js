@@ -63,6 +63,7 @@ async function onMessage(message) {
     // TODO: v3 plugins
     for (const o of global.artillery.plugins) {
       if (o.plugin.cleanup) {
+        console.log('CLEANUP FROM WORKER');
         try {
           await p(o.plugin.cleanup.bind(o.plugin))();
           debug('plugin unloaded:', o.name);

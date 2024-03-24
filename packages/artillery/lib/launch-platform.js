@@ -149,6 +149,9 @@ class Launcher {
     });
 
     workerEvents.on('done', async (workerId, message) => {
+      // this.pluginEvents.emit('workerDone', SSMS.deserializeMetrics(
+      //   message.report
+      // ))
       this.workers[workerId].state = STATES.completed;
 
       this.finalReportsByWorker[workerId] = SSMS.deserializeMetrics(
@@ -465,6 +468,7 @@ class Launcher {
     if (global.artillery && global.artillery.plugins) {
       for (const o of global.artillery.plugins) {
         if (o.plugin.cleanup) {
+          console.log('CLEANUP FROM LAUNCHER');
           try {
             await p(o.plugin.cleanup.bind(o.plugin))();
             debug('plugin unloaded:', o.name);
