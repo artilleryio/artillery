@@ -109,13 +109,10 @@ const ScenarioSchema = Joi.object({
     }
   );
 
-// TODO: PR in joi-to-json repo for converting deprecated and default
-//TODO: missing some descriptions (ws and socketio)
-
+//TODO: implement full schema consistent with scenario - right now it's Joi.any() on items
 const BeforeAfterSchema = Joi.object({
   flow: Joi.array()
     .items(Joi.any())
-    .required()
     .meta({ title: 'Flow object' })
     .description(
       'https://www.artillery.io/docs/reference/test-script#before-and-after-sections'
