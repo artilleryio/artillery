@@ -51,6 +51,9 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
   startHTTPRequestSpan(req, userContext, events, done) {
     const startTime = Date.now();
     const scenarioSpan = userContext.vars['__httpScenarioSpan'];
+    if (!scenarioSpan) {
+      return done();
+    }
     context.with(trace.setSpan(context.active(), scenarioSpan), () => {
       const spanName =
         this.config.useRequestNames && req.name
@@ -85,10 +88,11 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
   }
 
   endHTTPRequestSpan(req, res, userContext, events, done) {
-    if (!userContext.vars['__otlpHTTPRequestSpan']) {
+    const span = userContext.vars['__otlpHTTPRequestSpan'];
+    if (!span) {
       return done();
     }
-    const span = userContext.vars['__otlpHTTPRequestSpan'];
+
     let endTime;
 
     const scenarioSpan = userContext.vars['__httpScenarioSpan'];
@@ -162,9 +166,12 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
   otelTraceOnError(err, req, userContext, ee, done) {
     const scenarioSpan = userContext.vars.__httpScenarioSpan;
     const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
+    if (!scenarioSpan) {
+      return done();
+    }
     // If the error happened outside the request, the request span will be handled in the afterResponse hook
     // If the error happens on the request we set the exception on the request, otherwise we set it to the scenario span
-    if (!requestSpan.endTime[0]) {
+    if (requestSpan && !requestSpan.endTime[0]) {
       requestSpan.recordException(err);
       requestSpan.setStatus({
         code: SpanStatusCode.ERROR,
@@ -181,7 +188,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       requestSpan.end();
       this.pendingRequestSpans--;
     } else {
-      scenarioSpan.recordException(err);
+      scenarioSpan?.recordException(err);
     }
     // We set the scenario span status to error regardles of what level the error happened in (scenario or request) for easier querrying
     scenarioSpan.setStatus({

@@ -39,6 +39,10 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
       specName || 'Scenario execution',
       { kind: SpanKind.CLIENT },
       async (scenarioSpan) => {
+        if (!scenarioSpan.isRecording()) {
+          scenarioSpan.end();
+          return;
+        }
         scenarioSpan.setAttributes({
           'vu.uuid': vuContext.vars.$uuid,
           test_id: vuContext.vars.$testId,
