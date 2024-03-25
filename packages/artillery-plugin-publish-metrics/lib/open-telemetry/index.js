@@ -165,7 +165,9 @@ class OTelReporter {
 
     // Waiting for flush period to complete here rather than in trace/metric reporters
     this.debug('Waiting for flush period to end');
-    await new Promise((resolve) => setTimeout(resolve, 60000));
+    console.log('BEFORE 10 sec SLEEP: ', Date.now());
+    await new Promise((resolve) => setTimeout(resolve, 10000));
+    console.log('AFTER 10 sec SLEEP: ', Date.now());
 
     if (this.metricReporter) {
       await this.metricReporter.cleanup();
