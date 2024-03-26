@@ -140,19 +140,26 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     try {
       span.setAttributes({
         [SemanticAttributes.HTTP_STATUS_CODE]: res.statusCode,
-        [SemanticAttributes.HTTP_REQUEST_CONTENT_LENGTH]:
-          res.request.options.headers['content-length'],
         [SemanticAttributes.HTTP_FLAVOR]: res.httpVersion,
-        [SemanticAttributes.HTTP_USER_AGENT]:
-          res.request.options.headers['user-agent']
+        [SemanticAttributes.HTTP_USER_AGENT]: req.headers['user-agent']
       });
-
+      if (res.headers['content-length']) {
+        span.setAttribute(
+          SemanticAttributes.HTTP_REQUEST_CONTENT_LENGTH,
+          res.headers['content-length']
+        );
+      }
       if (res.statusCode >= this.statusAsErrorThreshold) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: res.statusMessage
         });
       }
+    } catch (err) {
+      this.debug(err);
+    }
+
+    try {
       if (!span.endTime[0]) {
         span.end(endTime || Date.now());
         this.pendingRequestSpans--;
