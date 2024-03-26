@@ -22,8 +22,8 @@ export const goToDocsAndSearch = async (page: Page, step) => {
       .click();
     await page.keyboard.type('typescript', { delay: 100 });
     await page
-      .getByRole('link', { name: 'processor - custom JS code' })
+      .getByRole('link', { name: 'processor - load custom code' })
       .click();
-    await expect(page.getByText('processor - custom JS code')).toBeVisible();
+    await expect(page.getByText('processor - load custom code')).toBeVisible();
   });
 };
