@@ -39,6 +39,25 @@ class PlaywrightEngine {
       this.processor.$rewriteMetricName = function (name, _type) { return name; }
     }
 
+    //
+    // Tracing:
+    // Note that these variables are shared across VUs *within* a single worker thread, as each
+    // worker creates its own instance of the engine.
+    this.tracesRecordedCount = 0; // total count of traces recorded so far
+    this.MAX_TRACE_RECORDINGS = 5; // total limit on traces we'll record
+
+    this.enablePlaywrightTracing = typeof process.env.ENABLE_PLAYWRIGHT_TRACING !== 'undefined';
+
+    // We use this to make sure only one VU is recording at one time:
+    this.playwrightRecordTraceForNextVU = this.enablePlaywrightTracing;
+    
+    // We use this to limit the number of recordings that we save:
+    this.lastTraceRecordedTime = 0; // timestamp of last saved recording
+    this.TRACE_RECORDING_INTERVAL_MSEC = 1000 * 60 * 5; // minimum interval between saving new recordings
+    
+    this.tracePaths = [];
+    this.traceOutputDir = process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR || '/tmp';
+
     return this;
   }
 
@@ -97,6 +116,12 @@ class PlaywrightEngine {
       }
 
       const context = await browser.newContext(contextOptions);
+
+      if (self.playwrightRecordTraceForNextVU) {
+        self.playwrightRecordTraceForNextVU = false;
+        initialContext.vars.isRecording = true; // used by the VU to discard the trace if needed
+        await context.tracing.start({ screenshots: true, snapshots: true });
+      }
 
       context.setDefaultNavigationTimeout(self.defaultNavigationTimeout);
       context.setDefaultTimeout(self.defaultTimeout);
@@ -248,22 +273,41 @@ class PlaywrightEngine {
           await traceScenario(page, initialContext, events, fn, spec.name)
         } else {
           await fn(page, initialContext, events, test);
-        }
-
+        }        
         await page.close();
-
+        
         if (cb) {
           cb(null, initialContext);
         }
         return initialContext;
       } catch (err) {
-        console.error(err);
+        if (initialContext.vars.isRecording) {
+          if (Date.now() - self.lastTraceRecordedTime > self.TRACE_RECORDING_INTERVAL_MSEC) {
+            const tracePath = `${self.traceOutputDir}/trace-${initialContext.vars.$testId}-${initialContext.vars.$uuid}-${Date.now()}.zip`;
+            await context.tracing.stop({ path: tracePath});
+            self.lastTraceRecordedTime = Date.now();
+            self.tracesRecordedCount++;
+            self.tracePaths.push(tracePath);
+            initialContext.vars.isRecording = false; // for finally{} block
+          }
+        }
+
         if (cb) {
           cb(err, initialContext);
         } else {
           throw err;
         }
+
       } finally {
+        if (self.enablePlaywrightTracing && self.tracesRecordedCount < self.MAX_TRACE_RECORDINGS) {
+          self.playwrightRecordTraceForNextVU = true;
+        }
+
+        if (initialContext.vars.isRecording) {
+          // This VU was recording but completed successfully, drop the recording
+          await context.tracing.stop();
+        }
+
         await context.close();
 
         if (self.useSeparateBrowserPerVU) {
