@@ -48,7 +48,10 @@
        if (telemetryDisabled) {
          eventPayload = {
            event,
-           distinctId: 'skytrace'
+           distinctId: 'skytrace',
+           properties: {
+             $ip: 'not-collected',
+           }
          };
        } else {
          eventPayload = {
@@ -59,7 +62,7 @@
              version: skytraceVersion,
              os: process.platform,
              isCi: isCI,
-             $ip: null
+             $ip: 'not-collected'
            }
          };
  

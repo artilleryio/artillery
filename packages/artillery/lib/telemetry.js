@@ -52,7 +52,10 @@ const init = () => {
       if (telemetryDisabled) {
         eventPayload = {
           event,
-          distinctId: 'artillery-core'
+          distinctId: 'artillery-core',
+          properties: {
+            $ip: 'not-collected'
+          }
         };
       } else {
         eventPayload = {
@@ -63,7 +66,7 @@ const init = () => {
             version: artilleryVersion,
             os: process.platform,
             isCi: isCI,
-            $ip: null
+            $ip: 'not-collected'
           }
         };
 

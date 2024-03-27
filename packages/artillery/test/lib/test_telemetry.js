@@ -49,7 +49,7 @@ test('Telemetry', function (t) {
       version: artilleryVersion,
       os: process.platform,
       isCi: ci.isCI,
-      $ip: null,
+      $ip: 'not-collected',
       source: 'test-suite'
     }
   };
@@ -83,7 +83,7 @@ test('Telemetry with defaults env var', function (t) {
       version: artilleryVersion,
       os: process.platform,
       isCi: ci.isCI,
-      $ip: null,
+      $ip: 'not-collected',
       default1: 'value1',
       default2: 2
     }
@@ -111,7 +111,10 @@ test('Telemetry - disable user info through environment variable', function (t) 
   const callArg = captureSpy.args[0][0];
   const expectedEvent = {
     event: 'test event',
-    distinctId: 'artillery-core'
+    distinctId: 'artillery-core',
+    properties: {
+      $ip: 'not-collected'
+    }
   };
 
   t.same(callArg, expectedEvent, 'Only basic ping is sent if user opted out');
