@@ -1,16 +1,24 @@
 'use strict';
 
-const { test } = require('tap');
+const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const http = require('http');
 const WebSocket = require('ws');
 
-test('should match a websocket response without capture', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
+let server;
+let wsServer;
+beforeEach(async () => {
+  const httpServer = http.createServer();
+  wsServer = new WebSocket.Server({ server: httpServer });
+  server = httpServer.listen(0);
+});
 
-  wss.on('connection', function (ws) {
+afterEach(async () => {
+  server.close();
+});
+
+test('should match a websocket response without capture', (t) => {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       ws.send(JSON.stringify({ foo: 'bar' }));
     });
@@ -18,7 +26,7 @@ test('should match a websocket response without capture', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }]
     },
     scenarios: [
@@ -43,7 +51,7 @@ test('should match a websocket response without capture', (t) => {
       t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -52,11 +60,7 @@ test('should match a websocket response without capture', (t) => {
 });
 
 test('should wait for a websocket response without send', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       ws.send(JSON.stringify({ bar: 'foo' }));
       setTimeout(() => {
@@ -67,7 +71,7 @@ test('should wait for a websocket response without send', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }]
     },
     scenarios: [
@@ -102,7 +106,7 @@ test('should wait for a websocket response without send', (t) => {
       );
 
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -111,11 +115,7 @@ test('should wait for a websocket response without send', (t) => {
 });
 
 test('should wait for multiple websocket responses in a loop', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       ws.send(JSON.stringify({ baz: 'foo' }));
     });
@@ -123,7 +123,7 @@ test('should wait for multiple websocket responses in a loop', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }]
     },
     scenarios: [
@@ -154,7 +154,7 @@ test('should wait for multiple websocket responses in a loop', (t) => {
       t.equal(c['websocket.messages_sent'], 5, 'All messages should be sent');
 
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -163,11 +163,7 @@ test('should wait for multiple websocket responses in a loop', (t) => {
 });
 
 test('should use config.ws.timeout on capture', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       setTimeout(() => {
         ws.send(JSON.stringify({ foo: 'bar' }));
@@ -177,7 +173,7 @@ test('should use config.ws.timeout on capture', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }],
       ws: { timeout: 1 }
     },
@@ -202,7 +198,7 @@ test('should use config.ws.timeout on capture', (t) => {
       t.equal(c['vusers.failed'], 1, 'There should be one failure');
       t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -211,11 +207,7 @@ test('should use config.ws.timeout on capture', (t) => {
 });
 
 test('should use config.timeout on capture', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       setTimeout(() => {
         ws.send(JSON.stringify({ foo: 'bar' }));
@@ -225,7 +217,7 @@ test('should use config.timeout on capture', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }],
       timeout: 1
     },
@@ -250,7 +242,7 @@ test('should use config.timeout on capture', (t) => {
       t.equal(c['vusers.failed'], 1, 'There should be one failure');
       t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -259,11 +251,7 @@ test('should use config.timeout on capture', (t) => {
 });
 
 test('should allow an empty string payload to be sent', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       ws.send(JSON.stringify({ bar: 'baz' }));
     });
@@ -271,7 +259,7 @@ test('should allow an empty string payload to be sent', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }]
     },
     scenarios: [
@@ -296,7 +284,7 @@ test('should allow an empty string payload to be sent', (t) => {
       t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -305,11 +293,7 @@ test('should allow an empty string payload to be sent', (t) => {
 });
 
 test('should allow a simple empty string to be sent', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       ws.send(JSON.stringify({ bar: 'baz' }));
     });
@@ -317,7 +301,7 @@ test('should allow a simple empty string to be sent', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }]
     },
     scenarios: [
@@ -339,7 +323,7 @@ test('should allow a simple empty string to be sent', (t) => {
       t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -348,11 +332,7 @@ test('should allow a simple empty string to be sent', (t) => {
 });
 
 test('should match allow an undefined variable to be sent', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       ws.send(JSON.stringify({ baz: 'foo' }));
     });
@@ -360,7 +340,7 @@ test('should match allow an undefined variable to be sent', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }]
     },
     scenarios: [
@@ -382,7 +362,7 @@ test('should match allow an undefined variable to be sent', (t) => {
       t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 
@@ -391,11 +371,7 @@ test('should match allow an undefined variable to be sent', (t) => {
 });
 
 test('should report an error if a step is not valid', (t) => {
-  const server = http.createServer();
-  const wss = new WebSocket.Server({ server: server });
-  const targetServer = server.listen(0);
-
-  wss.on('connection', function (ws) {
+  wsServer.on('connection', function (ws) {
     ws.on('message', function () {
       ws.send(JSON.stringify({ baz: 'foo' }));
     });
@@ -403,7 +379,7 @@ test('should report an error if a step is not valid', (t) => {
 
   const script = {
     config: {
-      target: `ws://127.0.0.1:${targetServer.address().port}`,
+      target: `ws://127.0.0.1:${server.address().port}`,
       phases: [{ duration: 1, arrivalCount: 1 }]
     },
     scenarios: [{ engine: 'ws', flow: [{ sedn: 'test' }] }]
@@ -416,7 +392,7 @@ test('should report an error if a step is not valid', (t) => {
       t.equal(c['errors.invalid_step'], 1, 'There should be one error');
 
       ee.stop().then(() => {
-        targetServer.close(t.end);
+        t.end();
       });
     });
 

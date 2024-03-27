@@ -102,7 +102,7 @@ tap.test('Metric aggregation', async (t) => {
       const cname = _.sample(counterNames);
       const workerIndex = _.random(0, workers.length - 1);
 
-      const dest = workers.filter((w) => w.threadId === workerIndex + 1)[0];
+      const [dest] = workers.filter((w, idx) => idx === workerIndex);
 
       dest.postMessage({ cmd: 'histogram', name: hname, value: dp, ts: ts });
       dest.postMessage({ cmd: 'incr', name: cname, value: 1, ts: ts });

@@ -27,10 +27,10 @@ trap cleanup EXIT
 
 if [ $# -eq 1 ] ; then
     echo Running Single Test: $1
-    "$DIR"/../../../../node_modules/.bin/tap --no-coverage --color --timeout 600 $DIR/$1
+    "$DIR"/../../../../node_modules/.bin/tap --timeout 600 $DIR/$1
 else
     echo Running All Available Tests
-    "$DIR"/../../../../node_modules/.bin/tap --no-coverage --color --timeout 600 $DIR/index.js
+    "$DIR"/../../../../node_modules/.bin/tap --timeout 600 $DIR/index.js
 fi
 
 test_status=$?

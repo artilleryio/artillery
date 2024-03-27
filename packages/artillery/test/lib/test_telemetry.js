@@ -1,6 +1,6 @@
 'use strict';
 
-const { test } = require('tap');
+const { test, afterEach, before, after } = require('tap');
 const rewiremock = require('rewiremock/node');
 const telemetry = require('../../lib/telemetry');
 const { version: artilleryVersion } = require('../../package.json');
@@ -16,22 +16,27 @@ const PostHogMock = {
   PostHog: InnerPostHog
 };
 
-test('Telemetry - setup', (t) => {
+before(() => {
   sandbox = sinon.sandbox.create();
   rewiremock.enable();
 
   captureSpy = sandbox.spy();
   shutdownSpy = sandbox.spy();
 
-  // make sure telemetry is enabled
-  delete process.env.ARTILLERY_DISABLE_TELEMETRY;
-
   InnerPostHog.prototype.capture = captureSpy;
   InnerPostHog.prototype.shutdown = shutdownSpy;
 
   rewiremock('posthog-node').with(PostHogMock);
+});
 
-  t.end();
+afterEach(() => {
+  delete process.env.ARTILLERY_TELEMETRY_DEFAULTS;
+  delete process.env.ARTILLERY_TELEMETRY_DEBUG;
+});
+
+after(() => {
+  sandbox.restore();
+  rewiremock.disable();
 });
 
 test('Telemetry', function (t) {
@@ -137,15 +142,7 @@ test('Telemetry - debug through environment variable', function (t) {
 
   const logArg = consoleSpy.args[0][0];
 
-  t.ok(logArg, expectedDebugOutput, 'Logs telemetry data');
-
-  delete process.env.ARTILLERY_TELEMETRY_DEBUG;
-  t.end();
-});
-
-test('Telemetry - teardown', (t) => {
-  sandbox.restore();
-  rewiremock.disable();
+  t.ok(logArg.includes(expectedDebugOutput), 'Logs telemetry data');
 
   t.end();
 });
