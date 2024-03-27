@@ -84,7 +84,8 @@ const otelTemplate = function (config, vendorSpecificSettings) {
         sampleRate: 1,
         useRequestNames: config.traces.useRequestNames,
         attributes: config.traces.attributes,
-        smartSampling: config.traces.smartSampling
+        smartSampling: config.traces.smartSampling,
+        replaceSpanNameRegex: config.traces.replaceSpanNameRegex
       },
       vendorSpecificSettings
     );
