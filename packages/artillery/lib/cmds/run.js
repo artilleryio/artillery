@@ -146,6 +146,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
 
   try {
     cloud = new CloudPlugin(null, null, { flags });
+    global.artillery.cloudEnabled = cloud.enabled;
 
     if (cloud.enabled) {
       try {
