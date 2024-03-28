@@ -81,7 +81,7 @@ const otelTemplate = function (config, vendorSpecificSettings) {
     otelConfig.serviceName = config.traces.serviceName || config.serviceName;
     otelConfig.traces = Object.assign(
       {
-        sampleRate: 1,
+        sampleRate: config.traces.sampleRate,
         useRequestNames: config.traces.useRequestNames,
         attributes: config.traces.attributes,
         smartSampling: config.traces.smartSampling

@@ -119,8 +119,13 @@ class OTelTraceBase {
         }
       );
 
-      userContext.vars[`__${engine}ScenarioSpan`] = span;
-      this.pendingScenarioSpans++;
+      if (span.isRecording()) {
+        userContext.vars[`__${engine}ScenarioSpan`] = span;
+        this.pendingScenarioSpans++;
+      } else {
+        span.end();
+      }
+
       if (engine === 'http') {
         next();
       } else {
@@ -132,7 +137,7 @@ class OTelTraceBase {
   endScenarioSpan(engine) {
     return function (userContext, ee, next) {
       const span = userContext.vars[`__${engine}ScenarioSpan`];
-      if (!span.endTime[0]) {
+      if (span && !span.endTime[0]) {
         span.end(Date.now());
         this.pendingScenarioSpans--;
         ee.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
