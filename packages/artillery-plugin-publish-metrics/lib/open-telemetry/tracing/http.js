@@ -127,6 +127,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
                 }
               })
               .end(res.timings[value.end]);
+            events.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
           }
         }
       });
@@ -152,6 +153,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       if (!span.endTime[0]) {
         span.end(endTime || Date.now());
         this.pendingRequestSpans--;
+        events.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
       }
     } catch (err) {
       this.debug(err);
@@ -159,7 +161,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     return done();
   }
 
-  otelTraceOnError(err, req, userContext, ee, done) {
+  otelTraceOnError(err, req, userContext, events, done) {
     const scenarioSpan = userContext.vars.__httpScenarioSpan;
     const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
     // If the error happened outside the request, the request span will be handled in the afterResponse hook
@@ -180,6 +182,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
       requestSpan.end();
       this.pendingRequestSpans--;
+      events.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
     } else {
       scenarioSpan.recordException(err);
     }
@@ -198,6 +201,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
     scenarioSpan.end();
     this.pendingScenarioSpans--;
+    events.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
     return done();
   }
 

@@ -68,9 +68,6 @@ class OTelReporter {
     if (!this.metricsConfig && !this.tracesConfig) {
       return this;
     }
-    if (this.tracesConfig) {
-      global.artillery.OTEL_TRACING_ENABLED = true;
-    }
 
     // Warn if traces are configured in multiple reporters
     this.warnIfDuplicateTracesConfigured(this.translatedConfigsList);
@@ -98,6 +95,15 @@ class OTelReporter {
 
     // HANDLING TRACES
     if (this.tracesConfig) {
+      global.artillery.OTEL_TRACING_ENABLED = true;
+
+      // Handling telemetry for traces
+      events.on('done', async (report) => {
+        const spanCount =
+          report?.counters?.['plugins.publish-metrics.spans.exported'];
+        await this.sendTraceTelemetry(spanCount, this.tracesConfig.type);
+      });
+
       // OpenTelemetry trace setup that is shared between engines - it is set in a separate class so it doesn't get duplicated in case both engines are used in a test
       const { OTelTraceConfig } = require('./tracing/base');
       this.trace = new OTelTraceConfig(this.tracesConfig, this.resource);
@@ -150,6 +156,41 @@ class OTelReporter {
         ? this.engines.add(scenario.engine)
         : this.engines.add('http');
     });
+  }
+
+  async sendTraceTelemetry(spanCount, reporterType) {
+    if (process.env.ARTILLERY_DISABLE_TELEMETRY) {
+      return;
+    }
+
+    const popularDestinations = {
+      'nr-data.net': 'new-relic',
+      lightstep: 'lightstep',
+      honeycomb: 'honeycomb',
+      dynatrace: 'dynatrace',
+      grafana: 'grafana'
+    };
+
+    let destination;
+    if (reporterType !== 'open-telemetry') {
+      destination = reporterType;
+    } else {
+      const destinationFromEndpoint = Object.keys(popularDestinations).find(
+        (key) => this.tracesConfig?.endpoint?.includes(key)
+      );
+      destination = destinationFromEndpoint
+        ? popularDestinations[destinationFromEndpoint]
+        : 'custom';
+    }
+
+    const telemetry = global.artillery?.telemetry;
+    if (telemetry) {
+      await telemetry.capture('otel-span-count', {
+        spansExported: spanCount,
+        destination
+      });
+      return true;
+    }
   }
 
   async cleanup(done) {
