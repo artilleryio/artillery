@@ -2,10 +2,13 @@
 
 const sleep = require('../../../../helpers/sleep.js');
 const got = require('got');
+const AWS = require('aws-sdk');
+const xray = new AWS.XRay({ region: 'us-east-1' });
 
 module.exports = {
   getTestId,
-  getDatadogSpans
+  getDatadogSpans,
+  getXRayTraces
 };
 
 function getTestId(outputString) {
@@ -64,4 +67,67 @@ async function getDatadogSpans(apiKey, appKey, testId, expectedTotalSpans) {
   }
 
   return spanList;
+}
+
+async function getXRayTraces(testId, expectedTraceNum) {
+  const endTime = new Date();
+  const startTime = new Date(endTime.getTime() - 30 * 60 * 1000); // 30 min ago
+  const filterExpression = `annotation.test_id = "${testId}"`;
+
+  const maxRetry = 12;
+  const delay = 30000;
+  let retryNum = 0;
+  let traceSummaries = [];
+
+  while (traceSummaries.length < expectedTraceNum && retryNum <= maxRetry) {
+    try {
+      console.log(
+        `ADOT Cloudwatch test: Awaiting trace summaries... (retry #${retryNum})`
+      );
+      traceSummaries = await xray
+        .getTraceSummaries({
+          StartTime: startTime,
+          EndTime: endTime,
+          FilterExpression: filterExpression,
+          TimeRangeType: 'Event'
+        })
+        .promise()
+        .then((data) => data.TraceSummaries);
+
+      await sleep(delay);
+      retryNum++;
+    } catch (err) {
+      throw new Error(err);
+    }
+  }
+
+  const traceIds = traceSummaries.map((trace) => trace.Id);
+  console.log('TRACE IDS: ', traceIds);
+
+  let fullTraceData = [];
+  let retryBatchNum = 0;
+  while (fullTraceData.length < expectedTraceNum && retryNum <= maxRetry) {
+    console.log(
+      `ADOT Cloudwatch test: Awaiting traces... (retry #${retryBatchNum})`
+    );
+    try {
+      fullTraceData = await xray
+        .batchGetTraces({
+          TraceIds: traceIds
+        })
+        .promise()
+        .then((data) => data.Traces);
+
+      await sleep(delay);
+      retryBatchNum++;
+    } catch (err) {
+      throw new Error(err);
+    }
+  }
+
+  const traceMap = fullTraceData?.map((trace) =>
+    trace.Segments.map((span) => JSON.parse(span.Document))
+  );
+
+  return traceMap;
 }

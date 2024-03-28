@@ -9,12 +9,19 @@ const request = require('got');
 const awaitOnEE = require('../../util/await-on-ee');
 const sleep = require('../../util/sleep');
 const util = require('node:util');
-
+const chokidar = require('chokidar');
+const fs = require('fs');
+const path = require('path');
 class ArtilleryCloudPlugin {
   constructor(_script, _events, { flags }) {
     this.enabled = false;
 
-    if (!flags.record) {
+    const isInteractiveUse = typeof flags.record !== 'undefined';
+    const enabledInCloudWorker =
+      typeof process.env.WORKER_ID !== 'undefined' &&
+      typeof process.env.ARTILLERY_CLOUD_API_KEY !== 'undefined';
+
+    if (!isInteractiveUse && !enabledInCloudWorker) {
       return this;
     }
 
@@ -26,6 +33,7 @@ class ArtilleryCloudPlugin {
       process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
     this.eventsEndpoint = `${this.baseUrl}/api/events`;
     this.whoamiEndpoint = `${this.baseUrl}/api/user/whoami`;
+    this.getAssetUploadUrls = `${this.baseUrl}/api/asset-upload-urls`;
 
     this.defaultHeaders = {
       'x-auth-token': this.apiKey
@@ -34,95 +42,107 @@ class ArtilleryCloudPlugin {
     this.cancellationRequestedBy = '';
 
     let testEndInfo = {};
-    global.artillery.globalEvents.on('test:init', async (testInfo) => {
-      debug('test:init', testInfo);
 
-      this.testRunId = testInfo.testRunId;
-      const testRunUrl = `${this.baseUrl}/load-tests/${this.testRunId}`;
-      testEndInfo.testRunUrl = testRunUrl;
+    // This value is available in cloud workers only. With interactive use, it'll be set
+    // in the test:init event handler.
+    this.testRunId = process.env.ARTILLERY_TEST_RUN_ID;
 
-      this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
+    if (isInteractiveUse) {
+      global.artillery.globalEvents.on('test:init', async (testInfo) => {
+        debug('test:init', testInfo);
 
-      console.log('Artillery Cloud reporting is configured for this test run');
-      console.log(`Run URL: ${testRunUrl}`);
+        this.testRunId = testInfo.testRunId;
 
-      await this._event('testrun:init', {
-        metadata: testInfo.metadata
+        const testRunUrl = `${this.baseUrl}/load-tests/${this.testRunId}`;
+        testEndInfo.testRunUrl = testRunUrl;
+
+        this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
+
+        console.log(
+          'Artillery Cloud reporting is configured for this test run'
+        );
+        console.log(`Run URL: ${testRunUrl}`);
+
+        await this._event('testrun:init', {
+          metadata: testInfo.metadata
+        });
+        this.setGetLoadTestInterval = this.setGetStatusInterval();
+
+        if (typeof testInfo.flags.note !== 'undefined') {
+          await this._event('testrun:addnote', { text: testInfo.flags.note });
+        }
+
+        this.uploading = 0;
       });
-      this.setGetLoadTestInterval = this.setGetStatusInterval();
 
-      if (typeof testInfo.flags.note !== 'undefined') {
-        await this._event('testrun:addnote', { text: testInfo.flags.note });
-      }
-    });
-
-    global.artillery.globalEvents.on('phaseStarted', async (phase) => {
-      await this._event('testrun:event', {
-        eventName: 'phaseStarted',
-        eventAttributes: phase
+      global.artillery.globalEvents.on('phaseStarted', async (phase) => {
+        await this._event('testrun:event', {
+          eventName: 'phaseStarted',
+          eventAttributes: phase
+        });
       });
-    });
 
-    global.artillery.globalEvents.on('phaseCompleted', async (phase) => {
-      await this._event('testrun:event', {
-        eventName: 'phaseCompleted',
-        eventAttributes: phase
+      global.artillery.globalEvents.on('phaseCompleted', async (phase) => {
+        await this._event('testrun:event', {
+          eventName: 'phaseCompleted',
+          eventAttributes: phase
+        });
       });
-    });
 
-    global.artillery.globalEvents.on('stats', async (report) => {
-      debug('stats', new Date());
-      const ts = Number(report.period);
-      await this._event('testrun:metrics', { report, ts });
-    });
-
-    global.artillery.globalEvents.on('done', async (report) => {
-      debug('done');
-      debug(
-        'testrun:aggregatereport: payload size:',
-        JSON.stringify(report).length
-      );
-      await this._event('testrun:aggregatereport', { aggregate: report });
-    });
-
-    global.artillery.globalEvents.on('checks', async (checks) => {
-      debug('checks');
-      await this._event('testrun:checks', { checks });
-    });
-
-    global.artillery.globalEvents.on('logLines', async (lines, ts) => {
-      debug('logLines event', ts);
-      this.unprocessedLogsCounter += 1;
-
-      let text = '';
-
-      try {
-        JSON.stringify(lines);
-      } catch (stringifyErr) {
-        console.log('Could not serialize console log');
-        console.log(stringifyErr);
-      }
-      for (const args of lines) {
-        text += util.format(...Object.keys(args).map((k) => args[k])) + '\n';
-      }
-
-      try {
-        await this._event('testrun:textlog', { lines: text, ts });
-      } catch (err) {
-        debug(err);
-      } finally {
-        this.unprocessedLogsCounter -= 1;
-      }
-
-      debug('last 100 characters:');
-      debug(text.slice(text.length - 100, text.length));
-    });
-
-    global.artillery.globalEvents.on('metadata', async (metadata) => {
-      await this._event('testrun:addmetadata', {
-        metadata
+      global.artillery.globalEvents.on('stats', async (report) => {
+        debug('stats', new Date());
+        const ts = Number(report.period);
+        await this._event('testrun:metrics', { report, ts });
       });
-    });
+
+      global.artillery.globalEvents.on('done', async (report) => {
+        debug('done');
+        debug(
+          'testrun:aggregatereport: payload size:',
+          JSON.stringify(report).length
+        );
+        await this._event('testrun:aggregatereport', { aggregate: report });
+      });
+
+      global.artillery.globalEvents.on('checks', async (checks) => {
+        debug('checks');
+        await this._event('testrun:checks', { checks });
+      });
+
+      global.artillery.globalEvents.on('logLines', async (lines, ts) => {
+        debug('logLines event', ts);
+        this.unprocessedLogsCounter += 1;
+
+        let text = '';
+
+        try {
+          JSON.stringify(lines);
+        } catch (stringifyErr) {
+          console.log('Could not serialize console log');
+          console.log(stringifyErr);
+        }
+        for (const args of lines) {
+          text += util.format(...Object.keys(args).map((k) => args[k])) + '\n';
+        }
+
+        try {
+          await this._event('testrun:textlog', { lines: text, ts });
+        } catch (err) {
+          debug(err);
+        } finally {
+          this.unprocessedLogsCounter -= 1;
+        }
+
+        debug('last 100 characters:');
+        debug(text.slice(text.length - 100, text.length));
+      });
+
+      global.artillery.globalEvents.on('metadata', async (metadata) => {
+        await this._event('testrun:addmetadata', {
+          metadata
+        });
+      });
+    } // isInteractiveUse
 
     global.artillery.ext({
       ext: 'beforeExit',
@@ -145,28 +165,34 @@ class ArtilleryCloudPlugin {
           return;
         }
 
-        clearInterval(this.setGetLoadTestInterval);
-        // Wait for the last logLines events to be processed, as they can sometimes finish processing after shutdown has finished
-        await awaitOnEE(
-          global.artillery.globalEvents,
-          'logLines',
-          200,
-          1 * 1000 //wait at most 1 second for a final log lines event emitter to be fired
-        );
-        await this.waitOnUnprocessedLogs(2 * 1000); //just waiting for ee is not enough, as the api call takes time
+        if (isInteractiveUse) {
+          clearInterval(this.setGetLoadTestInterval);
 
-        await this._event('testrun:end', {
-          ts: testEndInfo.endTime,
-          exitCode: global.artillery.suggestedExitCode || opts.exitCode,
-          isEarlyStop: !!opts.earlyStop,
-          report: testEndInfo.report
-        });
-
-        console.log('\n');
-        if (this.cancellationRequestedBy) {
-          console.log(`Test run stopped by ${this.cancellationRequestedBy}.`);
+          // Wait for the last logLines events to be processed, as they can sometimes finish processing after shutdown has finished
+          await awaitOnEE(
+            global.artillery.globalEvents,
+            'logLines',
+            200,
+            1 * 1000 //wait at most 1 second for a final log lines event emitter to be fired
+          );
         }
-        console.log(`Run URL: ${testEndInfo.testRunUrl}`);
+
+        await this.waitOnUnprocessedLogs(20 * 1000); //just waiting for ee is not enough, as the api call takes time
+
+        if (isInteractiveUse) {
+          await this._event('testrun:end', {
+            ts: testEndInfo.endTime,
+            exitCode: global.artillery.suggestedExitCode || opts.exitCode,
+            isEarlyStop: !!opts.earlyStop,
+            report: testEndInfo.report
+          });
+
+          console.log('\n');
+          if (this.cancellationRequestedBy) {
+            console.log(`Test run stopped by ${this.cancellationRequestedBy}.`);
+          }
+          console.log(`Run URL: ${testEndInfo.testRunUrl}`);
+        }
       }
     });
 
@@ -209,11 +235,80 @@ class ArtilleryCloudPlugin {
       id: body.id,
       email: body.email
     };
+
+    const watcher = chokidar.watch(
+      process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR || '/tmp',
+      {
+        ignored: /(^|[\/\\])\../, // ignore dotfiles
+        persistent: true,
+        ignorePermissionErrors: true,
+        ignoreInitial: true
+      }
+    );
+
+    watcher.on('add', (fp) => {
+      if (path.basename(fp).startsWith('trace-') && fp.endsWith('.zip')) {
+        this._uploadAsset(fp);
+      }
+    });
+  }
+
+  async _uploadAsset(localFilename) {
+    this.uploading++;
+
+    const payload = {
+      testRunId: this.testRunId,
+      filenames: [path.basename(localFilename)]
+    };
+
+    debug(payload);
+
+    let url;
+    try {
+      const res = await request.post(this.getAssetUploadUrls, {
+        headers: this.defaultHeaders,
+        throwHttpErrors: false,
+        json: payload
+      });
+
+      const body = JSON.parse(res.body);
+      debug(body);
+
+      url = body.urls[path.basename(localFilename)];
+    } catch (err) {
+      debug(err);
+    }
+
+    if (!url) {
+      return;
+    }
+
+    const fileStream = fs.createReadStream(localFilename);
+    try {
+      const _response = await request.put(url, {
+        body: fileStream
+      });
+    } catch (error) {
+      console.error('Failed to upload Playwright trace recording:', error);
+      console.log(error.code, error.name, error.message, error.stack);
+    } finally {
+      this.uploading--;
+      artillery.globalEvents.emit('counter', 'browser.traces.uploaded', 1);
+      try {
+        fs.unlinkSync(localFilename);
+      } catch (err) {
+        debug(err);
+      }
+    }
   }
 
   async waitOnUnprocessedLogs(maxWaitTime) {
     let waitedTime = 0;
-    while (this.unprocessedLogsCounter > 0 && waitedTime < maxWaitTime) {
+    while (
+      this.unprocessedLogsCounter > 0 &&
+      this.uploading > 0 &&
+      waitedTime < maxWaitTime
+    ) {
       debug('waiting on unprocessed logs');
       await sleep(500);
       waitedTime += 500;

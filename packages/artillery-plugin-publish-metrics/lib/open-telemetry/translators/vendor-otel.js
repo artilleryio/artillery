@@ -72,6 +72,13 @@ const vendorTranslators = {
       newConfig.metrics.type = 'open-telemetry';
     }
     return newConfig;
+  },
+  cloudwatch: (config) => {
+    const cloudwatchTraceSettings = {
+      type: 'cloudwatch',
+      attributes: config.traces?.annotations
+    };
+    return otelTemplate(config, cloudwatchTraceSettings);
   }
 };
 
@@ -81,7 +88,7 @@ const otelTemplate = function (config, vendorSpecificSettings) {
     otelConfig.serviceName = config.traces.serviceName || config.serviceName;
     otelConfig.traces = Object.assign(
       {
-        sampleRate: 1,
+        sampleRate: config.traces.sampleRate,
         useRequestNames: config.traces.useRequestNames,
         attributes: config.traces.attributes,
         smartSampling: config.traces.smartSampling,

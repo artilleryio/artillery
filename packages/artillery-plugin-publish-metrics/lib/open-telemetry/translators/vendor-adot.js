@@ -1,6 +1,6 @@
 'use strict';
 
-const ADOTSupportedTraceReporters = ['datadog'];
+const ADOTSupportedTraceReporters = ['datadog', 'cloudwatch'];
 const ADOTSupportedMetricReporters = [];
 
 // Getting the relevant reporter configurations from full publish-metrics configuration
@@ -101,6 +101,27 @@ const vendorToCollectorConfigTranslators = {
       };
     }
     return collectorConfig;
+  },
+  cloudwatch: (config) => {
+    const collectorConfig = JSON.parse(JSON.stringify(collectorConfigTemplate));
+    if (config.traces) {
+      collectorConfig.processors['batch/trace'] = {
+        timeout: '2s',
+        send_batch_max_size: 1024,
+        send_batch_size: 200
+      };
+      collectorConfig.exporters['awsxray'] = {
+        region: config.region || 'us-east-1',
+        index_all_attributes: 'true'
+      };
+
+      collectorConfig.service.pipelines.traces = {
+        receivers: ['otlp'],
+        processors: ['batch/trace'],
+        exporters: ['awsxray']
+      };
+    }
+    return collectorConfig;
   }
 };
 
@@ -110,11 +131,13 @@ function getADOTEnvVars(adotRelevantconfigs, dotenv) {
   const envVars = {};
   try {
     adotRelevantconfigs.forEach((config) => {
-      const vendorVars = vendorSpecificEnvVarsForCollector[config.type](
-        config,
-        dotenv
-      );
-      Object.assign(envVars, vendorVars);
+      if (vendorSpecificEnvVarsForCollector[config.type]) {
+        const vendorVars = vendorSpecificEnvVarsForCollector[config.type](
+          config,
+          dotenv
+        );
+        Object.assign(envVars, vendorVars);
+      }
     });
   } catch (err) {
     // We warn here instead of throwing because in the future we will support providing these variables through secrets

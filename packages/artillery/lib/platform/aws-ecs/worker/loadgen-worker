@@ -64,8 +64,6 @@ progress "Worker starting up, ID = $worker_id, version = ${WORKER_VERSION:-unkno
 
 declare -r DEPENDENCIES=(jq aws pwgen node npm yarn)
 
-export ARTILLERY_DISABLE_TELEMETRY=true
-
 send_message () {
     set +e
     set +o pipefail

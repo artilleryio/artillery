@@ -1,0 +1,22 @@
+config:
+  target: "https://artillery.io"
+  phases:
+    - duration: 2
+      arrivalRate: 2
+      name: "Phase 1"
+  engines:
+    playwright: {}
+  processor: "./flow.js"
+  plugins:
+    publish-metrics:
+      - type: cloudwatch
+        traces:
+          serviceName: "Artillery-adot"
+          annotations: 
+            testType: e2e
+
+
+scenarios:
+  - engine: playwright
+    name: "adot-e2e"
+    flowFunction: "simpleCheck"

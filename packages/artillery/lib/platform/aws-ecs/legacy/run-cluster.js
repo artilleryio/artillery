@@ -235,6 +235,17 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     context.dotenv = dotenv.parse(contents);
   }
 
+  // Explicitly make ARTILLERY_CLOUD_API_KEY available to workers (if set)
+  // Relying on the fact that contents of context.dotenv gets passed onto workers
+  // for it
+  if (process.env.ARTILLERY_CLOUD_API_KEY) {
+    if (!context.dotenv) {
+      context.dotenv = {};
+    }
+    context.dotenv.ARTILLERY_CLOUD_API_KEY =
+      process.env.ARTILLERY_CLOUD_API_KEY;
+  }
+
   if (options.bundle) {
     context.namedTest = true;
   }

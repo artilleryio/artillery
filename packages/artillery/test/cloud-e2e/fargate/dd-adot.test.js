@@ -11,7 +11,7 @@ const {
 
 const { getDatadogSpans, getTestId } = require('./fixtures/adot/helpers.js');
 
-//NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
+//NOTE: This test reports to Artillery Dashboard to dogfood and improve visibility
 const baseTags = getTestTags(['type:acceptance']);
 
 let reportFilePath;
