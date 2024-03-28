@@ -209,6 +209,11 @@ async function createWorkerRole(accountId) {
           `arn:aws:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}`,
           `arn:aws:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}/*`
         ]
+      },
+      {
+        Effect: 'Allow',
+        Action: ['xray:PutTraceSegments', 'xray:PutTelemetryRecords'],
+        Resource: ['*']
       }
     ]
   };

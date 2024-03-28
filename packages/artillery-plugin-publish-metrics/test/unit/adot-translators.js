@@ -11,6 +11,30 @@ const {
 } = require('../../lib/open-telemetry/translators/vendor-adot');
 
 // Test getADOTRelevantReporterConfigs
+
+test('getADOTRelevantReporterConfigs returns the cloudwatch config only when it is configured to send traces', async (t) => {
+  const pmConfigList = [
+    {
+      type: 'cloudwatch',
+      traces: {}
+    },
+    {
+      type: 'cloudwatch'
+    },
+    {
+      type: 'cloudwatch',
+      metrics: {}
+    }
+  ];
+  const result = getADOTRelevantReporterConfigs(pmConfigList);
+  t.same(result, [
+    {
+      type: 'cloudwatch',
+      traces: {}
+    }
+  ]);
+});
+
 test('getADOTRelevantReporterConfigs correctly filters out unsupported reporter configurations from a list of reporter configs', async (t) => {
   const pmConfigList = [
     {
@@ -49,6 +73,9 @@ test('getADOTRelevantReporterConfigs does not return configuration when the supp
   const pmConfigList = [
     {
       type: 'datadog'
+    },
+    {
+      type: 'cloudwatch'
     }
   ];
   const result = getADOTRelevantReporterConfigs(pmConfigList);
@@ -68,7 +95,7 @@ test('when vendorSpecificEnvVarsForCollector is called with needed parameters, i
   t.same(result, { DD_API_KEY: '123' });
 });
 
-test('when vendorSpecificEnvVarsForCollector is called without apiKey or DD_API_KEY, it throws an error', async (t) => {
+test('when vendorSpecificEnvVarsForCollector is called for datadog without apiKey or DD_API_KEY, it throws an error', async (t) => {
   const config = {
     type: 'datadog',
     tracing: {}
@@ -80,7 +107,7 @@ test('when vendorSpecificEnvVarsForCollector is called without apiKey or DD_API_
   });
 });
 
-test('when vendorSpecificEnvVarsForCollector is called with an apiKey but and an empty dotenv object, it returns an object with the DD_API_KEY', async (t) => {
+test('when vendorSpecificEnvVarsForCollector is called for datadog with an apiKey and an empty dotenv object, it returns an object with the DD_API_KEY', async (t) => {
   const config = {
     type: 'datadog',
     apiKey: '123',
@@ -91,7 +118,7 @@ test('when vendorSpecificEnvVarsForCollector is called with an apiKey but and an
   t.same(result, { DD_API_KEY: '123' });
 });
 
-test('when vendorSpecificEnvVarsForCollector is called with an apiKey and DD_API_KEY, it returns an object with the DD_API_KEY as the apiKey', async (t) => {
+test('when vendorSpecificEnvVarsForCollector is called for datadog with an apiKey and DD_API_KEY, it returns an object with the DD_API_KEY as the apiKey', async (t) => {
   const config = {
     type: 'datadog',
     apiKey: '123',
@@ -124,6 +151,19 @@ test('if an error happens in getADOTEnvVars it logs the error message and return
   const adotRelevantconfigs = [
     {
       type: 'datadog',
+      tracing: {}
+    }
+  ];
+  const dotenv = {};
+  const result = getADOTEnvVars(adotRelevantconfigs, dotenv);
+  t.same(result, {});
+});
+
+test('when getADOTEnvVars is called with a reporter that does not have a mapping to vendorSpecificEnvVarsForCollector properties, it returns an empty object', async (t) => {
+  const adotRelevantconfigs = [
+    {
+      // Cloudwatch does not require any additional environment variables so it does not require a mapping in vendorSpecificEnvVarsForCollector
+      type: 'cloudwatch',
       tracing: {}
     }
   ];
@@ -182,6 +222,50 @@ test('when vendorToCollectorConfigTranslators is called with a datadog config, i
           receivers: ['otlp'],
           processors: ['batch/trace'],
           exporters: ['datadog/api']
+        }
+      }
+    }
+  });
+});
+
+test('when vendorToCollectorConfigTranslators is called with a cloudwatch config, it returns an object with the correct properties', async (t) => {
+  const config = {
+    type: 'cloudwatch',
+    traces: {}
+  };
+  const result = vendorToCollectorConfigTranslators.cloudwatch(config);
+  t.same(result, {
+    receivers: {
+      otlp: {
+        protocols: {
+          http: {
+            endpoint: '0.0.0.0:4318'
+          },
+          grpc: {
+            endpoint: '0.0.0.0:4317'
+          }
+        }
+      }
+    },
+    processors: {
+      'batch/trace': {
+        timeout: '2s',
+        send_batch_max_size: 1024,
+        send_batch_size: 200
+      }
+    },
+    exporters: {
+      awsxray: {
+        region: config.region || 'us-east-1',
+        index_all_attributes: 'true'
+      }
+    },
+    service: {
+      pipelines: {
+        traces: {
+          receivers: ['otlp'],
+          processors: ['batch/trace'],
+          exporters: ['awsxray']
         }
       }
     }
