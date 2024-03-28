@@ -32,7 +32,13 @@ const CloudwatchReporterSchema = Joi.object({
         firstByte: artilleryNumberOrString,
         total: artilleryNumberOrString
       })
-    })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -66,7 +72,13 @@ const DatadogReporterSchema = Joi.object({
         firstByte: artilleryNumberOrString,
         total: artilleryNumberOrString
       })
-    })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -97,7 +109,13 @@ const NewRelicReporterSchema = Joi.object({
         firstByte: artilleryNumberOrString,
         total: artilleryNumberOrString
       })
-    })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -155,7 +173,13 @@ const DynatraceReporterSchema = Joi.object({
         firstByte: artilleryNumberOrString,
         total: artilleryNumberOrString
       })
-    })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -175,7 +199,13 @@ const HoneycombReporterSchema = Joi.object({
       firstByte: artilleryNumberOrString,
       total: artilleryNumberOrString
     })
-  })
+  }),
+  replaceSpanNameRegex: Joi.array().items(
+    Joi.object({
+      pattern: Joi.string().required(),
+      as: Joi.string().required()
+    })
+  )
 })
   .unknown(false)
   .meta({ title: 'Honeycomb (Tracing) Reporter' });
@@ -248,7 +278,13 @@ const OpenTelemetryReporterSchema = Joi.object({
         firstByte: artilleryNumberOrString,
         total: artilleryNumberOrString
       })
-    })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
