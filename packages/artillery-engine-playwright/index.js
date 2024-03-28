@@ -159,6 +159,7 @@ class PlaywrightEngine {
         await context.addInitScript(() => {
           ['onLCP', 'onFCP', 'onCLS', 'onTTFB', 'onFID', 'onINP'].forEach(
             (hook) => {
+              // eslint-disable-next-line no-undef
               webVitals[hook]((metric) => {
                 console.trace(
                   JSON.stringify({
