@@ -51,9 +51,14 @@ class PlaywrightEngine {
     // We use this to make sure only one VU is recording at one time:
     this.playwrightRecordTraceForNextVU = this.enablePlaywrightTracing;
     
+    //
     // We use this to limit the number of recordings that we save:
+    //
     this.lastTraceRecordedTime = 0; // timestamp of last saved recording
-    this.TRACE_RECORDING_INTERVAL_MSEC = 1000 * 60 * 5; // minimum interval between saving new recordings
+    // Minimum interval between saving new recordings. Add randomness to avoid multiple workers
+    // saving multiple recordings at around the same time which would likely be redundant.
+    // Interval is between 5 and 10 minutes.
+    this.TRACE_RECORDING_INTERVAL_MSEC = 1000 * 60 * (Math.ceil(Math.random() * 5) + 5);
     
     this.tracePaths = [];
     this.traceOutputDir = process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR || '/tmp';
