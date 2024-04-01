@@ -82,16 +82,12 @@ const vendorToCollectorConfigTranslators = {
     const collectorConfig = JSON.parse(JSON.stringify(collectorConfigTemplate));
     if (config.traces) {
       collectorConfig.processors['batch/trace'] = {
-        timeout: '10s',
-        send_batch_max_size: 1024,
+        timeout: '2s',
         send_batch_size: 200
-      };
-      collectorConfig.exporters.logging = {
-        verbosity: 'detailed'
       };
       collectorConfig.exporters['datadog/api'] = {
         traces: {
-          trace_buffer: 100
+          trace_buffer: 200
         },
         api: {
           key: '${env:DD_API_KEY}'
@@ -100,7 +96,7 @@ const vendorToCollectorConfigTranslators = {
       collectorConfig.service.pipelines.traces = {
         receivers: ['otlp'],
         processors: ['batch/trace'],
-        exporters: ['datadog/api', 'logging']
+        exporters: ['datadog/api']
       };
     }
     return collectorConfig;
