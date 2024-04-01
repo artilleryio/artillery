@@ -50,10 +50,9 @@ class PlaywrightEngine {
     this.tracesRecordedCount = 0; // total count of traces recorded so far
     this.MAX_TRACE_RECORDINGS = 5; // total limit on traces we'll record
 
-    this.enablePlaywrightTracing = global.artillery.cloudEnabled; // on by default if recording to Artillery Cloud
-    if (this.config.trace === false) {
-      // can be explicitly disabled with "trace: false"
-      this.enablePlaywrightTracing = false;
+    this.enablePlaywrightTracing = false;
+    if (typeof this.config.trace !== 'undefined') {
+      this.enablePlaywrightTracing = this.config.trace !== false;
     }
 
     // We use this to make sure only one VU is recording at one time:
