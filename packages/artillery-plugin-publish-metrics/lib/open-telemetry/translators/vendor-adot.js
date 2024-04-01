@@ -82,13 +82,12 @@ const vendorToCollectorConfigTranslators = {
     const collectorConfig = JSON.parse(JSON.stringify(collectorConfigTemplate));
     if (config.traces) {
       collectorConfig.processors['batch/trace'] = {
-        timeout: '10s',
-        send_batch_max_size: 1024,
+        timeout: '2s',
         send_batch_size: 200
       };
       collectorConfig.exporters['datadog/api'] = {
         traces: {
-          trace_buffer: 100
+          trace_buffer: 200
         },
         api: {
           key: '${env:DD_API_KEY}'
