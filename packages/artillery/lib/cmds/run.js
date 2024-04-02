@@ -502,11 +502,15 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
 
   script1 = await checkConfig(script1, scriptPath, flags);
 
-  const script2 = await resolveConfigPath(script1, flags);
+  const script2 = await resolveConfigPath(script1, flags, scriptPath);
 
   const script3 = await addOverrides(script2, flags);
   const script4 = await addVariables(script3, flags);
-  const script5 = await resolveConfigTemplates(script4, flags);
+  const script5 = await resolveConfigTemplates(
+    script4,
+    flags,
+    script4._configPath
+  );
 
   if (!script5.config.target) {
     throw new Error('No target specified and no environment chosen');
