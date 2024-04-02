@@ -55,10 +55,16 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       return done();
     }
     context.with(trace.setSpan(context.active(), scenarioSpan), () => {
-      const spanName =
+      let spanName =
         this.config.useRequestNames && req.name
           ? req.name
           : req.method.toLowerCase();
+      if (this.config.replaceSpanNameRegex) {
+        spanName = this.replaceSpanNameRegex(
+          spanName,
+          this.config.replaceSpanNameRegex
+        );
+      }
 
       const url = new URL(req.url);
       let parsedUrl;
@@ -119,8 +125,14 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
       // Create phase spans within the request span context
       context.with(trace.setSpan(context.active(), span), () => {
-        for (const [name, value] of Object.entries(timingsMap)) {
+        for (let [name, value] of Object.entries(timingsMap)) {
           if (res.timings[value.start] && res.timings[value.end]) {
+            if (this.config.replaceSpanNameRegex) {
+              name = this.replaceSpanNameRegex(
+                name,
+                this.config.replaceSpanNameRegex
+              );
+            }
             this.httpTracer
               .startSpan(name, {
                 kind: SpanKind.CLIENT,

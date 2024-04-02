@@ -106,18 +106,23 @@ class OTelTraceBase {
   // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
   startScenarioSpan(engine) {
     return function (userContext, ee, next) {
-      const span = this[`${engine}Tracer`].startSpan(
-        userContext.scenario?.name || `artillery-${engine}-scenario`,
-        {
-          startTime: Date.now(),
-          kind: SpanKind.CLIENT,
-          attributes: {
-            'vu.uuid': userContext.vars.$uuid,
-            test_id: userContext.vars.$testId,
-            [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
-          }
+      let spanName =
+        userContext.scenario?.name || `artillery-${engine}-scenario`;
+      if (this.config.replaceSpanNameRegex) {
+        spanName = this.replaceSpanNameRegex(
+          spanName,
+          this.config.replaceSpanNameRegex
+        );
+      }
+      const span = this[`${engine}Tracer`].startSpan(spanName, {
+        startTime: Date.now(),
+        kind: SpanKind.CLIENT,
+        attributes: {
+          'vu.uuid': userContext.vars.$uuid,
+          test_id: userContext.vars.$testId,
+          [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
         }
-      );
+      });
 
       if (span.isRecording()) {
         userContext.vars[`__${engine}ScenarioSpan`] = span;
@@ -153,6 +158,15 @@ class OTelTraceBase {
   // Placeholder - make onError hook engine agnostic - implement hook for other engines?
   otelTraceOnError(scenarioErr, req, userContext, ee, done) {
     done();
+  }
+
+  replaceSpanNameRegex(spanName, replMap) {
+    let newSpanName = spanName;
+    for (const repl of replMap) {
+      const { pattern, as } = repl;
+      newSpanName = newSpanName.replace(new RegExp(pattern), as);
+    }
+    return newSpanName;
   }
 
   async waitOnPendingSpans(pendingRequests, pendingScenarios, maxWaitTime) {

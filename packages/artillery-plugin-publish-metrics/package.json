@@ -4,7 +4,8 @@
   "description": "Publish metrics from your Artillery.io tests to external monitoring & observability systems",
   "main": "index.js",
   "scripts": {
-    "test": "tap test/index.js --no-coverage --color"
+    "test": "tap test/index.js --no-coverage --color && npm run test:unit",
+    "test:unit": "tap test/unit/*.js --no-coverage --color"
   },
   "repository": {
     "type": "git",

@@ -34,6 +34,12 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
     userFlowFunction,
     specName
   ) {
+    if (this.config.replaceSpanNameRegex) {
+      specName = this.replaceSpanNameRegex(
+        specName,
+        this.config.replaceSpanNameRegex
+      );
+    }
     // Start scenarioSpan as a root span for the trace and set it as active context
     return await this.playwrightTracer.startActiveSpan(
       specName || 'Scenario execution',
@@ -116,9 +122,15 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
                 1
               );
             }
-
+            let spanName = 'Page: ' + pageUrl;
+            if (this.config.replaceSpanNameRegex) {
+              spanName = this.replaceSpanNameRegex(
+                spanName,
+                this.config.replaceSpanNameRegex
+              );
+            }
             pageSpan = this.playwrightTracer.startSpan(
-              'Page: ' + pageUrl,
+              spanName,
               { kind: SpanKind.CLIENT },
               ctx
             );
@@ -171,6 +183,12 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
     return async function (stepName, callback) {
       // Set the parent context to be scenarioSpan and within it we create step spans
       return context.with(trace.setSpan(context.active(), parent), async () => {
+        if (this.config.replaceSpanNameRegex) {
+          stepName = this.replaceSpanNameRegex(
+            stepName,
+            this.config.replaceSpanNameRegex
+          );
+        }
         const span = tracer.startSpan(
           stepName,
           { kind: SpanKind.CLIENT },
