@@ -22,6 +22,7 @@ module.exports = {
   addOverrides,
   addVariables,
   addDefaultPlugins,
+  resolveConfigPath,
   resolveConfigTemplates,
   checkConfig,
   renderVariables,
@@ -196,6 +197,37 @@ async function checkConfig(script, scriptPath, flags) {
     );
     payloadSpec.path = resolvedPathToPayload;
   });
+
+  return script;
+}
+
+async function resolveConfigPath(script, flags) {
+  if (!flags.config) {
+    return script;
+  }
+
+  const absoluteConfigPath = path.resolve(process.cwd(), flags.config);
+
+  if (!script.config.processor) {
+    return script;
+  }
+
+  const processorPath = path.resolve(
+    path.dirname(absoluteConfigPath),
+    script.config.processor
+  );
+
+  const stats = fs.statSync(processorPath, { throwIfNoEntry: false });
+
+  if (typeof stats === 'undefined') {
+    // No file at that path - backwards compatibility mode:
+    console.log(
+      'WARNING - config.processor is now resolved relative to the config file'
+    );
+    console.log('Expected to find file at:', processorPath);
+  } else {
+    script.config.processor = processorPath;
+  }
 
   return script;
 }
