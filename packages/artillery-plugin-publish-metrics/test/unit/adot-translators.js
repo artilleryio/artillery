@@ -201,15 +201,14 @@ test('when vendorToCollectorConfigTranslators is called with a datadog config, i
     },
     processors: {
       'batch/trace': {
-        timeout: '10s',
-        send_batch_max_size: 1024,
+        timeout: '2s',
         send_batch_size: 200
       }
     },
     exporters: {
       'datadog/api': {
         traces: {
-          trace_buffer: 100
+          trace_buffer: 200
         },
         api: {
           key: '${env:DD_API_KEY}'
@@ -304,15 +303,14 @@ test('when getADOTConfig is called with a list of adotRelevantConfigs, it return
     },
     processors: {
       'batch/trace': {
-        timeout: '10s',
-        send_batch_max_size: 1024,
+        timeout: '2s',
         send_batch_size: 200
       }
     },
     exporters: {
       'datadog/api': {
         traces: {
-          trace_buffer: 100
+          trace_buffer: 200
         },
         api: {
           key: '${env:DD_API_KEY}'
@@ -367,15 +365,14 @@ test('when resolveADOTConfigSettings is called with a configList and a dotenv ob
       },
       processors: {
         'batch/trace': {
-          timeout: '10s',
-          send_batch_max_size: 1024,
+          timeout: '2s',
           send_batch_size: 200
         }
       },
       exporters: {
         'datadog/api': {
           traces: {
-            trace_buffer: 100
+            trace_buffer: 200
           },
           api: {
             key: '${env:DD_API_KEY}'
