@@ -1,13 +1,25 @@
-const { test } = require('tap');
+const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
+const createTestServer = require('./targets/simple');
+
+let server;
+let port;
+beforeEach(async () => {
+  server = await createTestServer(0);
+  port = server.info.port;
+});
+
+afterEach(() => {
+  server.stop();
+});
 
 test('Set header inside request', (t) => {
   const xAuthHeader = 'secret';
 
   const script = {
     config: {
-      target: 'http://127.0.0.1:3003',
+      target: `http://127.0.0.1:${port}`,
       phases: [{ duration: 1, arrivalRate: 1 }]
     },
     scenarios: [
@@ -46,7 +58,7 @@ test('Set header from config.http.defaults', (t) => {
 
   const script = {
     config: {
-      target: 'http://127.0.0.1:3003',
+      target: `http://127.0.0.1:${port}`,
       phases: [{ duration: 1, arrivalRate: 1 }],
       http: {
         defaults: {
@@ -94,7 +106,7 @@ test('Set header from config.defaults', (t) => {
 
   const script = {
     config: {
-      target: 'http://127.0.0.1:3003',
+      target: `http://127.0.0.1:${port}`,
       phases: [{ duration: 1, arrivalRate: 1 }],
       defaults: {
         headers: { 'x-auth': xAuthHeader }

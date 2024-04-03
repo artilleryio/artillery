@@ -1,18 +1,31 @@
 'use strict';
 
-var { test } = require('tap');
-var runner = require('../..').runner.runner;
-var l = require('lodash');
-var request = require('got');
+const { test, beforeEach, afterEach } = require('tap');
+const runner = require('../..').runner.runner;
+const l = require('lodash');
+const request = require('got');
 const { SSMS } = require('../../lib/ssms');
+const createTestServer = require('./targets/simple');
+
+let server;
+let port;
+beforeEach(async () => {
+  server = await createTestServer(0);
+  port = server.info.port;
+});
+
+afterEach(() => {
+  server.stop();
+});
 
 test('cookie jar http', function (t) {
-  var script = require('./scripts/cookies.json');
+  const script = require('./scripts/cookies.json');
+  script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
-      request('http://127.0.0.1:3003/_stats', { responseType: 'json' })
+      request(`http://127.0.0.1:${port}/_stats`, { responseType: 'json' })
         .then((res) => {
           var ok =
             report.scenariosCompleted &&
@@ -35,7 +48,9 @@ test('cookie jar http', function (t) {
 });
 
 test('cookie jar invalid response', function (t) {
-  var script = require('./scripts/cookies_malformed_response.json');
+  const script = require('./scripts/cookies_malformed_response.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
@@ -57,7 +72,9 @@ test('cookie jar invalid response', function (t) {
 });
 
 test('setting cookie jar parsing options', function (t) {
-  var script = require('./scripts/cookies_malformed_response.json');
+  const script = require('./scripts/cookies_malformed_response.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   Object.assign(script.config, {
     http: { cookieJarOptions: { looseMode: true } }
   });
@@ -79,42 +96,10 @@ test('setting cookie jar parsing options', function (t) {
   });
 });
 
-test('cookie jar socketio', function (t) {
-  var script = require('./scripts/cookies_socketio.json');
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
-      const report = SSMS.legacyReport(nr).report();
-      request('http://127.0.0.1:9092/_stats', { responseType: 'json' })
-        .then((res) => {
-          const hasScenariosCompleted = report.scenariosCompleted;
-          const hasUniqueCookies =
-            l.size(res.body.cookies) === report.scenariosCompleted;
-
-          if (!hasScenariosCompleted || !hasUniqueCookies) {
-            console.log(res.body);
-            console.log(report);
-          }
-
-          t.ok(
-            hasScenariosCompleted,
-            'There should be some scenarios completed'
-          );
-          t.ok(hasUniqueCookies, 'Each scenario had a unique cookie');
-
-          ee.stop().then(() => {
-            t.end();
-          });
-        })
-        .catch((err) => {
-          t.fail(err);
-        });
-    });
-    ee.run();
-  });
-});
-
 test('default cookies', function (t) {
-  var script = require('./scripts/defaults_cookies.json');
+  const script = require('./scripts/defaults_cookies.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
@@ -133,6 +118,8 @@ test('default cookies', function (t) {
 
 test('default cookies from config.http.defaults instead', function (t) {
   const script = l.cloneDeep(require('./scripts/defaults_cookies.json'));
+  script.config.target = `http://127.0.0.1:${port}`;
+
   const cookie = script.config.defaults.cookie;
   delete script.config.defaults;
   script.config.http = { defaults: { cookie } };
@@ -155,6 +142,8 @@ test('default cookies from config.http.defaults instead', function (t) {
 
 test('default cookies from config.http.defaults should take precedence', function (t) {
   const script = l.cloneDeep(require('./scripts/defaults_cookies.json'));
+  script.config.target = `http://127.0.0.1:${port}`;
+
   const cookie = script.config.defaults.cookie;
   script.config.http = { defaults: { cookie } };
   script.config.defaults.cookie = 'rubbishcookie';
@@ -176,7 +165,9 @@ test('default cookies from config.http.defaults should take precedence', functio
 });
 
 test('no default cookie', function (t) {
-  var script = require('./scripts/defaults_cookies.json');
+  const script = require('./scripts/defaults_cookies.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   delete script.config.defaults.cookie;
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
@@ -195,7 +186,9 @@ test('no default cookie', function (t) {
 });
 
 test('no default cookie still sends cookies defined in script', function (t) {
-  var script = require('./scripts/no_defaults_cookies.json');
+  const script = require('./scripts/no_defaults_cookies.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();

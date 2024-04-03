@@ -1,11 +1,25 @@
 'use strict';
 
-const { test } = require('tap');
-const runner = require('../../lib/runner').runner;
+const { test, beforeEach, afterEach } = require('tap');
+const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
+const createTestServer = require('./targets/simple');
+
+let server;
+let port;
+beforeEach(async () => {
+  server = await createTestServer(0);
+  port = server.info.port;
+});
+
+afterEach(() => {
+  server.stop();
+});
 
 test('scenarios avoided - arrival rate', function (t) {
-  var script = require('./scripts/concurrent_requests_arrival_rate.json');
+  const script = require('./scripts/concurrent_requests_arrival_rate.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   runner(script).then(function (ee) {
     ee.on('phaseStarted', function (info) {
       console.log('Starting phase: %j - %s', info, new Date());
@@ -28,7 +42,9 @@ test('scenarios avoided - arrival rate', function (t) {
 });
 
 test('scenarios avoided - arrival count', function (t) {
-  var script = require('./scripts/concurrent_requests_arrival_count.json');
+  const script = require('./scripts/concurrent_requests_arrival_count.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   runner(script).then(function (ee) {
     ee.on('phaseStarted', function (info) {
       console.log('Starting phase: %j - %s', info, new Date());
@@ -50,7 +66,9 @@ test('scenarios avoided - arrival count', function (t) {
 });
 
 test('scenarios avoided - ramp to', function (t) {
-  var script = require('./scripts/concurrent_requests_ramp_to.json');
+  const script = require('./scripts/concurrent_requests_ramp_to.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   runner(script).then(function (ee) {
     ee.on('phaseStarted', function (info) {
       console.log('Starting phase: %j - %s', info, new Date());
@@ -72,7 +90,9 @@ test('scenarios avoided - ramp to', function (t) {
 });
 
 test('scenarios avoided - multiple phases', function (t) {
-  var script = require('./scripts/concurrent_requests_multiple_phases.json');
+  const script = require('./scripts/concurrent_requests_multiple_phases.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   runner(script).then(function (ee) {
     ee.on('phaseStarted', function (info) {
       console.log('Starting phase: %j - %s', info, new Date());
