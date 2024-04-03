@@ -251,15 +251,14 @@ class ArtilleryCloudPlugin {
         console.log('🪵', 'New file:', fp);
         setTimeout(() => {
           console.log('🪵', 'Uploading:', fp);
+          this.uploading++;
           this._uploadAsset(fp);
-        }, 10 * 1000);
+        }, 5 * 1000);
       }
     });
   }
 
   async _uploadAsset(localFilename) {
-    this.uploading++;
-
     const payload = {
       testRunId: this.testRunId,
       filenames: [path.basename(localFilename)]
