@@ -249,15 +249,14 @@ class ArtilleryCloudPlugin {
     watcher.on('add', (fp) => {
       if (path.basename(fp).startsWith('trace-') && fp.endsWith('.zip')) {
         setTimeout(() => {
+          this.uploading++;
           this._uploadAsset(fp);
-        }, 10 * 1000);
+        }, 5 * 1000);
       }
     });
   }
 
   async _uploadAsset(localFilename) {
-    this.uploading++;
-
     const payload = {
       testRunId: this.testRunId,
       filenames: [path.basename(localFilename)]
@@ -307,14 +306,14 @@ class ArtilleryCloudPlugin {
   async waitOnUnprocessedLogs(maxWaitTime) {
     let waitedTime = 0;
     while (
-      this.unprocessedLogsCounter > 0 &&
-      this.uploading > 0 &&
+      (this.unprocessedLogsCounter > 0 || this.uploading > 0) &&
       waitedTime < maxWaitTime
     ) {
       debug('waiting on unprocessed logs');
       await sleep(500);
       waitedTime += 500;
     }
+
     return true;
   }
 
