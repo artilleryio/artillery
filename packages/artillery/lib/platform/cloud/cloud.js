@@ -248,7 +248,9 @@ class ArtilleryCloudPlugin {
 
     watcher.on('add', (fp) => {
       if (path.basename(fp).startsWith('trace-') && fp.endsWith('.zip')) {
+        console.log('🪵', 'New file:', fp);
         setTimeout(() => {
+          console.log('🪵', 'Uploading:', fp);
           this._uploadAsset(fp);
         }, 10 * 1000);
       }
@@ -277,7 +279,9 @@ class ArtilleryCloudPlugin {
       debug(body);
 
       url = body.urls[path.basename(localFilename)];
+      console.log('🪵', 'Got upload URL:', localFilename);
     } catch (err) {
+      console.log('🪵', err);
       debug(err);
     }
 

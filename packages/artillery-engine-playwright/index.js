@@ -55,6 +55,8 @@ class PlaywrightEngine {
       this.enablePlaywrightTracing = this.config.trace !== false;
     }
 
+    console.log('🪵', 'enablePlaywrightTracing:', this.enablePlaywrightTracing);
+
     // We use this to make sure only one VU is recording at one time:
     this.playwrightRecordTraceForNextVU = this.enablePlaywrightTracing;
 
@@ -143,6 +145,7 @@ class PlaywrightEngine {
         self.playwrightRecordTraceForNextVU = false;
         initialContext.vars.isRecording = true; // used by the VU to discard the trace if needed
         await context.tracing.start({ screenshots: true, snapshots: true });
+        console.log('🪵', 'Recording trace for VU:', initialContext.vars.$uuid);
       }
 
       context.setDefaultNavigationTimeout(self.defaultNavigationTimeout);
@@ -355,6 +358,7 @@ class PlaywrightEngine {
               initialContext.vars.$testId
             }-${initialContext.vars.$uuid}-${Date.now()}.zip`;
             await context.tracing.stop({ path: tracePath });
+            console.log('🪵', 'Saved trace in:', tracePath);
             self.lastTraceRecordedTime = Date.now();
             self.tracesRecordedCount++;
             self.tracePaths.push(tracePath);
