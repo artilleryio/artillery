@@ -78,7 +78,7 @@ function createTestServer() {
     res.end('No http pages here');
   }
 
-  return io;
+  return server;
 }
 
 if (require.main === module) {
