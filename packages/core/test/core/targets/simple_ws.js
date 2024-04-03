@@ -2,7 +2,7 @@ const WebSocketServer = require('ws').Server;
 
 const wss = new WebSocketServer({
   host: '127.0.0.1',
-  port: parseInt(process.env.PORT) || 9090,
+  port: parseInt(process.env.PORT, 10) || 9090,
   handleProtocols: handleProtocols
 });
 
