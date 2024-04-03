@@ -7,13 +7,13 @@ const https = require('https');
 const debug = require('debug')('test:target:ws_tls');
 const WebSocketServer = require('ws').Server;
 
-var options = {
+const options = {
   port: 9443,
   key: fs.readFileSync(path.resolve(__dirname, '../certs/private-key.pem')),
   cert: fs.readFileSync(path.resolve(__dirname, '../certs/public-cert.pem'))
 };
 
-var app = https
+const app = https
   .createServer(
     {
       key: options.key,

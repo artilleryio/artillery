@@ -1,21 +1,21 @@
-var http = require('http');
-var socketio = require('socket.io');
+const http = require('http');
+const socketio = require('socket.io');
 const debug = require('debug')('target:socketio');
 module.exports = createServer;
 
 if (require.main === module) {
   const server = createServer();
-  var PORT = 9091;
+  const PORT = 9091;
   server.listen(PORT, function () {
     console.log('Socket.io listening on %s', PORT);
   });
 }
 
 function createServer() {
-  var server = http.createServer(handler);
-  var io = socketio(server);
+  const server = http.createServer(handler);
+  const io = socketio(server);
 
-  var CONNECTIONS = {
+  const CONNECTIONS = {
     nsp1: { connections: 0, messages: 0 },
     nsp2: { connections: 0, messages: 0 }
   };

@@ -1,13 +1,13 @@
-var WebSocketServer = require('ws').Server;
+const WebSocketServer = require('ws').Server;
 
-var wss = new WebSocketServer({
+const wss = new WebSocketServer({
   host: '127.0.0.1',
   port: parseInt(process.env.PORT) || 9090,
   handleProtocols: handleProtocols
 });
 
-var MESSAGE_COUNT = 0;
-var CONNECTION_COUNT = 0;
+let MESSAGE_COUNT = 0;
+let CONNECTION_COUNT = 0;
 
 wss.on('connection', function connection(ws) {
   CONNECTION_COUNT++;

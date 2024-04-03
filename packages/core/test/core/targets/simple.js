@@ -227,7 +227,7 @@ function ok(req, h) {
   return 'ok';
 }
 
-var DB = {};
+const DB = {};
 
 let reporters = [];
 
@@ -240,7 +240,7 @@ function postIndex(req, h) {
 }
 
 function create(req, h) {
-  var id = uuid.v4();
+  const id = uuid.v4();
   DB[id] = req.payload;
   DB[id].id = id;
   REQUEST_COUNT++;
@@ -249,7 +249,7 @@ function create(req, h) {
 
 function read(req, h) {
   REQUEST_COUNT++;
-  var result = DB[req.params.id];
+  const result = DB[req.params.id];
   if (result) {
     return h.response(result).code(200);
   } else {
@@ -270,7 +270,7 @@ function stats(req, h) {
 //
 
 function setsCookie(req, h) {
-  var newuid = uuid.v4();
+  const newuid = uuid.v4();
   // console.log('setting testCookie.uid to %j', newuid);
   h.state('testCookie', { uid: newuid });
   return h.continue;
@@ -292,7 +292,7 @@ function expectsCookie(req, h) {
 }
 
 function getJourneys(req, h) {
-  var response = `
+  const response = `
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:tns1="http://" xmlns:tns="http://">
   <soap:Header></soap:Header>
   <soap:Body>
@@ -343,7 +343,7 @@ function getJourney(req, h) {
 }
 
 function getDevices(req, h) {
-  var response = `
+  const response = `
 [
   {
     "id": "4dcb754442b1285785b81833c77f4a46",
