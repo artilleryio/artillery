@@ -9,9 +9,16 @@ async function cloudWaitlistSignupFlow(page) {
     .getByLabel('Main navigation')
     .getByRole('link', { name: 'Cloud' })
     .click();
-  await page
-    .getByRole('button', { name: 'Join Artillery Cloud early access waitlist' })
-    .click();
+
+  if (Math.random() > 0.8) {
+    await page
+      .getByRole('button', {
+        name: 'Join Artillery Cloud early access waitlist'
+      })
+      .click();
+  } else {
+    await page.getByRole('button', { name: 'Not going to find this' }).click();
+  }
 }
 
 //
