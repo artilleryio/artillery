@@ -3,32 +3,40 @@ const debug = require('debug')('test:target:ws_proxy');
 const http = require('http');
 const { createProxy } = require('proxy');
 
-const server = createProxy(http.createServer());
+const createTestServer = (wsPort, proxyPort) => {
+  const server = createProxy(http.createServer());
 
-const WS_PORT = 9093;
-const PROXY_PORT = 9095;
-
-const wss = new WebSocketServer({
-  host: '127.0.0.1',
-  port: WS_PORT
-});
-
-wss.on('connection', function connection(ws) {
-  debug('+ client');
-
-  ws.on('message', function incoming(message) {
-    debug(message);
+  //TODO: review this
+  const wss = new WebSocketServer({
+    host: '127.0.0.1',
+    port: wsPort
   });
 
-  ws.send('something');
-});
+  wss.on('connection', function connection(ws) {
+    debug('+ client');
 
-server.on('connect', (_, socket) => {
-  debug(`+ proxy connection ${socket.remoteAddress}`);
-});
+    ws.on('message', function incoming(message) {
+      debug(message);
+    });
 
-server.on('listening', () => {
-  console.log(`Proxy server listening on ${PROXY_PORT}`);
-});
+    ws.send('something');
+  });
 
-server.listen(PROXY_PORT, '127.0.0.1');
+  server.on('connect', (_, socket) => {
+    debug(`+ proxy connection ${socket.remoteAddress}`);
+  });
+
+  server.on('listening', () => {
+    console.log(`Proxy server listening on ${proxyPort}`);
+  });
+
+  return server;
+};
+
+if (require.main === module) {
+  const WS_PORT = 9093;
+  const PROXY_PORT = 9095;
+  createTestServer(WS_PORT, PROXY_PORT).listen(PROXY_PORT, '127.0.0.1');
+}
+
+module.exports = createTestServer;

@@ -3,19 +3,8 @@
 const Hapi = require('@hapi/hapi');
 const uuid = require('uuid');
 
-const PORT = process.env.PORT || 3003;
-
 let REQUEST_COUNT = 0;
 let COOKIES = {};
-
-// const server = new Hapi.Server({
-//   load: { sampleInterval: 1000 }
-// });
-
-// server.connection({
-//   host: '0.0.0.0',
-//   port: PORT
-// });
 
 const users = {
   leo: {
@@ -40,8 +29,8 @@ const validate = async (request, username, password, h) => {
   return { isValid, credentials };
 };
 
-const main = async () => {
-  const server = Hapi.server({ port: PORT });
+const createTestServer = async (port) => {
+  const server = Hapi.server({ port });
   await server.register(require('@hapi/basic'));
   server.auth.strategy('simple', 'basic', { validate });
   // server.auth.default('simple');
@@ -387,9 +376,13 @@ function putDevice(req, h) {
   }
 }
 
-main()
-  .then((server) => console.log(`Server listening on ${server.info.uri}`))
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  });
+if (require.main === module) {
+  createTestServer(process.env.PORT || 3003)
+    .then((server) => console.log(`Server listening on ${server.info.uri}`))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
+}
+
+module.exports = createTestServer;

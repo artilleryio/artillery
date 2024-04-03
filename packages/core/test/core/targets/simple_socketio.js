@@ -1,17 +1,8 @@
 const http = require('http');
 const socketio = require('socket.io');
 const debug = require('debug')('target:socketio');
-module.exports = createServer;
 
-if (require.main === module) {
-  const server = createServer();
-  const PORT = 9091;
-  server.listen(PORT, function () {
-    console.log('Socket.io listening on %s', PORT);
-  });
-}
-
-function createServer() {
+function createTestServer() {
   const server = http.createServer(handler);
   const io = socketio(server);
 
@@ -89,3 +80,13 @@ function createServer() {
 
   return io;
 }
+
+if (require.main === module) {
+  const server = createTestServer();
+  const PORT = 9091;
+  server.listen(PORT, function () {
+    console.log('Socket.io listening on %s', PORT);
+  });
+}
+
+module.exports = createTestServer;
