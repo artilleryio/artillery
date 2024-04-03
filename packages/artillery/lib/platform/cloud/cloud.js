@@ -279,7 +279,7 @@ class ArtilleryCloudPlugin {
       debug(body);
 
       url = body.urls[path.basename(localFilename)];
-      console.log('🪵', 'Got upload URL:', localFilename);
+      console.log('🪵', 'Got upload URL:', localFilename, url);
     } catch (err) {
       console.log('🪵', err);
       debug(err);
@@ -299,6 +299,7 @@ class ArtilleryCloudPlugin {
       console.log(error.code, error.name, error.message, error.stack);
     } finally {
       this.uploading--;
+      console.log('🪵', 'Upload complete:', localFilename);
       artillery.globalEvents.emit('counter', 'browser.traces.uploaded', 1);
       try {
         fs.unlinkSync(localFilename);
@@ -309,16 +310,18 @@ class ArtilleryCloudPlugin {
   }
 
   async waitOnUnprocessedLogs(maxWaitTime) {
+    console.log('🪵', 'waitOnUnprocessedLogs', new Date());
+
     let waitedTime = 0;
     while (
-      this.unprocessedLogsCounter > 0 &&
-      this.uploading > 0 &&
+      (this.unprocessedLogsCounter > 0 || this.uploading > 0) &&
       waitedTime < maxWaitTime
     ) {
       debug('waiting on unprocessed logs');
       await sleep(500);
       waitedTime += 500;
     }
+
     return true;
   }
 
