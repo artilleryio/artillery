@@ -39,8 +39,8 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix",
     "test": "npm run test:unit && npm run test:acceptance",
-    "test:unit": "tap --no-coverage --color --timeout=300 test/core/unit/*.test.js",
-    "test:acceptance": "tap --no-coverage --color --timeout 300 test/core/test_* && tap --no-coverage --color --timeout=300 test/core/acceptance/**/*.test.js"
+    "test:unit": "tap --no-coverage --color --timeout=300 test/unit/*.test.js",
+    "test:acceptance": "tap --no-coverage --color --timeout 300 test/acceptance/*.test.js && tap --no-coverage --color --timeout=300 test/acceptance/**/*.test.js"
   },
   "devDependencies": {
     "@hapi/basic": "^6.0.0",
