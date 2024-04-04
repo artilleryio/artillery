@@ -3,13 +3,13 @@
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
-// const { init } = require('../../../artillery/lib/telemetry');
 const createTestServer = require('./targets/simple');
 
 let server;
 let port;
 beforeEach(async () => {
   server = await createTestServer(0);
+  port = server.info.port;
 });
 
 afterEach(() => {
@@ -30,6 +30,7 @@ test('arrival phases', function (t) {
 
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
+      console.log(report);
 
       t.equal(report.codes[200], 60, 'Should get 60 status 200 responses');
 
@@ -59,6 +60,7 @@ test('arrival phases - with modified time format', function (t) {
       const finalTime = Date.now();
       const report = SSMS.legacyReport(nr).report();
 
+      console.log(report);
       t.equal(report.codes[200], 61, 'Did not get 61 status 200 responses');
       t.ok(
         finalTime - initialTime >= 50 * 1000,
