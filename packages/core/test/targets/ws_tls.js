@@ -33,7 +33,11 @@ const createTestServer = (port = 9443) => {
     });
   });
 
-  return app;
+  return new Promise((resolve, reject) => {
+    app.listen(0, function () {
+      resolve({ server: app, wss, port: app.address().port });
+    });
+  });
 };
 
 module.exports = createTestServer;

@@ -15,7 +15,11 @@ const createTestServer = () => {
     res.end('hello\n');
   });
 
-  return server;
+  return new Promise((resolve, reject) => {
+    server.listen(0, function () {
+      resolve({ server, port: server.address().port });
+    });
+  });
 };
 
 module.exports = createTestServer;

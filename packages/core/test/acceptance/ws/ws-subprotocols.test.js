@@ -1,62 +1,76 @@
 'use strict';
 
-const { test } = require('tap');
+const { test, beforeEach, afterEach } = require('tap');
 const core = require('../../..');
 const vuserLauncher = core.runner.runner;
 const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../../targets/simple_ws');
 
-//simple-ws
+let server;
+let port;
+beforeEach(async () => {
+  const serverInfo = await createTestServer();
+  port = serverInfo.port;
+  server = serverInfo.server;
+});
+
+afterEach(() => {
+  server.close();
+});
+
 test('Subprotocols - using a known subprotocol', function (t) {
   const script = require('./scripts/subprotocols.json');
-  vuserLauncher(script).then((sessions) => {
-    sessions.on('done', (nr) => {
+  script.config.target = `ws://127.0.0.1:${port}`;
+  vuserLauncher(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
+      console.log(report);
       t.equal(
         Object.keys(report.errors).length,
         0,
         'Test with a subprotocol should complete with no errors'
       );
-      sessions.stop().then(() => {
+      ee.stop().then(() => {
         t.end();
       });
     });
 
-    sessions.run();
+    ee.run();
   });
 });
 
-//simple-ws
 test('Subprotocols - no subprotocol', function (t) {
   const script = require('./scripts/subprotocols.json');
-
+  script.config.target = `ws://127.0.0.1:${port}`;
   delete script.config.ws;
 
-  vuserLauncher(script).then((sessions) => {
-    sessions.on('done', (nr) => {
+  vuserLauncher(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.equal(
         Object.keys(report.errors).length,
         0,
         'Test with no subprotocol set should complete with no errors'
       );
-      sessions.stop().then(() => {
+      ee.stop().then(() => {
         t.end();
       });
     });
 
-    sessions.run();
+    ee.run();
   });
 });
 
 test('Subprotocols - unknown subprotocol', function (t) {
   const script = require('./scripts/subprotocols.json');
+  script.config.target = `ws://127.0.0.1:${port}`;
 
   script.config.ws = {
     subprotocols: ['unsupportedByTheServer']
   };
 
-  vuserLauncher(script).then((sessions) => {
-    sessions.on('done', (nr) => {
+  vuserLauncher(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.equal(Object.keys(report.errors).length, 1, 'Should have one error');
 
@@ -67,11 +81,11 @@ test('Subprotocols - unknown subprotocol', function (t) {
         'The error should be of "no subprotocol" type'
       );
 
-      sessions.stop().then(() => {
+      ee.stop().then(() => {
         t.end();
       });
     });
 
-    sessions.run();
+    ee.run();
   });
 });
