@@ -1,0 +1,15 @@
+{
+  "config": {
+    "target": "wss://localhost:9443",
+    "phases": [{ "duration": 1, "arrivalCount": 1 }],
+    "ws": {
+      "rejectUnauthorized": false
+    }
+  },
+  "scenarios": [
+    {
+      "engine": "ws",
+      "flow": [{ "send": "hello" }]
+    }
+  ]
+}
