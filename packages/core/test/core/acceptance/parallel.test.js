@@ -1,8 +1,8 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const createTestServer = require('./targets/simple');
+const runner = require('../../..').runner.runner;
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 test('parallel requests', (t) => {
-  const script = require('./scripts/parallel.json');
+  const script = require('../scripts/parallel.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {

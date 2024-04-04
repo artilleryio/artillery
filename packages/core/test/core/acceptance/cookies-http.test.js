@@ -1,11 +1,11 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+const runner = require('../../..').runner.runner;
 const l = require('lodash');
 const request = require('got');
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/simple');
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 test('cookie jar http', function (t) {
-  const script = require('./scripts/cookies.json');
+  const script = require('../scripts/cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
@@ -48,7 +48,7 @@ test('cookie jar http', function (t) {
 });
 
 test('cookie jar invalid response', function (t) {
-  const script = require('./scripts/cookies_malformed_response.json');
+  const script = require('../scripts/cookies_malformed_response.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
@@ -72,7 +72,7 @@ test('cookie jar invalid response', function (t) {
 });
 
 test('setting cookie jar parsing options', function (t) {
-  const script = require('./scripts/cookies_malformed_response.json');
+  const script = require('../scripts/cookies_malformed_response.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   Object.assign(script.config, {
@@ -97,7 +97,7 @@ test('setting cookie jar parsing options', function (t) {
 });
 
 test('default cookies', function (t) {
-  const script = require('./scripts/defaults_cookies.json');
+  const script = require('../scripts/defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
@@ -117,7 +117,7 @@ test('default cookies', function (t) {
 });
 
 test('default cookies from config.http.defaults instead', function (t) {
-  const script = l.cloneDeep(require('./scripts/defaults_cookies.json'));
+  const script = l.cloneDeep(require('../scripts/defaults_cookies.json'));
   script.config.target = `http://127.0.0.1:${port}`;
 
   const cookie = script.config.defaults.cookie;
@@ -141,7 +141,7 @@ test('default cookies from config.http.defaults instead', function (t) {
 });
 
 test('default cookies from config.http.defaults should take precedence', function (t) {
-  const script = l.cloneDeep(require('./scripts/defaults_cookies.json'));
+  const script = l.cloneDeep(require('../scripts/defaults_cookies.json'));
   script.config.target = `http://127.0.0.1:${port}`;
 
   const cookie = script.config.defaults.cookie;
@@ -165,7 +165,7 @@ test('default cookies from config.http.defaults should take precedence', functio
 });
 
 test('no default cookie', function (t) {
-  const script = require('./scripts/defaults_cookies.json');
+  const script = require('../scripts/defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   delete script.config.defaults.cookie;
@@ -186,7 +186,7 @@ test('no default cookie', function (t) {
 });
 
 test('no default cookie still sends cookies defined in script', function (t) {
-  const script = require('./scripts/no_defaults_cookies.json');
+  const script = require('../scripts/no_defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {

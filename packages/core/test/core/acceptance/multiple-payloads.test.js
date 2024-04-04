@@ -1,13 +1,13 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+const runner = require('../../..').runner.runner;
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parse');
 const async = require('async');
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/simple');
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -21,11 +21,11 @@ afterEach(() => {
 });
 
 test('single payload', function (t) {
-  const fn = path.resolve(__dirname, './scripts/single_payload.json');
+  const fn = path.resolve(__dirname, '../scripts/single_payload.json');
   let script = require(fn);
   script.config.target = `http://127.0.0.1:${port}`;
 
-  let data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
+  let data = fs.readFileSync(path.join(__dirname, '../pets.csv'));
   csv(data, function (err, parsedData) {
     if (err) {
       t.fail(err);
@@ -68,7 +68,7 @@ test('single payload', function (t) {
 });
 
 test('multiple_payloads', function (t) {
-  const fn = path.resolve(__dirname, './scripts/multiple_payloads.json');
+  const fn = path.resolve(__dirname, '../scripts/multiple_payloads.json');
   let script = require(fn);
   script.config.target = `http://127.0.0.1:${port}`;
 

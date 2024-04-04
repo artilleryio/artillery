@@ -1,10 +1,10 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
+const runner = require('../../..').runner.runner;
+const { SSMS } = require('../../../lib/ssms');
 const l = require('lodash');
-const createTestServer = require('./targets/simple');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 test('think', function (t) {
-  const script = require('./scripts/thinks_http.json');
+  const script = require('../scripts/thinks_http.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
@@ -43,7 +43,7 @@ test('think', function (t) {
 });
 
 test('think - invalid think time', function (t) {
-  const script = l.cloneDeep(require('./scripts/thinks_http.json'));
+  const script = l.cloneDeep(require('../scripts/thinks_http.json'));
   script.config.target = `http://127.0.0.1:${port}`;
   delete script.scenarios[0].flow;
   script.scenarios[0].flow = [{ think: '1 potatoe' }];
@@ -68,7 +68,7 @@ test('think - invalid think time', function (t) {
 });
 
 test('think - with defaults from config.http.defaults instead', function (t) {
-  const script = l.cloneDeep(require('./scripts/thinks_http.json'));
+  const script = l.cloneDeep(require('../scripts/thinks_http.json'));
   script.config.target = `http://127.0.0.1:${port}`;
   const think = script.config.defaults.think;
   delete script.config.defaults;

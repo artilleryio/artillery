@@ -1,11 +1,11 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+const runner = require('../../..').runner.runner;
 const l = require('lodash');
 const request = require('got');
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/express_socketio');
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/express_socketio');
 
 let server;
 let port;
@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 test('cookie jar socketio', function (t) {
-  const script = require('./scripts/cookies_socketio.json');
+  const script = require('../scripts/cookies_socketio.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {

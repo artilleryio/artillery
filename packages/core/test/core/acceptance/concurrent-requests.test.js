@@ -1,9 +1,9 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/simple');
+const runner = require('../../..').runner.runner;
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 test('scenarios avoided - arrival rate', function (t) {
-  const script = require('./scripts/concurrent_requests_arrival_rate.json');
+  const script = require('../scripts/concurrent_requests_arrival_rate.json');
   script.config.target = `http://127.0.0.1:${port}`;
   console.log('script', script);
 
@@ -70,7 +70,7 @@ test('scenarios avoided - arrival rate', function (t) {
 // });
 
 test('scenarios avoided - ramp to', function (t) {
-  const script = require('./scripts/concurrent_requests_ramp_to.json');
+  const script = require('../scripts/concurrent_requests_ramp_to.json');
   script.config.target = `http://127.0.0.1:${port}`;
   console.log('script', script);
 
@@ -95,7 +95,7 @@ test('scenarios avoided - ramp to', function (t) {
 });
 
 test('scenarios avoided - multiple phases', function (t) {
-  const script = require('./scripts/concurrent_requests_multiple_phases.json');
+  const script = require('../scripts/concurrent_requests_multiple_phases.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {

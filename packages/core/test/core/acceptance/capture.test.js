@@ -1,13 +1,13 @@
 'use strict';
 
 const { test, beforeEach } = require('tap');
-const runner = require('../..').runner.runner;
+const runner = require('../../..').runner.runner;
 const nock = require('nock');
 const uuid = require('uuid');
 const csv = require('csv-parse');
 const fs = require('fs');
 const path = require('path');
-const { SSMS } = require('../../lib/ssms');
+const { SSMS } = require('../../../lib/ssms');
 const http = require('http');
 const WebSocket = require('ws');
 

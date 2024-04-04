@@ -1,7 +1,7 @@
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/simple');
+const runner = require('../../..').runner.runner;
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;

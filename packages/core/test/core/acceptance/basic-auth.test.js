@@ -1,9 +1,9 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/simple');
+const runner = require('../../..').runner.runner;
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 test('HTTP basic auth', (t) => {
-  const script = require('./scripts/hello_basic_auth.json');
+  const script = require('../scripts/hello_basic_auth.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {

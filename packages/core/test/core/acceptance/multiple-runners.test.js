@@ -1,9 +1,9 @@
 'use strict';
 
 const { test, afterEach, beforeEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/simple');
+const runner = require('../../..').runner.runner;
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 test('concurrent runners', function (t) {
-  let script = require('./scripts/hello.json');
+  let script = require('../scripts/hello.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee1) {

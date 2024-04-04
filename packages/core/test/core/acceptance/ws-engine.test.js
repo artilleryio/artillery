@@ -1,7 +1,7 @@
 'use strict';
 
 const { test } = require('tap');
-const runner = require('../..').runner.runner;
+const runner = require('../../..').runner.runner;
 const http = require('http');
 const WebSocket = require('ws');
 

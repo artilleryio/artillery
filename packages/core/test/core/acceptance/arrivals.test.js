@@ -1,9 +1,9 @@
 'use strict';
 
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
-const createTestServer = require('./targets/simple');
+const runner = require('../../..').runner.runner;
+const { SSMS } = require('../../../lib/ssms');
+const createTestServer = require('../targets/simple');
 
 let server;
 let port;
@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 test('arrival phases', function (t) {
-  const script = require('./scripts/arrival_phases.json');
+  const script = require('../scripts/arrival_phases.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
@@ -42,7 +42,7 @@ test('arrival phases', function (t) {
 });
 
 test('arrival phases - with modified time format', function (t) {
-  const script = require('./scripts/arrival_phases_time_format.json');
+  const script = require('../scripts/arrival_phases_time_format.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   const initialTime = Date.now();
