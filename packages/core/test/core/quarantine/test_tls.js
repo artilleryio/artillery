@@ -7,8 +7,12 @@ var fs = require('fs');
 var path = require('path');
 
 var options = {
-  key: fs.readFileSync(path.resolve(__dirname, './certs/private-key.pem')),
-  cert: fs.readFileSync(path.resolve(__dirname, './certs/public-cert.pem')),
+  key: fs.readFileSync(
+    path.resolve(__dirname, '../targets/certs/private-key.pem')
+  ),
+  cert: fs.readFileSync(
+    path.resolve(__dirname, '../targets/certs/public-cert.pem')
+  ),
   path: '/'
 };
 

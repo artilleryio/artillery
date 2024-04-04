@@ -10,8 +10,8 @@ const WebSocketServer = require('ws').Server;
 const createTestServer = (port = 9443) => {
   const options = {
     port,
-    key: fs.readFileSync(path.resolve(__dirname, '../certs/private-key.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, '../certs/public-cert.pem'))
+    key: fs.readFileSync(path.resolve(__dirname, './certs/private-key.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, './certs/public-cert.pem'))
   };
   const app = https.createServer(
     {

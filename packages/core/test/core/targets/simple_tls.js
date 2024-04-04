@@ -4,8 +4,8 @@ const path = require('path');
 
 const createTestServer = () => {
   const options = {
-    key: fs.readFileSync(path.resolve(__dirname, '../certs/private-key.pem')),
-    cert: fs.readFileSync(path.resolve(__dirname, '../certs/public-cert.pem')),
+    key: fs.readFileSync(path.resolve(__dirname, './certs/private-key.pem')),
+    cert: fs.readFileSync(path.resolve(__dirname, './certs/public-cert.pem')),
     path: '/'
   };
 
