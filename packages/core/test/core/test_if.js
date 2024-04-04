@@ -1,12 +1,24 @@
 'use strict';
 
-const { test } = require('tap');
+const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
-const L = require('lodash');
 const { SSMS } = require('../../lib/ssms');
+const createTestServer = require('./targets/simple');
+
+let server;
+let port;
+beforeEach(async () => {
+  server = await createTestServer(0);
+  port = server.info.port;
+});
+
+afterEach(() => {
+  server.stop();
+});
 
 test('ifTrue', (t) => {
   const script = require('./scripts/iftrue.json');
+  script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
     ee.on('done', (nr) => {

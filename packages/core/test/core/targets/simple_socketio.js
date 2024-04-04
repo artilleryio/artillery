@@ -1,21 +1,12 @@
-var http = require('http');
-var socketio = require('socket.io');
+const http = require('http');
+const socketio = require('socket.io');
 const debug = require('debug')('target:socketio');
-module.exports = createServer;
 
-if (require.main === module) {
-  const server = createServer();
-  var PORT = 9091;
-  server.listen(PORT, function () {
-    console.log('Socket.io listening on %s', PORT);
-  });
-}
+function createTestServer() {
+  const server = http.createServer(handler);
+  const io = socketio(server);
 
-function createServer() {
-  var server = http.createServer(handler);
-  var io = socketio(server);
-
-  var CONNECTIONS = {
+  const CONNECTIONS = {
     nsp1: { connections: 0, messages: 0 },
     nsp2: { connections: 0, messages: 0 }
   };
@@ -87,5 +78,11 @@ function createServer() {
     res.end('No http pages here');
   }
 
-  return io;
+  return new Promise((resolve, reject) => {
+    server.listen(0, function () {
+      resolve({ server, io, port: server.address().port });
+    });
+  });
 }
+
+module.exports = createTestServer;

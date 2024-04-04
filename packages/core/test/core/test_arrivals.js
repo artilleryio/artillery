@@ -1,12 +1,24 @@
 'use strict';
 
-const { test } = require('tap');
+const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
-const { init } = require('../../../artillery/lib/telemetry');
+const createTestServer = require('./targets/simple');
+
+let server;
+let port;
+beforeEach(async () => {
+  server = await createTestServer(0);
+  port = server.info.port;
+});
+
+afterEach(() => {
+  server.stop();
+});
 
 test('arrival phases', function (t) {
   const script = require('./scripts/arrival_phases.json');
+  script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then(function (ee) {
     ee.on('phaseStarted', function (info) {
@@ -31,6 +43,8 @@ test('arrival phases', function (t) {
 
 test('arrival phases - with modified time format', function (t) {
   const script = require('./scripts/arrival_phases_time_format.json');
+  script.config.target = `http://127.0.0.1:${port}`;
+
   const initialTime = Date.now();
 
   runner(script).then(function (ee) {

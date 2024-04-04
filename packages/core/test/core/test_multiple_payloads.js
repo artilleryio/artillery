@@ -1,18 +1,29 @@
 'use strict';
 
-const { test } = require('tap');
+const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
-const l = require('lodash');
-const url = require('url');
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parse');
 const async = require('async');
 const { SSMS } = require('../../lib/ssms');
+const createTestServer = require('./targets/simple');
+
+let server;
+let port;
+beforeEach(async () => {
+  server = await createTestServer(0);
+  port = server.info.port;
+});
+
+afterEach(() => {
+  server.stop();
+});
 
 test('single payload', function (t) {
   const fn = path.resolve(__dirname, './scripts/single_payload.json');
   let script = require(fn);
+  script.config.target = `http://127.0.0.1:${port}`;
 
   let data = fs.readFileSync(path.join(__dirname, 'pets.csv'));
   csv(data, function (err, parsedData) {
@@ -59,6 +70,7 @@ test('single payload', function (t) {
 test('multiple_payloads', function (t) {
   const fn = path.resolve(__dirname, './scripts/multiple_payloads.json');
   let script = require(fn);
+  script.config.target = `http://127.0.0.1:${port}`;
 
   async.map(
     script.config.payload,
