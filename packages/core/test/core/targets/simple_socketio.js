@@ -78,14 +78,15 @@ function createTestServer() {
     res.end('No http pages here');
   }
 
-  return server;
-}
+  // return {
+  //   io,
+  //   server
+  // };
 
-if (require.main === module) {
-  const server = createTestServer();
-  const PORT = 9091;
-  server.listen(PORT, function () {
-    console.log('Socket.io listening on %s', PORT);
+  return new Promise((resolve, reject) => {
+    server.listen(0, function () {
+      resolve({ server, io, port: server.address().port });
+    });
   });
 }
 
