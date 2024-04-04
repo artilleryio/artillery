@@ -37,11 +37,4 @@ const createTestServer = (port, host = '127.0.0.1') => {
   return server;
 };
 
-if (require.main === module) {
-  const PORT = 9090;
-  createTestServer().listen(PORT, function () {
-    console.log('simple_ws running on %s', PORT);
-  });
-}
-
 module.exports = createTestServer;

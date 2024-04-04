@@ -78,11 +78,6 @@ function createTestServer() {
     res.end('No http pages here');
   }
 
-  // return {
-  //   io,
-  //   server
-  // };
-
   return new Promise((resolve, reject) => {
     server.listen(0, function () {
       resolve({ server, io, port: server.address().port });

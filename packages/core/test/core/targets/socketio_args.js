@@ -36,11 +36,4 @@ const createTestServer = () => {
   return httpServer;
 };
 
-if (require.main === module) {
-  const PORT = 9096;
-  createTestServer().listen(PORT, function () {
-    console.log('Socket.io Args Server listening on %s', PORT);
-  });
-}
-
 module.exports = createTestServer;

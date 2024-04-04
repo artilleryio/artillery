@@ -376,13 +376,4 @@ function putDevice(req, h) {
   }
 }
 
-if (require.main === module) {
-  createTestServer(process.env.PORT || 3003)
-    .then((server) => console.log(`Server listening on ${server.info.uri}`))
-    .catch((err) => {
-      console.error(err);
-      process.exit(1);
-    });
-}
-
 module.exports = createTestServer;

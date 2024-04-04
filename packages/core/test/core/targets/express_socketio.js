@@ -66,11 +66,4 @@ const createTestServer = () => {
   return http;
 };
 
-if (require.main === module) {
-  const PORT = 9092;
-  createTestServer().listen(PORT, function () {
-    console.log('Express Socket.io listening on %s', PORT);
-  });
-}
-
 module.exports = createTestServer;

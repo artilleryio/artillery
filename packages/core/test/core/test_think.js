@@ -50,7 +50,6 @@ test('think - invalid think time', function (t) {
   runner(script).then(function (ee) {
     ee.on('done', function (nr) {
       const report = SSMS.legacyReport(nr).report();
-      console.log(report);
       t.ok(
         Object.keys(report.errors).includes('Invalid think time: 1 potatoe'),
         'should have an error in report'

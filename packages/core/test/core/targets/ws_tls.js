@@ -36,11 +36,4 @@ const createTestServer = (port = 9443) => {
   return app;
 };
 
-if (require.main === module) {
-  const PORT = 9443;
-  createTestServer(PORT).listen(PORT, function () {
-    console.log('TLS WebSocket server listening on %s', PORT);
-  });
-}
-
 module.exports = createTestServer;

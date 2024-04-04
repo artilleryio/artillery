@@ -18,11 +18,4 @@ const createTestServer = () => {
   return server;
 };
 
-if (require.main === module) {
-  const PORT = 3002;
-  createTestServer().listen(PORT, function () {
-    console.log('simple_tls running on %s', PORT);
-  });
-}
-
 module.exports = createTestServer;

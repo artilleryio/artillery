@@ -28,10 +28,4 @@ const createTestServers = (wsPort, proxyPort) => {
   return { wsServer, proxyServer };
 };
 
-if (require.main === module) {
-  const WS_PORT = 9093;
-  const PROXY_PORT = 9095;
-  createTestServers(WS_PORT, PROXY_PORT).listen(PROXY_PORT, '127.0.0.1');
-}
-
 module.exports = createTestServers;
