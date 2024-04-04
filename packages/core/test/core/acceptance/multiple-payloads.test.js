@@ -25,7 +25,7 @@ test('single payload', function (t) {
   let script = require(fn);
   script.config.target = `http://127.0.0.1:${port}`;
 
-  let data = fs.readFileSync(path.join(__dirname, '../pets.csv'));
+  let data = fs.readFileSync(path.join(__dirname, '../scripts/data/pets.csv'));
   csv(data, function (err, parsedData) {
     if (err) {
       t.fail(err);

@@ -4,11 +4,11 @@
     "phases": [{ "duration": 10, "arrivalRate": 5 }],
     "payload": [
       {
-        "path": "../pets.csv",
+        "path": "./data/pets.csv",
         "fields": ["species", "name"]
       },
       {
-        "path": "../urls.csv",
+        "path": "./data/urls.csv",
         "fields": ["url"]
       }
     ]
