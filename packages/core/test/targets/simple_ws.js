@@ -34,7 +34,11 @@ const createTestServer = (port, host = '127.0.0.1') => {
     }
   }
 
-  return server;
+  return new Promise((resolve, reject) => {
+    server.listen(0, function () {
+      resolve({ server, wss, port: server.address().port });
+    });
+  });
 };
 
 module.exports = createTestServer;
