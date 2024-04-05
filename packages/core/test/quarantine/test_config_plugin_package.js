@@ -32,8 +32,10 @@ test('Normal artillery-plugin-*', function (t) {
 
 function runTest(t, scriptName) {
   const script = require(scriptName);
+  console.log(script);
   runner(script).then(function (ee) {
     ee.on('plugin_loaded', function (stats) {
+      console.log('hey');
       t.ok(true);
       t.end();
     });
