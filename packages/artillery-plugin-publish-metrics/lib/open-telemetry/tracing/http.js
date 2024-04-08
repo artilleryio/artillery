@@ -86,15 +86,16 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
           ...(this.config.attributes || {})
         }
       });
-
-      userContext.vars['__otlpHTTPRequestSpan'] = span;
+      const spanMap = userContext.vars['__otlpHTTPRequestSpans'] || {};
+      spanMap[req.uuid] = span;
+      userContext.vars['__otlpHTTPRequestSpans'] = spanMap;
       this.pendingRequestSpans++;
     });
     return done();
   }
 
   endHTTPRequestSpan(req, res, userContext, events, done) {
-    const span = userContext.vars['__otlpHTTPRequestSpan'];
+    const span = userContext.vars['__otlpHTTPRequestSpans']?.[req.uuid];
     if (!span) {
       return done();
     }
