@@ -1,0 +1,19 @@
+{
+  "name": "using-data-from-redis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "processor.js",
+  "scripts": {
+    "seed": "node scripts/seed-redis-with-users.js",
+    "test": "npx artillery run scenario.yml --dotenv .env"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@upstash/redis": "^1.29.0"
+  },
+  "devDependencies": {
+    "@ngneat/falso": "^7.2.0",
+    "dotenv": "^16.4.5"
+  }
+}
