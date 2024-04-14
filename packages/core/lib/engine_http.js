@@ -691,7 +691,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         requestParams.retry = 0; // disable retries - ignored when using streams
 
         let totalDownloaded = 0;
-        request(requestParams)
+        request(_.omit(requestParams, ['uuid']))
           .on('request', function (req) {
             ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
