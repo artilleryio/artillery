@@ -23,9 +23,6 @@ on:
 
 jobs:
   push_to_registry:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.head_commit.message, 'ci: release v')
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
