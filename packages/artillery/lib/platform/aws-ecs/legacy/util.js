@@ -22,6 +22,7 @@ const supportedRegions = [
   'eu-west-2',
   'eu-west-3',
   'eu-central-1',
+  'eu-north-1',
   'ap-south-1',
   'ap-east-1',
   'ap-northeast-2',
