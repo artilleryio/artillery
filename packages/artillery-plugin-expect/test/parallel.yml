@@ -1,0 +1,23 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - duration: 2
+      arrivalRate: 2
+  plugins:
+    expect: {}
+
+scenarios:
+  - flow:
+      - parallel:
+        - get:
+            url: "/dino"
+            expect:
+              - statusCode: 200
+        - get:
+            url: "/pony"
+            expect:
+              - statusCode: 200
+        - get:
+            url: "/armadillo"
+            expect:
+              - statusCode: 404

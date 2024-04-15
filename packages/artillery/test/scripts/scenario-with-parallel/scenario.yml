@@ -1,0 +1,22 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - duration: 2
+      arrivalRate: 1
+      name: "Phase 1"
+  processor: ./processor.js
+scenarios:
+  - name: "Load some ASCII animals"
+    beforeRequest: beforeReqInParallel
+    afterResponse: afterReqInParallel
+    flow:
+      - parallel:
+          - get:
+              url: "/dino"
+              name: "Dinosaur"
+          - get:
+              url: "/pony"
+              name: "Pony"
+          - get:
+              url: "/armadillo"
+              name: "Armadillo"

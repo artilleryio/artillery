@@ -290,7 +290,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     const requestParams = _.extend(_.clone(params), {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
-      timeout: timeout * 1000
+      timeout: timeout * 1000,
+      uuid: crypto.randomUUID()
     });
 
     if (context._enableCookieJar) {
@@ -562,7 +563,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               let haveFailedCaptures = false;
 
               if (result !== null) {
-                ee.emit('trace:http:capture', result, uuid);
+                ee.emit('trace:http:capture', result, requestParams.uuid);
                 if (
                   Object.keys(result.matches).length > 0 ||
                   Object.keys(result.captures).length > 0
@@ -689,11 +690,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         requestParams.retry = 0; // disable retries - ignored when using streams
 
-        const uuid = crypto.randomUUID();
         let totalDownloaded = 0;
-        request(requestParams)
+        request(_.omit(requestParams, ['uuid']))
           .on('request', function (req) {
-            ee.emit('trace:http:request', requestParams, uuid);
+            ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
             debugRequests('request start: %s', req.path);
             ee.emit('counter', 'http.requests', 1);
@@ -702,7 +702,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               res.on('end', () => {
                 ee.emit('counter', 'http.downloaded_bytes', totalDownloaded);
               });
-              ee.emit('trace:http:response', res, uuid);
+              ee.emit('trace:http:response', res, requestParams.uuid);
               self._handleResponse(
                 requestParams,
                 res,
@@ -717,7 +717,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             totalDownloaded = progress.total;
           })
           .on('error', function (err, body, res) {
-            ee.emit('trace:http:error', err, uuid);
+            ee.emit('trace:http:error', err, requestParams.uuid);
             if (err.name === 'HTTPError') {
               return;
             }

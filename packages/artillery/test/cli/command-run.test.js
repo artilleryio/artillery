@@ -642,3 +642,57 @@ tap.test(
     t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
   }
 );
+
+tap.test("Script with 'parallel' behaves as expected", async (t) => {
+  const expectedVus = 2;
+  const expectedRequests = 6; // 1 scenario * 3 requests * 2 VUs
+  const requestNames = ['Dinosaur', 'Pony', 'Armadillo'];
+  const [exitCode, output] = await execute([
+    'run',
+    'test/scripts/scenario-with-parallel/scenario.yml',
+    '-o',
+    `${reportFilePath}`
+  ]);
+
+  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(
+    !output.stdout.includes('false'),
+    'Request uuid available in request hooks should be correctly mapped to requests'
+  );
+  for (const name of requestNames) {
+    t.equal(
+      report.aggregate.counters[`beforeRequestHook.${name}`],
+      expectedVus,
+      `Should have created ${expectedVus} requests for ${name} request`
+    );
+    t.equal(
+      report.aggregate.counters[`afterRequestHook.${name}`],
+      expectedVus,
+      `AfterRequest hook should of ran ${expectedVus} times for ${name} request`
+    );
+  }
+
+  t.equal(
+    report.aggregate.counters['vusers.created'],
+    expectedVus,
+    `Should have created ${expectedVus} scenarios`
+  );
+  t.equal(
+    report.aggregate.counters['vusers.completed'],
+    expectedVus,
+    'All VUs should have succeeded'
+  );
+  t.equal(
+    report.aggregate.counters['http.requests'],
+    expectedRequests,
+    `Should have made ${expectedRequests} requests`
+  );
+  t.equal(
+    report.aggregate.counters['http.codes.200'],
+    expectedRequests,
+    `Should have made ${expectedRequests} successful requests`
+  );
+  deleteFile(reportFilePath);
+});

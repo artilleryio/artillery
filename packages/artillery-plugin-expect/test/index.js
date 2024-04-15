@@ -9,6 +9,8 @@ const chalk = require('chalk');
 
 const shelljs = require('shelljs');
 const path = require('path');
+const os = require('os');
+const fs = require('fs');
 
 //
 // We only need this when running unit tests. When the plugin actually runs inside
@@ -399,4 +401,55 @@ test('Report failures as errors by request name', async (t) => {
     'Should print errors for request unicorns'
   );
   t.not(result.code, 0, 'Should exit with non-zero code');
+});
+
+test("Works as expected with 'parallel'", async (t) => {
+  const expectedVus = 4;
+  const expectedVusFailed = 0;
+  const shouldFail = 4;
+  const shouldPass = 8;
+  shelljs.env['ARTILLERY_PLUGIN_PATH'] = path.resolve(__dirname, '..', '..');
+  shelljs.env['PATH'] = process.env.PATH;
+
+  const reportPath =
+    os.tmpdir() + '/artillery-plugin-expect-parallel-test.json';
+
+  const result = shelljs.exec(
+    `${__dirname}/../../../node_modules/.bin/artillery run ${__dirname}/parallel.yml -o ${reportPath}`,
+    {
+      silent: false
+    }
+  );
+
+  const output = result.stdout;
+
+  const report = require(reportPath);
+  console.log(report.aggregate.counters);
+
+  t.equal(
+    output.indexOf('expect.ok') > -1,
+    true,
+    'Should print expect.ok metrics'
+  );
+  t.ok(result.code !== 0, 'Should exit with non zero code');
+  t.equal(
+    report.aggregate.counters['vusers.created'],
+    expectedVus,
+    `${expectedVus} VUs should have been created`
+  );
+  t.equal(
+    report.aggregate.counters['vusers.failed'],
+    expectedVusFailed,
+    `${expectedVusFailed} VUs should have failed`
+  );
+  t.equal(
+    report.aggregate.counters['plugins.expect.ok'],
+    shouldPass,
+    `${shouldPass} expectations should have passed`
+  );
+  t.equal(
+    report.aggregate.counters['plugins.expect.failed'],
+    shouldFail,
+    `${shouldFail} expectations should have failed`
+  );
 });
