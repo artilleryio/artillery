@@ -1,6 +1,12 @@
 name: Publish Docker image for Artillery
 
 on:
+  workflow_dispatch:
+    inputs:
+      COMMIT_SHA:
+        description: 'Commit SHA'
+        required: true
+        type: string
   workflow_call:
     inputs:
       COMMIT_SHA:
@@ -17,7 +23,9 @@ on:
 
 jobs:
   push_to_registry:
-    if: "contains(github.event.head_commit.message, 'ci: release v')"
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, 'ci: release v')
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
