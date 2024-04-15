@@ -69,3 +69,12 @@ jobs:
       - run: npm run build -w skytrace
       - run: npm -w skytrace publish
       - run: npm -w artillery-plugin-memory-inspector publish
+
+  publish-official-docker-image:
+    uses: ./.github/workflows/docker-publish-artillery.yml
+    needs: publish-packages-to-npm
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
