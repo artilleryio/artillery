@@ -3,9 +3,11 @@ on:
   
 jobs:
   create_release_pr:
+    runs-on: ubuntu-latest
     env:
       # these are the packages we auto release (e.g. standalone pkgs like artillery/skytrace/types, and included dependencies like plugins)
       # some non-included dependencies are not released automatically (e.g. posthog, memory-inspector)
+      # this list should be kept in sync with npm-publish-all-packages.yml
       PACKAGES_TO_RELEASE: "\
         artillery-engine-playwright,\
         artillery-plugin-apdex,\
@@ -17,12 +19,10 @@ jobs:
         commons,\
         core,\
         artillery,\
-        skytrace,\
-        types"
-    runs-on: ubuntu-latest
+        skytrace"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # all packages receive minor version bump, except for artillery which receives a patch version bump as convention
       - name: Update package versions

@@ -1,17 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const packageJsonRelativePath = `../../../packages/${process.env.PACKAGE_FOLDER_NAME}/package.json`;
-const packageJsonFullPath = path.join(__dirname, packageJsonRelativePath);
-
-if (!fs.existsSync(packageJsonFullPath)) {
-  throw new Error(
-    `Path ${packageJsonRelativePath} does not exist! Please ensure you pass the correct PACKAGE_FOLDER_NAME environment variable. Perhaps your folder name has changed?`
-  );
-} else {
-  artilleryPackage = require(packageJsonRelativePath);
-}
-
 const updatePackageWithDependencies = (originalPackage) => {
   const packagesDir = '../../../packages';
   const finalPackage = { ...originalPackage };
@@ -39,9 +28,11 @@ const updatePackageWithDependencies = (originalPackage) => {
       finalPackage.dependencies[packageJson.name] == '*'
     ) {
       console.log(
-        `Switching package ${packageJson.name} from ${
-          finalPackage.dependencies[packageJson.name]
-        } to version ${packageJson.version}`
+        `Switching package ${packageJson.name} in ${
+          originalPackage.name
+        } from ${finalPackage.dependencies[packageJson.name]} to version ${
+          packageJson.version
+        }`
       );
       finalPackage.dependencies[packageJson.name] = packageJson.version;
     }
@@ -50,9 +41,21 @@ const updatePackageWithDependencies = (originalPackage) => {
   return finalPackage;
 };
 
-const modifiedPackage = updatePackageWithDependencies(artilleryPackage);
+for (const PACKAGE_FOLDER_NAME of process.env.PACKAGES_TO_REPLACE.split(',')) {
+  const packageJsonRelativePath = `../../../packages/${PACKAGE_FOLDER_NAME}/package.json`;
+  const packageJsonFullPath = path.join(__dirname, packageJsonRelativePath);
 
-fs.writeFileSync(
-  `${packageJsonFullPath}`,
-  JSON.stringify(modifiedPackage, null, 2)
-);
+  if (!fs.existsSync(packageJsonFullPath)) {
+    throw new Error(
+      `Path ${packageJsonRelativePath} does not exist! Please ensure you pass the correct PACKAGE_FOLDER_NAME environment variable. Perhaps your folder name has changed?`
+    );
+  } else {
+    artilleryPackage = require(packageJsonRelativePath);
+  }
+
+  const modifiedPackage = updatePackageWithDependencies(artilleryPackage);
+  fs.writeFileSync(
+    `${packageJsonFullPath}`,
+    JSON.stringify(modifiedPackage, null, 2)
+  );
+}
