@@ -1,0 +1,79 @@
+name: Publish packages to CLI
+on:
+  push:
+    branches:
+      - main
+    paths:
+      #If there are changes to package.json and ci:release v is in commit msg, it's a release
+      - 'packages/artillery/package.json'
+      
+jobs:
+  publish-fargate-worker-image:
+    if: "contains( github.event.head_commit.message, 'ci: release v')"
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+
+  publish-packages-to-npm:
+    runs-on: ubuntu-latest
+    if: "contains( github.event.head_commit.message, 'ci: release v')"
+    needs: publish-fargate-worker-image
+    permissions:
+      contents: read
+      packages: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # this list should be kept in sync with create-release-pr.yml
+      PACKAGES_TO_RELEASE: "\
+        artillery-engine-playwright,\
+        artillery-plugin-apdex,\
+        artillery-plugin-ensure,\
+        artillery-plugin-expect,\
+        artillery-plugin-fake-data,\
+        artillery-plugin-metrics-by-endpoint,\
+        artillery-plugin-publish-metrics,\
+        commons,\
+        core,\
+        artillery,\
+        skytrace"
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@artilleryio'
+      - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+      - run: node .github/workflows/scripts/rename-packages-to-correct-version.js
+        env:
+          PACKAGES_TO_REPLACE: ${{ env.PACKAGES_TO_RELEASE }}
+      # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
+      - run: npm -w @artilleryio/int-commons publish
+      - run: npm -w @artilleryio/int-core publish
+      - run: npm -w artillery-plugin-expect publish
+      - run: npm -w artillery-plugin-publish-metrics publish
+      - run: npm -w artillery-plugin-metrics-by-endpoint publish
+      - run: npm -w artillery-plugin-ensure publish
+      - run: npm -w artillery-plugin-apdex publish
+      - run: npm -w artillery-engine-posthog publish
+      - run: npm -w artillery-engine-playwright publish
+      - run: npm -w artillery-plugin-fake-data publish
+      - run: npm -w artillery publish
+      # Skytrace is a Typescript Package and needs to install -> build -> publish
+      - run: npm install -w skytrace --ignore-scripts
+      - run: npm run build -w skytrace
+      - run: npm -w skytrace publish
+
+  publish-official-docker-image:
+    uses: ./.github/workflows/docker-publish-artillery.yml
+    needs: publish-packages-to-npm
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

@@ -1,11 +1,19 @@
 name: Publish Docker image for Artillery
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - packages/artillery/package.json
+  workflow_call:
+    inputs:
+      COMMIT_SHA:
+        description: 'Commit SHA'
+        required: true
+        type: string
+    secrets:
+      DOCKER_USERNAME:
+        description: 'Docker Hub username'
+        required: true
+      DOCKER_PASSWORD:
+        description: 'Docker Hub password'
+        required: true
 
 jobs:
   push_to_registry:
@@ -19,6 +27,10 @@ jobs:
       - name: Get Artillery version
         run: |
           echo "ARTILLERY_VERSION=$(node -e 'console.log(require("./packages/artillery/package.json").version)')" >> $GITHUB_ENV
+
+      - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
+        env:
+          COMMIT_SHA: ${{ inputs.COMMIT_SHA }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
