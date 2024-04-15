@@ -24,8 +24,7 @@ jobs:
         artillery-plugin-publish-metrics,\
         commons,\
         core,\
-        artillery,\
-        skytrace"
+        artillery"
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
