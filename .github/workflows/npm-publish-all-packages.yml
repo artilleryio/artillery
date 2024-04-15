@@ -37,8 +37,7 @@ jobs:
         artillery-plugin-publish-metrics,\
         commons,\
         core,\
-        artillery,\
-        skytrace"
+        artillery"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
