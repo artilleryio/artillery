@@ -76,10 +76,11 @@ let IS_FARGATE = false;
 
 const TEST_RUN_STATUS = require('./test-run-status');
 
-function setupConsoleReporter() {
+function setupConsoleReporter(quiet) {
   const reporterOpts = {
     outputFormat: 'classic',
-    printPeriod: false
+    printPeriod: false,
+    quiet: quiet
   };
 
   if (
@@ -122,7 +123,7 @@ function runCluster(scriptPath, options) {
     AWS.config.logger = console;
   }
 
-  const artilleryReporter = setupConsoleReporter();
+  const artilleryReporter = setupConsoleReporter(options.quiet);
 
   // camelCase all flag names, e.g. `launch-config` becomes launchConfig
   const options2 = {};
