@@ -2,7 +2,11 @@ name: Create Release PR
 
 on:
   workflow_dispatch:
-  
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   create_release_pr:
     runs-on: ubuntu-latest
