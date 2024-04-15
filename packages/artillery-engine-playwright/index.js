@@ -346,6 +346,7 @@ class PlaywrightEngine {
         }
         return initialContext;
       } catch (err) {
+        console.error(err);
         if (initialContext.vars.isRecording) {
           if (
             Date.now() - self.lastTraceRecordedTime >
