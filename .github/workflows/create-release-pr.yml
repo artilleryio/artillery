@@ -1,0 +1,67 @@
+on:
+  workflow_dispatch:
+  
+jobs:
+  create_release_pr:
+    env:
+      # these are the packages we auto release (e.g. standalone pkgs like artillery/skytrace/types, and included dependencies like plugins)
+      # some non-included dependencies are not released automatically (e.g. posthog, memory-inspector)
+      PACKAGES_TO_RELEASE: "\
+        artillery-engine-playwright,\
+        artillery-plugin-apdex,\
+        artillery-plugin-ensure,\
+        artillery-plugin-expect,\
+        artillery-plugin-fake-data,\
+        artillery-plugin-metrics-by-endpoint,\
+        artillery-plugin-publish-metrics,\
+        commons,\
+        core,\
+        artillery,\
+        skytrace,\
+        types"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # all packages receive minor version bump, except for artillery which receives a patch version bump as convention
+      - name: Update package versions
+        run: |
+          for package in $(echo ${{ env.PACKAGES_TO_RELEASE }} | tr "," "\n"); do
+            if [ "$package" = "artillery" ]; then
+              npm version patch --workspace $package
+            else
+              npm version minor --workspace $package
+            fi
+          done
+
+      - name: Get new Artillery version
+        run: |
+          ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
+          echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> "$GITHUB_ENV"
+
+      - name: Create branch
+        run: |
+          export BRANCH_NAME=release/artillery-v${{ env.ARTILLERY_VERSION }}-$(date '+%Y-%m-%d-%H-%M-%S')
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+          git checkout -b $BRANCH_NAME
+          git push --set-upstream origin $BRANCH_NAME
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Add changes to commit
+        run: git add .
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          RELEASE_COMMIT_MSG="ci: release v${{ env.ARTILLERY_VERSION }} artillery" >> "$GITHUB_ENV"
+          git commit -m "ci: release v${{ env.ARTILLERY_VERSION }} artillery"
+          git push
+
+      - name: create pull request
+        run: gh pr create -B main -H ${{ env.BRANCH_NAME }} --body 'Release v${{ env.ARTILLERY_VERSION }}. Created by Github action' --fill
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
