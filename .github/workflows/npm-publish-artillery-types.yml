@@ -19,7 +19,7 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: PACKAGE_FOLDER_NAME=types node .github/workflows/scripts/rename-packages-to-correct-version.js
+      - run: .github/workflows/scripts/replace-package-versions.js
       - run: npm ci
       - run: npm -w '@artilleryio/types' publish --access public
         env:

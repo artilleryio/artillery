@@ -4,7 +4,13 @@ const path = require('path');
 const packagesDir = '../../../packages';
 const commitSha = process.env.COMMIT_SHA;
 
-const getNewVersion = (version) => `${version}-${commitSha}`;
+const getNewVersion = (version) => {
+  if (!commitSha) {
+    return version;
+  }
+
+  return `${version}-${commitSha}`;
+};
 
 let versionMapping = {};
 
@@ -56,6 +62,10 @@ const updateDependencies = (pkg) => {
       //replace the dependency we care about in this package with its corrected canary version
       dependencies[packageNameToReplace] =
         versionMapping[packageNameToReplace].content.version;
+
+      console.log(
+        `Updated dependency ${packageNameToReplace} in ${pkg.content.name} to ${dependencies[packageNameToReplace]}`
+      );
     }
   }
 };
