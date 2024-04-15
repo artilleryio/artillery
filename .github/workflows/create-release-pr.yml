@@ -30,6 +30,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Replace package folder name with actual name from package.json
+        run: |
+          for package in $(echo $PACKAGES_TO_RELEASE | tr "," "\n"); do
+            PACKAGE_NAME=$(node -e "console.log(require('./packages/$package/package.json').name)")
+            PACKAGES_TO_RELEASE=${PACKAGES_TO_RELEASE/$package/$PACKAGE_NAME}
+            echo "PACKAGES_TO_RELEASE=$PACKAGES_TO_RELEASE" >> "$GITHUB_ENV"
+          done
+
       # all packages receive minor version bump, except for artillery which receives a patch version bump as convention
       - name: Update package versions
         run: |
