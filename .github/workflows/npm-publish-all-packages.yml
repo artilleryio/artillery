@@ -63,10 +63,10 @@ jobs:
       - run: npm -w artillery-engine-playwright publish
       - run: npm -w artillery-plugin-fake-data publish
       - run: npm -w artillery publish
-      # Skytrace is a Typescript Package and needs to install -> build -> publish
-      - run: npm install -w skytrace --ignore-scripts
-      - run: npm run build -w skytrace
-      - run: npm -w skytrace publish
+      # # Skytrace is a Typescript Package and needs to install -> build -> publish
+      # - run: npm install -w skytrace --ignore-scripts
+      # - run: npm run build -w skytrace
+      # - run: npm -w skytrace publish
 
   publish-official-docker-image:
     uses: ./.github/workflows/docker-publish-artillery.yml
