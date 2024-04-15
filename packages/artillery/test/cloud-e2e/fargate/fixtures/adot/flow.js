@@ -4,22 +4,24 @@ async function simpleCheck(page, userContext, events, test) {
     await page.goto('https://artillery.io/');
     const req = await requestPromise;
   });
-  await test.step('Go to cloud', async () => {
-    const cloud = await page
+  await test.step('Go to docs', async () => {
+    const docs = await page
       .getByLabel('Main navigation')
-      .getByRole('link', { name: 'Cloud' });
-    await cloud.click();
-    await page.waitForURL('https://www.artillery.io/cloud');
+      .getByRole('link', { name: 'Documentation' });
+    await docs.click();
+    await page.waitForURL('https://www.artillery.io/docs');
   });
 
-  await test.step('Click on Join button', async () => {
+  await test.step('Go to core concepts', async () => {
     await page
-      .getByRole('button', {
-        name: 'Join Artillery Cloud early access waitlist'
+      .getByRole('link', {
+        name: 'Review core concepts'
       })
       .click();
 
-    await page.waitForURL('https://www.artillery.io/cloud?tf=1');
+    await page.waitForURL(
+      'https://www.artillery.io/docs/get-started/core-concepts'
+    );
   });
 }
 
