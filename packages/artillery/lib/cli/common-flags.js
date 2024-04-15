@@ -37,6 +37,10 @@ const CommonRunFlags = {
     char: 'k',
     description: 'Allow insecure TLS connections; do not use in production'
   }),
+  quiet: Flags.boolean({
+    char: 'q',
+    description: 'Quiet mode'
+  }),
   // multiple allows multiple arguments for the -i flag, which means that e.g.:
   // artillery -i one.yml -i two.yml main.yml
   // does not work as expected. Instead of being considered an argument, "main.yml"

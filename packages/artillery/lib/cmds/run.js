@@ -76,10 +76,6 @@ Examples:
 
 RunCommand.flags = {
   ...CommonRunFlags,
-  quiet: Flags.boolean({
-    char: 'q',
-    description: 'Quiet mode'
-  }),
   // TODO: Deprecation notices for commands below:
   payload: Flags.string({
     char: 'p',
