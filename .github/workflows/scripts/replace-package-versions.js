@@ -4,7 +4,13 @@ const path = require('path');
 const packagesDir = '../../../packages';
 const commitSha = process.env.COMMIT_SHA;
 
-const getNewVersion = (version) => `${version}-${commitSha}`;
+const getNewVersion = (version) => {
+  if (!commitSha) {
+    return version;
+  }
+
+  return `${version}-${commitSha}`;
+};
 
 let versionMapping = {};
 

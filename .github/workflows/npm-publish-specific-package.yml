@@ -41,13 +41,11 @@ jobs:
       - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
         env:
           COMMIT_SHA: ${{ github.sha }}
-      - run: node .github/workflows/scripts/rename-packages-to-correct-version.js
+      - run: node .github/workflows/scripts/replace-package-versions.js
         if: ${{ inputs.CHANNEL == 'latest'}}
-        env:
-          PACKAGES_TO_REPLACE: ${{ inputs.PACKAGE_FOLDER_NAME }}
       - run: | 
           export COMMIT_SHA=$(git rev-parse --short HEAD)
-          node .github/workflows/scripts/replace-package-versions-with-commit-sha.js
+          node .github/workflows/scripts/replace-package-versions.js
         if: ${{ inputs.CHANNEL == 'canary'}}
 
       - name: Get corresponding package name from package.json
