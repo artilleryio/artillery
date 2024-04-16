@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "artillery-plugin-tracetest": "latest"
+    "artillery-plugin-tracetest": "latest",
+    "artillery": "latest"
   }
 }
