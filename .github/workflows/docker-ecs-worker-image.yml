@@ -60,7 +60,7 @@ jobs:
 
       - name: Build the Docker image
         run: |
-          docker build . --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+          docker build . --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }} -f ./packages/artillery/lib/platform/aws-lambda/lambda-handler/Dockerfile
     
       - name: Push Docker image
         run: |
