@@ -47,7 +47,7 @@ RUN npm cache clean --force \
 
 # COPY ./entrypoint.sh /entry_script.sh
 RUN chmod +x ./entrypoint.sh
-ADD aws-lambda-rie /usr/local/bin/aws-lambda-rie
+# ADD aws-lambda-rie /usr/local/bin/aws-lambda-rie
 ENTRYPOINT [ "./entrypoint.sh", "index.handler" ]
 
 # ENTRYPOINT ["/usr/local/bin/npx", "aws-lambda-ric"]
