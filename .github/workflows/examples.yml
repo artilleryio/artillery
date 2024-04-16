@@ -27,14 +27,14 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Check contents of node_modules
-        run: ls -la node_modules
+      - name: Check contents
+        run: ls -la
 
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
-          command: run ./endpoint-metrics.yml --record --tags ${{ env.CLI_TAGS }},group:http-metrics-by-endpoint --note ${{ env.CLI_NOTE }}
-          working-directory: ${{ env.CWD }}
+          command: run ./${{ env.CWD }}/endpoint-metrics.yml --tags ${{ env.CLI_TAGS }},group:http-metrics-by-endpoint --note ${{ env.CLI_NOTE }}
+          # working-directory: ${{ env.CWD }}
         env:
           # ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
           ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
