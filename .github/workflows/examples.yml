@@ -27,6 +27,9 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Check contents of node_modules
+        run: ls -la node_modules
+
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
@@ -52,13 +55,16 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Check contents of node_modules
+        run: ls -la node_modules
+
       - name: Run armadillo scenario
         uses: artilleryio/action-cli@v1
         with:
           command: run --config ./common-config.yml ./scenarios/armadillo.yml --record --tags ${{ env.CLI_TAGS }},group:multiple-scenario-specs --note ${{ env.CLI_NOTE }}
           working-directory: ${{ env.CWD }}
         env:
-          ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
+          # ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
           ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
 
