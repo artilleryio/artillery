@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "artillery-plugin-discord-hook-stats": "^1.0.14",
+    "artillery-plugin-tracetest": "latest"
+  }
+}

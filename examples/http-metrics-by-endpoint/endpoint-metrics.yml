@@ -5,6 +5,9 @@ config:
       arrivalRate: 1
   plugins:
     metrics-by-endpoint: {}
+    tracetest: {}
+    # discord-hook-stats: {}
+
 scenarios:
   - flow:
       - get:
