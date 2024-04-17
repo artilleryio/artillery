@@ -79,9 +79,6 @@ async function uploadFileToS3(item, testRunId, bucketName) {
 }
 
 async function syncS3(bomManifest, testRunId, bucketName) {
-  console.log('Will try syncing to:', bucketName);
-
-  console.log('Manifest: ', bomManifest);
   const metadata = {
     createdOn: Date.now(),
     name: testRunId,
@@ -90,16 +87,12 @@ async function syncS3(bomManifest, testRunId, bucketName) {
 
   //TODO: parallelise this
   for (const file of bomManifest.files) { 
-    console.log(`STARTING ON FILE:`)
-    console.log(file)
     await uploadFileToS3(file, testRunId, bucketName);
   }
 
   const plainS3 = createS3Client();
   const prefix = `tests/${testRunId}`;
 
-  console.log(bucketName)
-  console.log(prefix)
 
   //TODO: add writeTestMetadata with configPath and newScriptPath if needed
   try {
@@ -130,7 +123,6 @@ const createTest = async (
   const bom = await prepareManifest(absoluteScriptPath, absoluteConfigPath);
 
   prettyPrintManifest(bom);
-  console.log(bom)
   
   await syncS3(bom, testRunId, bucketName);
 

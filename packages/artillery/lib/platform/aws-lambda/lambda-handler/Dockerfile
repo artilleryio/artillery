@@ -21,9 +21,9 @@ ARG FUNCTION_DIR="/function"
 RUN mkdir -p ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
-COPY package.json package.json
 COPY packages packages
 COPY packages/artillery/lib/platform/aws-lambda/lambda-handler/ .
+COPY package.json package.json
 
 # Install dependencies
 RUN npm install -w artillery --ignore-scripts --omit=dev

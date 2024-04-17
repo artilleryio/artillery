@@ -126,10 +126,6 @@ class PlatformLambda {
     );
     this.bucketName = bucketName;
 
-    const dirname = temp.mkdirSync(); // TODO: May want a way to override this by the user
-    const zipfile = temp.path({ suffix: '.zip' });
-
-    console.log({ dirname, zipfile });
     const metadata = {
       region: this.region,
       platformConfig: {
@@ -421,8 +417,8 @@ class PlatformLambda {
       WAIT_FOR_GREEN: true
     };
 
-    console.log('Lambda event payload:');
-    console.log({ event });
+    debug('Lambda event payload:');
+    debug({ event });
 
     const payload = JSON.stringify(event);
 
@@ -470,7 +466,7 @@ class PlatformLambda {
       })
       .promise();
     
-      console.log(`TOOK: ${Date.now() - this.startTime}ms`)
+      console.log(`Lambda startup time: ${Date.now() - this.startTime}ms`)
 
     this.count++;
   }
