@@ -66,6 +66,7 @@ async function handler(event, context) {
 
   await syncTestData(BUCKET, TEST_RUN_ID);
   await installNpmDependencies(TEST_DATA_LOCATION);
+  //TODO: figure out what to do with plugins etc (like fargate handles it)
 
   const interval = setInterval(async () => {
     const timeRemaining = context.getRemainingTimeInMillis();

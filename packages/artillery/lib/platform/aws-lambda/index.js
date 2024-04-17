@@ -66,6 +66,7 @@ function memoryToVCPU(memMB) {
 class PlatformLambda {
   constructor(script, payload, opts, platformOpts) {
     this.workers = {};
+    this.startTime = Date.now();
 
     this.count = 0;
     this.waitingReadyCount = 0;
@@ -140,30 +141,6 @@ class PlatformLambda {
 
     const bom = await createTest(this.opts.absoluteScriptPath, this.opts.absoluteConfigPath, this.testRunId, this.bucketName);
 
-    // process.exit(1);
-
-    // process.exit(1);
-    // Copy handler:
-    // fs.copyFileSync(
-    //   path.resolve(__dirname, 'lambda-handler', 'index.js'),
-    //   path.join(dirname, 'index.js')
-    // );
-    // fs.copyFileSync(
-    //   path.resolve(__dirname, 'lambda-handler', 'package.json'),
-    //   path.join(dirname, 'package.json')
-    // );
-
-    // FIXME: This may overwrite lambda-handler's index.js or package.json
-    // Copy files that make up the test:
-    // for (const o of bom.files) {
-    //   if (o.noPrefix.includes(`package.json`)) {
-    //     continue;
-    //   }
-    //   console.log(`Copying ${o.orig} to ${path.join(dirname, o.noPrefix)}`)
-    //   fs.ensureFileSync(path.join(dirname, o.noPrefix));
-    //   fs.copyFileSync(o.orig, path.join(dirname, o.noPrefix));
-    // }
-
     //TODO: account for dotenv
     // if (this.platformOpts.cliArgs.dotenv) {
     //   fs.copyFileSync(
@@ -221,111 +198,7 @@ class PlatformLambda {
     )[0];
     this.artilleryArgs.push(p.noPrefix);
 
-    // artillery.log('- Installing dependencies');
-    // const { stdout, stderr, status, error } = spawn.sync(
-    //   'npm',
-    //   ['install', '--omit', 'dev'],
-    //   {
-    //     cwd: dirname
-    //   }
-    // );
-
-    // if (error) {
-    //   artillery.log(stdout?.toString(), stderr?.toString(), status, error);
-    // } else {
-    //   // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    // }
-
-    // // Install extra plugins & engines
-    // if (bom.modules.length > 0) {
-    //   artillery.log(
-    //     `- Installing extra engines & plugins: ${bom.modules.join(', ')}`
-    //   );
-    //   const { stdout, stderr, status, error } = spawn.sync(
-    //     'npm',
-    //     ['install'].concat(bom.modules),
-    //     { cwd: dirname }
-    //   );
-    //   if (error) {
-    //     artillery.log(stdout?.toString(), stderr?.toString(), status, error);
-    //   }
-    // }
-
-    // // Copy this version of Artillery into the Lambda package
-    // const a9basepath = path.resolve(__dirname, '..', '..', '..');
-    // // TODO: read this from .files in package.json instead:
-    // for (const dir of ['bin', 'lib']) {
-    //   const destdir = path.join(dirname, 'node_modules', 'artillery', dir);
-    //   const srcdir = path.join(a9basepath, dir);
-    //   fs.ensureDirSync(destdir);
-    //   fs.copySync(srcdir, destdir);
-    // }
-    // for (const fn of ['console-reporter.js', 'util.js']) {
-    //   const destfn = path.join(dirname, 'node_modules', 'artillery', fn);
-    //   const srcfn = path.join(a9basepath, fn);
-    //   fs.copyFileSync(srcfn, destfn);
-    // }
-
-    // fs.copyFileSync(
-    //   path.resolve(a9basepath, 'package.json'),
-    //   path.join(dirname, 'node_modules', 'artillery', 'package.json')
-    // );
-
-    // const a9cwd = path.join(dirname, 'node_modules', 'artillery');
-    // debug({ a9basepath, a9cwd });
-
-    // const {
-    //   stdout: stdout2,
-    //   stderr: stderr2,
-    //   status: status2,
-    //   error: error2
-    // } = spawn.sync('npm', ['install', '--omit', 'dev'], { cwd: a9cwd });
-    // if (error2) {
-    //   artillery.log(stdout2?.toString(), stderr2?.toString(), status2, error2);
-    // } else {
-    //   // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    // }
-
-    // const {
-    //   stdout: stdout3,
-    //   stderr: stderr3,
-    //   status: status3,
-    //   error: error3
-    // } = spawn.sync(
-    //   'npm',
-    //   [
-    //     'uninstall',
-    //     'dependency-tree',
-    //     'detective',
-    //     'is-builtin-module',
-    //     'try-require',
-    //     'walk-sync',
-    //     'esbuild-wasm',
-    //     'artillery-plugin-publish-metrics'
-    //   ],
-    //   {
-    //     cwd: a9cwd
-    //   }
-    // );
-    // if (error3) {
-    //   artillery.log(stdout3?.toString(), stderr3?.toString(), status3, error3);
-    // } else {
-    //   // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    // }
-
-    // fs.removeSync(path.join(dirname, 'node_modules', 'aws-sdk'));
-    // fs.removeSync(path.join(a9cwd, 'node_modules', 'typescript'));
-    // fs.removeSync(path.join(a9cwd, 'node_modules', 'tap'));
-    // fs.removeSync(path.join(a9cwd, 'node_modules', 'prettier'));
-
-    // artillery.log('- Creating zip package');
-    // await this.createZip(dirname, zipfile);
-
-    // artillery.log('Preparing AWS environment...');
-
-    // const s3path = await this.uploadLambdaZip(bucketName, zipfile);
-    // debug({ s3path });
-    // this.lambdaZipPath = s3path;
+    artillery.log('Preparing AWS environment...');
 
     // 36 is length of a UUUI v4 string
     const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
@@ -349,11 +222,12 @@ class PlatformLambda {
       functionName: this.functionName,
       zipPath: this.lambdaZipPath
     });
+    //TODO: consolidate these logs into something consistent with fargate
     artillery.log(` - Lambda function: ${this.functionName}`);
     artillery.log(` - Region: ${this.region}`);
     artillery.log(` - AWS account: ${this.accountId}`);
 
-    debug({ bucketName, s3path, sqsQueueUrl });
+    debug({ bucketName, sqsQueueUrl });
 
     const self = this;
 
@@ -412,8 +286,10 @@ class PlatformLambda {
           if (body.event === 'workerStats') {
             this.events.emit('stats', workerId, body); // event consumer accesses body.stats
           } else if (body.event === 'artillery.log') {
+            console.log(`artillery.log: ${workerId}`)
             console.log(body.log);
           } else if (body.event === 'done') {
+            console.log(`WE ARE DONE`)
             // 'done' handler in Launcher exects the message argument to have an "id" and "report" fields
             body.id = workerId;
             body.report = body.stats; // Launcher expects "report", SQS reporter sends "stats"
@@ -441,14 +317,21 @@ class PlatformLambda {
             // TODO: Do this only for batches of workers with "wait" option set
             if (this.waitingReadyCount === this.count) {
               // TODO: Retry
-              const s3 = new AWS.S3();
-              await s3
-                .putObject({
-                  Body: Buffer.from(''),
-                  Bucket: this.bucketName,
-                  Key: `/${this.testRunId}/green`
-                })
-                .promise();
+              try {
+                const s3 = new AWS.S3();
+                await s3
+                  .putObject({
+                    Body: Buffer.from(''),
+                    Bucket: this.bucketName,
+                    Key: `/${this.testRunId}/green`
+                  })
+                  .promise();
+              } catch (err) {
+                console.log(`FAILED TO PUT GREEN`)
+                console.error(err);
+              }
+  
+              console.log(`SUCCESSFULLY PUT GREEN`)
             }
           } else {
             debug(body);
@@ -537,11 +420,9 @@ class PlatformLambda {
       BUCKET: this.bucketName,
       WAIT_FOR_GREEN: true
     };
-    console.log(event)
-    // process.exit(1)
 
-    debug('Lambda event payload:');
-    debug({ event });
+    console.log('Lambda event payload:');
+    console.log({ event });
 
     const payload = JSON.stringify(event);
 
@@ -556,7 +437,7 @@ class PlatformLambda {
             .promise()
         ).State;
         if (state === 'Active') {
-          debug('Lambda function ready:', this.functionName);
+          console.log('Lambda function ready:', this.functionName);
           ok = true;
           break;
         } else {
@@ -571,7 +452,7 @@ class PlatformLambda {
     }
 
     if (!ok) {
-      debug(
+      console.log(
         'Time out waiting for lamda function to be ready:',
         this.functionName
       );
@@ -580,6 +461,7 @@ class PlatformLambda {
       );
     }
 
+    artillery.log('Running your test in Lambda function...');
     await lambda
       .invoke({
         FunctionName: this.functionName,
@@ -587,6 +469,8 @@ class PlatformLambda {
         InvocationType: 'Event'
       })
       .promise();
+    
+      console.log(`TOOK: ${Date.now() - this.startTime}ms`)
 
     this.count++;
   }
@@ -608,13 +492,6 @@ class PlatformLambda {
     });
 
     try {
-      await s3
-        .deleteObject({
-          Bucket: this.bucketName,
-          Key: this.lambdaZipPath
-        })
-        .promise();
-
       await sqs
         .deleteQueue({
           QueueUrl: this.sqsQueueUrl
@@ -735,33 +612,17 @@ class PlatformLambda {
   }
 
   async createLambda(opts) {
-    const { bucketName, functionName, zipPath } = opts;
+    const { functionName } = opts;
 
     const lambda = new AWS.Lambda({
       apiVersion: '2015-03-31',
       region: this.region
     });
 
-    // const lambdaConfig = {
-    //   Code: {
-    //     S3Bucket: bucketName,
-    //     S3Key: zipPath
-    //   },
-    //   FunctionName: functionName,
-    //   Description: 'Artillery.io test',
-    //   Handler: 'index.handler',
-    //   MemorySize: this.memorySize,
-    //   PackageType: 'Zip',
-    //   Runtime: 'nodejs16.x',
-    //   Architectures: [this.architecture],
-    //   Timeout: 900,
-    //   Role: this.lambdaRoleArn
-    // };
-
     const lambdaConfig = {
       PackageType: 'Image',
       Code: {
-        ImageUri: 'URL_TO_ADD'
+        ImageUri: '377705245354.dkr.ecr.us-east-1.amazonaws.com/artillery-bernardo-test:latest'
       },
       FunctionName: functionName,
       Description: 'Artillery.io test',
@@ -769,9 +630,13 @@ class PlatformLambda {
       PackageType: 'Image',
       Timeout: 900,
       Role: this.lambdaRoleArn,
+      //TODO: review architecture needed. Right now it's hardcoded to arm64. How will this affect users having to push their own docker image?
+      Architectures: ['arm64'],
       Environment: {
         Variables: {
           S3_BUCKET_PATH: this.bucketName,
+          NPM_CONFIG_CACHE: '/tmp/.npm', //TODO: move this to Dockerfile
+          AWS_LAMBDA_LOG_FORMAT: 'JSON' //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
         }
       }
     };
@@ -783,23 +648,8 @@ class PlatformLambda {
       };
     }
 
-    await lambda.createFunction({ Environment: {}}).promise();
+    await lambda.createFunction(lambdaConfig).promise();
   }
-
-  // async uploadLambdaZip(bucketName, zipfile) {
-  //   const key = `lambda/${randomUUID()}.zip`;
-  //   // TODO: Set lifecycle policy on the bucket/key prefix to delete after 24 hours
-  //   const s3 = new AWS.S3();
-  //   const s3res = await s3
-  //     .putObject({
-  //       Body: fs.createReadStream(zipfile),
-  //       Bucket: bucketName,
-  //       Key: key
-  //     })
-  //     .promise();
-
-  //   return key;
-  // }
 }
 
 module.exports = PlatformLambda;
