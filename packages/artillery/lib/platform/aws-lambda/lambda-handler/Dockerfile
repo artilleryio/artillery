@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libcurl4-openssl-dev \
     autoconf \
-    libtool 
+    libtool \
+    awscli
 
 # Define custom function directory
 ARG FUNCTION_DIR="/function"

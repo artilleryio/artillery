@@ -33,29 +33,13 @@ const syncTestData = async (bucketName, testRunId) => {
     //TODO: use aws s3 sync with child process
     console.log('Syncing test data');
     const LOCAL_TEST_DATA_PATH = `/tmp/test_data/${testRunId}`;
-  
-    const s3 = new AWS.S3();
-    const params = {
-      Bucket: bucketName,
-      Prefix: `tests/${testRunId}`
-    };
-    const data = await s3.listObjectsV2(params).promise();
-  
-    if (!fs.existsSync(LOCAL_TEST_DATA_PATH)) {
-      fs.mkdirSync(LOCAL_TEST_DATA_PATH, { recursive: true })
-    }
-  
-    //TODO : review why I didn't use s3 sync here? I think it was because aws cli wasnt available in the env at the time
-    for (const file of data.Contents) {
-      const params = {
-        Bucket: bucketName,
-        Key: file.Key
-      };
-      const data = await s3.getObject(params).promise();
-      const pathFile = path.basename(file.Key);
 
-      fs.writeFileSync(`${LOCAL_TEST_DATA_PATH}/${pathFile}`, data.Body);
-    }
+    if (!fs.existsSync(LOCAL_TEST_DATA_PATH)) {
+        fs.mkdirSync(LOCAL_TEST_DATA_PATH, { recursive: true })
+      }
+
+    const result = await runProcess('aws', ['s3', 'sync', `s3://${bucketName}/tests/${testRunId}`, LOCAL_TEST_DATA_PATH], { log: true });
+    console.log(result)
   
     for (const file of fs.readdirSync(LOCAL_TEST_DATA_PATH)) {
       console.log(file);
