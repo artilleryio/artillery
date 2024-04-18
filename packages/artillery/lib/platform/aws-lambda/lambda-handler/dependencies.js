@@ -56,6 +56,15 @@ const syncTestData = async (bucketName, testRunId) => {
     console.log(`Changing directory to ${testDataLocation}`)
     process.chdir(testDataLocation);
 
+    const metadataJson = fs.readFileSync(path.join(testDataLocation, 'metadata.json'));
+
+    for (const dep of JSON.parse(metadataJson).modules) { 
+        console.log(`Installing ${dep}`);
+        await runProcess('npm', ['install', dep, '--prefix', testDataLocation], { log: true, env: {
+            HOME: testDataLocation,
+        } });
+    }
+
     if (!fs.existsSync(path.join(testDataLocation, 'package.json'))) {
       await runProcess('npm', ['init', '-y'], { log: true, env: {
         HOME: testDataLocation,
