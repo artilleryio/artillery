@@ -5,6 +5,7 @@ const debug = require('debug')('aws:lambda');
 const Table = require('cli-table3');
 const fs = require('fs');
 
+//TODO: unify BOM's
 const prepareManifest = async (absoluteScriptPath, absoluteConfigPath) => {
   let createBomOpts = {};
   let entryPoint = absoluteScriptPath;
@@ -86,9 +87,12 @@ async function syncS3(bomManifest, testRunId, bucketName) {
   };
 
   //TODO: parallelise this
+  let fileCount = 0;
   for (const file of bomManifest.files) { 
     await uploadFileToS3(file, testRunId, bucketName);
+    fileCount++;
   }
+  metadata.fileCount = fileCount;
 
   const plainS3 = createS3Client();
   const prefix = `tests/${testRunId}`;

@@ -30,7 +30,6 @@ const { runProcess } = require('./helpers');
 // };
 
 const syncTestData = async (bucketName, testRunId) => {
-    //TODO: use aws s3 sync with child process
     console.log('Syncing test data');
     const LOCAL_TEST_DATA_PATH = `/tmp/test_data/${testRunId}`;
 
@@ -43,11 +42,15 @@ const syncTestData = async (bucketName, testRunId) => {
 
     //TODO: should we introduce the "leader" concept and optimise using the install of node_modules?
     //how relevant is it really? Only on larger dependency trees I suppose?
-  
-    //TODO: turn this into a check of expected number of files being the same as the number of files sent over by the CLI
-    for (const file of fs.readdirSync(LOCAL_TEST_DATA_PATH)) {
-      console.log(file);
+
+    const metadataJson = fs.readFileSync(path.join(LOCAL_TEST_DATA_PATH, 'metadata.json'), );
+    const localFiles = fs.readdirSync(LOCAL_TEST_DATA_PATH);
+
+    const metadataFileCount = JSON.parse(metadataJson).fileCount + 1 //include metadata json too;
+    if (metadataFileCount != localFiles.length) { 
+        throw new Error(`Number of files in metadata.json (${metadataFileCount}) does not match number of files (${localFiles.length}) in local directory! Something went wrong!`);
     }
+    
     console.log('Test data synced');
   };
   
