@@ -40,7 +40,11 @@ const syncTestData = async (bucketName, testRunId) => {
 
     const result = await runProcess('aws', ['s3', 'sync', `s3://${bucketName}/tests/${testRunId}`, LOCAL_TEST_DATA_PATH], { log: true });
     console.log(result)
+
+    //TODO: should we introduce the "leader" concept and optimise using the install of node_modules?
+    //how relevant is it really? Only on larger dependency trees I suppose?
   
+    //TODO: turn this into a check of expected number of files being the same as the number of files sent over by the CLI
     for (const file of fs.readdirSync(LOCAL_TEST_DATA_PATH)) {
       console.log(file);
     }
@@ -48,8 +52,15 @@ const syncTestData = async (bucketName, testRunId) => {
   };
   
   const installNpmDependencies = async (testDataLocation) => {
+    //TODO: handle npmrc (i.e. artifactory, etc)
     console.log(`Changing directory to ${testDataLocation}`)
     process.chdir(testDataLocation);
+
+    if (!fs.existsSync(path.join(testDataLocation, 'package.json'))) {
+      await runProcess('npm', ['init', '-y'], { log: true, env: {
+        HOME: testDataLocation,
+      } });
+    }
   
     const res = await runProcess('npm', ['install', '--prefix', testDataLocation], { log: true, env: {
       HOME: testDataLocation,
