@@ -64,9 +64,25 @@ async function handler(event, context) {
   });
   const TEST_DATA_LOCATION = `/tmp/test_data/${TEST_RUN_ID}`
 
-  await syncTestData(BUCKET, TEST_RUN_ID);
-  await installNpmDependencies(TEST_DATA_LOCATION);
-  //TODO: figure out what to do with plugins etc (like fargate handles it)
+  try {
+    await syncTestData(BUCKET, TEST_RUN_ID);
+  } catch (err) {
+    await mq.send({
+      event: 'workerError',
+      reason: 'TestDataSyncFailure',
+      logs: { err }
+    });
+  }
+  
+  try {
+    await installNpmDependencies(TEST_DATA_LOCATION);
+  } catch (err) {
+    await mq.send({
+      event: 'workerError',
+      reason: 'InstallDependenciesFailure',
+      logs: { err }
+    });
+  }
 
   const interval = setInterval(async () => {
     const timeRemaining = context.getRemainingTimeInMillis();
