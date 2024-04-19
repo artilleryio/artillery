@@ -3,15 +3,36 @@
 // playwright codegen
 // https://playwright.dev/docs/codegen
 //
-async function cloudWaitlistSignupFlow(page) {
-  await page.goto('https://www.artillery.io/');
-  await page
-    .getByLabel('Main navigation')
-    .getByRole('link', { name: 'Cloud' })
-    .click();
-  await page
-    .getByRole('button', { name: 'Join Artillery Cloud early access waitlist' })
-    .click();
+async function checkOutArtilleryCoreConceptsFlow(
+  page,
+  userContext,
+  events,
+  test
+) {
+  await test.step('Go to Artillery', async () => {
+    const requestPromise = page.waitForRequest('https://artillery.io/');
+    await page.goto('https://artillery.io/');
+    const req = await requestPromise;
+  });
+  await test.step('Go to docs', async () => {
+    const docs = await page
+      .getByLabel('Main navigation')
+      .getByRole('link', { name: 'Documentation' });
+    await docs.click();
+    await page.waitForURL('https://www.artillery.io/docs');
+  });
+
+  await test.step('Go to core concepts', async () => {
+    await page
+      .getByRole('link', {
+        name: 'Review core concepts'
+      })
+      .click();
+
+    await page.waitForURL(
+      'https://www.artillery.io/docs/get-started/core-concepts'
+    );
+  });
 }
 
 //
@@ -59,7 +80,7 @@ async function multistepWithCustomMetrics(page, userContext, events, test) {
 }
 
 module.exports = {
-  cloudWaitlistSignupFlow,
+  checkOutArtilleryCoreConceptsFlow,
   checkPage,
   multistepWithCustomMetrics
 };
