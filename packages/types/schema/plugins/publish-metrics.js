@@ -103,7 +103,7 @@ const NewRelicReporterSchema = Joi.object({
     serviceName: Joi.string(),
     sampleRate: artilleryNumberOrString,
     useRequestNames: artilleryBooleanOrString,
-    attributes: Joi.object().unknown(),
+    attributes: Joi.array().items(Joi.string()),
     smartSampling: Joi.object({
       thresholds: Joi.object({
         firstByte: artilleryNumberOrString,
@@ -167,7 +167,7 @@ const DynatraceReporterSchema = Joi.object({
     serviceName: Joi.string(),
     sampleRate: artilleryNumberOrString,
     useRequestNames: artilleryBooleanOrString,
-    attributes: Joi.object().unknown(),
+    attributes: Joi.array().items(Joi.string()),
     smartSampling: Joi.object({
       thresholds: Joi.object({
         firstByte: artilleryNumberOrString,
