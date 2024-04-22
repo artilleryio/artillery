@@ -50,7 +50,7 @@ const syncTestData = async (bucketName, testRunId) => {
     if (metadataFileCount != localFiles.length) { 
         throw new Error(`Number of files in metadata.json (${metadataFileCount}) does not match number of files (${localFiles.length}) in local directory! Something went wrong!`);
     }
-    
+
     console.log('Test data synced');
   };
   
@@ -61,6 +61,7 @@ const syncTestData = async (bucketName, testRunId) => {
 
     const metadataJson = fs.readFileSync(path.join(testDataLocation, 'metadata.json'));
 
+    //first, install custom dependencies
     for (const dep of JSON.parse(metadataJson).modules) { 
         console.log(`Installing ${dep}`);
         await runProcess('npm', ['install', dep, '--prefix', testDataLocation], { log: true, env: {
@@ -69,7 +70,7 @@ const syncTestData = async (bucketName, testRunId) => {
     }
 
     if (!fs.existsSync(path.join(testDataLocation, 'package.json'))) {
-      await runProcess('npm', ['init', '-y'], { log: true, env: {
+      await runProcess('npm', ['init', '-y', '--quiet'], { log: true, env: {
         HOME: testDataLocation,
       } });
     }
