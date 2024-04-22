@@ -13,5 +13,5 @@ if [ $ARTILLERY_WORKER_PLATFORM = "aws:lambda" ]; then
 fi
 
 if [ $ARTILLERY_WORKER_PLATFORM = "aws:fargate" ]; then
-  exec bash /artillery/loadgen-worker
+  exec bash /artillery/loadgen-worker "$@"
 fi
