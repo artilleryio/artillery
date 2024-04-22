@@ -148,6 +148,7 @@ function logProgress(msg, opts = {}) {
 }
 
 async function tryRunCluster(scriptPath, options, artilleryReporter) {
+  const startTime = Date.now();
   const MAX_RETAINED_LOG_SIZE_MB = Number(
     process.env.MAX_RETAINED_LOG_SIZE_MB || '50'
   );
@@ -710,7 +711,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         logProgress('Waiting for workers to come online...');
         await waitForWorkerSync(context);
         await sendGoSignal(context);
-        logProgress('Workers are running, waiting for reports...');
+        logProgress(`Workers are running, waiting for reports... Took: ${Date.now() - startTime}ms`);
 
         if (context.maxDurationMs && context.maxDurationMs > 0) {
           logProgress(
@@ -1459,6 +1460,10 @@ async function generateTaskOverrides(context) {
           {
             name: 'ARTILLERY_TEST_RUN_ID',
             value: global.artillery.testRunId
+          },
+          {
+            name: 'ARTILLERY_WORKER_PLATFORM',
+            value: 'aws:fargate'
           }
         ]
       },

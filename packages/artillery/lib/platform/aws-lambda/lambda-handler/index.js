@@ -191,7 +191,7 @@ async function execArtillery(options) {
     ENV
   );
 
-  const artilleryPath = `/function/node_modules/artillery/`
+  const artilleryPath = `/artillery/node_modules/artillery/`
 
   //check that artillery is there
   console.log("WHAT FOLDERS ARE IN ARTILLERY:")
@@ -201,7 +201,7 @@ async function execArtillery(options) {
 
   const res = await runProcess(
     'node',
-    [ARTILLERY_BINARY_PATH || '/function/node_modules/artillery/bin/run'].concat(
+    [ARTILLERY_BINARY_PATH || '/artillery/node_modules/artillery/bin/run'].concat(
       ARTILLERY_ARGS
     ),
     { env: {...env, HOME: '/tmp'}, log: true }

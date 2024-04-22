@@ -632,7 +632,8 @@ class PlatformLambda {
         Variables: {
           S3_BUCKET_PATH: this.bucketName,
           NPM_CONFIG_CACHE: '/tmp/.npm', //TODO: move this to Dockerfile
-          AWS_LAMBDA_LOG_FORMAT: 'JSON' //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
+          AWS_LAMBDA_LOG_FORMAT: 'JSON', //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
+          ARTILLERY_WORKER_PLATFORM: 'aws:lambda'
         }
       }
     };

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.42.1-focal as build-image
+FROM mcr.microsoft.com/playwright:v1.42.1 as build-image
 
 # https://steele.blue/playwright-on-lambda/
 # https://blog.carlosnunez.me/post/scraping-chromium-lambda-nodeless-zerostress/
@@ -16,15 +16,24 @@ RUN apt-get update && apt-get install -y \
     libtool \
     awscli
 
+ARG WORKER_VERSION
+ENV WORKER_VERSION=$WORKER_VERSION
+
+# Additional dependencies for Fargate
+RUN apt-get install -y bash jq pwgen curl git zip tree python2-minimal
+
 # Define custom function directory
-ARG FUNCTION_DIR="/function"
-# Create function dir
+ARG FUNCTION_DIR="/artillery"
 RUN mkdir -p ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
 COPY packages packages
 COPY packages/artillery/lib/platform/aws-lambda/lambda-handler/ .
 COPY package.json package.json
+
+## Copy Fargate worker files
+COPY ./packages/artillery/lib/platform/aws-ecs/worker/loadgen-worker /artillery/loadgen-worker
+COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/helpers.sh
 
 # Install dependencies
 RUN npm install -w artillery --ignore-scripts --omit=dev
@@ -34,11 +43,12 @@ RUN npm install artillery-plugin-sqs-reporter
 
 RUN npm cache clean --force \
     && rm -rf /root/.cache \
-    && ln -s /function/node_modules/.bin/artillery /usr/local/bin/artillery \
+    && ln -s /artillery/node_modules/.bin/artillery /usr/local/bin/artillery \
     && rm -rf /ms-playwright/firefox* \
     && rm -rf /ms-playwright/webkit* \
     && echo "ok"
 
 RUN chmod +x ./entrypoint.sh
+RUN chmod +x /artillery/loadgen-worker
 # ADD aws-lambda-rie /usr/local/bin/aws-lambda-rie
-ENTRYPOINT [ "./entrypoint.sh", "index.handler" ]
+ENTRYPOINT [ "./entrypoint.sh" ]
