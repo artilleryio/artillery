@@ -63,14 +63,17 @@ class SqsReporter extends EventEmitter {
     }, 10 * 1000);
 
     self.intermediateReporterInterval = driftless.setDriftlessInterval(() => {
-      if (Object.keys(self.metricsByPeriod).length === 0) {
-        return; // nothing received yet
-      }
-
       // We always look at the earliest period available so that reports come in chronological order
-      const earliestPeriodAvailable = Object.keys(self.metricsByPeriod)
+      const unreportedPeriods = Object.keys(self.metricsByPeriod)
         .filter((x) => self.periodsReportedFor.indexOf(x) === -1)
         .sort()[0];
+
+      const earliestUnreportedPeriod = unreportedPeriods[0] || 0;
+
+      if (!earliestUnreportedPeriod) {
+        debug('No metrics received yet');
+        return;
+      }
 
       // TODO: better name. One above is earliestNotAlreadyReported
       const earliest = Object.keys(self.metricsByPeriod).sort()[0];
@@ -89,37 +92,38 @@ class SqsReporter extends EventEmitter {
         (Math.ceil(self.count / 10) * 2 + 20) * 1000;
 
       if (
-        typeof earliestPeriodAvailable !== 'undefined' &&
-        (self.metricsByPeriod[earliestPeriodAvailable].length === self.count ||
-          Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS)
+        typeof earliestUnreportedPeriod !== 'undefined' &&
+        (self.metricsByPeriod[earliestUnreportedPeriod].length === self.count ||
+          Date.now() - Number(earliestUnreportedPeriod) >
+            MAX_WAIT_FOR_PERIOD_MS)
       ) {
         // TODO: autoscaling. Handle workers that drop off as the first case - self.count needs to be updated dynamically
         debug(
           'have metrics from all workers for period or MAX_WAIT_FOR_PERIOD reached',
-          earliestPeriodAvailable
+          earliestUnreportedPeriod
         );
 
         debug(
           'Report @',
-          new Date(Number(earliestPeriodAvailable)),
+          new Date(Number(earliestUnreportedPeriod)),
           'made up of items:',
-          self.metricsByPeriod[String(earliestPeriodAvailable)].length
+          self.metricsByPeriod[String(earliestUnreportedPeriod)].length
         );
 
         // TODO: Track how many workers provided metrics in the metrics report
         const stats = global.artillery.__SSMS.mergeBuckets(
-          self.metricsByPeriod[String(earliestPeriodAvailable)]
-        )[String(earliestPeriodAvailable)];
+          self.metricsByPeriod[String(earliestUnreportedPeriod)]
+        )[String(earliestUnreportedPeriod)];
         self.mergedPeriodMetrics.push(stats);
         // summarize histograms for console reporter
         stats.summaries = {};
         for (const [name, value] of Object.entries(stats.histograms || {})) {
           const summary = global.artillery.__SSMS.summarizeHistogram(value);
           stats.summaries[name] = summary;
-          delete self.metricsByPeriod[String(earliestPeriodAvailable)];
+          delete self.metricsByPeriod[String(earliestUnreportedPeriod)];
         }
 
-        self.periodsReportedFor.push(earliestPeriodAvailable);
+        self.periodsReportedFor.push(earliestUnreportedPeriod);
 
         debug('Emitting stats event');
         self.emit('stats', stats);

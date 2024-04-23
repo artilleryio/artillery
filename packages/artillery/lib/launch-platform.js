@@ -315,20 +315,24 @@ class Launcher {
   }
 
   async flushIntermediateMetrics(flushAll = false) {
-    if (Object.keys(this.metricsByPeriod).length === 0) {
-      debug('No metrics received yet');
-      return;
-    }
-
     // We always look at the earliest period available so that reports come in chronological order
+    // filter over individual periods, find not reported ones and sort them
     const unreportedPeriods = Object.keys(this.metricsByPeriod)
       .filter((x) => this.periodsReportedFor.indexOf(x) === -1)
       .sort();
 
-    const earliestPeriodAvailable = unreportedPeriods[0];
+    // fallback if undefined
+    const earliestUnreportedPeriod = unreportedPeriods[0] || 0;
+
+    if (!earliestUnreportedPeriod) {
+      debug('No metrics received yet');
+      return;
+    }
 
     // TODO: better name. One above is earliestNotAlreadyReported
     const earliest = Object.keys(this.metricsByPeriod).sort()[0];
+
+    // double check with unreportedPeriods?
     if (this.periodsReportedFor.indexOf(earliest) > -1) {
       global.artillery.log(
         'Warning: multiple batches of metrics for period',
@@ -339,35 +343,42 @@ class Launcher {
       delete this.metricsByPeriod[earliest]; // FIXME: need to merge them in for the final report
     }
 
+    const allWorkersReportedForPeriod =
+      this.metricsByPeriod[earliestUnreportedPeriod]?.length === this.count;
+
+    const availableEarliestPeriod = earliestUnreportedPeriod;
+
     // Dynamically adjust the duration we're willing to wait for. This matters on SQS where messages are received
     // in batches of 10 and more workers => need to wait longer.
     const MAX_WAIT_FOR_PERIOD_MS = (Math.ceil(this.count / 10) * 3 + 30) * 1000;
 
+    const waitedLongEnough =
+      Date.now() - Number(availableEarliestPeriod) > MAX_WAIT_FOR_PERIOD_MS;
+
     debug({
       now: Date.now(),
       count: this.count,
-      earliestPeriodAvailable,
+      earliestUnreportedPeriod: earliestUnreportedPeriod,
       earliest,
       MAX_WAIT_FOR_PERIOD_MS,
-      numReports: this.metricsByPeriod[earliestPeriodAvailable]?.length,
+      numReports: this.metricsByPeriod[earliestUnreportedPeriod]?.length,
       periodsReportedFor: this.periodsReportedFor,
-      metricsByPeriod: Object.keys(this.metricsByPeriod)
+      metricsByPeriod: Object.keys(this.metricsByPeriod),
+      allWorkersReportedForPeriod: allWorkersReportedForPeriod,
+      waitedLongEnough: waitedLongEnough
     });
 
-    const allWorkersReportedForPeriod =
-      this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
-    const waitedLongEnough =
-      Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
-
     if (flushAll) {
+      debug('Flushing all metrics for unreportedPeriods');
       for (const period of unreportedPeriods) {
         this.emitIntermediatesForPeriod(period);
       }
     } else if (
-      typeof earliestPeriodAvailable !== 'undefined' &&
-      (allWorkersReportedForPeriod || waitedLongEnough)
+      // normal flush case
+      allWorkersReportedForPeriod ||
+      waitedLongEnough
     ) {
-      this.emitIntermediatesForPeriod(earliestPeriodAvailable);
+      this.emitIntermediatesForPeriod(earliestUnreportedPeriod);
       // TODO: autoscaling. Handle workers that drop off or join, and update count
     } else {
       debug('Waiting for more workerStats before emitting stats event');
