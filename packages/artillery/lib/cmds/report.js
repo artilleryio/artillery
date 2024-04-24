@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('lodash');
 const telemetry = require('../telemetry').init();
+const chalk = require('chalk');
 
 class ReportCommand extends Command {
   async run() {
@@ -37,19 +38,33 @@ ReportCommand.flags = {
 };
 
 const deprecationNotice = `
-\x1b[34m┌───────────────────────────────────────────────────────────────────────┐
-│                          \x1b[33mDEPRECATION NOTICE                           \x1b[34m│
+${chalk.blue(`┌───────────────────────────────────────────────────────────────────────┐
+│`)}                          ${chalk.yellow(
+  'DEPRECATION NOTICE'
+)}                           ${chalk.blue(`│
 ├───────────────────────────────────────────────────────────────────────┤
-│ \x1b[0m\x1b[33mThe "report" command is deprecated and will be removed in a future\x1b[0m    \x1b[34m│
-│ \x1b[0m\x1b[33mrelease of Artillery.\x1b[0m                                                 \x1b[34m│
+│`)} ${chalk.yellow(
+  'The "report" command is deprecated and will be removed in a future'
+)}    ${chalk.blue(`│
+│`)} ${chalk.yellow(
+  'release of Artillery.'
+)}                                                 ${chalk.blue(`│
 │                                                                       │
-│ \x1b[0m\x1b[37m\x1b[94mArtillery Cloud\x1b[0m is now the recommended way to visualize test results. \x1b[0m\x1b[34m│
-│ \x1b[0m\x1b[37mIt provides more comprehensive reporting, advanced visualizations,\x1b[0m    \x1b[34m│
-│ \x1b[0m\x1b[37mand includes a free tier.                         \x1b[0m                    \x1b[34m│
+│`)} ${chalk.blueBright('Artillery Cloud')} ${chalk.white(
+  'is now the recommended way to visualize test results.'
+)} ${chalk.blue(`│
+│`)} ${chalk.white(
+  'It provides more comprehensive reporting, advanced visualizations,'
+)}    ${chalk.blue(`│
+│`)} ${chalk.white(
+  'and includes a free tier.'
+)}                                             ${chalk.blue(`│
 │                                                                       │
-│ \x1b[0m\x1b[37mSign up on \x1b[0m \x1b[4m\x1b[36mhttps://artillery.io/cloud\x1b[24m                                \x1b[34m│
+│`)} ${chalk.white('Sign up on')} ${chalk.cyan(
+  chalk.underline('https://artillery.io/cloud')
+)}                                 ${chalk.blue(`│
 └───────────────────────────────────────────────────────────────────────┘
-\x1b[0m`;
+`)}`;
 
 ReportCommand.args = { file: Args.string() };
 
