@@ -8,7 +8,7 @@ const chalk = require('chalk');
 
 class ReportCommand extends Command {
   async run() {
-    console.log(deprecationNotice);
+    console.error(deprecationNotice);
     telemetry.capture('report generate');
     const { flags, args } = await this.parse(ReportCommand);
     const output = flags.output || args.file + '.html'; // TODO: path.resolve
