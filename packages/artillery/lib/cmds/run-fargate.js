@@ -71,8 +71,7 @@ class RunCommand extends Command {
       { testRunId: 'foo', region: flags.region }
     );
     await ECS.init();
-
-    flags.taskRoleName = ECS_WORKER_ROLE_NAME;
+    flags.taskRoleName = flags['task-role-name'] || ECS_WORKER_ROLE_NAME;
     process.env.USE_NOOP_BACKEND_STORE = 'true';
 
     telemetry.capture('run:fargate', {
