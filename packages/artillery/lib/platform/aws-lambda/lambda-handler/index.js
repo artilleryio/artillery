@@ -9,7 +9,7 @@ const { runProcess, sleep } = require('./helpers');
 const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 
 class MQ {
-  constructor({ region, queueUrl, attrs } = opts) {
+  constructor({ region, queueUrl, attrs }) {
     this.sqs = new AWS.SQS({ region });
     this.queueUrl = queueUrl;
     this.attrs = attrs;
@@ -152,7 +152,7 @@ async function execArtillery(options) {
       // Set test run ID for this Artillery process explicitly. This makes sure that $testId
       // template variable is set to the same value for all Lambda workers as the one user
       // sees on their terminal
-      ARTILLERY_TEST_RUN_ID: TEST_RUN_ID,
+      ARTILLERY_TEST_RUN_ID: TEST_RUN_ID
       // SHIP_LOGS: 'true',
     },
     ENV

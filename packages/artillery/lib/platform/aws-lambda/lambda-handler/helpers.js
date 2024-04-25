@@ -8,7 +8,7 @@ const sleep = async function (n) {
   });
 };
 
-async function runProcess(name, args, { env, log } = opts) {
+async function runProcess(name, args, { env, log }) {
   return new Promise((resolve, reject) => {
     const proc = spawn(name, args, { env });
     let stdout = '';
@@ -40,6 +40,6 @@ async function runProcess(name, args, { env, log } = opts) {
 }
 
 module.exports = {
-    runProcess,
-    sleep
-}
+  runProcess,
+  sleep
+};
