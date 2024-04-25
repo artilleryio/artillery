@@ -32,4 +32,4 @@ COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/help
 
 RUN chmod +x /artillery/loadgen-worker
 
-ENTRYPOINT ["/artillery/loadgen-worker"]
+ENTRYPOINT ["/artillery/packages/artillery/bin/run"]

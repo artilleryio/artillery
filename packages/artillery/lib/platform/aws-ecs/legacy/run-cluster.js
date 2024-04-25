@@ -1170,6 +1170,7 @@ async function ensureTaskExists(context) {
           image: imageUrl,
           cpu: cpu,
           command: [],
+          entryPoint: ['/artillery/loadgen-worker'],
           memory: memory,
           secrets: secrets,
           ulimits: ulimits,
