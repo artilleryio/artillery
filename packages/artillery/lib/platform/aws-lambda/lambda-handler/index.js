@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const AWS = require('aws-sdk');
-const { spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
+const { runProcess, sleep } = require('./helpers');
 
 const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 
@@ -165,45 +165,6 @@ async function execArtillery(options) {
     ),
     { env, log: true }
   );
-}
-
-const sleep = async function (n) {
-  return new Promise((resolve, _reject) => {
-    setTimeout(function () {
-      resolve();
-    }, n);
-  });
-};
-
-async function runProcess(name, args, { env, log } = opts) {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(name, args, { env });
-    let stdout = '';
-    let stderr = '';
-
-    proc.stdout.on('data', (data) => {
-      if (log) {
-        console.log(data.toString());
-      }
-      stdout += data.toString();
-    });
-
-    proc.stderr.on('data', (data) => {
-      if (log) {
-        console.error(data.toString());
-      }
-
-      stderr += data.toString();
-    });
-
-    proc.once('close', (code) => {
-      resolve({ stdout, stderr, code });
-    });
-
-    proc.on('error', (err) => {
-      resolve({ stdout, stderr, err });
-    });
-  });
 }
 
 module.exports = { handler, runProcess, execArtillery };
