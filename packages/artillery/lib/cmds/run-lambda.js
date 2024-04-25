@@ -34,6 +34,10 @@ class RunLambdaCommand extends Command {
       flags['platform-opt'].push(`subnet-ids=${flags['subnet-ids']}`);
     }
 
+    if (flags.container) {
+      flags['platform-opt'].push('container=true');
+    }
+
     flags.platform = 'aws:lambda';
 
     RunCommand.runCommandImplementation(flags, argv, args);
@@ -59,6 +63,10 @@ RunLambdaCommand.flags = {
   count: Flags.string({
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
+  }),
+  container: Flags.boolean({
+    description: 'Run the test in a container (recommended)',
+    default: false
   }),
   architecture: Flags.string({
     description: 'Architecture of the Lambda function',

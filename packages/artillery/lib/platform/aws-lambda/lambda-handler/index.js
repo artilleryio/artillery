@@ -5,6 +5,7 @@
 const AWS = require('aws-sdk');
 const { randomUUID } = require('node:crypto');
 const { runProcess, sleep } = require('./helpers');
+const { syncTestData, installNpmDependencies } = require('./pull-dependencies');
 
 const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 
@@ -45,7 +46,8 @@ async function handler(event, context) {
     ARTILLERY_ARGS,
     BUCKET,
     ENV,
-    WAIT_FOR_GREEN
+    WAIT_FOR_GREEN,
+    IS_CONTAINER_LAMBDA
   } = event;
 
   console.log('TEST_RUN_ID: ', TEST_RUN_ID);
@@ -58,6 +60,30 @@ async function handler(event, context) {
       workerId: WORKER_ID
     }
   });
+
+  const TEST_DATA_LOCATION = `/tmp/test_data/${TEST_RUN_ID}`;
+
+  if (IS_CONTAINER_LAMBDA) {
+    try {
+      await syncTestData(BUCKET, TEST_RUN_ID);
+    } catch (err) {
+      await mq.send({
+        event: 'workerError',
+        reason: 'TestDataSyncFailure',
+        logs: { err }
+      });
+    }
+
+    try {
+      await installNpmDependencies(TEST_DATA_LOCATION);
+    } catch (err) {
+      await mq.send({
+        event: 'workerError',
+        reason: 'InstallDependenciesFailure',
+        logs: { err }
+      });
+    }
+  }
 
   const interval = setInterval(async () => {
     const timeRemaining = context.getRemainingTimeInMillis();
@@ -106,6 +132,8 @@ async function handler(event, context) {
       TEST_RUN_ID,
       WORKER_ID,
       ARTILLERY_ARGS,
+      IS_CONTAINER_LAMBDA,
+      TEST_DATA_LOCATION,
       ENV
     });
 
@@ -137,7 +165,9 @@ async function execArtillery(options) {
     ARTILLERY_ARGS,
     ENV,
     NODE_BINARY_PATH,
-    ARTILLERY_BINARY_PATH
+    ARTILLERY_BINARY_PATH,
+    IS_CONTAINER_LAMBDA,
+    TEST_DATA_LOCATION
   } = options;
 
   const env = Object.assign(
@@ -158,11 +188,19 @@ async function execArtillery(options) {
     ENV
   );
 
+  let ARTILLERY_PATH =
+    ARTILLERY_BINARY_PATH || './node_modules/artillery/bin/run';
+
+  if (IS_CONTAINER_LAMBDA) {
+    ARTILLERY_PATH = '/artillery/node_modules/artillery/bin/run';
+
+    env.ARTILLERY_PLUGIN_PATH = `${TEST_DATA_LOCATION}/node_modules/`;
+    env.HOME = '/tmp';
+  }
+
   return runProcess(
-    NODE_BINARY_PATH || '/var/lang/bin/node',
-    [ARTILLERY_BINARY_PATH || './node_modules/artillery/bin/run'].concat(
-      ARTILLERY_ARGS
-    ),
+    NODE_BINARY_PATH || 'node',
+    [ARTILLERY_PATH].concat(ARTILLERY_ARGS),
     { env, log: true }
   );
 }
