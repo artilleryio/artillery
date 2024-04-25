@@ -616,13 +616,16 @@ class PlatformLambda {
     let lambdaConfig;
 
     if (this.isContainerLambda) {
-      console.log('IS CONTAINER IMAGE!');
       lambdaConfig = {
         PackageType: 'Image',
         Code: {
           ImageUri:
             process.env.WORKER_IMAGE_URL ||
             '377705245354.dkr.ecr.us-east-1.amazonaws.com/artillery-bernardo-test:latest'
+        },
+        ImageConfig: {
+          Command: ['index.handler'],
+          EntryPoint: ['/usr/bin/npx', 'aws-lambda-ric']
         },
         FunctionName: functionName,
         Description: 'Artillery.io test',
