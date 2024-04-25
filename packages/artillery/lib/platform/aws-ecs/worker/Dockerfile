@@ -2,34 +2,57 @@
 # NOTE: Version we use here needs to be kept consistent with that in
 # artillery-engine-playwright.
 # ********************************
-FROM mcr.microsoft.com/playwright:v1.43.1
-LABEL maintainer="team@artillery.io"
+FROM mcr.microsoft.com/playwright:v1.43.1 as build-image
+
+# https://steele.blue/playwright-on-lambda/
+# https://blog.carlosnunez.me/post/scraping-chromium-lambda-nodeless-zerostress/
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \
-        apt-get install -y bash jq pwgen python2-minimal make g++ curl git zip tree awscli
+# Install aws-lambda-ric build dependencies
+RUN apt-get update && apt-get install -y \
+    g++ \
+    make \
+    cmake \
+    unzip \
+    libcurl4-openssl-dev \
+    autoconf \
+    libtool \
+    awscli
 
 ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
 
-WORKDIR /artillery
-COPY LICENSE.txt LICENSE.txt
-COPY package.json package.json
-COPY packages packages
+# Additional dependencies for Fargate
+RUN apt-get install -y bash jq pwgen curl git zip tree python2-minimal
 
-RUN cd /artillery && \
-        npm install -w artillery --ignore-scripts --omit=dev && \
-        npm cache clean --force && \
-        rm -rf /root/.cache && \
-        ln -s /artillery/node_modules/.bin/artillery /usr/local/bin/artillery && \
-        rm -rf /ms-playwright/firefox* && \
-        rm -rf /ms-playwright/webkit* && \
-        echo "ok"
- 
+# Define custom function directory
+ARG FUNCTION_DIR="/artillery"
+RUN mkdir -p ${FUNCTION_DIR}
+WORKDIR ${FUNCTION_DIR}
+
+COPY packages packages
+COPY packages/artillery/lib/platform/aws-lambda/lambda-handler/ .
+COPY package.json package.json
+
+## Copy Fargate worker files
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/loadgen-worker /artillery/loadgen-worker
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/helpers.sh
+
+# Install dependencies
+RUN npm install -w artillery --ignore-scripts --omit=dev
+RUN npm install aws-lambda-ric
+# TODO: add artillery-plugin-sqs-reporter as a depedency instead of installing it here
+RUN npm install artillery-plugin-sqs-reporter 
+
+RUN npm cache clean --force \
+    && rm -rf /root/.cache \
+    && ln -s /artillery/node_modules/.bin/artillery /usr/local/bin/artillery \
+    && rm -rf /ms-playwright/firefox* \
+    && rm -rf /ms-playwright/webkit* \
+    && echo "ok"
 
 RUN chmod +x /artillery/loadgen-worker
 
 ENTRYPOINT ["/artillery/packages/artillery/bin/run"]
+
