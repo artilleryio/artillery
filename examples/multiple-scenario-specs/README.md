@@ -33,7 +33,7 @@ We're testing a simple service that returns ASCII pictures of various animals.
 For example, to see a picture of an armadillo, send a GET request to http://asciizoo.artillery.io:8080/armadillo:
 
 ```sh
-artillery probe http://asciizoo.artillery.io:8080/armadillo -b
+skytrace probe http://asciizoo.artillery.io:8080/armadillo -b
 ```
 
 ![armadillo](./artillery-probe.png)
