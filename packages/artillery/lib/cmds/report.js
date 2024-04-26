@@ -61,7 +61,7 @@ ${chalk.blue(`┌─────────────────────
 )}                                             ${chalk.blue(`│
 │                                                                       │
 │`)} ${chalk.white('Sign up on')} ${chalk.cyan(
-  chalk.underline('https://artillery.io/cloud')
+  chalk.underline('https://app.artillery.io')
 )}                                 ${chalk.blue(`│
 └───────────────────────────────────────────────────────────────────────┘
 `)}`;
