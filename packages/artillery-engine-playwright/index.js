@@ -346,7 +346,28 @@ class PlaywrightEngine {
         }
         return initialContext;
       } catch (err) {
+        function cleanErrorMessage(error) {
+          // Remove ANSI color codes and use only first line of error message
+          const cleanMsg = error.message
+            .replace(/\u001b\[.*?m/g, '')
+            .split('\n')[0];
+
+          // If the error is not a Playwright failed assertion, return the clean error message
+          if (!error.matcherResult) {
+            return cleanMsg;
+          }
+
+          const expectation =
+            error.matcherResult.name ||
+            cleanMsg
+              .match(/\).(not.)?to[a-zA-Z]+/)[0]
+              ?.slice(2)
+              .replace('not.', '');
+          return expectation ? `pw_failed_assertion.${expectation}` : cleanMsg;
+        }
         console.error(err);
+        events.emit('error', cleanErrorMessage(err));
+
         if (initialContext.vars.isRecording) {
           if (
             Date.now() - self.lastTraceRecordedTime >
