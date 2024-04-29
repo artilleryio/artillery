@@ -32,6 +32,7 @@ const {
   createAndUploadLambdaZip,
   createAndUploadTestDependencies
 } = require('./dependencies');
+const pkgVersion = require('../../../package.json').version;
 
 // https://stackoverflow.com/a/66523153
 function memoryToVCPU(memMB) {
@@ -73,6 +74,9 @@ class PlatformLambda {
 
     const platformConfig = platformOpts.platformConfig;
 
+    this.currentVersion = process.env.LAMBDA_IMAGE_VERSION || pkgVersion;
+    this.ecrImageRepository =
+      process.env.LAMBDA_IMAGE_REPOSITORY || 'artillery-worker';
     this.isContainerLambda = platformConfig.container === 'true';
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
@@ -134,6 +138,7 @@ class PlatformLambda {
 
     let bom, s3Path;
     if (this.isContainerLambda) {
+      await this.ensureECRImageExists();
       const result = await createAndUploadTestDependencies(
         this.bucketName,
         this.testRunId,
@@ -220,17 +225,32 @@ class PlatformLambda {
       artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
     }
 
-    this.functionName = `artilleryio-${this.testRunId}`;
-    try {
-      await this.createLambda({
-        bucketName: this.bucketName,
-        functionName: this.functionName,
-        zipPath: this.lambdaZipPath
+    let shouldCreateLambda;
+    if (this.isContainerLambda) {
+      this.functionName = `artillery-worker-v${this.currentVersion.replace(
+        /\./g,
+        '-'
+      )}`;
+      shouldCreateLambda = await this.checkIfNewLambdaIsNeeded({
+        memorySize: this.memorySize,
+        functionName: this.functionName
       });
-    } catch (err) {
-      throw new Error(`Failed to create Lambda Function: \n${err}`);
+    } else {
+      this.functionName = `artilleryio-${this.testRunId}`;
+      shouldCreateLambda = true;
     }
 
+    if (shouldCreateLambda) {
+      try {
+        await this.createLambda({
+          bucketName: this.bucketName,
+          functionName: this.functionName,
+          zipPath: this.lambdaZipPath
+        });
+      } catch (err) {
+        throw new Error(`Failed to create Lambda Function: \n${err}`);
+      }
+    }
     artillery.log(` - Lambda function: ${this.functionName}`);
     artillery.log(` - Region: ${this.region}`);
     artillery.log(` - AWS account: ${this.accountId}`);
@@ -507,7 +527,10 @@ class PlatformLambda {
         })
         .promise();
 
-      if (typeof process.env.RETAIN_LAMBDA === 'undefined') {
+      if (
+        typeof process.env.RETAIN_LAMBDA === 'undefined' &&
+        !this.isContainerLambda
+      ) {
         await lambda
           .deleteFunction({
             FunctionName: this.functionName
@@ -603,6 +626,61 @@ class PlatformLambda {
     await sleep(10 * 1000);
 
     return lambdaRoleArn;
+  }
+
+  async ensureECRImageExists() {
+    const ecr = new AWS.ECR({ apiVersion: '2015-09-21', region: this.region });
+
+    const params = {
+      repositoryName: this.ecrImageRepository,
+      imageIds: [{ imageTag: this.currentVersion }]
+    };
+
+    let data;
+    try {
+      data = await ecr.describeImages(params).promise();
+    } catch (err) {
+      if (err.code === 'RepositoryNotFoundException') {
+        throw new Error(`ECR repository not found: ${this.ecrImageRepository}`);
+      }
+      throw new Error(`ECR image not found: ${this.currentVersion}`);
+    }
+    console.log(data.imageDetails[0].imageTags);
+
+    if (data.imageDetails[0].imageTags.includes(this.ecrImageVersion)) {
+      return;
+    } else {
+      throw new Error(`ECR image not found: ${this.currentVersion}`);
+    }
+  }
+
+  async checkIfNewLambdaIsNeeded({ memorySize, functionName }) {
+    const lambda = new AWS.Lambda({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    try {
+      const res = await lambda
+        .getFunctionConfiguration({
+          FunctionName: functionName
+        })
+        .promise();
+
+      if (res.MemorySize != memorySize) {
+        console.log(
+          `Desired memory size changed: ${res.MemorySize} -> ${memorySize}. Updating Lambda Function!`
+        );
+        return true;
+      }
+    } catch (err) {
+      if (err.code === 'ResourceNotFoundException') {
+        return true;
+      }
+      throw new Error(`Failed to get Lambda Function: \n${err}`);
+    }
+
+    return false;
   }
 
   async createLambda(opts) {
