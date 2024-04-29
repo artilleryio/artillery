@@ -187,7 +187,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
   otelTraceOnError(err, req, userContext, events, done) {
     const scenarioSpan = userContext.vars.__httpScenarioSpan;
-    const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
+    const requestSpan = userContext.vars['__otlpHTTPRequestSpans']?.[req.uuid];
     if (!scenarioSpan) {
       return done();
     }
