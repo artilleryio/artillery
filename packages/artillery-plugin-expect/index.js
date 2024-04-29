@@ -123,15 +123,21 @@ function expectationsPluginCheckExpectations(
   _.each(expectations, (ex) => {
     const checker = Object.keys(ex)[0];
     debug(`checker: ${checker}`);
-    let result = EXPECTATIONS[checker]?.call(
-      this,
-      ex,
-      body,
-      req,
-      res,
-      userContext
-    );
-    results.push(result);
+
+    let result;
+    if (EXPECTATIONS[checker]) {
+      result = EXPECTATIONS[checker].call(
+        this,
+        ex,
+        body,
+        req,
+        res,
+        userContext
+      );
+      results.push(result);
+    } else {
+      console.log(`Expect Plugin: Expectation '${checker}' is not supported`);
+    }
   });
 
   userContext.expectations = [].concat(userContext.expectations || []);
