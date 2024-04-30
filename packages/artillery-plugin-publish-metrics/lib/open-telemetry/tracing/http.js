@@ -104,7 +104,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
     const scenarioSpan = userContext.vars['__httpScenarioSpan'];
     if (this.config.smartSampling) {
-      this.tagResponseOutliers(span, scenarioSpan, res, this.outlierCriteria);
+      this.tagResponseOutliers(span, res, this.outlierCriteria);
     }
 
     if (res.timings && res.timings.phases) {
@@ -216,13 +216,12 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
         code: SpanStatusCode.ERROR,
         message: err.message || err
       });
-    }
-
-    if (this.config.smartSampling) {
-      scenarioSpan.setAttributes({
-        outlier: 'true',
-        'outlier.type.error': true
-      });
+      if (this.config.smartSampling) {
+        scenarioSpan.setAttributes({
+          outlier: 'true',
+          'outlier.type.error': true
+        });
+      }
     }
 
     scenarioSpan.end();
@@ -231,7 +230,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     return done();
   }
 
-  tagResponseOutliers(span, scenarioSpan, res, criteria) {
+  tagResponseOutliers(span, res, criteria) {
     const types = {};
     const details = [];
     if (res.statusCode >= this.statusAsErrorThreshold) {
@@ -254,11 +253,6 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     span.setAttributes({
       outlier: 'true',
       'outlier.details': details.join(', '),
-      ...types
-    });
-
-    scenarioSpan.setAttributes({
-      outlier: 'true',
       ...types
     });
   }
