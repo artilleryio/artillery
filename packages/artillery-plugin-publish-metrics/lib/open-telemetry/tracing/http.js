@@ -212,12 +212,11 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       events.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
     } else {
       scenarioSpan?.recordException(err);
+      scenarioSpan.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err.message || err
+      });
     }
-    // We set the scenario span status to error regardles of what level the error happened in (scenario or request) for easier querrying
-    scenarioSpan.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: err.message || err
-    });
 
     if (this.config.smartSampling) {
       scenarioSpan.setAttributes({
