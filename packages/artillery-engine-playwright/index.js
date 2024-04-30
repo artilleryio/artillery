@@ -346,7 +346,33 @@ class PlaywrightEngine {
         }
         return initialContext;
       } catch (err) {
+        function cleanErrorMessage(error) {
+          // Remove ANSI color codes and use only first line of error message
+          const cleanMsg = error.message
+            .replace(/\u001b\[.*?m/g, '')
+            .split('\n')[0];
+
+          // If the error is not a Playwright failed assertion, return the clean error message
+          if (!error.matcherResult) {
+            return cleanMsg;
+          }
+          // If the error is a Playwright failed assertion, we return the expectation name (e.g. toHaveText)
+
+          const expectation =
+            // First we try to get the name from the `name` property of the matcherResult
+            error.matcherResult.name ||
+            // If the name property is not available, we try to extract it from the error message that usually contains the expect function called e.g. expect(locator).toHaveContent('text') or expect(locator).not.toHaveContent('text'))
+            // The expectation name returned will not have the "not." prefix if the expectation is negated as Playwright also doesn't include it in the name.
+            cleanMsg
+              .match(/\).(not.)?to[a-zA-Z]+/)[0]
+              ?.slice(2)
+              .replace('not.', '');
+          // If the expectation name is not available, we return the error message
+          return expectation ? `pw_failed_assertion.${expectation}` : cleanMsg;
+        }
         console.error(err);
+        events.emit('error', cleanErrorMessage(err));
+
         if (initialContext.vars.isRecording) {
           if (
             Date.now() - self.lastTraceRecordedTime >

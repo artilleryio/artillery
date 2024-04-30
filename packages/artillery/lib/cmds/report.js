@@ -4,9 +4,11 @@ const fs = require('fs');
 const path = require('path');
 const _ = require('lodash');
 const telemetry = require('../telemetry').init();
+const chalk = require('chalk');
 
 class ReportCommand extends Command {
   async run() {
+    console.error(deprecationNotice);
     telemetry.capture('report generate');
     const { flags, args } = await this.parse(ReportCommand);
     const output = flags.output || args.file + '.html'; // TODO: path.resolve
@@ -34,6 +36,35 @@ ReportCommand.flags = {
     description: 'Write HTML report to specified location'
   })
 };
+
+const deprecationNotice = `
+${chalk.blue(`┌───────────────────────────────────────────────────────────────────────┐
+│`)}                          ${chalk.yellow(
+  'DEPRECATION NOTICE'
+)}                           ${chalk.blue(`│
+├───────────────────────────────────────────────────────────────────────┤
+│`)} ${chalk.yellow(
+  'The "report" command is deprecated and will be removed in a future'
+)}    ${chalk.blue(`│
+│`)} ${chalk.yellow(
+  'release of Artillery.'
+)}                                                 ${chalk.blue(`│
+│                                                                       │
+│`)} ${chalk.blueBright('Artillery Cloud')} ${chalk.white(
+  'is now the recommended way to visualize test results.'
+)} ${chalk.blue(`│
+│`)} ${chalk.white(
+  'It provides more comprehensive reporting, advanced visualizations,'
+)}    ${chalk.blue(`│
+│`)} ${chalk.white(
+  'and includes a free tier.'
+)}                                             ${chalk.blue(`│
+│                                                                       │
+│`)} ${chalk.white('Sign up on')} ${chalk.cyan(
+  chalk.underline('https://app.artillery.io')
+)}                                 ${chalk.blue(`│
+└───────────────────────────────────────────────────────────────────────┘
+`)}`;
 
 ReportCommand.args = { file: Args.string() };
 

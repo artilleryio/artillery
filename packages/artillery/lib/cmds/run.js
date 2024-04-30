@@ -326,7 +326,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         launchType: flags.platform,
         artilleryVersion: {
           core: global.artillery.version
-        }
+        },
+        targetUrl: script.config.target
       }
     });
 
