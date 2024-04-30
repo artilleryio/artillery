@@ -645,9 +645,8 @@ class PlatformLambda {
       }
       throw new Error(`ECR image not found: ${this.currentVersion}`);
     }
-    console.log(data.imageDetails[0].imageTags);
 
-    if (data.imageDetails[0].imageTags.includes(this.ecrImageVersion)) {
+    if (data.imageDetails[0].imageTags.includes(this.currentVersion)) {
       return;
     } else {
       throw new Error(`ECR image not found: ${this.currentVersion}`);
@@ -697,9 +696,7 @@ class PlatformLambda {
       lambdaConfig = {
         PackageType: 'Image',
         Code: {
-          ImageUri:
-            process.env.WORKER_IMAGE_URL ||
-            '377705245354.dkr.ecr.us-east-1.amazonaws.com/artillery-bernardo-test:latest'
+          ImageUri: `${this.accountId}.dkr.ecr.${this.region}.amazonaws.com/${this.ecrImageRepository}:${this.currentVersion}`
         },
         ImageConfig: {
           Command: ['a9-handler-index.handler'],
