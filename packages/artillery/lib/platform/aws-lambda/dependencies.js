@@ -66,7 +66,7 @@ const createAndUploadLambdaZip = async (
 ) => {
   const dirname = temp.mkdirSync(); // TODO: May want a way to override this by the user
   const zipfile = temp.path({ suffix: '.zip' });
-  debug({ dirname, zipfile });
+  console.log({ dirname, zipfile });
 
   artillery.log('- Bundling test data');
   const bom = await _createLambdaBom(absoluteScriptPath, absoluteConfigPath);
@@ -84,16 +84,16 @@ const createAndUploadLambdaZip = async (
 
   // Copy handler:
   fs.copyFileSync(
-    path.resolve(__dirname, 'lambda-handler', 'index.js'),
-    path.join(dirname, 'index.js')
+    path.resolve(__dirname, 'lambda-handler', 'a9-handler-index.js'),
+    path.join(dirname, 'a9-handler-index.js')
   );
   fs.copyFileSync(
-    path.resolve(__dirname, 'lambda-handler', 'helpers.js'),
-    path.join(dirname, 'helpers.js')
+    path.resolve(__dirname, 'lambda-handler', 'a9-handler-helpers.js'),
+    path.join(dirname, 'a9-handler-helpers.js')
   );
   fs.copyFileSync(
-    path.resolve(__dirname, 'lambda-handler', 'pull-dependencies.js'),
-    path.join(dirname, 'pull-dependencies.js')
+    path.resolve(__dirname, 'lambda-handler', 'a9-handler-dependencies.js'),
+    path.join(dirname, 'a9-handler-dependencies.js')
   );
   fs.copyFileSync(
     path.resolve(__dirname, 'lambda-handler', 'package.json'),

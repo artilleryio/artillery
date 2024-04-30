@@ -702,7 +702,7 @@ class PlatformLambda {
             '377705245354.dkr.ecr.us-east-1.amazonaws.com/artillery-bernardo-test:latest'
         },
         ImageConfig: {
-          Command: ['index.handler'],
+          Command: ['a9-handler-index.handler'],
           EntryPoint: ['/usr/bin/npx', 'aws-lambda-ric']
         },
         FunctionName: functionName,
@@ -729,7 +729,7 @@ class PlatformLambda {
         },
         FunctionName: functionName,
         Description: 'Artillery.io test',
-        Handler: 'index.handler',
+        Handler: 'a9-handler-index.handler',
         MemorySize: this.memorySize,
         PackageType: 'Zip',
         Runtime: 'nodejs16.x',

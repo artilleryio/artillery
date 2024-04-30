@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { runProcess } = require('./helpers');
+const { runProcess } = require('./a9-handler-helpers');
 
 const syncTestData = async (bucketName, testRunId) => {
   console.log('Syncing test data');

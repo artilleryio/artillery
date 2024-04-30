@@ -4,8 +4,11 @@
 
 const AWS = require('aws-sdk');
 const { randomUUID } = require('node:crypto');
-const { runProcess, sleep } = require('./helpers');
-const { syncTestData, installNpmDependencies } = require('./pull-dependencies');
+const { runProcess, sleep } = require('./a9-handler-helpers');
+const {
+  syncTestData,
+  installNpmDependencies
+} = require('./a9-handler-dependencies');
 
 const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 
