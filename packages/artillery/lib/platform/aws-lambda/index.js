@@ -2,11 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const temp = require('temp');
-const fs = require('fs-extra');
-const spawn = require('cross-spawn');
-const chalk = require('chalk');
-
 const EventEmitter = require('events');
 const debug = require('debug')('platform:aws-lambda');
 
@@ -14,18 +9,13 @@ const { randomUUID } = require('crypto');
 
 const sleep = require('../../util/sleep');
 const path = require('path');
-
-const archiver = require('archiver');
 const AWS = require('aws-sdk');
 
 const https = require('https');
 
 const { QueueConsumer } = require('../../queue-consumer');
 
-const { createBOM } = require('../../create-bom/create-bom');
-
 const setDefaultAWSCredentials = require('../aws/aws-set-default-credentials');
-const { promisify } = require('node:util');
 
 const telemetry = require('../../telemetry').init();
 const crypto = require('node:crypto');
@@ -38,6 +28,11 @@ const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
 const getAccountId = require('../aws/aws-get-account-id');
 
 const createSQSQueue = require('../aws/aws-create-sqs-queue');
+const {
+  createAndUploadLambdaZip,
+  createAndUploadTestDependencies
+} = require('./dependencies');
+const pkgVersion = require('../../../package.json').version;
 
 // https://stackoverflow.com/a/66523153
 function memoryToVCPU(memMB) {
@@ -79,6 +74,10 @@ class PlatformLambda {
 
     const platformConfig = platformOpts.platformConfig;
 
+    this.currentVersion = process.env.LAMBDA_IMAGE_VERSION || pkgVersion;
+    this.ecrImageRepository =
+      process.env.LAMBDA_IMAGE_REPOSITORY || 'artillery-worker';
+    this.isContainerLambda = platformConfig.container === 'true';
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
 
@@ -121,21 +120,6 @@ class PlatformLambda {
     await setDefaultAWSCredentials(AWS);
     this.accountId = await getAccountId();
 
-    const dirname = temp.mkdirSync(); // TODO: May want a way to override this by the user
-    const zipfile = temp.path({ suffix: '.zip' });
-
-    debug({ dirname, zipfile });
-
-    let createBomOpts = {};
-    let entryPoint = this.opts.absoluteScriptPath;
-    let extraFiles = [];
-    if (this.opts.absoluteConfigPath) {
-      entryPoint = this.opts.absoluteConfigPath;
-      extraFiles.push(this.opts.absoluteScriptPath);
-      createBomOpts.entryPointIsConfig = true;
-    }
-    // TODO: custom package.json path here
-
     const metadata = {
       region: this.region,
       platformConfig: {
@@ -145,38 +129,36 @@ class PlatformLambda {
     };
     global.artillery.globalEvents.emit('metadata', metadata);
 
-    artillery.log('- Bundling test data');
-    const bom = await promisify(createBOM)(
-      entryPoint,
-      extraFiles,
-      createBomOpts
+    //make sure the bucket exists to send the zip file or the dependencies to
+    const bucketName = await ensureS3BucketExists(
+      this.region,
+      this.s3LifecycleConfigurationRules
     );
-    for (const f of bom.files) {
-      artillery.log('  -', f.noPrefix);
-    }
+    this.bucketName = bucketName;
 
-    // Copy handler:
-    fs.copyFileSync(
-      path.resolve(__dirname, 'lambda-handler', 'index.js'),
-      path.join(dirname, 'index.js')
-    );
-    fs.copyFileSync(
-      path.resolve(__dirname, 'lambda-handler', 'package.json'),
-      path.join(dirname, 'package.json')
-    );
-
-    // FIXME: This may overwrite lambda-handler's index.js or package.json
-    // Copy files that make up the test:
-    for (const o of bom.files) {
-      fs.ensureFileSync(path.join(dirname, o.noPrefix));
-      fs.copyFileSync(o.orig, path.join(dirname, o.noPrefix));
-    }
-
-    if (this.platformOpts.cliArgs.dotenv) {
-      fs.copyFileSync(
-        path.resolve(process.cwd(), this.platformOpts.cliArgs.dotenv),
-        path.join(dirname, path.basename(this.platformOpts.cliArgs.dotenv))
+    let bom, s3Path;
+    if (this.isContainerLambda) {
+      await this.ensureECRImageExists();
+      const result = await createAndUploadTestDependencies(
+        this.bucketName,
+        this.testRunId,
+        this.opts.absoluteScriptPath,
+        this.opts.absoluteConfigPath,
+        this.platformOpts.cliArgs.dotenv
       );
+      bom = result.bom;
+      s3Path = result.s3Path;
+    } else {
+      //NOTE: for now this is the default behavior to preserve backwards compatibility
+      const result = await createAndUploadLambdaZip(
+        this.bucketName,
+        this.opts.absoluteScriptPath,
+        this.opts.absoluteConfigPath,
+        this.platformOpts.cliArgs.dotenv
+      );
+      bom = result.bom;
+      s3Path = result.s3Path;
+      this.lambdaZipPath = s3Path;
     }
 
     this.artilleryArgs.push('run');
@@ -227,118 +209,6 @@ class PlatformLambda {
       (x) => x.orig === this.opts.absoluteScriptPath
     )[0];
     this.artilleryArgs.push(p.noPrefix);
-
-    artillery.log('- Installing dependencies');
-    const { stdout, stderr, status, error } = spawn.sync(
-      'npm',
-      ['install', '--omit', 'dev'],
-      {
-        cwd: dirname
-      }
-    );
-
-    if (error) {
-      artillery.log(stdout?.toString(), stderr?.toString(), status, error);
-    } else {
-      // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    }
-
-    // Install extra plugins & engines
-    if (bom.modules.length > 0) {
-      artillery.log(
-        `- Installing extra engines & plugins: ${bom.modules.join(', ')}`
-      );
-      const { stdout, stderr, status, error } = spawn.sync(
-        'npm',
-        ['install'].concat(bom.modules),
-        { cwd: dirname }
-      );
-      if (error) {
-        artillery.log(stdout?.toString(), stderr?.toString(), status, error);
-      }
-    }
-
-    // Copy this version of Artillery into the Lambda package
-    const a9basepath = path.resolve(__dirname, '..', '..', '..');
-    // TODO: read this from .files in package.json instead:
-    for (const dir of ['bin', 'lib']) {
-      const destdir = path.join(dirname, 'node_modules', 'artillery', dir);
-      const srcdir = path.join(a9basepath, dir);
-      fs.ensureDirSync(destdir);
-      fs.copySync(srcdir, destdir);
-    }
-    for (const fn of ['console-reporter.js', 'util.js']) {
-      const destfn = path.join(dirname, 'node_modules', 'artillery', fn);
-      const srcfn = path.join(a9basepath, fn);
-      fs.copyFileSync(srcfn, destfn);
-    }
-
-    fs.copyFileSync(
-      path.resolve(a9basepath, 'package.json'),
-      path.join(dirname, 'node_modules', 'artillery', 'package.json')
-    );
-
-    const a9cwd = path.join(dirname, 'node_modules', 'artillery');
-    debug({ a9basepath, a9cwd });
-
-    const {
-      stdout: stdout2,
-      stderr: stderr2,
-      status: status2,
-      error: error2
-    } = spawn.sync('npm', ['install', '--omit', 'dev'], { cwd: a9cwd });
-    if (error2) {
-      artillery.log(stdout2?.toString(), stderr2?.toString(), status2, error2);
-    } else {
-      // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    }
-
-    const {
-      stdout: stdout3,
-      stderr: stderr3,
-      status: status3,
-      error: error3
-    } = spawn.sync(
-      'npm',
-      [
-        'uninstall',
-        'dependency-tree',
-        'detective',
-        'is-builtin-module',
-        'try-require',
-        'walk-sync',
-        'esbuild-wasm',
-        'artillery-plugin-publish-metrics'
-      ],
-      {
-        cwd: a9cwd
-      }
-    );
-    if (error3) {
-      artillery.log(stdout3?.toString(), stderr3?.toString(), status3, error3);
-    } else {
-      // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    }
-
-    fs.removeSync(path.join(dirname, 'node_modules', 'aws-sdk'));
-    fs.removeSync(path.join(a9cwd, 'node_modules', 'typescript'));
-    fs.removeSync(path.join(a9cwd, 'node_modules', 'tap'));
-    fs.removeSync(path.join(a9cwd, 'node_modules', 'prettier'));
-
-    artillery.log('- Creating zip package');
-    await this.createZip(dirname, zipfile);
-
-    artillery.log('Preparing AWS environment...');
-    const bucketName = await ensureS3BucketExists(
-      this.region,
-      this.s3LifecycleConfigurationRules
-    );
-    this.bucketName = bucketName;
-
-    const s3path = await this.uploadLambdaZip(bucketName, zipfile);
-    debug({ s3path });
-    this.lambdaZipPath = s3path;
-
     // 36 is length of a UUUI v4 string
     const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
       0,
@@ -355,17 +225,37 @@ class PlatformLambda {
       artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
     }
 
-    this.functionName = `artilleryio-${this.testRunId}`;
-    await this.createLambda({
-      bucketName: this.bucketName,
-      functionName: this.functionName,
-      zipPath: this.lambdaZipPath
-    });
+    let shouldCreateLambda;
+    if (this.isContainerLambda) {
+      this.functionName = `artillery-worker-v${this.currentVersion.replace(
+        /\./g,
+        '-'
+      )}`;
+      shouldCreateLambda = await this.checkIfNewLambdaIsNeeded({
+        memorySize: this.memorySize,
+        functionName: this.functionName
+      });
+    } else {
+      this.functionName = `artilleryio-${this.testRunId}`;
+      shouldCreateLambda = true;
+    }
+
+    if (shouldCreateLambda) {
+      try {
+        await this.createLambda({
+          bucketName: this.bucketName,
+          functionName: this.functionName,
+          zipPath: this.lambdaZipPath
+        });
+      } catch (err) {
+        throw new Error(`Failed to create Lambda Function: \n${err}`);
+      }
+    }
     artillery.log(` - Lambda function: ${this.functionName}`);
     artillery.log(` - Region: ${this.region}`);
     artillery.log(` - AWS account: ${this.accountId}`);
 
-    debug({ bucketName, s3path, sqsQueueUrl });
+    debug({ bucketName, s3Path, sqsQueueUrl });
 
     const self = this;
 
@@ -550,6 +440,10 @@ class PlatformLambda {
       WAIT_FOR_GREEN: true
     };
 
+    if (this.isContainerLambda) {
+      event.IS_CONTAINER_LAMBDA = true;
+    }
+
     debug('Lambda event payload:');
     debug({ event });
 
@@ -618,12 +512,14 @@ class PlatformLambda {
     });
 
     try {
-      await s3
-        .deleteObject({
-          Bucket: this.bucketName,
-          Key: this.lambdaZipPath
-        })
-        .promise();
+      if (!this.isContainerLambda) {
+        await s3
+          .deleteObject({
+            Bucket: this.bucketName,
+            Key: this.lambdaZipPath
+          })
+          .promise();
+      }
 
       await sqs
         .deleteQueue({
@@ -631,7 +527,10 @@ class PlatformLambda {
         })
         .promise();
 
-      if (typeof process.env.RETAIN_LAMBDA === 'undefined') {
+      if (
+        typeof process.env.RETAIN_LAMBDA === 'undefined' &&
+        !this.isContainerLambda
+      ) {
         await lambda
           .deleteFunction({
             FunctionName: this.functionName
@@ -641,21 +540,6 @@ class PlatformLambda {
     } catch (err) {
       console.error(err);
     }
-  }
-
-  async createZip(src, out) {
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    const stream = fs.createWriteStream(out);
-
-    return new Promise((resolve, reject) => {
-      archive
-        .directory(src, false)
-        .on('error', (err) => reject(err))
-        .pipe(stream);
-
-      stream.on('close', () => resolve());
-      archive.finalize();
-    });
   }
 
   async createLambdaRole() {
@@ -744,6 +628,76 @@ class PlatformLambda {
     return lambdaRoleArn;
   }
 
+  async ensureECRImageExists() {
+    const ecr = new AWS.ECR({ apiVersion: '2015-09-21', region: this.region });
+
+    const params = {
+      repositoryName: this.ecrImageRepository,
+      imageIds: [{ imageTag: this.currentVersion }]
+    };
+
+    let data;
+    try {
+      data = await ecr.describeImages(params).promise();
+    } catch (err) {
+      if (err.code === 'RepositoryNotFoundException') {
+        //TODO: add links to ECR documentation when available
+        console.error(
+          `ECR repository not found: ${this.ecrImageRepository}. Have you created an ECR Private Repository in ${this.region}?`
+        );
+        process.exit(1);
+      }
+
+      if (err.code === 'ImageNotFoundException') {
+        //TODO: add links to ECR documentation when available
+        console.error(
+          `ECR image ${this.currentVersion} not found in repository ${this.ecrImageRepository}. Have you pushed the image to ECR?`
+        );
+        process.exit(1);
+      }
+
+      throw new Error(`Unexpected error getting ECR image:\n${err}`);
+    }
+
+    if (data.imageDetails[0].imageTags.includes(this.currentVersion)) {
+      return;
+    } else {
+      console.error(
+        `ECR image ${this.currentVersion} not found in repository ${this.ecrImageRepository}. Have you pushed the image to ECR?`
+      );
+      process.exit(1);
+    }
+  }
+
+  async checkIfNewLambdaIsNeeded({ memorySize, functionName }) {
+    const lambda = new AWS.Lambda({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    try {
+      const res = await lambda
+        .getFunctionConfiguration({
+          FunctionName: functionName
+        })
+        .promise();
+
+      if (res.MemorySize != memorySize) {
+        debug(
+          `Desired memory size changed: ${res.MemorySize} -> ${memorySize}. Updating Lambda Function!`
+        );
+        return true;
+      }
+    } catch (err) {
+      if (err.code === 'ResourceNotFoundException') {
+        return true;
+      }
+      throw new Error(`Failed to get Lambda Function: \n${err}`);
+    }
+
+    return false;
+  }
+
   async createLambda(opts) {
     const { bucketName, functionName, zipPath } = opts;
 
@@ -752,21 +706,51 @@ class PlatformLambda {
       region: this.region
     });
 
-    const lambdaConfig = {
-      Code: {
-        S3Bucket: bucketName,
-        S3Key: zipPath
-      },
-      FunctionName: functionName,
-      Description: 'Artillery.io test',
-      Handler: 'index.handler',
-      MemorySize: this.memorySize,
-      PackageType: 'Zip',
-      Runtime: 'nodejs16.x',
-      Architectures: [this.architecture],
-      Timeout: 900,
-      Role: this.lambdaRoleArn
-    };
+    let lambdaConfig;
+
+    if (this.isContainerLambda) {
+      lambdaConfig = {
+        PackageType: 'Image',
+        Code: {
+          ImageUri: `${this.accountId}.dkr.ecr.${this.region}.amazonaws.com/${this.ecrImageRepository}:${this.currentVersion}`
+        },
+        ImageConfig: {
+          Command: ['a9-handler-index.handler'],
+          EntryPoint: ['/usr/bin/npx', 'aws-lambda-ric']
+        },
+        FunctionName: functionName,
+        Description: 'Artillery.io test',
+        MemorySize: this.memorySize,
+        Timeout: 900,
+        Role: this.lambdaRoleArn,
+        //TODO: review architecture needed. Right now it's hardcoded to arm64. How will this affect users having to push their own docker image?
+        Architectures: ['arm64'],
+        Environment: {
+          Variables: {
+            S3_BUCKET_PATH: this.bucketName,
+            NPM_CONFIG_CACHE: '/tmp/.npm', //TODO: move this to Dockerfile
+            AWS_LAMBDA_LOG_FORMAT: 'JSON', //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
+            ARTILLERY_WORKER_PLATFORM: 'aws:lambda'
+          }
+        }
+      };
+    } else {
+      lambdaConfig = {
+        Code: {
+          S3Bucket: bucketName,
+          S3Key: zipPath
+        },
+        FunctionName: functionName,
+        Description: 'Artillery.io test',
+        Handler: 'a9-handler-index.handler',
+        MemorySize: this.memorySize,
+        PackageType: 'Zip',
+        Runtime: 'nodejs16.x',
+        Architectures: [this.architecture],
+        Timeout: 900,
+        Role: this.lambdaRoleArn
+      };
+    }
 
     if (this.securityGroupIds.length > 0 && this.subnetIds.length > 0) {
       lambdaConfig.VpcConfig = {
@@ -776,21 +760,6 @@ class PlatformLambda {
     }
 
     await lambda.createFunction(lambdaConfig).promise();
-  }
-
-  async uploadLambdaZip(bucketName, zipfile) {
-    const key = `lambda/${randomUUID()}.zip`;
-    // TODO: Set lifecycle policy on the bucket/key prefix to delete after 24 hours
-    const s3 = new AWS.S3();
-    const s3res = await s3
-      .putObject({
-        Body: fs.createReadStream(zipfile),
-        Bucket: bucketName,
-        Key: key
-      })
-      .promise();
-
-    return key;
   }
 }
 

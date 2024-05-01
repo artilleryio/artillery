@@ -3,13 +3,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const AWS = require('aws-sdk');
-const { spawn } = require('node:child_process');
 const { randomUUID } = require('node:crypto');
+const { runProcess, sleep } = require('./a9-handler-helpers');
+const {
+  syncTestData,
+  installNpmDependencies
+} = require('./a9-handler-dependencies');
 
 const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 
 class MQ {
-  constructor({ region, queueUrl, attrs } = opts) {
+  constructor({ region, queueUrl, attrs }) {
     this.sqs = new AWS.SQS({ region });
     this.queueUrl = queueUrl;
     this.attrs = attrs;
@@ -45,7 +49,8 @@ async function handler(event, context) {
     ARTILLERY_ARGS,
     BUCKET,
     ENV,
-    WAIT_FOR_GREEN
+    WAIT_FOR_GREEN,
+    IS_CONTAINER_LAMBDA
   } = event;
 
   console.log('TEST_RUN_ID: ', TEST_RUN_ID);
@@ -58,6 +63,30 @@ async function handler(event, context) {
       workerId: WORKER_ID
     }
   });
+
+  const TEST_DATA_LOCATION = `/tmp/test_data/${TEST_RUN_ID}`;
+
+  if (IS_CONTAINER_LAMBDA) {
+    try {
+      await syncTestData(BUCKET, TEST_RUN_ID);
+    } catch (err) {
+      await mq.send({
+        event: 'workerError',
+        reason: 'TestDataSyncFailure',
+        logs: { err }
+      });
+    }
+
+    try {
+      await installNpmDependencies(TEST_DATA_LOCATION);
+    } catch (err) {
+      await mq.send({
+        event: 'workerError',
+        reason: 'InstallDependenciesFailure',
+        logs: { err }
+      });
+    }
+  }
 
   const interval = setInterval(async () => {
     const timeRemaining = context.getRemainingTimeInMillis();
@@ -106,6 +135,8 @@ async function handler(event, context) {
       TEST_RUN_ID,
       WORKER_ID,
       ARTILLERY_ARGS,
+      IS_CONTAINER_LAMBDA,
+      TEST_DATA_LOCATION,
       ENV
     });
 
@@ -137,7 +168,9 @@ async function execArtillery(options) {
     ARTILLERY_ARGS,
     ENV,
     NODE_BINARY_PATH,
-    ARTILLERY_BINARY_PATH
+    ARTILLERY_BINARY_PATH,
+    IS_CONTAINER_LAMBDA,
+    TEST_DATA_LOCATION
   } = options;
 
   const env = Object.assign(
@@ -152,58 +185,27 @@ async function execArtillery(options) {
       // Set test run ID for this Artillery process explicitly. This makes sure that $testId
       // template variable is set to the same value for all Lambda workers as the one user
       // sees on their terminal
-      ARTILLERY_TEST_RUN_ID: TEST_RUN_ID,
+      ARTILLERY_TEST_RUN_ID: TEST_RUN_ID
       // SHIP_LOGS: 'true',
     },
     ENV
   );
 
+  let ARTILLERY_PATH =
+    ARTILLERY_BINARY_PATH || './node_modules/artillery/bin/run';
+
+  if (IS_CONTAINER_LAMBDA) {
+    ARTILLERY_PATH = '/artillery/node_modules/artillery/bin/run';
+
+    env.ARTILLERY_PLUGIN_PATH = `${TEST_DATA_LOCATION}/node_modules/`;
+    env.HOME = '/tmp';
+  }
+
   return runProcess(
-    NODE_BINARY_PATH || '/var/lang/bin/node',
-    [ARTILLERY_BINARY_PATH || './node_modules/artillery/bin/run'].concat(
-      ARTILLERY_ARGS
-    ),
+    NODE_BINARY_PATH || 'node',
+    [ARTILLERY_PATH].concat(ARTILLERY_ARGS),
     { env, log: true }
   );
-}
-
-const sleep = async function (n) {
-  return new Promise((resolve, _reject) => {
-    setTimeout(function () {
-      resolve();
-    }, n);
-  });
-};
-
-async function runProcess(name, args, { env, log } = opts) {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(name, args, { env });
-    let stdout = '';
-    let stderr = '';
-
-    proc.stdout.on('data', (data) => {
-      if (log) {
-        console.log(data.toString());
-      }
-      stdout += data.toString();
-    });
-
-    proc.stderr.on('data', (data) => {
-      if (log) {
-        console.error(data.toString());
-      }
-
-      stderr += data.toString();
-    });
-
-    proc.once('close', (code) => {
-      resolve({ stdout, stderr, code });
-    });
-
-    proc.on('error', (err) => {
-      resolve({ stdout, stderr, err });
-    });
-  });
 }
 
 module.exports = { handler, runProcess, execArtillery };
