@@ -126,7 +126,7 @@ class SlackPlugin {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `<${this.cloudTestRunUrl}|View in Artillery cloud>`
+          text: `<${this.cloudTestRunUrl}|View in Artillery Cloud>`
         }
       });
     }
