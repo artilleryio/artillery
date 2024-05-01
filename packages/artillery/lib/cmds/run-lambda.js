@@ -65,7 +65,7 @@ RunLambdaCommand.flags = {
     default: '1'
   }),
   container: Flags.boolean({
-    description: 'Run the test in a container (recommended)',
+    description: 'Use a container image for Lambda (experimental)',
     default: false
   }),
   architecture: Flags.string({

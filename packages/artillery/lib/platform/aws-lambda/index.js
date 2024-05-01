@@ -641,15 +641,31 @@ class PlatformLambda {
       data = await ecr.describeImages(params).promise();
     } catch (err) {
       if (err.code === 'RepositoryNotFoundException') {
-        throw new Error(`ECR repository not found: ${this.ecrImageRepository}`);
+        //TODO: add links to ECR documentation when available
+        console.error(
+          `ECR repository not found: ${this.ecrImageRepository}. Have you created an ECR Private Repository in ${this.region}?`
+        );
+        process.exit(1);
       }
-      throw new Error(`ECR image not found: ${this.currentVersion}`);
+
+      if (err.code === 'ImageNotFoundException') {
+        //TODO: add links to ECR documentation when available
+        console.error(
+          `ECR image ${this.currentVersion} not found in repository ${this.ecrImageRepository}. Have you pushed the image to ECR?`
+        );
+        process.exit(1);
+      }
+
+      throw new Error(`Unexpected error getting ECR image:\n${err}`);
     }
 
     if (data.imageDetails[0].imageTags.includes(this.currentVersion)) {
       return;
     } else {
-      throw new Error(`ECR image not found: ${this.currentVersion}`);
+      console.error(
+        `ECR image ${this.currentVersion} not found in repository ${this.ecrImageRepository}. Have you pushed the image to ECR?`
+      );
+      process.exit(1);
     }
   }
 
@@ -667,7 +683,7 @@ class PlatformLambda {
         .promise();
 
       if (res.MemorySize != memorySize) {
-        console.log(
+        debug(
           `Desired memory size changed: ${res.MemorySize} -> ${memorySize}. Updating Lambda Function!`
         );
         return true;
