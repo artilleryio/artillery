@@ -2,10 +2,7 @@
 # NOTE: Version we use here needs to be kept consistent with that in
 # artillery-engine-playwright.
 # ********************************
-FROM mcr.microsoft.com/playwright:v1.43.1 as build-image
-
-# https://steele.blue/playwright-on-lambda/
-# https://blog.carlosnunez.me/post/scraping-chromium-lambda-nodeless-zerostress/
+FROM mcr.microsoft.com/playwright:v1.43.1
 
 ENV DEBIAN_FRONTEND=noninteractive
 
