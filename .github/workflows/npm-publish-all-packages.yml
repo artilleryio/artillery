@@ -38,6 +38,7 @@ jobs:
         artillery-plugin-ensure,\
         artillery-plugin-expect,\
         artillery-plugin-fake-data,\
+        artillery-plugin-slack,\
         artillery-plugin-metrics-by-endpoint,\
         artillery-plugin-publish-metrics,\
         commons,\
@@ -64,6 +65,7 @@ jobs:
       - run: npm -w artillery-plugin-apdex publish
       - run: npm -w artillery-engine-playwright publish
       - run: npm -w artillery-plugin-fake-data publish
+      - run: npm -w artillery-plugin-slack publish
       - run: npm -w artillery publish
       # # Skytrace is a Typescript Package and needs to install -> build -> publish
       # - run: npm install -w skytrace --ignore-scripts
