@@ -15,9 +15,7 @@ async function checkOutArtilleryCoreConceptsFlow(
     const req = await requestPromise;
   });
   await test.step('Go to docs', async () => {
-    const docs = await page
-      .getByLabel('Main navigation')
-      .getByRole('link', { name: 'Documentation' });
+    const docs = await page.getByRole('link', { name: 'Docs' });
     await docs.click();
     await page.waitForURL('https://www.artillery.io/docs');
   });
@@ -67,8 +65,8 @@ async function multistepWithCustomMetrics(page, userContext, events, test) {
     await page.goto('https://www.artillery.io');
   });
 
-  await step('go_to_cloud_page', async () => {
-    await page.goto('https://www.artillery.io/cloud');
+  await step('go_to_blog_page', async () => {
+    await page.goto('https://www.artillery.io/blog');
   });
 
   await step('go_to_docs', async () => {
