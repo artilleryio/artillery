@@ -46,6 +46,9 @@ class SlackPlugin {
           .forEach((check) => {
             this.ensureChecks.total += 1;
             if (check.result !== 1) {
+              if (check.strict) {
+                this.exitCode = 1;
+              }
               this.ensureChecks.failed += 1;
               this.ensureChecks.checkList.push(
                 `:x: ${check.original} ${check.strict ? '' : '(optional) '}`
@@ -95,13 +98,11 @@ class SlackPlugin {
 
   assembleSlackPayload(report, ensureChecks) {
     const errorList = this.getErrors(report);
-    const passed =
-      this.exitCode === 0 && !this.ensureChecks?.failedChecks?.length > 0
-        ? true
-        : false;
-    const introText = passed
-      ? '🟢 Artillery test run finished'
-      : '🔴 Artillery test run failed';
+
+    const introText =
+      this.exitCode === 0
+        ? '🟢 Artillery test run finished'
+        : '🔴 Artillery test run failed';
 
     const payloadTemplate = {
       text: introText,
