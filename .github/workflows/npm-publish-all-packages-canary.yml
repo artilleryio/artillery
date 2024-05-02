@@ -12,7 +12,8 @@ on:
       - 'packages/artillery-plugin-expect/**'
       - 'packages/artillery-plugin-metrics-by-endpoint/**'
       - 'packages/artillery-plugin-publish-metrics/**'
-      - 'packages/artillery-plugin-fake-data/**'   
+      - 'packages/artillery-plugin-fake-data/**'
+      - 'packages/artillery-plugin-slack/**'
       - 'packages/commons/**'
       - 'packages/core/**'
       - 'packages/skytrace/**'
@@ -61,6 +62,7 @@ jobs:
       - run: npm -w artillery-engine-posthog publish --tag canary
       - run: npm -w artillery-engine-playwright publish --tag canary
       - run: npm -w artillery-plugin-fake-data publish --tag canary
+      - run: npm -w artillery-plugin-slack publish --tag canary
       - run: npm -w artillery publish --tag canary
       # Skytrace is a Typescript Package and needs to install -> build -> publish
       - run: npm install -w skytrace --ignore-scripts

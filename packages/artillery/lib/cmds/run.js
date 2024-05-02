@@ -702,7 +702,8 @@ async function sendTelemetry(script, flags, extraProps) {
         'fuzzer',
         'ensure',
         'memory-inspector',
-        'fake-data'
+        'fake-data',
+        'slack'
       ];
       for (const p of OFFICIAL_PLUGINS) {
         if (script.config.plugins[p]) {

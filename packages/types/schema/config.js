@@ -17,6 +17,7 @@ const {
   PublishMetricsPluginConfigSchema
 } = require('./plugins/publish-metrics');
 const { FakeDataPlugin } = require('./plugins/fake-data');
+const { SlackPluginConfigSchema } = require('./plugins/slack');
 const { TestPhase } = require('./config/phases');
 const { buildArtilleryKeyValue } = require('./joi.helpers');
 
@@ -72,7 +73,8 @@ const ArtilleryBuiltInPlugins = {
   apdex: ApdexPluginConfigSchema,
   'metrics-by-endpoint': MetricsByEndpointPluginConfigSchema,
   'publish-metrics': PublishMetricsPluginConfigSchema,
-  'fake-data': FakeDataPlugin
+  'fake-data': FakeDataPlugin,
+  slack: SlackPluginConfigSchema
 };
 
 const ArtilleryBuiltInPluginsInRootConfig = (({ ensure, apdex }) => ({
@@ -99,7 +101,9 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
   socketio: SocketIoConfigSchema.meta({ title: 'SocketIo Configuration' }),
   processor: Joi.string()
     .meta({ title: 'Processor Function Path' })
-    .description('Path to a CommonJS (.js), ESM (.mjs) or Typescript (.ts) module to load for this test run.\nhttps://www.artillery.io/docs/reference/test-script#processor---custom-js-code'),
+    .description(
+      'Path to a CommonJS (.js), ESM (.mjs) or Typescript (.ts) module to load for this test run.\nhttps://www.artillery.io/docs/reference/test-script#processor---custom-js-code'
+    ),
   variables: Joi.object()
     .meta({ title: 'Variables' })
     .description('Map of variables to expose to the test run.'),
@@ -110,12 +114,17 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
     ),
   tls: TlsConfig.meta({ title: 'TLS Settings' }),
   bundling: Joi.object({
-    external: Joi.array().items(Joi.string())
+    external: Joi.array()
+      .items(Joi.string())
       .meta({ title: 'External Packages' })
-      .description('Can be used when using Typescript (.ts) processors. List npm modules to prevent them from being bundled. Use in case there are issues with bundling certain packages.\nhttps://www.artillery.io/docs/reference/test-script#preventing-bundling-of-typescript-packages'),
+      .description(
+        'Can be used when using Typescript (.ts) processors. List npm modules to prevent them from being bundled. Use in case there are issues with bundling certain packages.\nhttps://www.artillery.io/docs/reference/test-script#preventing-bundling-of-typescript-packages'
+      )
   })
-    .meta({ title: 'Bundling'})
-    .description('Configuration for bundling the test script and its dependencies'),
+    .meta({ title: 'Bundling' })
+    .description(
+      'Configuration for bundling the test script and its dependencies'
+    ),
   plugins: Joi.object({ ...ArtilleryBuiltInPlugins })
     .meta({ title: 'Plugins' })
     .description(
