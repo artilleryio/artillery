@@ -40,9 +40,9 @@ jobs:
           scope: '@artilleryio'
       - run: node .github/workflows/scripts/replace-package-versions.js
         if: ${{ inputs.CHANNEL == 'latest'}}
-      - run: | 
-          export COMMIT_SHA=$(git rev-parse --short HEAD)
-          node .github/workflows/scripts/replace-package-versions.js
+      - run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ github.sha }}
         if: ${{ inputs.CHANNEL == 'canary'}}
 
       - name: Get corresponding package name from package.json

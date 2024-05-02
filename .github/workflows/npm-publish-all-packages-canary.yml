@@ -44,9 +44,9 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: | 
-          export COMMIT_SHA=$(git rev-parse --short HEAD)
-          node .github/workflows/scripts/replace-package-versions.js
+      - run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ github.sha }}
       # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
       - run: npm -w @artilleryio/int-commons publish --tag canary
       - run: npm -w @artilleryio/int-core publish --tag canary

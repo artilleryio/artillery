@@ -9,7 +9,8 @@ const getNewVersion = (version) => {
     return version;
   }
 
-  return `${version}-${commitSha}`;
+  const shortSha = commitSha.slice(0, 7);
+  return `${version}-${shortSha}`;
 };
 
 let versionMapping = {};
