@@ -113,6 +113,15 @@ class SlackPlugin {
             type: 'plain_text',
             text: introText
           }
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*Test duration:* ${
+              report.lastMetricReported - report.firstMetricReported
+            } ms`
+          }
         }
       ]
     };
