@@ -28,6 +28,12 @@ jobs:
           ref: ${{ inputs.ref || null }}
           fetch-depth: 0
       
+      - name: Replace package versions
+        run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ inputs.ref || null }}
+          REPLACE_MAIN_VERSION_ONLY: true # we don't need to replace depenencies, as docker image builds using workspaces
+      
       - name: Get Artillery version
         #if main branch, and with no ref override, it's a release (canary or mainline), so we get the version from package.json
         if: ${{ github.ref == 'refs/heads/main' }}

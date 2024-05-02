@@ -5,7 +5,7 @@ const packagesDir = '../../../packages';
 const commitSha = process.env.COMMIT_SHA;
 
 const getNewVersion = (version) => {
-  if (!commitSha) {
+  if (!commitSha || commitSha == 'null') {
     return version;
   }
 
@@ -48,7 +48,9 @@ const updatePackageVersions = () => {
   });
 
   for (const pkg of Object.values(versionMapping)) {
-    updateDependencies(pkg);
+    if (!process.env.REPLACE_MAIN_VERSION_ONLY) {
+      updateDependencies(pkg);
+    }
     saveUpdatedPackage(pkg);
   }
 };

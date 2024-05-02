@@ -28,6 +28,12 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
+      
+      - name: Replace package versions
+        run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ inputs.COMMIT_SHA || null }}
+          REPLACE_MAIN_VERSION_ONLY: true
 
       - name: Get Artillery version
         run: |
