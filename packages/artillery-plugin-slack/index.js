@@ -2,6 +2,7 @@
 
 const debug = require('debug')('plugin:slack');
 const got = require('got');
+const moment = require('moment');
 
 class SlackPlugin {
   constructor(script, events) {
@@ -51,12 +52,12 @@ class SlackPlugin {
               }
               this.ensureChecks.failed += 1;
               this.ensureChecks.checkList.push(
-                `:x: ${check.original} ${check.strict ? '' : '(optional) '}`
+                `:x: \`${check.original}\`${check.strict ? '' : ' (optional) '}`
               );
             } else {
               this.ensureChecks.passed += 1;
               this.ensureChecks.checkList.push(
-                `:white_check_mark: ${check.original}`
+                `:white_check_mark: \`${check.original}\``
               );
             }
           });
@@ -98,7 +99,7 @@ class SlackPlugin {
 
   assembleSlackPayload(report, ensureChecks) {
     const errorList = this.getErrors(report);
-
+    const duration = report.lastMetricAt - report.firstMetricAt;
     const introText =
       this.exitCode === 0
         ? '🟢 Artillery test run finished'
@@ -108,19 +109,27 @@ class SlackPlugin {
       text: introText,
       blocks: [
         {
-          type: 'section',
-          text: {
-            type: 'plain_text',
-            text: introText
-          }
+          type: 'rich_text',
+          elements: [
+            {
+              type: 'rich_text_section',
+              elements: [
+                {
+                  type: 'text',
+                  text: introText,
+                  style: {
+                    bold: true
+                  }
+                }
+              ]
+            }
+          ]
         },
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `*Test duration:* ${
-              report.lastMetricReported - report.firstMetricReported
-            } ms`
+            text: `Duration: ${this.formatDuration(duration)}`
           }
         }
       ]
@@ -201,6 +210,27 @@ class SlackPlugin {
       this.finished = true;
       console.error(`Slack Plugin: Failed to send report to Slack: ${err}`);
     }
+  }
+
+  formatDuration(durationInMs) {
+    const duration = moment.duration(durationInMs);
+    if (durationInMs < 1000) {
+      return `${durationInMs} miliseconds`;
+    }
+    const timeComponents = ['day', 'hour', 'minute', 'second'];
+    const formatedTimeComponents = timeComponents
+      .map((component) => {
+        const value = duration.get(component);
+        return value
+          ? `${value} ${value === 1 ? component : component + 's'}`
+          : '';
+      })
+      .filter((component) => !!component);
+
+    const lastComponent = formatedTimeComponents.pop();
+    return formatedTimeComponents.length
+      ? formatedTimeComponents.join(', ') + ' and ' + lastComponent
+      : lastComponent;
   }
 
   async cleanup(done) {
