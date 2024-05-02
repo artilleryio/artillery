@@ -48,11 +48,13 @@ class SlackPlugin {
             if (check.result !== 1) {
               this.ensureChecks.failed += 1;
               this.ensureChecks.checkList.push(
-                `🔴 ${check.original} ${check.strict ? '' : '(optional) '}`
+                `:x: ${check.original} ${check.strict ? '' : '(optional) '}`
               );
             } else {
               this.ensureChecks.passed += 1;
-              this.ensureChecks.checkList.push(`🟢 ${check.original}`);
+              this.ensureChecks.checkList.push(
+                `:white_check_mark: ${check.original}`
+              );
             }
           });
 
@@ -98,8 +100,8 @@ class SlackPlugin {
         ? true
         : false;
     const introText = passed
-      ? ':white_check_mark: Artillery test run finished'
-      : ':no_entry: Artillery test run failed';
+      ? '🟢 Artillery test run finished'
+      : '🔴 Artillery test run failed';
 
     const payloadTemplate = {
       text: introText,
@@ -110,13 +112,6 @@ class SlackPlugin {
             type: 'plain_text',
             text: introText
           }
-        },
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: '*Test run id:* `' + `${global.artillery.testRunId}` + '`'
-          }
         }
       ]
     };
@@ -126,7 +121,7 @@ class SlackPlugin {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `<${this.cloudTestRunUrl}|View in Artillery Cloud>`
+          text: `<${this.cloudTestRunUrl}>`
         }
       });
     }
