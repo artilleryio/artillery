@@ -1,7 +1,7 @@
 'use strict';
 
 const debug = require('debug')('plugin:slack');
-const axios = require('axios').default;
+const got = require('got');
 
 class SlackPlugin {
   constructor(script, events) {
@@ -184,16 +184,17 @@ class SlackPlugin {
   async sendReport(report, ensureChecks) {
     const payload = this.assembleSlackPayload(report, ensureChecks);
     try {
-      const res = await axios.post(this.config.webhookUrl, payload, {
+      const res = await got.post(this.config.webhookUrl, {
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        body: payload
       });
       debug('Slack response:', res.status, res.statusText);
       this.finished = true;
     } catch (err) {
       this.finished = true;
-      throw new SlackPluginError(`Failed to send report to Slack: ${err}`);
+      console.error(`Slack Plugin: Failed to send report to Slack: ${err}`);
     }
   }
 
