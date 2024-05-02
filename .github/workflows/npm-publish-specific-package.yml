@@ -38,9 +38,6 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
-        env:
-          COMMIT_SHA: ${{ github.sha }}
       - run: node .github/workflows/scripts/replace-package-versions.js
         if: ${{ inputs.CHANNEL == 'latest'}}
       - run: | 

@@ -50,9 +50,6 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
-        env:
-          COMMIT_SHA: ${{ github.sha }}
       - run: node .github/workflows/scripts/replace-package-versions.js
       # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
       - run: npm -w @artilleryio/int-commons publish

@@ -20,7 +20,7 @@ jobs:
   build_docker_image:
     runs-on: ubuntu-latest
     env:
-      # From PR's this is overridden by a head ref by the caller workflow. defaults to commit sha when not passed (e.g. workflow_dispatch or call from main branch)
+      # From PR's this is overridden by a head ref by the caller workflow. defaults to commit sha when not passed (e.g. workflow_dispatch)
       WORKER_VERSION: ${{ inputs.ref || github.sha }}
     steps:
       - uses: actions/checkout@v3
@@ -28,6 +28,14 @@ jobs:
           ref: ${{ inputs.ref || null }}
           fetch-depth: 0
       
+      - name: Get Artillery version
+        #if main branch, and with no ref override, it's a release (canary or mainline), so we get the version from package.json
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          if [ -z "${{ inputs.ref }}" ]; then
+            echo "WORKER_VERSION=$(node -e 'console.log(require("./packages/artillery/package.json").version)')" >> $GITHUB_ENV
+          fi
+
       - name: Show git ref
         run: |
           echo GITHUB REF ${{ github.ref }}
