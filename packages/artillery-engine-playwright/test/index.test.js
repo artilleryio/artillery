@@ -154,7 +154,7 @@ test('playwright js test fails and has correct vu count when expectation fails',
 
 test('playwright typescript test works and reports data', async (t) => {
   const configOverride = JSON.stringify({
-    processor: './processor.ts'
+    config: { processor: './processor.ts' }
   });
   const output =
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${configOverride}`;

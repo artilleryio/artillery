@@ -36,6 +36,8 @@ export async function artilleryPlaywrightFunction(
       page.getByText("What's different about Artillery?")
     ).toBeVisible();
   });
+
+  events.emit('counter', 'custom_emitter', 1);
 }
 
 export async function playwrightFunctionWithFailure(
