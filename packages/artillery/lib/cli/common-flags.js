@@ -56,7 +56,7 @@ const CommonRunFlags = {
   //Artillery Cloud commands
   tags: Flags.string({
     description:
-      'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sqa,service:foo'
+      'Comma-separated list of tags in key:value format to tag the test run with in Artillery Cloud, for example: --tags team:sqa,service:foo'
   }),
   note: Flags.string({
     description: 'Add a note/annotation to the test run'
