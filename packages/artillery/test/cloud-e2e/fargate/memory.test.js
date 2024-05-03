@@ -14,6 +14,7 @@ const baseTags = getTestTags(['type:acceptance']);
 test('Fargate should exit with error code when workers run out of memory', async (t) => {
   try {
     await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:true --region us-east-1`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
 

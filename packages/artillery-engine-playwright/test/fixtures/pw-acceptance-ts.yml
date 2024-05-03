@@ -4,7 +4,7 @@ config:
     - duration: 3
       arrivalRate: 1
       name: "Phase 1"
-  processor: "./processor.js"
+  processor: "./processor.ts"
   engines:
     playwright:
       extendedMetrics: true

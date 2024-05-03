@@ -121,6 +121,7 @@ test('playwright js test fails and has correct vu count when expectation fails',
 
   try {
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(
       output.exitCode,
@@ -138,8 +139,14 @@ test('playwright js test fails and has correct vu count when expectation fails',
       'should have 3 failed VUs'
     );
 
+    t.equal(
+      jsonReportAggregate.counters['errors.pw_failed_assertion.toBeVisible'],
+      3,
+      'should have 3 failed assertions'
+    );
+
     t.ok(
-      output.stdout.includes('"Locator:·getByText(\'gremlins·are·here!\')"'),
+      output.stderr.includes("Locator: getByText('gremlins are here!')"),
       'should have error message in stdout'
     );
   }
@@ -147,7 +154,7 @@ test('playwright js test fails and has correct vu count when expectation fails',
 
 test('playwright typescript test works and reports data', async (t) => {
   const configOverride = JSON.stringify({
-    processor: './processor.ts'
+    config: { processor: './processor.ts' }
   });
   const output =
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${configOverride}`;
@@ -252,14 +259,12 @@ test('playwright typescript test fails and has correct vu count when expectation
   const scenarioOverride = JSON.stringify({
     scenarios: [
       { engine: 'playwright', testFunction: 'playwrightFunctionWithFailure' }
-    ],
-    config: {
-      processor: './processor.ts'
-    }
+    ]
   });
 
   try {
-    await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride}`;
+    await $`../artillery/bin/run run ./test/fixtures/pw-acceptance-ts.yml --output ${playwrightOutput} --overrides ${scenarioOverride}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(
       output.exitCode,
@@ -277,8 +282,14 @@ test('playwright typescript test fails and has correct vu count when expectation
       'should have 3 failed VUs'
     );
 
+    t.equal(
+      jsonReportAggregate.counters['errors.pw_failed_assertion.toBeVisible'],
+      3,
+      'should have 3 failed assertions'
+    );
+
     t.ok(
-      output.stdout.includes('"Locator:·getByText(\'gremlins·are·here!\')"'),
+      output.stderr.includes("Locator: getByText('gremlins are here!')"),
       'should have error message in stdout'
     );
   }
