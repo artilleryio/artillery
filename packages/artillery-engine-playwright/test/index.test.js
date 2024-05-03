@@ -121,6 +121,7 @@ test('playwright js test fails and has correct vu count when expectation fails',
 
   try {
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(
       output.exitCode,
@@ -260,6 +261,7 @@ test('playwright typescript test fails and has correct vu count when expectation
 
   try {
     await $`../artillery/bin/run run ./test/fixtures/pw-acceptance.yml --output ${playwrightOutput} --overrides ${scenarioOverride}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(
       output.exitCode,

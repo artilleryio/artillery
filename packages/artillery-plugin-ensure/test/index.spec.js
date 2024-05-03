@@ -85,6 +85,7 @@ test('fails thresholds correctly', async (t) => {
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     //Assert
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
@@ -152,6 +153,7 @@ test('passes and fails correctly multiple conditions and thresholds', async (t) 
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     //Assert
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
@@ -225,6 +227,7 @@ test('works with legacy thresholds (passing and failing) together with new thres
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     // Assert
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
@@ -261,6 +264,7 @@ test('works with legacy maxErrorRate', async (t) => {
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     // Assert
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
@@ -289,6 +293,7 @@ test('checks are grouped in the correct order (ok first, fail after)', async (t)
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     const startIndex = output.stdout.indexOf('Checks:');
     // Get the relevant logs (the first 4 lines after the Checks: line)
@@ -349,6 +354,7 @@ test('works with custom metrics including weird characters like urls', async (t)
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario-custom-metrics.yml --overrides ${override}`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     //Assert
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');

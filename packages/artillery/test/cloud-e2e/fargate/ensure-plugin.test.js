@@ -20,6 +20,7 @@ beforeEach(async (t) => {
 test('Run uses ensure', async (t) => {
   try {
     await $`${A9} run:fargate ${__dirname}/fixtures/uses-ensure/with-ensure.yaml --record --tags ${baseTags} --output ${reportFilePath} --count 15`;
+    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(
