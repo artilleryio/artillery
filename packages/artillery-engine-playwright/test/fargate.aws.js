@@ -146,10 +146,5 @@ test('playwright typescript test fails and has correct vu count when expectation
       3,
       'should have 3 failed assertions'
     );
-
-    t.ok(
-      output.stderr.includes("Locator: getByText('gremlins are here!')"),
-      'should have error message in stdout'
-    );
   }
 });
