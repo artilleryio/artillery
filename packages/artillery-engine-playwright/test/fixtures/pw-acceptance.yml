@@ -8,6 +8,9 @@ config:
   engines:
     playwright:
       extendedMetrics: true
+  plugins:
+    ensure:
+      maxErrorRate: 0
 
 scenarios:
   - engine: playwright
