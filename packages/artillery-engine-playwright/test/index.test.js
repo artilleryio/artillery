@@ -285,8 +285,14 @@ test('playwright typescript test fails and has correct vu count when expectation
       'should have 3 failed VUs'
     );
 
+    t.equal(
+      jsonReportAggregate.counters['errors.pw_failed_assertion.toBeVisible'],
+      3,
+      'should have 3 failed assertions'
+    );
+
     t.ok(
-      output.stdout.includes('"Locator:·getByText(\'gremlins·are·here!\')"'),
+      output.stderr.includes("Locator: getByText('gremlins are here!')"),
       'should have error message in stdout'
     );
   }
