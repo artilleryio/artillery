@@ -1,0 +1,17 @@
+config:
+  target: "https://www.artillery.io/"
+  phases:
+    - duration: 3
+      arrivalRate: 1
+      name: "Phase 1"
+  processor: "./processor.ts"
+  engines:
+    playwright:
+      extendedMetrics: true
+  plugins:
+    ensure:
+      maxErrorRate: 0
+
+scenarios:
+  - engine: playwright
+    testFunction: artilleryPlaywrightFunction
