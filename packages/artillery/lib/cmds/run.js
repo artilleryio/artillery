@@ -622,6 +622,11 @@ async function sendTelemetry(script, flags, extraProps) {
     }
 
     properties.platform = flags.platform;
+
+    if (flags.container) {
+      properties.isContainerLambda = true;
+    }
+
     properties.count = flags.count;
 
     if (properties.targetHash) {
