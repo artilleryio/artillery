@@ -43,6 +43,10 @@ const traceExporters = {
   zipkin(options) {
     const { ZipkinExporter } = require('@opentelemetry/exporter-zipkin');
     return new ZipkinExporter(options);
+  },
+  __test(options) {
+    const { FileSpanExporter } = require('./file-span-exporter');
+    return new FileSpanExporter(options);
   }
 };
 
