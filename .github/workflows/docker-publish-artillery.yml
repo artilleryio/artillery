@@ -28,14 +28,16 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
+      
+      - name: Replace package versions
+        run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ inputs.COMMIT_SHA || null }}
+          REPLACE_MAIN_VERSION_ONLY: true
 
       - name: Get Artillery version
         run: |
           echo "ARTILLERY_VERSION=$(node -e 'console.log(require("./packages/artillery/package.json").version)')" >> $GITHUB_ENV
-
-      - run: node .github/workflows/scripts/replace-worker-version-in-js-file.js
-        env:
-          COMMIT_SHA: ${{ inputs.COMMIT_SHA }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
