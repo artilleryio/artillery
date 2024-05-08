@@ -1,0 +1,20 @@
+config:
+  target: "http://asciiart.artillery.io:8080"
+  phases:
+    - duration: 4
+      arrivalRate: 1
+  plugins:
+    publish-metrics:
+      - type: "open-telemetry"
+        traces:
+          exporter: "__test"
+
+scenarios:
+  - name: "pm-test"
+    flow:
+      - get:
+          url: "/dino"
+          name: "dino"
+      - get:
+          url: "/pony"
+          name: "pony"

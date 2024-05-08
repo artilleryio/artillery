@@ -57,6 +57,10 @@ class OTelTraceConfig {
       }
     }
 
+    if (this.config.__outputPath) {
+      this.exporterOpts.output = this.config.__outputPath;
+    }
+
     this.exporter = traceExporters[this.config.exporter || 'otlp-http'](
       this.exporterOpts
     );
