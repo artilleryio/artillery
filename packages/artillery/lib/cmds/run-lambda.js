@@ -66,7 +66,8 @@ RunLambdaCommand.flags = {
   }),
   container: Flags.boolean({
     description: 'Use a container image for Lambda (experimental)',
-    default: false
+    default: false,
+    exclusive: ['architecture']
   }),
   architecture: Flags.string({
     description: 'Architecture of the Lambda function',
