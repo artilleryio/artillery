@@ -724,7 +724,7 @@ class PlatformLambda {
         Timeout: 900,
         Role: this.lambdaRoleArn,
         //TODO: review architecture needed. Right now it's hardcoded to arm64. How will this affect users having to push their own docker image?
-        Architectures: ['arm64'],
+        Architectures: ['x86_64'],
         Environment: {
           Variables: {
             S3_BUCKET_PATH: this.bucketName,
