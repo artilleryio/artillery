@@ -4,9 +4,13 @@ on:
   workflow_dispatch: 
   workflow_call:
     inputs:
-      ref:
+      COMMIT_SHA:
         description: 'Branch ref to checkout. Needed for pull_request_target to be able to pull correct ref.'
         type: string
+        required: true
+      USE_COMMIT_SHA_IN_VERSION:
+        description: 'Whether to use the commit sha in building the pkg version of the image.'
+        type: boolean
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN:
         description: 'ARN of the IAM role to assume to push the image to ECR.'
@@ -20,27 +24,26 @@ jobs:
   build_docker_image:
     runs-on: ubuntu-latest
     env:
-      # From PR's this is overridden by a head ref by the caller workflow. defaults to commit sha when not passed (e.g. workflow_dispatch)
-      WORKER_VERSION: ${{ inputs.ref || github.sha }}
+      # Set by the caller workflow, defaults to github.sha when not passed (e.g. workflow_dispatch against a branch)
+      WORKER_VERSION: ${{ inputs.COMMIT_SHA || github.sha }}
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.ref || null }}
+          ref: ${{ env.WORKER_VERSION }}
           fetch-depth: 0
       
-      - name: Replace package versions
+      - name: Replace package version
+        if: ${{ inputs.USE_COMMIT_SHA_IN_VERSION || false }}
         run: node .github/workflows/scripts/replace-package-versions.js
         env:
-          COMMIT_SHA: ${{ inputs.ref || null }}
-          REPLACE_MAIN_VERSION_ONLY: true # we don't need to replace depenencies, as docker image builds using workspaces
-      
+          COMMIT_SHA: ${{ env.WORKER_VERSION }}
+          REPLACE_MAIN_VERSION_ONLY: true # we don't need to replace dependencies, as docker image builds using workspaces
+    
       - name: Get Artillery version
-        #if main branch, and with no ref override, it's a release (canary or mainline), so we get the version from package.json
+        #if main branch, we will be tagging with package.json version, otherwise it's a sha by default
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
-          if [ -z "${{ inputs.ref }}" ]; then
             echo "WORKER_VERSION=$(node -e 'console.log(require("./packages/artillery/package.json").version)')" >> $GITHUB_ENV
-          fi
 
       - name: Show git ref
         run: |
