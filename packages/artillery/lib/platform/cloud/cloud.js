@@ -237,7 +237,8 @@ class ArtilleryCloudPlugin {
     };
 
     const watcher = chokidar.watch(
-      process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR || '/tmp',
+      process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR ||
+        `/tmp/${global.artillery.testRunId}`,
       {
         ignored: /(^|[\/\\])\../, // ignore dotfiles
         persistent: true,

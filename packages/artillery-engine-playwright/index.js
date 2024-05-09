@@ -69,7 +69,9 @@ class PlaywrightEngine {
       1000 * 60 * (Math.ceil(Math.random() * 5) + 5);
 
     this.tracePaths = [];
-    this.traceOutputDir = process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR || '/tmp';
+    this.traceOutputDir =
+      process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR ||
+      `/tmp/${global.artillery.testRunId}`;
 
     return this;
   }
