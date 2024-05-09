@@ -40,8 +40,9 @@ jobs:
           REPLACE_MAIN_VERSION_ONLY: true # we don't need to replace dependencies, as docker image builds using workspaces
     
       - name: Get Artillery version
-        #if main branch, we will be tagging with package.json version, otherwise it's a sha by default
-        if: ${{ github.ref == 'refs/heads/main' }}
+        # we only want to tag with an actual version from pkg.json outside of PRs and manual dispatches
+        # NOTE: can't check for refs/head/main because of pull_request_target used in some workflows
+        if: github.event.pull_request == null && github.event_name != 'workflow_dispatch'
         run: |
             echo "WORKER_VERSION=$(node -e 'console.log(require("./packages/artillery/package.json").version)')" >> $GITHUB_ENV
 
