@@ -289,9 +289,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   context.extraSecrets = options.secret || [];
 
-  const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
-  context.testId = testRunId;
-  global.artillery.testRunId = testRunId;
+  context.testId = global.artillery.testRunId;
 
   if (context.namedTest) {
     context.s3Prefix = options.bundle;

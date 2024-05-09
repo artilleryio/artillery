@@ -11,6 +11,7 @@ const { supportedRegions } = require('../platform/aws-ecs/legacy/util');
 const PlatformECS = require('../platform/aws-ecs/ecs');
 const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
+const generateId = require('../util/generate-id');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
@@ -34,6 +35,9 @@ class RunCommand extends Command {
       }
       dotenv.config({ path: dotEnvPath });
     }
+
+    const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+    global.artillery.testRunId = testRunId;
 
     const cloud = new CloudPlugin(null, null, { flags });
     if (cloud.enabled) {

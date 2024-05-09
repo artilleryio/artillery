@@ -140,6 +140,10 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     checkDirExists(flags.output);
   }
 
+  const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+  console.log('Test run id:', testRunId);
+  global.artillery.testRunId = testRunId;
+
   try {
     cloud = new CloudPlugin(null, null, { flags });
     global.artillery.cloudEnabled = cloud.enabled;
@@ -171,10 +175,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         }
       }
     }
-
-    const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
-    console.log('Test run id:', testRunId);
-    global.artillery.testRunId = testRunId;
 
     const script = await prepareTestExecutionPlan(inputFiles, flags, args);
 
