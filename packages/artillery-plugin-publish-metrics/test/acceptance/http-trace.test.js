@@ -7,6 +7,26 @@ const {
   getTestId
 } = require('../_helpers.js');
 
+let expectedVus;
+let expectedRequestsPerVu;
+let expectedTimePhaseSpansPerRequest;
+let expectedVusFailed;
+let expectedErrors;
+let expectedSpansWithErrorStatus;
+let userSetAttributes;
+
+let expectedSpansPerVu;
+let expectedRequests;
+let expectedTotalSpans;
+let scenarioName = 'trace-http-test';
+let timePhaseSpanNames = [
+  'dns_lookup',
+  'tcp_handshake',
+  'request',
+  'download',
+  'first_byte'
+]; // There is also 'tls_negotiation' but it will not be present in the spans as the test does not make https requests
+
 let reportFilePath;
 let tracesFilePath;
 beforeEach(async (t) => {
@@ -21,24 +41,12 @@ afterEach(async (t) => {
 
 test('OTel reporter correctly records trace data for http engine test runs', async (t) => {
   // Arrange
-  const expectedVus = 4;
-  const expectedRequestsPerVu = 2;
-  const expectedTimePhaseSpansPerRequest = 5;
-  const expectedSpansPerVu =
-    1 +
-    expectedRequestsPerVu +
-    expectedRequestsPerVu * expectedTimePhaseSpansPerRequest; // 1 represents the root scenario/VU span
-  const expectedRequests = expectedVus * expectedRequestsPerVu;
-  const expectedTotalSpans = expectedVus * expectedSpansPerVu;
-  const scenarioName = 'pm-test';
-  const expectedVusFailed = 0;
-  const timePhaseSpanNames = [
-    'dns_lookup',
-    'tcp_handshake',
-    'request',
-    'download',
-    'first_byte'
-  ]; // There is also 'tls_negotiation' but it will not be present in the spans as the test does not make https requests
+  expectedVus = 4;
+  expectedRequestsPerVu = 3;
+  expectedTimePhaseSpansPerRequest = 5;
+  expectedVusFailed = 0;
+  expectedErrors = 0;
+  expectedSpansWithErrorStatus = 0;
 
   const override = {
     config: {
@@ -50,6 +58,48 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
               exporter: '__test',
               __outputPath: tracesFilePath,
               useRequestNames: true,
+              replaceSpanNameRegex: [{ pattern: 'armadillo', as: 'bombolini' }],
+              attributes: {
+                environment: 'test',
+                tool: 'Artillery'
+              }
+            }
+          }
+        ]
+      }
+    }
+  };
+  userSetAttributes =
+    override.config.plugins['publish-metrics'][0].traces.attributes;
+
+  try {
+    await runHttpTest(t, override);
+  } catch (err) {
+    console.error(err);
+    t.fail(err);
+  }
+});
+
+test('OTel reporter works appropriately with "parallel" scenario setting ', async (t) => {
+  (expectedVus = 2),
+    (expectedRequestsPerVu = 3),
+    (expectedTimePhaseSpansPerRequest = 5),
+    (expectedVusFailed = 0),
+    (expectedErrors = 0),
+    (expectedSpansWithErrorStatus = 0);
+
+  const override = {
+    config: {
+      phases: [{ duration: 2, arrivalRate: 1 }],
+      plugins: {
+        'publish-metrics': [
+          {
+            type: 'open-telemetry',
+            traces: {
+              exporter: '__test',
+              __outputPath: tracesFilePath,
+              useRequestNames: true,
+              replaceSpanNameRegex: [{ pattern: 'armadillo', as: 'bombolini' }],
               attributes: {
                 environment: 'test',
                 tool: 'Artillery'
@@ -63,14 +113,30 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
       {
         name: scenarioName,
         flow: [
-          { get: { url: '/dino', name: 'dino' } },
-          { get: { url: '/pony' } }
+          {
+            parallel: [
+              { get: { url: '/dino', name: 'dino' } },
+              { get: { url: '/pony' } },
+              { get: { url: '/armadillo', name: 'armadillo' } }
+            ]
+          }
         ]
       }
     ]
   };
-  const userSetAttributes =
+
+  userSetAttributes =
     override.config.plugins['publish-metrics'][0].traces.attributes;
+  try {
+    await runHttpTest(t, override);
+  } catch (err) {
+    console.error(err);
+    t.fail(err);
+  }
+});
+
+async function runHttpTest(t, override) {
+  setDynamicHTTPTraceExpectations();
 
   /// Run the test
   let output;
@@ -95,7 +161,7 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
   );
   const scenarioSpans = spans.filter((span) => !span.parentId);
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  // Created VUs/traces
   t.equal(
     reportSummary.counters['vusers.created'],
     expectedVus,
@@ -106,13 +172,16 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
     scenarioSpans.length,
     'The number of scenario spans should match the number of VUs created'
   );
+
+  // Errors and failed VUs
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
   t.equal(
     reportSummary.counters['vusers.failed'],
     expectedVusFailed,
     'No VUs should have failed'
   );
   t.equal(
-    spans.filter((span) => span.status === 2).length,
+    spans.filter((span) => span.status.code === 2).length,
     expectedVusFailed,
     'There should be no errors recorded on the spans'
   );
@@ -122,7 +191,29 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
     `There should be ${expectedTotalSpans} spans created in total`
   );
 
-  // Request spans
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  t.equal(
+    reportSummary.counters['vusers.failed'],
+    expectedVusFailed,
+    'No VUs should have failed'
+  );
+
+  t.equal(
+    Object.keys(reportSummary.counters).filter((metricName) =>
+      metricName.startsWith('errors.')
+    ).length,
+    expectedErrors,
+    `There should be ${expectedErrors} errors recorded`
+  );
+
+  // Span status can be set to error even when no error is recorded, e.g. when http status code is 404 or over
+  t.equal(
+    spans.filter((span) => span.status.code === 2).length,
+    expectedSpansWithErrorStatus,
+    `${expectedSpansWithErrorStatus} spans should have the 'error' status`
+  );
+
+  // Request level spans
   t.equal(
     reportSummary.counters['http.requests'],
     expectedRequests,
@@ -172,32 +263,48 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
       t.equal(
         siblingTimingSpans.length,
         expectedTimePhaseSpansPerRequest,
-        `Each request should have ${expectedTimePhaseSpansPerRequest} timing spans`
+        `Each request should have ${expectedTimePhaseSpansPerRequest} child timing phase spans`
       );
+      const names = timePhaseSpanNames.slice();
+      siblingTimingSpans
+        .map((span) => span.name)
+        .forEach((name) => {
+          if (names.includes(name)) {
+            t.pass(
+              'Correct child timing phase spans should be recorded for each request span'
+            );
+            names.splice(names.indexOf(name), 1);
+          } else {
+            t.fail(`Unexpected timing phase span: ${name}`);
+          }
+        });
     });
 
-  // Span names and useRequestNames setting
+  // Span names
   t.equal(
     scenarioSpans[0].name,
     scenarioName,
     'The scenario span should have the name of the scenario when set'
-  ); // If one is named correctly all will be, as all are set the same
+  );
+
+  // Curently this file always runs 3 req per scenario one with name dino, one without a name and one with name armadillo that is replaced with bombolini by using the replaceSpanNameRegex setting
+  // TODO Dynamically set the expected number of spans with a certain name or without a name
   t.equal(
     requestSpans.filter((span) => span.name === 'dino').length,
-    requestSpans.length / 2,
+    requestSpans.length / 3,
     'When useRequestNames is set to true, the request span should have the name of the request if the name is set'
-  ); // Request name was provided for only one of the 2 requests in the scenario
+  );
+  t.equal(
+    requestSpans.filter((span) => span.name === 'bombolini').length,
+    requestSpans.length / 3,
+    'replaceSpanNameRegex appropriately replaces the pattern in span name'
+  );
   t.equal(
     requestSpans.filter(
       (span) => span.name === span.attributes['http.method'].toLowerCase()
     ).length,
-    requestSpans.length / 2,
+    requestSpans.length / 3,
     'When useRequestNames is set to true, if no request name is provided,the request span will be named by the request method'
-  );
-  t.equal(
-    timingSpans.filter((span) => timePhaseSpanNames.includes(span.name)).length,
-    timingSpans.length,
-    'Time phase spans should have correct names'
   );
 
   // Attributes
@@ -231,4 +338,13 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
       'Correct values should be set for all user provided attributes'
     );
   });
-});
+}
+
+function setDynamicHTTPTraceExpectations() {
+  expectedSpansPerVu =
+    1 +
+    expectedRequestsPerVu +
+    expectedRequestsPerVu * expectedTimePhaseSpansPerRequest; // 1 represents the root scenario/VU span
+  expectedRequests = expectedVus * expectedRequestsPerVu;
+  expectedTotalSpans = expectedVus * expectedSpansPerVu;
+}

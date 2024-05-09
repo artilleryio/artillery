@@ -7,14 +7,20 @@ config:
     publish-metrics:
       - type: "open-telemetry"
         traces:
+          useRequestNames: true
+          replaceSpanNameRegex:
+            - pattern: "/armadillo"
+              as: "bombolini"
           exporter: "__test"
 
 scenarios:
-  - name: "pm-test"
+  - name: "trace-http-test"
     flow:
       - get:
           url: "/dino"
           name: "dino"
       - get:
           url: "/pony"
-          name: "pony"
+      - get:
+          url: "/armadillo"
+          name: "armadillo"
