@@ -236,23 +236,29 @@ class ArtilleryCloudPlugin {
       email: body.email
     };
 
-    const watcher = chokidar.watch(
+    const outputDir =
       process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR ||
-        `/tmp/${global.artillery.testRunId}`,
-      {
-        ignored: /(^|[\/\\])\../, // ignore dotfiles
-        persistent: true,
-        ignorePermissionErrors: true,
-        ignoreInitial: true
+      `/tmp/${global.artillery.testRunId}/`;
+
+    try {
+      fs.mkdirSync(outputDir, { recursive: true });
+    } catch (_err) {}
+
+    const watcher = chokidar.watch(outputDir, {
+      ignored: /(^|[\/\\])\../, // ignore dotfiles
+      persistent: true,
+      ignorePermissionErrors: true,
+      ignoreInitial: true,
+      awaitWriteFinish: {
+        stabilityThreshold: 2000,
+        pollInterval: 500
       }
-    );
+    });
 
     watcher.on('add', (fp) => {
       if (path.basename(fp).startsWith('trace-') && fp.endsWith('.zip')) {
-        setTimeout(() => {
-          this.uploading++;
-          this._uploadAsset(fp);
-        }, 5 * 1000);
+        this.uploading++;
+        this._uploadAsset(fp);
       }
     });
   }
