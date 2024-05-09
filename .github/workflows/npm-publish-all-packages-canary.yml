@@ -27,7 +27,8 @@ jobs:
       contents: read
       id-token: write
     with:
-      ref: ${{ github.sha }}
+      COMMIT_SHA: ${{ github.sha }}
+      USE_COMMIT_SHA_IN_VERSION: true
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
 

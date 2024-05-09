@@ -17,6 +17,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    with:
+      COMMIT_SHA: ${{ github.sha }}
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
 

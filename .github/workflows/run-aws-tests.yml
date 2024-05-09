@@ -36,7 +36,7 @@ jobs:
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
     with:
-      ref: ${{ github.event.pull_request.head.sha || null }} # this should only be run with this ref if is-collaborator has been run and passed
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha || null }} # this should only be run with this ref if is-collaborator has been run and passed
 
   generate-test-matrix:
     runs-on: ubuntu-latest
