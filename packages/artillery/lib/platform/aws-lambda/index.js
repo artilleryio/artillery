@@ -225,7 +225,7 @@ class PlatformLambda {
 
     let shouldCreateLambda;
     if (this.isContainerLambda) {
-      this.functionName = `artillery-worker-v${this.currentVersion.replace(
+      this.functionName = `artilleryio-v${this.currentVersion.replace(
         /\./g,
         '-'
       )}`;
