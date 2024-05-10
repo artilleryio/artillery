@@ -75,8 +75,7 @@ class PlatformLambda {
     const platformConfig = platformOpts.platformConfig;
 
     this.currentVersion = process.env.LAMBDA_IMAGE_VERSION || pkgVersion;
-    this.ecrImageRepository =
-      process.env.LAMBDA_IMAGE_REPOSITORY || 'artillery-worker';
+    this.ecrImageUrl = process.env.WORKER_IMAGE_URL;
     this.isContainerLambda = platformConfig.container === 'true';
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
@@ -138,7 +137,6 @@ class PlatformLambda {
 
     let bom, s3Path;
     if (this.isContainerLambda) {
-      await this.ensureECRImageExists();
       const result = await createAndUploadTestDependencies(
         this.bucketName,
         this.testRunId,
@@ -628,47 +626,6 @@ class PlatformLambda {
     return lambdaRoleArn;
   }
 
-  async ensureECRImageExists() {
-    const ecr = new AWS.ECR({ apiVersion: '2015-09-21', region: this.region });
-
-    const params = {
-      repositoryName: this.ecrImageRepository,
-      imageIds: [{ imageTag: this.currentVersion }]
-    };
-
-    let data;
-    try {
-      data = await ecr.describeImages(params).promise();
-    } catch (err) {
-      if (err.code === 'RepositoryNotFoundException') {
-        //TODO: add links to ECR documentation when available
-        console.error(
-          `ECR repository not found: ${this.ecrImageRepository}. Have you created an ECR Private Repository in ${this.region}?`
-        );
-        process.exit(1);
-      }
-
-      if (err.code === 'ImageNotFoundException') {
-        //TODO: add links to ECR documentation when available
-        console.error(
-          `ECR image ${this.currentVersion} not found in repository ${this.ecrImageRepository}. Have you pushed the image to ECR?`
-        );
-        process.exit(1);
-      }
-
-      throw new Error(`Unexpected error getting ECR image:\n${err}`);
-    }
-
-    if (data.imageDetails[0].imageTags.includes(this.currentVersion)) {
-      return;
-    } else {
-      console.error(
-        `ECR image ${this.currentVersion} not found in repository ${this.ecrImageRepository}. Have you pushed the image to ECR?`
-      );
-      process.exit(1);
-    }
-  }
-
   async checkIfNewLambdaIsNeeded({ memorySize, functionName }) {
     const lambda = new AWS.Lambda({
       apiVersion: '2015-03-31',
@@ -712,7 +669,9 @@ class PlatformLambda {
       lambdaConfig = {
         PackageType: 'Image',
         Code: {
-          ImageUri: `${this.accountId}.dkr.ecr.${this.region}.amazonaws.com/${this.ecrImageRepository}:${this.currentVersion}`
+          ImageUri:
+            this.ecrImageUrl ||
+            `301676560329.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}`
         },
         ImageConfig: {
           Command: ['a9-handler-index.handler'],
