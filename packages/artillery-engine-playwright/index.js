@@ -421,7 +421,14 @@ class PlaywrightEngine {
         if (initialContext.vars.isRecording) {
           self.vusRecording--;
           // This VU was recording but completed successfully, drop the recording
-          await context.tracing.stop();
+          // unless recordSuccessfulVUs is set
+          if (self.tracingConfig.recordSuccessfulVUs) {
+            await context.tracing.stop({
+              path: initialContext.vars.__tracePath
+            });
+          } else {
+            await context.tracing.stop();
+          }
         }
 
         await context.close();
