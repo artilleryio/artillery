@@ -50,10 +50,20 @@ class PlaywrightEngine {
     this.tracesRecordedCount = 0; // total count of traces recorded so far
     this.MAX_TRACE_RECORDINGS = 5; // total limit on traces we'll record
 
-    this.enablePlaywrightTracing = false;
-    if (typeof this.config.trace !== 'undefined') {
-      this.enablePlaywrightTracing = this.config.trace !== false;
+    // Playwright tracing is disabled if:
+    // - trace is not set
+    // - trace is set to false
+    // - trace is set to an object with enabled = false
+    this.tracingConfig =
+      typeof this.config.trace === 'object'
+        ? this.config.trace
+        : {
+            enabled: false
+          };
+    if (typeof this.config.trace === 'boolean') {
+      this.tracingConfig.enabled = this.config.trace;
     }
+    this.enablePlaywrightTracing = this.tracingConfig.enabled !== false;
 
     // We use this to make sure only one VU is recording at one time:
     this.playwrightRecordTraceForNextVU = this.enablePlaywrightTracing;
