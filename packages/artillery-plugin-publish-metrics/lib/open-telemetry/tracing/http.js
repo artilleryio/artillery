@@ -104,7 +104,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
     const scenarioSpan = userContext.vars['__httpScenarioSpan'];
     if (this.config.smartSampling) {
-      this.tagResponseOutliers(span, scenarioSpan, res, this.outlierCriteria);
+      this.tagResponseOutliers(span, res, this.outlierCriteria);
     }
 
     if (res.timings && res.timings.phases) {
@@ -187,7 +187,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
   otelTraceOnError(err, req, userContext, events, done) {
     const scenarioSpan = userContext.vars.__httpScenarioSpan;
-    const requestSpan = userContext.vars.__otlpHTTPRequestSpan;
+    const requestSpan = userContext.vars['__otlpHTTPRequestSpans']?.[req.uuid];
     if (!scenarioSpan) {
       return done();
     }
@@ -212,18 +212,16 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       events.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
     } else {
       scenarioSpan?.recordException(err);
-    }
-    // We set the scenario span status to error regardles of what level the error happened in (scenario or request) for easier querrying
-    scenarioSpan.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: err.message || err
-    });
-
-    if (this.config.smartSampling) {
-      scenarioSpan.setAttributes({
-        outlier: 'true',
-        'outlier.type.error': true
+      scenarioSpan.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: err.message || err
       });
+      if (this.config.smartSampling) {
+        scenarioSpan.setAttributes({
+          outlier: 'true',
+          'outlier.type.error': true
+        });
+      }
     }
 
     scenarioSpan.end();
@@ -232,7 +230,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     return done();
   }
 
-  tagResponseOutliers(span, scenarioSpan, res, criteria) {
+  tagResponseOutliers(span, res, criteria) {
     const types = {};
     const details = [];
     if (res.statusCode >= this.statusAsErrorThreshold) {
@@ -255,11 +253,6 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     span.setAttributes({
       outlier: 'true',
       'outlier.details': details.join(', '),
-      ...types
-    });
-
-    scenarioSpan.setAttributes({
-      outlier: 'true',
       ...types
     });
   }

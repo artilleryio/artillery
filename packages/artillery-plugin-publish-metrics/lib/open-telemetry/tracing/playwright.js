@@ -159,11 +159,20 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           // Execute the user-provided processor function within the context of the new span
           await userFlowFunction(page, vuContext, events, test);
         } catch (err) {
-          scenarioSpan.recordException(err, Date.now());
-          scenarioSpan.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: err.message
-          });
+          // We record the error on scenario span only if it has not been recorded in step spans. This is to avoid duplicate error recording
+          if (!err.message.startsWith('Error during step execution:')) {
+            scenarioSpan.recordException(err, Date.now());
+            scenarioSpan.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: err.message
+            });
+          }
+          // Removing the prefix added to error message in step spans so we can throw the original error
+          const originalErrMsg = err.message.replace(
+            'Error during step execution:',
+            ''
+          );
+          err.message = originalErrMsg;
           throw err;
         } finally {
           if (pageSpan && !pageSpan.endTime[0]) {
@@ -212,6 +221,8 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             message: err.message
           });
           this.debug('There has been an error during step execution:');
+          // Adding a prefix to the error message so we can screen out errors added to step spans from the ones we need to add to scenario span
+          err.message = `Error during step execution: ${err.message}`;
           throw err;
         } finally {
           const difference = Date.now() - startTime;
