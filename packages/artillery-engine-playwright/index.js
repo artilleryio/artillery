@@ -403,9 +403,12 @@ class PlaywrightEngine {
             await context.tracing.stop({
               path: initialContext.vars.__tracePath
             });
+            events.emit('counter', 'browser.traces_recorded', 1);
             self.lastTraceRecordedTime = Date.now();
             self.tracesRecordedCount++;
             initialContext.vars.isRecording = false; // for finally{} block
+          } else {
+            events.emit('counter', 'browser.traces_discarded', 1);
           }
         }
 
