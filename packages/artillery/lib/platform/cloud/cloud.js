@@ -58,11 +58,6 @@ class ArtilleryCloudPlugin {
 
         this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
 
-        console.log(
-          'Artillery Cloud reporting is configured for this test run'
-        );
-        console.log(`Run URL: ${testRunUrl}`);
-
         await this._event('testrun:init', {
           metadata: testInfo.metadata
         });
@@ -230,6 +225,11 @@ class ArtilleryCloudPlugin {
       this.off = true;
       throw err;
     }
+
+    console.log('Artillery Cloud reporting is configured for this test run');
+    console.log(
+      `Run URL: ${this.baseUrl}/load-tests/${global.artillery.testRunId}`
+    );
 
     this.user = {
       id: body.id,

@@ -47,16 +47,29 @@ class PlaywrightEngine {
     // Tracing:
     // Note that these variables are shared across VUs *within* a single worker thread, as each
     // worker creates its own instance of the engine.
-    this.tracesRecordedCount = 0; // total count of traces recorded so far
-    this.MAX_TRACE_RECORDINGS = 5; // total limit on traces we'll record
 
-    this.enablePlaywrightTracing = false;
-    if (typeof this.config.trace !== 'undefined') {
-      this.enablePlaywrightTracing = this.config.trace !== false;
+    // Playwright tracing is disabled if:
+    // - trace is not set
+    // - trace is set to false
+    // - trace is set to an object with enabled = false
+    this.tracingConfig =
+      typeof this.config.trace === 'object'
+        ? this.config.trace
+        : {
+            enabled: false
+          };
+    if (typeof this.config.trace === 'boolean') {
+      this.tracingConfig.enabled = this.config.trace;
     }
+    this.enablePlaywrightTracing = this.tracingConfig.enabled !== false;
+
+    this.tracesRecordedCount = 0; // total count of traces recorded so far
+    this.MAX_TRACE_RECORDINGS = this.tracingConfig.maxTraceRecordings || 360; // total limit on traces we'll record
 
     // We use this to make sure only one VU is recording at one time:
-    this.playwrightRecordTraceForNextVU = this.enablePlaywrightTracing;
+    this.MAX_CONCURRENT_RECORDINGS =
+      this.tracingConfig.maxConcurrentRecordings || 3; // maximum number of VUs that can record at the same time
+    this.vusRecording = 0; // number of VUs currently recording
 
     //
     // We use this to limit the number of recordings that we save:
@@ -64,15 +77,14 @@ class PlaywrightEngine {
     this.lastTraceRecordedTime = 0; // timestamp of last saved recording
     // Minimum interval between saving new recordings. Add randomness to avoid multiple workers
     // saving multiple recordings at around the same time which would likely be redundant.
-    // Interval is between 5 and 10 minutes.
+    // Interval is between 1-5 minutes
     this.TRACE_RECORDING_INTERVAL_MSEC =
-      1000 * 60 * (Math.ceil(Math.random() * 5) + 5);
+      this.tracingConfig.recordingIntervalSec * 1000 ||
+      1000 * 60 * Math.ceil(Math.random() * 5);
 
-    this.tracePaths = [];
     this.traceOutputDir =
       process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR ||
       `/tmp/${global.artillery.testRunId}`;
-
     return this;
   }
 
@@ -141,9 +153,17 @@ class PlaywrightEngine {
 
       const context = await browser.newContext(contextOptions);
 
-      if (self.playwrightRecordTraceForNextVU) {
-        self.playwrightRecordTraceForNextVU = false;
+      if (
+        self.vusRecording < self.MAX_CONCURRENT_RECORDINGS &&
+        self.enablePlaywrightTracing &&
+        self.tracesRecordedCount < self.MAX_TRACE_RECORDINGS
+      ) {
+        self.vusRecording++;
         initialContext.vars.isRecording = true; // used by the VU to discard the trace if needed
+        const tracePath = `${self.traceOutputDir}/trace-${
+          initialContext.vars.$testId
+        }-${initialContext.vars.$uuid}-${Date.now()}.zip`;
+        initialContext.vars.__tracePath = tracePath;
         await context.tracing.start({ screenshots: true, snapshots: true });
       }
 
@@ -380,13 +400,12 @@ class PlaywrightEngine {
             Date.now() - self.lastTraceRecordedTime >
             self.TRACE_RECORDING_INTERVAL_MSEC
           ) {
-            const tracePath = `${self.traceOutputDir}/trace-${
-              initialContext.vars.$testId
-            }-${initialContext.vars.$uuid}-${Date.now()}.zip`;
-            await context.tracing.stop({ path: tracePath });
+            await context.tracing.stop({
+              path: initialContext.vars.__tracePath
+            });
+            events.emit('counter', 'browser.traces_collected', 1);
             self.lastTraceRecordedTime = Date.now();
             self.tracesRecordedCount++;
-            self.tracePaths.push(tracePath);
             initialContext.vars.isRecording = false; // for finally{} block
           }
         }
@@ -397,16 +416,19 @@ class PlaywrightEngine {
           throw err;
         }
       } finally {
-        if (
-          self.enablePlaywrightTracing &&
-          self.tracesRecordedCount < self.MAX_TRACE_RECORDINGS
-        ) {
-          self.playwrightRecordTraceForNextVU = true;
-        }
-
         if (initialContext.vars.isRecording) {
+          self.vusRecording--;
           // This VU was recording but completed successfully, drop the recording
-          await context.tracing.stop();
+          // unless recordSuccessfulVUs is set
+          if (self.tracingConfig.recordSuccessfulVUs) {
+            await context.tracing.stop({
+              path: initialContext.vars.__tracePath
+            });
+            events.emit('counter', 'browser.traces_collected', 1);
+          } else {
+            await context.tracing.stop();
+            events.emit('counter', 'browser.traces_discarded', 1);
+          }
         }
 
         await context.close();
