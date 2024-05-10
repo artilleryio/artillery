@@ -2,13 +2,18 @@ const tap = require('tap');
 const { $ } = require('zx');
 const { getTestTags } = require('../../cli/_helpers.js');
 
-tap.test('Run a test on AWS Lambda', async (t) => {
+tap.test('Run a test on AWS Lambda using containers', async (t) => {
   const tags = getTestTags(['type:acceptance']);
   const configPath = `${__dirname}/fixtures/quick-loop-with-csv/config.yml`;
   const scenarioPath = `${__dirname}/fixtures/quick-loop-with-csv/blitz.yml`;
 
+  // TODO: override with created image once we have the workflow in place
+  process.env.WORKER_IMAGE_URL =
+    '377705245354.dkr.ecr.us-east-1.amazonaws.com/artillery-worker:2.0.11-2a2f7a1';
+  process.env.LAMBDA_IMAGE_VERSION = '2.0.11-2a2f7a1';
+
   const output =
-    await $`artillery run-lambda --count 10 --region eu-west-1 --config ${configPath} --record --tags ${tags} ${scenarioPath}`;
+    await $`artillery run-lambda --count 10 --region us-east-1 --container --config ${configPath} --record --tags ${tags} ${scenarioPath}`;
 
   t.equal(output.exitCode, 0, 'CLI should exit with code 0');
 
