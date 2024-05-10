@@ -77,9 +77,10 @@ class PlaywrightEngine {
     this.lastTraceRecordedTime = 0; // timestamp of last saved recording
     // Minimum interval between saving new recordings. Add randomness to avoid multiple workers
     // saving multiple recordings at around the same time which would likely be redundant.
-    // Interval is between 5 and 10 minutes.
+    // Interval is between 1-5 minutes
     this.TRACE_RECORDING_INTERVAL_MSEC =
-      1000 * 60 * (Math.ceil(Math.random() * 5) + 5);
+      this.tracingConfig.recordingIntervalSec * 1000 ||
+      1000 * 60 * Math.ceil(Math.random() * 5);
 
     this.traceOutputDir =
       process.env.PLAYWRIGHT_TRACING_OUTPUT_DIR ||
