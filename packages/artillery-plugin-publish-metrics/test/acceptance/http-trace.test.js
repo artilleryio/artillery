@@ -7,17 +7,12 @@ const {
   getTestId
 } = require('../_helpers.js');
 
+let expectedExitCode;
 let expectedVus;
 let expectedRequestsPerVu;
-let expectedTimePhaseSpansPerRequest;
-let expectedVusFailed;
-let expectedErrors;
-let expectedSpansWithErrorStatus;
+let expectedReqSpansPerVu;
+let expectedTimePhaseSpansPerReqSpan;
 let userSetAttributes;
-
-let expectedSpansPerVu;
-let expectedRequests;
-let expectedTotalSpans;
 let scenarioName = 'trace-http-test';
 let timePhaseSpanNames = [
   'dns_lookup',
@@ -26,6 +21,20 @@ let timePhaseSpanNames = [
   'download',
   'first_byte'
 ]; // There is also 'tls_negotiation' but it will not be present in the spans as the test does not make https requests
+
+// Error specific expectations
+let expectedVusFailed = 0;
+let expectedErrors = 0;
+let expectedSpansWithErrorStatus = 0;
+let expectedReqSpansWithError = 0;
+let expectedReqSpansWithErrorPerVu = 0;
+let expectedTimePhaseSpansPerReqSpanWithError = 0;
+
+// Dynamically set expectations based on the above
+let expectedReqWithoutErrorPerVu;
+let expectedSpansPerVu;
+let expectedReqSpans;
+let expectedTotalSpans;
 
 let reportFilePath;
 let tracesFilePath;
@@ -36,14 +45,17 @@ beforeEach(async (t) => {
 
 afterEach(async (t) => {
   deleteFile(reportFilePath);
-  deleteFile(tracesFilePath);
+  // deleteFile(tracesFilePath);
 });
 
 test('OTel reporter correctly records trace data for http engine test runs', async (t) => {
   // Arrange
+  expectedExitCode = 0;
   expectedVus = 4;
   expectedRequestsPerVu = 3;
-  expectedTimePhaseSpansPerRequest = 5;
+  expectedReqSpansPerVu = expectedRequestsPerVu;
+
+  expectedTimePhaseSpansPerReqSpan = 5;
   expectedVusFailed = 0;
   expectedErrors = 0;
   expectedSpansWithErrorStatus = 0;
@@ -81,16 +93,17 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
 });
 
 test('OTel reporter works appropriately with "parallel" scenario setting ', async (t) => {
-  (expectedVus = 2),
-    (expectedRequestsPerVu = 3),
-    (expectedTimePhaseSpansPerRequest = 5),
-    (expectedVusFailed = 0),
-    (expectedErrors = 0),
-    (expectedSpansWithErrorStatus = 0);
+  expectedExitCode = 0;
+  expectedVus = 4;
+  expectedRequestsPerVu = 3;
+  expectedReqSpansPerVu = expectedRequestsPerVu;
+  expectedTimePhaseSpansPerReqSpan = 5;
+  expectedVusFailed = 0;
+  expectedErrors = 0;
+  expectedSpansWithErrorStatus = 0;
 
   const override = {
     config: {
-      phases: [{ duration: 2, arrivalRate: 1 }],
       plugins: {
         'publish-metrics': [
           {
@@ -135,6 +148,63 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
   }
 });
 
+test('Otel reporter appropriately records traces for test runs with errors', async (t) => {
+  expectedExitCode = 0;
+  expectedVus = 4;
+  expectedRequestsPerVu = 2;
+  expectedReqSpansPerVu = 3;
+  expectedReqSpansWithErrorPerVu = 1;
+  expectedTimePhaseSpansPerReqSpan = 5;
+  expectedTimePhaseSpansPerReqSpanWithError = 0;
+  expectedVusFailed = expectedVus;
+  expectedErrors = expectedVus;
+  expectedSpansWithErrorStatus = expectedVus;
+
+  const override = {
+    config: {
+      plugins: {
+        'publish-metrics': [
+          {
+            type: 'open-telemetry',
+            traces: {
+              exporter: '__test',
+              __outputPath: tracesFilePath,
+              useRequestNames: true,
+              replaceSpanNameRegex: [{ pattern: 'armadillo', as: 'bombolini' }],
+              attributes: {
+                environment: 'test',
+                tool: 'Artillery'
+              }
+            }
+          }
+        ]
+      }
+    },
+    scenarios: [
+      {
+        name: scenarioName,
+        flow: [
+          {
+            parallel: [
+              { get: { url: '/dino', name: 'dino' } },
+              { get: { url: '/armadillo', name: 'armadillo' } },
+              { get: { url: '/pony', body: { json: 'This will fail' } } }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  userSetAttributes =
+    override.config.plugins['publish-metrics'][0].traces.attributes;
+  try {
+    await runHttpTest(t, override);
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 async function runHttpTest(t, override) {
   setDynamicHTTPTraceExpectations();
 
@@ -156,7 +226,7 @@ async function runHttpTest(t, override) {
 
   const spans = JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'));
   const requestSpans = spans.filter((span) => span.attributes['http.method']);
-  const timingSpans = spans.filter(
+  const timingPhaseSpans = spans.filter(
     (span) => !span.attributes['http.method'] && span.parentId
   );
   const scenarioSpans = spans.filter((span) => !span.parentId);
@@ -172,58 +242,90 @@ async function runHttpTest(t, override) {
     scenarioSpans.length,
     'The number of scenario spans should match the number of VUs created'
   );
-
-  // Errors and failed VUs
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.equal(
-    reportSummary.counters['vusers.failed'],
-    expectedVusFailed,
-    'No VUs should have failed'
-  );
-  t.equal(
-    spans.filter((span) => span.status.code === 2).length,
-    expectedVusFailed,
-    'There should be no errors recorded on the spans'
-  );
   t.equal(
     spans.length,
     expectedTotalSpans,
     `There should be ${expectedTotalSpans} spans created in total`
   );
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  // Errors and failed VUs
+  t.equal(
+    output.exitCode,
+    expectedExitCode,
+    `CLI Exit Code should be ${expectedExitCode}`
+  );
   t.equal(
     reportSummary.counters['vusers.failed'],
     expectedVusFailed,
-    'No VUs should have failed'
+    `${expectedVusFailed} VUs should have failed`
   );
 
+  const errorsReported = Object.keys(reportSummary.counters).filter(
+    (metricName) => metricName.startsWith('errors.')
+  );
+  const numErrorsReported = errorsReported.reduce(
+    (acc, metricName) => acc + reportSummary.counters[metricName],
+    0
+  );
   t.equal(
-    Object.keys(reportSummary.counters).filter((metricName) =>
-      metricName.startsWith('errors.')
-    ).length,
+    numErrorsReported,
     expectedErrors,
-    `There should be ${expectedErrors} errors recorded`
+    `There should be ${expectedErrors} errors reported`
   );
+  t.equal(
+    spans.filter((span) => span.events[0]?.name === 'exception').length,
+    expectedErrors,
+    'Num of errors in report should match the num of spans with error exception'
+  ); // In http engine the only event we record is the error exception event so we can just check that event is present
 
-  // Span status can be set to error even when no error is recorded, e.g. when http status code is 404 or over
+  // We check the error span status separately from errors as it can be set to error even when no error is recorded, e.g. when http status code is 404 or over
   t.equal(
     spans.filter((span) => span.status.code === 2).length,
     expectedSpansWithErrorStatus,
     `${expectedSpansWithErrorStatus} spans should have the 'error' status`
   );
 
+  if (expectedErrors) {
+    t.equal(
+      spans.filter(
+        (span) => span.events[0]?.name === 'exception' && span.status.code === 2
+      ).length,
+      expectedErrors,
+      'Errors should be recorded on spans as an event and status code'
+    );
+    t.equal(
+      requestSpans.filter((span) => span.events[0]?.name === 'exception')
+        .length,
+      expectedReqSpansWithError,
+      `${expectedReqSpansWithError} request spans should have the error exception recorded`
+    );
+    spans
+      .filter((span) => span.events[0]?.name === 'exception')
+      .forEach((span) => {
+        t.hasProps(
+          span.events[0].attributes,
+          ['exception.type', 'exception.message', 'exception.stacktrace'],
+          'Every error event recorded should have the error type, message and stacktrace recorded'
+        );
+      });
+  }
+
   // Request level spans
   t.equal(
     reportSummary.counters['http.requests'],
-    expectedRequests,
-    `${expectedRequests} requests should have been made`
+    expectedRequestsPerVu * expectedVus,
+    `${expectedRequestsPerVu * expectedVus} requests should have been made`
   );
-  t.equal(
-    requestSpans.length,
-    reportSummary.counters['http.requests'],
-    'The number of request spans should match the number of requests made'
-  );
+
+  // If an error happens when trying to make a request (after before request hook) resulting in request not being made, we will still have the request span for it with the error recorded on the span
+  // So the number of request spans will not be equal to the number of requests made
+  if (!expectedErrors) {
+    t.equal(
+      requestSpans.length,
+      reportSummary.counters['http.requests'],
+      'The number of request spans should match the number of requests made'
+    );
+  }
 
   Object.keys(reportSummary.counters)
     .filter((counter) => {
@@ -249,24 +351,29 @@ async function runHttpTest(t, override) {
       );
       t.equal(
         siblingRequestSpans.length,
-        expectedRequestsPerVu,
-        `Each trace should have ${expectedRequestsPerVu} request spans`
+        expectedReqSpansPerVu,
+        `Each trace should have ${expectedReqSpansPerVu} request spans`
       );
     });
 
-  requestSpans
-    .map((span) => span.id)
-    .forEach((id) => {
-      const siblingTimingSpans = timingSpans.filter(
-        (timingSpan) => timingSpan.parentId === id
-      );
-      t.equal(
-        siblingTimingSpans.length,
-        expectedTimePhaseSpansPerRequest,
-        `Each request should have ${expectedTimePhaseSpansPerRequest} child timing phase spans`
-      );
-      const names = timePhaseSpanNames.slice();
-      siblingTimingSpans
+  requestSpans.forEach((span) => {
+    const siblingTimingPhaseSpans = timingPhaseSpans.filter(
+      (timingSpan) => timingSpan.parentId === span.id
+    );
+    const hasError = span.events[0]?.name === 'exception';
+    const expectedCount = hasError
+      ? expectedTimePhaseSpansPerReqSpanWithError
+      : expectedTimePhaseSpansPerReqSpan;
+    t.equal(
+      siblingTimingPhaseSpans.length,
+      expectedCount,
+      `Request spans ${
+        hasError ? 'with error' : ''
+      } should have ${expectedCount} child timing phase spans`
+    );
+    const names = timePhaseSpanNames.slice();
+    if (!hasError) {
+      siblingTimingPhaseSpans
         .map((span) => span.name)
         .forEach((name) => {
           if (names.includes(name)) {
@@ -278,7 +385,8 @@ async function runHttpTest(t, override) {
             t.fail(`Unexpected timing phase span: ${name}`);
           }
         });
-    });
+    }
+  });
 
   // Span names
   t.equal(
@@ -287,7 +395,7 @@ async function runHttpTest(t, override) {
     'The scenario span should have the name of the scenario when set'
   );
 
-  // Curently this file always runs 3 req per scenario one with name dino, one without a name and one with name armadillo that is replaced with bombolini by using the replaceSpanNameRegex setting
+  // Curently this file always assumes 3 req per scenario one with name dino, one without a name and one with name armadillo that is replaced with bombolini by using the replaceSpanNameRegex setting
   // TODO Dynamically set the expected number of spans with a certain name or without a name
   t.equal(
     requestSpans.filter((span) => span.name === 'dino').length,
@@ -341,10 +449,23 @@ async function runHttpTest(t, override) {
 }
 
 function setDynamicHTTPTraceExpectations() {
-  expectedSpansPerVu =
-    1 +
-    expectedRequestsPerVu +
-    expectedRequestsPerVu * expectedTimePhaseSpansPerRequest; // 1 represents the root scenario/VU span
-  expectedRequests = expectedVus * expectedRequestsPerVu;
+  if (!expectedErrors) {
+    expectedSpansPerVu =
+      1 +
+      expectedReqSpansPerVu +
+      expectedReqSpansPerVu * expectedTimePhaseSpansPerReqSpan; // 1 represents the root scenario/VU span
+  } else {
+    // If there are errors, the number of spans could be lower than expected - request spans with error might not have all the timing phase spans
+    const expectedReqSpansWithoutErrorPerVu =
+      expectedReqSpansPerVu - expectedReqSpansWithErrorPerVu;
+    expectedSpansPerVu =
+      1 +
+      expectedReqSpansPerVu +
+      expectedReqSpansWithoutErrorPerVu * expectedTimePhaseSpansPerReqSpan +
+      expectedReqSpansWithErrorPerVu *
+        expectedTimePhaseSpansPerReqSpanWithError;
+    expectedReqSpansWithError = expectedReqSpansWithErrorPerVu * expectedVus;
+  }
+  expectedReqSpans = expectedVus * expectedReqSpansPerVu;
   expectedTotalSpans = expectedVus * expectedSpansPerVu;
 }
