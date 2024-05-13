@@ -66,7 +66,7 @@ const createAndUploadLambdaZip = async (
 ) => {
   const dirname = temp.mkdirSync(); // TODO: May want a way to override this by the user
   const zipfile = temp.path({ suffix: '.zip' });
-  console.log({ dirname, zipfile });
+  debug({ dirname, zipfile });
 
   artillery.log('- Bundling test data');
   const bom = await _createLambdaBom(absoluteScriptPath, absoluteConfigPath);
