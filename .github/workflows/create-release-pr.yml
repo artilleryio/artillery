@@ -22,6 +22,7 @@ jobs:
         artillery-plugin-fake-data,\
         artillery-plugin-metrics-by-endpoint,\
         artillery-plugin-publish-metrics,\
+        artillery-plugin-slack,\
         commons,\
         core,\
         artillery"
