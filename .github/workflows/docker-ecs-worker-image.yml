@@ -79,12 +79,11 @@ jobs:
       
       - name: Build the Docker image (public and private)
         run: |
-          docker build \ 
+          docker build . \ 
             --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" \
             --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }} \
             --tag 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.WORKER_VERSION }} \
-            -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile \
-            .
+            -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
     
       - name: Push Docker image (Public - Fargate)
         run: |
