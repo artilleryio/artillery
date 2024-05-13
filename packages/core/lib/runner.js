@@ -341,7 +341,7 @@ function runScenario(script, metrics, runState, contextVars, options) {
         scenario.name
       );
       const hasScenarioByName = scenario.name === options.scenarioName;
-      const hasScenario = hasScenarioByRegex || hasScenarioByName;
+      const hasScenario = hasScenarioByName || hasScenarioByRegex;
 
       if (hasScenario) {
         foundIndex = index;
