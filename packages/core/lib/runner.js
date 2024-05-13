@@ -453,8 +453,7 @@ function createContext(script, contextVars, additionalProperties = {}) {
         $environment: script._environment,
         $processEnvironment: process.env, // TODO: deprecate
         $env: process.env,
-        $testId: global.artillery.testRunId,
-        $dirname: path.dirname(script._configPath)
+        $testId: global.artillery.testRunId
       },
       contextVars || {}
     ),
@@ -465,6 +464,10 @@ function createContext(script, contextVars, additionalProperties = {}) {
     },
     ...additionalPropertiesWithoutOverride
   };
+
+  if (script._configPath) {
+    INITIAL_CONTEXT.vars.$dirname = path.dirname(script._configPath);
+  }
 
   let result = INITIAL_CONTEXT;
 
@@ -477,6 +480,7 @@ function createContext(script, contextVars, additionalProperties = {}) {
 
   result._uid = uuidv4();
   result.vars.$uuid = result._uid;
+
   return result;
 }
 
