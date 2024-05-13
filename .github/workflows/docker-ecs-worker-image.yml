@@ -53,7 +53,7 @@ jobs:
           echo GITHUB SHA ${{ github.sha }}
           echo WORKER_VERSION ENV ${{ env.WORKER_VERSION }}
     
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials (Public ECR)
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: us-east-1
@@ -90,7 +90,7 @@ jobs:
         run: |
           docker push public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }}
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials (Private ECR)
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: eu-west-1
@@ -99,7 +99,7 @@ jobs:
           role-session-name: OIDCSession
           mask-aws-account-id: true
   
-      - name: Login to Amazon ECR Public
+      - name: Login to Amazon ECR Private
         id: login-ecr-private
         uses: aws-actions/amazon-ecr-login@v1
 
