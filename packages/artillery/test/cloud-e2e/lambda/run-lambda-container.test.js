@@ -46,7 +46,7 @@ tap.test(
     const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
 
     const output =
-      await $`artillery run-lambda ${scenarioPath} --container --output ${reportFilePath} --tags ${tags},typescript:true`;
+      await $`artillery run-lambda ${scenarioPath} --container --record --output ${reportFilePath} --tags ${tags},typescript:true`;
 
     t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
