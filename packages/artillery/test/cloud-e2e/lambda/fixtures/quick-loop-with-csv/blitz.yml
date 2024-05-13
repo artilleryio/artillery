@@ -1,5 +1,6 @@
 scenarios:
-  - flow:
+  - beforeScenario: emitCsvCounters
+    flow:
       - loop:
           - get:
               url: "/dino"

@@ -1,4 +1,4 @@
-module.exports = { maybeSleep };
+module.exports = { maybeSleep, emitCsvCounters };
 
 function maybeSleep(req, context, events, done) {
   if (Math.random() < 0.7) {
@@ -8,4 +8,16 @@ function maybeSleep(req, context, events, done) {
   setTimeout(() => {
     return done();
   }, Math.random() * 1000);
+}
+
+function emitCsvCounters(context, events, done) {
+  if (context.vars.number) {
+    events.emit('counter', `csv_number_${context.vars.number}`, 1);
+  }
+
+  if (context.vars.name) {
+    events.emit('counter', `csv_name_${context.vars.name}`, 1);
+  }
+
+  return done();
 }
