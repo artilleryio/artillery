@@ -138,20 +138,49 @@ tap.test('Can specify scenario to run by name', async (t) => {
   );
 });
 
+tap.test('Can specify scenario to run by name', async (t) => {
+  const [exitCode, output] = await execute([
+    'run',
+    '--scenario-name',
+    'Test Scenario (4)',
+    '-o',
+    `${reportFilePath}`,
+    'test/scripts/scenario-named/scenario.yml'
+  ]);
+
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(
+    output.stdout.includes('Successfully running scenario 4'),
+    'Should log success'
+  );
+  const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+  t.equal(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario (4)'],
+    6,
+    'Should have created 6 vusers for the right scenario'
+  );
+  t.type(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario 1'],
+    'undefined',
+    'Should not have created vusers for the wrong scenario'
+  );
+});
+
 tap.test(
   'Errors correctly when specifying a non-existing scenario by name',
   async (t) => {
     const [exitCode, output] = await execute([
       'run',
       '--scenario-name',
-      'Test Scenario 4',
+      'Test Scenario 5',
       'test/scripts/scenario-named/scenario.yml'
     ]);
 
     t.equal(exitCode, 11);
     t.ok(
       output.stdout.includes(
-        'Error: Scenario Test Scenario 4 not found in script. Make sure your chosen scenario matches the one in your script exactly.'
+        'Error: Scenario Test Scenario 5 not found in script. Make sure your chosen scenario matches the one in your script exactly.'
       ),
       'Should log error when scenario not found'
     );
