@@ -465,6 +465,10 @@ function createContext(script, contextVars, additionalProperties = {}) {
     ...additionalPropertiesWithoutOverride
   };
 
+  if (script._configPath) {
+    INITIAL_CONTEXT.vars.$dirname = path.dirname(script._configPath);
+  }
+
   let result = INITIAL_CONTEXT;
 
   // variables from payloads:
@@ -476,6 +480,7 @@ function createContext(script, contextVars, additionalProperties = {}) {
 
   result._uid = uuidv4();
   result.vars.$uuid = result._uid;
+
   return result;
 }
 

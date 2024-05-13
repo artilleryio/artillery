@@ -22,6 +22,7 @@ module.exports = {
   addOverrides,
   addVariables,
   addDefaultPlugins,
+  resolveConfigPath,
   resolveConfigTemplates,
   checkConfig,
   renderVariables,
@@ -97,11 +98,12 @@ function addDefaultPlugins(script) {
   return finalScript;
 }
 
-async function resolveConfigTemplates(script, flags) {
+async function resolveConfigTemplates(script, flags, configPath) {
   const cliVariables = flags.variables ? JSON.parse(flags.variables) : {};
 
   script.config = engineUtil.template(script.config, {
     vars: {
+      $dirname: path.dirname(configPath),
       $testId: global.artillery.testRunId,
       $processEnvironment: process.env,
       $env: process.env,
@@ -196,6 +198,39 @@ async function checkConfig(script, scriptPath, flags) {
     );
     payloadSpec.path = resolvedPathToPayload;
   });
+
+  return script;
+}
+
+async function resolveConfigPath(script, flags, scriptPath) {
+  if (!flags.config) {
+    script._configPath = scriptPath;
+    return script;
+  }
+
+  const absoluteConfigPath = path.resolve(process.cwd(), flags.config);
+  script._configPath = absoluteConfigPath;
+
+  if (!script.config.processor) {
+    return script;
+  }
+
+  const processorPath = path.resolve(
+    path.dirname(absoluteConfigPath),
+    script.config.processor
+  );
+
+  const stats = fs.statSync(processorPath, { throwIfNoEntry: false });
+
+  if (typeof stats === 'undefined') {
+    // No file at that path - backwards compatibility mode:
+    console.log(
+      'WARNING - config.processor is now resolved relative to the config file'
+    );
+    console.log('Expected to find file at:', processorPath);
+  } else {
+    script.config.processor = processorPath;
+  }
 
   return script;
 }

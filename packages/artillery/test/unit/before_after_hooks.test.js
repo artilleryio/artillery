@@ -58,7 +58,8 @@ const script = {
         }
       ]
     }
-  ]
+  ],
+  _configPath: 'fakepath.yml'
 };
 
 const authToken = 'abcdefg';

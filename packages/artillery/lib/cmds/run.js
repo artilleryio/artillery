@@ -8,7 +8,8 @@ const {
   addVariables,
   addDefaultPlugins,
   resolveConfigTemplates,
-  checkConfig
+  checkConfig,
+  resolveConfigPath
 } = require('../../util');
 
 const p = require('util').promisify;
@@ -490,6 +491,7 @@ function replaceProcessorIfTypescript(
 }
 
 async function prepareTestExecutionPlan(inputFiles, flags, args) {
+  const scriptPath = inputFiles[0];
   let script1 = {};
 
   for (const fn of inputFiles) {
@@ -498,40 +500,23 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
     script1 = _.merge(script1, parsedData);
   }
 
-  script1 = await checkConfig(script1, inputFiles[0], flags);
+  script1 = await checkConfig(script1, scriptPath, flags);
 
-  if (flags.config) {
-    const absoluteConfigPath = path.resolve(process.cwd(), flags.config);
+  const script2 = await resolveConfigPath(script1, flags, scriptPath);
 
-    if (script1.config?.processor) {
-      const newPath = path.resolve(
-        path.dirname(absoluteConfigPath),
-        script1.config.processor
-      );
+  const script3 = await addOverrides(script2, flags);
+  const script4 = await addVariables(script3, flags);
+  const script5 = await resolveConfigTemplates(
+    script4,
+    flags,
+    script4._configPath
+  );
 
-      const stats = fs.statSync(newPath, { throwIfNoEntry: false });
-
-      if (typeof stats === 'undefined') {
-        // No file at that path - backwards compatibility mode:
-        console.log(
-          'WARNING - config.processor is now resolved relative to the config file'
-        );
-        console.log('Expected to find file at:', newPath);
-      } else {
-        script1.config.processor = newPath;
-      }
-    }
-  }
-
-  const script2 = await addOverrides(script1, flags);
-  const script3 = await addVariables(script2, flags);
-  const script4 = await resolveConfigTemplates(script3, flags);
-
-  if (!script4.config.target) {
+  if (!script5.config.target) {
     throw new Error('No target specified and no environment chosen');
   }
 
-  const validationError = validateScript(script4);
+  const validationError = validateScript(script5);
 
   if (validationError) {
     console.log(`Scenario validation error: ${validationError}`);
@@ -539,10 +524,10 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
     process.exit(1);
   }
 
-  const script5 = await readPayload(script4);
+  const script6 = await readPayload(script5);
 
-  if (typeof script5.config.phases === 'undefined' || flags.solo) {
-    script5.config.phases = [
+  if (typeof script6.config.phases === 'undefined' || flags.solo) {
+    script6.config.phases = [
       {
         duration: 1,
         arrivalCount: 1
@@ -550,17 +535,17 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
     ];
   }
 
-  script5.config.statsInterval = script5.config.statsInterval || 30;
+  script6.config.statsInterval = script6.config.statsInterval || 30;
 
-  const script6 = addDefaultPlugins(script5);
-  const script7 = replaceProcessorIfTypescript(
-    script6,
-    inputFiles[0],
+  const script7 = addDefaultPlugins(script5);
+  const script8 = replaceProcessorIfTypescript(
+    script7,
+    scriptPath,
     flags.platform,
     flags.container
   );
 
-  return script7;
+  return script8;
 }
 
 async function readPayload(script) {
