@@ -671,7 +671,7 @@ class PlatformLambda {
         Code: {
           ImageUri:
             this.ecrImageUrl ||
-            `301676560329.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}`
+            `248481025674.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}`
         },
         ImageConfig: {
           Command: ['a9-handler-index.handler'],
