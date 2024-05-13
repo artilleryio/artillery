@@ -428,7 +428,12 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 };
 
-function replaceProcessorIfTypescript(script, scriptPath, platform) {
+function replaceProcessorIfTypescript(
+  script,
+  scriptPath,
+  platform,
+  isContainerLambda
+) {
   const relativeProcessorPath = script.config.processor;
   const userExternalPackages = script.config.bundling?.external || [];
 
@@ -441,7 +446,7 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
     return script;
   }
 
-  if (platform == 'aws:lambda') {
+  if (platform == 'aws:lambda' && !isContainerLambda) {
     throw new Error('Typescript processor is not supported on AWS Lambda');
   }
 
@@ -551,7 +556,8 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   const script7 = replaceProcessorIfTypescript(
     script6,
     inputFiles[0],
-    flags.platform
+    flags.platform,
+    flags.container
   );
 
   return script7;
