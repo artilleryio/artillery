@@ -441,7 +441,7 @@ function replaceProcessorIfTypescript(script, scriptPath, platform) {
     return script;
   }
 
-  if (platform == 'aws:lambda') {
+  if (platform == 'aws:lambda' && !process.env.IS_CONTAINER_LAMBDA) {
     throw new Error('Typescript processor is not supported on AWS Lambda');
   }
 

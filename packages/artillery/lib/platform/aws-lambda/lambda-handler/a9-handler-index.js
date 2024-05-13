@@ -185,7 +185,8 @@ async function execArtillery(options) {
       // Set test run ID for this Artillery process explicitly. This makes sure that $testId
       // template variable is set to the same value for all Lambda workers as the one user
       // sees on their terminal
-      ARTILLERY_TEST_RUN_ID: TEST_RUN_ID
+      ARTILLERY_TEST_RUN_ID: TEST_RUN_ID,
+      IS_CONTAINER_LAMBDA: IS_CONTAINER_LAMBDA
       // SHIP_LOGS: 'true',
     },
     ENV
