@@ -119,7 +119,6 @@
     "eventemitter3": "^4.0.4",
     "fs-extra": "^10.1.0",
     "got": "^11.8.5",
-    "is-builtin-module": "^2.0.0",
     "joi": "^17.6.0",
     "js-yaml": "^3.13.1",
     "jsonwebtoken": "^9.0.1",

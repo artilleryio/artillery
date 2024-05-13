@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const A = require('async');
 
-const isBuiltinModule = require('is-builtin-module');
+const { isBuiltin } = require('node:module');
 const detective = require('detective-es6');
 const depTree = require('dependency-tree');
 
@@ -240,7 +240,7 @@ function getCustomJsDependencies(context, next) {
       const npmPackages = requires
         .filter(
           (requireString) =>
-            !isBuiltinModule(requireString) && !isLocalModule(requireString)
+            !isBuiltin(requireString) && !isLocalModule(requireString)
         )
         .map((requireString) => {
           return requireString.startsWith('@')

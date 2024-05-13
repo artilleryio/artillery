@@ -183,7 +183,6 @@ const createAndUploadLambdaZip = async (
       'uninstall',
       'dependency-tree',
       'detective',
-      'is-builtin-module',
       'try-require',
       'walk-sync',
       'esbuild-wasm',
