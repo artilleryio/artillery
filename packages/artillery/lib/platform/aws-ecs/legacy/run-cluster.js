@@ -14,6 +14,7 @@ const defaultOptions = require('rc')('artillery');
 const moment = require('moment');
 
 const EnsurePlugin = require('artillery-plugin-ensure');
+const SlackPlugin = require('artillery-plugin-slack');
 
 const {
   getADOTRelevantReporterConfigs,
@@ -475,7 +476,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     region: options.region,
     taskName: `${TASK_NAME}_${
       IS_FARGATE ? 'fargate' : ''
-    }_${clusterName}_${IMAGE_VERSION.replace(/\./g, '-')}_${Math.floor(Math.random() * 1e6)}`,
+    }_${clusterName}_${IMAGE_VERSION.replace(/\./g, '-')}_${Math.floor(
+      Math.random() * 1e6
+    )}`,
     clusterName: clusterName,
     logGroupName: LOGGROUP_NAME,
     cliOptions: options,
@@ -746,6 +749,12 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       if (context.ensureSpec) {
         new EnsurePlugin.Plugin({ config: { ensure: context.ensureSpec } });
+      }
+
+      if (context.fullyResolvedConfig?.plugins?.slack) {
+        new SlackPlugin.Plugin({
+          config: context.fullyResolvedConfig
+        });
       }
 
       if (context.cliOptions.output) {

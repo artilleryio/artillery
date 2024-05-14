@@ -9,7 +9,7 @@ class SlackPlugin {
     this.script = script;
     this.events = events;
 
-    if (process.env.LOCAL_WORKER_ID) {
+    if (process.env.LOCAL_WORKER_ID || process.env.WORKER_ID) {
       debug('Running in a worker, exiting');
       return;
     }
@@ -22,6 +22,7 @@ class SlackPlugin {
     }
 
     if (global.artillery && global.artillery.cloudEnabled) {
+      debug('Artillery Cloud enabled, configuring Run URL');
       this.cloudEnabled = true;
       const baseUrl =
         process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
@@ -41,7 +42,7 @@ class SlackPlugin {
           passed: 0,
           checkList: []
         };
-
+        debug('Sorting and formatting ensure checks');
         checkTests
           .sort((a, b) => (a.result < b.result ? 1 : -1))
           .forEach((check) => {
@@ -65,6 +66,7 @@ class SlackPlugin {
         // When ensure is enabled, whether the beforeExit or the checks event will be triggered first will depend on the order of plugins in the test script
         // Since we need data from both events, first event triggered will store the data and the second event will send the report
         if (this.exitCode !== undefined && this.report && !this.reportSent) {
+          debug('Sending report from checks event');
           await this.sendReport(this.report, this.ensureChecks);
           this.reportSent = true;
         }
@@ -78,6 +80,7 @@ class SlackPlugin {
         if (this.ensureEnabled && !this.ensureChecks && !this.reportSent) {
           this.report = opts.report;
         } else {
+          debug('Sending report from beforeExit event');
           await this.sendReport(opts.report, this.ensureChecks);
           this.reportSent = true;
         }
@@ -217,6 +220,7 @@ class SlackPlugin {
     if (durationInMs < 1000) {
       return `${durationInMs} miliseconds`;
     }
+
     const timeComponents = ['day', 'hour', 'minute', 'second'];
     const formatedTimeComponents = timeComponents
       .map((component) => {
