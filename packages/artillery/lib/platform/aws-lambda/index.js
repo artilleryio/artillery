@@ -526,8 +526,9 @@ class PlatformLambda {
         .promise();
 
       if (
-        typeof process.env.RETAIN_LAMBDA === 'undefined' &&
-        !this.isContainerLambda
+        (typeof process.env.RETAIN_LAMBDA === 'undefined' &&
+          !this.isContainerLambda) ||
+        process.env.RETAIN_LAMBDA === 'false'
       ) {
         await lambda
           .deleteFunction({
