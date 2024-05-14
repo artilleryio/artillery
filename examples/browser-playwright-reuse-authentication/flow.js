@@ -2,7 +2,10 @@ const { expect } = require('@playwright/test');
 const fs = require('fs');
 
 async function loginUserAndSaveStorage(page, context) {
-  const storageState = JSON.parse(fs.readFileSync('./storage.json', 'utf8'));
+  // NOTE: we use the $dirname utility so Playwright can resolve the full path
+  const storageState = JSON.parse(
+    fs.readFileSync(`${context.vars.$dirname}/storage.json`, 'utf8')
+  );
   if (Object.keys(storageState).length > 0) {
     console.log('Already logged in. Skipping login.');
     return;
@@ -25,7 +28,10 @@ async function loginUserAndSaveStorage(page, context) {
   await expect(page.getByText('Your GitHub profile')).toBeVisible();
 
   //5. save iron session cookie to storage.json
-  await page.context().storageState({ path: './storage.json' });
+  // NOTE: we use the $dirname utility so Playwright can resolve the full path
+  await page
+    .context()
+    .storageState({ path: `${context.vars.$dirname}/storage.json` });
 }
 
 async function goToProfilePageAndLogout(page, context, events, test) {

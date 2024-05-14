@@ -8,7 +8,8 @@ config:
       launchOptions:
         headless: false
       contextOptions:
-        storageState: './storage.json'
+        # NOTE: we use the $dirname utility so Playwright can resolve the full path
+        storageState: "{{ $dirname }}/storage.json"
   processor: ./flow.js
   variables:
     githubUsername: "bernardobridge"
