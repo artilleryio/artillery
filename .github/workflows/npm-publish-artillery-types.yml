@@ -19,7 +19,7 @@ jobs:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: .github/workflows/scripts/replace-package-versions.js
+      - run: node .github/workflows/scripts/replace-package-versions.js
       - run: npm ci
       - run: npm -w '@artilleryio/types' publish --access public
         env:
