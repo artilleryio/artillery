@@ -16,7 +16,7 @@ npm install artillery
 
 The example leverages [`storageState`] similarly to [Playwright documentation](https://playwright.dev/docs/auth#basic-shared-account-in-all-tests). It's simple to set this up with Artillery, but there are some small differences:
 
-* You set the `storageState` path in [`config.engines.playwright.contextOptions`](https://www.artillery.io/docs/reference/engines/playwright#configuration), instead of a Playwright config file. 
+* You set the `storageState` path in [`config.engines.playwright.contextOptions`](https://www.artillery.io/docs/reference/engines/playwright#configuration), instead of a Playwright config file. Note that the [`$dirname` utility](https://www.artillery.io/docs/reference/test-script#test-level-variables) is needed to resolve the full path for Playwright.
 * A [before hook](https://www.artillery.io/docs/reference/test-script#before-and-after-sections) will run the setup function (`loginUserAndSaveStorage` in this example), rather than referencing it as a Playwright project.
 * You will need to create the storageState JSON (`storage.json` in this example) file first as an empty object (`{}`), in the same directory where you run the test from. This is because the first time Artillery runs, it will run the `before` hook, and the file referenced in `config` won't be available.
 
