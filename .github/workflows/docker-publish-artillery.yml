@@ -2,6 +2,7 @@ name: Publish Docker image for Artillery
 
 on:
   workflow_dispatch:
+    # this will override the latest image, so only trigger when you want to publish a new version
     inputs:
       COMMIT_SHA:
         description: 'Commit SHA'
@@ -28,12 +29,9 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      
-      - name: Replace package versions
-        run: node .github/workflows/scripts/replace-package-versions.js
-        env:
-          COMMIT_SHA: ${{ inputs.COMMIT_SHA || null }}
-          REPLACE_MAIN_VERSION_ONLY: true
+        with:
+          ref: ${{ inputs.COMMIT_SHA || null }}
+          fetch-depth: 0
 
       - name: Get Artillery version
         run: |
