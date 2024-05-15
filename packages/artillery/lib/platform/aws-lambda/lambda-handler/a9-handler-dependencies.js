@@ -27,7 +27,9 @@ const syncTestData = async (bucketName, testRunId) => {
   const metadataJson = fs.readFileSync(
     path.join(LOCAL_TEST_DATA_PATH, 'metadata.json')
   );
-  const localFiles = fs.readdirSync(LOCAL_TEST_DATA_PATH);
+  const localFiles = fs
+    .readdirSync(LOCAL_TEST_DATA_PATH, { recursive: true, withFileTypes: true })
+    .filter((file) => !file.isDirectory());
 
   const metadataFileCount = JSON.parse(metadataJson).fileCount + 1; //include metadata json too;
   if (metadataFileCount != localFiles.length) {
