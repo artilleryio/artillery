@@ -73,7 +73,12 @@ async function handler(event, context) {
       await mq.send({
         event: 'workerError',
         reason: 'TestDataSyncFailure',
-        logs: { err }
+        logs: {
+          err: {
+            message: err.message,
+            stack: err.stack
+          }
+        }
       });
     }
 
@@ -83,7 +88,12 @@ async function handler(event, context) {
       await mq.send({
         event: 'workerError',
         reason: 'InstallDependenciesFailure',
-        logs: { err }
+        logs: {
+          err: {
+            message: err.message,
+            stack: err.stack
+          }
+        }
       });
     }
   }
@@ -154,7 +164,12 @@ async function handler(event, context) {
     await mq.send({
       event: 'workerError',
       reason: 'StartupFailure',
-      logs: { err }
+      logs: {
+        err: {
+          message: err.message,
+          stack: err.stack
+        }
+      }
     });
   }
 }
