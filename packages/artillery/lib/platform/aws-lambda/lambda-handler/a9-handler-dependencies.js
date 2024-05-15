@@ -16,7 +16,10 @@ const syncTestData = async (bucketName, testRunId) => {
     ['s3', 'sync', REMOTE_TEST_DATA_PATH, LOCAL_TEST_DATA_PATH],
     { log: true }
   );
-  console.log(result);
+
+  if (result.code != 0 || result.stderr) {
+    throw new Error(`Failed to sync test data:\n ${result.stderr}`);
+  }
 
   //TODO: should we introduce the "leader" concept and optimise using the install of node_modules?
   //how relevant is it really? Only on larger dependency trees I suppose?
