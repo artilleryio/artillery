@@ -220,11 +220,14 @@ class SlackPlugin {
     if (durationInMs < 1000) {
       return `${durationInMs} miliseconds`;
     }
-
+    const miliseconds = duration.get('millisecond');
     const timeComponents = ['day', 'hour', 'minute', 'second'];
     const formatedTimeComponents = timeComponents
       .map((component) => {
-        const value = duration.get(component);
+        let value = duration.get(component);
+        if (component === 'second' && miliseconds) {
+          value += 1;
+        }
         return value
           ? `${value} ${value === 1 ? component : component + 's'}`
           : '';
