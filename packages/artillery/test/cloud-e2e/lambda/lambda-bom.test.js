@@ -17,7 +17,7 @@ tap.test('Run mixed-hierarchy test in Lambda Container', async (t) => {
   const configPath = `${__dirname}/../fargate/fixtures/mixed-hierarchy/config/config-no-file-uploads.yml`;
 
   const output =
-    await $`artillery run-lambda ${scenarioPath} --config ${configPath} -e main --tags ${tags} --output ${reportFilePath} --container`;
+    await $`artillery run-lambda ${scenarioPath} --config ${configPath} -e main --tags ${tags} --output ${reportFilePath} --record --container`;
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
