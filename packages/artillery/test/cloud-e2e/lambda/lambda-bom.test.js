@@ -12,6 +12,23 @@ tap.beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
+tap.test('Run simple-bom', async (t) => {
+  const scenarioPath = `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`;
+
+  const output =
+    await $`artillery run-lambda ${scenarioPath} -e test --tags ${tags} --output ${reportFilePath} --count 51 --record --container`;
+
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+
+  t.match(output.stdout, /summary report/i, 'print summary report');
+  t.match(output.stdout, /p99/i, 'a p99 value is reported');
+  t.match(
+    output.stdout,
+    /created:.+510/i,
+    'expected number of vusers is reported'
+  );
+});
+
 tap.test('Run mixed-hierarchy test in Lambda Container', async (t) => {
   const scenarioPath = `${__dirname}/../fargate/fixtures/mixed-hierarchy/scenarios/mixed-hierarchy-dino.yml`;
   const configPath = `${__dirname}/../fargate/fixtures/mixed-hierarchy/config/config-no-file-uploads.yml`;
