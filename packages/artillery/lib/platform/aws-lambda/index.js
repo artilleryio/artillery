@@ -142,7 +142,7 @@ class PlatformLambda {
         this.testRunId,
         this.opts.absoluteScriptPath,
         this.opts.absoluteConfigPath,
-        this.platformOpts.cliArgs.dotenv
+        this.platformOpts.cliArgs
       );
       bom = result.bom;
       s3Path = result.s3Path;
@@ -152,7 +152,7 @@ class PlatformLambda {
         this.bucketName,
         this.opts.absoluteScriptPath,
         this.opts.absoluteConfigPath,
-        this.platformOpts.cliArgs.dotenv
+        this.platformOpts.cliArgs
       );
       bom = result.bom;
       s3Path = result.s3Path;
