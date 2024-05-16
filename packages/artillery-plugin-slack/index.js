@@ -8,8 +8,11 @@ class SlackPlugin {
   constructor(script, events) {
     this.script = script;
     this.events = events;
-
-    if (process.env.LOCAL_WORKER_ID) {
+    console.log('LOCAL_WORKER_ID: ', process.env.LOCAL_WORKER_ID);
+    console.log('WORKER_ID: ', process.env.WORKER_ID);
+    console.log('IS_CONTAINER_LAMBDA: ', process.env.IS_CONTAINER_LAMBDA);
+    console.log('HOME: ', process.env.HOME);
+    if (process.env.LOCAL_WORKER_ID || process.env.WORKER_ID) {
       debug('Running in a worker, exiting');
       return;
     }
@@ -35,6 +38,7 @@ class SlackPlugin {
       this.ensureEnabled = true;
 
       global.artillery.globalEvents.on('checks', async (checkTests) => {
+        console.log('SLACK: CHECKS EVENT FIRED!');
         this.ensureChecks = {
           failed: 0,
           total: 0,
@@ -74,10 +78,14 @@ class SlackPlugin {
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (opts) => {
+        console.log('SLACK: BEFORE EXIT EVENT FIRED!');
         this.exitCode = global.artillery.suggestedExitCode || opts.exitCode;
         if (this.ensureEnabled && !this.ensureChecks && !this.reportSent) {
           this.report = opts.report;
         } else {
+          console.log('SLACK: SENDING REPORT BEFORE EXIT!');
+          console.log('\nSLACK: OPTS: ', opts);
+          console.log('\nSLACK: REPORT: ', opts.report);
           await this.sendReport(opts.report, this.ensureChecks);
           this.reportSent = true;
         }
