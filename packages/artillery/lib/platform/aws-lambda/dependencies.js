@@ -79,7 +79,11 @@ const createAndUploadLambdaZip = async (
   debug({ dirname, zipfile });
 
   artillery.log('- Bundling test data');
-  const bom = await _createLambdaBom(absoluteScriptPath, absoluteConfigPath);
+  const bom = await _createLambdaBom(
+    absoluteScriptPath,
+    absoluteConfigPath,
+    flags
+  );
 
   for (const f of bom.files) {
     artillery.log('  -', f.noPrefix);
