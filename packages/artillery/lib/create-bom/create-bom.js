@@ -10,6 +10,7 @@ const A = require('async');
 const debug = require('debug')('bom');
 const _ = require('lodash');
 const Table = require('cli-table3');
+const { getCustomJsDependencies } = require('../platform/aws-ecs/legacy/bom');
 
 const { readScript, parseScript } = require('../util');
 
@@ -163,25 +164,6 @@ function getCustomEngines(context, next) {
   context.npmModules = context.npmModules.concat(enginePackages);
 
   return next(null, context);
-}
-
-function getCustomJsDependencies(context, next) {
-  if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.processor
-  ) {
-    const procPath = path.resolve(
-      path.dirname(context.opts.absoluteScriptPath),
-      context.opts.scriptData.config.processor
-    );
-    context.localFilePaths.push(procPath);
-
-    debug('got custom JS dependencies');
-    return next(null, context);
-  } else {
-    debug('no custom JS dependencies');
-    return next(null, context);
-  }
 }
 
 function getVariableDataFiles(context, next) {

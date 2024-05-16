@@ -474,4 +474,10 @@ function prettyPrint(manifest) {
   artillery.log();
 }
 
-module.exports = { createBOM, commonPrefix, prettyPrint, applyScriptChanges };
+module.exports = {
+  createBOM,
+  commonPrefix,
+  prettyPrint,
+  applyScriptChanges,
+  getCustomJsDependencies
+};

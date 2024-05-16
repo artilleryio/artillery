@@ -181,10 +181,7 @@ const createAndUploadLambdaZip = async (
     'npm',
     [
       'uninstall',
-      'dependency-tree',
-      'detective',
       'try-require',
-      'walk-sync',
       'esbuild-wasm',
       'artillery-plugin-publish-metrics'
     ],
@@ -199,7 +196,6 @@ const createAndUploadLambdaZip = async (
   }
 
   fs.removeSync(path.join(dirname, 'node_modules', 'aws-sdk'));
-  fs.removeSync(path.join(a9cwd, 'node_modules', 'typescript'));
   fs.removeSync(path.join(a9cwd, 'node_modules', 'tap'));
   fs.removeSync(path.join(a9cwd, 'node_modules', 'prettier'));
 
