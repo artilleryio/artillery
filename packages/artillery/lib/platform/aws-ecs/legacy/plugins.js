@@ -8,7 +8,8 @@ module.exports.getOfficialPlugins = function () {
     'expect',
     'metrics-by-endpoint',
     'publish-metrics',
-    'apdex'
+    'apdex',
+    'slack'
   ];
 };
 
