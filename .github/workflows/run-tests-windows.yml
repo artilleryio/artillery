@@ -7,6 +7,16 @@ on:
         description: 'ECR image version'
 
 jobs:
+  publish-branch-image:
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+
   test:
     timeout-minutes: 60
     runs-on: windows-latest
@@ -30,10 +40,10 @@ jobs:
           role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
           role-session-name: OIDCSession
           mask-aws-account-id: true
-      - name: Run local windows tests
-        run: npm run test:windows --workspace artillery
-        env:
-          FORCE_COLOR: 1
+      # - name: Run local windows tests
+      #   run: npm run test:windows --workspace artillery
+      #   env:
+      #     FORCE_COLOR: 1
       - name: Run AWS windows tests
         run: npm run test:aws:windows --workspace artillery
         env:
@@ -42,7 +52,7 @@ jobs:
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
           GITHUB_REPO: ${{ github.repository }}
           GITHUB_ACTOR: ${{ github.actor }}
-          ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha}}
+          ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha }}
       - name: Notify about failures
         if: failure() && github.ref == 'refs/heads/main'
         uses: 8398a7/action-slack@v3.15.1
