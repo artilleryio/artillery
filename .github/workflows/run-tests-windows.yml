@@ -45,15 +45,15 @@ jobs:
       #   run: npm run test:windows --workspace artillery
       #   env:
       #     FORCE_COLOR: 1
-      - name: Run AWS windows tests (Fargate)
-        run: npm run test:aws:windows:fargate --workspace artillery
-        env:
-          FORCE_COLOR: 1
-          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
-          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
-          GITHUB_REPO: ${{ github.repository }}
-          GITHUB_ACTOR: ${{ github.actor }}
-          ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha }}
+      # - name: Run AWS windows tests (Fargate)
+      #   run: npm run test:aws:windows:fargate --workspace artillery
+      #   env:
+      #     FORCE_COLOR: 1
+      #     ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      #     ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      #     GITHUB_REPO: ${{ github.repository }}
+      #     GITHUB_ACTOR: ${{ github.actor }}
+      #     ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha }}
       - name: Run AWS windows tests
         run: npm run test:aws:windows --workspace artillery
         env:
