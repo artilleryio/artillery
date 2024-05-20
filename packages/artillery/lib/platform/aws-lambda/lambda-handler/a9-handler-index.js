@@ -9,6 +9,7 @@ const {
   syncTestData,
   installNpmDependencies
 } = require('./a9-handler-dependencies');
+const path = require('path');
 
 const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 
@@ -210,10 +211,15 @@ async function execArtillery(options) {
     ARTILLERY_BINARY_PATH || './node_modules/artillery/bin/run';
 
   if (IS_CONTAINER_LAMBDA) {
-    ARTILLERY_PATH = '/artillery/node_modules/artillery/bin/run';
+    const TEST_DATA_NODE_MODULES = `${TEST_DATA_LOCATION}/node_modules`;
+    const ARTILLERY_NODE_MODULES = '/artillery/node_modules';
 
-    env.ARTILLERY_PLUGIN_PATH = `${TEST_DATA_LOCATION}/node_modules/`;
+    ARTILLERY_PATH = `${ARTILLERY_NODE_MODULES}/artillery/bin/run`;
+    env.ARTILLERY_PLUGIN_PATH = TEST_DATA_NODE_MODULES;
     env.HOME = '/tmp';
+    env.NODE_PATH = ['/artillery/node_modules', TEST_DATA_NODE_MODULES].join(
+      path.delimiter
+    );
   }
 
   return runProcess(

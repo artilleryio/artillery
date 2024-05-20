@@ -8,9 +8,14 @@ const debug = require('debug')('platform:aws-lambda');
 const Table = require('cli-table3');
 const { randomUUID } = require('crypto');
 const { promisify } = require('node:util');
-const { createBOM } = require('../../create-bom/create-bom');
+const { createBOM: createBOMForZip } = require('../../create-bom/create-bom');
+const { createBOM: createBOMForContainer } = require('../aws-ecs/legacy/bom');
 
-const _createLambdaBom = async (absoluteScriptPath, absoluteConfigPath) => {
+const _createLambdaBom = async (
+  absoluteScriptPath,
+  absoluteConfigPath,
+  flags
+) => {
   let createBomOpts = {};
   let entryPoint = absoluteScriptPath;
   let extraFiles = [];
@@ -20,6 +25,11 @@ const _createLambdaBom = async (absoluteScriptPath, absoluteConfigPath) => {
     createBomOpts.entryPointIsConfig = true;
   }
   // TODO: custom package.json path here
+  if (flags) {
+    createBomOpts.flags = flags;
+  }
+
+  const createBOM = flags.container ? createBOMForContainer : createBOMForZip;
 
   const bom = await promisify(createBOM)(entryPoint, extraFiles, createBomOpts);
 
@@ -62,23 +72,27 @@ const createAndUploadLambdaZip = async (
   bucketName,
   absoluteScriptPath,
   absoluteConfigPath,
-  dotenvPath
+  flags
 ) => {
   const dirname = temp.mkdirSync(); // TODO: May want a way to override this by the user
   const zipfile = temp.path({ suffix: '.zip' });
   debug({ dirname, zipfile });
 
   artillery.log('- Bundling test data');
-  const bom = await _createLambdaBom(absoluteScriptPath, absoluteConfigPath);
+  const bom = await _createLambdaBom(
+    absoluteScriptPath,
+    absoluteConfigPath,
+    flags
+  );
 
   for (const f of bom.files) {
     artillery.log('  -', f.noPrefix);
   }
 
-  if (dotenvPath) {
+  if (flags.dotenv) {
     fs.copyFileSync(
-      path.resolve(process.cwd(), dotenvPath),
-      path.join(dirname, path.basename(dotenvPath))
+      path.resolve(process.cwd(), flags.dotenv),
+      path.join(dirname, path.basename(flags.dotenv))
     );
   }
 
@@ -288,9 +302,13 @@ const createAndUploadTestDependencies = async (
   testRunId,
   absoluteScriptPath,
   absoluteConfigPath,
-  dotenvPath
+  flags
 ) => {
-  const bom = await _createLambdaBom(absoluteScriptPath, absoluteConfigPath);
+  const bom = await _createLambdaBom(
+    absoluteScriptPath,
+    absoluteConfigPath,
+    flags
+  );
   artillery.log('Test bundle contents:');
   const t = new Table({ head: ['Name', 'Type', 'Notes'] });
   for (const f of bom.files) {
