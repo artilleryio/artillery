@@ -50,6 +50,7 @@
     "test:aws": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --color --timeout=4200 test/cloud-e2e/**/*.test.js",
     "test:aws:ci": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --color --timeout=4200",
     "test:aws:windows": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & tap --no-coverage --timeout=420 --color test/cloud-e2e/lambda/lambda-bom.test.js",
+    "test:aws:windows:fargate": "set ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' & tap --no-coverage --timeout=420 --color test/cloud-e2e/fargate/*.test.js --grep \"Run simple-bom\"",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix"
   },

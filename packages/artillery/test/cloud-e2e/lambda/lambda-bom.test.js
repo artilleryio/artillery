@@ -1,7 +1,7 @@
 const tap = require('tap');
 const fs = require('fs');
 const { $ } = require('zx');
-const { getTestTags, generateTmpReportPath } = require('../../cli/_helpers.js');
+const { getTestTags, generateTmpReportPath, execute } = require('../../cli/_helpers.js');
 const path = require('path');
 
 const tags = getTestTags(['type:acceptance']);
