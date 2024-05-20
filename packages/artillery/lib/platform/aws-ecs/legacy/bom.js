@@ -47,6 +47,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       getVariableDataFiles,
       getFileUploadPluginFiles,
       getExtraFiles,
+      getDotEnv,
       expandDirectories
     ],
 
@@ -371,6 +372,25 @@ function getExtraFiles(context, next) {
   } else {
     return next(null, context);
   }
+}
+
+function getDotEnv(context, next) {
+  const flags = context.opts.flags;
+  //TODO: For now only enabled on Lambda. Enable this for Fargate after refactoring to allow for it
+  if (!flags.dotenv || !flags.container || flags.platform !== 'aws:lambda') {
+    return next(null, context);
+  }
+
+  const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
+  try {
+    if (fs.statSync(dotEnvPath)) {
+      context.localFilePaths.push(dotEnvPath);
+    }
+  } catch (ignoredErr) {
+    console.log(`WARNING: could not find dotenv file: ${flags.dotenv}`);
+  }
+
+  return next(null, context);
 }
 
 function expandDirectories(context, next) {
