@@ -137,6 +137,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             pageSpan.setAttributes({
               'vu.uuid': vuContext.vars.$uuid,
               test_id: vuContext.vars.$testId,
+              url: pageUrl,
               ...(this.config.attributes || {})
             });
             lastPageUrl = pageUrl;
