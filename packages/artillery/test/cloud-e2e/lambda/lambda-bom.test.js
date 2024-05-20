@@ -20,7 +20,7 @@ tap.test('Run simple-bom', async (t) => {
 
   const scenarioPath = path.join(__dirname, '../fargate/fixtures/simple-bom/simple-bom.yml');
   const [exitCode, output] = await execute([
-    'run-fargate',
+    'run-lambda',
     '--environment',
     'test',
     '--count',
