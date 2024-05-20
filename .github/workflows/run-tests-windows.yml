@@ -7,20 +7,20 @@ on:
         description: 'ECR image version'
 
 jobs:
-  publish-branch-image:
-    uses: ./.github/workflows/docker-ecs-worker-image.yml
-    permissions:
-      contents: read
-      id-token: write
-    secrets:
-      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
-    with:
-      COMMIT_SHA: ${{ github.sha }}
+  # publish-branch-image:
+  #   uses: ./.github/workflows/docker-ecs-worker-image.yml
+  #   permissions:
+  #     contents: read
+  #     id-token: write
+  #   secrets:
+  #     ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+  #   with:
+  #     COMMIT_SHA: ${{ github.sha }}
 
   test:
     timeout-minutes: 60
     runs-on: windows-latest
-    needs: publish-branch-image
+    # needs: publish-branch-image
     permissions:
       contents: read
       id-token: write
@@ -30,7 +30,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20.x
-      - run: npm install
+      - run: npm install --verbose
       - run: npm run build
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
