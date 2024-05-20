@@ -325,6 +325,8 @@ class PlatformLambda {
             body.id = workerId;
             this.events.emit(body.event, workerId, { phase: body.phase });
           } else if (body.event === 'workerError') {
+            global.artillery.suggestedExitCode = body.exitCode || 1;
+
             this.events.emit(body.event, workerId, {
               id: workerId,
               error: new Error(

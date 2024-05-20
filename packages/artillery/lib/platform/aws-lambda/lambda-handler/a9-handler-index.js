@@ -156,6 +156,7 @@ async function handler(event, context) {
       await mq.send({
         event: 'workerError',
         reason: 'ArtilleryError',
+        exitCode: code,
         logs: { stdout, stderr }
       });
     }
