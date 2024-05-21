@@ -1,8 +1,8 @@
 config:
   target: "http://asciiart.artillery.io:8080"
   phases:
-    - duration: 4
-      arrivalRate: 1
+    - duration: 2
+      arrivalRate: 2
   plugins:
     publish-metrics:
       - type: "open-telemetry"
