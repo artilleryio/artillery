@@ -23,22 +23,7 @@ afterEach(async (t) => {
 });
 
 test('OTel reporter correctly records trace data for http engine test runs', async (t) => {
-  // Arrange
-  const expectedOutcome = {
-    scenarioName: 'trace-http-test',
-    exitCode: 0,
-    vus: 4,
-    reqPerVu: 3,
-    reqSpansPerVu: 3,
-    timePhaseSpansPerReqSpan: 5,
-    vusFailed: 0,
-    errors: 0,
-    spansWithErrorStatus: 0
-  };
-
-  // Setting expected values calculated from the base values
-  setDynamicHTTPTraceExpectations(expectedOutcome);
-
+  // Define test configuration
   const override = {
     config: {
       plugins: {
@@ -61,9 +46,24 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
     }
   };
 
-  expectedOutcome.userSetAttributes =
-    override.config.plugins['publish-metrics'][0].traces.attributes;
-  console.log('PATH', `${__dirname}/../fixtures/http-trace.yml`);
+  // Define the expected outcome
+  const expectedOutcome = {
+    scenarioName: 'trace-http-test',
+    exitCode: 0,
+    vus: 4,
+    reqPerVu: 3,
+    reqSpansPerVu: 3,
+    timePhaseSpansPerReqSpan: 5,
+    vusFailed: 0,
+    errors: 0,
+    spansWithErrorStatus: 0,
+    userSetAttributes:
+      override.config.plugins['publish-metrics'][0].traces.attributes
+  };
+
+  // Setting expected values calculated from the base values
+  setDynamicHTTPTraceExpectations(expectedOutcome);
+
   /// Run the test
   let output;
   try {
@@ -83,6 +83,7 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
     spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
   };
 
+  // Run assertions
   try {
     await runHttpTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
@@ -91,20 +92,7 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
 });
 
 test('OTel reporter works appropriately with "parallel" scenario setting ', async (t) => {
-  const expectedOutcome = {
-    scenarioName: 'trace-http-test',
-    exitCode: 0,
-    vus: 4,
-    reqPerVu: 3,
-    reqSpansPerVu: 3,
-    timePhaseSpansPerReqSpan: 5,
-    vusFailed: 0,
-    errors: 0,
-    spansWithErrorStatus: 0
-  };
-
-  // Setting expected values calculated from the base values
-  setDynamicHTTPTraceExpectations(expectedOutcome);
+  // Define test configuration
   const override = {
     config: {
       plugins: {
@@ -141,8 +129,23 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
     ]
   };
 
-  expectedOutcome.userSetAttributes =
-    override.config.plugins['publish-metrics'][0].traces.attributes;
+  // Define the expected outcome
+  const expectedOutcome = {
+    scenarioName: 'trace-http-test',
+    exitCode: 0,
+    vus: 4,
+    reqPerVu: 3,
+    reqSpansPerVu: 3,
+    timePhaseSpansPerReqSpan: 5,
+    vusFailed: 0,
+    errors: 0,
+    spansWithErrorStatus: 0,
+    userSetAttributes:
+      override.config.plugins['publish-metrics'][0].traces.attributes
+  };
+
+  // Setting expected values calculated from the base values
+  setDynamicHTTPTraceExpectations(expectedOutcome);
 
   /// Run the test
   let output;
@@ -163,6 +166,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
     spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
   };
 
+  // Run assertions
   try {
     await runHttpTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
@@ -171,24 +175,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
 });
 
 test('Otel reporter appropriately records traces for test runs with errors', async (t) => {
-  // Setting base expected values
-  const expectedOutcome = {
-    scenarioName: 'trace-http-test',
-    exitCode: 0,
-    vus: 4,
-    reqPerVu: 2,
-    reqSpansPerVu: 3,
-    reqSpansWithErrorPerVu: 1,
-    timePhaseSpansPerReqSpan: 5,
-    timePhaseSpansPerReqSpanWithError: 0,
-    vusFailed: 4,
-    errors: 4,
-    spansWithErrorStatus: 4
-  };
-
-  // Setting expected values calculated from the base values
-  setDynamicHTTPTraceExpectations(expectedOutcome);
-
+  // Define test configuration
   const override = {
     config: {
       plugins: {
@@ -225,8 +212,25 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
     ]
   };
 
-  expectedOutcome.userSetAttributes =
-    override.config.plugins['publish-metrics'][0].traces.attributes;
+  // Define the expected outcome
+  const expectedOutcome = {
+    scenarioName: 'trace-http-test',
+    exitCode: 0,
+    vus: 4,
+    reqPerVu: 2,
+    reqSpansPerVu: 3,
+    reqSpansWithErrorPerVu: 1,
+    timePhaseSpansPerReqSpan: 5,
+    timePhaseSpansPerReqSpanWithError: 0,
+    vusFailed: 4,
+    errors: 4,
+    spansWithErrorStatus: 4,
+    userSetAttributes:
+      override.config.plugins['publish-metrics'][0].traces.attributes
+  };
+
+  // Setting expected values calculated from the base values
+  setDynamicHTTPTraceExpectations(expectedOutcome);
 
   /// Run the test
   let output;
@@ -247,6 +251,7 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
     spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
   };
 
+  // Run assertions
   try {
     await runHttpTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
