@@ -28,10 +28,7 @@ const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
 const getAccountId = require('../aws/aws-get-account-id');
 
 const createSQSQueue = require('../aws/aws-create-sqs-queue');
-const {
-  createAndUploadLambdaZip,
-  createAndUploadTestDependencies
-} = require('./dependencies');
+const { createAndUploadTestDependencies } = require('./dependencies');
 const pkgVersion = require('../../../package.json').version;
 
 // https://stackoverflow.com/a/66523153
@@ -76,7 +73,6 @@ class PlatformLambda {
 
     this.currentVersion = process.env.LAMBDA_IMAGE_VERSION || pkgVersion;
     this.ecrImageUrl = process.env.WORKER_IMAGE_URL;
-    this.isContainerLambda = platformConfig.container === 'true';
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
 
@@ -135,29 +131,13 @@ class PlatformLambda {
     );
     this.bucketName = bucketName;
 
-    let bom, s3Path;
-    if (this.isContainerLambda) {
-      const result = await createAndUploadTestDependencies(
-        this.bucketName,
-        this.testRunId,
-        this.opts.absoluteScriptPath,
-        this.opts.absoluteConfigPath,
-        this.platformOpts.cliArgs
-      );
-      bom = result.bom;
-      s3Path = result.s3Path;
-    } else {
-      //NOTE: for now this is the default behavior to preserve backwards compatibility
-      const result = await createAndUploadLambdaZip(
-        this.bucketName,
-        this.opts.absoluteScriptPath,
-        this.opts.absoluteConfigPath,
-        this.platformOpts.cliArgs
-      );
-      bom = result.bom;
-      s3Path = result.s3Path;
-      this.lambdaZipPath = s3Path;
-    }
+    const { bom, s3Path } = await createAndUploadTestDependencies(
+      this.bucketName,
+      this.testRunId,
+      this.opts.absoluteScriptPath,
+      this.opts.absoluteConfigPath,
+      this.platformOpts.cliArgs
+    );
 
     this.artilleryArgs.push('run');
 
@@ -223,27 +203,20 @@ class PlatformLambda {
       artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
     }
 
-    let shouldCreateLambda;
-    if (this.isContainerLambda) {
-      this.functionName = `artilleryio-v${this.currentVersion.replace(
-        /\./g,
-        '-'
-      )}-${this.architecture}`;
-      shouldCreateLambda = await this.checkIfNewLambdaIsNeeded({
-        memorySize: this.memorySize,
-        functionName: this.functionName
-      });
-    } else {
-      this.functionName = `artilleryio-${this.testRunId}`;
-      shouldCreateLambda = true;
-    }
+    this.functionName = `artilleryio-v${this.currentVersion.replace(
+      /\./g,
+      '-'
+    )}-${this.architecture}`;
+    const shouldCreateLambda = await this.checkIfNewLambdaIsNeeded({
+      memorySize: this.memorySize,
+      functionName: this.functionName
+    });
 
     if (shouldCreateLambda) {
       try {
         await this.createLambda({
           bucketName: this.bucketName,
-          functionName: this.functionName,
-          zipPath: this.lambdaZipPath
+          functionName: this.functionName
         });
       } catch (err) {
         throw new Error(`Failed to create Lambda Function: \n${err}`);
@@ -440,10 +413,6 @@ class PlatformLambda {
       WAIT_FOR_GREEN: true
     };
 
-    if (this.isContainerLambda) {
-      event.IS_CONTAINER_LAMBDA = true;
-    }
-
     debug('Lambda event payload:');
     debug({ event });
 
@@ -512,26 +481,13 @@ class PlatformLambda {
     });
 
     try {
-      if (!this.isContainerLambda) {
-        await s3
-          .deleteObject({
-            Bucket: this.bucketName,
-            Key: this.lambdaZipPath
-          })
-          .promise();
-      }
-
       await sqs
         .deleteQueue({
           QueueUrl: this.sqsQueueUrl
         })
         .promise();
 
-      if (
-        (typeof process.env.RETAIN_LAMBDA === 'undefined' &&
-          !this.isContainerLambda) ||
-        process.env.RETAIN_LAMBDA === 'false'
-      ) {
+      if (process.env.RETAIN_LAMBDA === 'false') {
         await lambda
           .deleteFunction({
             FunctionName: this.functionName
@@ -666,53 +622,33 @@ class PlatformLambda {
       region: this.region
     });
 
-    let lambdaConfig;
-
-    if (this.isContainerLambda) {
-      lambdaConfig = {
-        PackageType: 'Image',
-        Code: {
-          ImageUri:
-            this.ecrImageUrl ||
-            `248481025674.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}-${this.architecture}`
-        },
-        ImageConfig: {
-          Command: ['a9-handler-index.handler'],
-          EntryPoint: ['/usr/bin/npx', 'aws-lambda-ric']
-        },
-        FunctionName: functionName,
-        Description: 'Artillery.io test',
-        MemorySize: this.memorySize,
-        Timeout: 900,
-        Role: this.lambdaRoleArn,
-        //TODO: architecture influences the entrypoint. We should review which architecture to use in the end (may impact Playwright viability)
-        Architectures: [this.architecture],
-        Environment: {
-          Variables: {
-            S3_BUCKET_PATH: this.bucketName,
-            NPM_CONFIG_CACHE: '/tmp/.npm', //TODO: move this to Dockerfile
-            AWS_LAMBDA_LOG_FORMAT: 'JSON', //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
-            ARTILLERY_WORKER_PLATFORM: 'aws:lambda'
-          }
+    const lambdaConfig = {
+      PackageType: 'Image',
+      Code: {
+        ImageUri:
+          this.ecrImageUrl ||
+          `248481025674.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}-${this.architecture}`
+      },
+      ImageConfig: {
+        Command: ['a9-handler-index.handler'],
+        EntryPoint: ['/usr/bin/npx', 'aws-lambda-ric']
+      },
+      FunctionName: functionName,
+      Description: 'Artillery.io test',
+      MemorySize: this.memorySize,
+      Timeout: 900,
+      Role: this.lambdaRoleArn,
+      //TODO: architecture influences the entrypoint. We should review which architecture to use in the end (may impact Playwright viability)
+      Architectures: [this.architecture],
+      Environment: {
+        Variables: {
+          S3_BUCKET_PATH: this.bucketName,
+          NPM_CONFIG_CACHE: '/tmp/.npm', //TODO: move this to Dockerfile
+          AWS_LAMBDA_LOG_FORMAT: 'JSON', //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
+          ARTILLERY_WORKER_PLATFORM: 'aws:lambda'
         }
-      };
-    } else {
-      lambdaConfig = {
-        Code: {
-          S3Bucket: bucketName,
-          S3Key: zipPath
-        },
-        FunctionName: functionName,
-        Description: 'Artillery.io test',
-        Handler: 'a9-handler-index.handler',
-        MemorySize: this.memorySize,
-        PackageType: 'Zip',
-        Runtime: 'nodejs16.x',
-        Architectures: [this.architecture],
-        Timeout: 900,
-        Role: this.lambdaRoleArn
-      };
-    }
+      }
+    };
 
     if (this.securityGroupIds.length > 0 && this.subnetIds.length > 0) {
       lambdaConfig.VpcConfig = {

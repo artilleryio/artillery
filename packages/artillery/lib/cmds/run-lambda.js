@@ -34,10 +34,6 @@ class RunLambdaCommand extends Command {
       flags['platform-opt'].push(`subnet-ids=${flags['subnet-ids']}`);
     }
 
-    if (flags.container) {
-      flags['platform-opt'].push('container=true');
-    }
-
     flags.platform = 'aws:lambda';
 
     RunCommand.runCommandImplementation(flags, argv, args);
@@ -65,8 +61,11 @@ RunLambdaCommand.flags = {
     default: '1'
   }),
   container: Flags.boolean({
-    description: 'Use a container image for Lambda (experimental)',
-    default: false
+    description: '[DEPRECATED] Use a container image for Lambda (experimental)',
+    deprecated: {
+      message:
+        'The "container" flag has been deprecated. Container is now the default mode for Lambda functions.'
+    }
   }),
   architecture: Flags.string({
     description: 'Architecture of the Lambda function',
