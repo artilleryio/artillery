@@ -475,7 +475,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     region: options.region,
     taskName: `${TASK_NAME}_${
       IS_FARGATE ? 'fargate' : ''
-    }_${clusterName}_${IMAGE_VERSION.replace(/\./g, '-')}_${Math.floor(Math.random() * 1e6)}`,
+    }_${clusterName}_${IMAGE_VERSION.replace(/\./g, '-')}_${Math.floor(
+      Math.random() * 1e6
+    )}`,
     clusterName: clusterName,
     logGroupName: LOGGROUP_NAME,
     cliOptions: options,
@@ -1139,9 +1141,10 @@ async function ensureTaskExists(context) {
       };
     });
 
+    const defaultArchitecture = 'x86_64';
     const imageUrl =
       process.env.WORKER_IMAGE_URL ||
-      `public.ecr.aws/d8a4z9o5/artillery-worker:${IMAGE_VERSION}`;
+      `public.ecr.aws/d8a4z9o5/artillery-worker:${IMAGE_VERSION}-${defaultArchitecture}`;
 
     const secrets = [
       'NPM_TOKEN',
