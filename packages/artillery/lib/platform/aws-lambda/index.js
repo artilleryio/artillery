@@ -199,14 +199,14 @@ class PlatformLambda {
       const p = bom.files.filter(
         (x) => x.orig === this.opts.absoluteConfigPath
       )[0];
-      this.artilleryArgs.push(p.noPrefix);
+      this.artilleryArgs.push(p.noPrefixPosix);
     }
 
     // This needs to be the last argument for now:
     const p = bom.files.filter(
       (x) => x.orig === this.opts.absoluteScriptPath
     )[0];
-    this.artilleryArgs.push(p.noPrefix);
+    this.artilleryArgs.push(p.noPrefixPosix);
     // 36 is length of a UUUI v4 string
     const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
       0,
