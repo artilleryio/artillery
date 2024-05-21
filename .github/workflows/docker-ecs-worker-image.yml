@@ -26,11 +26,23 @@ jobs:
     env:
       # Set by the caller workflow, defaults to github.sha when not passed (e.g. workflow_dispatch against a branch)
       WORKER_VERSION: ${{ inputs.COMMIT_SHA || github.sha }}
+    strategy:
+      matrix:
+        platform: [ linux/amd64 , linux/arm64 ]
+        registry: [ public, private ]
     steps:
       - uses: actions/checkout@v3
         with:
           ref: ${{ env.WORKER_VERSION }}
           fetch-depth: 0
+      
+      - name: Replace actual platform name
+        run: |
+          if [[ ${{ matrix.platform }} == 'linux/amd64' ]]; then
+            echo "PLATFORM_NAME=x86_64" >> $GITHUB_ENV
+          else
+            echo "PLATFORM_NAME=arm64" >> $GITHUB_ENV
+          fi
       
       - name: Replace package version
         if: ${{ inputs.USE_COMMIT_SHA_IN_VERSION || false }}
@@ -52,21 +64,6 @@ jobs:
           echo GITHUB PR HEAD SHA ${{ github.event.pull_request.head.sha }}
           echo GITHUB SHA ${{ github.sha }}
           echo WORKER_VERSION ENV ${{ env.WORKER_VERSION }}
-    
-      - name: Configure AWS Credentials (Public ECR)
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: us-east-1
-          audience: sts.amazonaws.com
-          role-to-assume: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
-          role-session-name: OIDCSession
-          mask-aws-account-id: true
-    
-      - name: Login to Amazon ECR Public
-        id: login-ecr-public
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          registry-type: public
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -75,17 +72,40 @@ jobs:
           images: public.ecr.aws/d8a4z9o5/artillery-worker
           tags: |
             type=semver,pattern={{version}}
-
       
-      - name: Build the Docker image (public and private)
+      - name: Configure AWS Credentials (Public ECR)
+        if: matrix.registry == 'public'
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+    
+      - name: Login to Amazon (Public ECR)
+        if: matrix.registry == 'public'
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
+      
+      - name: Build the Docker image (Public ECR)
+        if: matrix.registry == 'public'
         run: |
-          docker build . --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }} --tag 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.WORKER_VERSION }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+          docker build . --platform ${{ matrix.platform }} --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_IMAGE_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+        env:
+          DOCKER_IMAGE_TAG: ${{ env.WORKER_VERSION }}-${{ env.PLATFORM_NAME }}
     
       - name: Push Docker image (Public - Fargate)
+        if: matrix.registry == 'public'
         run: |
-          docker push public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.WORKER_VERSION }}
+          docker push public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_IMAGE_TAG }}
+        env:
+          DOCKER_IMAGE_TAG: ${{ env.WORKER_VERSION }}-${{ env.PLATFORM_NAME }}
 
       - name: Configure AWS Credentials (Private ECR)
+        if: matrix.registry == 'private'
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-region: eu-west-1
@@ -94,10 +114,22 @@ jobs:
           role-session-name: OIDCSession
           mask-aws-account-id: true
   
-      - name: Login to Amazon ECR Private
+      - name: Login to Amazon (Private ECR)
+        if: matrix.registry == 'private'
         id: login-ecr-private
         uses: aws-actions/amazon-ecr-login@v1
+      
+      - name: Build the Docker image (Private ECR)
+        if: matrix.registry == 'private'
+        run: |
+          docker build . --platform ${{ matrix.platform }} --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_IMAGE_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+        env:
+          DOCKER_IMAGE_TAG: ${{ env.WORKER_VERSION }}-${{ env.PLATFORM_NAME }}
 
       - name: Push Docker image (Private - Lambda)
+        if: matrix.registry == 'private'
         run: |
-          docker push 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.WORKER_VERSION }}
+          docker push 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_IMAGE_TAG }}
+        env:
+          DOCKER_IMAGE_TAG: ${{ env.WORKER_VERSION }}-${{ env.PLATFORM_NAME }}
+      
