@@ -39,7 +39,7 @@ jobs:
       - name: Replace actual platform name
         run: |
           if [[ ${{ matrix.platform }} == 'linux/amd64' ]]; then
-            echo "PLATFORM_NAME=amd64" >> $GITHUB_ENV
+            echo "PLATFORM_NAME=x86_64" >> $GITHUB_ENV
           else
             echo "PLATFORM_NAME=arm64" >> $GITHUB_ENV
           fi
