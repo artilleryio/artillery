@@ -51,8 +51,7 @@ class OTelMetricsReporter {
       includeOnly: config.includeOnly || [],
       exclude: config.exclude || [],
       attributes: {
-        ...(config.attributes || {}),
-        test_id: global.artillery.testRunId
+        ...(config.attributes || {})
       }
     };
 
