@@ -240,7 +240,7 @@ async function _uploadFileToS3(item, testRunId, bucketName) {
     return;
   }
 
-  const key = prefix + '/' + item.noPrefix;
+  const key = prefix + '/' + item.noPrefixPosix;
 
   try {
     await s3
