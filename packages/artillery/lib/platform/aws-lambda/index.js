@@ -674,7 +674,7 @@ class PlatformLambda {
         Code: {
           ImageUri:
             this.ecrImageUrl ||
-            `248481025674.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}`
+            `248481025674.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}-${this.architecture}`
         },
         ImageConfig: {
           Command: ['a9-handler-index.handler'],
@@ -686,7 +686,7 @@ class PlatformLambda {
         Timeout: 900,
         Role: this.lambdaRoleArn,
         //TODO: architecture influences the entrypoint. We should review which architecture to use in the end (may impact Playwright viability)
-        Architectures: ['x86_64'],
+        Architectures: [this.architecture],
         Environment: {
           Variables: {
             S3_BUCKET_PATH: this.bucketName,

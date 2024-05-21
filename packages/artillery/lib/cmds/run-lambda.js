@@ -66,12 +66,12 @@ RunLambdaCommand.flags = {
   }),
   container: Flags.boolean({
     description: 'Use a container image for Lambda (experimental)',
-    default: false,
-    exclusive: ['architecture']
+    default: false
   }),
   architecture: Flags.string({
     description: 'Architecture of the Lambda function',
-    default: 'arm64'
+    default: 'arm64',
+    options: ['arm64', 'x86_64']
   }),
   'memory-size': Flags.string({
     description: 'Memory size of the Lambda function',
