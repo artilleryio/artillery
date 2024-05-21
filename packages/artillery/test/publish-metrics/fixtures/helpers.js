@@ -31,7 +31,18 @@ function setDynamicHTTPTraceExpectations(expectedOutcome) {
   return expectedOutcome;
 }
 
+function setDynamicPlaywrightTraceExpectations(expectedOutcome) {
+  expectedOutcome.spansPerVu =
+    1 + expectedOutcome.pageSpansPerVu + expectedOutcome.stepSpansPerVu; // 1 represents the root scenario/VU span
+  expectedOutcome.pageSpans =
+    expectedOutcome.vus * expectedOutcome.pageSpansPerVu;
+  expectedOutcome.stepSpans =
+    expectedOutcome.vus * expectedOutcome.stepSpansPerVu;
+  expectedOutcome.totalSpans = expectedOutcome.vus * expectedOutcome.spansPerVu;
+  return expectedOutcome;
+}
 module.exports = {
   getTestId,
-  setDynamicHTTPTraceExpectations
+  setDynamicHTTPTraceExpectations,
+  setDynamicPlaywrightTraceExpectations
 };
