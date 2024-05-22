@@ -57,14 +57,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       
-      - name: Replace actual platform name
-        run: |
-          if [[ ${{ matrix.platform }} == 'linux/amd64' ]]; then
-            echo "PLATFORM_NAME=x86_64" >> $GITHUB_ENV
-          else
-            echo "PLATFORM_NAME=arm64" >> $GITHUB_ENV
-          fi
-      
       - name: Replace package version
         if: ${{ inputs.USE_COMMIT_SHA_IN_VERSION || false }}
         run: node .github/workflows/scripts/replace-package-versions.js
