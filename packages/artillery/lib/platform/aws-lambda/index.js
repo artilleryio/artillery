@@ -84,6 +84,8 @@ class PlatformLambda {
       platformConfig['security-group-ids']?.split(',') || [];
     this.subnetIds = platformConfig['subnet-ids']?.split(',') || [];
 
+    this.useVPC = this.securityGroupIds.length > 0 && this.subnetIds.length > 0;
+
     this.memorySize = platformConfig['memory-size'] || 4096;
 
     this.testRunId = platformOpts.testRunId;
@@ -450,9 +452,10 @@ class PlatformLambda {
     const payload = JSON.stringify(event);
 
     // Wait for the function to be invocable:
+    const timeout = this.useVPC ? 240e3 : 120e3;
     let waited = 0;
     let ok = false;
-    while (waited < 120 * 1000) {
+    while (waited < timeout) {
       try {
         var state = (
           await lambda
@@ -714,7 +717,7 @@ class PlatformLambda {
       };
     }
 
-    if (this.securityGroupIds.length > 0 && this.subnetIds.length > 0) {
+    if (this.useVPC) {
       lambdaConfig.VpcConfig = {
         SecurityGroupIds: this.securityGroupIds,
         SubnetIds: this.subnetIds
