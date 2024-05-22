@@ -1,7 +1,12 @@
 name: Build & publish ECS/Fargate worker image to ECR
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch:
+    inputs:
+      SHOULD_BUILD_ARM64:
+        description: 'Whether to build the ARM64 image.'
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       COMMIT_SHA:
