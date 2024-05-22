@@ -29,6 +29,7 @@ jobs:
     with:
       COMMIT_SHA: ${{ github.sha }}
       USE_COMMIT_SHA_IN_VERSION: true
+      SHOULD_BUILD_ARM64: true
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
 
