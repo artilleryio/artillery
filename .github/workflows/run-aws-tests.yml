@@ -76,6 +76,7 @@ jobs:
       DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
       GITHUB_REPO: ${{ github.repository }}
       GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v3
         with:
