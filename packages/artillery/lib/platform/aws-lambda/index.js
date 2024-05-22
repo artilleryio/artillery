@@ -228,7 +228,7 @@ class PlatformLambda {
       this.functionName = `artilleryio-v${this.currentVersion.replace(
         /\./g,
         '-'
-      )}`;
+      )}-${this.architecture}`;
       shouldCreateLambda = await this.checkIfNewLambdaIsNeeded({
         memorySize: this.memorySize,
         functionName: this.functionName
