@@ -22,6 +22,7 @@ jobs:
       id-token: write
     with:
       COMMIT_SHA: ${{ github.sha }}
+      SHOULD_BUILD_ARM64: true
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
 
