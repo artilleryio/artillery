@@ -343,6 +343,7 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
 
     async.waterfall(steps, function scenarioWaterfallCb(err, context) {
       if (err) {
+        ee.emit('error', err.code || err.message);
         debug(err);
       }
 
