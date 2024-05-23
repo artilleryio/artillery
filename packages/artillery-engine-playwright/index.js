@@ -352,6 +352,14 @@ class PlaywrightEngine {
           self.processor[spec.testFunction] ||
           self.processor[spec.flowFunction];
 
+        console.error('Playwright test function not found:', fn);
+        if (!fn) {
+          return cb(
+            new Error('Playwright test function not found'),
+            initialContext
+          );
+        }
+
         const test = { step };
 
         let traceScenario;
