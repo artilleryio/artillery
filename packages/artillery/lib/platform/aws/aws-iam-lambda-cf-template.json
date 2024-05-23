@@ -1,0 +1,112 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation template to create an IAM Role for Artillery.io Lambda with attached policies",
+  "Resources": {
+    "ArtilleryLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "ArtilleryLambdaRole",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": ["lambda.amazonaws.com"]
+              },
+              "Action": ["sts:AssumeRole"]
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "ArtilleryLambdaPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "CreateOrGetLambdaRole",
+                  "Effect": "Allow",
+                  "Action": [
+                    "iam:CreateRole",
+                    "iam:GetRole",
+                    "iam:PassRole",
+                    "iam:AttachRolePolicy"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:role/artilleryio-default-lambda-role-*"}
+                },
+                {
+                  "Sid": "CreateLambdaPolicy",
+                  "Effect": "Allow",
+                  "Action": ["iam:CreatePolicy"],
+                  "Resource": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:policy/artilleryio-lambda-policy"}
+                },
+                {
+                  "Sid": "SQSPermissions",
+                  "Effect": "Allow",
+                  "Action": ["sqs:*"],
+                  "Resource": {"Fn::Sub": "arn:aws:sqs:*:${AWS::AccountId}:artilleryio*"}
+                },
+                {
+                  "Sid": "SQSListQueues",
+                  "Effect": "Allow",
+                  "Action": ["sqs:ListQueues"],
+                  "Resource": "*"
+                },
+                {
+                  "Sid": "LambdaPermissions",
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction",
+                    "lambda:CreateFunction",
+                    "lambda:DeleteFunction",
+                    "lambda:GetFunctionConfiguration"
+                  ],
+                  "Resource": {"Fn::Sub": "arn:aws:lambda:*:${AWS::AccountId}:function:artilleryio-*"}
+                },
+                {
+                  "Sid": "EcrPullImagePermissions",
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": "*",
+                  "Condition": {
+                    "StringLike": {
+                      "aws:sourceArn": {"Fn::Sub": "arn:aws:lambda:*:${AWS::AccountId}:function:artilleryio-*"}
+                    }
+                  }
+                },
+                {
+                  "Sid": "S3Permissions",
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:CreateBucket",
+                    "s3:DeleteObject",
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:ListBucket",
+                    "s3:GetLifecycleConfiguration",
+                    "s3:PutLifecycleConfiguration"
+                  ],
+                  "Resource": [
+                    {"Fn::Sub": "arn:aws:s3:::artilleryio-test-data-*"},
+                    {"Fn::Sub": "arn:aws:s3:::artilleryio-test-data-*/*"}
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "RoleArn": {
+      "Description": "ARN of the IAM Role for Artillery.io Lambda functions",
+      "Value": {"Fn::GetAtt": ["ArtilleryLambdaRole", "Arn"]}
+    }
+  }
+}
