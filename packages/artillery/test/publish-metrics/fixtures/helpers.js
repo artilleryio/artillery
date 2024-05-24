@@ -7,40 +7,33 @@ function getTestId(outputString) {
 }
 
 function setDynamicHTTPTraceExpectations(expectedOutcome) {
-  if (!expectedOutcome.errors) {
-    expectedOutcome.spansPerVu =
-      1 +
-      expectedOutcome.reqSpansPerVu +
-      expectedOutcome.reqSpansPerVu * expectedOutcome.timePhaseSpansPerReqSpan; // 1 represents the root scenario/VU span
-  } else {
-    // If there are errors, the number of spans could be lower than expected - request spans with error might not have all the timing phase spans
-    const reqSpansWithoutErrorPerVu =
-      expectedOutcome.reqSpansPerVu - expectedOutcome.reqSpansWithErrorPerVu;
-    expectedOutcome.spansPerVu =
-      1 +
-      expectedOutcome.reqSpansPerVu +
-      reqSpansWithoutErrorPerVu * expectedOutcome.timePhaseSpansPerReqSpan +
-      expectedOutcome.reqSpansWithErrorPerVu *
-        expectedOutcome.timePhaseSpansPerReqSpanWithError;
-    expectedOutcome.reqSpansWithError =
-      expectedOutcome.reqSpansWithErrorPerVu * expectedOutcome.vus;
+  if (expectedOutcome.errors) {
+    expectedOutcome.reqSpansWithError = expectedOutcome.reqSpansWithErrorPerVu
+      ? expectedOutcome.reqSpansWithErrorPerVu * expectedOutcome.vus
+      : 0;
   }
+  expectedOutcome.spansPerVu = 1 + expectedOutcome.reqSpansPerVu;
   expectedOutcome.reqSpans =
     expectedOutcome.vus * expectedOutcome.reqSpansPerVu;
+  expectedOutcome.req = expectedOutcome.vus * expectedOutcome.reqPerVu;
   expectedOutcome.totalSpans = expectedOutcome.vus * expectedOutcome.spansPerVu;
   return expectedOutcome;
 }
 
 function setDynamicPlaywrightTraceExpectations(expectedOutcome) {
   expectedOutcome.spansPerVu =
-    1 + expectedOutcome.pageSpansPerVu + expectedOutcome.stepSpansPerVu; // 1 represents the root scenario/VU span
+    1 + expectedOutcome.pageSpansPerVu + (expectedOutcome.stepSpansPerVu || 0); // 1 represents the root scenario/VU span
   expectedOutcome.pageSpans =
     expectedOutcome.vus * expectedOutcome.pageSpansPerVu;
-  expectedOutcome.stepSpans =
-    expectedOutcome.vus * expectedOutcome.stepSpansPerVu;
   expectedOutcome.totalSpans = expectedOutcome.vus * expectedOutcome.spansPerVu;
+
+  if (expectedOutcome.stepSpansPerVu) {
+    expectedOutcome.stepSpans =
+      expectedOutcome.vus * expectedOutcome.stepSpansPerVu;
+  }
   return expectedOutcome;
 }
+
 module.exports = {
   getTestId,
   setDynamicHTTPTraceExpectations,

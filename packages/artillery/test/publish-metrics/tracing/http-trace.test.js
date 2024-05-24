@@ -1,14 +1,18 @@
 const { test, afterEach, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
-const { generateTmpReportPath, deleteFile } = require('../../cli/_helpers.js');
-
 const {
-  getTestId,
-  setDynamicHTTPTraceExpectations
-} = require('../fixtures/helpers.js');
+  generateTmpReportPath,
+  deleteFile,
+  getTestTags
+} = require('../../cli/_helpers.js');
+
+const { setDynamicHTTPTraceExpectations } = require('../fixtures/helpers.js');
 
 const { runHttpTraceAssertions } = require('./http-trace-assertions.js');
+
+//NOTE: This test reports to Artillery Dashboard to dogfood and improve visibility
+const baseTags = getTestTags(['type:acceptance']);
 
 let reportFilePath;
 let tracesFilePath;
@@ -21,6 +25,17 @@ afterEach(async (t) => {
   deleteFile(reportFilePath);
   deleteFile(tracesFilePath);
 });
+
+/* To write a test for the publish-metrics http tracing you need to:
+    1. Define the test configuration through the override object
+    2. Define the expected outcome values in the expectedOutcome object (see the required properties in the runHttptTraceAssertions function in the http-trace-assertions.js file)
+    3. Run the test
+    5. Assemble all test run data into one object for assertions (output of the test run, artillery report summary and exported spans)
+    6. Run assertions with `runHttpTraceAssertions`  
+
+  NOTE: Any changes or features that influence the trace format or require additional checks 
+  should be added to the `runHttpTraceAssertions` function
+*/
 
 test('OTel reporter correctly records trace data for http engine test runs', async (t) => {
   // Define test configuration
@@ -53,12 +68,14 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
     vus: 4,
     reqPerVu: 3,
     reqSpansPerVu: 3,
-    timePhaseSpansPerReqSpan: 5,
     vusFailed: 0,
     errors: 0,
     spansWithErrorStatus: 0,
     userSetAttributes:
-      override.config.plugins['publish-metrics'][0].traces.attributes
+      override.config.plugins['publish-metrics'][0].traces.attributes,
+    spanNamesByReqName: ['dino', 'bombolini'],
+    spanNamesByMethod: ['get'],
+    spanNamesReplaced: ['bombolini']
   };
 
   // Setting expected values calculated from the base values
@@ -68,7 +85,7 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --record --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
@@ -136,12 +153,14 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
     vus: 4,
     reqPerVu: 3,
     reqSpansPerVu: 3,
-    timePhaseSpansPerReqSpan: 5,
     vusFailed: 0,
     errors: 0,
     spansWithErrorStatus: 0,
     userSetAttributes:
-      override.config.plugins['publish-metrics'][0].traces.attributes
+      override.config.plugins['publish-metrics'][0].traces.attributes,
+    spanNamesByReqName: ['dino', 'bombolini'],
+    spanNamesByMethod: ['get'],
+    spanNamesReplaced: ['bombolini']
   };
 
   // Setting expected values calculated from the base values
@@ -151,7 +170,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --record --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
@@ -160,7 +179,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
 
   // Get all main test run data
   const testRunData = {
-    testId: getTestId(output.stdout),
+    output,
     reportSummary: JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
       .aggregate,
     spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
@@ -220,13 +239,14 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
     reqPerVu: 2,
     reqSpansPerVu: 3,
     reqSpansWithErrorPerVu: 1,
-    timePhaseSpansPerReqSpan: 5,
-    timePhaseSpansPerReqSpanWithError: 0,
     vusFailed: 4,
     errors: 4,
     spansWithErrorStatus: 4,
     userSetAttributes:
-      override.config.plugins['publish-metrics'][0].traces.attributes
+      override.config.plugins['publish-metrics'][0].traces.attributes,
+    spanNamesByReqName: ['dino', 'bombolini'],
+    spanNamesByMethod: ['get'],
+    spanNamesReplaced: ['bombolini']
   };
 
   // Setting expected values calculated from the base values
@@ -236,7 +256,7 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --record --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
