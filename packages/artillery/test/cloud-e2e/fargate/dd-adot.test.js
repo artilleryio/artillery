@@ -34,7 +34,7 @@ test('traces succesfully arrive to datadog', async (t) => {
   }
 
   /// Expected values
-  const expectedTotalSpans = 52; // 4 VUs * (1 scenario root span + 2 requests + 10 timing zone spans (5 per request))
+  const expectedTotalSpans = 12; // 4 VUs * (1 scenario root span + 2 requests)
   const expectedVus = 4;
   const expectedRequests = 8;
   const expectedStatusCode200 = 8;
