@@ -3,45 +3,47 @@
 const { getTestId } = require('../fixtures/helpers.js');
 
 /**  Runs assertions for OTel Playwright tracing tests using 'tap' library. It checks that the trace data is correctly recorded, formatted and exported by the OTel plugin.
+ * @param {Object} t - the tap library test object
+ * @param {Object} testRunData - an object containing the console output of the test run, the report summary and the exported spans - `{ output, reportSummary, spans }`
+ * @namespace expectedOutcome
+ * @param {Object} expectedOutcome - an object containing the expected outcome values for the test run.
+ * @param {string} expectedOutcome.scenarioName - the name of the scenario
+ * @param {number} expectedOutcome.exitCode - the expected exit code of the test run
+ * @param {number} expectedOutcome.vus - the number of VUs created
+ * @param {number} [expectedOutcome.vusFailed] - the number of VUs that should fail
+ * @param {number} [expectedOutcome.errors] - the number of errors to be reported
+ * @param {number} [expectedOutcome.spansWithErrorStatus] - the number of spans that should have the error status
+ * @param {number} expectedOutcome.pageSpansPerVu - the number of page spans per VU
+ * @param {Array} expectedOutcome.pageSpanNames - an array of page span names expected - the final version of names when `replaceSpanRegex` is used
+ * @param {Array} expectedOutcome.pagesVisitedPerVU - an array of page URLs to be visited by each VU
+ * @param {number} [expectedOutcome.stepSpansPerVu] - the number of step spans per VU
+ * @param {Array} [expectedOutcome.stepNames] - an array of step names defined in the testFunction - the final version of names when `replaceSpanRegex` is used
+ * @param {Object} [expectedOutcome.userSetAttributes] - an object containing the user set attributes
+ * @param {Object} [expectedOutcome.modifiedSpanNames] - an object containing the expected modified span names
+ * @param {Array} [expectedOutcome.modifiedSpanNames.steps] - an array of step names expected - the final version of names when `replaceSpanRegex` is used
+ * @param {Array} [expectedOutcome.modifiedSpanNames.pages] - an array of page span names expected - the final version of names when `replaceSpanRegex` is used
+ * @param {number} [expectedOutcome.spansPerVu] - the number of spans per VU - `setDynamicPlaywrightTraceExpectations` function can be used to calculate this value
+ * @param {number} expectedOutcome.pageSpans - the number of page spans to be created - `setDynamicPlaywrightTraceExpectations` function can be used to calculate this value
+ * @param {number} [expectedOutcome.stepSpans] - the number of step spans to be created - `setDynamicPlaywrightTraceExpectations` function can be used to calculate this value
+ * @param {number} expectedOutcome.totalSpans - the total number of spans to be created - `setDynamicPlaywrightTraceExpectations` function can be used to calculate this value
+ *
+ *
+ * #### Configuration settings and functionality covered:
+ *  - `replaceSpanNameRegex` config setting - replaces the specified pattern in page span names
+ *  - `attributes` config setting - sets the user attributes for all spans
+ *  - default attributes - `test_id` and `vu.uuid` attributes for all spans
+ *  - web vitals recording - adds the web vitals values and ratings as attributes and events to the page spans when reported
+ *  - navigation events - adds the navigation events to the scenario spans
+ *  - `plugins.publish-metrics.spans.exported` metric - emits the counter metric for the number of spans exported
+ *  - errors - errors are recorded on traces both as error events and as the error status code
+ *
+ *
+ * #### Configuration settings and functionality not covered - needs to be implemented in the future:
+ *  - `sampleRate` config setting - lose percentage of spans to be sampled
+ *
+ * If any new features are added that add to or change the tracing format, this is where the change should be implemented to propagate to all tests.
+ */
 
-  @param {Object} t - the tap library test object
-  @param {Object} testRunData - an object containing the console output of the test run, the report summary and the exported spans - `{ output, reportSummary, spans }`
-  @param {Object} expectedOutcome - an object containing the expected outcome values for the test run.
-      Must contain the following:
-        - `scenarioName` - the name of the scenario
-        - `exitCode` - the expected exit code of the test run
-        - `vus` - the number of VUs created
-        - `vusFailed` - the number of VUs that should fail
-        - `errors` - the number of errors to be reported
-        - `spansWithErrorStatus` - the number of spans that should have the error status
-        - `pageSpans` - the number of page spans to be created
-        - `stepSpans` - the number of step spans to be created
-        - `totalSpans` - the total number of spans to be created
-        - `pageSpansPerVu` - the number of page spans per VU
-        - `stepSpansPerVu` - the number of step spans per VU
-        - `stepNames` - an array of step names defined in the testFunction - the final version of names when `replaceSpanRegex` is used
-        - `pageSpanNames` - an array of page span names expected - the final version of names when `replaceSpanRegex` is used
-        - `pagesVisitedPerVU` - an array of page URLs to be visited by each VU
-        - `userSetAttributes` - an object containing the user set attributes
-        - `modifiedSpanNames` - an object containing the expected modified span names
-          {
-            steps: [stepName1, stepName2, ...],
-            pages: [pageName1, pageName2, ...]
-          }
-    
-   #### Configuration settings and functionality covered:
-    - `replaceSpanNameRegex` config setting - replaces the specified pattern in page span names
-    - `attributes` config setting - sets the user attributes for all spans
-    - default attributes - `test_id` and `vu.uuid` attributes for all spans
-    - web vitals recording - adds the web vitals values and ratings as attributes and events to the page spans when reported
-    - navigation events - adds the navigation events to the scenario spans
-    - `plugins.publish-metrics.spans.exported` metric - emits the counter metric for the number of spans exported
-    - errors - errors are recorded on traces both as error events and as the error status code
-  
-   #### Configuration settings and functionality not covered - needs to be implemented in the future:
-     - `sampleRate` config setting - lose percentage of spans to be sampled
-  If any new features are added that add to or change the tracing format, this is where the change should be implemented to propagate to all tests.
-*/
 async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
   const { output, reportSummary, spans } = testRunData;
   const testId = getTestId(output.stdout);
@@ -173,7 +175,7 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
       );
     });
   }
-  // Per VU/trace:
+  // Per VU/trace (this will check that each trace is nested correctly and all its data is where and what it is supposed to be):
   scenarioSpans.forEach((span) => {
     t.equal(
       span.name,

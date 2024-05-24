@@ -32,7 +32,7 @@ afterEach(async (t) => {
 
 /* To write a test for the publish-metrics tracing you need to:
     1. Define the test configuration through the override object
-    2. Define the expected outcome values in the expectedOutcome object (the object must have same properties as in the tests below)
+    2. Define the expected outcome values in the expectedOutcome object (see the required properties in the runPlaywrightTraceAssertions function in the playwright-trace-assertions.js file)
     3. Run the test
     5. Assemble all test run data into one object for assertions (output of the test run, artillery report summary and exported spans)
     6. Run assertions with `runPlaywrightTraceAssertions`  
