@@ -7,5 +7,6 @@ module.exports = [
   'ensure',
   'publish-metrics',
   'expect',
-  'apdex'
+  'apdex',
+  'slack'
 ];

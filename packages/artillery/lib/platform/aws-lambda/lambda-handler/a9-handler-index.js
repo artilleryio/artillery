@@ -194,6 +194,7 @@ async function execArtillery(options) {
       SQS_QUEUE_URL: SQS_QUEUE_URL,
       SQS_REGION: SQS_REGION,
       ARTILLERY_DISABLE_ENSURE: 'true',
+      WORKER_ID: WORKER_ID,
       // Set test run ID for this Artillery process explicitly. This makes sure that $testId
       // template variable is set to the same value for all Lambda workers as the one user
       // sees on their terminal

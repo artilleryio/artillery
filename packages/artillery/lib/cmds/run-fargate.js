@@ -40,6 +40,7 @@ class RunCommand extends Command {
     global.artillery.testRunId = testRunId;
 
     const cloud = new CloudPlugin(null, null, { flags });
+    global.artillery.cloudEnabled = cloud.enabled;
     if (cloud.enabled) {
       try {
         await cloud.init();
