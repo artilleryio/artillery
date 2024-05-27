@@ -1,6 +1,6 @@
 {
   "name": "artillery-plugin-metrics-by-endpoint",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Per-endpoint breakdown of latency and response codes for Artillery HTTP tests.",
   "main": "index.js",
   "scripts": {
