@@ -50,8 +50,7 @@ async function handler(event, context) {
     ARTILLERY_ARGS,
     BUCKET,
     ENV,
-    WAIT_FOR_GREEN,
-    IS_CONTAINER_LAMBDA
+    WAIT_FOR_GREEN
   } = event;
 
   console.log('TEST_RUN_ID: ', TEST_RUN_ID);
@@ -67,36 +66,34 @@ async function handler(event, context) {
 
   const TEST_DATA_LOCATION = `/tmp/test_data/${TEST_RUN_ID}`;
 
-  if (IS_CONTAINER_LAMBDA) {
-    try {
-      await syncTestData(BUCKET, TEST_RUN_ID);
-    } catch (err) {
-      await mq.send({
-        event: 'workerError',
-        reason: 'TestDataSyncFailure',
-        logs: {
-          err: {
-            message: err.message,
-            stack: err.stack
-          }
+  try {
+    await syncTestData(BUCKET, TEST_RUN_ID);
+  } catch (err) {
+    await mq.send({
+      event: 'workerError',
+      reason: 'TestDataSyncFailure',
+      logs: {
+        err: {
+          message: err.message,
+          stack: err.stack
         }
-      });
-    }
+      }
+    });
+  }
 
-    try {
-      await installNpmDependencies(TEST_DATA_LOCATION);
-    } catch (err) {
-      await mq.send({
-        event: 'workerError',
-        reason: 'InstallDependenciesFailure',
-        logs: {
-          err: {
-            message: err.message,
-            stack: err.stack
-          }
+  try {
+    await installNpmDependencies(TEST_DATA_LOCATION);
+  } catch (err) {
+    await mq.send({
+      event: 'workerError',
+      reason: 'InstallDependenciesFailure',
+      logs: {
+        err: {
+          message: err.message,
+          stack: err.stack
         }
-      });
-    }
+      }
+    });
   }
 
   const interval = setInterval(async () => {
@@ -146,7 +143,6 @@ async function handler(event, context) {
       TEST_RUN_ID,
       WORKER_ID,
       ARTILLERY_ARGS,
-      IS_CONTAINER_LAMBDA,
       TEST_DATA_LOCATION,
       ENV
     });
@@ -186,7 +182,6 @@ async function execArtillery(options) {
     ENV,
     NODE_BINARY_PATH,
     ARTILLERY_BINARY_PATH,
-    IS_CONTAINER_LAMBDA,
     TEST_DATA_LOCATION
   } = options;
 
@@ -208,20 +203,16 @@ async function execArtillery(options) {
     ENV
   );
 
-  let ARTILLERY_PATH =
-    ARTILLERY_BINARY_PATH || './node_modules/artillery/bin/run';
+  const TEST_DATA_NODE_MODULES = `${TEST_DATA_LOCATION}/node_modules`;
+  const ARTILLERY_NODE_MODULES = '/artillery/node_modules';
+  const ARTILLERY_PATH =
+    ARTILLERY_BINARY_PATH || `${ARTILLERY_NODE_MODULES}/artillery/bin/run`;
 
-  if (IS_CONTAINER_LAMBDA) {
-    const TEST_DATA_NODE_MODULES = `${TEST_DATA_LOCATION}/node_modules`;
-    const ARTILLERY_NODE_MODULES = '/artillery/node_modules';
-
-    ARTILLERY_PATH = `${ARTILLERY_NODE_MODULES}/artillery/bin/run`;
-    env.ARTILLERY_PLUGIN_PATH = TEST_DATA_NODE_MODULES;
-    env.HOME = '/tmp';
-    env.NODE_PATH = ['/artillery/node_modules', TEST_DATA_NODE_MODULES].join(
-      path.delimiter
-    );
-  }
+  env.ARTILLERY_PLUGIN_PATH = TEST_DATA_NODE_MODULES;
+  env.HOME = '/tmp';
+  env.NODE_PATH = ['/artillery/node_modules', TEST_DATA_NODE_MODULES].join(
+    path.delimiter
+  );
 
   return runProcess(
     NODE_BINARY_PATH || 'node',

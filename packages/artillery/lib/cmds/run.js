@@ -429,12 +429,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 };
 
-function replaceProcessorIfTypescript(
-  script,
-  scriptPath,
-  platform,
-  isContainerLambda
-) {
+function replaceProcessorIfTypescript(script, scriptPath) {
   const relativeProcessorPath = script.config.processor;
   const userExternalPackages = script.config.bundling?.external || [];
 
@@ -445,10 +440,6 @@ function replaceProcessorIfTypescript(
 
   if (extensionType != '.ts') {
     return script;
-  }
-
-  if (platform == 'aws:lambda' && !isContainerLambda) {
-    throw new Error('Typescript processor is not supported on AWS Lambda');
   }
 
   const actualProcessorPath = path.resolve(
@@ -538,12 +529,7 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
   script6.config.statsInterval = script6.config.statsInterval || 30;
 
   const script7 = addDefaultPlugins(script5);
-  const script8 = replaceProcessorIfTypescript(
-    script7,
-    scriptPath,
-    flags.platform,
-    flags.container
-  );
+  const script8 = replaceProcessorIfTypescript(script7, scriptPath);
 
   return script8;
 }
@@ -613,10 +599,6 @@ async function sendTelemetry(script, flags, extraProps) {
     }
 
     properties.platform = flags.platform;
-
-    if (flags.container) {
-      properties.isContainerLambda = true;
-    }
 
     properties.count = flags.count;
 
