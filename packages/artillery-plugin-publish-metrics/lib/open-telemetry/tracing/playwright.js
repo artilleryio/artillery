@@ -77,7 +77,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
           }
 
           // Associate only the metrics that belong to the page
-          if (metadata.url !== pageSpan.name.replace('Page: ', '')) {
+          if (metadata.url !== pageSpan.attributes.url) {
             return;
           }
           const webVitals = ['LCP', 'FCP', 'CLS', 'TTFB', 'INP', 'FID'];
@@ -137,6 +137,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
             pageSpan.setAttributes({
               'vu.uuid': vuContext.vars.$uuid,
               test_id: vuContext.vars.$testId,
+              url: pageUrl,
               ...(this.config.attributes || {})
             });
             lastPageUrl = pageUrl;

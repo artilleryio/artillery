@@ -108,49 +108,23 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     }
 
     if (res.timings && res.timings.phases) {
-      span.setAttribute('response.time.ms', res.timings.phases.firstByte);
-
-      // Child spans are created for each phase of the request from the timings object and named accordingly. More info here: https://github.com/sindresorhus/got/blob/main/source/core/response.ts
-      // Map names of request phases to the timings parameters representing their start and end times for easier span creation
+      // Map timings parameters to attribute names for request phases
       const timingsMap = {
-        dns_lookup: { start: 'socket', end: 'lookup' },
-        tcp_handshake: { start: 'lookup', end: 'connect' },
-        tls_negotiation: { start: 'connect', end: 'secureConnect' },
-        request: {
-          start: res.timings.secureConnect ? 'secureConnect' : 'connect',
-          end: 'upload'
-        },
-        download: { start: 'response', end: 'end' },
-        first_byte: { start: 'upload', end: 'response' }
+        dns: 'dns_lookup.duration',
+        tcp: 'tcp_handshake.duration',
+        tls: 'tls_negotiation.duration',
+        request: 'request.duration',
+        download: 'download.duration',
+        firstByte: 'response.time.ms'
       };
-
-      // Create phase spans within the request span context
-      context.with(trace.setSpan(context.active(), span), () => {
-        for (let [name, value] of Object.entries(timingsMap)) {
-          if (res.timings[value.start] && res.timings[value.end]) {
-            if (this.config.replaceSpanNameRegex) {
-              name = this.replaceSpanNameRegex(
-                name,
-                this.config.replaceSpanNameRegex
-              );
-            }
-            this.httpTracer
-              .startSpan(name, {
-                kind: SpanKind.CLIENT,
-                startTime: res.timings[value.start],
-                attributes: {
-                  'vu.uuid': userContext.vars.$uuid,
-                  test_id: userContext.vars.$testId
-                }
-              })
-              .end(res.timings[value.end]);
-            events.emit('counter', 'plugins.publish-metrics.spans.exported', 1);
-          }
+      const phases = Object.keys(res.timings.phases).reduce((acc, key) => {
+        if (timingsMap[key] && res.timings.phases[key] !== undefined) {
+          acc[timingsMap[key]] = res.timings.phases[key];
         }
-      });
-      endTime = res.timings.end || res.timings.error || res.timings.abort;
+        return acc;
+      }, {});
+      span.setAttributes(phases);
     }
-
     try {
       span.setAttributes({
         [SemanticAttributes.HTTP_STATUS_CODE]: res.statusCode,
