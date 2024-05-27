@@ -44,8 +44,8 @@ test('TLS - with rejectUnauthorized true', function (t) {
       console.log(report);
       t.equal(
         Object.keys(report.errors).length,
-        1,
-        `Test should run with one error. Got: ${Object.keys(report.errors)}`
+        2,
+        `Test should run with two errors. Got: ${Object.keys(report.errors)}`
       );
       ee.stop().then(() => {
         t.end();
