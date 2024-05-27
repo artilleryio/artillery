@@ -61,7 +61,7 @@ RunLambdaCommand.flags = {
     default: '1'
   }),
   container: Flags.boolean({
-    description: '[DEPRECATED] Use a container image for Lambda (experimental)',
+    description: 'Use a container image for Lambda',
     deprecated: {
       message:
         'The "container" flag has been deprecated. Container is now the default mode for Lambda functions.'
