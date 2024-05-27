@@ -18,9 +18,9 @@ class PlaywrightEngine {
       * 1000
     ;
     this.defaultTimeout =
-      (isNaN(Number(
-        this.config.defaultPageTimeout || this.config.defaultTimeout
-      )) ? 30 : Number(this.config.defaultPageTimeout || this.config.defaultTimeout)) * 1000;
+      (isNaN(Number(this.config.defaultTimeout)) ? 30 : Number(this.config.defaultTimeout))
+      * 1000
+    ;
 
     this.testIdAttribute = this.config.testIdAttribute;
 
