@@ -14,12 +14,13 @@ class PlaywrightEngine {
     this.tracing = global.artillery.OTEL_TRACING_ENABLED || false;
 
     this.defaultNavigationTimeout =
-      (parseInt(this.config.defaultNavigationTimeout, 10) || 30) * 1000;
+      (isNaN(Number(this.config.defaultNavigationTimeout)) ? 30 : Number(this.config.defaultNavigationTimeout))
+      * 1000
+    ;
     this.defaultTimeout =
-      (parseInt(
-        this.config.defaultPageTimeout || this.config.defaultTimeout,
-        10
-      ) || 30) * 1000;
+      (isNaN(Number(
+        this.config.defaultPageTimeout || this.config.defaultTimeout
+      )) ? 30 : Number(this.config.defaultPageTimeout || this.config.defaultTimeout)) * 1000;
 
     this.testIdAttribute = this.config.testIdAttribute;
 
