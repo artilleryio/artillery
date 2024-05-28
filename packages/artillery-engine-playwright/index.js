@@ -14,13 +14,13 @@ class PlaywrightEngine {
     this.tracing = global.artillery.OTEL_TRACING_ENABLED || false;
 
     this.defaultNavigationTimeout =
-      (isNaN(Number(this.config.defaultNavigationTimeout)) ? 30 : Number(this.config.defaultNavigationTimeout))
-      * 1000
-    ;
+      (isNaN(Number(this.config.defaultNavigationTimeout))
+        ? 30
+        : Number(this.config.defaultNavigationTimeout)) * 1000;
     this.defaultTimeout =
-      (isNaN(Number(this.config.defaultTimeout)) ? 30 : Number(this.config.defaultTimeout))
-      * 1000
-    ;
+      (isNaN(Number(this.config.defaultTimeout))
+        ? 30
+        : Number(this.config.defaultTimeout)) * 1000;
 
     this.testIdAttribute = this.config.testIdAttribute;
 
@@ -353,8 +353,9 @@ class PlaywrightEngine {
           self.processor[spec.testFunction] ||
           self.processor[spec.flowFunction];
 
-        console.error('Playwright test function not found:', fn);
         if (!fn) {
+          console.error('Playwright test function not found:', fn);
+
           return cb(
             new Error('Playwright test function not found'),
             initialContext
