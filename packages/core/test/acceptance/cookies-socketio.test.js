@@ -6,15 +6,16 @@ const l = require('lodash');
 const request = require('got');
 const { SSMS } = require('../../lib/ssms');
 const createTestServer = require('../targets/express_socketio');
+const { once } = require('events');
 
 let server;
 let port;
 
 beforeEach(async () => {
-  server = createTestServer().listen(0, function () {
-    port = server.address().port;
-    console.log('Express Socket.io listening on %s', port);
-  });
+  server = createTestServer().listen(0);
+  await once(server, 'listening');
+  console.log('Express Socket.io listening on %s', port);
+  port = server.address().port;
 });
 
 afterEach(() => {

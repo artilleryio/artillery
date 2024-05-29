@@ -1,13 +1,15 @@
 const { test, beforeEach, afterEach } = require('tap');
 const { runGenericRunnerTest } = require('./helper');
 const createTestServer = require('../../targets/express_socketio');
+const { once } = require('events');
 
 let server;
 let port;
 beforeEach(async () => {
-  server = createTestServer().listen(0, function () {
-    port = server.address().port;
-  });
+  server = createTestServer().listen(0);
+  await once(server, 'listening');
+  console.log('Express Socket.io listening on %s', port);
+  port = server.address().port;
 });
 
 afterEach(() => {
