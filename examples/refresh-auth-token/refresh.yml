@@ -1,0 +1,27 @@
+config:
+  target: http://asciizoo.artillery.io:8080
+  processor: ./refresh.mjs
+scenarios:
+  - name: "refresh_auth_token"
+    beforeRequest: "refreshTokenIfNeeded"
+    flow:
+      - get:
+          url: "/dino"
+          headers:
+            x-auth-token: "{{ authToken}}"
+      - get:
+          url: "/pony"
+          headers:
+            x-auth-token: "{{ authToken}}"
+      - log: "Used auth token: {{ authToken}}"
+
+      # Pause for 10 seconds. This will cause the "refreshTokenIfNeeded"
+      # function to refresh it before the next request to /armadillo is
+      # made
+      - think: 10
+      # This request will use a refreshed auth token
+      - get:
+          url: "/armadillo"
+          headers:
+            x-auth-token: "{{ authToken }}"
+      - log: "Now used a refreshed auth token: {{ authToken}}"
