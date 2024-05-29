@@ -31,4 +31,4 @@ jobs:
           mask-aws-account-id: true
 
       - name: Update IAM CloudFormation templates
-        run: aws s3 sync ./.github/workflows/iam-cf-templates/ s3://artillery-cf-templates/ --delete
+        run: aws s3 sync ./packages/artillery/lib/platform/aws/iam-cf-templates/ s3://artillery-cf-templates/ --delete
