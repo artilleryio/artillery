@@ -8,13 +8,11 @@ let port;
 let proxyPort;
 
 beforeEach(async () => {
-  const servers = createTestServers();
-  server = servers.wsServer.listen(0, function () {
-    port = this.address().port;
-    proxyServer = servers.proxyServer.listen(0, function () {
-      proxyPort = this.address().port;
-    });
-  });
+  const servers = await createTestServers();
+  server = servers.wsServer;
+  proxyServer = servers.proxyServer;
+  port = server.address().port;
+  proxyPort = proxyServer.address().port;
 });
 
 afterEach(() => {
