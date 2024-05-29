@@ -1,18 +1,11 @@
 const { test, afterEach, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
-const {
-  generateTmpReportPath,
-  deleteFile,
-  getTestTags
-} = require('../../cli/_helpers.js');
+const { generateTmpReportPath, deleteFile } = require('../../cli/_helpers.js');
 
 const { setDynamicHTTPTraceExpectations } = require('../fixtures/helpers.js');
 
 const { runHttpTraceAssertions } = require('./http-trace-assertions.js');
-
-//NOTE: This test reports to Artillery Dashboard to dogfood and improve visibility
-const baseTags = getTestTags(['type:acceptance']);
 
 let reportFilePath;
 let tracesFilePath;
@@ -85,7 +78,7 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
@@ -171,7 +164,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
@@ -257,7 +250,7 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
