@@ -39,8 +39,16 @@
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix",
     "test": "npm run test:unit && npm run test:acceptance",
-    "test:unit": "tap --no-coverage --color --timeout=300 test/unit/*.test.js",
-    "test:acceptance": "tap --no-coverage --color --timeout 300 test/acceptance/*.test.js && tap --no-coverage --color --timeout=300 test/acceptance/**/*.test.js"
+    "test:unit": "tap --timeout=300 test/unit/*.test.js",
+    "test:acceptance": "tap --timeout 300 test/acceptance/*.test.js && tap --timeout=300 test/acceptance/**/*.test.js"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "devDependencies": {
     "@hapi/basic": "^6.0.0",
@@ -51,6 +59,6 @@
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
     "socket.io": "^4.7.1",
-    "tap": "^16.3.7"
+    "tap": "^19.0.2"
   }
 }

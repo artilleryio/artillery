@@ -21,4 +21,4 @@ docker run --name mockingjay -p 9099:9090 -v "$DIR":/data "quii/mockingjay-serve
 
 sleep 10
 
-"$DIR"/../../../node_modules/.bin/tap --no-coverage --timeout 120 --reporter base --color
+"$DIR"/../../../node_modules/.bin/tap --timeout 120 --reporter base

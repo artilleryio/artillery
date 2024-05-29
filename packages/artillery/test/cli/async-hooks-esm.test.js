@@ -22,8 +22,6 @@ tap.test('async hooks with ESM', async (t) => {
   );
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  console.log(output);
-
   t.equal(
     json.aggregate.counters['http.codes.200'],
     10,
