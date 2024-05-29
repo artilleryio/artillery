@@ -3,8 +3,9 @@ const { createServer } = require('http');
 const app = require('express')();
 const socketio = require('socket.io');
 const uuid = require('uuid');
+const { once } = require('events');
 
-const createTestServer = () => {
+const createTestServer = async (port) => {
   app.get('/test-get', handler);
   app.post('/test-post', handler);
   app.put('/test-put', handler);
@@ -62,6 +63,10 @@ const createTestServer = () => {
       cookies: COOKIES
     });
   }
+
+  http.listen(port || 0);
+  await once(http, 'listening');
+  console.log('Express Socket.io listening on %s', http.address().port);
 
   return http;
 };

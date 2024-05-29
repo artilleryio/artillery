@@ -1,7 +1,8 @@
 const { createServer } = require('http');
 const { Server } = require('socket.io');
+const { once } = require('events');
 
-const createTestServer = () => {
+const createTestServer = async (port) => {
   function handler(req, res) {
     res.writeHead(404);
     res.end('No http pages here');
@@ -32,6 +33,13 @@ const createTestServer = () => {
       });
     });
   });
+
+  httpServer.listen(port || 0);
+  await once(httpServer, 'listening');
+  console.log(
+    'Express Socket.io with args listening on %s',
+    httpServer.address().port
+  );
 
   return httpServer;
 };
