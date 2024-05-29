@@ -1,7 +1,11 @@
 name: Publish CloudFormation templates to AWS S3
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - './packages/artillery/lib/platform/aws/iam-cf-templates/**'
 
 jobs:
   put-cloudformation-templates:
