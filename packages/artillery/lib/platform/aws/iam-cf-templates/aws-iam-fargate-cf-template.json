@@ -12,9 +12,10 @@
             {
               "Effect": "Allow",
               "Principal": {
-                "Service": ["ecs-tasks.amazonaws.com"]
+                  "AWS": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}
               },
-              "Action": ["sts:AssumeRole"]
+              "Action": "sts:AssumeRole",
+              "Condition": {}
             }
           ]
         },

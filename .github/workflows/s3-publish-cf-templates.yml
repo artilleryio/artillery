@@ -6,10 +6,29 @@ on:
 jobs:
   put-cloudformation-templates:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
-      - name: "Hello world"
-        run: echo "Hello world"
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+
+      - name: Update IAM CloudFormation templates
+        run: aws s3 sync ./.github/workflows/iam-cf-templates/ s3://artillery-cf-templates/ --delete
