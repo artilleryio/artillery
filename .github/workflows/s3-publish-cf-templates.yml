@@ -1,0 +1,15 @@
+name: Publish CloudFormation templates to AWS S3
+
+on:
+  workflow_dispatch:
+
+jobs:
+  put-cloudformation-templates:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: "Hello world"
+        run: echo "Hello world"
