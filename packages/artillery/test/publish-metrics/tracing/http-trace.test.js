@@ -85,10 +85,11 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --record --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
+    console.error('There has been an error in test run execution: ', err);
     t.fail(err);
   }
 
@@ -170,7 +171,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --record --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
@@ -256,7 +257,7 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --record --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
+      await $`artillery run ${__dirname}/../fixtures/http-trace.yml --tags ${baseTags} -o ${reportFilePath} --overrides ${JSON.stringify(
         override
       )}`;
   } catch (err) {
