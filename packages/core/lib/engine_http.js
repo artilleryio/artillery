@@ -856,9 +856,14 @@ function lastRequest(res, requestParams) {
 HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
 
-  initialContext._defaultStrictCapture =
-    this.config.http.defaults.strictCapture ||
-    this.config.defaults.strictCapture;
+  initialContext._defaultStrictCapture = true;
+  if (
+    this.config.http?.defaults?.strictCapture === false ||
+    this.config.defaults?.strictCapture === false
+  ) {
+    initialContext._defaultStrictCapture = false;
+  }
+
   initialContext._jar = new tough.CookieJar(
     null,
     this.config.http.cookieJarOptions
