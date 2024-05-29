@@ -8,7 +8,7 @@
   "license": "MPL-2.0",
   "scripts": {
     "pretest": "npm run build",
-    "test": "tap --ts --timeout 120 test/**/*.test.ts",
+    "test": "tap --timeout 120 test/**/*.test.ts",
     "build": "node generate-schema.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build && npm test"
