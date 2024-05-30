@@ -5,7 +5,7 @@
     "ArtilleryECSRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
-        "RoleName": "ArtilleryECSRole",
+        "RoleName": "ArtilleryDistributedTestingFargateRole",
         "AssumeRolePolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
@@ -22,7 +22,7 @@
         "Path": "/",
         "Policies": [
           {
-            "PolicyName": "ArtilleryECSPolicy",
+            "PolicyName": "ArtilleryDistributedTestingFargatePolicy",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
@@ -159,11 +159,23 @@
                   ],
                   "Resource": [
                     {"Fn::Sub": "arn:aws:ssm:us-east-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:us-east-2:${AWS::AccountId}:parameter/artilleryio/*"},
                     {"Fn::Sub": "arn:aws:ssm:us-west-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:us-west-2:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:ca-central-1:${AWS::AccountId}:parameter/artilleryio/*"},
                     {"Fn::Sub": "arn:aws:ssm:eu-west-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:eu-west-2:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:eu-west-3:${AWS::AccountId}:parameter/artilleryio/*"},
                     {"Fn::Sub": "arn:aws:ssm:eu-central-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:eu-north-1:${AWS::AccountId}:parameter/artilleryio/*"},
                     {"Fn::Sub": "arn:aws:ssm:ap-south-1:${AWS::AccountId}:parameter/artilleryio/*"},
-                    {"Fn::Sub": "arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/artilleryio/*"}
+                    {"Fn::Sub": "arn:aws:ssm:ap-east-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:ap-northeast-2:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:ap-southeast-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:ap-southeast-2:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:me-south-1:${AWS::AccountId}:parameter/artilleryio/*"},
+                    {"Fn::Sub": "arn:aws:ssm:sa-east-1:${AWS::AccountId}:parameter/artilleryio/*"}
                   ]
                 },
                 {

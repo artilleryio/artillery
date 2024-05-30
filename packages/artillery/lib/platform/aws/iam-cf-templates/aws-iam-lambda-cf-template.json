@@ -5,7 +5,7 @@
     "ArtilleryLambdaRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
-        "RoleName": "ArtilleryLambdaRole",
+        "RoleName": "ArtilleryDistributedTestingLambdaRole",
         "AssumeRolePolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
@@ -22,7 +22,7 @@
         "Path": "/",
         "Policies": [
           {
-            "PolicyName": "ArtilleryLambdaPolicy",
+            "PolicyName": "ArtilleryDistributedTestingLambdaPolicy",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
