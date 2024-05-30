@@ -41,7 +41,7 @@
                   "Sid": "CreateLambdaPolicy",
                   "Effect": "Allow",
                   "Action": ["iam:CreatePolicy"],
-                  "Resource": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:policy/artilleryio-lambda-policy"}
+                  "Resource": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:policy/artilleryio-lambda-policy-*"}
                 },
                 {
                   "Sid": "SQSPermissions",
@@ -73,12 +73,7 @@
                     "ecr:GetDownloadUrlForLayer",
                     "ecr:BatchGetImage"
                   ],
-                  "Resource": "*",
-                  "Condition": {
-                    "StringLike": {
-                      "aws:sourceArn": {"Fn::Sub": "arn:aws:lambda:*:${AWS::AccountId}:function:artilleryio-*"}
-                    }
-                  }
+                  "Resource": "arn:aws:ecr:*:248481025674:repository/artillery-worker"
                 },
                 {
                   "Sid": "S3Permissions",
