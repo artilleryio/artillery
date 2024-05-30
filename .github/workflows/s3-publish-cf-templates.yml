@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - './packages/artillery/lib/platform/aws/iam-cf-templates/**'
+  workflow_dispatch:
 
 jobs:
   put-cloudformation-templates:
