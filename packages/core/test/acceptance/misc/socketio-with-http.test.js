@@ -5,9 +5,8 @@ const createTestServer = require('../../targets/express_socketio');
 let server;
 let port;
 beforeEach(async () => {
-  server = createTestServer().listen(0, function () {
-    port = server.address().port;
-  });
+  server = await createTestServer();
+  port = server.address().port;
 });
 
 afterEach(() => {

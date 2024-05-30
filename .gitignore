@@ -5,7 +5,7 @@ dump.rdb
 node_modules
 components
 build
-results.tap
+.tap
 results.xml
 config.json
 .DS_Store

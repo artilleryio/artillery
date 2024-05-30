@@ -4,8 +4,16 @@
   "description": "Publish metrics from your Artillery.io tests to external monitoring & observability systems",
   "main": "index.js",
   "scripts": {
-    "test": "tap test/index.js --no-coverage --color && npm run test:unit",
-    "test:unit": "tap test/unit/*.js --no-coverage --color"
+    "test": "tap test/index.js && npm run test:unit",
+    "test:unit": "tap test/unit/*.js"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "repository": {
     "type": "git",
@@ -43,6 +51,6 @@
   },
   "devDependencies": {
     "shelljs": "^0.8.4",
-    "tap": "^16.3.7"
+    "tap": "^19.0.2"
   }
 }

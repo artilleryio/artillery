@@ -11,10 +11,8 @@ let server;
 let port;
 
 beforeEach(async () => {
-  server = createTestServer().listen(0, function () {
-    port = server.address().port;
-    console.log('Express Socket.io listening on %s', port);
-  });
+  server = await createTestServer();
+  port = server.address().port;
 });
 
 afterEach(() => {

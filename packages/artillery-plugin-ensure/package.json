@@ -5,8 +5,16 @@
   "main": "index.js",
   "scripts": {
     "test": "npm run test:unit && npm run test:acceptance",
-    "test:acceptance": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300 --no-coverage --color",
-    "test:unit": "tap ./test/*.unit.js --no-coverage --color"
+    "test:acceptance": "tap ./test/*.spec.js --timeout 300",
+    "test:unit": "tap ./test/*.unit.js"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "keywords": [],
   "author": "Artillery.io <team@artillery.io>",
@@ -17,7 +25,7 @@
     "filtrex": "^2.2.3"
   },
   "devDependencies": {
-    "tap": "^16.3.8",
+    "tap": "^19.0.2",
     "zx": "^4.3.0"
   }
 }

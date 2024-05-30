@@ -1,6 +1,6 @@
 'use strict';
 
-const { test } = require('tap');
+const { test, beforeEach, afterEach } = require('tap');
 const assert = require('assert');
 const http = require('http');
 const { cloneDeep } = require('lodash');
@@ -16,53 +16,61 @@ const beforeEndpoint = '/auth';
 const afterEndpoint = '/logout';
 const scenarioEndpoint = '/data';
 
-const targetServer = runServer().listen(0);
-const script = {
-  config: {
-    target: `http://127.0.0.1:${targetServer.address().port}`,
-    phases: [{ duration: 3, arrivalRate: 2 }]
-  },
-  before: {
-    flow: [
-      {
-        post: {
-          url: beforeEndpoint,
-          capture: {
-            json: '$.token',
-            as: 'token'
-          }
-        }
-      }
-    ]
-  },
-  after: {
-    flow: [
-      {
-        post: {
-          url: afterEndpoint,
-          json: { token: '{{ token }}' }
-        }
-      }
-    ]
-  },
-  scenarios: [
-    {
+const authToken = 'abcdefg';
+let targetServer;
+let script;
+
+beforeEach(async () => {
+  targetServer = runServer().listen(0);
+  script = {
+    config: {
+      target: `http://127.0.0.1:${targetServer.address().port}`,
+      phases: [{ duration: 3, arrivalRate: 2 }]
+    },
+    before: {
       flow: [
         {
-          get: {
-            url: scenarioEndpoint,
-            headers: {
-              authorization: 'Bearer {{ token }}'
+          post: {
+            url: beforeEndpoint,
+            capture: {
+              json: '$.token',
+              as: 'token'
             }
           }
         }
       ]
-    }
-  ],
-  _configPath: 'fakepath.yml'
-};
+    },
+    after: {
+      flow: [
+        {
+          post: {
+            url: afterEndpoint,
+            json: { token: '{{ token }}' }
+          }
+        }
+      ]
+    },
+    scenarios: [
+      {
+        flow: [
+          {
+            get: {
+              url: scenarioEndpoint,
+              headers: {
+                authorization: 'Bearer {{ token }}'
+              }
+            }
+          }
+        ]
+      }
+    ],
+    _configPath: 'fakepath.yml'
+  };
+});
 
-const authToken = 'abcdefg';
+afterEach(async () => {
+  targetServer.close();
+});
 
 test('before/after hooks', (t) => {
   const s = cloneDeep(script);
@@ -190,8 +198,8 @@ test('before/after hooks - payload', (t) => {
   });
 });
 
-test('before/after hooks - teardown', (t) => {
-  targetServer.close(t.end);
+test('before/after hooks - teardown', async (t) => {
+  targetServer.close();
 });
 
 function runServer() {

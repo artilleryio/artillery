@@ -4,9 +4,20 @@
   "description": "Calculate and report Apdex scores",
   "main": "index.js",
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.js --timeout 300 --no-coverage --color"
+    "test": "tap ./test/*.spec.js --timeout 300"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "keywords": [],
   "author": "",
-  "license": "MPL-2.0"
+  "license": "MPL-2.0",
+  "dependencies": {
+    "tap": "^19.0.2"
+  }
 }
