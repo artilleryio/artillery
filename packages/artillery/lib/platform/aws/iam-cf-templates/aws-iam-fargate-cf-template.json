@@ -12,8 +12,8 @@
             {
               "Effect": "Allow",
               "Principal": {
-                  "AWS": {"Fn::Sub": "arn:aws:iam::${AWS::AccountId}:root"}
-              },
+                "AWS": "*"
+            },
               "Action": "sts:AssumeRole",
               "Condition": {}
             }
