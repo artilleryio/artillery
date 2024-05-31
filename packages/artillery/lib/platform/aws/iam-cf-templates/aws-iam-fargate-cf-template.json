@@ -2,7 +2,7 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Template to create an IAM Role with attached policies for Artillery.io",
   "Resources": {
-    "ArtilleryECSRole": {
+    "ArtilleryDistributedTestingFargateRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "RoleName": "ArtilleryDistributedTestingFargateRole",

@@ -2,7 +2,7 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "CloudFormation template to create an IAM Role for Artillery.io Lambda with attached policies",
   "Resources": {
-    "ArtilleryLambdaRole": {
+    "ArtilleryDistributedTestingLambdaRole": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "RoleName": "ArtilleryDistributedTestingLambdaRole",
