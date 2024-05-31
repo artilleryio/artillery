@@ -22,6 +22,7 @@ const crypto = require('node:crypto');
 
 const prices = require('./prices');
 const { STATES } = require('../local/artillery-worker-local');
+const _ = require('lodash');
 
 const { SQS_QUEUES_NAME_PREFIX } = require('../aws/constants');
 const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
@@ -209,21 +210,9 @@ class PlatformLambda {
       /\./g,
       '-'
     )}-${this.architecture}`;
-    const shouldCreateLambda = await this.checkIfNewLambdaIsNeeded({
-      memorySize: this.memorySize,
-      functionName: this.functionName
-    });
 
-    if (shouldCreateLambda) {
-      try {
-        await this.createLambda({
-          bucketName: this.bucketName,
-          functionName: this.functionName
-        });
-      } catch (err) {
-        throw new Error(`Failed to create Lambda Function: \n${err}`);
-      }
-    }
+    await this.createOrUpdateLambdaFunctionIfNeeded();
+
     artillery.log(` - Lambda function: ${this.functionName}`);
     artillery.log(` - Region: ${this.region}`);
     artillery.log(` - AWS account: ${this.accountId}`);
@@ -588,7 +577,34 @@ class PlatformLambda {
     return lambdaRoleArn;
   }
 
-  async checkIfNewLambdaIsNeeded({ memorySize, functionName }) {
+  async createOrUpdateLambdaFunctionIfNeeded() {
+    const existingLambdaConfig = await this.getLambdaFunctionConfiguration();
+
+    if (existingLambdaConfig) {
+      await this.updateLambdaIfNeeded(existingLambdaConfig);
+      return;
+    }
+
+    try {
+      await this.createLambda({
+        bucketName: this.bucketName,
+        functionName: this.functionName
+      });
+      return;
+    } catch (err) {
+      if (err.code === 'ResourceConflictException') {
+        // Sometimes the lambda function is already created by another process in the meantime
+        // To avoid this race condition, we check again if an update is needed, otherwise we reuse the now created and existing function
+        const newLambdaConfig = await this.getLambdaFunctionConfiguration();
+        await this.updateLambdaIfNeeded(newLambdaConfig);
+        return;
+      }
+
+      throw new Error(`Failed to create Lambda Function: \n${err}`);
+    }
+  }
+
+  async getLambdaFunctionConfiguration() {
     const lambda = new AWS.Lambda({
       apiVersion: '2015-03-31',
       region: this.region
@@ -597,28 +613,74 @@ class PlatformLambda {
     try {
       const res = await lambda
         .getFunctionConfiguration({
-          FunctionName: functionName
+          FunctionName: this.functionName
         })
         .promise();
 
-      if (res.MemorySize != memorySize) {
-        debug(
-          `Desired memory size changed: ${res.MemorySize} -> ${memorySize}. Updating Lambda Function!`
-        );
-        return true;
-      }
+      return res;
     } catch (err) {
       if (err.code === 'ResourceNotFoundException') {
-        return true;
+        return null;
       }
+
       throw new Error(`Failed to get Lambda Function: \n${err}`);
     }
+  }
 
-    return false;
+  async updateLambdaIfNeeded(lambdaConfig) {
+    const lambda = new AWS.Lambda({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    if (!lambdaConfig) {
+      return;
+    }
+
+    let shouldUpdateLambda = false;
+    const updateLambdaConfig = {
+      FunctionName: this.functionName
+    };
+
+    if (lambdaConfig.MemorySize != this.memorySize) {
+      updateLambdaConfig.MemorySize = this.memorySize;
+      shouldUpdateLambda = true;
+      debug(
+        `Desired memory size changed: ${lambdaConfig.MemorySize} -> ${this.memorySize}. Updating Lambda Function!`
+      );
+    }
+
+    if (
+      this.useVPC &&
+      (!_.isEqual(
+        lambdaConfig.VpcConfig?.SecurityGroupIds,
+        this.securityGroupIds
+      ) ||
+        !_.isEqual(lambdaConfig.VpcConfig?.SubnetIds, this.subnetIds))
+    ) {
+      updateLambdaConfig.VpcConfig = {
+        SecurityGroupIds: this.securityGroupIds,
+        SubnetIds: this.subnetIds
+      };
+
+      shouldUpdateLambda = true;
+      debug('Desired vpc config changed. Updating Lambda Function!');
+    }
+
+    if (!shouldUpdateLambda) {
+      debug('Reusing existing Lambda function!');
+      return;
+    }
+
+    try {
+      await lambda.updateFunctionConfiguration(updateLambdaConfig).promise();
+    } catch (err) {
+      throw new Error(`Failed to update Lambda Function: \n${err}`);
+    }
   }
 
   async createLambda(opts) {
-    const { bucketName, functionName, zipPath } = opts;
+    const { bucketName, functionName } = opts;
 
     const lambda = new AWS.Lambda({
       apiVersion: '2015-03-31',
