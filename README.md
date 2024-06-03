@@ -21,7 +21,7 @@
 - **Powerful workload modeling**. Emulate complex user behavior with request chains, multiple steps, transactions, and more.
 - **Extensible & hackable**. Artillery has a plugin API to allow extending and customization.
 - **Open source**. Permissive open source license to let you build on top of Artillery without worry.
-
+- **Reporting dashboard**. Visualize test results, share reports, analyze performance trends, and collaborate with your team with [Artillery Cloud](https://app.artillery.io/).
 → [Learn more](./packages/artillery#readme)
 
 <!--

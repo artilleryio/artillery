@@ -20,6 +20,7 @@
 | **Powerful workload modeling** | Emulate complex user behavior with request chains, multiple steps, transactions, and more. |
 | **Extensible & hackable** | Artillery has a plugin API to allow extending and customization. |
 | **Permissive open-source** | Permissive open source license (MPLv2) that lets you build on top of Artillery without worry. |
+| **Reporting dashboard** | Visualize test results, share reports, analyze performance trends, and collaborate with your team with [Artillery Cloud](https://app.artillery.io/). |
 
 ## Get started
 
@@ -42,6 +43,7 @@ Follow our 5-minute guide to run your first load test - https://www.artillery.io
 - Set [API response expectations](https://docs.art/expect), automate [SLO checks](https://docs.art/ensure), and report [Apdex scores](https://docs.art/apdex)
 - [Running tests using real headless browsers](https://docs.art/playwright) with Artillery's Playwright integration
 - [Publishing metrics](https://docs.art/o11y) to Datadog, Honeycomb, Lightstep, and more
+- Get started with [Artillery Cloud](https://www.artillery.io/docs/cloud/get-started)
 
 ### Integrations and plugins
 
