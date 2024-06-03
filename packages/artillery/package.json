@@ -44,7 +44,7 @@
   },
   "scripts": {
     "test:unit": "tap --timeout=420 test/unit/*.test.js",
-    "test:acceptance": "tap --timeout=420 test/cli/*.test.js && bash test/lib/run.sh",
+    "test:acceptance": "tap --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap --timeout=420 test/publish-metrics/**/*.test.js",
     "test": " npm run test:unit && npm run test:acceptance",
     "test:windows": "npm run test:unit && tap --timeout=420 test/cli/*.test.js",
     "test:aws": "tap --timeout=4200 test/cloud-e2e/**/*.test.js",
