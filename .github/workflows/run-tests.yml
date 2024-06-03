@@ -39,7 +39,7 @@ jobs:
       - name: Run tests
         run: npm run test:canary --workspace artillery
         env:
-          A9_PATH: __artillery__/node_modules/.bin/artillery
+          A9_PATH: "$GITHUB_WORKSPACE/__artillery__/node_modules/.bin/artillery"
       # - run: npm run build
       # - run: npm run test
       #   env:
