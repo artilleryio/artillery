@@ -3,6 +3,7 @@ const fs = require('fs');
 const { $ } = require('zx');
 const { getTestTags, generateTmpReportPath } = require('../../cli/_helpers.js');
 
+const A9_PATH = process.env.A9_PATH || 'artillery';
 const tags = getTestTags(['type:acceptance']);
 
 let reportFilePath;
@@ -17,7 +18,7 @@ tap.test('Run a test on AWS Lambda using containers', async (t) => {
   const scenarioPath = `${__dirname}/fixtures/quick-loop-with-csv/blitz.yml`;
 
   const output =
-    await $`artillery run-lambda --count 10 --region us-east-1 --architecture x86_64 --container --config ${configPath} --record --tags ${tags} ${scenarioPath}`;
+    await $`${A9_PATH} run-lambda --count 10 --region us-east-1 --architecture x86_64 --container --config ${configPath} --record --tags ${tags} ${scenarioPath}`;
 
   t.equal(output.exitCode, 0, 'CLI should exit with code 0');
 
@@ -47,7 +48,7 @@ tap.test(
     const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
 
     const output =
-      await $`artillery run-lambda ${scenarioPath} --architecture x86_64 --container --record --output ${reportFilePath} --tags ${tags},typescript:true`;
+      await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 --container --record --output ${reportFilePath} --tags ${tags},typescript:true`;
 
     t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 

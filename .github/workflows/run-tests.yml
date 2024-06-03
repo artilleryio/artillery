@@ -23,15 +23,23 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install
-      - run: npm run build
-      - run: npm run test
+      - name: Create new folder for tests
+        run: mkdir __artillery__
+      - name: Install Artillery in new folder
+        run: cd __artillery__ && npm init -y && npm install artillery@canary
+      - name: Run tests
+        run: npm run test:canary --workspace artillery
         env:
-          FORCE_COLOR: 1
-      - name: Notify about failures
-        if: failure() && github.ref == 'refs/heads/main'
-        uses: 8398a7/action-slack@v3.15.1
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,eventName,job,took,pullRequest
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          A9_PATH: __artillery__/node_modules/.bin/artillery
+      # - run: npm run build
+      # - run: npm run test
+      #   env:
+      #     FORCE_COLOR: 1
+      # - name: Notify about failures
+      #   if: failure() && github.ref == 'refs/heads/main'
+      #   uses: 8398a7/action-slack@v3.15.1
+      #   with:
+      #     status: ${{ job.status }}
+      #     fields: repo,message,commit,author,eventName,job,took,pullRequest
+      #   env:
+      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
