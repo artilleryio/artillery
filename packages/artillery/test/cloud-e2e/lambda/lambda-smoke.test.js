@@ -3,7 +3,6 @@ const fs = require('fs');
 const { $ } = require('zx');
 const { getTestTags, generateTmpReportPath } = require('../../cli/_helpers.js');
 
-const A9_PATH = process.env.A9_PATH || 'artillery';
 const tags = getTestTags(['type:acceptance']);
 
 let reportFilePath;
@@ -11,6 +10,11 @@ tap.beforeEach(async (t) => {
   process.env.LAMBDA_IMAGE_VERSION = process.env.ECR_IMAGE_VERSION;
   process.env.RETAIN_LAMBDA = 'false';
   reportFilePath = generateTmpReportPath(t.name, 'json');
+});
+
+const A9_PATH = process.env.A9_PATH || 'artillery';
+tap.before(async () => {
+  await $`${A9_PATH} -V`;
 });
 
 tap.test('Run a test on AWS Lambda using containers', async (t) => {

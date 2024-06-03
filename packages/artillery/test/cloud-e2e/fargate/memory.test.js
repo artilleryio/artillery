@@ -2,10 +2,10 @@ const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
 
-const A9 = process.env.A9 || 'artillery';
+const A9_PATH = process.env.A9_PATH || 'artillery';
 
 before(async () => {
-  await $`${A9} -V`;
+  await $`${A9_PATH} -V`;
 });
 
 //NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
@@ -13,7 +13,7 @@ const baseTags = getTestTags(['type:acceptance']);
 
 test('Fargate should exit with error code when workers run out of memory', async (t) => {
   try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:true --region us-east-1`;
+    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:true --region us-east-1`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
@@ -25,7 +25,7 @@ test('Fargate should exit with error code when workers run out of memory', async
 
 test('Fargate should not run out of memory when cpu and memory is increased via launch config', async (t) => {
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
+    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --launch-config '{"cpu":"4096", "memory":"12288"}'`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
   t.match(output, /summary report/i, 'print summary report');
@@ -34,7 +34,7 @@ test('Fargate should not run out of memory when cpu and memory is increased via 
 
 test('Fargate should not run out of memory when cpu and memory is increased via flags', async (t) => {
   const output =
-    await $`${A9} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --cpu 4 --memory 12`;
+    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --cpu 4 --memory 12`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
   t.match(output, /summary report/i, 'print summary report');

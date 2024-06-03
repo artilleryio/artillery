@@ -1,6 +1,6 @@
 'use strict';
 
-const { test, afterEach, beforeEach } = require('tap');
+const { test, afterEach, beforeEach, before } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
 const {
@@ -8,9 +8,9 @@ const {
   deleteFile,
   getTestTags
 } = require('../../cli/_helpers.js');
-
 const { getTestId, getXRayTraces } = require('./fixtures/adot/helpers.js');
 
+const A9_PATH = process.env.A9_PATH || 'artillery';
 // NOTE: This test reports to Artillery Dashboard to dogfood and improve visibility
 const baseTags = getTestTags(['type:acceptance']);
 
@@ -21,6 +21,10 @@ beforeEach(async (t) => {
 
 afterEach(async (t) => {
   deleteFile(reportFilePath);
+});
+
+before(async () => {
+  await $`${A9_PATH} -V`;
 });
 
 test('traces succesfully arrive to cloudwatch', async (t) => {
@@ -36,7 +40,7 @@ test('traces succesfully arrive to cloudwatch', async (t) => {
 
   // Act:
   const output =
-    await $`artillery run-fargate ${__dirname}/fixtures/adot/adot-cloudwatch.yml --record --tags ${baseTags} --output ${reportFilePath}`;
+    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/adot/adot-cloudwatch.yml --record --tags ${baseTags} --output ${reportFilePath}`;
 
   const testId = getTestId(output.stdout);
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));

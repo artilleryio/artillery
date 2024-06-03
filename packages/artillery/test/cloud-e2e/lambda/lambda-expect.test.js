@@ -12,11 +12,16 @@ tap.beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
+const A9_PATH = process.env.A9_PATH || 'artillery';
+tap.before(async () => {
+  await $`${A9_PATH} -V`;
+});
+
 tap.test(
   'CLI should exit with non-zero exit code when there are failed expectations in container workers',
   async (t) => {
     try {
-      await $`artillery run-lambda ${__dirname}/../fargate/fixtures/cli-exit-conditions/with-expect.yml --architecture x86_64 --record --tags ${tags} --output ${reportFilePath} --container --count 2`;
+      await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/cli-exit-conditions/with-expect.yml --architecture x86_64 --record --tags ${tags} --output ${reportFilePath} --container --count 2`;
       t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
     } catch (output) {
       t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
