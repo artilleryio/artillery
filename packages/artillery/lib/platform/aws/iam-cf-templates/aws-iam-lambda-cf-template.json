@@ -12,7 +12,7 @@
             {
               "Effect": "Allow",
               "Principal": {
-                "AWS": "*"
+                "AWS": {"Fn::Sub": "${AWS::AccountId}"}
             },
               "Action": "sts:AssumeRole",
               "Condition": {}
