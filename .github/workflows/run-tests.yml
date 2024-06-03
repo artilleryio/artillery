@@ -15,7 +15,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x]
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -27,6 +27,15 @@ jobs:
         run: mkdir __artillery__
       - name: Install Artillery in new folder
         run: cd __artillery__ && npm init -y && npm install artillery@canary
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
       - name: Run tests
         run: npm run test:canary --workspace artillery
         env:
