@@ -8,47 +8,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    timeout-minutes: 30
-    runs-on: ubuntu-latest
+  run-distributed-tests:
+    uses: ./.github/workflows/run-distributed-tests.yml
+    with:
+      ARTILLERY_VERSION_OVERRIDE: 2.0.14-ef69996
     permissions:
       contents: read
-    strategy:
-      matrix:
-        node-version: [20.x]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-      - run: npm install
-      - name: Create new folder for tests
-        run: mkdir __artillery__
-      - name: Install Artillery in new folder
-        run: cd __artillery__ && npm init -y && npm install artillery@canary
-      # - name: Configure AWS Credentials
-      #   uses: aws-actions/configure-aws-credentials@v2
-      #   env:
-      #     SHOW_STACK_TRACE: true
-      #   with:
-      #     aws-region: eu-west-1
-      #     role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
-      #     role-session-name: OIDCSession
-      #     mask-aws-account-id: true
-      - name: Run tests
-        run: npm run test:canary --workspace artillery
-        env:
-          A9_PATH: "${{ github.workspace }}/__artillery__/node_modules/.bin/artillery"
-      # - run: npm run build
-      # - run: npm run test
-      #   env:
-      #     FORCE_COLOR: 1
-      # - name: Notify about failures
-      #   if: failure() && github.ref == 'refs/heads/main'
-      #   uses: 8398a7/action-slack@v3.15.1
-      #   with:
-      #     status: ${{ job.status }}
-      #     fields: repo,message,commit,author,eventName,job,took,pullRequest
-      #   env:
-      #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      id-token: write
+    secrets:
+      ARTILLERY_CLOUD_ENDPOINT_TEST: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY_TEST: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+      AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}

@@ -58,7 +58,6 @@ jobs:
       contents: read
       id-token: write
     env:
-      ECR_IMAGE_VERSION: ${{ inputs.COMMIT_SHA || github.sha }}
       ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
       ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
       DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
@@ -84,6 +83,15 @@ jobs:
           node-version: 18.x
       - run: npm install
       - run: npm run build
+      - name: Install Specific Artillery Version if needed
+        if: ${{ inputs.ARTILLERY_VERSION_OVERRIDE || false }}
+        run: mkdir __artillery__ && cd __artillery__ && npm init -y && npm install artillery@${{ inputs.ARTILLERY_VERSION_OVERRIDE }}
+      - name: Set A9_PATH
+        if: ${{ inputs.ARTILLERY_VERSION_OVERRIDE || false }}
+        run: echo "A9_PATH=${{ github.workspace }}/__artillery__/node_modules/.bin/artillery" >> $GITHUB_ENV
+      - name: Set ECR Image Version if needed
+        if: ${{ inputs.COMMIT_SHA }}
+        run: echo "ECR_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
       # runs the single test file from `package` workspace in the `file`, as defined in the matrix output
       - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
         env:
