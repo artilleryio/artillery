@@ -1,0 +1,54 @@
+name: Run AWS tests
+
+on:
+  pull_request_target:
+    branches: [main]
+    #opened, reopened and synchronize will cause the workflow to fail on forks due to permissions
+    #once labeled, that will then be overridden by the is-collaborator job
+    types: [opened, labeled, synchronize, reopened]
+
+jobs:
+  is-collaborator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get User Permission
+        id: checkAccess
+        uses: actions-cool/check-user-permission@cd622002ff25c2311d2e7fb82107c0d24be83f9b
+        with:
+          require: write
+          username: ${{ github.actor }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check User Permission
+        if: steps.checkAccess.outputs.require-result == 'false'
+        run: |
+          echo "${{ github.actor }} does not have permissions on this repo."
+          echo "Current permission level is ${{ steps.checkAccess.outputs.user-permission }}"
+          exit 1
+
+  publish-branch-image:
+    if: contains( github.event.pull_request.labels.*.name, 'run-aws-tests' )
+    needs: is-collaborator
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+    with:
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha || null }} # this should only be run with this ref if is-collaborator has been run and passed
+
+  run-distributed-tests:
+    needs: publish-branch-image
+    uses: ./.github/workflows/run-distributed-tests.yml
+    with:
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha || null }}
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ARTILLERY_CLOUD_ENDPOINT_TEST: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY_TEST: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+      AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
