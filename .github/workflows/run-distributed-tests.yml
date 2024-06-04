@@ -91,7 +91,9 @@ jobs:
         run: echo "A9_PATH=${{ github.workspace }}/__artillery__/node_modules/.bin/artillery" >> $GITHUB_ENV
       - name: Set ECR Image Version if needed
         if: ${{ inputs.COMMIT_SHA }}
-        run: echo "ECR_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
+        run: |
+          echo "ECR_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
+          echo "LAMBDA_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
       # runs the single test file from `package` workspace in the `file`, as defined in the matrix output
       - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
         env:

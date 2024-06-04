@@ -7,7 +7,6 @@ const tags = getTestTags(['type:acceptance']);
 
 let reportFilePath;
 tap.beforeEach(async (t) => {
-  process.env.LAMBDA_IMAGE_VERSION = process.env.ECR_IMAGE_VERSION;
   process.env.RETAIN_LAMBDA = 'false';
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
