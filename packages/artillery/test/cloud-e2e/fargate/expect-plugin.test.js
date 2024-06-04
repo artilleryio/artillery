@@ -22,7 +22,12 @@ test('CLI should exit with non-zero exit code when there are failed expectations
     await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
-    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
+    t.equal(output.exitCode, 21, 'CLI Exit Code should be 21');
+
+    t.ok(
+      !output.stderr.includes('Worker exited with an error'),
+      'Should not have worker exit error message in stdout'
+    );
 
     const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     t.equal(

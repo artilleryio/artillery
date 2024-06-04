@@ -1917,11 +1917,14 @@ async function listen(context, ee) {
           )
         );
       }
-      artillery.log(
-        chalk.yellow(
-          `Worker exited with an error, worker ID = ${attrs.workerId.StringValue}`
-        )
-      );
+      if (body.exitCode != 21) {
+        artillery.log(
+          chalk.yellow(
+            `Worker exited with an error, worker ID = ${attrs.workerId.StringValue}`
+          )
+        );
+      }
+
       // TODO: Copy log over and print path to log file so that user may inspect it - in a temporary location
       global.artillery.suggestedExitCode = body.exitCode || 1;
     });
