@@ -38,64 +38,17 @@ jobs:
     with:
       COMMIT_SHA: ${{ github.event.pull_request.head.sha || null }} # this should only be run with this ref if is-collaborator has been run and passed
 
-  generate-test-matrix:
-    runs-on: ubuntu-latest
+  run-distributed-tests:
     needs: publish-branch-image
-    outputs:
-      matrix: ${{ steps.generate-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha || null }}
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-      - id: generate-matrix
-        run: |
-          RESULT=$(node .github/workflows/scripts/get-tests-in-package-location.js)
-          echo "matrix=$RESULT" >> $GITHUB_OUTPUT
-
-  run-tests:
-    if: contains( github.event.pull_request.labels.*.name, 'run-aws-tests' )
-    needs: generate-test-matrix
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        testName: ${{fromJson(needs.generate-test-matrix.outputs.matrix).names}}
+    uses: ./.github/workflows/run-distributed-tests.yml
+    with:
+      COMMIT_SHA: ${{ github.event.pull_request.head.sha || null }}
     permissions:
       contents: read
       id-token: write
-    env:
-      ECR_IMAGE_VERSION: ${{ github.event.pull_request.head.sha || github.sha }} # the image is published with the sha of the commmit in the branch
-      ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
-      ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+    secrets:
+      ARTILLERY_CLOUD_ENDPOINT_TEST: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY_TEST: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
       DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
       DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
-      GITHUB_REPO: ${{ github.repository }}
-      GITHUB_ACTOR: ${{ github.actor }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha || null }} # this should only be run with this ref if is-collaborator has been run and passed
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        env:
-          SHOW_STACK_TRACE: true
-        with:
-          aws-region: eu-west-1
-          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
-          role-session-name: OIDCSession
-          mask-aws-account-id: true
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v2
-        with:
-          node-version: 18.x
-      - run: npm install
-      - run: npm run build
-      # runs the single test file from `package` workspace in the `file`, as defined in the matrix output
-      - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
-        env:
-          FORCE_COLOR: 1
+      AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}

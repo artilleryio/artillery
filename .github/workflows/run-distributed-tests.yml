@@ -1,0 +1,90 @@
+name: Run AWS tests
+
+on:
+  workflow_call:
+    inputs:
+      COMMIT_SHA:
+        type: string
+      ARTILLERY_VERSION_OVERRIDE:
+        type: string
+    secrets:
+      ARTILLERY_CLOUD_ENDPOINT_TEST: 
+        required: true
+        description: 'The endpoint for the Artillery Cloud API'
+      ARTILLERY_CLOUD_API_KEY_TEST:
+        required: true
+        description: 'The api key for the Artillery Cloud API'
+      DD_TESTS_API_KEY:
+        required: true
+        description: 'The api key for the Datadog API'
+      DD_TESTS_APP_KEY:
+        required: true
+        description: 'The app key for the Datadog API'
+      AWS_TEST_EXECUTION_ROLE_ARN_TEST5:
+        required: true
+        description: 'The role to assume for the AWS tests'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  generate-test-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.COMMIT_SHA || null }}
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+      - id: generate-matrix
+        run: |
+          RESULT=$(node .github/workflows/scripts/get-tests-in-package-location.js)
+          echo "matrix=$RESULT" >> $GITHUB_OUTPUT
+
+  run-tests:
+    needs: generate-test-matrix
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        testName: ${{fromJson(needs.generate-test-matrix.outputs.matrix).names}}
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ECR_IMAGE_VERSION: ${{ inputs.COMMIT_SHA || github.sha }}
+      ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+      GITHUB_REPO: ${{ github.repository }}
+      GITHUB_ACTOR: ${{ github.actor }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.COMMIT_SHA || null }} # in a PR we make a collaborator check, otherwise this would override pull_request_target
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - run: npm install
+      - run: npm run build
+      # runs the single test file from `package` workspace in the `file`, as defined in the matrix output
+      - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
+        env:
+          FORCE_COLOR: 1
