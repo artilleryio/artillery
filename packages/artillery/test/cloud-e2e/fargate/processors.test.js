@@ -4,10 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
 
-const A9 = process.env.A9 || 'artillery';
+const A9_PATH = process.env.A9_PATH || 'artillery';
 
 before(async () => {
-  await $`${A9} -V`;
+  await $`${A9_PATH} -V`;
 });
 
 //NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
@@ -21,7 +21,7 @@ test('Run with typescript processor and external package', async (t) => {
   const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
 
   const output =
-    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags},typescript:true`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags},typescript:true`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -45,7 +45,7 @@ test('Run a test with an ESM processor', async (t) => {
   );
 
   const output =
-    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags}`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI exit code should be 0');
 

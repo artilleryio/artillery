@@ -8,14 +8,18 @@ const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
 const tags = getTestTags(['type:acceptance']);
 let reportFilePath;
 tap.beforeEach(async (t) => {
-  process.env.LAMBDA_IMAGE_VERSION = process.env.ECR_IMAGE_VERSION;
   process.env.RETAIN_LAMBDA = 'false';
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
+const A9_PATH = process.env.A9_PATH || 'artillery';
+tap.before(async () => {
+  await $`${A9_PATH} -V`;
+});
+
 tap.test('Lambda Container run uses ensure', async (t) => {
   try {
-    await $`artillery run-lambda ${__dirname}/../fargate/fixtures/uses-ensure/with-ensure.yaml --architecture x86_64 --container --tags ${tags} --output ${reportFilePath} --count 15`;
+    await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/uses-ensure/with-ensure.yaml --architecture x86_64 --container --tags ${tags} --output ${reportFilePath} --count 15`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');

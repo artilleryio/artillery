@@ -4,10 +4,10 @@ const chalk = require('chalk');
 const fs = require('fs');
 const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
 
-const A9 = process.env.A9 || 'artillery';
+const A9_PATH = process.env.A9_PATH || 'artillery';
 
 before(async () => {
-  await $`${A9} -V`;
+  await $`${A9_PATH} -V`;
 });
 
 //NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
@@ -30,7 +30,7 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
   };
 
   const output =
-    await $`${A9} run-fargate ${scenarioPath} --output ${reportFilePath} --dotenv ${dotEnvPath} --record --tags ${baseTags} --count 2 --region us-east-2 --spot --launch-config ${JSON.stringify(
+    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --dotenv ${dotEnvPath} --record --tags ${baseTags} --count 2 --region us-east-2 --spot --launch-config ${JSON.stringify(
       launchConfig
     )}`;
 
@@ -83,7 +83,7 @@ test('Run lots-of-output', async (t) => {
   $.verbose = false; // we don't want megabytes of output on the console
 
   const output =
-    await $`${A9} run:fargate ${__dirname}/fixtures/large-output/lots-of-output.yml --record --tags ${baseTags}`;
+    await $`${A9_PATH} run:fargate ${__dirname}/fixtures/large-output/lots-of-output.yml --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
