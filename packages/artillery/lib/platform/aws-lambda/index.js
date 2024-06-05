@@ -206,10 +206,7 @@ class PlatformLambda {
       artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
     }
 
-    this.functionName = `artilleryio-v${this.currentVersion.replace(
-      /\./g,
-      '-'
-    )}-${this.architecture}`;
+    this.functionName = this.createFunctionNameWithHash();
 
     await this.createOrUpdateLambdaFunctionIfNeeded();
 
@@ -581,7 +578,9 @@ class PlatformLambda {
     const existingLambdaConfig = await this.getLambdaFunctionConfiguration();
 
     if (existingLambdaConfig) {
-      await this.updateLambdaIfNeeded(existingLambdaConfig);
+      debug(
+        'Lambda function with this configuration already exists. Using existing function.'
+      );
       return;
     }
 
@@ -593,10 +592,9 @@ class PlatformLambda {
       return;
     } catch (err) {
       if (err.code === 'ResourceConflictException') {
-        // Sometimes the lambda function is already created by another process in the meantime
-        // To avoid this race condition, we check again if an update is needed, otherwise we reuse the now created and existing function
-        const newLambdaConfig = await this.getLambdaFunctionConfiguration();
-        await this.updateLambdaIfNeeded(newLambdaConfig);
+        debug(
+          'Lambda function with this configuration already exists. Using existing function.'
+        );
         return;
       }
 
@@ -627,56 +625,23 @@ class PlatformLambda {
     }
   }
 
-  async updateLambdaIfNeeded(lambdaConfig) {
-    const lambda = new AWS.Lambda({
-      apiVersion: '2015-03-31',
-      region: this.region
-    });
-
-    if (!lambdaConfig) {
-      return;
-    }
-
-    let shouldUpdateLambda = false;
-    const updateLambdaConfig = {
-      FunctionName: this.functionName
-    };
-
-    if (lambdaConfig.MemorySize != this.memorySize) {
-      updateLambdaConfig.MemorySize = this.memorySize;
-      shouldUpdateLambda = true;
-      debug(
-        `Desired memory size changed: ${lambdaConfig.MemorySize} -> ${this.memorySize}. Updating Lambda Function!`
-      );
-    }
-
-    if (
-      this.useVPC &&
-      (!_.isEqual(
-        lambdaConfig.VpcConfig?.SecurityGroupIds,
-        this.securityGroupIds
-      ) ||
-        !_.isEqual(lambdaConfig.VpcConfig?.SubnetIds, this.subnetIds))
-    ) {
-      updateLambdaConfig.VpcConfig = {
+  createFunctionNameWithHash(lambdaConfig) {
+    const changeableConfig = {
+      MemorySize: this.memorySize,
+      VpcConfig: {
         SecurityGroupIds: this.securityGroupIds,
         SubnetIds: this.subnetIds
-      };
+      }
+    };
 
-      shouldUpdateLambda = true;
-      debug('Desired vpc config changed. Updating Lambda Function!');
-    }
+    const configHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(changeableConfig))
+      .digest('hex');
 
-    if (!shouldUpdateLambda) {
-      debug('Reusing existing Lambda function!');
-      return;
-    }
-
-    try {
-      await lambda.updateFunctionConfiguration(updateLambdaConfig).promise();
-    } catch (err) {
-      throw new Error(`Failed to update Lambda Function: \n${err}`);
-    }
+    return `artilleryio-v${this.currentVersion.replace(/\./g, '-')}-${
+      this.architecture
+    }-${configHash}`;
   }
 
   async createLambda(opts) {
