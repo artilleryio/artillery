@@ -1,0 +1,15 @@
+name: Test CLI AWS IAM permissions setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  set-up-iam-and-run-lambda-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: "Hello world"
+        run: echo "Hello world"
