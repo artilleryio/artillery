@@ -1,4 +1,4 @@
-name: Run AWS tests
+name: Run AWS tests (on PR)
 
 on:
   pull_request_target:

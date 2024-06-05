@@ -7,10 +7,10 @@ const {
   execute
 } = require('../../cli/_helpers.js');
 
-const A9 = process.env.A9 || 'artillery';
+const A9_PATH = process.env.A9_PATH || 'artillery';
 
 before(async () => {
-  await $`${A9} -V`;
+  await $`${A9_PATH} -V`;
 });
 
 //NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
@@ -54,7 +54,7 @@ test('Run mixed-hierarchy', async (t) => {
   const configPath = `${__dirname}/fixtures/mixed-hierarchy/config/config.yml`;
 
   const output =
-    await $`${A9} run-fargate ${scenarioPath} --config ${configPath} -e main --record --tags ${baseTags} --output ${reportFilePath}`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --config ${configPath} -e main --record --tags ${baseTags} --output ${reportFilePath}`;
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 

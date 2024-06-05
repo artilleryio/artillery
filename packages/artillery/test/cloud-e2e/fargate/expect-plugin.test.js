@@ -4,10 +4,10 @@ const chalk = require('chalk');
 const fs = require('fs');
 const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
 
-const A9 = process.env.A9 || 'artillery';
+const A9_PATH = process.env.A9_PATH || 'artillery';
 
 before(async () => {
-  await $`${A9} -V`;
+  await $`${A9_PATH} -V`;
 });
 
 //NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
@@ -19,7 +19,7 @@ beforeEach(async (t) => {
 
 test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
   try {
-    await $`${A9} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
+    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
@@ -42,7 +42,7 @@ test('Ensure (with new interface) should still run when workers exit from expect
   //Note: this test uses new ensure plugin interface (config.plugins.ensure) to test that indirectly
 
   try {
-    await $`${A9} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
+    await $`${A9_PATH} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');

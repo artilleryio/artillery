@@ -1,4 +1,4 @@
-const { test, afterEach, beforeEach } = require('tap');
+const { test, afterEach, beforeEach, before } = require('tap');
 const { $ } = require('zx');
 const { getTestTags } = require('../../artillery/test/cli/_helpers.js');
 const fs = require('fs');
@@ -15,9 +15,14 @@ afterEach(async () => {
   fs.unlinkSync(playwrightOutput);
 });
 
+const A9_PATH = process.env.A9_PATH || '../artillery/bin/run';
+before(async () => {
+  await $`${A9_PATH} -V`;
+});
+
 test('playwright typescript test works and reports data', async (t) => {
   const output =
-    await $`../artillery/bin/run run:fargate ./test/fixtures/pw-acceptance-ts.yml --output ${playwrightOutput} --tags ${tags} --record`;
+    await $`${A9_PATH} run:fargate ./test/fixtures/pw-acceptance-ts.yml --output ${playwrightOutput} --tags ${tags} --record`;
 
   t.equal(
     output.exitCode,
@@ -122,7 +127,7 @@ test('playwright typescript test fails and has correct vu count when expectation
   });
 
   try {
-    await $`../artillery/bin/run run:fargate ./test/fixtures/pw-acceptance-ts.yml --output ${playwrightOutput} --overrides ${scenarioOverride} --tags ${tags} --record`;
+    await $`${A9_PATH} run:fargate ./test/fixtures/pw-acceptance-ts.yml --output ${playwrightOutput} --overrides ${scenarioOverride} --tags ${tags} --record`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(

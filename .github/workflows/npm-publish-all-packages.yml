@@ -32,6 +32,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      ARTILLERY_VERSION: ${{ steps.get-artillery-version.outputs.ARTILLERY_VERSION }}
     env:
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       # this list should be kept in sync with create-release-pr.yml
@@ -67,6 +69,10 @@ jobs:
       - run: npm -w artillery-plugin-fake-data publish
       - run: npm -w artillery-plugin-slack publish
       - run: npm -w artillery publish
+      - id: get-artillery-version
+        run: |
+          ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
+          echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> $GITHUB_OUTPUT
       # # Skytrace is a Typescript Package and needs to install -> build -> publish
       # - run: npm install -w skytrace --ignore-scripts
       # - run: npm run build -w skytrace
@@ -83,3 +89,18 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  run-distributed-tests:
+    uses: ./.github/workflows/run-distributed-tests.yml
+    needs: publish-packages-to-npm
+    with:
+      ARTILLERY_VERSION_OVERRIDE: ${{ needs.publish-packages-to-npm.outputs.ARTILLERY_VERSION }}
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ARTILLERY_CLOUD_ENDPOINT_TEST: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY_TEST: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+      AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
