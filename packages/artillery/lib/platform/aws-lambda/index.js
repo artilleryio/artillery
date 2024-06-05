@@ -635,13 +635,19 @@ class PlatformLambda {
     };
 
     const configHash = crypto
-      .createHash('sha256')
+      .createHash('md5')
       .update(JSON.stringify(changeableConfig))
       .digest('hex');
 
-    return `artilleryio-v${this.currentVersion.replace(/\./g, '-')}-${
+    let name = `artilleryio-v${this.currentVersion.replace(/\./g, '-')}-${
       this.architecture
     }-${configHash}`;
+
+    if (name.length > 64) {
+      name = name.slice(0, 64);
+    }
+
+    return name;
   }
 
   async createLambda(opts) {
