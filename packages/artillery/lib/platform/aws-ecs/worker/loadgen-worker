@@ -26,6 +26,7 @@ declare -r ERR_INTERRUPTED=7
 declare -r ERR_UNKNOWN_PLATFORM=8
 declare -r ERR_DEP=9
 declare -r ERR_DEP_INSTALL=10 # npm install / yarn install failed
+declare -r ERR_CLI_ERROR_EXPECT=21
 
 ERR_EXTRA_INFO=""
 
@@ -314,6 +315,8 @@ run_a9 () {
 
     if [[ $CLI_STATUS -eq 0 ]] ; then
         EXIT_CODE=0
+    elif [[ $CLI_STATUS -eq $ERR_CLI_ERROR_EXPECT ]] ; then
+        EXIT_CODE=$ERR_CLI_ERROR_EXPECT
     else
         EXIT_CODE=$ERR_CLI_ERROR
     fi
