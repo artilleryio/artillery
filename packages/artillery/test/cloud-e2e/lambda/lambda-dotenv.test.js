@@ -21,7 +21,7 @@ tap.test('Run dotenv test in Lambda Container', async (t) => {
   const dotenvPath = `${__dirname}/fixtures/dotenv/.env-test`;
 
   const output =
-    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 --tags ${tags} --output ${reportFilePath} --count 5 --record --container --dotenv ${dotenvPath}`;
+    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 --tags ${tags} --output ${reportFilePath} --count 5 --record --dotenv ${dotenvPath}`;
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
