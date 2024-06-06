@@ -108,7 +108,7 @@ class PlatformLambda {
   }
 
   async init() {
-    artillery.log('λ Creating AWS Lambda function...');
+    artillery.log('λ Preparing AWS Lambda function...');
 
     await setDefaultAWSCredentials(AWS);
     this.accountId = await getAccountId();
