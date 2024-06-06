@@ -197,7 +197,7 @@
   "Outputs": {
     "RoleArn": {
       "Description": "ARN of the created IAM Role",
-      "Value": {"Fn::GetAtt": ["ArtilleryECSRole", "Arn"]}
+      "Value": {"Fn::GetAtt": ["ArtilleryDistributedTestingFargateRole", "Arn"]}
     }
   }
 }

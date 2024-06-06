@@ -102,7 +102,7 @@
   "Outputs": {
     "RoleArn": {
       "Description": "ARN of the IAM Role for Artillery.io Lambda functions",
-      "Value": {"Fn::GetAtt": ["ArtilleryLambdaRole", "Arn"]}
+      "Value": {"Fn::GetAtt": ["ArtilleryDistributedTestingLambdaRole", "Arn"]}
     }
   }
 }
