@@ -418,9 +418,19 @@ cleanup () {
         if [[ $CLI_RUNNING = "yes" ]] ; then
             printf "Interrupted with %s, stopping\n" "$sig"
             EXIT_CODE=$ERR_INTERRUPTED
-            kill -TERM $CLI_PID # TODO: Check handling in A9 CLI
-            wait $CLI_PID
-            CLI_STATUS=$(cat exitCode) # TODO: Could be 0, but is not a successful run
+            kill -TERM $CLI_PID
+            set +e
+            timeout 20 tail --pid $CLI_PID -f /dev/null
+            if [[ $? -eq 124 ]] ; then
+                # timeout exits with 124 if the process it's waiting on is still running
+                # i.e. if tail is still running it means the Artillery CLI did not exit:
+                kill -KILL $CLI_PID
+                CLI_STATUS=143 # SIGTERM (128 + 15)
+            else
+                # Preserve the exit code of the CLI
+                CLI_STATUS=$(cat exitCode)
+            fi
+            set -e
             CLI_RUNNING="no"
         fi
 
