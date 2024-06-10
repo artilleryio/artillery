@@ -108,11 +108,7 @@ class PlatformLambda {
   }
 
   async init() {
-    artillery.log(
-      'NOTE: AWS Lambda support is experimental. Not all Artillery features work yet.\nFor details please see https://docs.art/aws-lambda'
-    );
-    artillery.log();
-    artillery.log('λ Creating AWS Lambda function...');
+    artillery.log('λ Preparing AWS Lambda function...');
 
     await setDefaultAWSCredentials(AWS);
     this.accountId = await getAccountId();
