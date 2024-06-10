@@ -22,6 +22,7 @@ const crypto = require('node:crypto');
 
 const prices = require('./prices');
 const { STATES } = require('../local/artillery-worker-local');
+const _ = require('lodash');
 
 const { SQS_QUEUES_NAME_PREFIX } = require('../aws/constants');
 const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
@@ -201,25 +202,10 @@ class PlatformLambda {
       artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
     }
 
-    this.functionName = `artilleryio-v${this.currentVersion.replace(
-      /\./g,
-      '-'
-    )}-${this.architecture}`;
-    const shouldCreateLambda = await this.checkIfNewLambdaIsNeeded({
-      memorySize: this.memorySize,
-      functionName: this.functionName
-    });
+    this.functionName = this.createFunctionNameWithHash();
 
-    if (shouldCreateLambda) {
-      try {
-        await this.createLambda({
-          bucketName: this.bucketName,
-          functionName: this.functionName
-        });
-      } catch (err) {
-        throw new Error(`Failed to create Lambda Function: \n${err}`);
-      }
-    }
+    await this.createOrUpdateLambdaFunctionIfNeeded();
+
     artillery.log(` - Lambda function: ${this.functionName}`);
     artillery.log(` - Region: ${this.region}`);
     artillery.log(` - AWS account: ${this.accountId}`);
@@ -584,7 +570,35 @@ class PlatformLambda {
     return lambdaRoleArn;
   }
 
-  async checkIfNewLambdaIsNeeded({ memorySize, functionName }) {
+  async createOrUpdateLambdaFunctionIfNeeded() {
+    const existingLambdaConfig = await this.getLambdaFunctionConfiguration();
+
+    if (existingLambdaConfig) {
+      debug(
+        'Lambda function with this configuration already exists. Using existing function.'
+      );
+      return;
+    }
+
+    try {
+      await this.createLambda({
+        bucketName: this.bucketName,
+        functionName: this.functionName
+      });
+      return;
+    } catch (err) {
+      if (err.code === 'ResourceConflictException') {
+        debug(
+          'Lambda function with this configuration already exists. Using existing function.'
+        );
+        return;
+      }
+
+      throw new Error(`Failed to create Lambda Function: \n${err}`);
+    }
+  }
+
+  async getLambdaFunctionConfiguration() {
     const lambda = new AWS.Lambda({
       apiVersion: '2015-03-31',
       region: this.region
@@ -593,28 +607,47 @@ class PlatformLambda {
     try {
       const res = await lambda
         .getFunctionConfiguration({
-          FunctionName: functionName
+          FunctionName: this.functionName
         })
         .promise();
 
-      if (res.MemorySize != memorySize) {
-        debug(
-          `Desired memory size changed: ${res.MemorySize} -> ${memorySize}. Updating Lambda Function!`
-        );
-        return true;
-      }
+      return res;
     } catch (err) {
       if (err.code === 'ResourceNotFoundException') {
-        return true;
+        return null;
       }
+
       throw new Error(`Failed to get Lambda Function: \n${err}`);
     }
+  }
 
-    return false;
+  createFunctionNameWithHash(lambdaConfig) {
+    const changeableConfig = {
+      MemorySize: this.memorySize,
+      VpcConfig: {
+        SecurityGroupIds: this.securityGroupIds,
+        SubnetIds: this.subnetIds
+      }
+    };
+
+    const configHash = crypto
+      .createHash('md5')
+      .update(JSON.stringify(changeableConfig))
+      .digest('hex');
+
+    let name = `artilleryio-v${this.currentVersion.replace(/\./g, '-')}-${
+      this.architecture
+    }-${configHash}`;
+
+    if (name.length > 64) {
+      name = name.slice(0, 64);
+    }
+
+    return name;
   }
 
   async createLambda(opts) {
-    const { bucketName, functionName, zipPath } = opts;
+    const { bucketName, functionName } = opts;
 
     const lambda = new AWS.Lambda({
       apiVersion: '2015-03-31',
