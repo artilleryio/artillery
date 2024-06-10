@@ -3,8 +3,7 @@ const { $ } = require('zx');
 const fs = require('fs');
 const {
   generateTmpReportPath,
-  getTestTags,
-  execute
+  getTestTags
 } = require('../../cli/_helpers.js');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
@@ -24,21 +23,11 @@ beforeEach(async (t) => {
 
 test('Run simple-bom', async (t) => {
   const scenarioPath = `${__dirname}/fixtures/simple-bom/simple-bom.yml`;
-  const [exitCode, output] = await execute([
-    'run-fargate',
-    '--environment',
-    'test',
-    '--region',
-    'eu-west-1',
-    '--count',
-    '51',
-    '--tags',
-    baseTags,
-    '--record',
-    scenarioPath
-  ]);
 
-  t.equal(exitCode, 0, 'CLI Exit Code should be 0');
+  const output =
+    await $`${A9_PATH} run-fargate ${scenarioPath} --environment test --region eu-west-1 --count 51 --tags ${baseTags} --record`;
+
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
   t.match(output.stdout, /summary report/i, 'print summary report');
   t.match(output.stdout, /p99/i, 'a p99 value is reported');
