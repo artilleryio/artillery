@@ -183,7 +183,7 @@ function expectationsPluginCheckExpectations(
   }
 
   if (global.artillery) {
-    global.artillery.suggestedExitCode = 1;
+    global.artillery.suggestedExitCode = 21;
   }
 
   if (userContext.expectationsPlugin.reportFailuresAsErrors) {

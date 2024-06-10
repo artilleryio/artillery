@@ -284,15 +284,17 @@ class PlatformLambda {
           } else if (body.event === 'workerError') {
             global.artillery.suggestedExitCode = body.exitCode || 1;
 
-            this.events.emit(body.event, workerId, {
-              id: workerId,
-              error: new Error(
-                `A Lambda function has exited with an error. Reason: ${body.reason}`
-              ),
-              level: 'error',
-              aggregatable: false,
-              logs: body.logs
-            });
+            if (body.exitCode != 21) {
+              this.events.emit(body.event, workerId, {
+                id: workerId,
+                error: new Error(
+                  `A Lambda function has exited with an error. Reason: ${body.reason}`
+                ),
+                level: 'error',
+                aggregatable: false,
+                logs: body.logs
+              });
+            }
           } else if (body.event == 'workerReady') {
             this.events.emit(body.event, workerId);
             this.waitingReadyCount++;

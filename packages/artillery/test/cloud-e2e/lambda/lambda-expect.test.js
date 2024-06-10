@@ -23,7 +23,11 @@ tap.test(
       await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/cli-exit-conditions/with-expect.yml --architecture x86_64 --record --tags ${tags} --output ${reportFilePath} --count 2`;
       t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
     } catch (output) {
-      t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
+      t.equal(output.exitCode, 21, 'CLI Exit Code should be 21');
+      t.ok(
+        !output.stderr.includes('Worker exited with an error'),
+        'Should not have worker exit error message in stdout'
+      );
 
       const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
       t.equal(
