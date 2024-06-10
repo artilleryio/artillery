@@ -337,10 +337,10 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     var finalReport = {};
     var shuttingDown = false;
     process.on('SIGINT', async () => {
-      gracefulShutdown({ earlyStop: true });
+      gracefulShutdown({ earlyStop: true, exitCode: 130 });
     });
     process.on('SIGTERM', async () => {
-      gracefulShutdown({ earlyStop: true });
+      gracefulShutdown({ earlyStop: true, exitCode: 143 });
     });
 
     async function gracefulShutdown(opts = { exitCode: 0 }) {
