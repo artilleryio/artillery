@@ -60,13 +60,6 @@ RunLambdaCommand.flags = {
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
   }),
-  container: Flags.boolean({
-    description: 'Use a container image for Lambda',
-    deprecated: {
-      message:
-        'The --container flag has been deprecated. Container images are now the default mode for Lambda functions.'
-    }
-  }),
   architecture: Flags.string({
     description: 'Architecture of the Lambda function',
     default: 'arm64',

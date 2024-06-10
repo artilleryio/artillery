@@ -21,7 +21,7 @@ tap.test('Run simple-bom', async (t) => {
   const scenarioPath = `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`;
 
   const output =
-    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 -e test --tags ${tags} --output ${reportFilePath} --count 51 --record --container`;
+    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 -e test --tags ${tags} --output ${reportFilePath} --count 51 --record`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -39,7 +39,7 @@ tap.test('Run mixed-hierarchy test in Lambda Container', async (t) => {
   const configPath = `${__dirname}/../fargate/fixtures/mixed-hierarchy/config/config-no-file-uploads.yml`;
 
   const output =
-    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 --config ${configPath} -e main --tags ${tags} --output ${reportFilePath} --record --container`;
+    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 --config ${configPath} -e main --tags ${tags} --output ${reportFilePath} --record`;
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 

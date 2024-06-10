@@ -19,7 +19,7 @@ tap.before(async () => {
 
 tap.test('Lambda Container run uses ensure', async (t) => {
   try {
-    await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/uses-ensure/with-ensure.yaml --architecture x86_64 --container --tags ${tags} --output ${reportFilePath} --count 15`;
+    await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/uses-ensure/with-ensure.yaml --architecture x86_64 --tags ${tags} --output ${reportFilePath} --count 15`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
