@@ -115,7 +115,7 @@
     "cli-table3": "^0.6.0",
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
-    "dependency-tree": "^10.0.9",
+    "dependency-tree": "^11.0.1",
     "detective-es6": "^4.0.1",
     "dotenv": "^16.0.1",
     "driftless": "^2.0.3",
