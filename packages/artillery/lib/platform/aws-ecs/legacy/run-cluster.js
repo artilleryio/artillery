@@ -1201,7 +1201,7 @@ async function ensureTaskExists(context) {
 
     context.taskDefinition = taskDefinition;
 
-    if (!context.isFargate) {
+    if (!context.isFargate && taskDefinition.containerDefinitions.length > 1) {
       // Limits for sidecar have to be set explicitly on ECS EC2
       taskDefinition.containerDefinitions[1].memory = 1024;
       taskDefinition.containerDefinitions[1].cpu = 1024;
