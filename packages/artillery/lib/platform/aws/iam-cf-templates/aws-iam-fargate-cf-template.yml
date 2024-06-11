@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create an IAM Role with attached policies for Artillery.io"
+
+Parameters:
+  GHRepos:
+    Type: String
+    Default: ""
+    Description: GitHub repository to set up OIDC trust.
+
+  User:
+    Type: String
+    Default: ""
+    Description: IAM user name or ARN who can assume the role.
+
+  Role:
+    Type: String
+    Default: ""
+    Description: IAM role name or ARN that can assume this role.
+
+Conditions:
+  IsGHReposSet:
+    !Not [!Equals [!Ref GHRepos, ""]]
+  IsUserSet:
+    !And 
+      - !Not [!Equals [!Ref User, ""]]
+      - !Equals [!Ref GHRepos, ""]
+  IsUserArn:
+      !Equals [!Select [0, !Split [":", !Ref User]], "arn"]
+  IsRoleSet:
+    !And 
+      - !Not [!Equals [!Ref Role, ""]]
+      - !Equals [!Ref GHRepos, ""]
+      - !Equals [!Ref User, ""]
+  IsRoleArn:
+      !Equals [!Select [0, !Split [":", !Ref Role]], "arn"]
+
+
+Resources:
+  ArtilleryDistributedTestingFargateRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "ArtilleryDistributedTestingFargateRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: !If [IsGHReposSet,!Sub  "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com", !Ref "AWS::NoValue"]
+              AWS: !If [IsGHReposSet, !Ref "AWS::NoValue", 
+                      !If [IsUserSet, !If [IsUserArn, !Ref User, !Sub "arn:aws:iam::${AWS::AccountId}:user/${User}"],
+                          !If [IsRoleSet, !If [IsRoleArn, !Ref Role, !Sub "arn:aws:iam::${AWS::AccountId}:role/${Role}"],
+                              !Sub "arn:aws:iam::${AWS::AccountId}:root"]]]
+            Action: !If [IsGHReposSet, "sts:AssumeRoleWithWebIdentity", "sts:AssumeRole"]
+            Condition:
+              !If [IsGHReposSet, 
+                  {
+                    StringEquals:
+                      {
+                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                      },
+                    StringLike:
+                      {
+                        "token.actions.githubusercontent.com:sub": !Sub "repo:${GHRepos}"
+                      }
+                  }, !Ref "AWS::NoValue"]
+      Path: "/"
+      Policies:
+        - PolicyName: "ArtilleryDistributedTestingFargatePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "CreateOrGetECSRole"
+                Effect: "Allow"
+                Action:
+                  - "iam:CreateRole"
+                  - "iam:GetRole"
+                  - "iam:AttachRolePolicy"
+                Resource:
+                  Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/artilleryio-ecs-worker-role"
+              - Sid: "CreateECSPolicy"
+                Effect: "Allow"
+                Action:
+                  - "iam:CreatePolicy"
+                Resource:
+                  Fn::Sub: "arn:aws:iam::${AWS::AccountId}:policy/artilleryio-ecs-worker-policy"
+              - Effect: "Allow"
+                Action:
+                  - "iam:CreateServiceLinkedRole"
+                Resource:
+                  - "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS*"
+                Condition:
+                  StringLike:
+                    iam:AWSServiceName: "ecs.amazonaws.com"
+              - Effect: "Allow"
+                Action:
+                  - "iam:PassRole"
+                Resource:
+                  - Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/artilleryio-ecs-worker-role"
+              - Sid: "SQSPermissions"
+                Effect: "Allow"
+                Action:
+                  - "sqs:*"
+                Resource:
+                  Fn::Sub: "arn:aws:sqs:*:${AWS::AccountId}:artilleryio*"
+              - Sid: "SQSListQueues"
+                Effect: "Allow"
+                Action:
+                  - "sqs:ListQueues"
+                Resource: "*"
+              - Sid: "ECSPermissionsGeneral"
+                Effect: "Allow"
+                Action:
+                  - "ecs:ListClusters"
+                  - "ecs:CreateCluster"
+                  - "ecs:RegisterTaskDefinition"
+                  - "ecs:DeregisterTaskDefinition"
+                Resource: "*"
+              - Sid: "ECSPermissionsScopedToCluster"
+                Effect: "Allow"
+                Action:
+                  - "ecs:DescribeClusters"
+                  - "ecs:ListContainerInstances"
+                Resource:
+                  Fn::Sub: "arn:aws:ecs:*:${AWS::AccountId}:cluster/*"
+              - Sid: "ECSPermissionsScopedWithCondition"
+                Effect: "Allow"
+                Action:
+                  - "ecs:SubmitTaskStateChange"
+                  - "ecs:DescribeTasks"
+                  - "ecs:ListTasks"
+                  - "ecs:ListTaskDefinitions"
+                  - "ecs:DescribeTaskDefinition"
+                  - "ecs:StartTask"
+                  - "ecs:StopTask"
+                  - "ecs:RunTask"
+                Condition:
+                  ArnEquals:
+                    ecs:cluster:
+                      Fn::Sub: "arn:aws:ecs:*:${AWS::AccountId}:cluster/*"
+                Resource: "*"
+              - Sid: "S3Permissions"
+                Effect: "Allow"
+                Action:
+                  - "s3:CreateBucket"
+                  - "s3:DeleteObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectAcl"
+                  - "s3:GetObjectTagging"
+                  - "s3:GetObjectVersion"
+                  - "s3:PutObject"
+                  - "s3:PutObjectAcl"
+                  - "s3:ListBucket"
+                  - "s3:GetBucketLocation"
+                  - "s3:GetBucketLogging"
+                  - "s3:GetBucketPolicy"
+                  - "s3:GetBucketTagging"
+                  - "s3:PutBucketPolicy"
+                  - "s3:PutBucketTagging"
+                  - "s3:PutMetricsConfiguration"
+                  - "s3:GetLifecycleConfiguration"
+                  - "s3:PutLifecycleConfiguration"
+                Resource:
+                  - "arn:aws:s3:::artilleryio-test-data-*"
+                  - "arn:aws:s3:::artilleryio-test-data-*/*"
+              - Sid: "LogsPermissions"
+                Effect: "Allow"
+                Action:
+                  - "logs:PutRetentionPolicy"
+                Resource:
+                  - Fn::Sub: "arn:aws:logs:*:${AWS::AccountId}:log-group:artilleryio-log-group/*"
+              - Effect: "Allow"
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - Fn::Sub: "arn:aws:secretsmanager:*:${AWS::AccountId}:secret:artilleryio/*"
+              - Effect: "Allow"
+                Action:
+                  - "ssm:PutParameter"
+                  - "ssm:GetParameter"
+                  - "ssm:GetParameters"
+                  - "ssm:DeleteParameter"
+                  - "ssm:DescribeParameters"
+                  - "ssm:GetParametersByPath"
+                Resource:
+                  - Fn::Sub: "arn:aws:ssm:us-east-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:us-east-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:us-west-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:us-west-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ca-central-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-west-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-west-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-west-3:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-central-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-north-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-south-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-east-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-northeast-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-southeast-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-southeast-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:me-south-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:sa-east-1:${AWS::AccountId}:parameter/artilleryio/*"
+              - Effect: "Allow"
+                Action:
+                  - "ec2:DescribeRouteTables"
+                  - "ec2:DescribeVpcs"
+                  - "ec2:DescribeSubnets"
+                Resource: "*"
+
+Outputs:
+  RoleArn:
+    Description: "ARN of the created IAM Role"
+    Value:
+      Fn::GetAtt:
+        - "ArtilleryDistributedTestingFargateRole"
+        - "Arn"
