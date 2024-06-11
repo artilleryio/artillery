@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Template to create an IAM Role with attached policies for Artillery.io"
 
 Parameters:
-  GHRepos:
+  GHRepo:
     Type: String
     Default: ""
     Description: GitHub repository to set up OIDC trust.
@@ -18,18 +18,18 @@ Parameters:
     Description: IAM role name or ARN that can assume this role.
 
 Conditions:
-  IsGHReposSet:
-    !Not [!Equals [!Ref GHRepos, ""]]
+  IsGHRepoSet:
+    !Not [!Equals [!Ref GHRepo, ""]]
   IsUserSet:
     !And 
       - !Not [!Equals [!Ref User, ""]]
-      - !Equals [!Ref GHRepos, ""]
+      - !Equals [!Ref GHRepo, ""]
   IsUserArn:
       !Equals [!Select [0, !Split [":", !Ref User]], "arn"]
   IsRoleSet:
     !And 
       - !Not [!Equals [!Ref Role, ""]]
-      - !Equals [!Ref GHRepos, ""]
+      - !Equals [!Ref GHRepo, ""]
       - !Equals [!Ref User, ""]
   IsRoleArn:
       !Equals [!Select [0, !Split [":", !Ref Role]], "arn"]
@@ -45,14 +45,14 @@ Resources:
         Statement:
           - Effect: "Allow"
             Principal:
-              Federated: !If [IsGHReposSet,!Sub  "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com", !Ref "AWS::NoValue"]
-              AWS: !If [IsGHReposSet, !Ref "AWS::NoValue", 
+              Federated: !If [IsGHRepoSet,!Sub  "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com", !Ref "AWS::NoValue"]
+              AWS: !If [IsGHRepoSet, !Ref "AWS::NoValue", 
                       !If [IsUserSet, !If [IsUserArn, !Ref User, !Sub "arn:aws:iam::${AWS::AccountId}:user/${User}"],
                           !If [IsRoleSet, !If [IsRoleArn, !Ref Role, !Sub "arn:aws:iam::${AWS::AccountId}:role/${Role}"],
                               !Sub "arn:aws:iam::${AWS::AccountId}:root"]]]
-            Action: !If [IsGHReposSet, "sts:AssumeRoleWithWebIdentity", "sts:AssumeRole"]
+            Action: !If [IsGHRepoSet, "sts:AssumeRoleWithWebIdentity", "sts:AssumeRole"]
             Condition:
-              !If [IsGHReposSet, 
+              !If [IsGHRepoSet, 
                   {
                     StringEquals:
                       {
@@ -60,7 +60,7 @@ Resources:
                       },
                     StringLike:
                       {
-                        "token.actions.githubusercontent.com:sub": !Sub "repo:${GHRepos}"
+                        "token.actions.githubusercontent.com:sub": !Sub "repo:${GHRepo}"
                       }
                   }, !Ref "AWS::NoValue"]
       Path: "/"
