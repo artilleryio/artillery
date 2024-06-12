@@ -1,11 +1,14 @@
 name: Publish CloudFormation templates to AWS S3
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - './packages/artillery/lib/platform/aws/iam-cf-templates/**'
+  # workflow_call:
+  #   inputs:
+
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - './packages/artillery/lib/platform/aws/iam-cf-templates/**'
   workflow_dispatch:
 
 jobs:
@@ -31,4 +34,6 @@ jobs:
           mask-aws-account-id: true
 
       - name: Update IAM CloudFormation templates
-        run: aws s3 sync --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/ s3://artilleryio-cf-templates/ --delete
+        run: |
+          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-fargate-cf-template.yml s3://artilleryio-cf-templates/aws-iam-fargate-cf-template.yml
+          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-lambda-cf-template.yml s3://artilleryio-cf-templates/aws-iam-lambda-cf-template.yml
