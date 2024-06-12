@@ -26,9 +26,9 @@ jobs:
           SHOW_STACK_TRACE: true
         with:
           aws-region: us-east-1
-          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+          role-to-assume: ${{ secrets.AWS_ASSET_UPLOAD_ROLE_ARN }}
           role-session-name: OIDCSession
           mask-aws-account-id: true
 
       - name: Update IAM CloudFormation templates
-        run: aws s3 sync ./packages/artillery/lib/platform/aws/iam-cf-templates/ s3://artillery-cf-templates/ --delete
+        run: aws s3 sync ./packages/artillery/lib/platform/aws/iam-cf-templates/ s3://artilleryio-cf-templates/ --delete
