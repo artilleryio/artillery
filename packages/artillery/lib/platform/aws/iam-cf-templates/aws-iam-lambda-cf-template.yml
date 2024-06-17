@@ -1,6 +1,29 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: CloudFormation template to create an IAM Role for Artillery.io Lambda with attached policies
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Restrict to GitHub Repository (OIDC)"
+        Parameters:
+          - GitHubRepository
+          - GitHubBranch
+      - Label:
+          default: "Restrict to User or Role"
+        Parameters:
+          - User
+          - Role
+    ParameterLabels:
+      GitHubRepository:
+        default: "GitHub Repository (orgname/reponame)"
+      GitHubBranch:
+        default: "GitHub Branch"
+      User:
+        default: "User"
+      Role:
+        default: "Role"
+
 Parameters:
   GitHubRepository:
     Type: String
