@@ -2,34 +2,39 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: "Template to create an IAM Role with attached policies for Artillery.io"
 
 Parameters:
-  GHRepo:
+  GitHubRepository:
     Type: String
     Default: ""
-    Description: GitHub repository to set up OIDC trust.
+    Description: (Optional - required if using OIDC) Use when you want to restrict a specific GitHub repository (orgname/reponame) to assume this IAM role using OIDC (e.g. "artilleryio/artillery").
+
+  GitHubBranch:
+    Type: String
+    Default: "*"
+    Description: (Optional) Use when you also want to restrict a branch within a specific Github repository to assume this IAM role using OIDC (e.g. "main"). If not set, defaults to "*" (all branches). 
 
   User:
     Type: String
     Default: ""
-    Description: IAM user name or ARN who can assume the role.
+    Description: (Optional) Use when you want to restrict the created role to be assumed only by a specific IAM user. Provide the user name or ARN.
 
   Role:
     Type: String
     Default: ""
-    Description: IAM role name or ARN that can assume this role.
+    Description: (Optional) Use when you want to restrict the created role to be assumed only by a specific IAM role. Provide the role name or ARN.
 
 Conditions:
   IsGHRepoSet:
-    !Not [!Equals [!Ref GHRepo, ""]]
+    !Not [!Equals [!Ref GitHubRepository, ""]]
   IsUserSet:
     !And 
       - !Not [!Equals [!Ref User, ""]]
-      - !Equals [!Ref GHRepo, ""]
+      - !Equals [!Ref GitHubRepository, ""]
   IsUserArn:
       !Equals [!Select [0, !Split [":", !Ref User]], "arn"]
   IsRoleSet:
     !And 
       - !Not [!Equals [!Ref Role, ""]]
-      - !Equals [!Ref GHRepo, ""]
+      - !Equals [!Ref GitHubRepository, ""]
       - !Equals [!Ref User, ""]
   IsRoleArn:
       !Equals [!Select [0, !Split [":", !Ref Role]], "arn"]
@@ -60,7 +65,7 @@ Resources:
                       },
                     StringLike:
                       {
-                        "token.actions.githubusercontent.com:sub": !Sub "repo:${GHRepo}"
+                        "token.actions.githubusercontent.com:sub": !Sub "repo:${GitHubRepository}:${GitHubBranch}"
                       }
                   }, !Ref "AWS::NoValue"]
       Path: "/"
