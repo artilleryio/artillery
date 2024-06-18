@@ -1,64 +1,47 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: "Template to create an IAM Role with attached policies for Artillery.io"
+Description: "Template to create an IAM Role with an attached policy that provides all necessary permissions for Artillery.io to run distributed tests on AWS Fargate.
+  By default the IAM role is configured to trust your AWS account, meaning it will allow any IAM User, Role or service from your account to assume it. You can restrict the role to allow only by a specific IAM user or role to assume it by filling out the appropriate parameter value below."
 
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: "Restrict to GitHub Repository (OIDC)"
-        Parameters:
-          - GitHubRepository
-          - GitHubBranch
-      - Label:
-          default: "Restrict to User or Role"
+          default: "Restrict to specific IAM User (optional)"
         Parameters:
           - User
+      - Label:
+          default: "Restrict to specific IAM Role (optional)"
+        Parameters:
           - Role
     ParameterLabels:
-      GitHubRepository:
-        default: "GitHub Repository (orgname/reponame)"
-      GitHubBranch:
-        default: "GitHub Branch"
       User:
-        default: "User"
+        default: "IAM user name or ARN"
       Role:
-        default: "Role"
+        default: "IAM role name or ARN"
 
 Parameters:
-  GitHubRepository:
-    Type: String
-    Default: ""
-    Description: (Optional - required if using OIDC) Use when you want to restrict a specific GitHub repository (orgname/reponame) to assume this IAM role using OIDC (e.g. "artilleryio/artillery").
-
-  GitHubBranch:
-    Type: String
-    Default: "*"
-    Description: (Optional) Use when you also want to restrict a branch within a specific Github repository to assume this IAM role using OIDC (e.g. "main"). If not set, defaults to "*" (all branches). 
 
   User:
     Type: String
     Default: ""
-    Description: (Optional) Use when you want to restrict the created role to be assumed only by a specific IAM user. Provide the user name or ARN.
+    Description: Use when you want to allow the created role to be assumed only by a specific IAM user (by default any user, role or service from your account will be allowed to assume it). Provide the user name or ARN.
 
   Role:
     Type: String
     Default: ""
-    Description: (Optional) Use when you want to restrict the created role to be assumed only by a specific IAM role. Provide the role name or ARN.
+    Description: Use when you want to allow the created role to be assumed only by a specific IAM role (by default any user, role or service from your account will be allowed to assume it). Provide the role name or ARN.
 
 Conditions:
-  IsGHRepoSet:
-    !Not [!Equals [!Ref GitHubRepository, ""]]
-  IsUserSet:
+  ShouldTrustAccount:
     !And 
-      - !Not [!Equals [!Ref User, ""]]
-      - !Equals [!Ref GitHubRepository, ""]
+      - !Equals [!Ref User, ""]
+      - !Equals [!Ref Role, ""]
+  ShouldTrustUser:
+      !Not [!Equals [!Ref User, ""]]
   IsUserArn:
       !Equals [!Select [0, !Split [":", !Ref User]], "arn"]
-  IsRoleSet:
-    !And 
-      - !Not [!Equals [!Ref Role, ""]]
-      - !Equals [!Ref GitHubRepository, ""]
-      - !Equals [!Ref User, ""]
+  ShouldTrustRole:
+      !Not [!Equals [!Ref Role, ""]]
   IsRoleArn:
       !Equals [!Select [0, !Split [":", !Ref Role]], "arn"]
 
@@ -73,24 +56,15 @@ Resources:
         Statement:
           - Effect: "Allow"
             Principal:
-              Federated: !If [IsGHRepoSet,!Sub  "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com", !Ref "AWS::NoValue"]
-              AWS: !If [IsGHRepoSet, !Ref "AWS::NoValue", 
-                      !If [IsUserSet, !If [IsUserArn, !Ref User, !Sub "arn:aws:iam::${AWS::AccountId}:user/${User}"],
-                          !If [IsRoleSet, !If [IsRoleArn, !Ref Role, !Sub "arn:aws:iam::${AWS::AccountId}:role/${Role}"],
-                              !Sub "arn:aws:iam::${AWS::AccountId}:root"]]]
-            Action: !If [IsGHRepoSet, "sts:AssumeRoleWithWebIdentity", "sts:AssumeRole"]
-            Condition:
-              !If [IsGHRepoSet, 
-                  {
-                    StringEquals:
-                      {
-                        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-                      },
-                    StringLike:
-                      {
-                        "token.actions.githubusercontent.com:sub": !Sub "repo:${GitHubRepository}:${GitHubBranch}"
-                      }
-                  }, !Ref "AWS::NoValue"]
+              AWS: [
+                !If [ShouldTrustAccount, !Ref "AWS::AccountId", !Ref "AWS::NoValue"],
+                !If [ShouldTrustUser, !If [IsUserArn, !Ref User, !Sub "arn:aws:iam::${AWS::AccountId}:user/${User}"], !Ref "AWS::NoValue"],
+                !If [ShouldTrustRole, !If [IsRoleArn, !Ref Role, !Sub "arn:aws:iam::${AWS::AccountId}:role/${Role}"], !Ref "AWS::NoValue"]
+              ]
+            Action: [
+              "sts:AssumeRole"
+            ]
+            
       Path: "/"
       Policies:
         - PolicyName: "ArtilleryDistributedTestingFargatePolicy"
@@ -103,6 +77,7 @@ Resources:
                   - "iam:CreateRole"
                   - "iam:GetRole"
                   - "iam:AttachRolePolicy"
+                  - "iam:PassRole"
                 Resource:
                   Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/artilleryio-ecs-worker-role"
               - Sid: "CreateECSPolicy"
