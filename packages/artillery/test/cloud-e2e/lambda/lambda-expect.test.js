@@ -12,6 +12,8 @@ tap.beforeEach(async (t) => {
 });
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
+const ARCHITECTURE = process.env.HAS_ARM64_BUILD ? 'arm64' : 'x86_64';
+
 tap.before(async () => {
   await $`${A9_PATH} -V`;
 });
@@ -20,7 +22,7 @@ tap.test(
   'CLI should exit with non-zero exit code when there are failed expectations in container workers',
   async (t) => {
     try {
-      await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/cli-exit-conditions/with-expect.yml --architecture x86_64 --record --tags ${tags} --output ${reportFilePath} --count 2`;
+      await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/cli-exit-conditions/with-expect.yml --architecture ${ARCHITECTURE} --record --tags ${tags} --output ${reportFilePath} --count 2`;
       t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
     } catch (output) {
       t.equal(output.exitCode, 21, 'CLI Exit Code should be 21');

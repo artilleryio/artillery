@@ -82,6 +82,7 @@ jobs:
     needs: build
     with:
       ARTILLERY_VERSION_OVERRIDE: ${{ needs.build.outputs.ARTILLERY_VERSION }}
+      HAS_ARM64_BUILD: true
     permissions:
       contents: read
       id-token: write

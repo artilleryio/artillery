@@ -7,6 +7,9 @@ on:
         type: string
       ARTILLERY_VERSION_OVERRIDE:
         type: string
+      HAS_ARM64_BUILD:
+        type: boolean
+        default: false
     secrets:
       ARTILLERY_CLOUD_ENDPOINT_TEST: 
         required: true
@@ -64,6 +67,7 @@ jobs:
       DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
       GITHUB_REPO: ${{ github.repository }}
       GITHUB_ACTOR: ${{ github.actor }}
+      HAS_ARM64_BUILD: ${{ inputs.HAS_ARM64_BUILD }}
     steps:
       - uses: actions/checkout@v3
         with:

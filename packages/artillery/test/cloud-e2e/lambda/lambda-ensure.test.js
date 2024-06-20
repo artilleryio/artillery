@@ -13,13 +13,15 @@ tap.beforeEach(async (t) => {
 });
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
+const ARCHITECTURE = process.env.HAS_ARM64_BUILD ? 'arm64' : 'x86_64';
+
 tap.before(async () => {
   await $`${A9_PATH} -V`;
 });
 
 tap.test('Lambda Container run uses ensure', async (t) => {
   try {
-    await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/uses-ensure/with-ensure.yaml --architecture x86_64 --tags ${tags} --output ${reportFilePath} --count 15`;
+    await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/uses-ensure/with-ensure.yaml --architecture ${ARCHITECTURE} --tags ${tags} --output ${reportFilePath} --count 15`;
     t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');

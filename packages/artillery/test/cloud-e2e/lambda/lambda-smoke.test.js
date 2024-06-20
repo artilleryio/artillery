@@ -12,10 +12,13 @@ tap.beforeEach(async (t) => {
 });
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
+const ARCHITECTURE = process.env.HAS_ARM64_BUILD ? 'arm64' : 'x86_64';
+
 tap.before(async () => {
   await $`${A9_PATH} -V`;
 });
 
+//Note: we run this test always in x86_64 so we still run one x86_64 test in main pipeline as a smoke test
 tap.test('Run a test on AWS Lambda using containers', async (t) => {
   const configPath = `${__dirname}/fixtures/quick-loop-with-csv/config.yml`;
   const scenarioPath = `${__dirname}/fixtures/quick-loop-with-csv/blitz.yml`;
@@ -51,7 +54,7 @@ tap.test(
     const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
 
     const output =
-      await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 --record --output ${reportFilePath} --tags ${tags},typescript:true`;
+      await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} --record --output ${reportFilePath} --tags ${tags},typescript:true`;
 
     t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
