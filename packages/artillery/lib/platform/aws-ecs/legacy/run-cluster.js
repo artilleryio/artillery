@@ -1170,34 +1170,37 @@ async function ensureTaskExists(context) {
         };
       });
 
+    const artilleryContainerDefinition = {
+      name: 'artillery',
+      image: imageUrl,
+      cpu: cpu,
+      command: [],
+      entryPoint: ['/artillery/loadgen-worker'],
+      memory: memory,
+      secrets: secrets,
+      ulimits: ulimits,
+      essential: true,
+      logConfiguration: {
+        logDriver: 'awslogs',
+        options: {
+          'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+          'awslogs-region': context.region,
+          'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+          'awslogs-create-group': 'true',
+          mode: 'non-blocking'
+        }
+      }
+    };
+
     let taskDefinition = {
       family: context.taskName,
-      containerDefinitions: [
-        {
-          name: 'artillery',
-          image: imageUrl,
-          cpu: cpu,
-          command: [],
-          entryPoint: ['/artillery/loadgen-worker'],
-          memory: memory,
-          secrets: secrets,
-          ulimits: ulimits,
-          essential: true,
-          logConfiguration: {
-            logDriver: 'awslogs',
-            options: {
-              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
-              'awslogs-region': context.region,
-              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
-              'awslogs-create-group': 'true',
-              mode: 'non-blocking'
-            }
-          }
-        },
-        ...([context.adot?.taskDefinition] || [])
-      ],
+      containerDefinitions: [artilleryContainerDefinition],
       executionRoleArn: context.taskRoleArn
     };
+
+    if (typeof context.adot !== 'undefined') {
+      taskDefinition.containerDefinitions.push(context.adot.taskDefinition);
+    }
 
     context.taskDefinition = taskDefinition;
 
