@@ -16,7 +16,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 class RunCommand extends Command {
-  static aliases = ['run:fargate'];
+  static aliases = ['run:fargate', 'run:ecs', 'run-ecs'];
   // Enable multiple args:
   static strict = false;
 
