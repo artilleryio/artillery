@@ -6,6 +6,7 @@ const { getTestTags, generateTmpReportPath } = require('../../cli/_helpers.js');
 const tags = getTestTags(['type:acceptance']);
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
+const ARCHITECTURE = process.env.HAS_ARM64_BUILD ? 'arm64' : 'x86_64';
 
 tap.before(async () => {
   await $`${A9_PATH} -V`;
@@ -21,7 +22,7 @@ tap.test('Run simple-bom', async (t) => {
   const scenarioPath = `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`;
 
   const output =
-    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 -e test --tags ${tags} --output ${reportFilePath} --count 51 --record`;
+    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} -e test --tags ${tags} --output ${reportFilePath} --count 51 --record`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -39,7 +40,7 @@ tap.test('Run mixed-hierarchy test in Lambda Container', async (t) => {
   const configPath = `${__dirname}/../fargate/fixtures/mixed-hierarchy/config/config-no-file-uploads.yml`;
 
   const output =
-    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture x86_64 --config ${configPath} -e main --tags ${tags} --output ${reportFilePath} --record`;
+    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} --config ${configPath} -e main --tags ${tags} --output ${reportFilePath} --record`;
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 

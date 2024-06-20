@@ -95,6 +95,7 @@ jobs:
     needs: publish-packages-to-npm
     with:
       ARTILLERY_VERSION_OVERRIDE: ${{ needs.publish-packages-to-npm.outputs.ARTILLERY_VERSION }}
+      HAS_ARM64_BUILD: true
     permissions:
       contents: read
       id-token: write
