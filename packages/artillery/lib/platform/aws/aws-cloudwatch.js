@@ -72,7 +72,7 @@ function setCloudwatchRetention(
         if (opts.incr >= opts.maxRetries) {
           console.log(`\n${error.message}`);
           console.log(
-            '\nWARNING: Cannot find log group. Max retries exceeded setting CloudWatch retention policy:\n'
+            `\nWARNING: Cannot find log group ${logGroupName}\nMax retries exceeded setting CloudWatch retention policy:`
           );
           console.log(`${resumeTestMessage}\n`);
           clearInterval(interval);
