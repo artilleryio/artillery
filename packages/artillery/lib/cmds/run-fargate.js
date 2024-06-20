@@ -16,7 +16,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 class RunCommand extends Command {
-  static aliases = ['run:fargate'];
+  static aliases = ['run:fargate', 'run:ecs', 'run-ecs'];
   // Enable multiple args:
   static strict = false;
 
@@ -146,7 +146,7 @@ RunCommand.flags = {
   }),
   memory: Flags.string({
     description:
-      'Set task memory on Fargate (defaults 8 GB). Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)'
+      'Set task memory on Fargate (defaults to 8 GB). Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)'
   }),
   packages: Flags.string({
     description:
