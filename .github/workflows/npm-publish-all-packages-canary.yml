@@ -92,3 +92,14 @@ jobs:
       DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
       DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
       AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+
+  publish-cloudformation-templates-canary-to-s3:
+    uses: ./.github/workflows/s3-publish-cf-templates.yml
+    needs: run-distributed-tests
+    with:
+      canary: true
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ASSET_UPLOAD_ROLE_ARN: ${{ secrets.AWS_ASSET_UPLOAD_ROLE_ARN }}

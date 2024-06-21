@@ -1,15 +1,51 @@
 name: Publish CloudFormation templates to AWS S3
 
 on:
+  workflow_call:
+    inputs:
+      canary:
+        type: boolean
+        default: false
+        description: 'Whether to deploy the canary versions of the templates'
+    secrets:
+      AWS_ASSET_UPLOAD_ROLE_ARN:
+        description: 'ARN of the IAM role to assume to upload assets to S3'
+        required: true
+
   workflow_dispatch:
+    inputs:
+      canary:
+        type: boolean
+        default: false
+        description: 'Whether to deploy the canary versions of the templates'
+
+env:
+  CF_LAMBDA_TEMPLATE: ${{ inputs.canary && 'aws-iam-lambda-cf-template-canary.yml' || 'aws-iam-lambda-cf-template.yml' }}
+  CF_FARGATE_TEMPLATE: ${{ inputs.canary && 'aws-iam-fargate-cf-template-canary.yml' || 'aws-iam-fargate-cf-template.yml' }}
 
 jobs:
   put-cloudformation-templates:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
-      - name: "Hello world"
-        run: echo "Hello world"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ASSET_UPLOAD_ROLE_ARN }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+
+      - name: Update IAM CloudFormation templates
+        run: |
+          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-fargate-cf-template.yml s3://artilleryio-cf-templates/${{ env.CF_FARGATE_TEMPLATE }}
+          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-lambda-cf-template.yml s3://artilleryio-cf-templates/${{ env.CF_LAMBDA_TEMPLATE }}
