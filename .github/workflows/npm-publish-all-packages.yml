@@ -108,7 +108,7 @@ jobs:
   
   publish-cloudformation-templates-to-s3:
     uses: ./.github/workflows/s3-publish-cf-templates.yml
-    needs: publish-packages-to-npm
+    needs: run-distributed-tests
     with:
       canary: true
     permissions:
