@@ -1,15 +1,27 @@
 name: Publish CloudFormation templates to AWS S3
 
 on:
-  # workflow_call:
-  #   inputs:
+  workflow_call:
+    inputs:
+      canary:
+        type: boolean
+        default: false
+        description: 'Whether to deploy the canary versions of the templates'
+    secrets:
+      AWS_ASSET_UPLOAD_ROLE_ARN:
+        description: 'ARN of the IAM role to assume to upload assets to S3'
+        required: true
 
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - './packages/artillery/lib/platform/aws/iam-cf-templates/**'
   workflow_dispatch:
+    inputs:
+      canary:
+        type: boolean
+        default: false
+        description: 'Whether to deploy the canary versions of the templates'
+
+env:
+  CF_LAMBDA_TEMPLATE: ${{ inputs.canary && 'aws-iam-lambda-cf-template-canary.yml' || 'aws-iam-lambda-cf-template.yml' }}
+  CF_FARGATE_TEMPLATE: ${{ inputs.canary && 'aws-iam-fargate-cf-template-canary.yml' || 'aws-iam-fargate-cf-template.yml' }}
 
 jobs:
   put-cloudformation-templates:
@@ -35,5 +47,5 @@ jobs:
 
       - name: Update IAM CloudFormation templates
         run: |
-          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-fargate-cf-template.yml s3://artilleryio-cf-templates/aws-iam-fargate-cf-template.yml
-          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-lambda-cf-template.yml s3://artilleryio-cf-templates/aws-iam-lambda-cf-template.yml
+          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-fargate-cf-template.yml s3://artilleryio-cf-templates/${{ env.CF_FARGATE_TEMPLATE }}
+          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-lambda-cf-template.yml s3://artilleryio-cf-templates/${{ env.CF_LAMBDA_TEMPLATE }}
