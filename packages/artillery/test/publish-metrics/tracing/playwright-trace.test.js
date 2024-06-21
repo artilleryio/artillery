@@ -11,16 +11,22 @@ const {
   runPlaywrightTraceAssertions
 } = require('./playwright-trace-assertions.js');
 
+let testNum = 0;
 let reportFilePath;
 let tracesFilePath;
 beforeEach(async (t) => {
+  testNum++;
   reportFilePath = generateTmpReportPath(t.name, 'json');
+  console.log(`TEST${testNum} report path CREATED: ${reportFilePath}`);
   tracesFilePath = generateTmpReportPath('spans_' + t.name, 'json');
+  console.log(`TEST${testNum} traces path CREATED: ${tracesFilePath}`);
 });
 
 afterEach(async (t) => {
   deleteFile(reportFilePath);
+  console.log(`TEST${testNum} report path DELETED: ${reportFilePath}`);
   deleteFile(tracesFilePath);
+  console.log(`TEST${testNum} traces path DELETED: ${tracesFilePath}`);
 });
 
 /* To write a test for the publish-metrics tracing you need to:
@@ -36,6 +42,8 @@ afterEach(async (t) => {
 
 test('OTel reporter correctly records trace data for playwright engine test runs', async (t) => {
   // Define test configuration
+  console.log('TEST1 report path on test definition: ', reportFilePath);
+  console.log('TEST1 traces path on test definition: ', tracesFilePath);
   const override = {
     config: {
       plugins: {
@@ -99,6 +107,8 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   // Run the test
   let output;
   try {
+    console.log('TEST1 report path on test run: ', reportFilePath);
+    console.log('TEST1 traces path on test run: ', tracesFilePath);
     output =
       await $`artillery run ${__dirname}/../fixtures/playwright-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
         override
@@ -114,7 +124,8 @@ test('OTel reporter correctly records trace data for playwright engine test runs
       .aggregate,
     spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
   };
-
+  console.log('TEST1 report path fed to assertions: ', reportFilePath);
+  console.log('TEST1 traces path fed to assertions: ', tracesFilePath);
   // Run assertions
   try {
     await runPlaywrightTraceAssertions(t, testRunData, expectedOutcome);
@@ -126,6 +137,8 @@ test('OTel reporter correctly records trace data for playwright engine test runs
 
 test('OTel reporter correctly records trace data for playwright engine test runs', async (t) => {
   // Define test configuration
+  console.log('TEST2 report path on test definition: ', reportFilePath);
+  console.log('TEST2 traces path on test definition: ', tracesFilePath);
   const override = {
     config: {
       plugins: {
@@ -182,7 +195,8 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   };
 
   setDynamicPlaywrightTraceExpectations(expectedOutcome);
-
+  console.log('TEST2 report path on test run: ', reportFilePath);
+  console.log('TEST2 traces path on test run: ', tracesFilePath);
   // Run the test
   let output;
   try {
@@ -201,7 +215,8 @@ test('OTel reporter correctly records trace data for playwright engine test runs
       .aggregate,
     spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
   };
-
+  console.log('TEST2 report path fed to assertions: ', reportFilePath);
+  console.log('TEST2 traces path fed to assertions: ', tracesFilePath);
   // Run assertions
   try {
     await runPlaywrightTraceAssertions(t, testRunData, expectedOutcome);
