@@ -88,7 +88,8 @@ RunCommand.flags = {
   }),
   platform: Flags.string({
     description: 'Runtime platform',
-    default: 'local'
+    default: 'local',
+    options: ['local', 'aws:lambda']
   }),
   'platform-opt': Flags.string({
     description:
