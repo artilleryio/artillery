@@ -18,6 +18,8 @@ const {
 
 const getAccountId = require('../aws/aws-get-account-id');
 
+const sleep = require('../../util/sleep');
+
 class PlatformECS {
   constructor(script, payload, opts, platformOpts) {
     this.opts = opts;
@@ -233,6 +235,8 @@ async function createWorkerRole(accountId) {
     })
     .promise();
 
+  debug('Waiting for IAM role to be ready');
+  await sleep(30 * 1000);
   return createRoleResp.Role.Arn;
 }
 
