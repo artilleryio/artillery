@@ -23,6 +23,8 @@ const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 const decompressResponse = require('decompress-response');
+const fs = require('fs');
+const path = require('path');
 
 const { promisify } = require('node:util');
 
@@ -399,12 +401,22 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           requestParams.body = _.reduce(
             requestParams.formData,
             function (acc, v, k) {
-              // acc[k] = template(v, context);
-              acc.append(k, template(v, context));
+              let V = template(v, context);
+              if (V && _.isPlainObject(V) && V.fromFile) {
+                V = fs.createReadStream(
+                  path.resolve(process.cwd(), V.fromFile)
+                );
+              }
+              acc.append(k, V);
               return acc;
             },
             f
           );
+          if (params.setContentLengthHeader) {
+            requestParams.headers = requestParams.headers || {};
+            requestParams.headers['content-length'] =
+              requestParams.body.getLengthSync();
+          }
         }
 
         // Assign default headers then overwrite as needed
