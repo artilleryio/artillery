@@ -7,7 +7,7 @@ const {
   generateTmpReportPath,
   deleteFile,
   getTestTags
-} = require('../../cli/_helpers.js');
+} = require('../../helpers');
 
 const { getDatadogSpans, getTestId } = require('./fixtures/adot/helpers.js');
 

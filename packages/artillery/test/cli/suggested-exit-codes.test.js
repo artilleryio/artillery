@@ -1,5 +1,5 @@
 const tap = require('tap');
-const { execute } = require('../cli/_helpers.js');
+const { execute } = require('../helpers');
 const path = require('path');
 
 tap.test('Workers should be able to set exit codes', async (t) => {

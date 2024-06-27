@@ -2,7 +2,7 @@ const tap = require('tap');
 const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('fs');
-const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
+const { generateTmpReportPath, getTestTags } = require('../../helpers');
 
 const tags = getTestTags(['type:acceptance']);
 let reportFilePath;

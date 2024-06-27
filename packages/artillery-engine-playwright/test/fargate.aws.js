@@ -1,6 +1,6 @@
 const { test, afterEach, beforeEach, before } = require('tap');
 const { $ } = require('zx');
-const { getTestTags } = require('../../artillery/test/cli/_helpers.js');
+const { getTestTags } = require('../../artillery/test/helpers');
 const fs = require('fs');
 
 const TEST_URL = 'https://www.artillery.io/';

@@ -1,9 +1,5 @@
 const tap = require('tap');
-const {
-  execute,
-  generateTmpReportPath,
-  deleteFile
-} = require('../cli/_helpers.js');
+const { execute, generateTmpReportPath, deleteFile } = require('../helpers');
 const fs = require('fs');
 const path = require('path');
 

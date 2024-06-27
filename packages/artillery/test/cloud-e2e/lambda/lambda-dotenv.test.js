@@ -1,7 +1,7 @@
 const tap = require('tap');
 const fs = require('fs');
 const { $ } = require('zx');
-const { getTestTags, generateTmpReportPath } = require('../../cli/_helpers.js');
+const { getTestTags, generateTmpReportPath } = require('../../helpers');
 
 const tags = getTestTags(['type:acceptance']);
 const A9_PATH = process.env.A9_PATH || 'artillery';

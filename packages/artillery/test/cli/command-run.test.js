@@ -5,7 +5,7 @@ const {
   getRootPath,
   returnTmpPath,
   generateTmpReportPath
-} = require('../cli/_helpers.js');
+} = require('../helpers');
 const fs = require('fs');
 const path = require('path');
 const execa = require('execa');

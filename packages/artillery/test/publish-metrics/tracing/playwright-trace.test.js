@@ -1,7 +1,7 @@
 const { test, afterEach, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
-const { generateTmpReportPath, deleteFile } = require('../../cli/_helpers.js');
+const { generateTmpReportPath, deleteFile } = require('../../helpers');
 
 const {
   setDynamicPlaywrightTraceExpectations
