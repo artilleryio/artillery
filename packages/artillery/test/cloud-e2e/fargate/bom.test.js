@@ -2,6 +2,7 @@ const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
 const { generateTmpReportPath, getTestTags } = require('../../helpers');
+const { checkForNegativeValues } = require('../../helpers/expectations');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 
@@ -56,4 +57,6 @@ test('Run mixed-hierarchy', async (t) => {
     20,
     'Should have 20 "200 OK" responses'
   );
+
+  checkForNegativeValues(t, report);
 });

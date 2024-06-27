@@ -6,6 +6,7 @@ const {
   generateTmpReportPath,
   getImageArchitecture
 } = require('../../helpers');
+const { checkForNegativeValues } = require('../../helpers/expectations');
 
 const tags = getTestTags(['type:acceptance']);
 
@@ -73,5 +74,6 @@ tap.test(
       2,
       'Should have emitted 2 errors'
     );
+    checkForNegativeValues(t, report);
   }
 );

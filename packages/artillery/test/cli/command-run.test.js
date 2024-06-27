@@ -6,6 +6,7 @@ const {
   returnTmpPath,
   generateTmpReportPath
 } = require('../helpers');
+const { checkForNegativeValues } = require('../helpers/expectations');
 const fs = require('fs');
 const path = require('path');
 const execa = require('execa');
@@ -509,6 +510,10 @@ tap.test('Script using a plugin', async (t) => {
     pluginCount,
     'Should have same number of requests in report as plugin'
   );
+  checkForNegativeValues(
+    t,
+    JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
+  );
 });
 
 tap.test(
@@ -723,5 +728,7 @@ tap.test("Script with 'parallel' behaves as expected", async (t) => {
     expectedRequests,
     `Should have made ${expectedRequests} successful requests`
   );
+
+  checkForNegativeValues(t, report);
   deleteFile(reportFilePath);
 });

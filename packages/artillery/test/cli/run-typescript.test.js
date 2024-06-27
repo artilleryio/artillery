@@ -1,5 +1,6 @@
 const tap = require('tap');
 const { execute, generateTmpReportPath, deleteFile } = require('../helpers');
+const { checkForNegativeValues } = require('../helpers/expectations');
 const fs = require('fs');
 const path = require('path');
 
@@ -33,6 +34,8 @@ tap.test('Can run a Typescript processor', async (t) => {
     2,
     'Should have emitted 2 custom metrics from ts processor'
   );
+
+  checkForNegativeValues(t, json);
 });
 
 tap.test('Runs correctly when package is marked as external', async (t) => {
@@ -76,6 +79,7 @@ tap.test('Runs correctly when package is marked as external', async (t) => {
     2,
     'Should have emitted 2 custom metrics from ts processor'
   );
+  checkForNegativeValues(t, json);
 
   //assert that the bundle was created and marked as external
   const bundleLocation = path.join(
