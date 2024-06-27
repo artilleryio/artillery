@@ -2,7 +2,7 @@ const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
 const path = require('path');
-const { generateTmpReportPath, getTestTags } = require('../../cli/_helpers.js');
+const { generateTmpReportPath, getTestTags } = require('../../helpers');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 

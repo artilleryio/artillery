@@ -7,7 +7,7 @@ const {
   generateTmpReportPath,
   deleteFile,
   getTestTags
-} = require('../../cli/_helpers.js');
+} = require('../../helpers');
 const { getTestId, getXRayTraces } = require('./fixtures/adot/helpers.js');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';

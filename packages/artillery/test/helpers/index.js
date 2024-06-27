@@ -47,11 +47,16 @@ function getTestTags(additionalTags) {
   return `${repoTag},${actorTag},${ciTag},${additionalTags.join(',')}`;
 }
 
+const getImageArchitecture = () => {
+  return process.env.HAS_ARM64_BUILD === 'true' ? 'arm64' : 'x86_64';
+};
+
 module.exports = {
   execute,
   deleteFile,
   getRootPath,
   returnTmpPath,
   generateTmpReportPath,
-  getTestTags
+  getTestTags,
+  getImageArchitecture
 };
