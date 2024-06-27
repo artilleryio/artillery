@@ -135,6 +135,14 @@ const ConfigSchemaWithoutEnvironments = Joi.object({
   })
     .meta({ title: 'Engines' })
     .description('Configuration for specific engines used'),
+  includeFiles: Joi.array()
+    .items(Joi.string())
+    .meta({
+      title: 'Include Files'
+    })
+    .description(
+      'List of paths to extra files to include when running distributed tests with AWS Lambda/Fargate: https://www.artillery.io/docs/reference/test-script#includefiles---explicitly-bundling-files-with-the-test'
+    ),
   ...ArtilleryBuiltInPluginsInRootConfig
 }).id('BaseConfigSchema');
 
