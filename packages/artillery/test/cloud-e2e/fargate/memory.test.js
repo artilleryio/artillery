@@ -1,6 +1,6 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
-const { generateTmpReportPath, getTestTags } = require('../helpers');
+const { generateTmpReportPath, getTestTags } = require('../../helpers');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 
