@@ -498,10 +498,12 @@ async function prepareTestExecutionPlan(inputFiles, flags, args) {
 
   const script3 = await addOverrides(script2, flags);
   const script4 = await addVariables(script3, flags);
+  // The resolveConfigTemplates function expects the config and script path to be passed explicitly because it is used in Fargate as well where the two arguments will not be available on the script
   const script5 = await resolveConfigTemplates(
     script4,
     flags,
-    script4._configPath
+    script4._configPath,
+    script4._scriptPath
   );
 
   if (!script5.config.target) {

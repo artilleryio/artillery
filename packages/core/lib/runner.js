@@ -468,7 +468,9 @@ function createContext(script, contextVars, additionalProperties = {}) {
   if (script._configPath) {
     INITIAL_CONTEXT.vars.$dirname = path.dirname(script._configPath);
   }
-
+  if (script._scriptPath) {
+    INITIAL_CONTEXT.vars.$scenarioFile = script._scriptPath;
+  }
   let result = INITIAL_CONTEXT;
 
   // variables from payloads:

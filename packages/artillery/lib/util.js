@@ -98,11 +98,12 @@ function addDefaultPlugins(script) {
   return finalScript;
 }
 
-async function resolveConfigTemplates(script, flags, configPath) {
+async function resolveConfigTemplates(script, flags, configPath, scriptPath) {
   const cliVariables = flags.variables ? JSON.parse(flags.variables) : {};
 
   script.config = engineUtil.template(script.config, {
     vars: {
+      $scenarioFile: scriptPath,
       $dirname: path.dirname(configPath),
       $testId: global.artillery.testRunId,
       $processEnvironment: process.env,
@@ -198,7 +199,7 @@ async function checkConfig(script, scriptPath, flags) {
     );
     payloadSpec.path = resolvedPathToPayload;
   });
-
+  script._scriptPath = absoluteScriptPath;
   return script;
 }
 

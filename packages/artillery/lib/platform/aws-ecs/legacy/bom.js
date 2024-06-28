@@ -23,6 +23,7 @@ function _convertToPosixPath(p) {
   return p.split(path.sep).join(path.posix.sep);
 }
 
+// NOTE: absoluteScriptPath here is actually the absolute path to the config file
 function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   A.waterfall(
     [
@@ -34,7 +35,8 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
           opts: {
             scriptData,
             absoluteScriptPath,
-            flags: opts.flags
+            flags: opts.flags,
+            scenarioPath: opts.scenarioPath // Absolute path to the file that holds scenarios
           },
           localFilePaths: [absoluteScriptPath],
           npmModules: []
@@ -157,7 +159,8 @@ function applyScriptChanges(context, next) {
   resolveConfigTemplates(
     context.opts.scriptData,
     context.opts.flags,
-    context.opts.absoluteScriptPath
+    context.opts.absoluteScriptPath,
+    context.opts.scenarioPath
   ).then((resolvedConfig) => {
     context.opts.scriptData = resolvedConfig;
     return next(null, context);
