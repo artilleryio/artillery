@@ -397,6 +397,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         if (params.formData) {
+          let fileUpload;
           const f = new FormData();
           requestParams.body = _.reduce(
             requestParams.formData,
@@ -407,6 +408,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   path.dirname(context.vars.$scenarioFile),
                   V.fromFile
                 );
+                fileUpload = absPath;
                 V = fs.createReadStream(absPath);
               }
               acc.append(k, V);
@@ -414,10 +416,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             },
             f
           );
-          if (params.setContentLengthHeader) {
-            requestParams.headers = requestParams.headers || {};
-            requestParams.headers['content-length'] =
-              requestParams.body.getLengthSync();
+          if (params.setContentLengthHeader && fileUpload) {
+            try {
+              requestParams.headers = requestParams.headers || {};
+              requestParams.headers['content-length'] =
+                fs.statSync(fileUpload).size;
+            } catch (err) {
+              debug(`stat() on ${fileUpload} failed with ${err}`);
+            }
           }
         }
 
