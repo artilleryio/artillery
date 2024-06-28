@@ -403,9 +403,11 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             function (acc, v, k) {
               let V = template(v, context);
               if (V && _.isPlainObject(V) && V.fromFile) {
-                V = fs.createReadStream(
-                  path.resolve(process.cwd(), V.fromFile)
+                const absPath = path.resolve(
+                  path.dirname(context.vars.$scenarioFile),
+                  V.fromFile
                 );
+                V = fs.createReadStream(absPath);
               }
               acc.append(k, V);
               return acc;
