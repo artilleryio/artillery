@@ -6,6 +6,7 @@ const {
   generateTmpReportPath,
   getImageArchitecture
 } = require('../../helpers');
+const { checkForNegativeValues } = require('../../helpers/expectations');
 
 const tags = getTestTags(['type:acceptance']);
 const A9_PATH = process.env.A9_PATH || 'artillery';
@@ -43,4 +44,5 @@ tap.test('Run dotenv test in Lambda Container', async (t) => {
     50,
     'Should have custom counter for env variable fruit'
   );
+  checkForNegativeValues(t, report);
 });

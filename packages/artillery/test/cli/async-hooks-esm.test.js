@@ -1,5 +1,6 @@
 const tap = require('tap');
 const { execute, generateTmpReportPath } = require('../helpers');
+const { checkForNegativeValues } = require('../helpers/expectations');
 const fs = require('fs');
 
 let reportFilePath;
@@ -45,4 +46,6 @@ tap.test('async hooks with ESM', async (t) => {
     10,
     'Should have no completed VUs'
   );
+
+  checkForNegativeValues(t, json);
 });

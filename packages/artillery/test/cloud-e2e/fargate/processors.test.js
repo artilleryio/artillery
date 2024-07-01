@@ -3,6 +3,7 @@ const { $ } = require('zx');
 const fs = require('fs');
 const path = require('path');
 const { generateTmpReportPath, getTestTags } = require('../../helpers');
+const { checkForNegativeValues } = require('../../helpers/expectations');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 
@@ -36,6 +37,7 @@ test('Run with typescript processor and external package', async (t) => {
     2,
     'Should have emitted 2 errors'
   );
+  checkForNegativeValues(t, report);
 });
 
 test('Run a test with an ESM processor', async (t) => {
@@ -61,4 +63,5 @@ test('Run a test with an ESM processor', async (t) => {
     10,
     'Should have emitted 10 custom metrics from ts processor'
   );
+  checkForNegativeValues(t, report);
 });
