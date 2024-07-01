@@ -3,9 +3,7 @@ config:
   phases:
     - duration: 10min
       arrivalRate: 25
-  # Enables the file upload plugin from Artillery Pro.
-  plugins:
-    http-file-uploads: {}
+
   # To randomize the files to upload during the test scenario,
   # set up variables with the names of the files to use. These
   # files are placed in the `/files` directory.

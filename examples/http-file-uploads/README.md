@@ -1,8 +1,6 @@
-# HTTP file uploads with Artillery Pro
+# HTTP file uploads
 
 This example shows you how to perform HTTP file uploads from an Artillery test script.
-
-The file upload functionality is a part of Artillery Pro, which [needs to be installed](https://artillery.io/docs/guides/getting-started/installing-artillery-pro.html) before running the tests in this directory.
 
 ## Running the HTTP server
 

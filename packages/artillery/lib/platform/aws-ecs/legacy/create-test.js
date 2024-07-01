@@ -83,7 +83,11 @@ function prepareManifest(context, callback) {
   createBOM(
     fileToAnalyse,
     extraFiles,
-    { packageJsonPath: context.packageJsonPath, flags: context.flags},
+    {
+      packageJsonPath: context.packageJsonPath,
+      flags: context.flags,
+      scenarioPath: context.scriptPath
+    },
     (err, bom) => {
       debug(err);
       debug(bom);

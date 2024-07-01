@@ -13,6 +13,7 @@ const _createLambdaBom = async (
   let createBomOpts = {};
   let entryPoint = absoluteScriptPath;
   let extraFiles = [];
+  createBomOpts.scenarioPath = absoluteScriptPath;
   if (absoluteConfigPath) {
     entryPoint = absoluteConfigPath;
     extraFiles.push(absoluteScriptPath);

@@ -133,7 +133,14 @@ const HttpMethodPropertiesWithBody = {
     .meta({ title: 'Multipart Forms' })
     .description(
       'https://www.artillery.io/docs/reference/engines/http#multipart-forms-multipartform-data'
-    )
+    ),
+  setContentLengthHeader: artilleryBooleanOrString
+    .meta({
+      title: 'Set Content-Length header'
+    })
+    .description(
+      'Set the Content-Length header. Used only for the file upload requests.'
+    ) //TODO: add link when docs are available
 };
 
 const BaseWithHttp = [

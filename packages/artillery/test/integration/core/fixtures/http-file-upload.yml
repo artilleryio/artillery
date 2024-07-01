@@ -1,0 +1,21 @@
+config:
+  phases:
+    - duration: 1
+      arrivalRate: 1
+  processor: "../fixtures/http-file-upload-processor.js"
+
+  variables:
+    filename:
+      - "artillery-installation.pdf"
+scenarios:
+  - name: "Hello"
+    flow:
+    - post:
+        url: "/upload"
+        afterResponse: "getResponse"
+        formData:
+          name: "Artillery"
+          logo:
+            fromFile: "./files/artillery-logo.jpg"
+          guide:
+            fromFile: "./files/{{ filename }}"
