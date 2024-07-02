@@ -122,7 +122,7 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   }
 });
 
-test('OTel reporter correctly records trace data for playwright engine test runs', async (t) => {
+test('OTel reporter correctly records trace data for playwright engine test runs with errors', async (t) => {
   // Define test configuration
   const override = {
     config: {
