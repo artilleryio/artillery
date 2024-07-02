@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 const url = require('url');
 
 module.exports = { Plugin: MetricsByEndpoint };
@@ -12,6 +11,7 @@ let useOnlyRequestNames;
 let stripQueryString;
 let ignoreUnnamedRequests;
 let metricsPrefix;
+let useDefaultName;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
 function MetricsByEndpoint(script, events) {
@@ -43,20 +43,26 @@ function MetricsByEndpoint(script, events) {
   metricsPrefix =
     script.config.plugins['metrics-by-endpoint'].metricsNamespace ||
     'plugins.metrics-by-endpoint';
+  useDefaultName =
+    script.config.plugins['metrics-by-endpoint'].useDefaultName ?? true;
 
   script.config.processor.metricsByEndpoint_afterResponse =
     metricsByEndpoint_afterResponse;
   script.config.processor.metricsByEndpoint_onError = metricsByEndpoint_onError;
+  script.config.processor.metricsByEndpoint_beforeRequest =
+    metricsByEndpoint_beforeRequest;
 
   script.scenarios.forEach(function (scenario) {
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('metricsByEndpoint_afterResponse');
     scenario.onError = [].concat(scenario.onError || []);
     scenario.onError.push('metricsByEndpoint_onError');
+    scenario.beforeRequest = [].concat(scenario.beforeRequest || []);
+    scenario.beforeRequest.push('metricsByEndpoint_beforeRequest');
   });
 }
 
-function getReqName(target, originalRequestUrl, requestName) {
+function calculateBaseUrl(target, originalRequestUrl) {
   const targetUrl = target && url.parse(target);
   const requestUrl = url.parse(originalRequestUrl);
 
@@ -73,20 +79,33 @@ function getReqName(target, originalRequestUrl, requestName) {
   }
   baseUrl += stripQueryString ? requestUrl.pathname : requestUrl.path;
 
-  let reqName = '';
-  if (useOnlyRequestNames && requestName) {
-    reqName += requestName;
-  } else if (requestName) {
-    reqName += `${baseUrl} (${requestName})`;
-  } else if (!ignoreUnnamedRequests) {
-    reqName += baseUrl;
+  return decodeURIComponent(baseUrl);
+}
+
+function getReqName(target, originalRequestUrl, requestName) {
+  const baseUrl = calculateBaseUrl(target, originalRequestUrl);
+
+  if (!requestName) {
+    return ignoreUnnamedRequests ? '' : baseUrl;
   }
 
-  return reqName;
+  return useOnlyRequestNames ? requestName : `${baseUrl} (${requestName})`;
+}
+
+function metricsByEndpoint_beforeRequest(req, userContext, events, done) {
+  if (useDefaultName) {
+    req.defaultName = getReqName(userContext.vars.target, req.url, req.name);
+  }
+
+  return done();
 }
 
 function metricsByEndpoint_onError(err, req, userContext, events, done) {
-  const reqName = getReqName(userContext.vars.target, req.url, req.name);
+  //if useDefaultName is true, then req.defaultName is set in beforeRequest
+  //otherwise, we must calculate the reqName here as req.url is the non-templated version
+  const reqName = useDefaultName
+    ? req.defaultName
+    : getReqName(userContext.vars.target, req.url, req.name);
 
   if (reqName === '') {
     return done();
@@ -102,7 +121,11 @@ function metricsByEndpoint_onError(err, req, userContext, events, done) {
 }
 
 function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  const reqName = getReqName(userContext.vars.target, req.url, req.name);
+  //if useDefaultName is true, then req.defaultName is set in beforeRequest
+  //otherwise, we must calculate the reqName here as req.url is the non-templated version
+  const reqName = useDefaultName
+    ? req.defaultName
+    : getReqName(userContext.vars.target, req.url, req.name);
 
   if (reqName === '') {
     return done();
