@@ -11,16 +11,14 @@ const {
   runPlaywrightTraceAssertions
 } = require('./playwright-trace-assertions.js');
 
-let reportFilePath;
-let tracesFilePath;
 beforeEach(async (t) => {
-  reportFilePath = generateTmpReportPath(t.name, 'json');
-  tracesFilePath = generateTmpReportPath('spans_' + t.name, 'json');
+  t.context.reportFilePath = generateTmpReportPath(t.name, 'json');
+  t.context.tracesFilePath = generateTmpReportPath('spans_' + t.name, 'json');
 });
 
 afterEach(async (t) => {
-  deleteFile(reportFilePath);
-  deleteFile(tracesFilePath);
+  deleteFile(t.context.reportFilePath);
+  deleteFile(t.context.tracesFilePath);
 });
 
 /* To write a test for the publish-metrics tracing you need to:
@@ -44,7 +42,7 @@ test('OTel reporter correctly records trace data for playwright engine test runs
             type: 'open-telemetry',
             traces: {
               exporter: '__test',
-              __outputPath: tracesFilePath,
+              __outputPath: t.context.tracesFilePath,
               replaceSpanNameRegex: [
                 {
                   pattern:
@@ -100,9 +98,9 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/playwright-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
-        override
-      )}`;
+      await $`artillery run ${__dirname}/../fixtures/playwright-trace.yml -o ${
+        t.context.reportFilePath
+      } --overrides ${JSON.stringify(override)}`;
   } catch (err) {
     t.fail(err);
   }
@@ -110,9 +108,9 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   // Assemble all test run data into one object for assertions (output of the test run, artillery report summary and exported spans)
   const testRunData = {
     output,
-    reportSummary: JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
+    reportSummary: JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'))
       .aggregate,
-    spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
+    spans: JSON.parse(fs.readFileSync(t.context.tracesFilePath, 'utf8'))
   };
 
   // Run assertions
@@ -134,7 +132,7 @@ test('OTel reporter correctly records trace data for playwright engine test runs
             type: 'open-telemetry',
             traces: {
               exporter: '__test',
-              __outputPath: tracesFilePath,
+              __outputPath: t.context.tracesFilePath,
               replaceSpanNameRegex: [
                 { pattern: 'https://www.artillery.io/docs', as: 'docs_main' },
                 { pattern: 'Go to core concepts', as: 'bombolini' }
@@ -187,9 +185,9 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   let output;
   try {
     output =
-      await $`artillery run ${__dirname}/../fixtures/playwright-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
-        override
-      )}`;
+      await $`artillery run ${__dirname}/../fixtures/playwright-trace.yml -o ${
+        t.context.reportFilePath
+      } --overrides ${JSON.stringify(override)}`;
   } catch (err) {
     t.fail(err);
   }
@@ -197,9 +195,9 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   // Assembling all test run data into one object for assertions (output of the test run, artillery report summary and exported spans)
   const testRunData = {
     output,
-    reportSummary: JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
+    reportSummary: JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'))
       .aggregate,
-    spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
+    spans: JSON.parse(fs.readFileSync(t.context.tracesFilePath, 'utf8'))
   };
 
   // Run assertions

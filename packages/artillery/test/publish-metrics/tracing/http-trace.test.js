@@ -7,16 +7,14 @@ const { setDynamicHTTPTraceExpectations } = require('../fixtures/helpers.js');
 
 const { runHttpTraceAssertions } = require('./http-trace-assertions.js');
 
-let reportFilePath;
-let tracesFilePath;
 beforeEach(async (t) => {
-  reportFilePath = generateTmpReportPath(t.name, 'json');
-  tracesFilePath = generateTmpReportPath('spans_' + t.name, 'json');
+  t.context.reportFilePath = generateTmpReportPath(t.name, 'json');
+  t.context.tracesFilePath = generateTmpReportPath('spans_' + t.name, 'json');
 });
 
 afterEach(async (t) => {
-  deleteFile(reportFilePath);
-  deleteFile(tracesFilePath);
+  deleteFile(t.context.reportFilePath);
+  deleteFile(t.context.tracesFilePath);
 });
 
 /* To write a test for the publish-metrics http tracing you need to:
@@ -40,7 +38,7 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
             type: 'open-telemetry',
             traces: {
               exporter: '__test',
-              __outputPath: tracesFilePath,
+              __outputPath: t.context.tracesFilePath,
               useRequestNames: true,
               replaceSpanNameRegex: [{ pattern: 'armadillo', as: 'bombolini' }],
               attributes: {
@@ -77,10 +75,9 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
   /// Run the test
   let output;
   try {
-    output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
-        override
-      )}`;
+    output = await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${
+      t.context.reportFilePath
+    } --overrides ${JSON.stringify(override)}`;
   } catch (err) {
     console.error('There has been an error in test run execution: ', err);
     t.fail(err);
@@ -89,9 +86,9 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
   // Get all main test run data
   const testRunData = {
     output,
-    reportSummary: JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
+    reportSummary: JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'))
       .aggregate,
-    spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
+    spans: JSON.parse(fs.readFileSync(t.context.tracesFilePath, 'utf8'))
   };
 
   // Run assertions
@@ -112,7 +109,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
             type: 'open-telemetry',
             traces: {
               exporter: '__test',
-              __outputPath: tracesFilePath,
+              __outputPath: t.context.tracesFilePath,
               useRequestNames: true,
               replaceSpanNameRegex: [{ pattern: 'armadillo', as: 'bombolini' }],
               attributes: {
@@ -163,10 +160,9 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
   /// Run the test
   let output;
   try {
-    output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
-        override
-      )}`;
+    output = await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${
+      t.context.reportFilePath
+    } --overrides ${JSON.stringify(override)}`;
   } catch (err) {
     t.fail(err);
   }
@@ -174,9 +170,9 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
   // Get all main test run data
   const testRunData = {
     output,
-    reportSummary: JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
+    reportSummary: JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'))
       .aggregate,
-    spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
+    spans: JSON.parse(fs.readFileSync(t.context.tracesFilePath, 'utf8'))
   };
 
   // Run assertions
@@ -197,7 +193,7 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
             type: 'open-telemetry',
             traces: {
               exporter: '__test',
-              __outputPath: tracesFilePath,
+              __outputPath: t.context.tracesFilePath,
               useRequestNames: true,
               replaceSpanNameRegex: [{ pattern: 'armadillo', as: 'bombolini' }],
               attributes: {
@@ -249,10 +245,9 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
   /// Run the test
   let output;
   try {
-    output =
-      await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${reportFilePath} --overrides ${JSON.stringify(
-        override
-      )}`;
+    output = await $`artillery run ${__dirname}/../fixtures/http-trace.yml -o ${
+      t.context.reportFilePath
+    } --overrides ${JSON.stringify(override)}`;
   } catch (err) {
     t.fail(err);
   }
@@ -260,9 +255,9 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
   // Get all main test run data
   const testRunData = {
     output,
-    reportSummary: JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
+    reportSummary: JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'))
       .aggregate,
-    spans: JSON.parse(fs.readFileSync(tracesFilePath, 'utf8'))
+    spans: JSON.parse(fs.readFileSync(t.context.tracesFilePath, 'utf8'))
   };
 
   // Run assertions
