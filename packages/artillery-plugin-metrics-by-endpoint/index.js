@@ -47,12 +47,16 @@ function MetricsByEndpoint(script, events) {
   script.config.processor.metricsByEndpoint_afterResponse =
     metricsByEndpoint_afterResponse;
   script.config.processor.metricsByEndpoint_onError = metricsByEndpoint_onError;
+  script.config.processor.metricsByEndpoint_beforeRequest =
+    metricsByEndpoint_beforeRequest;
 
   script.scenarios.forEach(function (scenario) {
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('metricsByEndpoint_afterResponse');
     scenario.onError = [].concat(scenario.onError || []);
     scenario.onError.push('metricsByEndpoint_onError');
+    scenario.beforeRequest = [].concat(scenario.beforeRequest || []);
+    scenario.beforeRequest.push('metricsByEndpoint_beforeRequest');
   });
 }
 
@@ -85,8 +89,15 @@ function getReqName(target, originalRequestUrl, requestName) {
   return reqName;
 }
 
+function metricsByEndpoint_beforeRequest(req, userContext, events, done) {
+  //we set the req name as a beforeRequest so we can make use of the untemplated url in req.url
+  req.name = getReqName(userContext.vars.target, req.url, req.name);
+
+  return done();
+}
+
 function metricsByEndpoint_onError(err, req, userContext, events, done) {
-  const reqName = getReqName(userContext.vars.target, req.url, req.name);
+  const reqName = req.name;
 
   if (reqName === '') {
     return done();
@@ -102,7 +113,7 @@ function metricsByEndpoint_onError(err, req, userContext, events, done) {
 }
 
 function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  const reqName = getReqName(userContext.vars.target, req.url, req.name);
+  const reqName = req.name;
 
   if (reqName === '') {
     return done();
