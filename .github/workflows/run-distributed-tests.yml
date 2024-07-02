@@ -85,11 +85,11 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 18.x
-      - run: npm install
+      - run: .github/workflows/scripts/npm-command-retry.sh install
       - run: npm run build
       - name: Install Specific Artillery Version if needed
         if: ${{ inputs.ARTILLERY_VERSION_OVERRIDE || false }}
-        run: mkdir __artillery__ && cd __artillery__ && npm init -y && npm install artillery@${{ inputs.ARTILLERY_VERSION_OVERRIDE }}
+        run: mkdir __artillery__ && cd __artillery__ && npm init -y && .github/workflows/scripts/npm-command-retry.sh install artillery@${{ inputs.ARTILLERY_VERSION_OVERRIDE }}
       - name: Set A9_PATH
         if: ${{ inputs.ARTILLERY_VERSION_OVERRIDE || false }}
         run: echo "A9_PATH=${{ github.workspace }}/__artillery__/node_modules/.bin/artillery" >> $GITHUB_ENV
