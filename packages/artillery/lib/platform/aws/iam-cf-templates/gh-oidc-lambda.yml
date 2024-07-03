@@ -74,7 +74,7 @@ Resources:
                 Fn::If:
                   - CreateOIDCProvider
                   - !Ref GitHubOIDCProvider
-                  - !Ref GitHubOIDCProviderArn
+                  - !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
             Action: "sts:AssumeRoleWithWebIdentity"
             Condition: {
               StringEquals:
