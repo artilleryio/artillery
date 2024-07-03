@@ -3,7 +3,10 @@ const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('fs');
 const { generateTmpReportPath, getTestTags } = require('../../helpers');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 
@@ -40,6 +43,8 @@ test('Run uses ensure', async (t) => {
       300,
       'Should have 300 "200 OK" responses'
     );
+
     checkForNegativeValues(t, report);
+    checkAggregateCounterSums(t, report);
   }
 });

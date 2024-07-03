@@ -38,6 +38,35 @@ const checkForNegativeValues = (t, report) => {
   }
 };
 
+const checkAggregateCounterSums = (t, report) => {
+  const aggregateCounters = report.aggregate?.counters;
+
+  if (!aggregateCounters || Object.keys(aggregateCounters).length === 0) {
+    t.fail('No aggregate counters found in the report');
+  }
+
+  let intermediateCounters = {};
+
+  for (const intermediate of report.intermediate) {
+    for (const key in intermediate.counters) {
+      if (intermediateCounters[key]) {
+        intermediateCounters[key] += intermediate.counters[key];
+      } else {
+        intermediateCounters[key] = intermediate.counters[key];
+      }
+    }
+  }
+
+  for (const key in aggregateCounters) {
+    if (aggregateCounters[key] !== intermediateCounters[key]) {
+      t.fail(
+        `Aggregate counter sum mismatch for ${key}. Aggregate ${aggregateCounters[key]} != Intermediate ${intermediateCounters[key]}`
+      );
+    }
+  }
+};
+
 module.exports = {
-  checkForNegativeValues
+  checkForNegativeValues,
+  checkAggregateCounterSums
 };

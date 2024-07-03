@@ -6,7 +6,10 @@ const {
   generateTmpReportPath,
   getImageArchitecture
 } = require('../../helpers');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 
 const tags = getTestTags(['type:acceptance']);
 
@@ -61,5 +64,7 @@ tap.test('Run mixed-hierarchy test in Lambda Container', async (t) => {
     20,
     'Should have 20 "200 OK" responses'
   );
+
   checkForNegativeValues(t, report);
+  checkAggregateCounterSums(t, report);
 });

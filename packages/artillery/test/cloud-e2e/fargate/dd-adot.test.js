@@ -8,7 +8,10 @@ const {
   deleteFile,
   getTestTags
 } = require('../../helpers');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 const { getDatadogSpans, getTestId } = require('./fixtures/adot/helpers.js');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
@@ -53,6 +56,7 @@ test('traces succesfully arrive to datadog', async (t) => {
   const testId = getTestId(output.stdout);
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
   checkForNegativeValues(t, report);
+  checkAggregateCounterSums(t, report);
 
   let spanList;
   try {
