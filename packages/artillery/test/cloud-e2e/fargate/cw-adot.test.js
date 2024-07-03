@@ -9,7 +9,10 @@ const {
   getTestTags
 } = require('../../helpers');
 const { getTestId, getXRayTraces } = require('./fixtures/adot/helpers.js');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 // NOTE: This test reports to Artillery Dashboard to dogfood and improve visibility
@@ -46,6 +49,7 @@ test('traces succesfully arrive to cloudwatch', async (t) => {
   const testId = getTestId(output.stdout);
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
   checkForNegativeValues(t, report);
+  checkAggregateCounterSums(t, report);
 
   let traceMap;
   try {

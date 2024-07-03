@@ -3,7 +3,10 @@ const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('fs');
 const { generateTmpReportPath, getTestTags } = require('../../helpers');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 
@@ -41,7 +44,9 @@ test('CLI should exit with non-zero exit code when there are failed expectations
       10,
       'Should have 10 "200 OK" responses'
     );
+
     checkForNegativeValues(t, report);
+    checkAggregateCounterSums(t, report);
   }
 });
 

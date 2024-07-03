@@ -7,7 +7,10 @@ const {
   getTestTags,
   getImageArchitecture
 } = require('../../helpers');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 
 const tags = getTestTags(['type:acceptance']);
 let reportFilePath;
@@ -54,7 +57,9 @@ tap.test(
         10,
         'Should have 10 "200 OK" responses'
       );
+
       checkForNegativeValues(t, report);
+      checkAggregateCounterSums(t, report);
     }
   }
 );

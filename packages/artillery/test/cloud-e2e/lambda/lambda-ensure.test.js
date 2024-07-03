@@ -7,7 +7,10 @@ const {
   getTestTags,
   getImageArchitecture
 } = require('../../helpers');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 
 //NOTE: all these tests report to Artillery Dashboard to dogfood and improve visibility
 const tags = getTestTags(['type:acceptance']);
@@ -46,6 +49,8 @@ tap.test('Lambda Container run uses ensure', async (t) => {
       300,
       'Should have 300 "200 OK" responses'
     );
+
     checkForNegativeValues(t, report);
+    checkAggregateCounterSums(t, report);
   }
 });

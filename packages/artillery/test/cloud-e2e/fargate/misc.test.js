@@ -3,7 +3,10 @@ const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('fs');
 const { generateTmpReportPath, getTestTags } = require('../../helpers');
-const { checkForNegativeValues } = require('../../helpers/expectations');
+const {
+  checkForNegativeValues,
+  checkAggregateCounterSums
+} = require('../../helpers/expectations');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 
@@ -78,7 +81,9 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
     40,
     'Should have 40 /pony "200 OK" responses'
   );
+
   checkForNegativeValues(t, report);
+  checkAggregateCounterSums(t, report);
 });
 
 test('Run lots-of-output', async (t) => {
