@@ -44,6 +44,9 @@ CLI_PID=
 CLEANING_UP="no"
 
 #mode="${MODE:-run}" # "run" or "bootstrap"
+is_azure=
+azure_storage_container_name=
+
 s3_test_data_path=
 cli_args=()
 cli_args_encoded=
@@ -53,23 +56,46 @@ test_run_id=
 s3_run_data_base_path=
 s3_run_data_path=
 
-taskArn=$(curl -s "$ECS_CONTAINER_METADATA_URI_V4/task" \
-              | jq -r ".TaskARN" \
-              | cut -d "/" -f 3)
-
-worker_id=${taskArn:-worker-$(pwgen -A 12 1)}
-export WORKER_ID="$worker_id" # make available to Artillery custom scripts/environment
+# This is set once we know if we're on Azure or AWS
+worker_id=
 is_leader=${IS_LEADER:-false} # true or false
 
-progress "Worker starting up, ID = $worker_id, version = ${WORKER_VERSION:-unknown}, leader = $is_leader"
-
-declare -r DEPENDENCIES=(jq aws pwgen node npm yarn)
+declare -r DEPENDENCIES=(jq aws az pwgen node npm yarn tree)
 
 send_message () {
+    local body="$1" # body of the message, a string
+    local type="$2" # typeo of the message: debug, leader, ensure
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        send_message_aqs "$body" "$type"
+    else
+        send_message_sqs "$body" "$type"
+    fi
+}
+
+send_message_aqs () {
     set +e
     set +o pipefail
 
-    # NOTE: no quotes to avoid quoting issues
+    local body="$1"
+    local type="$2"
+
+    local aqs_message_payload="{\"msg\":\"$body\",\"type\":\"$type\"}"
+    local aqs_message_attributes="{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}"
+
+    >/dev/null az storage message put \
+        --content "{ \"payload\": $aqs_message_payload, \"attributes\": $aqs_message_attributes }" \
+        --queue-name "$AQS_QUEUE_NAME" \
+        --account-name "$AZURE_STORAGE_ACCOUNT" || true
+
+    set -e
+    set -o pipefail
+}
+
+send_message_sqs () {
+    set +e
+    set +o pipefail
+
     local body="$1"
     local type="$2"
 
@@ -87,6 +113,49 @@ send_message () {
     set -e
     set -o pipefail
 }
+
+send_event () {
+    set +e
+    set +o pipefail
+    
+    local payload="$1"
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        send_event_aqs "$payload"
+    else
+        send_event_sqs "$payload"
+    fi
+
+    set -e
+    set -o pipefail
+}
+
+send_event_sqs () {
+    local payload="$1"
+
+    local sqs_message_attributes="{\"testId\": {\"StringValue\": \"${test_run_id}\", \"DataType\": \"String\"}, \"workerId\": {\"StringValue\": \"${worker_id}\", \"DataType\": \"String\"}}"
+
+    >/dev/null aws sqs send-message \
+        --queue-url "${sqs_queue_url}" \
+        --message-body "$payload" \
+        --message-attributes "$sqs_message_attributes" \
+        --message-group-id "${test_run_id}" \
+        --message-deduplication-id "$(pwgen -A 32 1)" \
+        --region "$aws_region"
+}
+
+send_event_aqs () {
+    local payload="$1"
+
+    local aqs_message_attributes="{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}"
+
+    >/dev/null az storage message put \
+        --content "{ \"payload\": $payload, \"attributes\": $aqs_message_attributes }" \
+        --queue-name "$AQS_QUEUE_NAME" \
+        --account-name "$AZURE_STORAGE_ACCOUNT"
+}
+
+
 
 install_npm_dependencies () {
     if [[ -f "$TEST_DATA/package.json" ]] ; then
@@ -134,12 +203,31 @@ check_dependencies () {
 }
 
 sync_test_data () {
-    mkdir "$TEST_DATA"
+    mkdir "$TEST_DATA" || true
     pushd "$TEST_DATA" >/dev/null
-    aws s3 sync --exclude node_modules_stream.zip "$s3_test_data_path" . >/dev/null
+
+    echo "is_azure: $is_azure"
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        sync_test_data_azure
+    else
+        sync_test_data_s3
+    fi
 
     debug "$(pwd)"
     debug "$(ls -a)"
+}
+
+sync_test_data_azure () {
+    # TODO: Exclude node_modules_stream.zip
+    # This recreates the directory structure in the container, i.e. we'll have tests/$test_run_id here with all files under it
+    # So we need to move them all up two levels to the current directory
+    az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/*"
+    mv "tests/$test_run_id"/* .
+}
+
+sync_test_data_s3 () {
+    aws s3 sync --exclude node_modules_stream.zip "$s3_test_data_path" . >/dev/null
 }
 
 check_test_data () {
@@ -173,17 +261,29 @@ install_dependencies () {
             touch node_modules/.artillery
         fi
 
-        zip -r -q - node_modules | aws s3 cp - "$s3_test_data_path/node_modules_stream.zip"
-
+        zip -r -q node_modules.zip node_modules # | aws s3 cp - "$s3_test_data_path/node_modules_stream.zip"
         echo "Modules pre-packaged"
-        aws s3 mv "$s3_test_data_path/node_modules_stream.zip" "$s3_test_data_path/node_modules.zip"
+        
+        # aws s3 mv "$s3_test_data_path/node_modules_stream.zip" "$s3_test_data_path/node_modules.zip"
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            az storage blob upload --overwrite --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --file node_modules.zip --name "tests/$test_run_id/node_modules.zip"
+        else
+            aws s3 cp node_modules.zip "$s3_test_data_path/node_modules.zip"
+        fi
+
         send_message "leader npm prepack end `date +%s`" "debug"
         send_message "prepack_end" "leader"
     else
         # wait until node_modules.zip is available and unzip, or timeout
         # TODO: use aws s3api wait object-exists with a custom timeout
         send_message "follower npm prepack wait start `date +%s`" "debug"
-        wait_for_go "$s3_test_data_path/node_modules.zip"
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            wait_for_go "tests/$test_run_id/node_modules.zip"
+        else
+            wait_for_go "$s3_test_data_path/node_modules.zip"
+        fi
         unzip -o -q node_modules.zip
         send_message "follower npm prepack wait end `date +%s`" "debug"
     fi
@@ -194,9 +294,21 @@ install_dependencies () {
 signal_ready () {
     local synced_filename="synced_${worker_id}.json"
     echo "{ \"worker_id\": \"${worker_id}\" }" >> "$synced_filename"
-    local synced_dest="${s3_run_data_path}/${synced_filename}"
-    aws s3 cp "$synced_filename" "$synced_dest" 1>/dev/null 2>/dev/null
-    cp_status=$?
+    local synced_dest=
+    local cp_status=
+
+    if [[ "$is_azure" = "yes" ]] ; then
+
+        send_event "{\"event\": \"workerReady\"}"
+
+        synced_dest="${azure_storage_container_name}/$synced_filename"
+        az storage blob upload --overwrite --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --file "$synced_filename" --name "tests/$test_run_id/$synced_filename"
+        cp_status=$?
+    else
+        synced_dest="${s3_run_data_path}/${synced_filename}"
+        aws s3 cp "$synced_filename" "$synced_dest" 1>/dev/null 2>/dev/null
+        cp_status=$?
+    fi
 
     if [[ $cp_status -ne 0 ]]; then
         echo "could not send synced signal (to: $synced_dest)"
@@ -210,13 +322,25 @@ signal_ready () {
 wait_for_go () {
     local SLEEP=2
     local slept=0
-    local objpath="${1:-$s3_run_data_path/go.json}"
+    local objpath=
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        objpath="${1:-tests/$test_run_id/go.json}"
+    else
+        objpath="${1:-$s3_run_data_path/go.json}"
+    fi
 
     echo "Waiting... ($objpath)"
 
     while true ; do
         set +e
-        aws s3 cp "$objpath" . 1>/dev/null 2>/dev/null
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            az storage blob download --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --name "$objpath" --file "$(basename $objpath)" 1>/dev/null 2>/dev/null
+        else
+            aws s3 cp "$objpath" . 1>/dev/null 2>/dev/null
+        fi
+
 
         local cp_exit_code=$?
         set -e
@@ -257,12 +381,17 @@ run_a9 () {
     export NODE_PATH="$TEST_DATA/node_modules:${NODE_PATH:-""}"
     export DEBUG=${DEBUG:-"debug:mode:off"} # can set via --launch-config if needed
 
-    export ARTILLERY_PLUGIN_PATH=/artillery/packages/artillery/lib/platform/aws-ecs/legacy/plugins
+    export ARTILLERY_PLUGIN_PATH=${ARTILLERY_PLUGIN_PATH:-""}:/artillery/packages/artillery/lib/platform/aws-ecs/legacy/plugins
 
     export ARTILLERY_PLUGINS="{\"sqs-reporter\":{\"region\": \"${aws_region}\"},\"inspect-script\":{}}"
     export SQS_TAGS="[{\"key\": \"testId\", \"value\": \"${test_run_id}\"},{\"key\":\"workerId\", \"value\":\"${worker_id}\"}]"
-    export SQS_QUEUE_URL=$sqs_queue_url
-    export SQS_REGION=$aws_region
+    
+    if [[ "$is_azure" = "yes" ]] ; then
+        export AZURE_STORAGE_QUEUE_URL=$sqs_queue_url
+    else 
+        export SQS_QUEUE_URL=$sqs_queue_url
+        export SQS_REGION=$aws_region
+    fi
 
     export ARTILLERY_DISABLE_ENSURE=true
 
@@ -274,7 +403,7 @@ run_a9 () {
     MAX_OLD_SPACE_SIZE=${MAX_OLD_SPACE_SIZE:-12288}
     export NODE_OPTIONS="--max-http-header-size=32768 --max-old-space-size=$MAX_OLD_SPACE_SIZE ${NODE_OPTIONS:-""}"
 
-    (set +eu ; artillery "${cli_args[@]}" ; echo $? > exitCode ; set -eu) | tee output.txt &
+    (set +eu ; ${ARTILLERY_BINARY:-"artillery"} "${cli_args[@]}" ; echo $? > exitCode ; set -eu) | tee output.txt &
     debug "node processes:"
     debug "$(pgrep -lfa node)"
     sleep 5
@@ -310,8 +439,11 @@ run_a9 () {
             ;;
     esac
 
-    aws s3 cp output.txt "${s3_run_data_path}/worker-log-${worker_id}.txt"
-    echo "log: ${s3_run_data_path}/worker-log-${worker_id}.txt"
+    # TODO: Upload to Storage Blob if on Azure 
+    if [[ "$is_azure" != "yes" ]] ; then
+        aws s3 cp output.txt "${s3_run_data_path}/worker-log-${worker_id}.txt"
+        echo "log: ${s3_run_data_path}/worker-log-${worker_id}.txt"
+    fi
 
     if [[ $CLI_STATUS -eq 0 ]] ; then
         EXIT_CODE=0
@@ -352,12 +484,15 @@ usage: $0 - run worker
 EOF
 }
 
-while getopts "p:a:r:q:i:d:t:h?" OPTION
+while getopts "z:p:a:r:q:i:d:t:h?" OPTION
 do
     case $OPTION in
         h)
             usage
             exit 0
+            ;;
+        z)
+            is_azure="$OPTARG"
             ;;
         p)
             s3_test_data_path="$OPTARG"
@@ -369,6 +504,7 @@ do
             aws_region="$OPTARG"
             ;;
         q)
+            # Can also be AQS queue URL
             sqs_queue_url="$OPTARG"
             ;;
         i)
@@ -399,11 +535,33 @@ if [[ ! $# -eq 0 ]] ; then
     exit
 fi
 
-if [[ -z $s3_test_data_path || -z $cli_args_encoded || -z $aws_region || -z $test_run_id || -z $s3_run_data_base_path ]] ; then
+if [[ -z $s3_test_data_path || -z $cli_args_encoded || -z $test_run_id ]] ; then
     echo "Some required argument(s) not provided, aborting" >&2
     EXIT_CODE=$ERR_ARGS
     exit
 fi
+
+if [[ "$is_azure" = "yes" ]] ; then
+    # Remap for convenience
+    azure_storage_container_name="$s3_test_data_path"
+
+    az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+fi
+
+if [[ "$is_azure" != "yes" ]] ; then
+    taskArn=$(curl -s "$ECS_CONTAINER_METADATA_URI_V4/task" \
+              | jq -r ".TaskARN" \
+              | cut -d "/" -f 3)
+fi
+
+worker_id=${WORKER_ID_OVERRIDE:-$(pwgen -A 12 1)}
+worker_id=${taskArn:-$worker_id}
+# make available to Artillery custom scripts/environment
+export WORKER_ID="$worker_id"
+
+progress "============================"
+progress "Worker starting up, ID = $worker_id, version = ${WORKER_VERSION:-unknown}, leader = $is_leader"
+progress "============================"
 
 cleanup () {
     local sig="$1"
@@ -413,6 +571,17 @@ cleanup () {
 
     if [[ $CLEANING_UP = "no" ]] ; then
         CLEANING_UP="yes"
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            if [[ -z "${AZURE_RETAIN_BLOBS:-""}" ]] ; then
+                # This exits with 0 regardless of whether the pattern matches any
+                # blobs or not so it's OK to run this multiple times
+                az storage blob delete-batch \
+                    --account-name "$AZURE_STORAGE_ACCOUNT" \
+                    -s "$azure_storage_container_name" \
+                    --pattern "tests/$test_run_id/*"
+            fi
+        fi
 
         # Abnormal exit:
         if [[ $CLI_RUNNING = "yes" ]] ; then
@@ -443,18 +612,9 @@ cleanup () {
             sqs_message_body="{\"event\": \"workerError\", \"exitCode\": \"$EXIT_CODE\" }"
         fi
 
-        sqs_message_attributes="{\"testId\": {\"StringValue\": \"${test_run_id}\", \"DataType\": \"String\"}, \"workerId\": {\"StringValue\": \"${worker_id}\", \"DataType\": \"String\"}}"
-
-        >/dev/null aws sqs send-message \
-            --queue-url "${sqs_queue_url}" \
-            --message-body "$sqs_message_body" \
-            --message-attributes "$sqs_message_attributes" \
-            --message-group-id "${test_run_id}" \
-            --message-deduplication-id "$(pwgen -A 32 1)" \
-            --region "$aws_region"
+        send_event "$sqs_message_body"
 
         debug "Message body: $sqs_message_body"
-        debug "Message attributes: $sqs_message_attributes"
         exit $EXIT_CODE
     else
         if [[ ! $sig = "EXIT" ]] ; then
