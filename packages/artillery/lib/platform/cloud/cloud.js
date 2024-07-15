@@ -213,6 +213,7 @@ class ArtilleryCloudPlugin {
     let res;
     let body;
     try {
+      console.log(`WHO AM I ENDPOINT: ${this.whoamiEndpoint}`);
       res = await request.get(this.whoamiEndpoint, {
         headers: this.defaultHeaders,
         throwHttpErrors: false,
