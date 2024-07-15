@@ -21,7 +21,15 @@ class ArtilleryCloudPlugin {
       typeof process.env.WORKER_ID !== 'undefined' &&
       typeof process.env.ARTILLERY_CLOUD_API_KEY !== 'undefined';
 
+    console.log(`isInteractiveUse: ${isInteractiveUse}`);
+    console.log(`enabledInCloudWorker: ${enabledInCloudWorker}`);
+    console.log(`process.env.WORKER_ID: ${process.env.WORKER_ID}`);
+    console.log(
+      `process.env.ARTILLERY_CLOUD_API_KEY: ${process.env.ARTILLERY_CLOUD_API_KEY}`
+    );
+
     if (!isInteractiveUse && !enabledInCloudWorker) {
+      console.log('Artillery Cloud plugin is not enabled');
       return this;
     }
 

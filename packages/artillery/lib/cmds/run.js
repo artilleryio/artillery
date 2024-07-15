@@ -154,6 +154,8 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       try {
         await cloud.init();
       } catch (err) {
+        console.log(`ERROR FROM CLOUD WORKER: ${err.message}`);
+        console.log(err);
         if (err.name === 'CloudAPIKeyMissing') {
           console.error(
             'Error: API key is required to record test results to Artillery Cloud'
