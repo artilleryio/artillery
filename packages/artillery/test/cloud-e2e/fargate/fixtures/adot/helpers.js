@@ -6,16 +6,9 @@ const AWS = require('aws-sdk');
 const xray = new AWS.XRay({ region: 'us-east-1' });
 
 module.exports = {
-  getTestId,
   getDatadogSpans,
   getXRayTraces
 };
-
-function getTestId(outputString) {
-  const regex = /Test run ID: \S+/;
-  const match = outputString.match(regex);
-  return match[0].replace('Test run ID: ', '');
-}
 
 async function getDatadogSpans(apiKey, appKey, testId, expectedTotalSpans) {
   const url = 'https://api.datadoghq.com/api/v2/spans/events/search';

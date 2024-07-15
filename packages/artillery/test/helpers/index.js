@@ -59,6 +59,11 @@ const toCorrectPath = (originalPath) => {
     ? originalPath.split(path.sep).join(path.posix.sep)
     : originalPath;
 };
+function getTestId(outputString) {
+  const regex = /Test run ID: \S+/i;
+  const match = outputString.match(regex);
+  return match[0].replace('Test run ID: ', '');
+}
 
 module.exports = {
   execute,
@@ -68,5 +73,6 @@ module.exports = {
   generateTmpReportPath,
   getTestTags,
   toCorrectPath,
-  getImageArchitecture
+  getImageArchitecture,
+  getTestId
 };
