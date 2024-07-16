@@ -2,6 +2,8 @@ config:
   target: http://asciiart.artillery.io:8080
   plugins:
     ensure: {}
+    metrics-by-endpoint:
+      useDefaultName: false
   phases:
     - duration: 20
       arrivalRate: 1
