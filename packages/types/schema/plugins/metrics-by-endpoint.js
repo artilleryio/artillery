@@ -22,7 +22,13 @@ const MetricsByEndpointPluginConfigSchema = Joi.object({
   metricsNamespace: Joi.string()
     .meta({ title: 'Metrics Namespace' })
     .description('Custom prefix to use for metrics published by this plugin.')
-    .default('plugins.metrics-by-endpoint')
+    .default('plugins.metrics-by-endpoint'),
+  useDefaultName: Joi.boolean()
+    .default(true)
+    .meta({ title: 'Use Default Name' })
+    .description(
+      'Use the url field of the request as the default name if no name is provided (including templated strings).'
+    )
 })
   .unknown(false)
   .meta({ title: 'Metrics by Endpoint Plugin' })
