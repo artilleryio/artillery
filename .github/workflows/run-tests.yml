@@ -31,6 +31,7 @@ jobs:
       matrix:
         node-version: [18.x, 20.x]
         package: ${{fromJson(needs.generate-matrix-with-packages.outputs.matrix)}}
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
