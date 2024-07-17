@@ -15,6 +15,7 @@
   },
   "scripts": {
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
-    "lint-fix": "npm run lint -- --fix"
+    "lint-fix": "npm run lint -- --fix",
+    "test": "echo \"No test specified\" && exit 0"
   }
 }
