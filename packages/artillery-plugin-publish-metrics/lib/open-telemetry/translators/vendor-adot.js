@@ -1,5 +1,8 @@
 'use strict';
 
+const { metrics } = require('@opentelemetry/api');
+const { match } = require('tap');
+
 const ADOTSupportedTraceReporters = ['datadog', 'cloudwatch'];
 const ADOTSupportedMetricReporters = [];
 
@@ -11,7 +14,8 @@ function getADOTRelevantReporterConfigs(publishMetricsConfig) {
       (ADOTSupportedTraceReporters.includes(reporterConfig.type) &&
         reporterConfig.traces) ||
       (ADOTSupportedMetricReporters.includes(reporterConfig.type) &&
-        reporterConfig.metrics)
+        reporterConfig.metrics) ||
+      reporterConfig.containerInsightMetrics
   );
 
   return configs;
@@ -118,6 +122,41 @@ const vendorToCollectorConfigTranslators = {
         receivers: ['otlp'],
         processors: ['batch/trace'],
         exporters: ['awsxray']
+      };
+    }
+    if (config.containerInsightMetrics) {
+      collectorConfig.receivers['awsecscontainermetrics'] = {
+        collection_interval:
+          config.containerInsightMetrics.collectionInterval || '5s'
+      };
+      collectorConfig.exporters['awsemf'] = {};
+      collectorConfig.processors['filter'] = {
+        metrics: {
+          include: {
+            match_type: 'strict',
+            metric_names: config.containerInsightMetrics.metricNames || [
+              'ecs.task.memory.reserved',
+              'ecs.task.memory.utilized',
+              'ecs.task.cpu.reserved',
+              'ecs.task.cpu.utilized',
+              'ecs.task.network.rate.rx',
+              'ecs.task.network.rate.tx',
+              'ecs.task.storage.read_bytes',
+              'ecs.task.storage.write_bytes'
+            ]
+          }
+        }
+      };
+      collectorConfig.processors['batch/metrics'] = {
+        timeout: '2s',
+        send_batch_max_size: 1024,
+        send_batch_size: 200
+      };
+
+      collectorConfig.service.pipelines.metrics = {
+        receivers: ['awsecscontainermetrics'],
+        processors: ['filter', 'batch/metrics'],
+        exporters: ['awsemf']
       };
     }
     return collectorConfig;
