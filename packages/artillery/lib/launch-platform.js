@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const divideWork = require('./dist');
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const { loadPlugins, loadPluginsConfig } = require('./load-plugins');
 
@@ -15,7 +14,6 @@ const _ = require('lodash');
 
 const PlatformLocal = require('./platform/local');
 const PlatformLambda = require('./platform/aws-lambda');
-const STATES = require('./platform/worker-states');
 
 async function createLauncher(script, payload, opts, launcherOpts) {
   launcherOpts = launcherOpts || {
@@ -30,7 +28,7 @@ class Launcher {
     this.payload = payload;
     this.opts = opts;
 
-    this.workers = {};
+    this.exitedWorkersCount = 0;
     this.workerMessageBuffer = [];
 
     this.metricsByPeriod = {}; // individual intermediates by worker
@@ -47,23 +45,9 @@ class Launcher {
     this.periodsReportedFor = [];
 
     if (launcherOpts.platform === 'local') {
-      this.count = this.opts.count || Math.max(1, os.cpus().length - 1);
-      debug('Worker thread count:', this.count);
-    }
-
-    if (launcherOpts.platform === 'local') {
-      this.platform = new PlatformLocal(script, payload, opts);
-    } else {
-      // aws:lambda
+      this.platform = new PlatformLocal(script, payload, opts, launcherOpts);
+    } else if (launcherOpts.platform === 'aws:lambda') {
       this.platform = new PlatformLambda(script, payload, opts, launcherOpts);
-    }
-
-    if (launcherOpts.mode === 'distribute') {
-      this.workerScripts = divideWork(this.script, this.count);
-      this.count = this.workerScripts.length;
-    } else {
-      this.count = this.launcherOpts.count;
-      this.workerScripts = new Array(this.count).fill().map((_) => this.script);
     }
 
     this.phaseStartedEventsSeen = {};
@@ -76,7 +60,7 @@ class Launcher {
 
   async initWorkerEvents(workerEvents) {
     workerEvents.on('workerError', (workerId, message) => {
-      this.workers[workerId].state = STATES.stoppedError;
+      this.exitedWorkersCount++;
 
       const { id, error, level, aggregatable, logs } = message;
       if (aggregatable) {
@@ -149,8 +133,7 @@ class Launcher {
     });
 
     workerEvents.on('done', async (workerId, message) => {
-      this.workers[workerId].state = STATES.completed;
-
+      this.exitedWorkersCount++;
       this.finalReportsByWorker[workerId] = SSMS.deserializeMetrics(
         message.report
       );
@@ -238,13 +221,7 @@ class Launcher {
 
   async handleAllWorkersFinished() {
     const allWorkersDone =
-      Object.keys(this.workers).filter((workerId) => {
-        return (
-          this.workers[workerId].state === STATES.completed ||
-          this.workers[workerId].state === STATES.stoppedError
-        );
-      }).length === this.count;
-
+      this.exitedWorkersCount === this.platform.getDesiredWorkerCount();
     if (allWorkersDone) {
       clearInterval(this.i1);
       clearInterval(this.i2);
@@ -341,11 +318,12 @@ class Launcher {
 
     // Dynamically adjust the duration we're willing to wait for. This matters on SQS where messages are received
     // in batches of 10 and more workers => need to wait longer.
-    const MAX_WAIT_FOR_PERIOD_MS = (Math.ceil(this.count / 10) * 3 + 30) * 1000;
+    const MAX_WAIT_FOR_PERIOD_MS =
+      (Math.ceil(this.platform.getDesiredWorkerCount() / 10) * 3 + 30) * 1000;
 
     debug({
       now: Date.now(),
-      count: this.count,
+      count: this.platform.getDesiredWorkerCount(),
       earliestPeriodAvailable,
       earliest,
       MAX_WAIT_FOR_PERIOD_MS,
@@ -355,7 +333,8 @@ class Launcher {
     });
 
     const allWorkersReportedForPeriod =
-      this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
+      this.metricsByPeriod[earliestPeriodAvailable]?.length ===
+      this.platform.getDesiredWorkerCount();
     const waitedLongEnough =
       Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
 
@@ -418,40 +397,8 @@ class Launcher {
       await this.handleAllWorkersFinished();
     }, 2 * 1000);
 
-    const contextVars = await this.platform.init();
-
-    // TODO: only makes sense for "distribute" / "local"
-    for (const script of this.workerScripts) {
-      const w1 = await this.platform.createWorker();
-
-      this.workers[w1.workerId] = {
-        id: w1.workerId,
-        script,
-        state: STATES.initializing
-      };
-      debug(`worker init ok: ${w1.workerId}`);
-    }
-
     await this.initWorkerEvents(this.platform.events);
-
-    for (const [workerId, w] of Object.entries(this.workers)) {
-      await this.platform.prepareWorker(workerId, {
-        script: w.script,
-        payload: this.payload,
-        options: this.opts
-      });
-      this.workers[workerId].state = STATES.preparing;
-    }
-    debug('workers prepared');
-
-    // the initial context is stringified and copied to the workers
-    const contextVarsString = JSON.stringify(contextVars);
-
-    for (const [workerId, w] of Object.entries(this.workers)) {
-      await this.platform.runWorker(workerId, contextVarsString);
-      this.workers[workerId].state = STATES.initializing;
-    }
-
+    await this.platform.startJob();
     debug('workers running');
   }
 
@@ -473,11 +420,6 @@ class Launcher {
           }
         }
       }
-    }
-
-    // Stop workers
-    for (const [id, w] of Object.entries(this.workers)) {
-      await this.platform.stopWorker(id);
     }
   }
 }
