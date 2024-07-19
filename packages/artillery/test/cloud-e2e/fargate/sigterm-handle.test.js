@@ -32,18 +32,21 @@ beforeEach(async (t) => {
 
 test('Correctly handles early task termination', async (t) => {
   const scenarioPath = `${__dirname}/fixtures/sigterm.yml`;
+  // When SIGTERM is received, Artillery should exit with code 7
+  const expectedExitCode = 7;
   process.env.ARTILLERY_TEST_RUN_ID = generateId('t');
 
   let testRunProcess;
   let exitCode;
   let output;
 
+  // Callback func for both resolution and rejection of the testRunProcess promise below - in both cases the returned object should have the exitCode and stdout properties (if Artillery exits early like it should, the promise will be rejected)
   function setTestRunInfo(info) {
     exitCode = info?.exitCode;
     output = info?.stdout;
   }
-  // We run the test but do not await as we need to stop the Fargate task while the test is running
-  // We use the setTestRunInfo function for both resolve and reject cases of the testRunProcess promise (if Artillery exits early like it should, the promise will be rejected)
+
+  // We trigger the test run but do not await as we need to stop the Fargate task while the test is running
   testRunProcess =
     $`${A9_PATH} run-fargate ${scenarioPath} --output ${t.context.reportFilePath} --record --tags ${baseTags}`.then(
       setTestRunInfo,
@@ -79,25 +82,21 @@ test('Correctly handles early task termination', async (t) => {
     retryNum++;
   }
 
-  const taskIds = JSON.parse(res.body).tasks;
-  taskIds.forEach(async (taskId) => {
+  // Stop the task
+  const taskId = JSON.parse(res.body).tasks?.[0];
+  try {
     console.log('Stopping task: ', taskId);
-    try {
-      const stoppedTask = await ecs
-        .stopTask({ task: taskId, cluster: 'artilleryio-cluster' })
-        .promise();
-    } catch (err) {
-      t.error(`Error calling ecs.stopTask: ${err}`);
-    }
-  });
+    await ecs
+      .stopTask({ task: taskId, cluster: 'artilleryio-cluster' })
+      .promise();
+  } catch (err) {
+    t.error(`Error calling ecs.stopTask: ${err}`);
+  }
 
-  // If testRunProcess takes longer than 60sec to finish, it means the process didn't exit early.
-
+  // We await for testRunProcess but set a 1m timeout to ensure Artillery exited early.
   const timeout = new Promise((resolve) => {
     setTimeout(() => {
-      resolve(
-        new Error('Artillery test run did not exit within 60s as expected.')
-      );
+      resolve(new Error('Artillery did not exit within 60s as expected.'));
     }, 60000);
   });
 
@@ -109,7 +108,11 @@ test('Correctly handles early task termination', async (t) => {
 
   const reportExists = fs.existsSync(t.context.reportFilePath);
   t.ok(exitCode && output, 'Artillery should exit early when task is stopped');
-  t.equal(exitCode, 7, 'Exit code should be 7');
+  t.equal(
+    exitCode,
+    expectedExitCode,
+    `Exit code should be ${expectedExitCode}`
+  );
   t.ok(output.includes('Summary report'), 'Should log the summary report');
   t.ok(reportExists, 'Should generate report file');
 
