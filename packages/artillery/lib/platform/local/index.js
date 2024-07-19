@@ -137,6 +137,10 @@ class PlatformLocal {
     // 'after' hook is executed in the main thread, after all workers
     // are done
     await this.runHook('after', this.contextVars);
+
+    for (const [workerId, w] of Object.entries(this.workers)) {
+      await this.stopWorker(workerId);
+    }
   }
 
   // ********
