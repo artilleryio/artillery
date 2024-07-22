@@ -3,7 +3,7 @@ config:
   plugins:
     ensure: {}
     metrics-by-endpoint:
-      useDefaultName: false
+      groupDynamicURLs: false
   phases:
     - duration: 20
       arrivalRate: 1

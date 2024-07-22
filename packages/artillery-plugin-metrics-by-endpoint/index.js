@@ -11,7 +11,7 @@ let useOnlyRequestNames;
 let stripQueryString;
 let ignoreUnnamedRequests;
 let metricsPrefix;
-let useDefaultName;
+let groupDynamicURLs;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
 function MetricsByEndpoint(script, events) {
@@ -43,8 +43,8 @@ function MetricsByEndpoint(script, events) {
   metricsPrefix =
     script.config.plugins['metrics-by-endpoint'].metricsNamespace ||
     'plugins.metrics-by-endpoint';
-  useDefaultName =
-    script.config.plugins['metrics-by-endpoint'].useDefaultName ?? true;
+  groupDynamicURLs =
+    script.config.plugins['metrics-by-endpoint'].groupDynamicURLs ?? true;
 
   script.config.processor.metricsByEndpoint_afterResponse =
     metricsByEndpoint_afterResponse;
@@ -93,7 +93,7 @@ function getReqName(target, originalRequestUrl, requestName) {
 }
 
 function metricsByEndpoint_beforeRequest(req, userContext, events, done) {
-  if (useDefaultName) {
+  if (groupDynamicURLs) {
     req.defaultName = getReqName(userContext.vars.target, req.url, req.name);
   }
 
@@ -101,9 +101,9 @@ function metricsByEndpoint_beforeRequest(req, userContext, events, done) {
 }
 
 function metricsByEndpoint_onError(err, req, userContext, events, done) {
-  //if useDefaultName is true, then req.defaultName is set in beforeRequest
+  //if groupDynamicURLs is true, then req.defaultName is set in beforeRequest
   //otherwise, we must calculate the reqName here as req.url is the non-templated version
-  const reqName = useDefaultName
+  const reqName = groupDynamicURLs
     ? req.defaultName
     : getReqName(userContext.vars.target, req.url, req.name);
 
@@ -121,9 +121,9 @@ function metricsByEndpoint_onError(err, req, userContext, events, done) {
 }
 
 function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  //if useDefaultName is true, then req.defaultName is set in beforeRequest
+  //if groupDynamicURLs is true, then req.defaultName is set in beforeRequest
   //otherwise, we must calculate the reqName here as req.url is the non-templated version
-  const reqName = useDefaultName
+  const reqName = groupDynamicURLs
     ? req.defaultName
     : getReqName(userContext.vars.target, req.url, req.name);
 

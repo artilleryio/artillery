@@ -79,7 +79,7 @@ test("Reports correctly when 'parallel' is used", async (t) => {
   }
 });
 
-test('Reports correctly when `useDefaultName` is set to true (default)', async (t) => {
+test('Reports correctly when `groupDynamicURLs` is set to true (default)', async (t) => {
   const reportPath =
     os.tmpdir() + '/artillery-plugin-metrics-by-endpoint-use-path-as-name.json';
   const output =
@@ -128,7 +128,7 @@ test('Reports correctly when `useDefaultName` is set to true (default)', async (
   );
 });
 
-test('Reports correctly when `useDefaultName` is explicitly set to false', async (t) => {
+test('Reports correctly when `groupDynamicURLs` is explicitly set to false', async (t) => {
   const reportPath =
     os.tmpdir() +
     '/artillery-plugin-metrics-by-endpoint-use-path-without-name-test.json';
@@ -136,7 +136,7 @@ test('Reports correctly when `useDefaultName` is explicitly set to false', async
     config: {
       plugins: {
         'metrics-by-endpoint': {
-          useDefaultName: false,
+          groupDynamicURLs: false,
           stripQueryString: false
         }
       }

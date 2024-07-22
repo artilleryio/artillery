@@ -23,12 +23,10 @@ const MetricsByEndpointPluginConfigSchema = Joi.object({
     .meta({ title: 'Metrics Namespace' })
     .description('Custom prefix to use for metrics published by this plugin.')
     .default('plugins.metrics-by-endpoint'),
-  useDefaultName: Joi.boolean()
+  groupDynamicURLs: Joi.boolean()
     .default(true)
-    .meta({ title: 'Use Default Name' })
-    .description(
-      'Use the url field of the request as the default name if no name is provided (including templated strings).'
-    )
+    .meta({ title: 'Group Dynamic URLs' })
+    .description('Group metrics by the non-templated request URL.')
 })
   .unknown(false)
   .meta({ title: 'Metrics by Endpoint Plugin' })
