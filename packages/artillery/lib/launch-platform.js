@@ -60,9 +60,12 @@ class Launcher {
 
   async initWorkerEvents(workerEvents) {
     workerEvents.on('workerError', (workerId, message) => {
-      this.exitedWorkersCount++;
-
       const { id, error, level, aggregatable, logs } = message;
+
+      if (level !== 'warn') {
+        this.exitedWorkersCount++;
+      }
+
       if (aggregatable) {
         this.workerMessageBuffer.push(message);
       } else {
