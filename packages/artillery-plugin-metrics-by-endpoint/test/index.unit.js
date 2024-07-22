@@ -33,7 +33,7 @@ const baseScript = {
   ]
 };
 
-test('afterResponse', async (t) => {
+test('beforeRequest and afterResponse', async (t) => {
   let defaultPluginPrefix = 'plugins.metrics-by-endpoint';
   let script;
   let hookArgs;
@@ -85,18 +85,28 @@ test('afterResponse', async (t) => {
     };
   });
 
-  t.test('sets up afterResponse hook correctly', async (t) => {
-    new Plugin(script, hookArgs.events);
+  t.test(
+    'sets up beforeRequest and afterResponse hook correctly',
+    async (t) => {
+      new Plugin(script, hookArgs.events);
 
-    // check afterResponse is in processor
-    t.hasProp(script.config.processor, 'metricsByEndpoint_afterResponse');
+      // check afterResponse is in processor
+      t.hasProp(script.config.processor, 'metricsByEndpoint_afterResponse');
+      t.hasProp(script.config.processor, 'metricsByEndpoint_beforeRequest');
 
-    // check afterResponse is each scenario
-    script.scenarios.forEach((scenario) => {
-      t.equal(scenario.afterResponse.length, 1);
-      t.equal(scenario.afterResponse[0], 'metricsByEndpoint_afterResponse');
-    });
-  });
+      // check afterResponse is each scenario
+      script.scenarios.forEach((scenario) => {
+        t.equal(scenario.afterResponse.length, 1);
+        t.equal(scenario.afterResponse[0], 'metricsByEndpoint_afterResponse');
+      });
+
+      // check beforeRequest is each scenario
+      script.scenarios.forEach((scenario) => {
+        t.equal(scenario.beforeRequest.length, 1);
+        t.equal(scenario.beforeRequest[0], 'metricsByEndpoint_beforeRequest');
+      });
+    }
+  );
 
   t.test('only runs plugin inside workers', async (t) => {
     delete process.env.LOCAL_WORKER_ID;
@@ -110,6 +120,13 @@ test('afterResponse', async (t) => {
     'emits counter and histogram metrics correctly with basic configuration',
     async (t) => {
       new Plugin(script, hookArgs.events);
+
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
 
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
@@ -145,6 +162,13 @@ test('afterResponse', async (t) => {
       hookArgs.req.url = `http://${requestUrlWithoutProtocol}`;
       new Plugin(script, hookArgs.events);
 
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
+
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
         hookArgs.res,
@@ -178,6 +202,13 @@ test('afterResponse', async (t) => {
     hookArgs.req.url = requestWithPort;
     new Plugin(script, hookArgs.events);
 
+    script.config.processor.metricsByEndpoint_beforeRequest(
+      hookArgs.req,
+      hookArgs.userContext,
+      hookArgs.events,
+      hookArgs.done
+    );
+
     script.config.processor.metricsByEndpoint_afterResponse(
       hookArgs.req,
       hookArgs.res,
@@ -206,6 +237,13 @@ test('afterResponse', async (t) => {
 
     const serverTiming = 105;
     hookArgs.res.headers['server-timing'] = `total;dur=${serverTiming}`;
+
+    script.config.processor.metricsByEndpoint_beforeRequest(
+      hookArgs.req,
+      hookArgs.userContext,
+      hookArgs.events,
+      hookArgs.done
+    );
 
     script.config.processor.metricsByEndpoint_afterResponse(
       hookArgs.req,
@@ -236,6 +274,13 @@ test('afterResponse', async (t) => {
 
       const serverTiming = 105;
       hookArgs.res.headers['server-timing'] = `total;potatoes=${serverTiming}`;
+
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
 
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
@@ -269,6 +314,13 @@ test('afterResponse', async (t) => {
     const reqName = 'bunnyRequest123';
     hookArgs.req.name = reqName;
 
+    script.config.processor.metricsByEndpoint_beforeRequest(
+      hookArgs.req,
+      hookArgs.userContext,
+      hookArgs.events,
+      hookArgs.done
+    );
+
     script.config.processor.metricsByEndpoint_afterResponse(
       hookArgs.req,
       hookArgs.res,
@@ -300,6 +352,13 @@ test('afterResponse', async (t) => {
 
       const reqName = 'bunnyRequest123';
       hookArgs.req.name = reqName;
+
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
 
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
@@ -335,6 +394,13 @@ test('afterResponse', async (t) => {
       };
       new Plugin(script, hookArgs.events);
 
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
+
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
         hookArgs.res,
@@ -365,6 +431,13 @@ test('afterResponse', async (t) => {
       };
       new Plugin(script, hookArgs.events);
 
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
+
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
         hookArgs.res,
@@ -386,6 +459,13 @@ test('afterResponse', async (t) => {
       };
       hookArgs.req.name = 'iAmNamed';
       new Plugin(script, hookArgs.events);
+
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
 
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
@@ -420,6 +500,13 @@ test('afterResponse', async (t) => {
       };
       hookArgs.req.url = '/dino?query=stringy&another=one';
       new Plugin(script, hookArgs.events);
+
+      script.config.processor.metricsByEndpoint_beforeRequest(
+        hookArgs.req,
+        hookArgs.userContext,
+        hookArgs.events,
+        hookArgs.done
+      );
 
       script.config.processor.metricsByEndpoint_afterResponse(
         hookArgs.req,
