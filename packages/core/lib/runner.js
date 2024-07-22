@@ -405,18 +405,27 @@ function datafileVariables(script) {
   let result = {};
   if (script.config.payload) {
     _.each(script.config.payload, function (el) {
-      // If data = [] (i.e. the CSV file is empty, or only has headers and
-      // skipHeaders = true), then row could = undefined
-      let row = el.reader(el.data) || [];
-      _.each(el.fields, function (fieldName, j) {
-        result[fieldName] = row[j];
-      });
+      //when loading all the csv, we don't set individual fields
+      if (!el.loadAll) {
+        // If data = [] (i.e. the CSV file is empty, or only has headers and
+        // skipHeaders = true), then row could = undefined
+        let row = el.reader(el.data) || [];
+        _.each(el.fields, function (fieldName, j) {
+          result[fieldName] = row[j];
+        });
+      }
+
       if (typeof el.name !== 'undefined') {
         // Make the entire CSV available
         result[el.name] = el.reader(el.data);
+      } else {
+        console.log(
+          'WARNING: loadAll is set to true but no name is provided for the CSV data'
+        );
       }
     });
   }
+
   return result;
 }
 
