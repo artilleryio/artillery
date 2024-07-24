@@ -22,6 +22,7 @@ let server;
 let overrides;
 
 before(async () => {
+  console.log(`Using Artillery from ${A9}`);
   await $`${A9} -V`;
 });
 
