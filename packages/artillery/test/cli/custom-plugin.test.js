@@ -1,6 +1,7 @@
 const { test, beforeEach, before, afterEach } = require('tap');
 const http = require('http');
 const { $ } = require('zx');
+const { execute } = require('../helpers');
 const path = require('path');
 
 const A9 = process.env.A9 || path.join(__dirname, '../../bin/run');
@@ -20,13 +21,6 @@ function createServer() {
 
 let server;
 let overrides;
-
-before(async () => {
-  console.log(`Using Artillery from ${A9}`);
-  const output = await $`echo ${A9}`;
-  console.log(output);
-  await $`${A9} -V`;
-});
 
 beforeEach(async () => {
   server = createServer().listen(0);
@@ -50,13 +44,27 @@ afterEach(async () => {
 });
 
 test('plugins can attach functions to processor object', async (t) => {
-  const output = await $`ARTILLERY_PLUGIN_PATH=${path.join(
-    __dirname,
-    '../plugins'
-  )} ${A9} run --quiet --overrides ${overrides} ${path.join(
-    __dirname,
-    '../scripts/scenario-with-custom-plugin/custom-plugin.yml'
-  )}`;
+  const [exitCode, output] = await execute(
+    [
+      'run',
+      '--quiet',
+      '--overrides',
+      overrides,
+      path.join(
+        __dirname,
+        '../scripts/scenario-with-custom-plugin/custom-plugin.yml'
+      )
+    ],
+    {
+      env: {
+        ARTILLERY_PLUGIN_PATH: path.join(__dirname, '../plugins')
+      }
+    }
+  );
 
-  t.match(output, /afterResponse hook/, 'plugin should have been called');
+  t.match(
+    output.stdout,
+    /afterResponse hook/,
+    'plugin should have been called'
+  );
 });
