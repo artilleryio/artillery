@@ -27,7 +27,7 @@ before(async () => {
   console.log(`PATH: ${A9}`);
   console.log(`DIRNAME: ${__dirname}`);
   console.log(`PATH TO URL: ${pathToFileURL(__dirname)}`);
-  await $`${A9} -V`;
+  await $`${pathToFileURL(A9)} -V`;
 });
 
 beforeEach(async () => {
