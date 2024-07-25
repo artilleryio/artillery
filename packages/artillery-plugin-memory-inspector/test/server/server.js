@@ -1,4 +1,4 @@
-import http from 'http';
+const http = require('http');
 const port = process.env.TEST_PORT || 4444;
 
 // Array that will keep growing, causing a memory leak

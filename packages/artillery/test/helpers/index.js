@@ -51,6 +51,12 @@ const getImageArchitecture = () => {
   return process.env.HAS_ARM64_BUILD === 'true' ? 'arm64' : 'x86_64';
 };
 
+const toCorrectPath = (originalPath) => {
+  return process.platform === 'win32'
+    ? originalPath.split(path.sep).join(path.posix.sep)
+    : originalPath;
+};
+
 module.exports = {
   execute,
   deleteFile,
@@ -58,5 +64,6 @@ module.exports = {
   returnTmpPath,
   generateTmpReportPath,
   getTestTags,
+  toCorrectPath,
   getImageArchitecture
 };

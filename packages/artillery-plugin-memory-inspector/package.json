@@ -4,7 +4,7 @@
   "description": "Inspect the memory of processes running together with your load tests!",
   "main": "index.js",
   "scripts": {
-    "test": "tap ./test/*.spec.mjs --timeout 300"
+    "test": "tap ./test/*.spec.js --timeout 300"
   },
   "tap": {
     "disable-coverage": true,
@@ -23,6 +23,6 @@
   "devDependencies": {
     "portfinder": "^1.0.32",
     "tap": "^19.0.2",
-    "zx": "^7.2.3"
+    "zx": "^8.1.4"
   }
 }
