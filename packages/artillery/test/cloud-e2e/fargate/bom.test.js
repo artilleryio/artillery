@@ -1,13 +1,17 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
-const { generateTmpReportPath, getTestTags } = require('../../helpers');
+const {
+  generateTmpReportPath,
+  getTestTags,
+  toCorrectPath
+} = require('../../helpers');
 const {
   checkForNegativeValues,
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
 
-const A9_PATH = process.env.A9_PATH || 'artillery';
+const A9_PATH = toCorrectPath(process.env.A9_PATH || 'artillery');
 
 before(async () => {
   await $`${A9_PATH} -V`;
@@ -23,7 +27,9 @@ beforeEach(async (t) => {
 });
 
 test('Run simple-bom', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/simple-bom/simple-bom.yml`;
+  const scenarioPath = toCorrectPath(
+    `${__dirname}/fixtures/simple-bom/simple-bom.yml`
+  );
 
   const output =
     await $`${A9_PATH} run-fargate ${scenarioPath} --environment test --region eu-west-1 --count 51 --tags ${baseTags} --record`;

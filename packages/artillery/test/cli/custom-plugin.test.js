@@ -1,9 +1,12 @@
 const { test, beforeEach, before, afterEach } = require('tap');
-const http = require('http');
 const { $ } = require('zx');
+const http = require('http');
 const path = require('path');
+const { toCorrectPath } = require('../helpers');
 
-const A9 = process.env.A9 || path.join(__dirname, '../../bin/run');
+const A9 = toCorrectPath(
+  process.env.A9 || path.join(__dirname, '../../bin/run')
+);
 
 function createServer() {
   return http.createServer((req, res) => {
@@ -31,9 +34,11 @@ beforeEach(async () => {
     config: {
       phases: [{ duration: 2, arrivalRate: 2 }],
       target: `http://localhost:${server.address().port}`,
-      processor: path.join(
-        __dirname,
-        '../scripts/scenario-with-custom-plugin/processor.js'
+      processor: toCorrectPath(
+        path.join(
+          __dirname,
+          '../scripts/scenario-with-custom-plugin/processor.js'
+        )
       ),
       plugins: {
         httphooks: {}
@@ -47,13 +52,16 @@ afterEach(async () => {
 });
 
 test('plugins can attach functions to processor object', async (t) => {
-  const output = await $`ARTILLERY_PLUGIN_PATH=${path.join(
-    __dirname,
-    '../plugins'
-  )} ${A9} run --quiet --overrides ${overrides} ${path.join(
-    __dirname,
-    '../scripts/scenario-with-custom-plugin/custom-plugin.yml'
-  )}`;
+  const pluginPath = toCorrectPath(path.join(__dirname, '../plugins'));
+  const scenarioPath = toCorrectPath(
+    path.join(
+      __dirname,
+      '../scripts/scenario-with-custom-plugin/custom-plugin.yml'
+    )
+  );
+
+  const output =
+    await $`ARTILLERY_PLUGIN_PATH=${pluginPath} ${A9} run --quiet --overrides ${overrides} ${scenarioPath}`;
 
   t.match(output, /afterResponse hook/, 'plugin should have been called');
 });
