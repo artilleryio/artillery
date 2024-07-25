@@ -61,9 +61,8 @@ afterEach(async () => {
 });
 
 test('plugins can attach functions to processor object', async (t) => {
-  const output = await $`ARTILLERY_PLUGIN_PATH=${path.join(
-    __dirname,
-    '../plugins'
+  const output = await $`ARTILLERY_PLUGIN_PATH=${toCorrectPath(
+    path.join(__dirname, '../plugins')
   )} ${A9} run --quiet --overrides ${overrides} ${toCorrectPath(
     path.join(
       __dirname,
