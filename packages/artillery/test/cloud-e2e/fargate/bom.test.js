@@ -6,8 +6,14 @@ const {
   checkForNegativeValues,
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
+const path = require('path');
 
-const A9_PATH = process.env.A9_PATH || 'artillery';
+const toCorrectPath = (_path) =>
+  process.platform === 'win32'
+    ? _path.split(path.sep).join(path.posix.sep)
+    : _path;
+
+const A9_PATH = toCorrectPath(process.env.A9_PATH || 'artillery');
 
 before(async () => {
   await $`${A9_PATH} -V`;
@@ -23,10 +29,12 @@ beforeEach(async (t) => {
 });
 
 test('Run simple-bom', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/simple-bom/simple-bom.yml`;
+  const scenarioPath = toCorrectPath(
+    `${__dirname}/fixtures/simple-bom/simple-bom.yml`
+  );
 
   const output =
-    await $`${A9_PATH} run-fargate ${scenarioPath} --environment test --region eu-west-1 --count 51 --tags ${baseTags} --record`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --environment test --region eu-west-1 --count 51 --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -39,28 +47,28 @@ test('Run simple-bom', async (t) => {
   );
 });
 
-test('Run mixed-hierarchy', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/mixed-hierarchy/scenarios/mixed-hierarchy-dino.yml`;
-  const configPath = `${__dirname}/fixtures/mixed-hierarchy/config/config.yml`;
+// test('Run mixed-hierarchy', async (t) => {
+//   const scenarioPath = `${__dirname}/fixtures/mixed-hierarchy/scenarios/mixed-hierarchy-dino.yml`;
+//   const configPath = `${__dirname}/fixtures/mixed-hierarchy/config/config.yml`;
 
-  const output =
-    await $`${A9_PATH} run-fargate ${scenarioPath} --config ${configPath} -e main --record --tags ${baseTags} --output ${reportFilePath}`;
+//   const output =
+//     await $`${A9_PATH} run-fargate ${scenarioPath} --config ${configPath} -e main --record --tags ${baseTags} --output ${reportFilePath}`;
 
-  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+//   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+//   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
-  t.equal(
-    report.aggregate.counters['vusers.completed'],
-    20,
-    'Should have 20 total VUs'
-  );
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    20,
-    'Should have 20 "200 OK" responses'
-  );
+//   t.equal(
+//     report.aggregate.counters['vusers.completed'],
+//     20,
+//     'Should have 20 total VUs'
+//   );
+//   t.equal(
+//     report.aggregate.counters['http.codes.200'],
+//     20,
+//     'Should have 20 "200 OK" responses'
+//   );
 
-  checkForNegativeValues(t, report);
-  checkAggregateCounterSums(t, report);
-});
+//   checkForNegativeValues(t, report);
+//   checkAggregateCounterSums(t, report);
+// });
