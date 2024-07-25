@@ -1,13 +1,13 @@
-import portfinder from 'portfinder';
-import { spawn } from 'child_process';
+const portfinder = require('portfinder');
+const { spawn } = require('child_process');
 
-export const startTestServer = async () => {
+const startTestServer = async () => {
   const port = await portfinder.getPortPromise({
     port: 4444,
     stopPort: 4600
   });
 
-  const childProcess = spawn(`node`, ['./test/server/server.mjs'], {
+  const childProcess = spawn('node', ['./test/server/server.js'], {
     env: {
       ...process.env,
       TEST_PORT: `${port}`
@@ -20,4 +20,8 @@ export const startTestServer = async () => {
     currentPid: childProcess.pid,
     childProcess
   };
+};
+
+module.exports = {
+  startTestServer
 };

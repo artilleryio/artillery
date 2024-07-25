@@ -4,7 +4,7 @@
   "description": "Inspect the memory of processes running together with your load tests!",
   "main": "index.js",
   "scripts": {
-    "test": "tap ./test/*.spec.mjs --timeout 300"
+    "test": "tap ./test/*.spec.js --timeout 300"
   },
   "tap": {
     "disable-coverage": true,

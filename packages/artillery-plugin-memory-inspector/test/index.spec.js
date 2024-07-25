@@ -1,25 +1,27 @@
-import fs from 'fs';
-import { startTestServer } from './util.mjs';
-import { test, afterEach } from 'tap';
-import { $ } from 'zx';
+const fs = require('fs');
+const { startTestServer } = require('./util.js');
+const { test, afterEach } = require('tap');
+const { $ } = require('zx');
 
 let childProcess;
 
 afterEach(async () => {
   //cleanup output file after each test
   fs.unlinkSync('./test/output.json');
-  childProcess.kill()
+  childProcess.kill();
 });
 
 test('cpu and memory metrics display in the aggregate report with the correct name and unit', async (t) => {
   //Arrange: Test Server and Plugin overrides
   const testServer = await startTestServer();
-  childProcess = testServer.childProcess
+  childProcess = testServer.childProcess;
 
   const override = JSON.stringify({
     config: {
       plugins: {
-        'memory-inspector': [{ pid: testServer.currentPid, name: 'express-example', unit: 'kb' }]
+        'memory-inspector': [
+          { pid: testServer.currentPid, name: 'express-example', unit: 'kb' }
+        ]
       }
     }
   });
@@ -66,15 +68,20 @@ test('cpu and memory metrics display in the aggregate report with the correct na
     "Aggregate Histograms doesn't have Memory metric"
   );
 
-    //assert that kb unit is used
-    for (const [metric, value] of Object.entries(report.aggregate.summaries['express-example.memory'])) {
-      if (metric == 'count') {
-        continue;
-      }
-
-      const lengthOfValue = Math.round(value).toString().length;
-      t.ok(lengthOfValue > 3 && lengthOfValue <= 6, `Length of value ${value} should be in KB (more than mb unit, less than byte unit)`)
+  //assert that kb unit is used
+  for (const [metric, value] of Object.entries(
+    report.aggregate.summaries['express-example.memory']
+  )) {
+    if (metric == 'count') {
+      continue;
     }
+
+    const lengthOfValue = Math.round(value).toString().length;
+    t.ok(
+      lengthOfValue > 3 && lengthOfValue <= 6,
+      `Length of value ${value} should be in KB (more than mb unit, less than byte unit)`
+    );
+  }
 });
 
 test('cpu and memory metrics display in the aggregate report with a default name and unit when no name is given', async (t) => {
@@ -124,13 +131,18 @@ test('cpu and memory metrics display in the aggregate report with a default name
   );
 
   //assert that mb unit is used by default
-  for (const [metric, value] of Object.entries(report.aggregate.summaries[`process_${testServer.currentPid}.memory`])) {
+  for (const [metric, value] of Object.entries(
+    report.aggregate.summaries[`process_${testServer.currentPid}.memory`]
+  )) {
     if (metric == 'count') {
       continue;
     }
 
     const lengthOfValue = Math.round(value).toString().length;
-    t.ok(lengthOfValue <= 3, `Length of value ${value} in MB should be less than 4`)
+    t.ok(
+      lengthOfValue <= 3,
+      `Length of value ${value} in MB should be less than 4`
+    );
   }
 });
 
@@ -142,7 +154,9 @@ test('cpu and memory metrics also display in the aggregate report for artillery 
   const override = JSON.stringify({
     config: {
       plugins: {
-        'memory-inspector': [{ pid: testServer.currentPid, name: 'express-example' }]
+        'memory-inspector': [
+          { pid: testServer.currentPid, name: 'express-example' }
+        ]
       }
     }
   });
@@ -223,13 +237,18 @@ test('cpu and memory metrics also display in the aggregate report for artillery 
     "Aggregate Histograms doesn't have Artillery Heap Total metric"
   );
 
-   //assert that mb unit is used by default
-   for (const [metric, value] of Object.entries(report.aggregate.summaries['artillery_internal.memory'])) {
+  //assert that mb unit is used by default
+  for (const [metric, value] of Object.entries(
+    report.aggregate.summaries['artillery_internal.memory']
+  )) {
     if (metric == 'count') {
       continue;
     }
 
     const lengthOfValue = Math.round(value).toString().length;
-    t.ok(lengthOfValue <= 3, `Length of value ${value} in MB should be less than 4`)
+    t.ok(
+      lengthOfValue <= 3,
+      `Length of value ${value} in MB should be less than 4`
+    );
   }
 });
