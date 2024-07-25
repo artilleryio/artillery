@@ -4,8 +4,16 @@ const { $ } = require('zx');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const A9 =
-  process.env.A9 || path.normalize(path.join(__dirname, '../../bin/run'));
+const toCorrectPath = (_path) =>
+  process.platform === 'win32'
+    ? _path.split(path.sep).join(path.posix.sep)
+    : _path;
+
+const A9 = toCorrectPath(
+  process.env.A9 || path.join(__dirname, '../../bin/run')
+);
+
+// const ACTUAL_A9 = process.platform === 'win32' ? `${toPOSIXPath(A9)}` : A9;
 
 function createServer() {
   return http.createServer((req, res) => {
@@ -25,9 +33,8 @@ let overrides;
 
 before(async () => {
   console.log(`PATH: ${A9}`);
-  console.log(`DIRNAME: ${__dirname}`);
-  console.log(`PATH TO URL: ${pathToFileURL(__dirname)}`);
-  await $`${pathToFileURL(A9)} -V`;
+
+  await $`${A9} -V`;
 });
 
 beforeEach(async () => {
