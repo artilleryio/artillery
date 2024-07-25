@@ -43,9 +43,11 @@ beforeEach(async () => {
     config: {
       phases: [{ duration: 2, arrivalRate: 2 }],
       target: `http://localhost:${server.address().port}`,
-      processor: path.join(
-        __dirname,
-        '../scripts/scenario-with-custom-plugin/processor.js'
+      processor: toCorrectPath(
+        path.join(
+          __dirname,
+          '../scripts/scenario-with-custom-plugin/processor.js'
+        )
       ),
       plugins: {
         httphooks: {}
@@ -62,9 +64,11 @@ test('plugins can attach functions to processor object', async (t) => {
   const output = await $`ARTILLERY_PLUGIN_PATH=${path.join(
     __dirname,
     '../plugins'
-  )} ${A9} run --quiet --overrides ${overrides} ${path.join(
-    __dirname,
-    '../scripts/scenario-with-custom-plugin/custom-plugin.yml'
+  )} ${A9} run --quiet --overrides ${overrides} ${toCorrectPath(
+    path.join(
+      __dirname,
+      '../scripts/scenario-with-custom-plugin/custom-plugin.yml'
+    )
   )}`;
 
   t.match(output, /afterResponse hook/, 'plugin should have been called');
