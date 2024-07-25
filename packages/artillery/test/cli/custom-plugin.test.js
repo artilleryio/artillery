@@ -4,7 +4,8 @@ const { $ } = require('zx');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const A9 = process.env.A9 || path.join(__dirname, '../../bin/run');
+const A9 =
+  process.env.A9 || path.normalize(path.join(__dirname, '../../bin/run'));
 
 function createServer() {
   return http.createServer((req, res) => {
