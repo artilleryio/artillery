@@ -2,6 +2,7 @@ const { test, beforeEach, before, afterEach } = require('tap');
 const http = require('http');
 const { $ } = require('zx');
 const path = require('path');
+const { pathToFileURL } = require('url');
 
 const A9 = process.env.A9 || path.join(__dirname, '../../bin/run');
 
@@ -22,6 +23,9 @@ let server;
 let overrides;
 
 before(async () => {
+  console.log(`PATH: ${A9}`);
+  console.log(`DIRNAME: ${__dirname}`);
+  console.log(`PATH TO URL: ${pathToFileURL(__dirname)}`);
   await $`${A9} -V`;
 });
 
