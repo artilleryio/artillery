@@ -23,6 +23,6 @@
   "devDependencies": {
     "portfinder": "^1.0.32",
     "tap": "^19.0.2",
-    "zx": "^7.2.3"
+    "zx": "^8.1.4"
   }
 }
