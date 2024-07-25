@@ -376,13 +376,25 @@ class PlatformLambda {
     });
   }
 
+  getDesiredWorkerCount() {
+    return this.platformOpts.count;
+  }
+
+  async startJob() {
+    await this.init();
+
+    for (let i = 0; i < this.platformOpts.count; i++) {
+      const { workerId } = await this.createWorker();
+      this.workers[workerId] = { id: workerId };
+      await this.runWorker(workerId);
+    }
+  }
+
   async createWorker() {
     const workerId = randomUUID();
 
     return { workerId };
   }
-
-  async prepareWorker(workerId) {}
 
   async runWorker(workerId) {
     const lambda = new AWS.Lambda({
