@@ -38,7 +38,9 @@ tap.test('Run simple-bom @windows', async (t) => {
   );
 
   const output =
-    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} -e test --tags ${tags} --output ${reportFilePath} --count 51 --record`;
+    await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} -e test --tags ${tags} --output ${toCorrectPath(
+      reportFilePath
+    )} --count 51 --record`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 

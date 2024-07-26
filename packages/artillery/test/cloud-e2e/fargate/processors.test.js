@@ -32,7 +32,9 @@ test('Run with typescript processor and external package @windows', async (t) =>
   );
 
   const output =
-    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags},typescript:true`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${toCorrectPath(
+      reportFilePath
+    )} --record --tags ${baseTags},typescript:true`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -59,11 +61,15 @@ test('Run a test with an ESM processor @windows', async (t) => {
   );
 
   const output =
-    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags}`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${toCorrectPath(
+      reportFilePath
+    )} --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI exit code should be 0');
 
-  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+  const report = JSON.parse(
+    fs.readFileSync(toCorrectPath(reportFilePath), 'utf8')
+  );
   t.equal(
     report.aggregate.counters['http.codes.200'],
     10,
