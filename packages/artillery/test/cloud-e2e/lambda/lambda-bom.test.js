@@ -32,7 +32,7 @@ tap.beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-tap.test('Run simple-bom', async (t) => {
+tap.test('Run simple-bom @windows', async (t) => {
   const scenarioPath = toCorrectPath(
     `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`
   );

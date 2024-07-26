@@ -28,7 +28,7 @@ beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-test('Run simple-bom', async (t) => {
+test('Run simple-bom @windows', async (t) => {
   const scenarioPath = toCorrectPath(
     `${__dirname}/fixtures/simple-bom/simple-bom.yml`
   );

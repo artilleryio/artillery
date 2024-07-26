@@ -26,7 +26,7 @@ beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-test('Run with typescript processor and external package', async (t) => {
+test('Run with typescript processor and external package @windows', async (t) => {
   const scenarioPath = toCorrectPath(
     `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`
   );
@@ -52,7 +52,7 @@ test('Run with typescript processor and external package', async (t) => {
   checkAggregateCounterSums(t, report);
 });
 
-test('Run a test with an ESM processor', async (t) => {
+test('Run a test with an ESM processor @windows', async (t) => {
   // The main thing we're checking here is that ESM + dependencies get bundled correctly by BOM
   const scenarioPath = toCorrectPath(
     path.resolve(`${__dirname}/../../scripts/scenario-async-esm-hooks/test.yml`)
