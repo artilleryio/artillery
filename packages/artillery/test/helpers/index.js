@@ -43,8 +43,11 @@ function getTestTags(additionalTags) {
   const actorTag = `actor:${process.env.GITHUB_ACTOR || 'localhost'}`;
   const repoTag = `repo:${process.env.GITHUB_REPO || 'artilleryio/artillery'}`;
   const ciTag = `ci:${process.env.GITHUB_ACTIONS ? 'true' : 'false'}`;
+  const platformTag = `plat:${process.platform}`;
 
-  return `${repoTag},${actorTag},${ciTag},${additionalTags.join(',')}`;
+  return `${repoTag},${actorTag},${ciTag},${platformTag},${additionalTags.join(
+    ','
+  )}`;
 }
 
 const getImageArchitecture = () => {
