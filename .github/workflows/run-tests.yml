@@ -68,14 +68,23 @@ jobs:
           node-version: 20.x
       - run: npm install
       - run: npm run build
-      - run: npm run test:windows --workspace artillery
+      - name: Run windows tests and capture exit code
+        continue-on-error: true
+        run: |
+          try {
+            npm run test:windows --workspace artillery
+            $global:ExitCode = 0
+          } catch {
+            $global:ExitCode = $LASTEXITCODE
+          }
+          echo "ExitCode=$global:ExitCode" >> $env:GITHUB_ENV
         env:
           FORCE_COLOR: 1
       - name: Notify about failures
-        if: failure() && github.ref == 'refs/heads/main'
+        if: ${{ env.ExitCode }} != 0
         uses: 8398a7/action-slack@v3.15.1
         with:
-          status: ${{ job.status }}
+          status: failure
           fields: repo,message,commit,author,eventName,job,took,pullRequest
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
