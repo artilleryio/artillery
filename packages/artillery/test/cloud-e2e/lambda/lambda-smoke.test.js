@@ -4,7 +4,8 @@ const { $ } = require('zx');
 const {
   getTestTags,
   generateTmpReportPath,
-  getImageArchitecture
+  getImageArchitecture,
+  toCorrectPath
 } = require('../../helpers');
 const {
   checkForNegativeValues,
@@ -57,12 +58,16 @@ tap.test('Run a test on AWS Lambda using containers', async (t) => {
 });
 
 tap.test(
-  'Run in Lambda container with typescript processor and external package',
+  'Run in Lambda container with typescript processor and external package @windows',
   async (t) => {
-    const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
+    const scenarioPath = toCorrectPath(
+      `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`
+    );
 
     const output =
-      await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} --record --output ${reportFilePath} --tags ${tags},typescript:true`;
+      await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} --record --output ${toCorrectPath(
+        reportFilePath
+      )} --tags ${tags},typescript:true`;
 
     t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 

@@ -2,7 +2,11 @@ const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
 const path = require('path');
-const { generateTmpReportPath, getTestTags } = require('../../helpers');
+const {
+  generateTmpReportPath,
+  getTestTags,
+  toCorrectPath
+} = require('../../helpers');
 const {
   checkForNegativeValues,
   checkAggregateCounterSums
@@ -21,11 +25,15 @@ beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-test('Run with typescript processor and external package', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
+test('Run with typescript processor and external package @windows', async (t) => {
+  const scenarioPath = toCorrectPath(
+    `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`
+  );
 
   const output =
-    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags},typescript:true`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${toCorrectPath(
+      reportFilePath
+    )} --record --tags ${baseTags},typescript:true`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 
@@ -45,14 +53,16 @@ test('Run with typescript processor and external package', async (t) => {
   checkAggregateCounterSums(t, report);
 });
 
-test('Run a test with an ESM processor', async (t) => {
+test('Run a test with an ESM processor @windows', async (t) => {
   // The main thing we're checking here is that ESM + dependencies get bundled correctly by BOM
-  const scenarioPath = path.resolve(
-    `${__dirname}/../../scripts/scenario-async-esm-hooks/test.yml`
+  const scenarioPath = toCorrectPath(
+    path.resolve(`${__dirname}/../../scripts/scenario-async-esm-hooks/test.yml`)
   );
 
   const output =
-    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags}`;
+    await $`${A9_PATH} run-fargate ${scenarioPath} --output ${toCorrectPath(
+      reportFilePath
+    )} --record --tags ${baseTags}`;
 
   t.equal(output.exitCode, 0, 'CLI exit code should be 0');
 

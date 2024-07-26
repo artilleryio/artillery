@@ -4,7 +4,8 @@ const { $ } = require('zx');
 const {
   getTestTags,
   generateTmpReportPath,
-  getImageArchitecture
+  getImageArchitecture,
+  toCorrectPath
 } = require('../../helpers');
 const {
   checkForNegativeValues,
@@ -26,8 +27,10 @@ tap.beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-tap.test('Run simple-bom', async (t) => {
-  const scenarioPath = `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`;
+tap.test('Run simple-bom @windows', async (t) => {
+  const scenarioPath = toCorrectPath(
+    `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`
+  );
 
   const output =
     await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} -e test --tags ${tags} --output ${reportFilePath} --count 51 --record`;
