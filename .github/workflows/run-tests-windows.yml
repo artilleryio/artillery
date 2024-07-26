@@ -33,8 +33,13 @@ jobs:
       - name: Run windows tests and capture exit code
         continue-on-error: true
         run: |
-          npm run test:windows --workspace artillery || set ERRORLEVEL=%ERRORLEVEL%
-          echo ExitCode=%ERRORLEVEL% >> $env:GITHUB_ENV
+          try {
+            npm run test:aws:windows --workspace artillery
+            $global:ExitCode = 0
+          } catch {
+            $global:ExitCode = $LASTEXITCODE
+          }
+          echo "ExitCode=$global:ExitCode" >> $env:GITHUB_ENV
       # - name: Run AWS windows tests
       #   run: npm run test:aws:windows --workspace artillery
       #   env:
