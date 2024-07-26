@@ -44,8 +44,10 @@ jobs:
       #     GITHUB_REPO: ${{ github.repository }}
       #     GITHUB_ACTOR: ${{ github.actor }}
       #     ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha }}
+      - name: Echo exit code
+        run: echo ${{ env.ExitCode }}
       - name: Notify about failures
-        if: env.ExitCode != 0
+        if: ${{ env.ExitCode }} != 0
         uses: 8398a7/action-slack@v3.15.1
         with:
           status: failure
