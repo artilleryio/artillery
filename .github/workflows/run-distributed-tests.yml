@@ -102,3 +102,53 @@ jobs:
       - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
         env:
           FORCE_COLOR: 1
+  
+  run-tests-windows:
+    needs: generate-test-matrix
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+      GITHUB_REPO: ${{ github.repository }}
+      GITHUB_ACTOR: ${{ github.actor }}
+      HAS_ARM64_BUILD: ${{ inputs.HAS_ARM64_BUILD }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.COMMIT_SHA || null }} # in a PR we make a collaborator check, otherwise this would override pull_request_target
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - run: .github/workflows/scripts/npm-command-retry.sh install
+      - run: npm run build
+      - name: Install Specific Artillery Version if needed
+        if: ${{ inputs.ARTILLERY_VERSION_OVERRIDE || false }}
+        run: mkdir __artillery__ && cd __artillery__ && npm init -y && ../.github/workflows/scripts/npm-command-retry.sh install artillery@${{ inputs.ARTILLERY_VERSION_OVERRIDE }}
+      - name: Set A9_PATH
+        if: ${{ inputs.ARTILLERY_VERSION_OVERRIDE || false }}
+        run: echo "A9_PATH=${{ github.workspace }}/__artillery__/node_modules/.bin/artillery" >> $GITHUB_ENV
+      - name: Set ECR Image Version if needed
+        if: ${{ inputs.COMMIT_SHA }}
+        run: |
+          echo "ECR_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
+          echo "LAMBDA_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
+      - run: npm run test:aws:windows --workspace artillery
+        env:
+          FORCE_COLOR: 1

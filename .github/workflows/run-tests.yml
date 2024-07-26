@@ -51,3 +51,40 @@ jobs:
           fields: repo,message,commit,author,eventName,job,took,pullRequest
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  
+  test-windows:
+    timeout-minutes: 60
+    runs-on: windows-latest
+    needs: generate-matrix-with-packages
+    continue-on-error: true
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+      - run: npm install
+      - run: npm run build
+      - name: Run windows tests and capture exit code
+        continue-on-error: true
+        run: |
+          try {
+            npm run test:windows --workspace artillery
+            $global:ExitCode = 0
+          } catch {
+            $global:ExitCode = $LASTEXITCODE
+          }
+          echo "ExitCode=$global:ExitCode" >> $env:GITHUB_ENV
+        env:
+          FORCE_COLOR: 1
+      - name: Notify about failures
+        if: ${{ env.ExitCode }} != 0
+        uses: 8398a7/action-slack@v3.15.1
+        with:
+          status: failure
+          fields: repo,message,commit,author,eventName,job,took,pullRequest
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
