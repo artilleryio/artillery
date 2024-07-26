@@ -49,7 +49,7 @@
     "test:windows": "tap --timeout=420 test/cli/custom-plugin.test.js",
     "test:aws": "tap --timeout=4200 test/cloud-e2e/**/*.test.js",
     "test:aws:ci": "tap --timeout=4200",
-    "test:aws:windows": "tap --timeout=420 test/cloud-e2e/fargate/*.test.js --grep \"Run simple-bom\"",
+    "test:aws:windows": "tap --timeout=420 test/cloud-e2e/**/*.test.js --grep \"@windows\"",
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix"
   },

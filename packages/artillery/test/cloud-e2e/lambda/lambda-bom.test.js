@@ -10,10 +10,16 @@ const {
   checkForNegativeValues,
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
+const path = require('path');
 
 const tags = getTestTags(['type:acceptance']);
 
-const A9_PATH = process.env.A9_PATH || 'artillery';
+const toCorrectPath = (_path) =>
+  process.platform === 'win32'
+    ? _path.split(path.sep).join(path.posix.sep)
+    : _path;
+
+const A9_PATH = toCorrectPath(process.env.A9_PATH || 'artillery');
 const ARCHITECTURE = getImageArchitecture();
 
 tap.before(async () => {
@@ -27,7 +33,9 @@ tap.beforeEach(async (t) => {
 });
 
 tap.test('Run simple-bom', async (t) => {
-  const scenarioPath = `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`;
+  const scenarioPath = toCorrectPath(
+    `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`
+  );
 
   const output =
     await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} -e test --tags ${tags} --output ${reportFilePath} --count 51 --record`;

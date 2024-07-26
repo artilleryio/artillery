@@ -10,8 +10,13 @@ const {
   checkForNegativeValues,
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
+const path = require('path');
 
 const tags = getTestTags(['type:acceptance']);
+const toCorrectPath = (_path) =>
+  process.platform === 'win32'
+    ? _path.split(path.sep).join(path.posix.sep)
+    : _path;
 
 let reportFilePath;
 tap.beforeEach(async (t) => {
@@ -19,7 +24,7 @@ tap.beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-const A9_PATH = process.env.A9_PATH || 'artillery';
+const A9_PATH = toCorrectPath(process.env.A9_PATH || 'artillery');
 const ARCHITECTURE = getImageArchitecture();
 
 tap.before(async () => {
@@ -59,7 +64,9 @@ tap.test('Run a test on AWS Lambda using containers', async (t) => {
 tap.test(
   'Run in Lambda container with typescript processor and external package',
   async (t) => {
-    const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
+    const scenarioPath = toCorrectPath(
+      `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`
+    );
 
     const output =
       await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} --record --output ${reportFilePath} --tags ${tags},typescript:true`;

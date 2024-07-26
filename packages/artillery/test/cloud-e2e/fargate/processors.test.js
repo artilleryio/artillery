@@ -8,7 +8,12 @@ const {
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
 
-const A9_PATH = process.env.A9_PATH || 'artillery';
+const toCorrectPath = (_path) =>
+  process.platform === 'win32'
+    ? _path.split(path.sep).join(path.posix.sep)
+    : _path;
+
+const A9_PATH = toCorrectPath(process.env.A9_PATH || 'artillery');
 
 before(async () => {
   await $`${A9_PATH} -V`;
@@ -22,7 +27,9 @@ beforeEach(async (t) => {
 });
 
 test('Run with typescript processor and external package', async (t) => {
-  const scenarioPath = `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`;
+  const scenarioPath = toCorrectPath(
+    `${__dirname}/fixtures/ts-external-pkg/with-external-foreign-pkg.yml`
+  );
 
   const output =
     await $`${A9_PATH} run-fargate ${scenarioPath} --output ${reportFilePath} --record --tags ${baseTags},typescript:true`;
@@ -47,8 +54,8 @@ test('Run with typescript processor and external package', async (t) => {
 
 test('Run a test with an ESM processor', async (t) => {
   // The main thing we're checking here is that ESM + dependencies get bundled correctly by BOM
-  const scenarioPath = path.resolve(
-    `${__dirname}/../../scripts/scenario-async-esm-hooks/test.yml`
+  const scenarioPath = toCorrectPath(
+    path.resolve(`${__dirname}/../../scripts/scenario-async-esm-hooks/test.yml`)
   );
 
   const output =
