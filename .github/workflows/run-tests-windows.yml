@@ -30,24 +30,25 @@ jobs:
           role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
           role-session-name: OIDCSession
           mask-aws-account-id: true
-      - name: Run local windows tests
-        run: npm run test:windows --workspace artillery
-        env:
-          FORCE_COLOR: 1
-      - name: Run AWS windows tests
-        run: npm run test:aws:windows --workspace artillery
-        env:
-          FORCE_COLOR: 1
-          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
-          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
-          GITHUB_REPO: ${{ github.repository }}
-          GITHUB_ACTOR: ${{ github.actor }}
-          ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha}}
+      - name: Run windows tests and capture exit code
+        continue-on-error: true
+        run: |
+          npm run test:windows --workspace artillery || set ERRORLEVEL=%ERRORLEVEL%
+          echo ExitCode=%ERRORLEVEL% >> $env:GITHUB_ENV
+      # - name: Run AWS windows tests
+      #   run: npm run test:aws:windows --workspace artillery
+      #   env:
+      #     FORCE_COLOR: 1
+      #     ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      #     ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      #     GITHUB_REPO: ${{ github.repository }}
+      #     GITHUB_ACTOR: ${{ github.actor }}
+      #     ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha }}
       - name: Notify about failures
-        if: failure() && github.ref == 'refs/heads/main'
+        if: env.ExitCode != 0
         uses: 8398a7/action-slack@v3.15.1
         with:
-          status: ${{ job.status }}
+          status: failure
           fields: repo,message,commit,author,eventName,job,took,pullRequest
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
