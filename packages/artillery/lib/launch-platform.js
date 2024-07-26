@@ -14,13 +14,22 @@ const _ = require('lodash');
 
 const PlatformLocal = require('./platform/local');
 const PlatformLambda = require('./platform/aws-lambda');
+const PlatformAzureACI = require('./platform/az/aci');
 
 async function createLauncher(script, payload, opts, launcherOpts) {
   launcherOpts = launcherOpts || {
     platform: 'local',
     mode: 'distribute'
   };
-  return new Launcher(script, payload, opts, launcherOpts);
+  let l;
+  try {
+    l = new Launcher(script, payload, opts, launcherOpts);
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+
+  return l;
 }
 class Launcher {
   constructor(script, payload, opts, launcherOpts) {
@@ -48,6 +57,10 @@ class Launcher {
       this.platform = new PlatformLocal(script, payload, opts, launcherOpts);
     } else if (launcherOpts.platform === 'aws:lambda') {
       this.platform = new PlatformLambda(script, payload, opts, launcherOpts);
+    } else if (launcherOpts.platform === 'az:aci') {
+      this.platform = new PlatformAzureACI(script, payload, opts, launcherOpts);
+    } else {
+      throw new Error('Unknown platform: ' + launcherOpts.platform);
     }
 
     this.phaseStartedEventsSeen = {};

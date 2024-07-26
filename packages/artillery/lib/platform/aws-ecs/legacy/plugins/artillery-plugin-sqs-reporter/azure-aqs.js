@@ -1,5 +1,7 @@
 // Copyright (c) Artillery Software Inc.
 // SPDX-License-Identifier: BUSL-1.1
+//
+// Non-evaluation use of Artillery on Azure requires a commercial license
 
 const { QueueClient } = require('@azure/storage-queue');
 const { DefaultAzureCredential } = require('@azure/identity');
