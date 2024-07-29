@@ -18,6 +18,7 @@ const isIdlePhase = require('./is-idle-phase');
 const createReader = require('./readers');
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const wl = require('./weighted-pick');
+const { pathToFileURL } = require('url');
 
 const Engines = {
   http: require('./engine_http'),
@@ -86,7 +87,9 @@ async function loadProcessor(script, options) {
     );
 
     if (processorPath.endsWith('.mjs')) {
-      const exports = await import(processorPath);
+      const fileUrl = pathToFileURL(processorPath);
+      const exports = await import(fileUrl.href);
+
       script.config.processor = Object.assign(
         {},
         script.config.processor,
