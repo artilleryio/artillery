@@ -1,0 +1,10 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - duration: 1
+      arrivalRate: 1
+scenarios:
+  - name: load homepage
+    flow:
+      - get:
+          url: "/dino"

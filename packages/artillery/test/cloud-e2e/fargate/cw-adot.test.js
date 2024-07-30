@@ -6,9 +6,10 @@ const fs = require('fs');
 const {
   generateTmpReportPath,
   deleteFile,
-  getTestTags
+  getTestTags,
+  getTestId
 } = require('../../helpers');
-const { getTestId, getXRayTraces } = require('./fixtures/adot/helpers.js');
+const { getXRayTraces } = require('./fixtures/adot/helpers.js');
 const {
   checkForNegativeValues,
   checkAggregateCounterSums

@@ -6,13 +6,14 @@ const fs = require('fs');
 const {
   generateTmpReportPath,
   deleteFile,
-  getTestTags
+  getTestTags,
+  getTestId
 } = require('../../helpers');
 const {
   checkForNegativeValues,
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
-const { getDatadogSpans, getTestId } = require('./fixtures/adot/helpers.js');
+const { getDatadogSpans } = require('./fixtures/adot/helpers.js');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 //NOTE: This test reports to Artillery Dashboard to dogfood and improve visibility
