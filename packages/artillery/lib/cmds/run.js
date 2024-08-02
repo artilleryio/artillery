@@ -89,11 +89,11 @@ RunCommand.flags = {
   platform: Flags.string({
     description: 'Runtime platform',
     default: 'local',
-    options: ['local', 'aws:lambda']
+    options: ['local', 'aws:lambda', 'az:aci']
   }),
   'platform-opt': Flags.string({
     description:
-      'Set a platform-specific option, e.g. --platform region=eu-west-1 for AWS Lambda',
+      'Set a platform-specific option, e.g. --platform-opt region=eu-west-1 for AWS Lambda',
     multiple: true
   }),
   count: Flags.string({
@@ -233,6 +233,12 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       runnerOpts,
       launcherOpts
     );
+
+    if (!launcher) {
+      console.log('Failed to create launcher');
+      await gracefulShutdown({ exitCode: 1 });
+    }
+
     let intermediates = [];
 
     const metricsToSuppress = getPluginMetricsToSuppress(script);

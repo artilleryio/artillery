@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
     libtool \
     awscli
 
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
 ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
 
@@ -39,8 +41,6 @@ COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/help
 # Install dependencies
 RUN npm install -w artillery --ignore-scripts --omit=dev
 RUN npm install aws-lambda-ric
-# TODO: add artillery-plugin-sqs-reporter as a depedency instead of installing it here
-RUN npm install artillery-plugin-sqs-reporter 
 
 RUN npm cache clean --force \
     && rm -rf /root/.cache \

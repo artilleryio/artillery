@@ -50,8 +50,3 @@ We maintain a list of official and community-built [integrations and plugins](ht
 ### Example tests
 
 You can find a list of ready-to-run Artillery examples under [`examples/`](https://github.com/artilleryio/artillery/tree/master/examples#readme).
-
-
-## License
-
-**Artillery** is open-source software distributed under the terms of the [MPLv2](https://www.mozilla.org/en-US/MPL/2.0/) license.

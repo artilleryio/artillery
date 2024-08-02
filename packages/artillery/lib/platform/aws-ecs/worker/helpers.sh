@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+ARTIFACTORY_AUTH="${ARTIFACTORY_AUTH:-"null"}"
+ARTIFACTORY_EMAIL="${ARTIFACTORY_EMAIL:-"null"}"
+NPM_REGISTRY="${NPM_REGISTRY:-"null"}"
+NPM_TOKEN="${NPM_TOKEN:-"null"}"
+NPM_SCOPE="${NPM_SCOPE:-"null"}"
+NPMRC="${NPMRC:-"null"}"
+
 generate_npmrc () {
     if [[ "$ARTIFACTORY_AUTH" != "null" ]] && [[ "$ARTIFACTORY_EMAIL" != "null" ]] ; then
         echo "_auth=$ARTIFACTORY_AUTH"

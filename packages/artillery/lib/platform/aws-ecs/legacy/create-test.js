@@ -46,29 +46,48 @@ async function createTest(scriptPath, options, callback) {
     context.configPath = absoluteConfigPath;
   }
 
-  await setDefaultAWSCredentials();
+  if (options.customSyncClient) {
+    context.customSyncClient = options.customSyncClient;
+  }
 
-  A.waterfall(
-    [
-      A.constant(context),
-      async function (context) {
-        context.s3Bucket = await getBucketName();
-        return context;
-      },
-      prepareManifest,
-      printManifest,
-      syncS3,
-      writeTestMetadata
-    ],
-    function (err, context) {
-      if (err) {
-        console.log(err);
-        return;
+  if (!options.customSyncClient) {
+    await setDefaultAWSCredentials();
+  }
+
+  return new Promise((resolve, reject) => {
+    A.waterfall(
+      [
+        A.constant(context),
+        async function (context) {
+          if (!context.customSyncClient) {
+            context.s3Bucket = await getBucketName();
+            return context;
+          } else {
+            context.s3Bucket = 'S3_BUCKET_ARGUMENT_NOT_USED_ON_AZURE';
+            return context;
+          }
+        },
+        prepareManifest,
+        printManifest,
+        syncS3,
+        writeTestMetadata
+      ],
+      function (err, context) {
+        if (err) {
+          console.log(err);
+          return;
+        }
+
+        if (callback) {
+          callback(err, context);
+        } else if (err) {
+          reject(err);
+        } else {
+          resolve(context);
+        }
       }
-
-      callback(err, context);
-    }
-  );
+    );
+  });
 }
 
 function prepareManifest(context, callback) {
@@ -103,7 +122,13 @@ function printManifest(context, callback) {
 }
 
 function syncS3(context, callback) {
-  const plainS3 = createS3Client();
+  let plainS3;
+  if (context.customSyncClient) {
+    plainS3 = context.customSyncClient;
+  } else {
+    plainS3 = createS3Client();
+  }
+
   const prefix = `tests/${context.name}`;
 
   context.s3Prefix = prefix;
@@ -182,7 +207,13 @@ function writeTestMetadata(context, callback) {
 
   debug('metadata', metadata);
 
-  const s3 = createS3Client();
+  let s3 = null;
+  if (context.customSyncClient) {
+    s3 = context.customSyncClient;
+  } else {
+    s3 = createS3Client();
+  }
+
   const key = context.s3Prefix + '/metadata.json'; // TODO: Rename to something less likely to clash
   debug('metadata location:', `${context.s3Bucket}/${key}`);
   s3.putObject(

@@ -5,6 +5,7 @@
 const AWS = require('aws-sdk');
 const debug = require('debug')('plugin:sqsReporter');
 const uuid = require('node:crypto').randomUUID;
+const { getAQS, sendMessage } = require('./azure-aqs');
 
 module.exports = {
   Plugin: ArtillerySQSPlugin,
@@ -36,13 +37,23 @@ function ArtillerySQSPlugin(script, events) {
 
   this.messageAttributes = messageAttributes;
 
-  this.sqs = new AWS.SQS({
-    region:
-      process.env.SQS_REGION || script.config.plugins['sqs-reporter'].region
-  });
+  this.sqs = null;
+  this.aqs = null;
 
-  this.queueUrl =
-    process.env.SQS_QUEUE_URL || script.config.plugins['sqs-reporter'].queueUrl;
+  if (process.env.SQS_QUEUE_URL) {
+    this.sqs = new AWS.SQS({
+      region:
+        process.env.SQS_REGION || script.config.plugins['sqs-reporter'].region
+    });
+
+    this.queueUrl =
+      process.env.SQS_QUEUE_URL ||
+      script.config.plugins['sqs-reporter'].queueUrl;
+  }
+
+  if (process.env.AZURE_STORAGE_QUEUE_URL) {
+    this.aqs = getAQS();
+  }
 
   events.on('stats', (statsOriginal) => {
     let body;
@@ -51,105 +62,54 @@ function ArtillerySQSPlugin(script, events) {
       event: 'workerStats',
       stats: serialized
     };
-    body = JSON.stringify(body);
 
-    debug('Prepared messsage body');
-    debug(body);
-
-    this.unsent++;
-
-    // TODO: Check that body is not longer than 255kb
-    const params = {
-      MessageBody: body,
-      QueueUrl: this.queueUrl,
-      MessageAttributes: this.messageAttributes,
-      MessageDeduplicationId: uuid(),
-      MessageGroupId: this.testId
-    };
-
-    this.sqs.sendMessage(params, (err, data) => {
-      if (err) {
-        console.error(err);
-      }
-      this.unsent--;
-    });
+    this.sendMessage(body);
   });
 
   //TODO: reconcile some of this code with how lambda does sqs reporting
   events.on('phaseStarted', (phaseContext) => {
-    this.unsent++;
-    const body = JSON.stringify({
+    const body = {
       event: 'phaseStarted',
       phase: phaseContext
-    });
-
-    const params = {
-      MessageBody: body,
-      QueueUrl: this.queueUrl,
-      MessageAttributes: this.messageAttributes,
-      MessageDeduplicationId: uuid(),
-      MessageGroupId: this.testId
     };
 
-    this.sqs.sendMessage(params, (err, data) => {
-      if (err) {
-        console.error(err);
-      }
-
-      this.unsent--;
-    });
+    this.sendMessage(body);
   });
 
   //TODO: reconcile some of this code with how lambda does sqs reporting
   events.on('phaseCompleted', (phaseContext) => {
-    this.unsent++;
-    const body = JSON.stringify({
+    const body = {
       event: 'phaseCompleted',
       phase: phaseContext
-    });
-
-    const params = {
-      MessageBody: body,
-      QueueUrl: this.queueUrl,
-      MessageAttributes: this.messageAttributes,
-      MessageDeduplicationId: uuid(),
-      MessageGroupId: this.testId
     };
-
-    this.sqs.sendMessage(params, (err, data) => {
-      if (err) {
-        console.error(err);
-      }
-
-      this.unsent--;
-    });
+    this.sendMessage(body);
   });
 
   events.on('done', (_stats) => {
-    this.unsent++;
-    const body = JSON.stringify({
-      event: 'done'
-    });
-
-    const params = {
-      MessageBody: body,
-      QueueUrl: this.queueUrl,
-      MessageAttributes: this.messageAttributes,
-      MessageDeduplicationId: uuid(),
-      MessageGroupId: this.testId
+    const body = {
+      event: 'done',
+      stats: global.artillery.__SSMS.serializeMetrics(_stats)
     };
+    this.sendMessage(body);
+  });
 
-    this.sqs.sendMessage(params, (err, data) => {
-      if (err) {
-        console.error(err);
-      }
+  global.artillery.globalEvents.on('log', (opts, ...args) => {
+    if (process.env.SHIP_LOGS) {
+      const body = {
+        event: 'artillery.log',
+        log: {
+          opts,
+          args: [...args]
+        }
+      };
 
-      this.unsent--;
-    });
+      this.sendMessage(body);
+    }
   });
 
   return this;
 }
+
 ArtillerySQSPlugin.prototype.cleanup = function (done) {
   const interval = setInterval(() => {
     if (this.unsent <= 0) {
@@ -157,4 +117,45 @@ ArtillerySQSPlugin.prototype.cleanup = function (done) {
       done(null);
     }
   }, 200).unref();
+};
+
+ArtillerySQSPlugin.prototype.sendMessage = function (body) {
+  if (this.sqs) {
+    this.sendSQS(body);
+  } else {
+    this.sendAQS(body);
+  }
+};
+
+ArtillerySQSPlugin.prototype.sendSQS = function (body) {
+  this.unsent++;
+
+  const payload = JSON.stringify(body);
+
+  const params = {
+    MessageBody: payload,
+    QueueUrl: this.queueUrl,
+    MessageAttributes: this.messageAttributes,
+    MessageDeduplicationId: uuid(),
+    MessageGroupId: this.testId
+  };
+
+  this.sqs.sendMessage(params, (err, _data) => {
+    if (err) {
+      console.error(err);
+    }
+    this.unsent--;
+  });
+};
+
+ArtillerySQSPlugin.prototype.sendAQS = async function (body) {
+  this.unsent++;
+  sendMessage(this.aqs, body, this.tags)
+    .then((_res) => {
+      this.unsent--;
+    })
+    .catch((err) => {
+      console.error(err);
+      this.unsent--;
+    });
 };
