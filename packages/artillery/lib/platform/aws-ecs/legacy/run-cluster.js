@@ -1203,6 +1203,10 @@ async function ensureTaskExists(context) {
       }
     };
 
+    if (context.cliOptions.containerDnsServers) {
+      artilleryContainerDefinition.dnsServers = context.cliOptions.containerDnsServers.split(',');
+    }
+  
     let taskDefinition = {
       family: context.taskName,
       containerDefinitions: [artilleryContainerDefinition],
@@ -1493,6 +1497,12 @@ async function generateTaskOverrides(context) {
 
   if (context.customRoleArn) {
     overrides.taskRoleArn = context.customRoleArn;
+  }
+
+  if (context.cliOptions.taskEphemeralStorage) {
+    overrides.ephemeralStorage = {
+      sizeInGiB: context.cliOptions.taskEphemeralStorage
+    };
   }
 
   overrides.containerOverrides[0].environment.push({
