@@ -129,6 +129,16 @@ RunCommand.flags = {
     description:
       'JSON to customize launch configuration of ECS/Fargate tasks (see https://www.artillery.io/docs/reference/cli/run-fargate#using---launch-config)'
   }),
+  'container-dns-servers': Flags.string({
+    description:
+      'Comma-separated list of DNS servers for Artillery container. Maps to dnsServers parameter in ECS container definition'
+  }),
+  'task-ephemeral-storage': Flags.string({
+    description:
+      'Ephemeral storage in GiB for the worker task. Maps to ephemeralStorage parameter in ECS container definition. Fargate-only.',
+    type: 'integer',
+  }),
+
   'subnet-ids': Flags.string({
     description:
       'Comma-separated list of AWS VPC subnet IDs to launch Fargate tasks in'
