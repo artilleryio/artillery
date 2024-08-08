@@ -1,0 +1,15 @@
+{
+  "name": "browser-playwright-reuse-authentication",
+  "version": "1.0.0",
+  "description": "Playwright allows you to use `sessionStorage` to reuse authentication in your tests. This can be especially useful in Load Testing, where you might be interested in testing other parts of the application at scale, without having to exercise the login backend (which is sometimes third-party) with every VU.",
+  "main": "flow.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@playwright/test": "1.45.3"
+  }
+}
