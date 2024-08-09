@@ -48,3 +48,9 @@ npx artillery run:fargate scenario.yml --count 2
 ```
 
 *Note: `before` hooks run once per Fargate worker, so the authentication step will run as many times as the `--count` you set.*
+
+## Playwright Version Compatibility
+
+It's important to note that Artillery uses specific versions of Playwright, which are listed in our [documentation](https://www.artillery.io/docs/reference/engines/playwright#playwright-compatibility).
+
+The `@playwright/test` version installed in your package.json should ideally match the version Artillery is currently using.

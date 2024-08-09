@@ -8,6 +8,8 @@ The `performance` folder contains the Artillery/Playwright test. Using the same 
 
 ## Running the tests
 
+First, run `npm install`.
+
 To run the pure Playwright example:
 `cd e2e && npx playwright run`
 
@@ -23,3 +25,5 @@ In this example we didn't use a [Page Object Model](https://playwright.dev/docs/
 It's important to note that Artillery uses specific versions of Playwright, which are listed in our [documentation](https://www.artillery.io/docs/reference/engines/playwright#playwright-compatibility).
 
 Your regular Playwright tests must use features that are compatible with the versions used by Artillery.
+
+The `@playwright/test` version installed in your package.json should ideally match the version Artillery is currently using.
