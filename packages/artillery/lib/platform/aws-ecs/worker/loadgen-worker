@@ -223,7 +223,10 @@ sync_test_data_azure () {
     # This recreates the directory structure in the container, i.e. we'll have tests/$test_run_id here with all files under it
     # So we need to move them all up two levels to the current directory
     az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/*"
-    mv "tests/$test_run_id"/* .
+    local tmpdir="$(mktemp -d)"
+    mv tests/$test_run_id/* $tmpdir
+    rm -rf tests/$test_run_id
+    mv $tmpdir/* .
 }
 
 sync_test_data_s3 () {

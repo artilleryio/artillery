@@ -116,9 +116,11 @@ class PlatformAzureACI {
     this.blobContainerClient = this.blobServiceClient.getContainerClient(
       this.blobContainerName
     );
+
     const { manifest } = await createTest(this.opts.absoluteScriptPath, {
-      flags: this.platformOpts.cliArgs,
       name: this.testRunId,
+      config: this.platformOpts.cliArgs.config,
+      flags: this.platformOpts.cliArgs,
       customSyncClient: {
         putObject: ({ _Bucket, Key, Body }, callback) => {
           const blockBlobClient =
