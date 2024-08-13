@@ -271,8 +271,7 @@ function templateObjectOrArray(o, context) {
     debug(
       `path = ${path} ; value = ${JSON.stringify(
         value
-      )} (${typeof value}) ; (subj type: ${
-        subj.length ? 'list' : 'hash'
+      )} (${typeof value}) ; (subj type: ${subj.length ? 'list' : 'hash'
       }) ; newValue = ${JSON.stringify(newValue)} ; newPath = ${newPath}`
     );
 
@@ -571,7 +570,6 @@ function dummyParser(body, callback) {
   return callback(null, body);
 }
 
-// doc is a JSON object
 function extractJSONPath(doc, expr) {
   // typeof null is 'object' hence the explicit check here
   if (typeof doc !== 'object' || doc === null) {
@@ -581,7 +579,7 @@ function extractJSONPath(doc, expr) {
   let results;
 
   try {
-    results = jsonpath(expr, doc);
+    results = jsonpath({ path: expr, json: doc, wrap: false });
   } catch (queryErr) {
     debug(queryErr);
   }
@@ -590,11 +588,7 @@ function extractJSONPath(doc, expr) {
     return '';
   }
 
-  if (results.length > 1) {
-    return results[randomInt(0, results.length - 1)];
-  } else {
-    return results[0];
-  }
+  return results;
 }
 
 // doc is a string or an object (body parsed by Request when headers indicate JSON)
