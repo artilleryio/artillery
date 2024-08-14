@@ -570,7 +570,8 @@ function dummyParser(body, callback) {
   return callback(null, body);
 }
 
-function extractJSONPath(doc, expr) {
+// doc is a JSON object
+function extractJSONPath(doc, expr, opts) {
   // typeof null is 'object' hence the explicit check here
   if (typeof doc !== 'object' || doc === null) {
     return '';
@@ -579,7 +580,7 @@ function extractJSONPath(doc, expr) {
   let results;
 
   try {
-    results = jsonpath({ path: expr, json: doc, wrap: false });
+    results = jsonpath({ path: expr, json: doc, wrap: opts.multiple ?? true });
   } catch (queryErr) {
     debug(queryErr);
   }
@@ -588,7 +589,15 @@ function extractJSONPath(doc, expr) {
     return '';
   }
 
-  return results;
+  if (opts.multiple === false) {
+    return results;
+  }
+
+  if (results.length > 1) {
+    return results[randomInt(0, results.length - 1)];
+  } else {
+    return results[0];
+  }
 }
 
 // doc is a string or an object (body parsed by Request when headers indicate JSON)
