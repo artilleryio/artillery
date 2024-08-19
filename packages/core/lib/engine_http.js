@@ -403,15 +403,21 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             requestParams.formData,
             function (acc, v, k) {
               let V = template(v, context);
-              if (V && _.isPlainObject(V) && V.fromFile) {
-                const absPath = path.resolve(
-                  path.dirname(context.vars.$scenarioFile),
-                  V.fromFile
-                );
-                fileUpload = absPath;
-                V = fs.createReadStream(absPath);
+              let options;
+              if (V && _.isPlainObject(V)) {
+                if (V.fromFile) {
+                  const absPath = path.resolve(
+                    path.dirname(context.vars.$scenarioFile),
+                    V.fromFile
+                  );
+                  fileUpload = absPath;
+                  V = fs.createReadStream(absPath);
+                } else if (V.contentType) {
+                  options = { contentType: V.contentType };
+                  V = V.value;
+                }
               }
-              acc.append(k, V);
+              acc.append(k, V, options);
               return acc;
             },
             f
