@@ -19,6 +19,7 @@ const debug = require('debug')('platform:azure-aci');
 const { IMAGE_VERSION } = require('../aws-ecs/legacy/constants');
 const { regionNames } = require('./regions');
 const path = require('path');
+const { Timeout, sleep } = require('../aws-ecs/legacy/time');
 
 class PlatformAzureACI {
   constructor(script, variablePayload, opts, platformOpts) {
@@ -323,22 +324,28 @@ class PlatformAzureACI {
 
     let instancesCreated = false;
     console.log('Waiting for Azure ACI to create container instances...');
-    this.workerStatusInterval = setInterval(async () => {
-      const containerInstanceClient = new ContainerInstanceManagementClient(
-        new DefaultAzureCredential(),
-        this.azureSubscriptionId
-      );
+
+    const containerInstanceClient = new ContainerInstanceManagementClient(
+      new DefaultAzureCredential(),
+      this.azureSubscriptionId
+    );
+
+    const provisioningWaitTimeout = new Timeout(5 * 60 * 1000).start();
+
+    let containerGroupsInTestRun = [];
+    while (true) {
       const containerGroupListResult =
         containerInstanceClient.containerGroups.listByResourceGroup(
           this.resourceGroupName
         );
 
-      const containerGroupsInTestRun = [];
+      containerGroupsInTestRun = [];
       for await (const containerGroup of containerGroupListResult) {
         if (containerGroup.name.indexOf(this.testRunId) > 0) {
           containerGroupsInTestRun.push(containerGroup);
         }
       }
+
       const byStatus = containerGroupsInTestRun.reduce((acc, cg) => {
         if (!acc[cg.provisioningState]) {
           acc[cg.provisioningState] = 0;
@@ -351,14 +358,29 @@ class PlatformAzureACI {
         (byStatus['Succeeded'] || 0) + (byStatus['Running'] || 0) ===
         this.count
       ) {
-        if (!instancesCreated)
-          console.log(
-            'Container instances created. Waiting for workers to start...'
-          );
         instancesCreated = true;
-        clearInterval(this.workerStatusInterval);
+        break;
       }
-    }, 10 * 1000).unref();
+
+      if (provisioningWaitTimeout.timedout()) {
+        break;
+      }
+
+      await sleep(10000);
+    }
+
+    if (instancesCreated) {
+      console.log(
+        'Container instances have been created. Waiting for workers to start...'
+      );
+    } else {
+      console.log('Some containers instances failed to provision');
+      console.log('Please see the Azure console for details');
+      console.log(
+        'https://portal.azure.com/#view/HubsExtension/BrowseResource/resourceType/Microsoft.ContainerInstance%2FcontainerGroups'
+      );
+      await global.artillery.shutdown();
+    }
   }
 
   async shutdown() {
