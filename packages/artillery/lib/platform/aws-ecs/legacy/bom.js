@@ -379,8 +379,7 @@ function getExtraFiles(context, next) {
 
 function getDotEnv(context, next) {
   const flags = context.opts.flags;
-  //TODO: For now only enabled on Lambda. Enable this for Fargate after refactoring to allow for it
-  if (!flags.dotenv || flags.platform !== 'aws:lambda') {
+  if (!flags.dotenv || flags.platform === 'aws:ecs') {
     return next(null, context);
   }
 

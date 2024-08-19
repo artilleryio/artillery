@@ -44,7 +44,7 @@ class RunCommand extends Command {
   async run() {
     const { flags, argv, args } = await this.parse(RunCommand);
 
-    if (flags.platform === 'aws:fargate') {
+    if (flags.platform === 'aws:ecs') {
       // Delegate to existing implementation
       const RunFargateCommand = require('./run-fargate');
       return await RunFargateCommand.run(argv);
