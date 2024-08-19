@@ -405,15 +405,18 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               let V = template(v, context);
               let options;
               if (V && _.isPlainObject(V)) {
+                if (V.contentType) {
+                  options = { contentType: V.contentType };
+                }
                 if (V.fromFile) {
                   const absPath = path.resolve(
                     path.dirname(context.vars.$scenarioFile),
                     V.fromFile
                   );
                   fileUpload = absPath;
+                  options = { contentType: 'image/png' };
                   V = fs.createReadStream(absPath);
-                } else if (V.contentType) {
-                  options = { contentType: V.contentType };
+                } else if (V.value) {
                   V = V.value;
                 }
               }
