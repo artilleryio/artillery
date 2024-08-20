@@ -46,8 +46,6 @@ const dotenv = require('dotenv');
 
 const util = require('./util');
 
-const generateId = require('../../../util/generate-id');
-
 const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
 
 module.exports = runCluster;
@@ -76,6 +74,7 @@ const {
 let IS_FARGATE = false;
 
 const TEST_RUN_STATUS = require('./test-run-status');
+const prepareTestExecutionPlan = require('../../../util/prepare-test-execution-plan');
 
 function setupConsoleReporter(quiet) {
   const reporterOpts = {
@@ -218,6 +217,11 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   let context = {};
+  const inputFiles = [].concat(scriptPath, options.config || []);
+  const runnableScript = await prepareTestExecutionPlan(inputFiles, options);
+
+  context.runnableScript = runnableScript;
+
   let absoluteScriptPath;
   if (typeof scriptPath !== 'undefined') {
     absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
@@ -1622,7 +1626,16 @@ async function launchLeadTask(context) {
     }),
     artilleryVersion: JSON.stringify({
       core: global.artillery.version
-    })
+    }),
+    // Properties from the runnable script object:
+    testConfig: {
+      target: context.runnableScript.config.target,
+      phases: context.runnableScript.config.phases,
+      plugins: context.runnableScript.config.plugins,
+      environment: context.runnableScript._environment,
+      scriptPath: context.runnableScript._scriptPath,
+      configPath: context.runnableScript._configPath,
+    }
   };
 
   artillery.globalEvents.emit('metadata', metadata);
