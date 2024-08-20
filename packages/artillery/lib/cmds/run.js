@@ -169,6 +169,12 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
           );
 
           await gracefulShutdown({ exitCode: 7 });
+        } else if (err.name === 'PingFailed') {
+          console.error(
+            'Error: unable to reach Artillery Cloud API. This could be due to firewall restrictions on your network'
+          );
+          console.log('https://docs.art/cloud/err-ping');
+          await gracefulShutdown({ exitCode: 7 });
         } else {
           console.error(
             'Error: something went wrong connecting to Artillery Cloud'

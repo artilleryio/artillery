@@ -34,6 +34,7 @@ class ArtilleryCloudPlugin {
     this.eventsEndpoint = `${this.baseUrl}/api/events`;
     this.whoamiEndpoint = `${this.baseUrl}/api/user/whoami`;
     this.getAssetUploadUrls = `${this.baseUrl}/api/asset-upload-urls`;
+    this.pingEndpoint = `${this.baseUrl}/api/ping`;
 
     this.defaultHeaders = {
       'x-auth-token': this.apiKey
@@ -222,6 +223,31 @@ class ArtilleryCloudPlugin {
     if (res.statusCode === 401) {
       const err = new Error();
       err.name = 'APIKeyUnauthorized';
+      this.off = true;
+      throw err;
+    }
+
+    let postSucceeded = false;
+    try {
+      res = await request.post(this.pingEndpoint, {
+        headers: this.defaultHeaders,
+        throwHttpErrors: false,
+        retry: {
+          limit: 0
+        }
+      });
+
+      if (res.statusCode === 200) {
+        postSucceeded = true;
+      }
+    } catch (err) {
+      this.off = true;
+      throw err;
+    }
+
+    if (!postSucceeded) {
+      const err = new Error();
+      err.name = 'PingFailed';
       this.off = true;
       throw err;
     }

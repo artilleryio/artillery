@@ -60,6 +60,12 @@ class RunCommand extends Command {
           );
 
           process.exit(7);
+        } else if (err.name === 'PingFailed') {
+          console.error(
+            'Error: unable to reach Artillery Cloud API. This could be due to firewall restrictions on your network'
+          );
+          console.log('Please see https://docs.art/cloud/err-ping');
+          process.exit(7);
         } else {
           console.error(
             'Error: something went wrong connecting to Artillery Cloud'
@@ -136,7 +142,7 @@ RunCommand.flags = {
   'task-ephemeral-storage': Flags.string({
     description:
       'Ephemeral storage in GiB for the worker task. Maps to ephemeralStorage parameter in ECS container definition. Fargate-only.',
-    type: 'integer',
+    type: 'integer'
   }),
 
   'subnet-ids': Flags.string({
