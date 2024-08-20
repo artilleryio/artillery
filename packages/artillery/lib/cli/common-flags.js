@@ -53,7 +53,12 @@ const CommonRunFlags = {
     hidden: true
   }),
 
-  //Artillery Cloud commands
+  //Artillery Cloud options:
+
+  name: Flags.string({
+    description:
+      'Name of the test run. This name will be shown in the Artillery Cloud dashboard. Equivalent to setting a "name" tag.'
+  }),
   tags: Flags.string({
     description:
       'Comma-separated list of tags in key:value format to tag the test run with in Artillery Cloud, for example: --tags team:sqa,service:foo'
