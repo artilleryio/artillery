@@ -299,6 +299,14 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     }
   }
 
+  if (options.name) {
+    for (const t of context.tags) {
+      if (t.name === 'name') {
+        t.value = options.name;
+      }
+    }
+  }
+
   context.extraSecrets = options.secret || [];
 
   context.testId = global.artillery.testRunId;
@@ -1204,9 +1212,10 @@ async function ensureTaskExists(context) {
     };
 
     if (context.cliOptions.containerDnsServers) {
-      artilleryContainerDefinition.dnsServers = context.cliOptions.containerDnsServers.split(',');
+      artilleryContainerDefinition.dnsServers =
+        context.cliOptions.containerDnsServers.split(',');
     }
-  
+
     let taskDefinition = {
       family: context.taskName,
       containerDefinitions: [artilleryContainerDefinition],

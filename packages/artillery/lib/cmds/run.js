@@ -204,6 +204,14 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         value: path.basename(runnerOpts.scriptPath)
       });
     }
+    // Override the "name" tag with the value of --name if set
+    if (flags.name) {
+      for (const t of tagResult.tags) {
+        if (t.name === 'name') {
+          t.value = flags.name;
+        }
+      }
+    }
 
     if (flags.config) {
       runnerOpts.absoluteConfigPath = path.resolve(process.cwd(), flags.config);
