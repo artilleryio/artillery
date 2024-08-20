@@ -54,7 +54,7 @@ class ArtilleryCloudPlugin {
 
         this.testRunId = testInfo.testRunId;
 
-        const testRunUrl = `${this.baseUrl}/load-tests/${this.testRunId}`;
+        const testRunUrl = `${this.baseUrl}/${this.orgId}/load-tests/${global.artillery.testRunId}`;
         testEndInfo.testRunUrl = testRunUrl;
 
         this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
@@ -215,6 +215,7 @@ class ArtilleryCloudPlugin {
       });
 
       body = JSON.parse(res.body);
+      this.orgId = body.activeOrg;
     } catch (err) {
       this.off = true;
       throw err;
@@ -254,7 +255,7 @@ class ArtilleryCloudPlugin {
 
     console.log('Artillery Cloud reporting is configured for this test run');
     console.log(
-      `Run URL: ${this.baseUrl}/load-tests/${global.artillery.testRunId}`
+      `Run URL: ${this.baseUrl}/${this.orgId}/load-tests/${global.artillery.testRunId}`
     );
 
     this.user = {
