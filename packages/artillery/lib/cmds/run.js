@@ -1,17 +1,6 @@
 const { Command, Flags, Args } = require('@oclif/core');
 const { CommonRunFlags } = require('../cli/common-flags');
 
-const {
-  readScript,
-  parseScript,
-  addOverrides,
-  addVariables,
-  addDefaultPlugins,
-  resolveConfigTemplates,
-  checkConfig,
-  resolveConfigPath
-} = require('../../util');
-
 const p = require('util').promisify;
 const csv = require('csv-parse');
 const debug = require('debug')('commands:run');
@@ -29,12 +18,13 @@ const moment = require('moment');
 
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const telemetry = require('../telemetry').init();
-const validateScript = require('../util/validate-script');
+
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
 const parseTagString = require('../util/parse-tag-string');
 
 const generateId = require('../util/generate-id');
+const prepareTestExecutionPlan = require('../util/prepare-test-execution-plan');
 
 class RunCommand extends Command {
   static aliases = ['run'];
@@ -499,93 +489,6 @@ function replaceProcessorIfTypescript(script, scriptPath) {
   );
 
   script.config.processor = newProcessorPath;
-  return script;
-}
-
-async function prepareTestExecutionPlan(inputFiles, flags, args) {
-  const scriptPath = inputFiles[0];
-  let script1 = {};
-
-  for (const fn of inputFiles) {
-    const data = await readScript(fn);
-    const parsedData = await parseScript(data);
-    script1 = _.merge(script1, parsedData);
-  }
-
-  script1 = await checkConfig(script1, scriptPath, flags);
-
-  const script2 = await resolveConfigPath(script1, flags, scriptPath);
-
-  const script3 = await addOverrides(script2, flags);
-  const script4 = await addVariables(script3, flags);
-  // The resolveConfigTemplates function expects the config and script path to be passed explicitly because it is used in Fargate as well where the two arguments will not be available on the script
-  const script5 = await resolveConfigTemplates(
-    script4,
-    flags,
-    script4._configPath,
-    script4._scriptPath
-  );
-
-  if (!script5.config.target) {
-    throw new Error('No target specified and no environment chosen');
-  }
-
-  const validationError = validateScript(script5);
-
-  if (validationError) {
-    console.log(`Scenario validation error: ${validationError}`);
-
-    process.exit(1);
-  }
-
-  const script6 = await readPayload(script5);
-
-  if (typeof script6.config.phases === 'undefined' || flags.solo) {
-    script6.config.phases = [
-      {
-        duration: 1,
-        arrivalCount: 1
-      }
-    ];
-  }
-
-  script6.config.statsInterval = script6.config.statsInterval || 30;
-
-  const script7 = addDefaultPlugins(script5);
-  const script8 = replaceProcessorIfTypescript(script7, scriptPath);
-
-  return script8;
-}
-
-async function readPayload(script) {
-  if (!script.config.payload) {
-    return script;
-  }
-
-  for (const payloadSpec of script.config.payload) {
-    const data = fs.readFileSync(payloadSpec.path, 'utf-8');
-
-    const csvOpts = Object.assign(
-      {
-        skip_empty_lines:
-          typeof payloadSpec.skipEmptyLines === 'undefined'
-            ? true
-            : payloadSpec.skipEmptyLines,
-        cast: typeof payloadSpec.cast === 'undefined' ? true : payloadSpec.cast,
-        from_line: payloadSpec.skipHeader === true ? 2 : 1,
-        delimiter: payloadSpec.delimiter || ','
-      },
-      payloadSpec.options
-    );
-
-    try {
-      const parsedData = await p(csv)(data, csvOpts);
-      payloadSpec.data = parsedData;
-    } catch (err) {
-      throw err;
-    }
-  }
-
   return script;
 }
 
