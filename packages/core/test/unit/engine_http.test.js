@@ -1051,7 +1051,13 @@ test('HTTP engine', function (tap) {
     nock('http://localhost:8888')
       .post(
         '/submit',
-        /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi
+        (body) =>
+          body.match(
+            /Content-Disposition: form-data[\s\S]+activity[\s\S]+surfing/gi
+          ).length &&
+          body.match(
+            /Content-Disposition: form-data[\s\S]+climate[\s\S]+Content-Type: application\/json[\s\S]+{"temperature": 25, "unit": "Celcius"}/gi
+          ).length
       )
       .reply(200, 'ok');
 
@@ -1068,7 +1074,12 @@ test('HTTP engine', function (tap) {
                 formData: {
                   activity: '{{ activity }}',
                   type: '{{ type }}',
-                  location: '{{ location }}'
+                  location: '{{ location }}',
+                  climate: {
+                    value:
+                      '{"temperature": {{ climate.temperature }}, "unit": "{{ climate.unit }}"}',
+                    contentType: 'application/json'
+                  }
                 }
               }
             }
@@ -1095,7 +1106,11 @@ test('HTTP engine', function (tap) {
       vars: {
         location: 'Lahinch',
         type: 'beach',
-        activity: 'surfing'
+        activity: 'surfing',
+        climate: {
+          temperature: 25,
+          unit: 'Celcius'
+        }
       }
     };
 
