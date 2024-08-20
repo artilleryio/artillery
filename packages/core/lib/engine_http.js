@@ -414,7 +414,6 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                     V.fromFile
                   );
                   fileUpload = absPath;
-                  options = { contentType: 'image/png' };
                   V = fs.createReadStream(absPath);
                 } else if (V.value) {
                   V = V.value;
