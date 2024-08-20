@@ -339,7 +339,15 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         artilleryVersion: {
           core: global.artillery.version
         },
-        targetUrl: script.config.target
+        // Properties from the runnable script object:
+        testConfig: {
+          target: script.config.target,
+          phases: script.config.phases,
+          plugins: script.config.plugins,
+          environment: script._environment,
+          scriptPath: script._scriptPath,
+          configPath: script._configPath
+        }
       }
     });
 
