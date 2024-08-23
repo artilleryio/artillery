@@ -823,6 +823,34 @@ HttpEngine.prototype._handleResponse = function (
   ee.emit('counter', 'http.responses', 1);
   // ee.emit('rate', 'http.response_rate');
   ee.emit('histogram', 'http.response_time', res.timings.phases.firstByte);
+
+  const statusCode = res.statusCode;
+  if (statusCode >= 200 && statusCode < 300) {
+    ee.emit(
+      'histogram',
+      'http.response_time.2xx',
+      res.timings.phases.firstByte
+    );
+  } else if (statusCode >= 300 && statusCode < 400) {
+    ee.emit(
+      'histogram',
+      'http.response_time.3xx',
+      res.timings.phases.firstByte
+    );
+  } else if (statusCode >= 400 && statusCode < 500) {
+    ee.emit(
+      'histogram',
+      'http.response_time.4xx',
+      res.timings.phases.firstByte
+    );
+  } else if (statusCode >= 500 && statusCode < 600) {
+    ee.emit(
+      'histogram',
+      'http.response_time.5xx',
+      res.timings.phases.firstByte
+    );
+  }
+
   if (this.extendedHTTPMetrics) {
     ee.emit('histogram', 'http.dns', res.timings.phases.dns);
     ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
