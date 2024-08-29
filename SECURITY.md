@@ -7,7 +7,7 @@ The following versions of Artillery are currently being supported with security 
 | Version | Supported          |
 | ------- | ------------------ |
 | 2.x.x   | :white_check_mark: |
-| 1.7.x   | :white_check_mark: |
+| 1.7.x   | :x:                |
 | < 1.7   | :x:                |
 
 ## Reporting a Vulnerability
