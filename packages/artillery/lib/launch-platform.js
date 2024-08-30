@@ -376,17 +376,17 @@ class Launcher {
     );
 
     // TODO: Track how many workers provided metrics in the metrics report
-    const stats = SSMS.mergeBuckets(this.metricsByPeriod[String(period)])[
-      String(period)
-    ];
-    this.mergedPeriodMetrics.push(stats);
-    // summarize histograms for console reporter
+    // summarize histograms for console reporter:
+    const merged = SSMS.mergeBuckets(this.metricsByPeriod[String(period)]);
+    const stats = merged[String(period)];
+
     stats.summaries = {};
     for (const [name, value] of Object.entries(stats.histograms || {})) {
       const summary = SSMS.summarizeHistogram(value);
       stats.summaries[name] = summary;
-      delete this.metricsByPeriod[String(period)];
     }
+
+    delete this.metricsByPeriod[String(period)];
 
     this.periodsReportedFor.push(period);
     this.pluginEvents.emit('stats', stats);
