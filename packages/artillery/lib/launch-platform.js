@@ -8,7 +8,6 @@ const { loadPlugins, loadPluginsConfig } = require('./load-plugins');
 const EventEmitter = require('eventemitter3');
 const debug = require('debug')('core');
 
-const os = require('os');
 const p = require('util').promisify;
 const _ = require('lodash');
 
@@ -41,7 +40,6 @@ class Launcher {
     this.workerMessageBuffer = [];
 
     this.metricsByPeriod = {}; // individual intermediates by worker
-    this.mergedPeriodMetrics = []; // merged intermediates for a period
     this.finalReportsByWorker = {};
 
     this.events = new EventEmitter();
