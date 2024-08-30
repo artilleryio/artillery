@@ -14,7 +14,6 @@ const A = require('async');
 const { SSMS } = require('./ssms');
 const tryResolve = require('try-require').resolve;
 const createPhaser = require('./phases');
-const isIdlePhase = require('./is-idle-phase');
 const createReader = require('./readers');
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const wl = require('./weighted-pick');
@@ -223,15 +222,9 @@ function run(script, ee, options, runState, contextVars) {
   });
   phaser.on('phaseStarted', function (spec) {
     ee.emit('phaseStarted', spec);
-    if (isIdlePhase(spec)) {
-      ee.emit('stats', SSMS.empty());
-    }
   });
   phaser.on('phaseCompleted', function (spec) {
     ee.emit('phaseCompleted', spec);
-    if (isIdlePhase(spec)) {
-      ee.emit('stats', SSMS.empty());
-    }
   });
   phaser.on('done', function () {
     debug('All phases launched');
