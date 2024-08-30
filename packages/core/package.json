@@ -31,7 +31,6 @@
     "socket.io-client": "^4.5.1",
     "socketio-wildcard": "^2.0.0",
     "tough-cookie": "^5.0.0-rc.2",
-    "try-require": "^1.2.1",
     "uuid": "^8.0.0",
     "ws": "^7.5.7"
   },

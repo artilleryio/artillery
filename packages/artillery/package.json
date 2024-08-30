@@ -141,7 +141,6 @@
     "sqs-consumer": "5.8.0",
     "temp": "^0.9.4",
     "tmp": "0.2.1",
-    "try-require": "^1.2.1",
     "walk-sync": "^0.2.3",
     "yaml-js": "^0.2.3"
   },
