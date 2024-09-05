@@ -1,20 +1,8 @@
 # Load testing and smoke testing with real browsers
 
-<p align="center">
-  <img src="./repo-header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">
-</p>
 
 Ever wished you could run load tests with *real browsers*? Well, now you can! You can combine Artillery with Playwright to run full browser tests, and this example shows you how. We can run both load tests, and smoke tests with headless browsers.
 
-We'd love your feedback! -> [Discussion board](https://github.com/artilleryio/artillery/discussions)
-
-## Pre-requisites
-
-Before running the examples, install Artillery + [`artillery-engine-playwright`](https://github.com/artilleryio/artillery-engine-playwright):
-
-```sh
-npm install
-```
 
 ## Example 1: A simple load test
 
