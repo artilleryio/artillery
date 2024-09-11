@@ -43,6 +43,12 @@ class OTelReporter {
         this.serviceName = translatedConfig.serviceName;
       }
 
+      if (translatedConfig.resourceAttributes) {
+        this.resourceAttributes = translatedConfig.resourceAttributes;
+      } else {
+        this.resourceAttributes = {};
+      }
+
       // Setting traces to first traces configured
       if (translatedConfig.traces && !this.tracesConfig) {
         this.tracesConfig = translatedConfig.traces;
@@ -77,10 +83,16 @@ class OTelReporter {
 
     // Setting resources here as they are used by both metrics and traces and need to be set in a central place where OTel setup is initialised and before any data is generated
     this.resource = Resource.default().merge(
-      new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]:
-          this.serviceName || 'Artillery-test'
-      })
+      new Resource(
+        Object.assign(
+          {},
+          {
+            [SemanticResourceAttributes.SERVICE_NAME]:
+              this.serviceName || 'Artillery-test'
+          },
+          this.resourceAttributes
+        )
+      )
     );
 
     // HANDLING METRICS
