@@ -1,0 +1,11 @@
+config:
+  target: "http://localhost:8080"
+  phases:
+    - duration: 10
+      arrivalRate: 30
+      name: "Phase 1"
+  processor: "./processor.mjs"
+
+scenarios:
+  - flow:
+      - function: "callRpcServer"
