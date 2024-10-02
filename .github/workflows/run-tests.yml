@@ -29,7 +29,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x, 22.x]
         package: ${{fromJson(needs.generate-matrix-with-packages.outputs.matrix)}}
       fail-fast: false
     steps:

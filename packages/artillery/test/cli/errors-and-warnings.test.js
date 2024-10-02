@@ -48,9 +48,9 @@ tap.test(
 
 tap.test('Suggest similar commands if unknown command is used', async (t) => {
   const [exitCode, output] = await execute(['helpp']);
-  t.equal(exitCode, 127, 'CLI should error with exit code 127');
+  t.equal(exitCode, 1, 'CLI should error with exit code 1');
   t.ok(
-    output.stderr.includes('Did you mean'),
+    output.stdout.includes('Did you mean'),
     'Should suggest similar commands'
   );
 });
