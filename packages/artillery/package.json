@@ -116,7 +116,7 @@
     "aws-sdk": "^2.1338.0",
     "chalk": "^2.4.2",
     "chokidar": "^3.6.0",
-    "ci-info": "^3.8.0",
+    "ci-info": "^4.0.0",
     "cli-table3": "^0.6.0",
     "cross-spawn": "^7.0.3",
     "csv-parse": "^4.16.3",
