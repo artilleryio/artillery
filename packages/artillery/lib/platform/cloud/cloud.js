@@ -12,6 +12,8 @@ const util = require('node:util');
 const chokidar = require('chokidar');
 const fs = require('fs');
 const path = require('path');
+const { isCI, name: ciName } = require('ci-info');
+
 class ArtilleryCloudPlugin {
   constructor(_script, _events, { flags }) {
     this.enabled = false;
@@ -59,8 +61,13 @@ class ArtilleryCloudPlugin {
 
         this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
 
+        const metadata = Object.assign({}, testInfo.metadata, {
+          isCI,
+          ciName
+        });
+
         await this._event('testrun:init', {
-          metadata: testInfo.metadata
+          metadata: metadata
         });
         this.setGetLoadTestInterval = this.setGetStatusInterval();
 
