@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.45.3
+FROM mcr.microsoft.com/playwright:v1.48.0
 LABEL maintainer="team@artillery.io"
 
 RUN npm install -g artillery \

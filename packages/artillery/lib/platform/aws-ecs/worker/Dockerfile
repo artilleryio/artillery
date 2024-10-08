@@ -2,7 +2,7 @@
 # NOTE: Version we use here needs to be kept consistent with that in
 # artillery-engine-playwright.
 # ********************************
-FROM mcr.microsoft.com/playwright:v1.45.3
+FROM mcr.microsoft.com/playwright:v1.48.0
 
 ENV DEBIAN_FRONTEND=noninteractive
 
