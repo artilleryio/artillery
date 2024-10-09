@@ -271,8 +271,7 @@ function templateObjectOrArray(o, context) {
     debug(
       `path = ${path} ; value = ${JSON.stringify(
         value
-      )} (${typeof value}) ; (subj type: ${
-        subj.length ? 'list' : 'hash'
+      )} (${typeof value}) ; (subj type: ${subj.length ? 'list' : 'hash'
       }) ; newValue = ${JSON.stringify(newValue)} ; newPath = ${newPath}`
     );
 
@@ -572,7 +571,7 @@ function dummyParser(body, callback) {
 }
 
 // doc is a JSON object
-function extractJSONPath(doc, expr) {
+function extractJSONPath(doc, expr, opts) {
   // typeof null is 'object' hence the explicit check here
   if (typeof doc !== 'object' || doc === null) {
     return '';
@@ -581,13 +580,17 @@ function extractJSONPath(doc, expr) {
   let results;
 
   try {
-    results = jsonpath(expr, doc);
+    results = jsonpath({ path: expr, json: doc, wrap: opts.multiple ?? true });
   } catch (queryErr) {
     debug(queryErr);
   }
 
   if (!results) {
     return '';
+  }
+
+  if (opts.multiple === false) {
+    return results;
   }
 
   if (results.length > 1) {
