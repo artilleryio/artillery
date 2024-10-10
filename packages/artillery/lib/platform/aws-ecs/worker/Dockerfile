@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     autoconf \
     libtool \
-    awscli
+    python3-pip && pip3 install awscli --break-system-packages
 
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
