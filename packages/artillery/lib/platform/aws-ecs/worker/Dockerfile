@@ -23,7 +23,7 @@ ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
 
 # Additional dependencies for Fargate
-RUN apt-get install -y bash jq pwgen curl git zip tree python2-minimal
+RUN apt-get install -y bash jq pwgen curl git zip tree
 
 # Define custom function directory
 ARG FUNCTION_DIR="/artillery"
