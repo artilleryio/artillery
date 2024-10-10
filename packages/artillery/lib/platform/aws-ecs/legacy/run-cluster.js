@@ -1085,7 +1085,7 @@ async function createADOTDefinitionIfNeeded(context) {
 
     context.adot.taskDefinition = {
       name: 'adot-collector',
-      image: 'amazon/aws-otel-collector',
+      image: 'amazon/aws-otel-collector:v0.39.0',
       command: [
         '--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml'
       ],
@@ -1634,7 +1634,7 @@ async function launchLeadTask(context) {
       plugins: context.runnableScript.config.plugins,
       environment: context.runnableScript._environment,
       scriptPath: context.runnableScript._scriptPath,
-      configPath: context.runnableScript._configPath,
+      configPath: context.runnableScript._configPath
     }
   };
 
