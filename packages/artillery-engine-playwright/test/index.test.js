@@ -276,6 +276,8 @@ test('playwright typescript test fails and has correct vu count when expectation
       fs.readFileSync(playwrightOutput, 'utf8')
     ).aggregate;
 
+    console.log(jsonReportAggregate);
+
     t.equal(
       jsonReportAggregate.counters['vusers.failed'],
       3,
