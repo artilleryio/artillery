@@ -12,7 +12,7 @@ const util = require('node:util');
 const chokidar = require('chokidar');
 const fs = require('fs');
 const path = require('path');
-const { isCI, name: ciName } = require('ci-info');
+const { isCI, name: ciName, GITHUB_ACTIONS } = require('ci-info');
 
 class ArtilleryCloudPlugin {
   constructor(_script, _events, { flags }) {
@@ -61,9 +61,19 @@ class ArtilleryCloudPlugin {
 
         this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
 
+        let ciURL = null;
+        if (isCI && GITHUB_ACTIONS) {
+          const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } =
+            process.env;
+          if (GITHUB_SERVER_URL && GITHUB_REPOSITORY && GITHUB_RUN_ID) {
+            ciURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`;
+          }
+        }
+
         const metadata = Object.assign({}, testInfo.metadata, {
           isCI,
-          ciName
+          ciName,
+          ciURL
         });
 
         await this._event('testrun:init', {
