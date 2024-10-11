@@ -62,7 +62,7 @@ class ArtilleryCloudPlugin {
         this.getLoadTestEndpoint = `${this.baseUrl}/api/load-tests/${this.testRunId}/status`;
 
         let ciURL = null;
-        if (isCI && ciName === GITHUB_ACTIONS) {
+        if (isCI && GITHUB_ACTIONS) {
           const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } =
             process.env;
           if (GITHUB_SERVER_URL && GITHUB_REPOSITORY && GITHUB_RUN_ID) {
