@@ -5,6 +5,8 @@ config:
       fields:
         - "url"
         - "title"
+      loadAll: true
+      name: pageChecks
   engines:
     playwright: {}
   processor: ./flows.js

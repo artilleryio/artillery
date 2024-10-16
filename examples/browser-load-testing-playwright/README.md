@@ -16,7 +16,13 @@ That's it! Artillery will create headless Chrome browsers that will run Playwrig
 
 ## Example 2: A smoke test
 
-This example shows how we can implement a smoke test (or a synthetic check) using a headless browser. We make use of Artillery's [CSV payload](https://artillery.io/docs/guides/guides/test-script-reference.html#Payload-files) feature to specify the URLs we want to check, and [custom metric API](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) to track custom metrics.
+This example shows how we can implement a smoke test (or a synthetic check) using a headless browser.
+
+We make use of Artillery's [CSV payload](https://artillery.io/docs/guides/guides/test-script-reference.html#Payload-files) feature to specify the URLs we want to check, and [custom metric API](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) to track custom metrics.
+
+For every row in the CSV file, we'll load the URL from the first column, and check that the page contains the text specified in the second column.
+
+The test will load each page specified in the CSV file, and check that it contains the text
 
 ```sh
 npx artillery run browser-smoke-test.yml
