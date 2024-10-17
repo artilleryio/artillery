@@ -320,6 +320,15 @@ class PlatformAzureACI {
       const { workerId } = await this.createWorker();
       this.workers[workerId] = { workerId };
       await this.runWorker(workerId);
+
+      if (i > 0 && i % 10 === 0) {
+        const delayMs =
+          Math.floor(
+            Math.random() *
+              parseInt(process.env.AZURE_LAUNCH_STAGGER_SEC || '10', 10)
+          ) * 1000;
+        await sleep(delayMs);
+      }
     }
 
     let instancesCreated = false;
