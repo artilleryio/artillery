@@ -23,7 +23,8 @@ const CommonRunFlags = {
     description: 'Write a JSON report to file'
   }),
   dotenv: Flags.string({
-    description: 'Path to a dotenv file to load environment variables from'
+    description: 'Path to a dotenv file to load environment variables from',
+    aliases: ['env-file']
   }),
   variables: Flags.string({
     char: 'v',
