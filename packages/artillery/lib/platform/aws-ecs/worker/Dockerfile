@@ -4,6 +4,8 @@
 # ********************************
 FROM mcr.microsoft.com/playwright:v1.48.0
 
+ARG TARGETARCH
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install aws-lambda-ric build dependencies
@@ -16,6 +18,15 @@ RUN apt-get update && apt-get install -y \
     autoconf \
     libtool \
     python3-pip && pip3 install awscli --break-system-packages
+
+RUN <<EOT
+echo 'ipv4' >> ~/.curlrc
+if [ "$TARGETARCH" = "arm64" ]; then
+# Temporal fix for SSL_ERROR_SYSCALL error on arm64
+# see: https://github.com/curl/curl/issues/14154
+echo 'insecure' >> ~/.curlrc
+fi
+EOT
 
 RUN wget https://aka.ms/InstallAzureCLIDeb && bash InstallAzureCLIDeb
 
