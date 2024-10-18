@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     libtool \
     python3-pip && pip3 install awscli --break-system-packages
 
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+RUN wget https://aka.ms/InstallAzureCLIDeb && bash InstallAzureCLIDeb
 
 ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
