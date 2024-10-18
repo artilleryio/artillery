@@ -443,7 +443,9 @@ class PlatformAzureACI {
     const imageVersion =
       process.env.ARTILLERY_WORKER_IMAGE_VERSION || IMAGE_VERSION;
     const defaultArchitecture = 'x86_64';
-    const containerImageURL = `public.ecr.aws/d8a4z9o5/artillery-worker:${imageVersion}-${defaultArchitecture}`;
+    const containerImageURL =
+      process.env.WORKER_IMAGE_URL ||
+      `public.ecr.aws/d8a4z9o5/artillery-worker:${imageVersion}-${defaultArchitecture}`;
 
     const client = new ContainerInstanceManagementClient(
       credential,
