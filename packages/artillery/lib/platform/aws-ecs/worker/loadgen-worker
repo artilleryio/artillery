@@ -578,13 +578,15 @@ cleanup () {
         CLEANING_UP="yes"
 
         if [[ "$is_azure" = "yes" ]] ; then
-            if [[ -z "${AZURE_RETAIN_BLOBS:-""}" ]] ; then
-                # This exits with 0 regardless of whether the pattern matches any
-                # blobs or not so it's OK to run this multiple times
-                az storage blob delete-batch \
-                    --account-name "$AZURE_STORAGE_ACCOUNT" \
-                    -s "$azure_storage_container_name" \
-                    --pattern "tests/$test_run_id/*"
+            if [[ "$is_leader" = "true" ]] ; then
+                if [[ -z "${AZURE_RETAIN_BLOBS:-""}" ]] ; then
+                    # This exits with 0 regardless of whether the pattern matches any
+                    # blobs or not so it's OK to run this multiple times
+                    az storage blob delete-batch \
+                        --account-name "$AZURE_STORAGE_ACCOUNT" \
+                        -s "$azure_storage_container_name" \
+                        --pattern "tests/$test_run_id/*"
+                fi
             fi
         fi
 
