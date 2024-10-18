@@ -20,6 +20,8 @@ const { IMAGE_VERSION } = require('../aws-ecs/legacy/constants');
 const { regionNames } = require('./regions');
 const path = require('path');
 const { Timeout, sleep } = require('../aws-ecs/legacy/time');
+const dotenv = require('dotenv');
+const fs = require('node:fs');
 
 class PlatformAzureACI {
   constructor(script, variablePayload, opts, platformOpts) {
@@ -61,6 +63,8 @@ class PlatformAzureACI {
     this.cpu = parseInt(platformOpts.platformConfig.cpu, 10) || 4;
     this.memory = parseInt(platformOpts.platformConfig.memory, 10) || 8;
     this.region = platformOpts.platformConfig.region || 'eastus';
+
+    this.extraEnvVars = {};
 
     if (!regionNames.includes(this.region)) {
       const err = new Error(`Invalid region: ${this.region}`);
@@ -180,8 +184,13 @@ class PlatformAzureACI {
     }
 
     if (this.platformOpts.cliArgs.dotenv) {
-      this.artilleryArgs.push('--dotenv');
-      this.artilleryArgs.push(path.basename(this.platformOpts.cliArgs.dotenv));
+      const dotEnvPath = path.resolve(
+        process.cwd(),
+        this.platformOpts.cliArgs.dotenv
+      );
+      const contents = fs.readFileSync(dotEnvPath);
+      const envVars = dotenv.parse(contents);
+      this.extraEnvVars = Object.assign({}, this.extraEnvVars, envVars);
     }
 
     if (this.platformOpts.cliArgs['scenario-name']) {
@@ -517,6 +526,10 @@ class PlatformAzureACI {
         name: 'ARTILLERY_CLOUD_ENDPOINT',
         secureValue: cloudEndpoint
       });
+    }
+
+    for (const [name, value] of Object.entries(this.extraEnvVars)) {
+      environmentVariables.push({ name, value });
     }
 
     const containerGroup = {
