@@ -70,7 +70,7 @@ class RunCommand extends Command {
           console.error(
             'Error: something went wrong connecting to Artillery Cloud'
           );
-          console.error('Check https://x.com/artilleryio for status updates');
+          console.error('Check https://status.artillery.io for status updates');
         }
       }
     }
