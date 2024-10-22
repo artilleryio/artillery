@@ -159,7 +159,7 @@ class PosthogEngine {
         }
 
         if (context.postHogClient) {
-          callbackify(context.postHogClient.shutdownAsync)((postHogErr) => {
+          callbackify(context.postHogClient.shutdown)((postHogErr) => {
             // Ignore PostHog error as there's nothing we can do anyway
             debug(postHogErr);
             return callback(err, context);

@@ -35,7 +35,7 @@
     "jmespath": "^0.16.0",
     "js-yaml": "^3.13.1",
     "mime-types": "2.1.35",
-    "posthog-node": "^3.1.2",
+    "posthog-node": "^4.2.1",
     "sprintf-js": "^1.1.2",
     "temp": "^0.9.4"
   },
