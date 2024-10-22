@@ -136,7 +136,7 @@
     "moment": "^2.29.4",
     "nanoid": "^3.3.4",
     "ora": "^4.0.4",
-    "posthog-node": "^2.2.3",
+    "posthog-node": "^4.2.1",
     "rc": "^1.2.8",
     "sqs-consumer": "5.8.0",
     "temp": "^0.9.4",

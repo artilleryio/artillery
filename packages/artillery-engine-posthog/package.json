@@ -26,6 +26,6 @@
   "dependencies": {
     "async": "^3.2.4",
     "debug": "^4.3.4",
-    "posthog-node": "^2.2.3"
+    "posthog-node": "^4.2.1"
   }
 }
