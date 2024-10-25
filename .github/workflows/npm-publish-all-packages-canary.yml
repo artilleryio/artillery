@@ -93,7 +93,7 @@ jobs:
       DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
       AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
 
-  publish-cloudformation-templates-canary-to-s3:
+  run-cloudformation-iam-setup-tests:
     uses: ./.github/workflows/s3-publish-cf-templates.yml
     needs: run-distributed-tests
     with:
@@ -103,3 +103,8 @@ jobs:
       id-token: write
     secrets:
       AWS_ASSET_UPLOAD_ROLE_ARN: ${{ secrets.AWS_ASSET_UPLOAD_ROLE_ARN }}
+      ARTILLERY_CLOUD_ENDPOINT_TEST: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY_TEST: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      AWS_ACCOUNT_ID_FRESH_SETUP_TESTS: ${{ secrets.AWS_ACCOUNT_ID_FRESH_SETUP_TESTS }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
