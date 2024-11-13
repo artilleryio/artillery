@@ -94,5 +94,6 @@ module.exports = {
   engine_http: require('./lib/engine_http'),
   ssms: require('./lib/ssms'),
   isIdlePhase: require('./lib/is-idle-phase'),
-  updateGlobalObject
+  updateGlobalObject,
+  util: require('./lib/util')
 };
