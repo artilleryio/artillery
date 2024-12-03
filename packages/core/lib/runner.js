@@ -36,40 +36,41 @@ module.exports = {
   }
 };
 
-function loadEngines(
+async function loadEngines(
   script,
   ee,
   warnings = {
     engines: {}
   }
 ) {
-  const loadedEngines = _.map(
-    Object.assign({}, Engines, script.config.engines),
-    function loadEngine(engineConfig, engineName) {
-      let moduleName = 'artillery-engine-' + engineName;
-      try {
-        let Engine;
-        if (typeof Engines[engineName] !== 'undefined') {
-          Engine = Engines[engineName];
-        } else {
-          Engine = require(moduleName);
+  const loadedEngines = await Promise.all(
+    [...Object.entries(Engines), ...Object.entries(script.config.engines)].map(
+      async ([engineName, engineConfig]) => {
+        let moduleName = 'artillery-engine-' + engineName;
+        try {
+          let Engine;
+          if (typeof Engines[engineName] !== 'undefined') {
+            Engine = Engines[engineName];
+          } else {
+            Engine = (await import(moduleName)).default;
+          }
+          const engine = new Engine(script, ee, engineUtil);
+          engine.__name = engineName;
+          return engine;
+        } catch (err) {
+          console.log(
+            'WARNING: engine %s specified but module %s could not be loaded',
+            engineName,
+            moduleName
+          );
+          console.log(err.stack);
+          warnings.engines[engineName] = {
+            message: 'Could not load',
+            error: err
+          };
         }
-        const engine = new Engine(script, ee, engineUtil);
-        engine.__name = engineName;
-        return engine;
-      } catch (err) {
-        console.log(
-          'WARNING: engine %s specified but module %s could not be loaded',
-          engineName,
-          moduleName
-        );
-        console.log(err.stack);
-        warnings.engines[engineName] = {
-          message: 'Could not load',
-          error: err
-        };
       }
-    }
+    )
   );
 
   return { loadedEngines, warnings };
@@ -159,7 +160,7 @@ async function runner(script, payload, options, callback) {
   //
   // load engines:
   //
-  const { loadedEngines: runnerEngines } = loadEngines(
+  const { loadedEngines: runnerEngines } = await loadEngines(
     runnableScript,
     ee,
     warnings
@@ -508,12 +509,12 @@ function $randomString(length = 10) {
   return s;
 }
 
-function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
+async function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
   if (!script[hook]) {
     return {};
   }
 
-  const { loadedEngines: engines } = loadEngines(script, hookEvents);
+  const { loadedEngines: engines } = await loadEngines(script, hookEvents);
   const ee = new EventEmitter();
 
   return new Promise(function (resolve, reject) {
