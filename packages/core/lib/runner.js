@@ -13,6 +13,7 @@ const uuidv4 = require('uuid').v4;
 const { SSMS } = require('./ssms');
 const createPhaser = require('./phases');
 const createReader = require('./readers');
+const { isPackageESM } = require('./util');
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const wl = require('./weighted-pick');
 const { pathToFileURL } = require('url');
@@ -83,7 +84,7 @@ async function loadProcessor(script, options) {
       script.config.processor
     );
 
-    if (processorPath.endsWith('.mjs')) {
+    if (isPackageESM(processorPath)) {
       const fileUrl = pathToFileURL(processorPath);
       const exports = await import(fileUrl.href);
       script.config.processor = Object.assign(
