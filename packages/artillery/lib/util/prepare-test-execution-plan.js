@@ -28,6 +28,14 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args) {
     script1 = _.merge(script1, parsedData);
   }
 
+  // We run the check here because subsequent steps can overwrite the target to undefined in
+  // cases where the value of config.target is set to a value from the environment which
+  // is not available at this point in time. Example: target is set to an environment variable
+  // the value of which is only available at runtime in AWS Fargate
+  const hasTarget =
+    script1.config.target ||
+    script1.config.environments[flags.environment].target;
+
   script1 = await checkConfig(script1, scriptPath, flags);
 
   const script2 = await resolveConfigPath(script1, flags, scriptPath);
@@ -42,7 +50,7 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args) {
     script4._scriptPath
   );
 
-  if (!script5.config.target) {
+  if (!hasTarget) {
     throw new Error('No target specified and no environment chosen');
   }
 
