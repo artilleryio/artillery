@@ -2,6 +2,7 @@ const csv = require('csv-parse');
 const fs = require('node:fs');
 const path = require('node:path');
 const p = require('util').promisify;
+const { isPackageESM } = require('@artilleryio/int-core').util;
 
 const {
   readScript,
@@ -118,6 +119,8 @@ function replaceProcessorIfTypescript(script, scriptPath) {
     return script;
   }
 
+  const packageType = isPackageESM(scriptPath) ? 'esm' : 'cjs';
+
   const actualProcessorPath = path.resolve(
     path.dirname(scriptPath),
     relativeProcessorPath
@@ -140,7 +143,7 @@ function replaceProcessorIfTypescript(script, scriptPath) {
       outfile: newProcessorPath,
       bundle: true,
       platform: 'node',
-      format: 'cjs',
+      format: packageType,
       sourcemap: 'inline',
       external: ['@playwright/test', ...userExternalPackages]
     });
