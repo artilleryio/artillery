@@ -15,10 +15,6 @@ jobs:
           name: Execute load tests
           command: /home/node/artillery/bin/artillery run --output reports/report.json tests/performance/socket-io.yml
 
-      - run:
-          name: Generate HTML report
-          command: /home/node/artillery/bin/artillery report --output reports/report.html reports/report.json
-
       - store_artifacts:
           path: reports
 
