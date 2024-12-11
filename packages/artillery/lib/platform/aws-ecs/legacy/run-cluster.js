@@ -1713,6 +1713,19 @@ async function ecsRunTask(context) {
 
     try {
       const runData = await ecs.runTask(params).promise();
+
+      const launchedTasksCount = runData.tasks?.length || 0;
+      tasksRemaining -= launchedTasksCount;
+
+      if (launchedTasksCount > 0) {
+        const newTaskArns = runData.tasks.map((task) => task.taskArn);
+        context.taskArns = context.taskArns.concat(newTaskArns);
+        artillery.globalEvents.emit('metadata', {
+          platformMetadata: { taskArns: newTaskArns }
+        });
+        debug(`Launched ${launchedTasksCount} tasks`);
+      }
+
       if (runData.failures.length > 0) {
         artillery.log('Some workers failed to start');
         const uniqueReasons = [
@@ -1722,19 +1735,6 @@ async function ecsRunTask(context) {
         artillery.log('Retrying...');
         await sleep(10 * 1000);
         throw new Error('Not enough ECS capacity');
-      }
-
-      if (runData.tasks?.length > 0) {
-        const newTaskArns = runData.tasks.map((task) => task.taskArn);
-        context.taskArns = context.taskArns.concat(newTaskArns);
-        artillery.globalEvents.emit('metadata', {
-          platformMetadata: { taskArns: newTaskArns }
-        });
-        debug(`Launched ${launchCount} tasks`);
-        tasksRemaining -= launchCount;
-        await sleep(250);
-      } else {
-        retries++;
       }
     } catch (runErr) {
       if (runErr.code === 'ThrottlingException') {
