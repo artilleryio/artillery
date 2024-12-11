@@ -1,25 +1,31 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/artilleryio/artillery/main/packages/artillery/artillery-logo.svg" width="80">
-  <h1>Artillery<br/>cloud-scale load testing</h1>
-</div>
-
+  <h1>Artillery</h1>
 <p align="center">
-  <a href="https://www.artillery.io/docs">Docs</a> | <a href="https://github.com/artilleryio/artillery/discussions">Discussions</a> | <a href="https://twitter.com/artilleryio">@artilleryio</a> | <a href="https://www.artillery.io/careers">We are hiring!</a>
+  <a href="https://www.artillery.io/docs">Docs</a> | <a href="https://github.com/artilleryio/artillery/discussions">Discussions</a>
 </p>
 
 <p align="center">
   <img alt="npm" src="https://img.shields.io/npm/dm/artillery?style=flat-square">
 </p>
 
-| <!-- -->    | <!-- -->    |
-|---|---|
-| **Test at cloud scale**   | Scale out and run your tests on AWS Lambda or AWS Fargate. Artillery is the only solution that gives **distributed cloud-native load testing at scale** to everyone for FREE. |
-| **Batteries included**   | 20+ integrations for monitoring, observability, and CICD.  |
-| **Test anything**   | HTTP, Playwright, WebSocket, Socket.io, gRPC, Kinesis, and more.   |
-| **Playwright support** | Load test with real headless browsers. |
-| **Powerful workload modeling** | Emulate complex user behavior with request chains, multiple steps, transactions, and more. |
-| **Extensible & hackable** | Artillery has a plugin API to allow extending and customization. |
-| **Permissive open-source** | Permissive open source license (MPLv2) that lets you build on top of Artillery without worry. |
+
+<a href="https://www.artillery.io/">
+  <img
+    src="https://www.artillery.io/api/og?title=The%20Complete%20Load%20Testing%20Platform"
+  />
+</a>
+
+</div>
+
+## Features
+
+- **Test at cloud scale.** Cloud-native distributed load testing at scale, **out-of-the box**. Scale out with AWS Lambda, AWS Fargate or Azure ACI. No DevOps needed, zero infrastructure to set up or manage.
+- **Test with Playwright**. Reuse existing Playwright tests and load test with real headless browsers.
+- **Batteries-included.** 20+ integrations for monitoring, observability, and CICD.
+- **Test anything**. HTTP, WebSocket, Socket.io, gRPC, Kinesis, and more.
+- **Powerful workload modeling**. Emulate complex user behavior with request chains, multiple steps, transactions, and more.
+- **Extensible & hackable**. Artillery has a plugin API to allow extending and customization.
 
 ## Get started
 
@@ -37,10 +43,9 @@ Follow our 5-minute guide to run your first load test - https://www.artillery.io
 
 ### Docs and guides
 
-- [Distributed load testing with Artillery on AWS Lambda](https://docs.art/lambda)
-- [Distributed load testing on Fargate](https://docs.art/fargate)
+- [Load testing with Playwright](https://www.artillery.io/docs/playwright)
+- Distributed load testing with Artillery on [AWS Lambda](https://docs.art/lambda), [AWS Fargate](https://docs.art/fargate), or [Azure ACI](https://docs.art/azure)
 - Set [API response expectations](https://docs.art/expect), automate [SLO checks](https://docs.art/ensure), and report [Apdex scores](https://docs.art/apdex)
-- [Running tests using real headless browsers](https://docs.art/playwright) with Artillery's Playwright integration
 - [Publishing metrics](https://docs.art/o11y) to Datadog, Honeycomb, Lightstep, and more
 
 ### Integrations and plugins
