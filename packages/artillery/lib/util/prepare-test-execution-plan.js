@@ -33,8 +33,9 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args) {
   // is not available at this point in time. Example: target is set to an environment variable
   // the value of which is only available at runtime in AWS Fargate
   const hasTarget =
-    script1.config.target ||
-    script1.config.environments[flags.environment].target;
+    typeof script1.config.target !== 'undefined' ||
+    typeof script1.config.environments?.[flags.environment]?.target !==
+      'undefined';
 
   script1 = await checkConfig(script1, scriptPath, flags);
 
