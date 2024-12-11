@@ -32,7 +32,7 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args) {
   // cases where the value of config.target is set to a value from the environment which
   // is not available at this point in time. Example: target is set to an environment variable
   // the value of which is only available at runtime in AWS Fargate
-  const hasTarget =
+  const hasOriginalTarget =
     typeof script1.config.target !== 'undefined' ||
     typeof script1.config.environments?.[flags.environment]?.target !==
       'undefined';
@@ -51,7 +51,7 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args) {
     script4._scriptPath
   );
 
-  if (!hasTarget) {
+  if (!script5.config.target && !hasOriginalTarget) {
     throw new Error('No target specified and no environment chosen');
   }
 
