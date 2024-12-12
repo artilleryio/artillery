@@ -448,58 +448,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 };
 
-function replaceProcessorIfTypescript(script, scriptPath) {
-  const relativeProcessorPath = script.config.processor;
-  const userExternalPackages = script.config.bundling?.external || [];
-
-  if (!relativeProcessorPath) {
-    return script;
-  }
-  const extensionType = path.extname(relativeProcessorPath);
-
-  if (extensionType != '.ts') {
-    return script;
-  }
-
-  const actualProcessorPath = path.resolve(
-    path.dirname(scriptPath),
-    relativeProcessorPath
-  );
-  const processorFileName = path.basename(actualProcessorPath, extensionType);
-
-  const processorDir = path.dirname(actualProcessorPath);
-  const newProcessorPath = path.join(
-    processorDir,
-    `dist/${processorFileName}.js`
-  );
-
-  //TODO: move require to top of file when Lambda bundle size issue is solved
-  //must be conditionally required for now as this package is removed in Lambda for now to avoid bigger package sizes
-  const esbuild = require('esbuild-wasm');
-
-  try {
-    esbuild.buildSync({
-      entryPoints: [actualProcessorPath],
-      outfile: newProcessorPath,
-      bundle: true,
-      platform: 'node',
-      format: 'cjs',
-      sourcemap: 'inline',
-      external: ['@playwright/test', ...userExternalPackages]
-    });
-  } catch (error) {
-    throw new Error(`Failed to compile Typescript processor\n${error.message}`);
-  }
-
-  global.artillery.hasTypescriptProcessor = newProcessorPath;
-  console.log(
-    `Bundled Typescript file into JS. New processor path: ${newProcessorPath}`
-  );
-
-  script.config.processor = newProcessorPath;
-  return script;
-}
-
 async function sendTelemetry(script, flags, extraProps) {
   if (process.env.WORKER_ID) {
     debug('Telemetry: Running in cloud worker, skipping test run event');
