@@ -104,9 +104,23 @@ class ArtilleryWorker {
     this.state = STATES.preparing;
 
     const { script, payload, options } = opts;
+    let scriptForWorker = script;
+
+    if (script.__transpiledTypeScriptPath && script.__originalScriptPath) {
+      scriptForWorker = {
+        __transpiledTypeScriptPath: script.__transpiledTypeScriptPath,
+        __originalScriptPath: script.__originalScriptPath
+      };
+    }
+
     this.worker.postMessage({
       command: 'prepare',
-      opts: { script, payload, options, testRunId: global.artillery.testRunId }
+      opts: {
+        script: scriptForWorker,
+        payload,
+        options,
+        testRunId: global.artillery.testRunId
+      }
     });
 
     await awaitOnEE(this.workerEvents, 'readyWaiting', 50);

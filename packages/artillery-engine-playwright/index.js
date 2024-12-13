@@ -351,7 +351,8 @@ class PlaywrightEngine {
 
         const fn =
           self.processor[spec.testFunction] ||
-          self.processor[spec.flowFunction];
+          self.processor[spec.flowFunction] ||
+          spec.testFunction;
 
         if (!fn) {
           console.error('Playwright test function not found:', fn);

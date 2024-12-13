@@ -105,7 +105,17 @@ async function prepare(opts) {
     send({ event: 'log', args });
   });
 
-  const { script: _script, payload, options } = opts;
+  let _script;
+  if (
+    opts.script.__transpiledTypeScriptPath &&
+    opts.script.__originalScriptPath
+  ) {
+    _script = require(opts.script.__transpiledTypeScriptPath);
+  } else {
+    _script = opts.script;
+  }
+
+  const { payload, options } = opts;
   const script = await loadProcessor(_script, options);
 
   global.artillery.testRunId = opts.testRunId;

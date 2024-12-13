@@ -2,6 +2,7 @@ const csv = require('csv-parse');
 const fs = require('node:fs');
 const path = require('node:path');
 const p = require('util').promisify;
+const debug = require('debug')('artillery');
 
 const {
   readScript,
@@ -23,9 +24,44 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args) {
   let script1 = {};
 
   for (const fn of inputFiles) {
-    const data = await readScript(fn);
-    const parsedData = await parseScript(data);
-    script1 = _.merge(script1, parsedData);
+    const fn2 = fn.toLowerCase();
+    const absoluteFn = path.resolve(process.cwd(), fn);
+    if (
+      fn2.endsWith('.yml') ||
+      fn2.endsWith('.yaml') ||
+      fn2.endsWith('.json')
+    ) {
+      const data = await readScript(absoluteFn);
+      const parsedData = await parseScript(data);
+      script1 = _.merge(script1, parsedData);
+    } else {
+      if (fn2.endsWith('.js')) {
+        const parsedData = require(absoluteFn);
+        script1 = _.merge(script1, parsedData);
+      } else if (fn2.endsWith('.ts')) {
+        const outputPath = path.join(
+          path.dirname(absoluteFn),
+          `dist/${path.basename(fn)}.js`
+        );
+
+        const entryPoint = path.resolve(process.cwd(), fn);
+        // TODO: external packages will have to be specified externally to the script
+        transpileTypeScript(entryPoint, outputPath, []);
+        debug('transpiled TypeScript file into JS. Bundled file:', outputPath);
+        const parsedData = require(outputPath);
+        script1 = _.merge(script1, parsedData);
+        // These magic properties are used by the worker to load the transpiled file
+        script1.__transpiledTypeScriptPath = outputPath;
+        script1.__originalScriptPath = entryPoint;
+      } else {
+        console.log('Unknown file type', fn);
+        console.log(
+          'Only JSON (.json), YAML (.yml/.yaml) and TypeScript (.ts) files are supported'
+        );
+        console.log('https://docs.art/e/file-types');
+        throw new Error('Unknown file type');
+      }
+    }
   }
 
   // We run the check here because subsequent steps can overwrite the target to undefined in
@@ -112,6 +148,22 @@ async function readPayload(script) {
   }
 
   return script;
+}
+
+function transpileTypeScript(entryPoint, outputPath, userExternalPackages) {
+  const esbuild = require('esbuild-wasm');
+
+  esbuild.buildSync({
+    entryPoints: [entryPoint],
+    outfile: outputPath,
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    sourcemap: 'inline',
+    external: ['@playwright/test', ...userExternalPackages]
+  });
+
+  return outputPath;
 }
 
 function replaceProcessorIfTypescript(script, scriptPath) {
