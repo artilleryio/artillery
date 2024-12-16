@@ -28,11 +28,10 @@ jobs:
         run: npm ci
 
       - name: Run example
-        uses: actions/setup-node@v3
+        uses: artilleryio/action-cli@v1
         with:
-          node-version: '20.x'
-      - run: |
-          artillery run browser-load-test.ts --record --tags ${{ env.CLI_TAGS }},group:browser-load-test --note ${{ env.CLI_NOTE }}
+          command: run browser-load-test.ts --record --tags ${{ env.CLI_TAGS }},group:browser-load-test --note ${{ env.CLI_NOTE }}
+          working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
           ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
