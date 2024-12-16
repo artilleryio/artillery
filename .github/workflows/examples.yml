@@ -12,6 +12,32 @@ env:
   CLI_NOTE: Running&nbsp;from&nbsp;the&nbsp;Official&nbsp;Artillery&nbsp;Github&nbsp;Action!&nbsp;😀
 
 jobs:
+  browser-load-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CWD: ./examples/browser-load-testing-playwright
+    defaults:
+      run:
+        working-directory: ${{ env.CWD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install
+        run: npm ci
+
+      - name: Run example
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - run: |
+          artillery run browser-load-test.ts --record --tags ${{ env.CLI_TAGS }},group:browser-load-test --note ${{ env.CLI_NOTE }}
+        env:
+          ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
+          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+
   http-metrics-by-endpoint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
