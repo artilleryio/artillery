@@ -70,8 +70,8 @@ class QuickCommand extends Command {
       script.scenarios[0].engine = 'ws';
     }
 
-    const tmpf = tmp.fileSync();
-    fs.writeFileSync(tmpf.name, JSON.stringify(script, null, 2), { flag: 'w' });
+    const tmpf = `${tmp.fileSync().name}.yml`;
+    fs.writeFileSync(tmpf, JSON.stringify(script, null, 2), { flag: 'w' });
 
     const runArgs = [];
     if (flags.output) {
@@ -82,7 +82,7 @@ class QuickCommand extends Command {
       runArgs.push('--quiet');
     }
 
-    runArgs.push(`${tmpf.name}`);
+    runArgs.push(tmpf);
 
     RunCommand.run(runArgs);
   }
