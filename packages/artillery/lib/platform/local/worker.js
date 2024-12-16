@@ -31,6 +31,8 @@ const EventEmitter = require('eventemitter3');
 const p = require('util').promisify;
 const { loadProcessor } = core.runner.runnerFuncs;
 
+const prepareTestExecutionPlan = require('../../util/prepare-test-execution-plan');
+
 process.env.LOCAL_WORKER_ID = threadId;
 
 parentPort.on('message', onMessage);
@@ -110,7 +112,12 @@ async function prepare(opts) {
     opts.script.__transpiledTypeScriptPath &&
     opts.script.__originalScriptPath
   ) {
-    _script = require(opts.script.__transpiledTypeScriptPath);
+    // Load and process pre-compiled TypeScript file
+    _script = await prepareTestExecutionPlan(
+      [opts.script.__originalScriptPath],
+      opts.options.cliArgs,
+      []
+    );
   } else {
     _script = opts.script;
   }

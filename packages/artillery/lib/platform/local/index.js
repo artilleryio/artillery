@@ -52,6 +52,7 @@ class PlatformLocal {
     }
 
     for (const [workerId, w] of Object.entries(this.workers)) {
+      this.opts.cliArgs = this.platformOpts.cliArgs;
       await this.prepareWorker(workerId, {
         script: w.script,
         payload: this.payload,
