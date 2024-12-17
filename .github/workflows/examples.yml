@@ -24,14 +24,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install
-        run: npm ci
-
       - name: Run example
-        uses: artilleryio/action-cli@v1
+        uses: actions/setup-node@v3
         with:
-          command: run browser-load-test.ts --record --tags ${{ env.CLI_TAGS }},group:browser-load-test --note ${{ env.CLI_NOTE }}
-          working-directory: ${{ env.CWD }}
+          node-version: '20.x'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run test
+        run: |
+          $ARTILLERY_BINARY_PATH run browser-load-test.ts --record --tags ${{ env.CLI_TAGS }},group:browser-load-test --note "${{ env.CLI_NOTE }}"
+        working-directory: ${{ env.CWD }}
         env:
           ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
           ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
