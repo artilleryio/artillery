@@ -8,6 +8,8 @@ const {
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
 
+const path = require('path');
+
 const A9_PATH = process.env.A9_PATH || 'artillery';
 
 before(async () => {
@@ -21,6 +23,20 @@ beforeEach(async (t) => {
   $.verbose = true;
 
   reportFilePath = generateTmpReportPath(t.name, 'json');
+});
+
+test('Playwright test in TypeScript (example)', async (t) => {
+  const scenarioPath = path.resolve(
+    __dirname,
+    '../../../../../examples/browser-load-testing-playwright/browser-load-test.ts'
+  );
+  const output =
+    await $`${A9_PATH} run-fargate ${scenarioPath} --record --tags ${baseTags}`;
+  t.ok(output.stdout.includes('Summary report'));
+  t.ok(output.stdout.includes('p99'));
+  t.ok(output.stdout.includes('vusers.completed'));
+  t.ok(output.stdout.includes('browser.page.FCP.https://www.artillery.io/'));
+  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
 });
 
 test('Kitchen Sink Test - multiple features together', async (t) => {
