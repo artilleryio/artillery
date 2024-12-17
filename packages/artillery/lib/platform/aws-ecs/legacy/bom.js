@@ -15,6 +15,10 @@ const BUILTIN_ENGINES = require('./plugins').getOfficialEngines();
 const Table = require('cli-table3');
 
 const { resolveConfigTemplates } = require('../../../../util');
+
+const prepareTestExecutionPlan = require('../../../../lib/util/prepare-test-execution-plan');
+const { readScript, parseScript } = require('../../../../util');
+
 // NOTE: Code below presumes that all paths are absolute
 
 //Tests in Fargate run on ubuntu, which uses posix paths
@@ -28,8 +32,22 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   A.waterfall(
     [
       A.constant(absoluteScriptPath),
-      global.artillery.__util.readScript,
-      global.artillery.__util.parseScript,
+      async function (scriptPath) {
+        let scriptData;
+        if (scriptPath.toLowerCase().endsWith('.ts')) {
+          scriptData = await prepareTestExecutionPlan(
+            [scriptPath],
+            opts.flags,
+            []
+          );
+          scriptData.config.processor = scriptPath;
+        } else {
+          const data = await readScript(scriptPath);
+          scriptData = await parseScript(data);
+        }
+
+        return scriptData;
+      },
       (scriptData, next) => {
         return next(null, {
           opts: {

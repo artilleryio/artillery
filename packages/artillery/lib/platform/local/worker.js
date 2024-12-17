@@ -31,6 +31,8 @@ const EventEmitter = require('eventemitter3');
 const p = require('util').promisify;
 const { loadProcessor } = core.runner.runnerFuncs;
 
+const prepareTestExecutionPlan = require('../../util/prepare-test-execution-plan');
+
 process.env.LOCAL_WORKER_ID = threadId;
 
 parentPort.on('message', onMessage);
@@ -105,7 +107,22 @@ async function prepare(opts) {
     send({ event: 'log', args });
   });
 
-  const { script: _script, payload, options } = opts;
+  let _script;
+  if (
+    opts.script.__transpiledTypeScriptPath &&
+    opts.script.__originalScriptPath
+  ) {
+    // Load and process pre-compiled TypeScript file
+    _script = await prepareTestExecutionPlan(
+      [opts.script.__originalScriptPath],
+      opts.options.cliArgs,
+      []
+    );
+  } else {
+    _script = opts.script;
+  }
+
+  const { payload, options } = opts;
   const script = await loadProcessor(_script, options);
 
   global.artillery.testRunId = opts.testRunId;

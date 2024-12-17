@@ -17,10 +17,6 @@ async function createGlobalObject(opts) {
   global.artillery._workerThreadSend =
     global.artillery._workerThreadSend || null;
 
-  // TODO: Refactor these special fields away
-  global.artillery.__util = global.artillery.__util || {};
-  global.artillery.__util.parseScript = parseScript;
-  global.artillery.__util.readScript = readScript;
   global.artillery.__createReporter = require('./console-reporter');
 
   global.artillery._exitCode = 0;
