@@ -8,6 +8,11 @@ class PlaywrightEngine {
 
     this.config = script.config?.engines?.playwright || {};
     this.processor = script.config.processor || {};
+
+    if (script.$rewriteMetricName) {
+      this.processor.$rewriteMetricName = script.$rewriteMetricName;
+    }
+
     this.launchOptions = this.config.launchOptions || {};
     this.contextOptions = this.config.contextOptions || {};
 
