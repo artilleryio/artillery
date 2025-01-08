@@ -416,9 +416,13 @@ class PlaywrightEngine {
             Date.now() - self.lastTraceRecordedTime >
             self.TRACE_RECORDING_INTERVAL_MSEC
           ) {
-            await context.tracing.stop({
-              path: initialContext.vars.__tracePath
-            });
+            try {
+              await context.tracing.stop({
+                path: initialContext.vars.__tracePath
+              });
+            } catch (err) {
+              debug(err);
+            }
             events.emit('counter', 'browser.traces_collected', 1);
             self.lastTraceRecordedTime = Date.now();
             self.tracesRecordedCount++;
