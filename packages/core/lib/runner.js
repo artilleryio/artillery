@@ -165,6 +165,15 @@ async function runner(script, payload, options, callback) {
     warnings
   );
 
+  for (const e of runnerEngines) {
+    if (
+      typeof e.init === 'function' &&
+      e.init.constructor.name === 'AsyncFunction'
+    ) {
+      await e.init();
+    }
+  }
+
   const promise = new Promise(function (resolve, reject) {
     ee.run = function (contextVars) {
       let runState = {
