@@ -6,7 +6,6 @@
 
 const async = require('async');
 const _ = require('lodash');
-const request = require('got');
 const tough = require('tough-cookie');
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
@@ -127,6 +126,10 @@ function HttpEngine(script) {
     this.extendedHTTPMetrics = true;
   }
 }
+
+HttpEngine.prototype.init = async function () {
+  this.request = (await import('got')).default;
+};
 
 HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
   var self = this;
@@ -719,7 +722,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         requestParams.retry = 0; // disable retries - ignored when using streams
 
         let totalDownloaded = 0;
-        request(_.omit(requestParams, ['uuid']))
+        self
+          .request(_.omit(requestParams, ['uuid']))
           .on('request', function (req) {
             ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
