@@ -978,10 +978,19 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
         context = await promisify(task)(context);
       } catch (taskErr) {
         ee.emit('error', taskErr.code || taskErr.message);
-        return callback(taskErr, context); // calling back for now for existing client code
+        if (callback) {
+          return callback(taskErr, context); // calling back for now for existing client code
+        } else {
+          throw taskErr;
+        }
       }
     }
-    return callback(null, context);
+
+    if (callback) {
+      return callback(null, context);
+    } else {
+      return context;
+    }
   };
 };
 
