@@ -11,7 +11,7 @@ const HttpEngine = require('../../lib/engine_http');
 const EventEmitter = require('events');
 const nock = require('nock');
 
-test('url and uri parameters', function (t) {
+test('url and uri parameters', async function (t) {
   const target = nock('http://localhost:8888').get('/hello').reply(200, 'ok');
 
   const target2 = nock('http://localhost:8888')
@@ -75,6 +75,7 @@ test('url and uri parameters', function (t) {
   };
 
   const engine = new HttpEngine(script);
+  await engine.init();
   const ee = new EventEmitter();
   const spy = sinon.spy(console, 'log');
   const runScenario = engine.createScenario(script.scenarios[0], ee);
@@ -83,32 +84,25 @@ test('url and uri parameters', function (t) {
     vars: {}
   };
 
-  runScenario(initialContext, function userDone(err, finalContext) {
-    if (err) {
-      t.fail();
-    }
+  const finalContext = await runScenario(initialContext);
+  t.ok(target.isDone(), 'Should have made a request to /hello');
+  t.ok(target2.isDone(), 'Should have made a request to /goodbye');
 
-    t.ok(target.isDone(), 'Should have made a request to /hello');
-    t.ok(target2.isDone(), 'Should have made a request to /goodbye');
-
-    [
-      '# output from printHello hook!',
-      '# hello whatever Hassy',
-      '# output from logDetails hook!',
-      '# goodbye whatever Has',
-      '# output from logDetailsAgain hook!'
-    ].forEach((expectedOutput) => {
-      let seen = false;
-      spy.args.forEach((args) => {
-        if (args[0] === expectedOutput) {
-          t.comment(`string: "${args[0]}" found`);
-          seen = true;
-        }
-      });
-      t.ok(seen);
+  [
+    '# output from printHello hook!',
+    '# hello whatever Hassy',
+    '# output from logDetails hook!',
+    '# goodbye whatever Has',
+    '# output from logDetailsAgain hook!'
+  ].forEach((expectedOutput) => {
+    let seen = false;
+    spy.args.forEach((args) => {
+      if (args[0] === expectedOutput) {
+        t.comment(`string: "${args[0]}" found`);
+        seen = true;
+      }
     });
-    console.log.restore(); // unwrap the spy
-
-    t.end();
+    t.ok(seen);
   });
+  console.log.restore(); // unwrap the spy
 });
