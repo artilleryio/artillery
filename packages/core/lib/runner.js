@@ -517,12 +517,22 @@ function $randomString(length = 10) {
   return s;
 }
 
-function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
+async function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
   if (!script[hook]) {
     return {};
   }
 
   const { loadedEngines: engines } = loadEngines(script, hookEvents);
+
+  for (const e of engines) {
+    if (
+      typeof e.init === 'function' &&
+      e.init.constructor.name === 'AsyncFunction'
+    ) {
+      await e.init();
+    }
+  }
+
   const ee = new EventEmitter();
 
   return new Promise(function (resolve, reject) {
