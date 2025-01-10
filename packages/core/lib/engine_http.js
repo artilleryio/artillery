@@ -265,7 +265,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     let tls = config.tls || {};
-    let timeout = config.timeout || _.get(config, 'http.timeout') || 10;
+    const timeoutSec = config.timeout || _.get(config, 'http.timeout') || 10;
+    let timeout = {
+      response: timeoutSec * 1000
+    };
 
     if (!engineUtil.isProbableEnough(params)) {
       return process.nextTick(function () {
@@ -295,7 +298,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     const requestParams = _.extend(_.clone(params), {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
-      timeout: timeout * 1000,
+      timeout,
       uuid: crypto.randomUUID()
     });
 
@@ -719,11 +722,14 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           );
         }
 
-        requestParams.retry = 0; // disable retries - ignored when using streams
+        // disable retries - ignored when using streams
+        requestParams.retry = {
+          limit: 0
+        };
 
         let totalDownloaded = 0;
         self
-          .request(_.omit(requestParams, ['uuid']))
+          .request(_.omit(requestParams, ['uuid', 'defaultName']))
           .on('request', function (req) {
             ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
