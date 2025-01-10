@@ -41,6 +41,7 @@
     "datadog-metrics": "^0.9.3",
     "debug": "^4.1.1",
     "dogapi": "^2.8.4",
+    "got": "^14.4.5",
     "hot-shots": "^6.0.1",
     "lightstep-tracer": "^0.31.0",
     "mixpanel": "^0.13.0",
