@@ -1,6 +1,7 @@
-const got = require('got');
 const { sleep } = require('../util');
 const debug = require('debug')('plugin:publish-metrics:newrelic');
+
+let got = null;
 
 class NewRelicReporter {
   constructor(config, events, script) {
@@ -192,6 +193,10 @@ class NewRelicReporter {
   }
 
   async sendStats(url, licenseKey, body) {
+    if (!got) {
+      got = (await import('got')).default;
+    }
+
     this.pendingRequests += 1;
     const headers = {
       'Content-Type': 'application/json; charset=UTF-8',
@@ -236,6 +241,10 @@ class NewRelicReporter {
   }
 
   async sendEvent(url, licenseKey, eventOptions) {
+    if (!got) {
+      got = (await import('got')).default;
+    }
+
     this.pendingRequests += 1;
     const headers = {
       'Content-Type': 'application/json; charset=UTF-8',

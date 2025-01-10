@@ -1,9 +1,10 @@
 'use strict';
 
-const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:dynatrace');
 const path = require('path');
 const { sleep } = require('../util');
+
+let got = null;
 
 class DynatraceReporter {
   constructor(config, events, script) {
@@ -266,6 +267,10 @@ class DynatraceReporter {
   }
 
   async sendRequest(url, options, type = 'metrics') {
+    if (!got) {
+      got = (await import('got')).default;
+    }
+
     this.pendingRequests += 1;
 
     debug(`Sending ${type} to Dynatrace`);
