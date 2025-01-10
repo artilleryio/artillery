@@ -727,9 +727,32 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           limit: 0
         };
 
+        const gotOptionNames = [
+          'url',
+          'searchParams',
+          'method',
+          'headers',
+          'body',
+          'json',
+          'form',
+          'allowGetBody',
+          'timeout',
+          'retry',
+          'encoding',
+          'cookieJar',
+          'followRedirect',
+          'maxRedirects',
+          'decompress',
+          'http2',
+          'agent',
+          'username',
+          'password',
+          'https'
+        ];
+
         let totalDownloaded = 0;
         self
-          .request(_.omit(requestParams, ['uuid', 'defaultName']))
+          .request(_.pick(requestParams, gotOptionNames))
           .on('request', function (req) {
             ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
