@@ -13,9 +13,6 @@
     "lodash": "^4.17.19",
     "ms": "^2.1.3"
   },
-  "engines": {
-    "node": ">=18.0.0"
-  },
   "scripts": {
     "lint": "eslint --ext \".js,.ts,.tsx\" .",
     "lint-fix": "npm run lint -- --fix",
