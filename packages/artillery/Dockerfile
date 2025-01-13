@@ -5,7 +5,7 @@ WORKDIR /home/node/artillery
 
 COPY package*.json ./
 RUN npm --ignore-scripts --production install
-RUN yes | npx playwright install --with-deps
+RUN npx playwright install --with-deps chromium
 
 COPY . ./
 ENV PATH="/home/node/artillery/bin:${PATH}"
