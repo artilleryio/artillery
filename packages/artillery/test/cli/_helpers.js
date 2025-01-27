@@ -46,7 +46,7 @@ function getTestTags(additionalTags) {
   const baseTags = [repoTag, actorTag, ciTag];
 
   if (process.env.GITHUB_SHA) {
-    baseTags.push(`commit:${process.env.GITHUB_SHA}`);
+    baseTags.push(`commit:${process.env.GITHUB_SHA.substring(0, 7)}`);
   }
 
   return `${[...baseTags, ...additionalTags].join(',')}`;
