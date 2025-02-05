@@ -48,12 +48,14 @@ class PlatformECS {
 
   async init() {
     await setDefaultAWSCredentials(AWS);
-
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);
     await ensureS3BucketExists('global', this.s3LifecycleConfigurationRules);
-    await createIAMResources(this.accountId);
+    
+    if (!this.platformOpts.taskRoleName) {
+      await createIAMResources(this.accountId);
+    }
   }
 
   async createWorker() {}
