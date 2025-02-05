@@ -52,10 +52,7 @@ class PlatformECS {
 
     await ensureSSMParametersExist(this.platformOpts.region);
     await ensureS3BucketExists('global', this.s3LifecycleConfigurationRules);
-    
-    if (!this.platformOpts.taskRoleName) {
-      await createIAMResources(this.accountId);
-    }
+    await createIAMResources(this.accountId);
   }
 
   async createWorker() {}
@@ -126,7 +123,7 @@ async function createWorkerRole(accountId) {
   const iam = new AWS.IAM();
 
   try {
-    const res = await iam.getRole({ RoleName: ECS_WORKER_ROLE_NAME }).promise();
+    const res = await iam.getRole({ RoleName: this.platformOpts.taskRoleName }).promise();
     return res.Role.Arn;
   } catch (err) {
     debug(err);
