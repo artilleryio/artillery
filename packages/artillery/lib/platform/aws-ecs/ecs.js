@@ -11,10 +11,7 @@ const AWS = require('aws-sdk');
 
 const { ensureParameterExists } = require('./legacy/aws-util');
 
-const {
-  S3_BUCKET_NAME_PREFIX,
-  ECS_WORKER_ROLE_NAME
-} = require('../aws/constants');
+const { S3_BUCKET_NAME_PREFIX } = require('../aws/constants');
 
 const getAccountId = require('../aws/aws-get-account-id');
 
@@ -48,12 +45,11 @@ class PlatformECS {
 
   async init() {
     await setDefaultAWSCredentials(AWS);
-
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);
     await ensureS3BucketExists('global', this.s3LifecycleConfigurationRules);
-    await createIAMResources(this.accountId);
+    await createIAMResources(this.accountId, this.platformOpts.taskRoleName);
   }
 
   async createWorker() {}
@@ -112,19 +108,19 @@ async function ensureSSMParametersExist(region) {
   );
 }
 
-async function createIAMResources(accountId) {
-  const workerRoleArn = await createWorkerRole(accountId);
+async function createIAMResources(accountId, taskRoleName) {
+  const workerRoleArn = await createWorkerRole(accountId, taskRoleName);
 
   return {
     workerRoleArn
   };
 }
 
-async function createWorkerRole(accountId) {
+async function createWorkerRole(accountId, taskRoleName) {
   const iam = new AWS.IAM();
 
   try {
-    const res = await iam.getRole({ RoleName: ECS_WORKER_ROLE_NAME }).promise();
+    const res = await iam.getRole({ RoleName: taskRoleName }).promise();
     return res.Role.Arn;
   } catch (err) {
     debug(err);
@@ -145,7 +141,7 @@ async function createWorkerRole(accountId) {
         ]
       }),
       Path: '/',
-      RoleName: ECS_WORKER_ROLE_NAME
+      RoleName: taskRoleName
     })
     .promise();
 
@@ -231,7 +227,7 @@ async function createWorkerRole(accountId) {
   await iam
     .attachRolePolicy({
       PolicyArn: createPolicyResp.Policy.Arn,
-      RoleName: ECS_WORKER_ROLE_NAME
+      RoleName: taskRoleName
     })
     .promise();
 

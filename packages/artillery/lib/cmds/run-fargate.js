@@ -75,14 +75,16 @@ class RunCommand extends Command {
       }
     }
 
+    flags.taskRoleName = flags['task-role-name'] || ECS_WORKER_ROLE_NAME;
+
     const ECS = new PlatformECS(
       null,
       null,
       {},
-      { testRunId: 'foo', region: flags.region }
+      { testRunId: 'foo', region: flags.region, taskRoleName: flags.taskRoleName }
     );
     await ECS.init();
-    flags.taskRoleName = flags['task-role-name'] || ECS_WORKER_ROLE_NAME;
+    
     process.env.USE_NOOP_BACKEND_STORE = 'true';
 
     telemetry.capture('run:fargate', {
