@@ -36,6 +36,10 @@ class SqsReporter extends EventEmitter {
     // Debug info:
     this.messagesProcessed = {};
     this.metricsMessagesFromWorkers = {};
+
+    this.poolSize = typeof process.env.SQS_CONSUMER_POOL_SIZE !== 'undefined'
+      ? parseInt(process.env.SQS_CONSUMER_POOL_SIZE, 10)
+      : Math.max(Math.ceil(this.count / 10), 75);
   }
 
   _allWorkersDone() {
@@ -326,7 +330,7 @@ class SqsReporter extends EventEmitter {
     };
 
     this.sqsConsumers = [];
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < this.poolSize; i++) {
       const sqsConsumer = createConsumer(i);
 
       sqsConsumer.on('error', (err) => {
