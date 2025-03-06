@@ -30,7 +30,10 @@ class PlatformLocal {
     await this.init();
 
     if (this.platformOpts.mode === 'distribute') {
-      const count = Math.max(1, os.cpus().length - 1);
+      // Disable worker threads for Playwright-based load tests
+      const count = this.script.config.engines?.playwright
+        ? 1
+        : Math.max(1, os.cpus().length - 1);
       this.workerScripts = divideWork(this.script, count);
       this.count = this.workerScripts.length;
     } else {
