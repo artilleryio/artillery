@@ -2,7 +2,7 @@
 # NOTE: Version we use here needs to be kept consistent with that in
 # artillery-engine-playwright.
 # ********************************
-FROM mcr.microsoft.com/playwright:v1.49.1
+FROM mcr.microsoft.com/playwright:v1.51.0
 
 ARG TARGETARCH
 
