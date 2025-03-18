@@ -173,6 +173,27 @@ class SlackPlugin {
     ];
 
     if (this.ensureChecks) {
+      let checksText;
+      if (this.ensureChecks.total > 20) {
+        // Show summary if large amount checks (Slack limits messages to 4000 characters)
+        checksText = `*Checks (${ensureChecks.passed} / ${ensureChecks.total})*\n`;
+
+        if (ensureChecks.passed > 0) {
+          checksText += `:white_check_mark: ${ensureChecks.passed} passed\n`;
+        }
+
+        if (ensureChecks.failed > 0) {
+          checksText += `:x: ${ensureChecks.failed} failed`;
+        }
+
+        checksText = checksText.trim();
+      } else {
+        // Show full list if small amount checks
+        checksText = `*Checks (${ensureChecks.passed} / ${
+          ensureChecks.total
+        })*\n${this.ensureChecks.checkList.join('\n')}`;
+      }
+
       metricBlocks.push(
         ...[
           {
@@ -180,9 +201,7 @@ class SlackPlugin {
             fields: [
               {
                 type: 'mrkdwn',
-                text: `*Checks (${ensureChecks.passed} / ${
-                  ensureChecks.total
-                })*\n${this.ensureChecks.checkList.join('\n')}`
+                text: checksText
               }
             ]
           },
