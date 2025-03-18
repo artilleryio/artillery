@@ -52,14 +52,18 @@ class SlackPlugin {
                 this.exitCode = 1;
               }
               this.ensureChecks.failed += 1;
-              this.ensureChecks.checkList.push(
-                `:x: \`${check.original}\`${check.strict ? '' : ' (optional) '}`
-              );
+              this.ensureChecks.checkList.push({
+                text: check.original,
+                passed: false,
+                optional: !check.strict
+              });
             } else {
               this.ensureChecks.passed += 1;
-              this.ensureChecks.checkList.push(
-                `:white_check_mark: \`${check.original}\``
-              );
+              this.ensureChecks.checkList.push({
+                text: check.original,
+                passed: true,
+                optional: false
+              });
             }
           });
 
@@ -95,7 +99,7 @@ class SlackPlugin {
     for (const [key, value] of Object.entries(report.counters).filter(
       ([key, value]) => key.startsWith('errors.')
     )) {
-      errorList.push(` ◌ ${key.replace('errors.', '')}:  ${value}`);
+      errorList.push(`❌ ${key.replace('errors.', '')} (${value})`);
     }
     return errorList;
   }
@@ -103,116 +107,122 @@ class SlackPlugin {
   assembleSlackPayload(report, ensureChecks) {
     const errorList = this.getErrors(report);
     const duration = report.lastMetricAt - report.firstMetricAt;
-    const introText =
+    const headerText =
       this.exitCode === 0
         ? '🟢 Artillery test run finished'
         : '🔴 Artillery test run failed';
 
     const payloadTemplate = {
-      text: introText,
+      text: headerText,
       blocks: [
         {
-          type: 'rich_text',
-          elements: [
-            {
-              type: 'rich_text_section',
-              elements: [
-                {
-                  type: 'text',
-                  text: introText,
-                  style: {
-                    bold: true
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        {
-          type: 'section',
+          type: 'header',
           text: {
-            type: 'mrkdwn',
-            text: `Duration: ${this.formatDuration(duration)}`
+            type: 'plain_text',
+            text: headerText,
+            emoji: true
           }
         }
       ]
     };
 
-    if (this.cloudEnabled) {
-      payloadTemplate.blocks.push({
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `<${this.cloudTestRunUrl}>`
-        }
-      });
+    let errorsText;
+    if (errorList.length === 0) {
+      errorsText = '*Errors*\nNone';
+    } else {
+      // Only show first 10 errors to avoid Slack message length limit
+      const maxErrors = 10;
+      const trimmedList = errorList.slice(0, maxErrors);
+
+      if (errorList.length > maxErrors) {
+        trimmedList.push(`➕ ${errorList.length - maxErrors} more…`);
+      }
+
+      errorsText = `*Errors (${errorList.length})*\n\`\`\`\n${trimmedList.join(
+        '\n'
+      )}\n\`\`\``;
     }
 
     const metricBlocks = [
-      {
-        type: 'divider'
-      },
       {
         type: 'section',
         fields: [
           {
             type: 'mrkdwn',
-            text: `*${report.counters['vusers.completed']} / ${report.counters['vusers.created']}*\nVUs completed / created`
+            text: `*VUs*\n${report.counters['vusers.completed']} completed / ${report.counters['vusers.created']} created`
           },
           {
             type: 'mrkdwn',
-            text: `*Errors*\n${
-              errorList.length !== 0 ? errorList.join('\n') : '0'
-            }`
+            text: `*Duration*\n${this.formatDuration(duration)}`
           }
         ]
-      },
-      {
-        type: 'divider'
       }
     ];
 
+    let checksText = '*Checks*\nNone defined';
+
     if (this.ensureChecks) {
-      let checksText;
-      if (this.ensureChecks.total > 20) {
-        // Show summary if large amount checks (Slack limits messages to 4000 characters)
-        checksText = `*Checks (${ensureChecks.passed} / ${ensureChecks.total})*\n`;
+      // Show summary if more than 10 checks to avoid Slack message length limit
+      if (this.ensureChecks.total > 10) {
+        let summaryText = '';
 
         if (ensureChecks.passed > 0) {
-          checksText += `:white_check_mark: ${ensureChecks.passed} passed\n`;
+          summaryText += `🟢 ${ensureChecks.passed} checks passed\n`;
         }
 
         if (ensureChecks.failed > 0) {
-          checksText += `:x: ${ensureChecks.failed} failed`;
+          summaryText += `🔴 ${ensureChecks.failed} checks failed`;
         }
 
-        checksText = checksText.trim();
+        summaryText = summaryText.trim();
+        checksText = `*Checks (${ensureChecks.passed}/${ensureChecks.total})*\n\`\`\`\n${summaryText}\n\`\`\``;
       } else {
-        // Show full list if small amount checks
+        const formattedChecks = this.ensureChecks.checkList.map(
+          (check) =>
+            `${check.passed ? '🟢' : '🔴'} ${check.text}${
+              check.optional ? ' (optional)' : ''
+            }`
+        );
+
         checksText = `*Checks (${ensureChecks.passed} / ${
           ensureChecks.total
-        })*\n${this.ensureChecks.checkList.join('\n')}`;
+        })*\n\`\`\`\n${formattedChecks.join('\n')}\n\`\`\``;
       }
-
-      metricBlocks.push(
-        ...[
-          {
-            type: 'section',
-            fields: [
-              {
-                type: 'mrkdwn',
-                text: checksText
-              }
-            ]
-          },
-          {
-            type: 'divider'
-          }
-        ]
-      );
     }
 
+    metricBlocks.push({
+      type: 'section',
+      fields: [
+        {
+          type: 'mrkdwn',
+          text: checksText
+        },
+        {
+          type: 'mrkdwn',
+          text: errorsText
+        }
+      ]
+    });
+
     payloadTemplate.blocks = payloadTemplate.blocks.concat(metricBlocks);
+
+    if (this.cloudEnabled) {
+      payloadTemplate.blocks.push({
+        type: 'actions',
+        elements: [
+          {
+            type: 'button',
+            text: {
+              type: 'plain_text',
+              text: 'See report on Artillery Cloud',
+              emoji: true
+            },
+            url: this.cloudTestRunUrl,
+            style: 'primary'
+          }
+        ]
+      });
+    }
 
     return JSON.stringify(payloadTemplate);
   }
