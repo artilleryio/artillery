@@ -11,6 +11,21 @@ on:
       AWS_ASSET_UPLOAD_ROLE_ARN:
         description: 'ARN of the IAM role to assume to upload assets to S3'
         required: true
+      AWS_ACCOUNT_ID_FRESH_SETUP_TESTS:
+        description: 'AWS Account ID to use for setting up IAM permissions and running tests'
+        required: true
+      ARTILLERY_CLOUD_ENDPOINT_TEST:
+        description: 'Artillery Cloud endpoint for running tests'
+        required: true
+      ARTILLERY_CLOUD_API_KEY_TEST:
+        description: 'Artillery Cloud API Key for running tests'
+        required: true
+      DD_TESTS_API_KEY:
+        description: 'Datadog API Key for running tests'
+        required: true
+      DD_TESTS_APP_KEY:
+        description: 'Datadog App Key for running tests'
+        required: true
 
   workflow_dispatch:
     inputs:
@@ -22,9 +37,10 @@ on:
 env:
   CF_LAMBDA_TEMPLATE: ${{ inputs.canary && 'aws-iam-lambda-cf-template-canary.yml' || 'aws-iam-lambda-cf-template.yml' }}
   CF_FARGATE_TEMPLATE: ${{ inputs.canary && 'aws-iam-fargate-cf-template-canary.yml' || 'aws-iam-fargate-cf-template.yml' }}
-  GH_OIDC_LAMBDA_TEMPLATE: ${{ inputs.canary && 'gh-oidc-lambda-canary.yml' || 'gh-oidc-lambda.yml' }}
-  GH_OIDC_FARGATE_TEMPLATE: ${{ inputs.canary && 'gh-oidc-fargate-canary.yml' || 'gh-oidc-fargate.yml' }}
+  GH_OIDC_TEMPLATE: ${{ inputs.canary && 'github-oidc-canary.yml' || 'github-oidc.yml' }}
+
 jobs:
+  # Publish templates to AWS S3
   put-cloudformation-templates:
     runs-on: ubuntu-latest
 
@@ -50,5 +66,155 @@ jobs:
         run: |
           aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-fargate-cf-template.yml s3://artilleryio-cf-templates/${{ env.CF_FARGATE_TEMPLATE }}
           aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/aws-iam-lambda-cf-template.yml s3://artilleryio-cf-templates/${{ env.CF_LAMBDA_TEMPLATE }}
-          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/gh-oidc-lambda.yml s3://artilleryio-cf-templates/${{ env.GH_OIDC_LAMBDA_TEMPLATE }}
-          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/gh-oidc-fargate.yml s3://artilleryio-cf-templates/${{ env.GH_OIDC_FARGATE_TEMPLATE }}
+          aws s3 cp --acl public-read ./packages/artillery/lib/platform/aws/iam-cf-templates/github-oidc.yml s3://artilleryio-cf-templates/${{ env.GH_OIDC_TEMPLATE }}
+  
+  # This job is used to test that the IAM role created from the `github-oidc.yml` CF template has the correct permissions to be able to run Artillery tests on Lambda and Fargate and that the OIDC is set correctly.
+  set-up-and-run-artillery-test-on-aws:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+    needs: put-cloudformation-templates
+    strategy:
+      matrix:
+        service: [lambda, fargate]
+        include:
+          - service: lambda
+            test-file: 'test/cloud-e2e/lambda/lambda-smoke.test.js'
+          - service: fargate
+            test-file: 'test/cloud-e2e/fargate/dd-adot.test.js'
+      max-parallel: 1
+  
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_FRESH_SETUP_TESTS }}:role/ResetAccountForRunningTests
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+      
+      - name: Install aws-nuke
+        run: |
+          curl -sL https://github.com/rebuy-de/aws-nuke/releases/download/v2.25.0/aws-nuke-v2.25.0-linux-amd64.tar.gz | tar -xz
+          sudo install aws-nuke-v2.25.0-linux-amd64 /usr/local/bin/aws-nuke
+
+      - name: Run aws-nuke
+        run: |
+          cat <<EOF > aws-nuke-config.yml
+          regions:
+            - "global"
+            - "us-east-2"
+            - "us-east-1"
+            - "us-west-1"
+            - "us-west-2"
+            - "ap-south-1"
+            - "ap-northeast-3"
+            - "ap-northeast-2"
+            - "ap-southeast-1"
+            - "ap-southeast-2"
+            - "ap-northeast-1"
+            - "ca-central-1"
+            - "eu-central-1"
+            - "eu-west-1"
+            - "eu-west-2"
+            - "eu-west-3"
+            - "eu-north-1"
+            - "sa-east-1"
+
+          account-blocklist:
+            - 111111111111
+
+          resource-types:
+            targets:
+              - IAMRole
+              - IAMPolicy
+              - IAMRolePolicyAttachment
+              - IAMOpenIDConnectProvider
+              - S3Bucket
+              - S3Object
+              - LambdaFunction
+              - ECSTaskDefinition
+              - ECSCluster
+              - ECSContainerInstance
+              - CloudFormationStack
+              - SQSQueue
+              - CloudWatchLogGroup
+              - CloudWatchLogStream
+              - SSMParameter
+
+          accounts:
+            "${{ secrets.AWS_ACCOUNT_ID_FRESH_SETUP_TESTS }}":
+              filters:
+                IAMRole:
+                - property: Name
+                  type: "glob"
+                  value: "AWS*"
+                - property: Name
+                  type: "glob"
+                  value: "Organization*"
+                - property: Name
+                  value: "ResetAccountForRunningTests"
+                
+                IAMRolePolicyAttachment:
+                - property: RoleName
+                  type: "glob"
+                  value: "AWS*"
+                - property: RoleName
+                  value: "ResetAccountForRunningTests"
+                - property: RoleName
+                  type: "glob"
+                  value: "Organization*"
+                
+                IAMOpenIDConnectProvider:
+                - property: Arn
+                  type: "contains"
+                  value: "oidc-provider/token.actions.githubusercontent.com"
+                  invert: true
+          EOF
+
+          aws-nuke --config aws-nuke-config.yml --force --force-sleep 4 --no-dry-run
+
+      - name: Fetch CloudFormation Template
+        run: |
+          aws s3 cp s3://artilleryio-cf-templates/${{ env.GH_OIDC_TEMPLATE }} template.yml
+      - name: Deploy CloudFormation Template
+        run: |
+          aws cloudformation create-stack \
+            --stack-name iam-distributed-testing-setup \
+            --template-body file://template.yml \
+            --parameters ParameterKey=GitHubRepository,ParameterValue="artilleryio/artillery" \
+            --capabilities CAPABILITY_NAMED_IAM
+          aws cloudformation wait stack-create-complete --stack-name iam-distributed-testing-setup
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: us-east-1
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID_FRESH_SETUP_TESTS }}:role/ArtilleryGitHubOIDCRole
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+      - run: .github/workflows/scripts/npm-command-retry.sh install
+      - run: npm run build
+      - name: Run Artillery Test
+        env:
+          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+          FORCE_COLOR: 1
+          DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+          DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+        run: |
+          npm run test:aws:ci --workspace artillery -- --files ${{ matrix.test-file }}
+          
