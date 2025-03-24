@@ -1,7 +1,6 @@
 'use strict';
 
 const debug = require('debug')('plugin:slack');
-const got = require('got');
 const moment = require('moment');
 
 class SlackPlugin {
@@ -228,6 +227,7 @@ class SlackPlugin {
   }
 
   async sendReport(report, ensureChecks) {
+    const got = (await import('got')).default;
     const payload = this.assembleSlackPayload(report, ensureChecks);
     try {
       const res = await got.post(this.config.webhookUrl, {

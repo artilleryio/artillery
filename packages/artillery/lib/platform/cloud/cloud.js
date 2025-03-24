@@ -5,7 +5,6 @@
 'use strict';
 
 const debug = require('debug')('cloud');
-const request = require('got');
 const awaitOnEE = require('../../util/await-on-ee');
 const sleep = require('../../util/sleep');
 const util = require('node:util');
@@ -220,10 +219,12 @@ class ArtilleryCloudPlugin {
       throw err;
     }
 
+    this.request = (await import('got')).default;
+
     let res;
     let body;
     try {
-      res = await request.get(this.whoamiEndpoint, {
+      res = await this.request.get(this.whoamiEndpoint, {
         headers: this.defaultHeaders,
         throwHttpErrors: false,
         retry: {
@@ -247,7 +248,7 @@ class ArtilleryCloudPlugin {
 
     let postSucceeded = false;
     try {
-      res = await request.post(this.pingEndpoint, {
+      res = await this.request.post(this.pingEndpoint, {
         headers: this.defaultHeaders,
         throwHttpErrors: false,
         retry: {
@@ -317,7 +318,7 @@ class ArtilleryCloudPlugin {
 
     let url;
     try {
-      const res = await request.post(this.getAssetUploadUrls, {
+      const res = await this.request.post(this.getAssetUploadUrls, {
         headers: this.defaultHeaders,
         throwHttpErrors: false,
         json: payload
@@ -337,7 +338,7 @@ class ArtilleryCloudPlugin {
 
     const fileStream = fs.createReadStream(localFilename);
     try {
-      const _response = await request.put(url, {
+      const _response = await this.request.put(url, {
         body: fileStream
       });
     } catch (error) {
@@ -399,7 +400,7 @@ class ArtilleryCloudPlugin {
     debug('☁️', 'Getting load test status');
 
     try {
-      const res = await request.get(this.getLoadTestEndpoint, {
+      const res = await this.request.get(this.getLoadTestEndpoint, {
         headers: this.defaultHeaders,
         throwHttpErrors: false
       });
@@ -414,7 +415,7 @@ class ArtilleryCloudPlugin {
     debug('☁️', eventName, eventPayload);
 
     try {
-      const res = await request.post(this.eventsEndpoint, {
+      const res = await this.request.post(this.eventsEndpoint, {
         headers: this.defaultHeaders,
         json: {
           eventType: eventName,
