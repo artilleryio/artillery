@@ -69,7 +69,12 @@ class SlackPlugin {
 
         // When ensure is enabled, whether the beforeExit or the checks event will be triggered first will depend on the order of plugins in the test script
         // Since we need data from both events, first event triggered will store the data and the second event will send the report
-        if (this.exitCode !== undefined && this.report && !this.reportSent) {
+        if (
+          this.exitCode !== undefined &&
+          this.exitCode !== null &&
+          this.report &&
+          !this.reportSent
+        ) {
           debug('Sending report from checks event');
           await this.sendReport(this.report, this.ensureChecks);
           this.reportSent = true;
@@ -96,8 +101,8 @@ class SlackPlugin {
 
   getErrors(report) {
     const errorList = [];
-    for (const [key, value] of Object.entries(report.counters).filter(
-      ([key, value]) => key.startsWith('errors.')
+    for (const [key, value] of Object.entries(report.counters).filter(([key]) =>
+      key.startsWith('errors.')
     )) {
       errorList.push(`❌ ${key.replace('errors.', '')} (${value})`);
     }
@@ -126,10 +131,9 @@ class SlackPlugin {
       ]
     };
 
-    let errorsText;
-    if (errorList.length === 0) {
-      errorsText = '*Errors*\nNone';
-    } else {
+    let errorsText = '*Errors*\nNone';
+
+    if (errorList.length > 0) {
       // Only show first 10 errors to avoid Slack message length limit
       const maxErrors = 10;
       const trimmedList = errorList.slice(0, maxErrors);
