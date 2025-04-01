@@ -71,6 +71,7 @@ class RunCommand extends Command {
             'Error: something went wrong connecting to Artillery Cloud'
           );
           console.error('Check https://status.artillery.io for status updates');
+          console.error(err);
         }
       }
     }
@@ -81,10 +82,14 @@ class RunCommand extends Command {
       null,
       null,
       {},
-      { testRunId: 'foo', region: flags.region, taskRoleName: flags.taskRoleName }
+      {
+        testRunId: 'foo',
+        region: flags.region,
+        taskRoleName: flags.taskRoleName
+      }
     );
     await ECS.init();
-    
+
     process.env.USE_NOOP_BACKEND_STORE = 'true';
 
     telemetry.capture('run:fargate', {
