@@ -232,6 +232,7 @@ class ArtilleryCloudPlugin {
       });
 
       body = JSON.parse(res.body);
+      debug(res.body);
       this.orgId = body.activeOrg;
     } catch (err) {
       this.off = true;
@@ -251,7 +252,7 @@ class ArtilleryCloudPlugin {
         headers: this.defaultHeaders,
         throwHttpErrors: false,
         retry: {
-          limit: 0
+          limit: 3
         }
       });
 
@@ -260,7 +261,6 @@ class ArtilleryCloudPlugin {
       }
     } catch (err) {
       this.off = true;
-      throw err;
     }
 
     if (!postSucceeded) {

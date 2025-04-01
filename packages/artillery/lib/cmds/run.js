@@ -170,6 +170,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
             'Error: something went wrong connecting to Artillery Cloud'
           );
           console.error('Check https://status.artillery.io for status updates');
+          console.error(err);
         }
       }
     }
