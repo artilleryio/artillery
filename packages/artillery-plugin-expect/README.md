@@ -12,7 +12,7 @@
 
 ## Documentation
 
-📖 [Plugin documentation](https://artillery.io/docs/guides/plugins/plugin-expectations-assertions.html)
+📖 [Plugin documentation](https://www.artillery.io/docs/reference/extensions/expect)
 
 ## Feedback, Bugs, Issues
 
