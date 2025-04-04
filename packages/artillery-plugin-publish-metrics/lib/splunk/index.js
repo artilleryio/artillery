@@ -1,7 +1,6 @@
-const got = require('got');
 const { sleep } = require('../util');
 const debug = require('debug')('plugin:publish-metrics:splunk');
-
+let got = null;
 class SplunkReporter {
   constructor(config, events, script) {
     if (!config.accessToken) {
@@ -178,6 +177,10 @@ class SplunkReporter {
   }
 
   async sendRequest(url, payload, type) {
+    if (!got) {
+      got = (await import('got')).default;
+    }
+
     this.pendingRequests += 1;
     const options = this.formRequest(payload);
 
