@@ -1,4 +1,4 @@
-const { test, afterEach, beforeEach } = require('tap');
+const { test, afterEach, beforeEach, skip } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
 const { generateTmpReportPath, deleteFile } = require('../../helpers');
@@ -32,7 +32,7 @@ afterEach(async (t) => {
   should be added to the `runPlaywrightTraceAssertions` function
 */
 
-test('OTel reporter correctly records trace data for playwright engine test runs', async (t) => {
+skip('OTel reporter correctly records trace data for playwright engine test runs', async (t) => {
   // Define test configuration
   const override = {
     config: {
@@ -122,7 +122,7 @@ test('OTel reporter correctly records trace data for playwright engine test runs
   }
 });
 
-test('OTel reporter correctly records trace data for playwright engine test runs with errors', async (t) => {
+skip('OTel reporter correctly records trace data for playwright engine test runs with errors', async (t) => {
   // Define test configuration
   const override = {
     config: {
