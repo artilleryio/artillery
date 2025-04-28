@@ -27,9 +27,7 @@ class RunACICommand extends Command {
       `subscription-id=${flags['subscription-id']}`,
       `storage-account=${flags['storage-account']}`,
       `blob-container=${flags['blob-container']}`,
-      `resource-group=${flags['resource-group']}`,
-      `client-id=${flags['client-id']}`,
-      `client-secret=${flags['client-secret']}`
+      `resource-group=${flags['resource-group']}`
     ];
 
     RunCommand.runCommandImplementation(flags, argv, args);
@@ -82,14 +80,6 @@ RunACICommand.flags = {
   'resource-group': Flags.string({
     description:
       'Azure Resource Group name. May also be set via AZURE_RESOURCE_GROUP environment variable.'
-  }),
-  'client-id': Flags.string({
-    description:
-      'Azure app client ID. May also be set via AZURE_CLIENT_ID environment variable.'
-  }),
-  'client-secret': Flags.string({
-    description:
-      'Azure app client secret. May also be set via AZURE_CLIENT_SECRET environment variable.'
   })
 };
 
