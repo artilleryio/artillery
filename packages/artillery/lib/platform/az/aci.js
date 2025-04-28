@@ -44,11 +44,8 @@ class PlatformAzureACI {
     this.azureSubscriptionId =
       process.env.AZURE_SUBSCRIPTION_ID ||
       platformOpts.platformConfig['subscription-id'];
-    this.azureClientId =
-      process.env.AZURE_CLIENT_ID || platformOpts.platformConfig['client-id'];
-    this.azureClientSecret =
-      process.env.AZURE_CLIENT_SECRET ||
-      platformOpts.platformConfig['client-secret'];
+    this.azureClientId = process.env.AZURE_CLIENT_ID;
+    this.azureClientSecret = process.env.AZURE_CLIENT_SECRET;
 
     this.storageAccount =
       process.env.AZURE_STORAGE_ACCOUNT ||
