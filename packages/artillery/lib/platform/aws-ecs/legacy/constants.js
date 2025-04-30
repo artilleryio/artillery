@@ -1,6 +1,19 @@
 const pkgJson = require('../../../../package.json');
 const DEFAULT_IMAGE_TAG = pkgJson.version;
 
+// Default wait timeout for cloud workers to start
+let WAIT_TIMEOUT_SEC = 600;
+
+// Legacy override
+if (process.env.ECS_WAIT_TIMEOUT) {
+  WAIT_TIMEOUT_SEC = parseInt(process.env.ECS_WAIT_TIMEOUT, 10);
+}
+
+// Override
+if (process.env.WORKER_WAIT_TIMEOUT_SEC) {
+  WAIT_TIMEOUT_SEC = parseInt(process.env.WORKER_WAIT_TIMEOUT_SEC, 10);
+}
+
 module.exports = {
   ARTILLERY_CLUSTER_NAME: 'artilleryio-cluster',
   TASK_NAME: 'artilleryio-loadgen-worker',
@@ -9,9 +22,6 @@ module.exports = {
   LOGGROUP_NAME: 'artilleryio-log-group',
   LOGGROUP_RETENTION_DAYS: process.env.ARTILLERY_LOGGROUP_RETENTION_DAYS || 180,
   IMAGE_VERSION: process.env.ECR_IMAGE_VERSION || DEFAULT_IMAGE_TAG,
-  WAIT_TIMEOUT:
-    typeof process.env.ECS_WAIT_TIMEOUT === 'undefined'
-      ? 600
-      : parseInt(process.env.ECS_WAIT_TIMEOUT, 10),
+  WAIT_TIMEOUT: WAIT_TIMEOUT_SEC,
   TEST_RUNS_MAX_TAGS: parseInt(process.env.TEST_RUNS_MAX_TAGS, 10) || 8
 };
