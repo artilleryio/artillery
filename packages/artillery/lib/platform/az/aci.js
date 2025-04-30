@@ -16,7 +16,7 @@ const util = require('../aws-ecs/legacy/util');
 const generateId = require('../../util/generate-id');
 const EventEmitter = require('eventemitter3');
 const debug = require('debug')('platform:azure-aci');
-const { IMAGE_VERSION } = require('../aws-ecs/legacy/constants');
+const { IMAGE_VERSION, WAIT_TIMEOUT } = require('../aws-ecs/legacy/constants');
 const { regionNames } = require('./regions');
 const path = require('path');
 const { Timeout, sleep } = require('../aws-ecs/legacy/time');
@@ -345,7 +345,7 @@ class PlatformAzureACI {
       this.azureSubscriptionId
     );
 
-    const provisioningWaitTimeout = new Timeout(5 * 60 * 1000).start();
+    const provisioningWaitTimeout = new Timeout(WAIT_TIMEOUT * 1000).start();
 
     let containerGroupsInTestRun = [];
     while (true) {
