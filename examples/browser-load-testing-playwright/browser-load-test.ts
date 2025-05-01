@@ -1,5 +1,3 @@
-import { checkOutArtilleryCoreConceptsFlow } from './flows.js';
-
 export const config = {
   target: 'https://www.artillery.io',
   phases: [
@@ -9,7 +7,9 @@ export const config = {
     }
   ],
   engines: {
-    playwright: {}
+    playwright: {
+      trace: true
+    }
   }
 };
 
@@ -25,6 +25,34 @@ export const scenarios = [
   {
     engine: 'playwright',
     name: 'check_out_core_concepts_scenario',
-    testFunction: checkOutArtilleryCoreConceptsFlow
+    testFunction: async function checkOutArtilleryCoreConceptsFlow(
+      page,
+      userContext,
+      events,
+      test
+    ) {
+      await test.step('Go to Artillery', async () => {
+        const requestPromise = page.waitForRequest('https://artillery.io/');
+        await page.goto('https://artillery.io/');
+        const req = await requestPromise;
+      });
+      await test.step('Go to docs', async () => {
+        const docs = await page.getByRole('link', { name: 'Docs' });
+        await docs.click();
+        await page.waitForURL('https://www.artillery.io/docs');
+      });
+
+      await test.step('Go to core concepts', async () => {
+        await page
+          .getByRole('link', {
+            name: 'Review core concepts'
+          })
+          .click();
+
+        await page.waitForURL(
+          'https://www.artillery.io/docs/get-started/core-concepts'
+        );
+      });
+    }
   }
 ];

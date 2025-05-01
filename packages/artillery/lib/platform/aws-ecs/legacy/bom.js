@@ -297,6 +297,10 @@ function getCustomJsDependencies(context, next) {
     // Could be JSON files too.
     context.localFilePaths = context.localFilePaths.concat(tree);
     context.npmModules = context.npmModules.concat(reduced);
+    // Remove duplicate entries for the same file when invoked on a single .ts script
+    // See line 44 - the config.processor property is always set on .ts files, which leads to
+    // multiple entries in the localFilePaths array for the same file
+    context.localFilePaths = _.uniq(context.localFilePaths);
     debug('got custom JS dependencies');
     return next(null, context);
   } else {

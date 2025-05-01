@@ -1,9 +1,40 @@
 'use strict';
 
-const { test, afterEach } = require('tap');
-const { applyScriptChanges } = require('../../lib/platform/aws-ecs/legacy/bom');
+const promisify = require('util').promisify;
+const path = require('path');
+const { test } = require('tap');
+const {
+  createBOM,
+  applyScriptChanges
+} = require('../../lib/platform/aws-ecs/legacy/bom');
 
 // TODO: Add tests for other functions in bom.js
+
+test('Self-contained .ts script with no dependencies', async (t) => {
+  const inputFilename = 'browser-load-test.ts';
+  const inputScript = path.join(
+    __dirname,
+    '../../../../examples/browser-load-testing-playwright',
+    inputFilename
+  );
+  const createBOMAsync = promisify(createBOM);
+  const bom = await createBOMAsync(inputScript, [], {
+    scenarioPath: inputScript,
+    flags: {}
+  });
+  console.log(bom);
+  t.equal(
+    bom.files.length,
+    1,
+    'Input file is expected to have no dependencies'
+  );
+  t.equal(bom.files[0].orig.endsWith(inputFilename), true);
+  t.equal(
+    bom.files[0].noPrefix,
+    inputFilename,
+    'Unprefixed filename should be the same as the input filename'
+  );
+});
 
 test('applyScriptChanges should resolve config templates with cli variables', async (t) => {
   // Arrange
