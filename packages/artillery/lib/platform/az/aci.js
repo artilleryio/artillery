@@ -555,6 +555,8 @@ class PlatformAzureACI {
             util.btoa(JSON.stringify(this.artilleryArgs)),
             '-i',
             this.testRunId,
+            '-t',
+            WAIT_TIMEOUT,
             '-d',
             'NOT_USED_ON_AZURE',
             '-r',
