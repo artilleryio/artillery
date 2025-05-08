@@ -556,7 +556,7 @@ class PlatformAzureACI {
             '-i',
             this.testRunId,
             '-t',
-            WAIT_TIMEOUT,
+            String(WAIT_TIMEOUT),
             '-d',
             'NOT_USED_ON_AZURE',
             '-r',
