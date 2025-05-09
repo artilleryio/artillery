@@ -190,7 +190,7 @@ class ArtilleryCloudPlugin {
           );
         }
 
-        await this.waitOnUnprocessedLogs(30 * 1000); //just waiting for ee is not enough, as the api call takes time
+        await this.waitOnUnprocessedLogs(5 * 60 * 1000); //just waiting for ee is not enough, as the api call takes time
 
         if (isInteractiveUse) {
           await this._event('testrun:end', {

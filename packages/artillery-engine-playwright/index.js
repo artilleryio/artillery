@@ -74,7 +74,7 @@ class PlaywrightEngine {
 
     // We use this to make sure only one VU is recording at one time:
     this.MAX_CONCURRENT_RECORDINGS =
-      this.tracingConfig.maxConcurrentRecordings || 3; // maximum number of VUs that can record at the same time
+      this.tracingConfig.maxConcurrentRecordings || 5; // maximum number of VUs that can record at the same time
     this.vusRecording = 0; // number of VUs currently recording
 
     //
