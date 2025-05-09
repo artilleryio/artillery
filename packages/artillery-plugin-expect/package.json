@@ -1,6 +1,6 @@
 {
   "name": "artillery-plugin-expect",
-  "version": "2.16.0",
+  "version": "2.17.0",
   "description": "Expectations and assertions for HTTP scenarios",
   "main": "index.js",
   "scripts": {
