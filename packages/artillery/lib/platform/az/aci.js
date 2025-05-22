@@ -213,8 +213,13 @@ class PlatformAzureACI {
     )[0];
     this.artilleryArgs.push(p.noPrefixPosix);
 
+    const poolSize =
+      typeof process.env.CONSUMER_POOL_SIZE !== 'undefined'
+        ? parseInt(process.env.CONSUMER_POOL_SIZE, 10)
+        : Math.max(Math.ceil(this.count / 25), 5);
+
     const consumer = new QueueConsumer(
-      { poolSize: Infinity },
+      { poolSize },
       {
         queueUrl: process.env.AZURE_STORAGE_QUEUE_URL || this.queueUrl,
         handleMessage: async (message) => {
@@ -294,7 +299,6 @@ class PlatformAzureACI {
       console.error(err);
     });
 
-    consumer.start();
     this.queueConsumer = consumer;
 
     const metadata = {
@@ -331,7 +335,7 @@ class PlatformAzureACI {
         const delayMs =
           Math.floor(
             Math.random() *
-              parseInt(process.env.AZURE_LAUNCH_STAGGER_SEC || '10', 10)
+              parseInt(process.env.AZURE_LAUNCH_STAGGER_SEC || '5', 10)
           ) * 1000;
         await sleep(delayMs);
       }
@@ -388,6 +392,7 @@ class PlatformAzureACI {
       console.log(
         'Container instances have been created. Waiting for workers to start...'
       );
+      await this.queueConsumer.start();
     } else {
       console.log('Some containers instances failed to provision');
       console.log('Please see the Azure console for details');
