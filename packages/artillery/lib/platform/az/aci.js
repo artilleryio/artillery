@@ -335,7 +335,7 @@ class PlatformAzureACI {
         const delayMs =
           Math.floor(
             Math.random() *
-              parseInt(process.env.AZURE_LAUNCH_STAGGER_SEC || '10', 10)
+              parseInt(process.env.AZURE_LAUNCH_STAGGER_SEC || '5', 10)
           ) * 1000;
         await sleep(delayMs);
       }
