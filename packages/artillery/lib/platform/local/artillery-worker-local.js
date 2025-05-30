@@ -109,7 +109,8 @@ class ArtilleryWorker {
     if (script.__transpiledTypeScriptPath && script.__originalScriptPath) {
       scriptForWorker = {
         __transpiledTypeScriptPath: script.__transpiledTypeScriptPath,
-        __originalScriptPath: script.__originalScriptPath
+        __originalScriptPath: script.__originalScriptPath,
+        __phases: script.config?.phases
       };
     }
 
