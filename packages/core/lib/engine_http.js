@@ -26,7 +26,7 @@ const decompressResponse = require('decompress-response');
 const fs = require('fs');
 const path = require('path');
 
-const { promisify } = require('node:util');
+const { promisify, callbackify } = require('node:util');
 
 const crypto = require('node:crypto');
 
@@ -222,19 +222,15 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     return function (context, callback) {
       let processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
+        let f;
         if (processFunc.constructor.name === 'Function') {
-          return processFunc(context, ee, function (hookErr) {
-            return callback(hookErr, context);
-          });
+          f = processFunc;
         } else {
-          return processFunc(context, ee)
-            .then(() => {
-              callback(null, context);
-            })
-            .catch((err) => {
-              callback(err, context);
-            });
+          f = callbackify(processFunc);
         }
+        return f(context, ee, function (hookErr) {
+          return callback(hookErr, context);
+        });
       } else {
         debug(`Function "${requestSpec.function}" not defined`);
         debug('processor: %o', self.config.processor);
