@@ -2,7 +2,7 @@
 
 const debug = require('debug')('plugin:slack');
 const got = require('got');
-const moment = require('moment');
+const { formatDuration } = require('../artillery/lib/util');
 
 class SlackPlugin {
   constructor(script, events) {
@@ -111,7 +111,10 @@ class SlackPlugin {
 
   assembleSlackPayload(report, ensureChecks) {
     const errorList = this.getErrors(report);
-    const duration = report.lastMetricAt - report.firstMetricAt;
+    const duration =
+      report.lastMetricAt != null && report.firstMetricAt != null
+        ? report.lastMetricAt - report.firstMetricAt
+        : undefined;
     const headerText =
       this.exitCode === 0
         ? '🟢 Artillery test run finished'
@@ -155,10 +158,14 @@ class SlackPlugin {
             type: 'mrkdwn',
             text: `*VUs*\n${report.counters['vusers.completed']} completed / ${report.counters['vusers.created']} created`
           },
-          {
-            type: 'mrkdwn',
-            text: `*Duration*\n${this.formatDuration(duration)}`
-          }
+          ...(duration != null
+            ? [
+                {
+                  type: 'mrkdwn',
+                  text: `*Duration*\n${formatDuration(duration)}`
+                }
+              ]
+            : [])
         ]
       }
     ];
@@ -246,31 +253,6 @@ class SlackPlugin {
       this.finished = true;
       console.error(`Slack Plugin: Failed to send report to Slack: ${err}`);
     }
-  }
-
-  formatDuration(durationInMs) {
-    const duration = moment.duration(durationInMs);
-    if (durationInMs < 1000) {
-      return `${durationInMs} miliseconds`;
-    }
-    const miliseconds = duration.get('millisecond');
-    const timeComponents = ['day', 'hour', 'minute', 'second'];
-    const formatedTimeComponents = timeComponents
-      .map((component) => {
-        let value = duration.get(component);
-        if (component === 'second' && miliseconds) {
-          value += 1;
-        }
-        return value
-          ? `${value} ${value === 1 ? component : component + 's'}`
-          : '';
-      })
-      .filter((component) => !!component);
-
-    const lastComponent = formatedTimeComponents.pop();
-    return formatedTimeComponents.length
-      ? formatedTimeComponents.join(', ') + ' and ' + lastComponent
-      : lastComponent;
   }
 
   async cleanup(done) {
