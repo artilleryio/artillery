@@ -111,7 +111,10 @@ class SlackPlugin {
 
   assembleSlackPayload(report, ensureChecks) {
     const errorList = this.getErrors(report);
-    const duration = report.lastMetricAt - report.firstMetricAt;
+    const duration =
+      report.lastMetricAt != null && report.firstMetricAt != null
+        ? report.lastMetricAt - report.firstMetricAt
+        : undefined;
     const headerText =
       this.exitCode === 0
         ? '🟢 Artillery test run finished'
@@ -155,10 +158,14 @@ class SlackPlugin {
             type: 'mrkdwn',
             text: `*VUs*\n${report.counters['vusers.completed']} completed / ${report.counters['vusers.created']} created`
           },
-          {
-            type: 'mrkdwn',
-            text: `*Duration*\n${this.formatDuration(duration)}`
-          }
+          ...(duration != null
+            ? [
+                {
+                  type: 'mrkdwn',
+                  text: `*Duration*\n${formatDuration(duration)}`
+                }
+              ]
+            : [])
         ]
       }
     ];
@@ -248,31 +255,6 @@ class SlackPlugin {
     }
   }
 
-  formatDuration(durationInMs) {
-    const duration = moment.duration(durationInMs);
-    if (durationInMs < 1000) {
-      return `${durationInMs} miliseconds`;
-    }
-    const miliseconds = duration.get('millisecond');
-    const timeComponents = ['day', 'hour', 'minute', 'second'];
-    const formatedTimeComponents = timeComponents
-      .map((component) => {
-        let value = duration.get(component);
-        if (component === 'second' && miliseconds) {
-          value += 1;
-        }
-        return value
-          ? `${value} ${value === 1 ? component : component + 's'}`
-          : '';
-      })
-      .filter((component) => !!component);
-
-    const lastComponent = formatedTimeComponents.pop();
-    return formatedTimeComponents.length
-      ? formatedTimeComponents.join(', ') + ' and ' + lastComponent
-      : lastComponent;
-  }
-
   async cleanup(done) {
     debug('Cleaning up');
     done();
@@ -284,6 +266,38 @@ class SlackPluginError extends Error {
     super(message);
     this.name = 'SlackPluginError';
   }
+}
+
+// from artillery/lib/util.js
+function formatDuration(durationInMs) {
+  const duration = moment.duration(durationInMs);
+
+  const days = duration.days();
+  const hours = duration.hours();
+  const minutes = duration.minutes();
+  const seconds = duration.seconds();
+
+  const timeComponents = [];
+  if (days) {
+    timeComponents.push(`${days} ${maybePluralize(days, 'day')}`);
+  }
+
+  if (hours || days) {
+    timeComponents.push(`${hours} ${maybePluralize(hours, 'hour')}`);
+  }
+
+  if (minutes || hours || days) {
+    timeComponents.push(`${minutes} ${maybePluralize(minutes, 'minute')}`);
+  }
+
+  timeComponents.push(`${seconds} ${maybePluralize(seconds, 'second')}`);
+
+  return timeComponents.join(', ');
+}
+
+// from artillery/lib/util.js
+function maybePluralize(amount, singular, plural = `${singular}s`) {
+  return amount === 1 ? singular : plural;
 }
 
 module.exports = {
