@@ -15,7 +15,6 @@ class SlackPlugin {
     }
 
     this.config = script.config.plugins.slack || {};
-    this.webhook = this.config.webhookUrl;
 
     if (!this.config.webhookUrl) {
       throw new SlackPluginError('Slack webhook URL not provided');
@@ -69,12 +68,14 @@ class SlackPlugin {
 
         // When ensure is enabled, whether the beforeExit or the checks event will be triggered first will depend on the order of plugins in the test script
         // Since we need data from both events, first event triggered will store the data and the second event will send the report
-        if (
-          this.exitCode !== undefined &&
-          this.exitCode !== null &&
-          this.report &&
-          !this.reportSent
-        ) {
+
+        // Make sure exitCode is properly set before potentially sending the report
+        if (this.exitCode === undefined || this.exitCode === null) {
+          this.exitCode = global.artillery.suggestedExitCode ?? 0;
+          debug('Setting initial exitCode in checks event:', this.exitCode);
+        }
+
+        if (this.report && !this.reportSent) {
           debug('Sending report from checks event');
           await this.sendReport(this.report, this.ensureChecks);
           this.reportSent = true;
@@ -85,7 +86,8 @@ class SlackPlugin {
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (opts) => {
-        this.exitCode = global.artillery.suggestedExitCode || opts.exitCode;
+        this.exitCode =
+          global.artillery.suggestedExitCode ?? opts.exitCode ?? 0;
         if (this.ensureEnabled && !this.ensureChecks && !this.reportSent) {
           this.report = opts.report;
         } else {
@@ -115,8 +117,13 @@ class SlackPlugin {
       report.lastMetricAt != null && report.firstMetricAt != null
         ? report.lastMetricAt - report.firstMetricAt
         : undefined;
+
+    // Ensure exitCode has a value before using it
+    const exitCode =
+      this.exitCode !== undefined && this.exitCode !== null ? this.exitCode : 0;
+
     const headerText =
-      this.exitCode === 0
+      exitCode === 0
         ? '🟢 Artillery test run finished'
         : '🔴 Artillery test run failed';
 
