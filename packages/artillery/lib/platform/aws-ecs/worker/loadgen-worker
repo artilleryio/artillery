@@ -222,7 +222,7 @@ sync_test_data_azure () {
     # TODO: Exclude node_modules_stream.zip
     # This recreates the directory structure in the container, i.e. we'll have tests/$test_run_id here with all files under it
     # So we need to move them all up two levels to the current directory
-    az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/*"
+    az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/*.*"
     local tmpdir="$(mktemp -d)"
     set +e
     mv tests/$test_run_id/{.,}* $tmpdir
