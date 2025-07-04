@@ -13,7 +13,7 @@
     "cheerio": "^1.0.0-rc.10",
     "cookie-parser": "^1.4.3",
     "csv-parse": "^4.16.3",
-    "debug": "^4.3.1",
+    "debug": "^4.4.1",
     "decompress-response": "^6.0.0",
     "deep-for-each": "^3.0.0",
     "driftless": "^2.0.3",
