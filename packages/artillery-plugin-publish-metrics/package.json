@@ -42,7 +42,6 @@
     "debug": "^4.1.1",
     "dogapi": "^2.8.4",
     "hot-shots": "^6.0.1",
-    "lightstep-tracer": "^0.31.0",
     "mixpanel": "^0.13.0",
     "opentracing": "^0.14.5",
     "prom-client": "^14.0.1",

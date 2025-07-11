@@ -210,16 +210,6 @@ const HoneycombReporterSchema = Joi.object({
   .unknown(false)
   .meta({ title: 'Honeycomb (Tracing) Reporter' });
 
-const LightstepReporterSchema = Joi.object({
-  type: Joi.string().valid('lightstep').required(),
-  accessToken: Joi.string().required(),
-  componentName: Joi.string().required(),
-  tags: Joi.object(),
-  enabled: artilleryBooleanOrString
-})
-  .unknown(false)
-  .meta({ title: 'Lightstep (Tracing) Reporter' });
-
 const MixpanelReporterSchema = Joi.object({
   type: Joi.string().valid('mixpanel').required(),
   projectToken: Joi.string().required()
@@ -301,7 +291,6 @@ const PublishMetricsPluginConfigSchema = Joi.array()
         PrometheusReporterSchema,
         DynatraceReporterSchema,
         HoneycombReporterSchema,
-        LightstepReporterSchema,
         MixpanelReporterSchema,
         StatsdReporterSchema,
         InfluxReporterSchema,
