@@ -43,7 +43,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20.x
+          node-version: 22.x
       - id: generate-matrix
         run: |
           RESULT=$(node .github/workflows/scripts/get-tests-in-package-location.js)
@@ -84,7 +84,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 20.x
+          node-version: 22.x
       - run: .github/workflows/scripts/npm-command-retry.sh install
       - run: npm run build
       - name: Install Specific Artillery Version if needed
@@ -135,7 +135,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 20.x
+          node-version: 22.x
       - run: .github/workflows/scripts/npm-command-retry.sh install
       - run: npm run build
       - name: Install Specific Artillery Version if needed

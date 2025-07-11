@@ -15,10 +15,10 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v3
-      - name: Use Node.js 20.x
+      - name: Use Node.js 22.x
         uses: actions/setup-node@v3
         with:
-          node-version: 20.x
+          node-version: 22.x
       - run: npm install
       - run: npm run build
       - name: Configure AWS Credentials
