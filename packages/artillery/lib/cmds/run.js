@@ -587,7 +587,6 @@ async function sendTelemetry(script, flags, extraProps) {
       const OFFICIAL_REPORTERS = [
         'datadog',
         'open-telemetry',
-        'lightstep',
         'newrelic',
         'splunk',
         'dynatrace',

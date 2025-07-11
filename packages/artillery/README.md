@@ -46,7 +46,7 @@ Follow our 5-minute guide to run your first load test - https://www.artillery.io
 - [Load testing with Playwright](https://www.artillery.io/docs/playwright)
 - Distributed load testing with Artillery on [AWS Lambda](https://docs.art/lambda), [AWS Fargate](https://docs.art/fargate), or [Azure ACI](https://docs.art/azure)
 - Set [API response expectations](https://docs.art/expect), automate [SLO checks](https://docs.art/ensure), and report [Apdex scores](https://docs.art/apdex)
-- [Publishing metrics](https://docs.art/o11y) to Datadog, Honeycomb, Lightstep, and more
+- [Publishing metrics](https://docs.art/o11y) to Datadog, New Relic, Honeycomb, and any other OTel-compatible platform
 
 ### Integrations and plugins
 
