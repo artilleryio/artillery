@@ -178,7 +178,13 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
     }
 
-    const script = await prepareTestExecutionPlan(inputFiles, flags, args);
+    let script;
+    try {
+      script = await prepareTestExecutionPlan(inputFiles, flags, args);
+    } catch (err) {
+      console.error('Error:', err.message);
+      await gracefulShutdown({ exitCode: 1 });
+    }
 
     var runnerOpts = {
       environment: flags.environment,
