@@ -17,7 +17,7 @@
   "keywords": [],
   "author": "",
   "license": "MPL-2.0",
-  "dependencies": {
-    "tap": "^19.0.2"
+  "devDependencies": {
+    "tap": "^19.2.5"
   }
 }
