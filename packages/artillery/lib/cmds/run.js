@@ -129,7 +129,10 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   }
 
   if (flags.output) {
-    checkDirExists(flags.output);
+    if (!checkDirExists(flags.output)) {
+      console.error('Path does not exist:', flags.output);
+      process.exit(1);
+    }
   }
 
   const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
@@ -175,7 +178,13 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
     }
 
-    const script = await prepareTestExecutionPlan(inputFiles, flags, args);
+    let script;
+    try {
+      script = await prepareTestExecutionPlan(inputFiles, flags, args);
+    } catch (err) {
+      console.error('Error:', err.message);
+      await gracefulShutdown({ exitCode: 1 });
+    }
 
     var runnerOpts = {
       environment: flags.environment,
@@ -623,9 +632,7 @@ function checkDirExists(output) {
     ? fs.existsSync(path.dirname(output))
     : fs.existsSync(output);
 
-  if (!exists) {
-    throw new Error(`Path does not exist: ${output}`);
-  }
+  return exists;
 }
 
 function getLogFilename(output, nameFormat) {
