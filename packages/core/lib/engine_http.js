@@ -6,7 +6,6 @@
 
 const async = require('async');
 const _ = require('lodash');
-const request = require('got');
 const tough = require('tough-cookie');
 const debug = require('debug')('http');
 const debugRequests = require('debug')('http:request');
@@ -127,6 +126,10 @@ function HttpEngine(script) {
     this.extendedHTTPMetrics = true;
   }
 }
+
+HttpEngine.prototype.init = async function () {
+  this.request = (await import('got')).default;
+};
 
 HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
   var self = this;
@@ -262,7 +265,10 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     let tls = config.tls || {};
-    let timeout = config.timeout || _.get(config, 'http.timeout') || 10;
+    const timeoutSec = config.timeout || _.get(config, 'http.timeout') || 10;
+    let timeout = {
+      response: timeoutSec * 1000
+    };
 
     if (!engineUtil.isProbableEnough(params)) {
       return process.nextTick(function () {
@@ -292,7 +298,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     const requestParams = _.extend(_.clone(params), {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
-      timeout: timeout * 1000,
+      timeout,
       uuid: crypto.randomUUID()
     });
 
@@ -716,10 +722,37 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           );
         }
 
-        requestParams.retry = 0; // disable retries - ignored when using streams
+        // disable retries - ignored when using streams
+        requestParams.retry = {
+          limit: 0
+        };
+
+        const gotOptionNames = [
+          'url',
+          'searchParams',
+          'method',
+          'headers',
+          'body',
+          'json',
+          'form',
+          'allowGetBody',
+          'timeout',
+          'retry',
+          'encoding',
+          'cookieJar',
+          'followRedirect',
+          'maxRedirects',
+          'decompress',
+          'http2',
+          'agent',
+          'username',
+          'password',
+          'https'
+        ];
 
         let totalDownloaded = 0;
-        request(_.omit(requestParams, ['uuid']))
+        self
+          .request(_.pick(requestParams, gotOptionNames))
           .on('request', function (req) {
             ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
@@ -974,10 +1007,19 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
         context = await promisify(task)(context);
       } catch (taskErr) {
         ee.emit('error', taskErr.code || taskErr.message);
-        return callback(taskErr, context); // calling back for now for existing client code
+        if (callback) {
+          return callback(taskErr, context); // calling back for now for existing client code
+        } else {
+          throw taskErr;
+        }
       }
     }
-    return callback(null, context);
+
+    if (callback) {
+      return callback(null, context);
+    } else {
+      return context;
+    }
   };
 };
 
