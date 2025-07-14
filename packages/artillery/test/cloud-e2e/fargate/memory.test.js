@@ -25,7 +25,7 @@ test('Fargate should exit with error code when workers run out of memory', async
 
 test('Fargate should not run out of memory when cpu and memory is increased via launch config', async (t) => {
   const output =
-    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --cpu 8 --memory 20`;
+    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --launch-config '{"cpu":"8192", "memory":"20480"}'`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
   t.match(output, /summary report/i, 'print summary report');
@@ -34,7 +34,7 @@ test('Fargate should not run out of memory when cpu and memory is increased via 
 
 test('Fargate should not run out of memory when cpu and memory is increased via flags', async (t) => {
   const output =
-    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --cpu 4 --memory 12`;
+    await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --cpu 8 --memory 20`;
 
   t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
   t.match(output, /summary report/i, 'print summary report');
