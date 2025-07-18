@@ -11,6 +11,7 @@ const METRICS = {
   tolerated: 'apdex.tolerated',
   frustrated: 'apdex.frustrated'
 };
+
 class ApdexPlugin {
   constructor(script, _events) {
     this.script = script;
@@ -21,8 +22,8 @@ class ApdexPlugin {
       typeof process.env.LOCAL_WORKER_ID !== 'undefined'
     ) {
       const t =
-        script.config.apdex?.threshold ||
-        script.config.plugins.apdex?.threshold ||
+        script.config.apdex?.threshold ??
+        script.config.plugins?.apdex?.threshold ??
         500;
 
       if (!script.config.processor) {
@@ -59,10 +60,11 @@ class ApdexPlugin {
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (testInfo) => {
-        if (
-          typeof this.script?.config?.apdex === 'undefined' ||
-          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
-        ) {
+        const hasApdexConfig =
+          this.script?.config?.apdex !== undefined ||
+          this.script?.config?.plugins?.apdex !== undefined;
+
+        if (!hasApdexConfig) {
           return;
         }
 
