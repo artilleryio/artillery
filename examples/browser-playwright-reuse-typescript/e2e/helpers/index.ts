@@ -9,7 +9,7 @@ export const goToDocsAndSearch = async (page: Page, step) => {
     await page.getByRole('link', { name: 'Docs' }).click();
     await expect(page).toHaveURL('/docs');
     await expect(
-      page.getByText("What's different about Artillery?")
+      page.getByText("What’s different about Artillery?")
     ).toBeVisible();
   });
 
