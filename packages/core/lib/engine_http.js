@@ -218,31 +218,27 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     };
   }
 
+  // NOTE: All other step types return an async (library)-style
+  // callback-based function, but this step always returns
+  // a Promise-based async function.
   if (requestSpec.function) {
-    return function (context, callback) {
-      let processFunc = self.config.processor[requestSpec.function];
-      if (processFunc) {
-        if (processFunc.constructor.name === 'Function') {
-          return processFunc(context, ee, function (hookErr) {
-            return callback(hookErr, context);
-          });
-        } else {
-          return processFunc(context, ee)
-            .then(() => {
-              callback(null, context);
-            })
-            .catch((err) => {
-              callback(err, context);
-            });
-        }
-      } else {
-        debug(`Function "${requestSpec.function}" not defined`);
-        debug('processor: %o', self.config.processor);
-        ee.emit('error', `Undefined function "${requestSpec.function}"`);
-        return process.nextTick(function () {
-          callback(null, context);
-        });
+    const processFunc = self.config.processor[requestSpec.function];
+    if (!processFunc) {
+      debug(`Function "${requestSpec.function}" not defined`);
+      debug('processor: %o', self.config.processor);
+      ee.emit('error', `Undefined function "${requestSpec.function}"`);
+
+      return async function functionStepNoop(context) {
+        return context;
+      };
+    }
+
+    return async function functionStep(context) {
+      let callee = processFunc;
+      if (processFunc.constructor.name === 'Function') {
+        callee = promisify(processFunc);
       }
+      return await callee(context, ee);
     };
   }
 
@@ -971,7 +967,11 @@ HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
     let context = initialContext;
     for (const task of tasks) {
       try {
-        context = await promisify(task)(context);
+        if (task.constructor.name === 'Function') {
+          context = await promisify(task)(context);
+        } else {
+          context = await task(context);
+        }
       } catch (taskErr) {
         ee.emit('error', taskErr.code || taskErr.message);
         return callback(taskErr, context); // calling back for now for existing client code
