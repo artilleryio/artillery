@@ -46,8 +46,6 @@ const dotenv = require('dotenv');
 
 const util = require('./util');
 
-const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
-
 module.exports = runCluster;
 
 let consoleReporter = {
@@ -208,13 +206,6 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       }
     };
   })();
-
-  try {
-    await setDefaultAWSCredentials(AWS);
-  } catch (err) {
-    console.error(err);
-    process.exit(1);
-  }
 
   let context = {};
   const inputFiles = [].concat(scriptPath, options.config || []);

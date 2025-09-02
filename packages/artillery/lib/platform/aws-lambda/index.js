@@ -15,8 +15,6 @@ const https = require('https');
 
 const { QueueConsumer } = require('../../queue-consumer');
 
-const setDefaultAWSCredentials = require('../aws/aws-set-default-credentials');
-
 const telemetry = require('../../telemetry').init();
 const crypto = require('node:crypto');
 
@@ -110,8 +108,6 @@ class PlatformLambda {
 
   async init() {
     artillery.log('λ Preparing AWS Lambda function...');
-
-    await setDefaultAWSCredentials(AWS);
     this.accountId = await getAccountId();
 
     const metadata = {

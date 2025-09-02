@@ -6,7 +6,6 @@ const debug = require('debug')('platform:aws-ecs');
 
 const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
 
-const setDefaultAWSCredentials = require('../aws/aws-set-default-credentials');
 const AWS = require('aws-sdk');
 
 const { ensureParameterExists } = require('./legacy/aws-util');
@@ -44,7 +43,6 @@ class PlatformECS {
   }
 
   async init() {
-    await setDefaultAWSCredentials(AWS);
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);

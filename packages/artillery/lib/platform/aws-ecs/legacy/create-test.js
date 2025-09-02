@@ -6,7 +6,6 @@ const debug = require('debug')('commands:create-test');
 const util = require('./util');
 const { getBucketName } = require('./util');
 const createS3Client = require('./create-s3-client');
-const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
 
 const path = require('path');
 
@@ -48,10 +47,6 @@ async function createTest(scriptPath, options, callback) {
 
   if (options.customSyncClient) {
     context.customSyncClient = options.customSyncClient;
-  }
-
-  if (!options.customSyncClient) {
-    await setDefaultAWSCredentials();
   }
 
   return new Promise((resolve, reject) => {
