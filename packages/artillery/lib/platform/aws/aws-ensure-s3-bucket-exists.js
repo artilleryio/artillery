@@ -4,7 +4,12 @@
 
 const debug = require('debug')('util:aws:ensureS3BucketExists');
 
-const AWS = require('aws-sdk');
+const {
+  S3Client,
+  PutBucketLifecycleConfigurationCommand,
+  ListObjectsV2Command,
+  CreateBucketCommand
+} = require('@aws-sdk/client-s3');
 
 const getAWSAccountId = require('./aws-get-account-id');
 
@@ -14,7 +19,7 @@ const setBucketLifecyclePolicy = async (
   bucketName,
   lifecycleConfigurationRules
 ) => {
-  const s3 = new AWS.S3();
+  const s3 = new S3Client();
   const params = {
     Bucket: bucketName,
     LifecycleConfiguration: {
@@ -22,7 +27,7 @@ const setBucketLifecyclePolicy = async (
     }
   };
   try {
-    await s3.putBucketLifecycleConfiguration(params).promise();
+    await s3.send(new PutBucketLifecycleConfigurationCommand(params));
   } catch (err) {
     debug('Error setting lifecycle policy');
     debug(err);
@@ -44,13 +49,13 @@ module.exports = async function ensureS3BucketExists(
     bucketName = `${S3_BUCKET_NAME_PREFIX}-${accountId}-${region}`;
   }
   const s3Opts = region === 'global' ? {} : { region };
-  const s3 = new AWS.S3(s3Opts);
+  const s3 = new S3Client(s3Opts);
 
   try {
-    await s3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
+    await s3.send(new ListObjectsV2Command({ Bucket: bucketName, MaxKeys: 1 }));
   } catch (s3Err) {
-    if (s3Err.code === 'NoSuchBucket') {
-      await s3.createBucket({ Bucket: bucketName }).promise();
+    if (s3Err.name === 'NoSuchBucket') {
+      await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
     } else {
       throw s3Err;
     }
