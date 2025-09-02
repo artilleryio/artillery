@@ -1,4 +1,7 @@
-const AWS = require('aws-sdk');
+const {
+  CloudWatchLogsClient,
+  PutRetentionPolicyCommand
+} = require('@aws-sdk/client-cloudwatch-logs');
 const debug = require('debug')('artillery:aws-cloudwatch');
 
 const allowedRetentionDays = [
@@ -7,13 +10,15 @@ const allowedRetentionDays = [
 ];
 
 async function _putCloudwatchRetentionPolicy(logGroupName, retentionInDays) {
-  const cloudwatchlogs = new AWS.CloudWatchLogs({ apiVersion: '2014-11-06' });
+  const cloudwatchlogs = new CloudWatchLogsClient({ apiVersion: '2014-11-06' });
   const putRetentionPolicyParams = {
     logGroupName,
     retentionInDays
   };
 
-  return cloudwatchlogs.putRetentionPolicy(putRetentionPolicyParams).promise();
+  return cloudwatchlogs.send(
+    new PutRetentionPolicyCommand(putRetentionPolicyParams)
+  );
 }
 
 function setCloudwatchRetention(
