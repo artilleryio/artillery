@@ -2,8 +2,6 @@
 
 const debug = require('debug')('artillery:util');
 
-const AWS = require('aws-sdk');
-
 const chalk = require('chalk');
 
 const _ = require('lodash');
@@ -117,15 +115,6 @@ function listAllObjectsWithPrefix(bucket, prefix, cb) {
   );
 } // listAllObjectsWithPrefix
 
-function credentialsProvided(cb) {
-  const credsProvided = new AWS.Config().credentials !== null;
-  if (cb) {
-    return cb(credsProvided);
-  } else {
-    return credsProvided;
-  }
-}
-
 module.exports = {
   supportedRegions,
   getAccountId,
@@ -133,6 +122,5 @@ module.exports = {
   btoa,
   formatError,
   listAllObjectsWithPrefix,
-  credentialsProvided,
   getBucketName
 };
