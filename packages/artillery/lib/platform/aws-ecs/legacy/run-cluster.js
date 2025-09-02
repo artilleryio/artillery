@@ -1750,8 +1750,6 @@ async function ecsRunTask(context) {
 }
 
 async function waitForTasks2(context) {
-  const ecs = new AWS.ECS({ apiVersion: '2014-11-13', region: context.region });
-
   const params = {
     tasks: context.taskArns,
     cluster: context.clusterName
@@ -1766,7 +1764,7 @@ async function waitForTasks2(context) {
   while (context.status !== TEST_RUN_STATUS.TERMINATING) {
     let ecsData;
     try {
-      ecsData = await awsUtil.ecsDescribeTasks(params, ecs);
+      ecsData = await awsUtil.ecsDescribeTasks(params, context.region);
     } catch (err) {
       // TODO: Inspect err for any conditions in which we may want to abort immediately.
       // Otherwise, let the timeout run to completion.
