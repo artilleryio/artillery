@@ -4,7 +4,7 @@
 
 const debug = require('debug')('util:aws:getAccountId');
 
-const AWS = require('aws-sdk');
+const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
 
 module.exports = async function getAccountId() {
   let stsOpts = {};
@@ -15,8 +15,9 @@ module.exports = async function getAccountId() {
     );
   }
 
-  const sts = new AWS.STS(stsOpts);
-  const awsAccountId = (await sts.getCallerIdentity({}).promise()).Account;
+  const sts = new STSClient(stsOpts);
+  const result = await sts.send(new GetCallerIdentityCommand({}));
+  const awsAccountId = result.Account;
 
   debug(awsAccountId);
   return awsAccountId;
