@@ -6,7 +6,13 @@ const debug = require('debug')('platform:aws-ecs');
 
 const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
 
-const AWS = require('aws-sdk');
+const {
+  IAMClient,
+  GetRoleCommand,
+  CreateRoleCommand,
+  CreatePolicyCommand,
+  AttachRolePolicyCommand
+} = require('@aws-sdk/client-iam');
 
 const { ensureParameterExists } = require('./legacy/aws-util');
 
@@ -115,17 +121,17 @@ async function createIAMResources(accountId, taskRoleName) {
 }
 
 async function createWorkerRole(accountId, taskRoleName) {
-  const iam = new AWS.IAM();
+  const iam = new IAMClient();
 
   try {
-    const res = await iam.getRole({ RoleName: taskRoleName }).promise();
+    const res = await iam.send(new GetRoleCommand({ RoleName: taskRoleName }));
     return res.Role.Arn;
   } catch (err) {
     debug(err);
   }
 
-  const createRoleResp = await iam
-    .createRole({
+  const createRoleResp = await iam.send(
+    new CreateRoleCommand({
       AssumeRolePolicyDocument: JSON.stringify({
         Version: '2012-10-17',
         Statement: [
@@ -141,7 +147,7 @@ async function createWorkerRole(accountId, taskRoleName) {
       Path: '/',
       RoleName: taskRoleName
     })
-    .promise();
+  );
 
   const policyDocument = {
     Version: '2012-10-17',
@@ -214,20 +220,20 @@ async function createWorkerRole(accountId, taskRoleName) {
     ]
   };
 
-  const createPolicyResp = await iam
-    .createPolicy({
+  const createPolicyResp = await iam.send(
+    new CreatePolicyCommand({
       PolicyName: 'artilleryio-ecs-worker-policy',
       Path: '/',
       PolicyDocument: JSON.stringify(policyDocument)
     })
-    .promise();
+  );
 
-  await iam
-    .attachRolePolicy({
+  await iam.send(
+    new AttachRolePolicyCommand({
       PolicyArn: createPolicyResp.Policy.Arn,
       RoleName: taskRoleName
     })
-    .promise();
+  );
 
   debug('Waiting for IAM role to be ready');
   await sleep(30 * 1000);
