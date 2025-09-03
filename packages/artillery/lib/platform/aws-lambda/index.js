@@ -147,7 +147,8 @@ class PlatformLambda {
       this.testRunId,
       this.opts.absoluteScriptPath,
       this.opts.absoluteConfigPath,
-      this.platformOpts.cliArgs
+      this.platformOpts.cliArgs,
+      this.region
     );
 
     this.artilleryArgs.push('run');
@@ -686,7 +687,7 @@ class PlatformLambda {
       },
       FunctionName: functionName,
       Description: 'Artillery.io test',
-      MemorySize: this.memorySize,
+      MemorySize: parseInt(this.memorySize, 10),
       Timeout: 900,
       Role: this.lambdaRoleArn,
       //TODO: architecture influences the entrypoint. We should review which architecture to use in the end (may impact Playwright viability)

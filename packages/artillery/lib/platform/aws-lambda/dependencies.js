@@ -29,8 +29,8 @@ const _createLambdaBom = async (
   return bom;
 };
 
-async function _uploadFileToS3(item, testRunId, bucketName) {
-  const s3 = new S3Client({});
+async function _uploadFileToS3(item, testRunId, bucketName, region) {
+  const s3 = new S3Client({ region });
   const prefix = `tests/${testRunId}`;
   let body;
   try {
@@ -62,7 +62,7 @@ async function _uploadFileToS3(item, testRunId, bucketName) {
   }
 }
 
-async function _syncS3(bomManifest, testRunId, bucketName) {
+async function _syncS3(bomManifest, testRunId, bucketName, region) {
   const metadata = {
     createdOn: Date.now(),
     name: testRunId,
@@ -72,12 +72,12 @@ async function _syncS3(bomManifest, testRunId, bucketName) {
   //TODO: parallelise this
   let fileCount = 0;
   for (const file of bomManifest.files) {
-    await _uploadFileToS3(file, testRunId, bucketName);
+    await _uploadFileToS3(file, testRunId, bucketName, region);
     fileCount++;
   }
   metadata.fileCount = fileCount;
 
-  const plainS3 = new S3Client({});
+  const plainS3 = new S3Client({ region });
   const prefix = `tests/${testRunId}`;
 
   //TODO: add writeTestMetadata with configPath and newScriptPath if needed
@@ -105,7 +105,8 @@ const createAndUploadTestDependencies = async (
   testRunId,
   absoluteScriptPath,
   absoluteConfigPath,
-  flags
+  flags,
+  region
 ) => {
   const bom = await _createLambdaBom(
     absoluteScriptPath,
@@ -127,7 +128,8 @@ const createAndUploadTestDependencies = async (
   //TODO: add dotenv file if specified
   artillery.log(t.toString());
   artillery.log();
-  const s3Path = await _syncS3(bom, testRunId, bucketName);
+
+  const s3Path = await _syncS3(bom, testRunId, bucketName, region);
 
   return {
     bom,
