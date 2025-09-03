@@ -137,7 +137,8 @@ class PlatformLambda {
     //make sure the bucket exists to send the zip file or the dependencies to
     const bucketName = await ensureS3BucketExists(
       this.region,
-      this.s3LifecycleConfigurationRules
+      this.s3LifecycleConfigurationRules,
+      true
     );
     this.bucketName = bucketName;
 

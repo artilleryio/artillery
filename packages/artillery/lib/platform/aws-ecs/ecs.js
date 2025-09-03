@@ -52,7 +52,11 @@ class PlatformECS {
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);
-    await ensureS3BucketExists('global', this.s3LifecycleConfigurationRules);
+    await ensureS3BucketExists(
+      this.platformOpts.region,
+      this.s3LifecycleConfigurationRules,
+      false
+    );
     await createIAMResources(this.accountId, this.platformOpts.taskRoleName);
   }
 

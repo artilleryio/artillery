@@ -40,16 +40,17 @@ const setBucketLifecyclePolicy = async (
 // creating Lambda functions from a zip file in S3 the region of the
 // Lambda and the region of the S3 bucket must match.
 module.exports = async function ensureS3BucketExists(
-  region = 'global',
-  lifecycleConfigurationRules = []
+  region,
+  lifecycleConfigurationRules = [],
+  withRegionSpecificName = false
 ) {
   const accountId = await getAWSAccountId();
   let bucketName = `${S3_BUCKET_NAME_PREFIX}-${accountId}`;
-  if (region !== 'global') {
+  if (withRegionSpecificName) {
     bucketName = `${S3_BUCKET_NAME_PREFIX}-${accountId}-${region}`;
   }
-  const s3Opts = region === 'global' ? {} : { region };
-  const s3 = new S3Client(s3Opts);
+
+  const s3 = new S3Client({ region });
 
   try {
     await s3.send(new ListObjectsV2Command({ Bucket: bucketName, MaxKeys: 1 }));
