@@ -1,5 +1,6 @@
 const { getBucketName } = require('./util');
 const createS3Client = require('./create-s3-client');
+const { GetObjectCommand } = require('@aws-sdk/client-s3');
 
 class TestBundle {
   constructor(id) {
@@ -21,8 +22,8 @@ class TestBundle {
       Key: `tests/${this.id}/metadata.json`
     };
 
-    const s3Data = await s3.getObject(params).promise();
-    this.manifest = JSON.parse(s3Data.Body);
+    const s3Data = await s3.send(new GetObjectCommand(params));
+    this.manifest = JSON.parse(await s3Data.Body.transformToString());
 
     return this.manifest;
   }

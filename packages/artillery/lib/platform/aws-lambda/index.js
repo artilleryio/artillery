@@ -16,7 +16,7 @@ const {
   CreateFunctionCommand,
   DeleteFunctionCommand
 } = require('@aws-sdk/client-lambda');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { SQSClient, DeleteQueueCommand } = require('@aws-sdk/client-sqs');
 const {
   IAMClient,
@@ -25,6 +25,9 @@ const {
   AttachRolePolicyCommand,
   CreatePolicyCommand
 } = require('@aws-sdk/client-iam');
+
+const createS3Client = require('../aws-ecs/legacy/create-s3-client');
+const { getBucketRegion } = require('../aws/aws-get-bucket-region');
 
 const https = require('https');
 
@@ -307,7 +310,7 @@ class PlatformLambda {
             // TODO: Do this only for batches of workers with "wait" option set
             if (this.waitingReadyCount === this.count) {
               // TODO: Retry
-              const s3 = new S3Client();
+              const s3 = createS3Client();
               await s3.send(
                 new PutObjectCommand({
                   Body: Buffer.from(''),

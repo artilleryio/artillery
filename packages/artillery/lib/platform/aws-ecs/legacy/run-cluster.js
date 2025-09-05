@@ -90,6 +90,7 @@ let IS_FARGATE = false;
 
 const TEST_RUN_STATUS = require('./test-run-status');
 const prepareTestExecutionPlan = require('../../../util/prepare-test-execution-plan');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
 
 function setupConsoleReporter(quiet) {
   const reporterOpts = {
@@ -1038,25 +1039,16 @@ async function maybeGetSubnetIdsForFargate(context) {
 }
 
 async function createTestBundle(context) {
-  return new Promise((resolve, reject) => {
-    createTest(
-      context.scriptPath,
-      {
-        name: context.testId,
-        config: context.cliOptions.config,
-        packageJsonPath: context.packageJsonPath,
-        flags: context.cliOptions
-      },
-      function (err, result) {
-        if (err) {
-          return reject(err);
-        } else {
-          context.fullyResolvedConfig = result.manifest.fullyResolvedConfig;
-          return resolve(context);
-        }
-      }
-    );
+  const result = await createTest(context.scriptPath, {
+    name: context.testId,
+    config: context.cliOptions.config,
+    packageJsonPath: context.packageJsonPath,
+    flags: context.cliOptions
   });
+
+  context.fullyResolvedConfig = result.manifest.fullyResolvedConfig;
+
+  return context;
 }
 
 async function createADOTDefinitionIfNeeded(context) {
@@ -1863,68 +1855,47 @@ async function waitForTasks2(context) {
 }
 
 async function waitForWorkerSync(context) {
-  return new Promise((resolve, reject) => {
-    const MAGIC_PREFIX = 'synced_';
-    const prefix = `test-runs/${context.testId}/${MAGIC_PREFIX}`;
+  const MAGIC_PREFIX = 'synced_';
+  const prefix = `test-runs/${context.testId}/${MAGIC_PREFIX}`;
 
-    const intervalSec = 10;
-    const times = WAIT_TIMEOUT / intervalSec;
+  const intervalSec = 10;
+  const times = WAIT_TIMEOUT / intervalSec;
+  let attempts = 0;
+  let synced = false;
 
-    A.retry(
-      { times: times, interval: intervalSec * 1000 },
-      // we wrap the function since async#retry will retry ONLY when an
-      // error is returned
-      function wrapForRetry(next) {
-        util.listAllObjectsWithPrefix(
-          context.s3Bucket,
-          prefix,
-          (err, objects) => {
-            // NOTE: err here is an S3 error
-            if (err) {
-              next(err);
-            } else {
-              debug({ objects });
-
-              // TODO: context.count is how many we requested, but we need to handle the case when not everything started
-              if (objects.length !== context.count) {
-                debug(
-                  `expected ${context.count} sync acks but got ${objects.length}`
-                );
-                // this tells async#retry to retry
-                return next(new Error('Timed out waiting for workers to sync'));
-              } else {
-                return next(null);
-              }
-            }
-          }
-        );
-      },
-      (err) => {
-        if (err) {
-          return reject(err);
-        } else {
-          debug('all workers synced');
-          return resolve(context);
-        }
+  while (attempts < times) {
+    try {
+      const objects = await util.listAllObjectsWithPrefix(
+        context.s3Bucket,
+        prefix
+      );
+      if (objects.length !== context.count) {
+        attempts++;
+      } else {
+        synced = true;
+        break;
       }
-    ); // A.retry
-  });
+    } catch (err) {
+      attempts++;
+    }
+    await sleep(intervalSec * 1000);
+  }
+
+  if (synced) {
+    return context;
+  } else {
+    throw new Error('Timed out waiting for worker sync');
+  }
 }
 
 async function sendGoSignal(context) {
   const s3 = createS3Client();
-  try {
-    await s3
-      .putObject({
-        Body: context.testId,
-        Bucket: context.s3Bucket,
-        Key: `test-runs/${context.testId}/go.json`
-      })
-      .promise();
-  } catch (err) {
-    throw err;
-  }
-
+  const params = {
+    Body: context.testId,
+    Bucket: context.s3Bucket,
+    Key: `test-runs/${context.testId}/go.json`
+  };
+  await s3.send(new PutObjectCommand(params));
   return context;
 }
 

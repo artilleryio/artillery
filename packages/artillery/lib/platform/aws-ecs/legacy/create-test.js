@@ -3,18 +3,16 @@
 const A = require('async');
 const debug = require('debug')('commands:create-test');
 
-const util = require('./util');
 const { getBucketName } = require('./util');
 const createS3Client = require('./create-s3-client');
 
 const path = require('path');
 
 const fs = require('fs');
-const _ = require('lodash');
-
-const chalk = require('chalk');
 
 const { createBOM, prettyPrint } = require('./bom');
+
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
 
 function tryCreateTest(scriptPath, options) {
   createTest(scriptPath, options);
@@ -116,12 +114,12 @@ function printManifest(context, callback) {
   return callback(null, context);
 }
 
-function syncS3(context, callback) {
-  let plainS3;
+async function syncS3(context) {
+  let s3;
   if (context.customSyncClient) {
-    plainS3 = context.customSyncClient;
+    s3 = context.customSyncClient;
   } else {
-    plainS3 = createS3Client();
+    s3 = createS3Client();
   }
 
   const prefix = `tests/${context.name}`;
@@ -134,52 +132,49 @@ function syncS3(context, callback) {
 
   // Iterate through manifest, for each element: has orig (local source) and noPrefix (S3
   // destination) properties
-  A.eachLimit(
-    context.manifest.files,
-    3,
-    (item, eachDone) => {
-      // If we can't read the file, it may have been specified with a
-      // template in its name, e.g. a payload file like:
-      // {{ $environment }}-users.csv
-      // If so, ignore it, hope config.includeFiles was used, and let
-      // "artillery run" in the worker deal with it.
-      let body;
-      try {
-        body = fs.readFileSync(item.orig);
-      } catch (fsErr) {
-        debug(fsErr);
-      }
+  return new Promise((resolve, reject) => {
+    A.eachLimit(
+      context.manifest.files,
+      3,
+      async (item, eachDone) => {
+        // If we can't read the file, it may have been specified with a
+        // template in its name, e.g. a payload file like:
+        // {{ $environment }}-users.csv
+        // If so, ignore it, hope config.includeFiles was used, and let
+        // "artillery run" in the worker deal with it.
+        let body;
+        try {
+          body = fs.readFileSync(item.orig);
+        } catch (fsErr) {
+          debug(fsErr);
+        }
 
-      if (!body) {
-        return eachDone(null, context);
-      }
-
-      const key = context.s3Prefix + '/' + item.noPrefixPosix;
-      plainS3.putObject(
-        {
-          Bucket: context.s3Bucket,
-          Key: key,
-          // TODO: stream, not readFileSync
-          Body: body
-        },
-        (s3Err, s3Resp) => {
-          if (s3Err) {
-            // TODO: retry if needed
-            return eachDone(s3Err, context);
-          }
-          debug(`Uploaded ${key}`);
+        if (!body) {
           return eachDone(null, context);
         }
-      );
-    },
-    (bomUploadErr) => {
-      return callback(bomUploadErr, context);
-    }
-  );
+
+        const key = context.s3Prefix + '/' + item.noPrefixPosix;
+        await s3.send(
+          new PutObjectCommand({
+            Bucket: context.s3Bucket,
+            Key: key,
+            Body: body
+          })
+        );
+      },
+      (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(context);
+        }
+      }
+    );
+  });
 }
 
 // create just overwrites an existing test for now
-function writeTestMetadata(context, callback) {
+async function writeTestMetadata(context) {
   const metadata = {
     createdOn: Date.now(),
     name: context.name,
@@ -211,19 +206,15 @@ function writeTestMetadata(context, callback) {
 
   const key = context.s3Prefix + '/metadata.json'; // TODO: Rename to something less likely to clash
   debug('metadata location:', `${context.s3Bucket}/${key}`);
-  s3.putObject(
-    {
+  await s3.send(
+    new PutObjectCommand({
       Body: JSON.stringify(metadata),
       Bucket: context.s3Bucket,
       Key: key
-    },
-    function (s3Err, s3Resp) {
-      if (s3Err) {
-        return callback(s3Err, context);
-      }
-      return callback(null, context);
-    }
+    })
   );
+
+  return context;
 }
 
 module.exports = {

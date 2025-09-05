@@ -8,18 +8,20 @@ const {
   S3Client,
   PutBucketLifecycleConfigurationCommand,
   ListObjectsV2Command,
-  CreateBucketCommand
+  CreateBucketCommand,
+  GetBucketLocationCommand
 } = require('@aws-sdk/client-s3');
 
 const getAWSAccountId = require('./aws-get-account-id');
-
+const createS3Client = require('../aws-ecs/legacy/create-s3-client');
 const { S3_BUCKET_NAME_PREFIX } = require('./constants');
+const { getBucketRegion } = require('./aws-get-bucket-region');
 
 const setBucketLifecyclePolicy = async (
   bucketName,
   lifecycleConfigurationRules
 ) => {
-  const s3 = new S3Client();
+  const s3 = createS3Client();
   const params = {
     Bucket: bucketName,
     LifecycleConfiguration: {
@@ -53,12 +55,12 @@ module.exports = async function ensureS3BucketExists(
   const s3 = new S3Client({ region });
 
   try {
-    await s3.send(new ListObjectsV2Command({ Bucket: bucketName, MaxKeys: 1 }));
-  } catch (s3Err) {
-    if (s3Err.name === 'NoSuchBucket') {
+    await getBucketRegion(bucketName);
+  } catch (err) {
+    if (err.name === 'NoSuchBucket') {
       await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
     } else {
-      throw s3Err;
+      throw err;
     }
   }
 
