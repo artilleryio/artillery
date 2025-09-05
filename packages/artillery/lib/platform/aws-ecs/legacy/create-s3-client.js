@@ -20,9 +20,5 @@ function createS3Client(opts = {}) {
     clientOpts.region = global.artillery.s3BucketRegion;
   }
 
-  defaultOpts.logger = {
-    ...console
-  };
-
   return new S3Client(clientOpts);
 }

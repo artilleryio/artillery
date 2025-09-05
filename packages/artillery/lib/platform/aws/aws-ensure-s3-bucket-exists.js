@@ -19,9 +19,10 @@ const { getBucketRegion } = require('./aws-get-bucket-region');
 
 const setBucketLifecyclePolicy = async (
   bucketName,
-  lifecycleConfigurationRules
+  lifecycleConfigurationRules,
+  region
 ) => {
-  const s3 = createS3Client();
+  const s3 = createS3Client({ region });
   const params = {
     Bucket: bucketName,
     LifecycleConfiguration: {
@@ -54,8 +55,9 @@ module.exports = async function ensureS3BucketExists(
 
   const s3 = new S3Client({ region });
 
+  let location;
   try {
-    await getBucketRegion(bucketName);
+    location = await getBucketRegion(bucketName);
   } catch (err) {
     if (err.name === 'NoSuchBucket') {
       await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
@@ -65,7 +67,11 @@ module.exports = async function ensureS3BucketExists(
   }
 
   if (lifecycleConfigurationRules.length > 0) {
-    await setBucketLifecyclePolicy(bucketName, lifecycleConfigurationRules);
+    await setBucketLifecyclePolicy(
+      bucketName,
+      lifecycleConfigurationRules,
+      location
+    );
   }
 
   debug(bucketName);
