@@ -1,9 +1,10 @@
 const fs = require('fs-extra');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const debug = require('debug')('platform:aws-lambda');
 const Table = require('cli-table3');
 const { promisify } = require('node:util');
 const { createBOM } = require('../aws-ecs/legacy/bom');
+const createS3Client = require('../aws-ecs/legacy/create-s3-client');
 
 const _createLambdaBom = async (
   absoluteScriptPath,
@@ -29,8 +30,8 @@ const _createLambdaBom = async (
   return bom;
 };
 
-async function _uploadFileToS3(item, testRunId, bucketName, region) {
-  const s3 = new S3Client({ region });
+async function _uploadFileToS3(item, testRunId, bucketName) {
+  const s3 = createS3Client();
   const prefix = `tests/${testRunId}`;
   let body;
   try {
@@ -62,7 +63,7 @@ async function _uploadFileToS3(item, testRunId, bucketName, region) {
   }
 }
 
-async function _syncS3(bomManifest, testRunId, bucketName, region) {
+async function _syncS3(bomManifest, testRunId, bucketName) {
   const metadata = {
     createdOn: Date.now(),
     name: testRunId,
@@ -72,12 +73,12 @@ async function _syncS3(bomManifest, testRunId, bucketName, region) {
   //TODO: parallelise this
   let fileCount = 0;
   for (const file of bomManifest.files) {
-    await _uploadFileToS3(file, testRunId, bucketName, region);
+    await _uploadFileToS3(file, testRunId, bucketName);
     fileCount++;
   }
   metadata.fileCount = fileCount;
 
-  const plainS3 = new S3Client({ region });
+  const plainS3 = createS3Client();
   const prefix = `tests/${testRunId}`;
 
   //TODO: add writeTestMetadata with configPath and newScriptPath if needed
@@ -105,8 +106,7 @@ const createAndUploadTestDependencies = async (
   testRunId,
   absoluteScriptPath,
   absoluteConfigPath,
-  flags,
-  region
+  flags
 ) => {
   const bom = await _createLambdaBom(
     absoluteScriptPath,
@@ -129,7 +129,7 @@ const createAndUploadTestDependencies = async (
   artillery.log(t.toString());
   artillery.log();
 
-  const s3Path = await _syncS3(bom, testRunId, bucketName, region);
+  const s3Path = await _syncS3(bom, testRunId, bucketName);
 
   return {
     bom,

@@ -152,8 +152,7 @@ class PlatformLambda {
       this.testRunId,
       this.opts.absoluteScriptPath,
       this.opts.absoluteConfigPath,
-      this.platformOpts.cliArgs,
-      this.region
+      this.platformOpts.cliArgs
     );
 
     this.artilleryArgs.push('run');
