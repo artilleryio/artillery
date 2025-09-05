@@ -145,6 +145,8 @@ class PlatformLambda {
     );
     this.bucketName = bucketName;
 
+    global.artillery.s3BucketRegion = await getBucketRegion(bucketName);
+
     const { bom, s3Path } = await createAndUploadTestDependencies(
       this.bucketName,
       this.testRunId,

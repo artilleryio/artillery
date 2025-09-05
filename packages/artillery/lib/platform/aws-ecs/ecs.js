@@ -21,6 +21,7 @@ const { S3_BUCKET_NAME_PREFIX } = require('../aws/constants');
 const getAccountId = require('../aws/aws-get-account-id');
 
 const sleep = require('../../util/sleep');
+const { getBucketRegion } = require('../aws/aws-get-bucket-region');
 
 class PlatformECS {
   constructor(script, payload, opts, platformOpts) {
@@ -52,11 +53,13 @@ class PlatformECS {
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);
-    await ensureS3BucketExists(
+    const bucketName = await ensureS3BucketExists(
       this.platformOpts.region,
       this.s3LifecycleConfigurationRules,
       false
     );
+
+    global.artillery.s3BucketRegion = await getBucketRegion(bucketName);
     await createIAMResources(this.accountId, this.platformOpts.taskRoleName);
   }
 
