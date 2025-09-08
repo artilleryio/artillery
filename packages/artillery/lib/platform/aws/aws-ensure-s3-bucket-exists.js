@@ -4,17 +4,25 @@
 
 const debug = require('debug')('util:aws:ensureS3BucketExists');
 
-const AWS = require('aws-sdk');
+const {
+  S3Client,
+  PutBucketLifecycleConfigurationCommand,
+  ListObjectsV2Command,
+  CreateBucketCommand,
+  GetBucketLocationCommand
+} = require('@aws-sdk/client-s3');
 
 const getAWSAccountId = require('./aws-get-account-id');
-
+const createS3Client = require('../aws-ecs/legacy/create-s3-client');
 const { S3_BUCKET_NAME_PREFIX } = require('./constants');
+const { getBucketRegion } = require('./aws-get-bucket-region');
 
 const setBucketLifecyclePolicy = async (
   bucketName,
-  lifecycleConfigurationRules
+  lifecycleConfigurationRules,
+  region
 ) => {
-  const s3 = new AWS.S3();
+  const s3 = createS3Client({ region });
   const params = {
     Bucket: bucketName,
     LifecycleConfiguration: {
@@ -22,7 +30,7 @@ const setBucketLifecyclePolicy = async (
     }
   };
   try {
-    await s3.putBucketLifecycleConfiguration(params).promise();
+    await s3.send(new PutBucketLifecycleConfigurationCommand(params));
   } catch (err) {
     debug('Error setting lifecycle policy');
     debug(err);
@@ -35,29 +43,35 @@ const setBucketLifecyclePolicy = async (
 // creating Lambda functions from a zip file in S3 the region of the
 // Lambda and the region of the S3 bucket must match.
 module.exports = async function ensureS3BucketExists(
-  region = 'global',
-  lifecycleConfigurationRules = []
+  region,
+  lifecycleConfigurationRules = [],
+  withRegionSpecificName = false
 ) {
   const accountId = await getAWSAccountId();
   let bucketName = `${S3_BUCKET_NAME_PREFIX}-${accountId}`;
-  if (region !== 'global') {
+  if (withRegionSpecificName) {
     bucketName = `${S3_BUCKET_NAME_PREFIX}-${accountId}-${region}`;
   }
-  const s3Opts = region === 'global' ? {} : { region };
-  const s3 = new AWS.S3(s3Opts);
 
+  const s3 = new S3Client({ region });
+
+  let location;
   try {
-    await s3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
-  } catch (s3Err) {
-    if (s3Err.code === 'NoSuchBucket') {
-      await s3.createBucket({ Bucket: bucketName }).promise();
+    location = await getBucketRegion(bucketName);
+  } catch (err) {
+    if (err.name === 'NoSuchBucket') {
+      await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
     } else {
-      throw s3Err;
+      throw err;
     }
   }
 
   if (lifecycleConfigurationRules.length > 0) {
-    await setBucketLifecyclePolicy(bucketName, lifecycleConfigurationRules);
+    await setBucketLifecyclePolicy(
+      bucketName,
+      lifecycleConfigurationRules,
+      location
+    );
   }
 
   debug(bucketName);

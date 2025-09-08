@@ -6,8 +6,13 @@ const debug = require('debug')('platform:aws-ecs');
 
 const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
 
-const setDefaultAWSCredentials = require('../aws/aws-set-default-credentials');
-const AWS = require('aws-sdk');
+const {
+  IAMClient,
+  GetRoleCommand,
+  CreateRoleCommand,
+  CreatePolicyCommand,
+  AttachRolePolicyCommand
+} = require('@aws-sdk/client-iam');
 
 const { ensureParameterExists } = require('./legacy/aws-util');
 
@@ -16,6 +21,7 @@ const { S3_BUCKET_NAME_PREFIX } = require('../aws/constants');
 const getAccountId = require('../aws/aws-get-account-id');
 
 const sleep = require('../../util/sleep');
+const { getBucketRegion } = require('../aws/aws-get-bucket-region');
 
 class PlatformECS {
   constructor(script, payload, opts, platformOpts) {
@@ -44,11 +50,16 @@ class PlatformECS {
   }
 
   async init() {
-    await setDefaultAWSCredentials(AWS);
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);
-    await ensureS3BucketExists('global', this.s3LifecycleConfigurationRules);
+    const bucketName = await ensureS3BucketExists(
+      this.platformOpts.region,
+      this.s3LifecycleConfigurationRules,
+      false
+    );
+
+    global.artillery.s3BucketRegion = await getBucketRegion(bucketName);
     await createIAMResources(this.accountId, this.platformOpts.taskRoleName);
   }
 
@@ -117,17 +128,17 @@ async function createIAMResources(accountId, taskRoleName) {
 }
 
 async function createWorkerRole(accountId, taskRoleName) {
-  const iam = new AWS.IAM();
+  const iam = new IAMClient();
 
   try {
-    const res = await iam.getRole({ RoleName: taskRoleName }).promise();
+    const res = await iam.send(new GetRoleCommand({ RoleName: taskRoleName }));
     return res.Role.Arn;
   } catch (err) {
     debug(err);
   }
 
-  const createRoleResp = await iam
-    .createRole({
+  const createRoleResp = await iam.send(
+    new CreateRoleCommand({
       AssumeRolePolicyDocument: JSON.stringify({
         Version: '2012-10-17',
         Statement: [
@@ -143,7 +154,7 @@ async function createWorkerRole(accountId, taskRoleName) {
       Path: '/',
       RoleName: taskRoleName
     })
-    .promise();
+  );
 
   const policyDocument = {
     Version: '2012-10-17',
@@ -216,20 +227,20 @@ async function createWorkerRole(accountId, taskRoleName) {
     ]
   };
 
-  const createPolicyResp = await iam
-    .createPolicy({
+  const createPolicyResp = await iam.send(
+    new CreatePolicyCommand({
       PolicyName: 'artilleryio-ecs-worker-policy',
       Path: '/',
       PolicyDocument: JSON.stringify(policyDocument)
     })
-    .promise();
+  );
 
-  await iam
-    .attachRolePolicy({
+  await iam.send(
+    new AttachRolePolicyCommand({
       PolicyArn: createPolicyResp.Policy.Arn,
       RoleName: taskRoleName
     })
-    .promise();
+  );
 
   debug('Waiting for IAM role to be ready');
   await sleep(30 * 1000);

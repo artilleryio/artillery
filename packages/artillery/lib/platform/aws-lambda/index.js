@@ -9,13 +9,29 @@ const { randomUUID } = require('crypto');
 
 const sleep = require('../../util/sleep');
 const path = require('path');
-const AWS = require('aws-sdk');
+const {
+  LambdaClient,
+  GetFunctionConfigurationCommand,
+  InvokeCommand,
+  CreateFunctionCommand,
+  DeleteFunctionCommand
+} = require('@aws-sdk/client-lambda');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const { SQSClient, DeleteQueueCommand } = require('@aws-sdk/client-sqs');
+const {
+  IAMClient,
+  GetRoleCommand,
+  CreateRoleCommand,
+  AttachRolePolicyCommand,
+  CreatePolicyCommand
+} = require('@aws-sdk/client-iam');
+
+const createS3Client = require('../aws-ecs/legacy/create-s3-client');
+const { getBucketRegion } = require('../aws/aws-get-bucket-region');
 
 const https = require('https');
 
 const { QueueConsumer } = require('../../queue-consumer');
-
-const setDefaultAWSCredentials = require('../aws/aws-set-default-credentials');
 
 const telemetry = require('../../telemetry').init();
 const crypto = require('node:crypto');
@@ -110,8 +126,6 @@ class PlatformLambda {
 
   async init() {
     artillery.log('λ Preparing AWS Lambda function...');
-
-    await setDefaultAWSCredentials(AWS);
     this.accountId = await getAccountId();
 
     const metadata = {
@@ -126,9 +140,12 @@ class PlatformLambda {
     //make sure the bucket exists to send the zip file or the dependencies to
     const bucketName = await ensureS3BucketExists(
       this.region,
-      this.s3LifecycleConfigurationRules
+      this.s3LifecycleConfigurationRules,
+      true
     );
     this.bucketName = bucketName;
+
+    global.artillery.s3BucketRegion = await getBucketRegion(bucketName);
 
     const { bom, s3Path } = await createAndUploadTestDependencies(
       this.bucketName,
@@ -226,14 +243,6 @@ class PlatformLambda {
         messageAttributeNames: ['testId', 'workerId'],
         visibilityTimeout: 60,
         batchSize: 10,
-        sqs: new AWS.SQS({
-          httpOptions: {
-            agent: new https.Agent({
-              keepAlive: true
-            })
-          },
-          region: this.region
-        }),
         handleMessage: async (message) => {
           let body = null;
           try {
@@ -302,14 +311,14 @@ class PlatformLambda {
             // TODO: Do this only for batches of workers with "wait" option set
             if (this.waitingReadyCount === this.count) {
               // TODO: Retry
-              const s3 = new AWS.S3();
-              await s3
-                .putObject({
+              const s3 = createS3Client();
+              await s3.send(
+                new PutObjectCommand({
                   Body: Buffer.from(''),
                   Bucket: this.bucketName,
                   Key: `/${this.testRunId}/green`
                 })
-                .promise();
+              );
             }
           } else {
             debug(body);
@@ -397,7 +406,7 @@ class PlatformLambda {
   }
 
   async runWorker(workerId) {
-    const lambda = new AWS.Lambda({
+    const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
     });
@@ -423,9 +432,11 @@ class PlatformLambda {
     while (waited < timeout) {
       try {
         var state = (
-          await lambda
-            .getFunctionConfiguration({ FunctionName: this.functionName })
-            .promise()
+          await lambda.send(
+            new GetFunctionConfigurationCommand({
+              FunctionName: this.functionName
+            })
+          )
         ).State;
         if (state === 'Active') {
           debug('Lambda function ready:', this.functionName);
@@ -452,13 +463,13 @@ class PlatformLambda {
       );
     }
 
-    await lambda
-      .invoke({
+    await lambda.send(
+      new InvokeCommand({
         FunctionName: this.functionName,
         Payload: payload,
         InvocationType: 'Event'
       })
-      .promise();
+    );
 
     this.count++;
   }
@@ -472,26 +483,25 @@ class PlatformLambda {
       this.sqsConsumer.stop();
     }
 
-    const s3 = new AWS.S3({ region: this.region });
-    const sqs = new AWS.SQS({ region: this.region });
-    const lambda = new AWS.Lambda({
+    const sqs = new SQSClient({ region: this.region });
+    const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
     });
 
     try {
-      await sqs
-        .deleteQueue({
+      await sqs.send(
+        new DeleteQueueCommand({
           QueueUrl: this.sqsQueueUrl
         })
-        .promise();
+      );
 
       if (process.env.RETAIN_LAMBDA === 'false') {
-        await lambda
-          .deleteFunction({
+        await lambda.send(
+          new DeleteFunctionCommand({
             FunctionName: this.functionName
           })
-          .promise();
+        );
       }
     } catch (err) {
       console.error(err);
@@ -502,17 +512,17 @@ class PlatformLambda {
     const ROLE_NAME = 'artilleryio-default-lambda-role-20230116';
     const POLICY_NAME = 'artilleryio-lambda-policy-20230116';
 
-    const iam = new AWS.IAM();
+    const iam = new IAMClient();
 
     try {
-      const res = await iam.getRole({ RoleName: ROLE_NAME }).promise();
+      const res = await iam.send(new GetRoleCommand({ RoleName: ROLE_NAME }));
       return res.Role.Arn;
     } catch (err) {
       debug(err);
     }
 
-    const res = await iam
-      .createRole({
+    const res = await iam.send(
+      new CreateRoleCommand({
         AssumeRolePolicyDocument: `{
         "Version": "2012-10-17",
         "Statement": [
@@ -528,28 +538,28 @@ class PlatformLambda {
         Path: '/',
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
     const lambdaRoleArn = res.Role.Arn;
 
-    await iam
-      .attachRolePolicy({
+    await iam.send(
+      new AttachRolePolicyCommand({
         PolicyArn:
           'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
-    await iam
-      .attachRolePolicy({
+    await iam.send(
+      new AttachRolePolicyCommand({
         PolicyArn:
           'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
-    const iamRes = await iam
-      .createPolicy({
+    const iamRes = await iam.send(
+      new CreatePolicyCommand({
         PolicyDocument: `{
         "Version": "2012-10-17",
         "Statement": [
@@ -569,14 +579,14 @@ class PlatformLambda {
         PolicyName: POLICY_NAME,
         Path: '/'
       })
-      .promise();
+    );
 
-    await iam
-      .attachRolePolicy({
+    await iam.send(
+      new AttachRolePolicyCommand({
         PolicyArn: iamRes.Policy.Arn,
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
     // See https://stackoverflow.com/a/37438525 for why we need this
     await sleep(10 * 1000);
@@ -613,21 +623,21 @@ class PlatformLambda {
   }
 
   async getLambdaFunctionConfiguration() {
-    const lambda = new AWS.Lambda({
+    const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
     });
 
     try {
-      const res = await lambda
-        .getFunctionConfiguration({
+      const res = await lambda.send(
+        new GetFunctionConfigurationCommand({
           FunctionName: this.functionName
         })
-        .promise();
+      );
 
       return res;
     } catch (err) {
-      if (err.code === 'ResourceNotFoundException') {
+      if (err.name === 'ResourceNotFoundException') {
         return null;
       }
 
@@ -663,7 +673,7 @@ class PlatformLambda {
   async createLambda(opts) {
     const { bucketName, functionName } = opts;
 
-    const lambda = new AWS.Lambda({
+    const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
     });
@@ -681,7 +691,7 @@ class PlatformLambda {
       },
       FunctionName: functionName,
       Description: 'Artillery.io test',
-      MemorySize: this.memorySize,
+      MemorySize: parseInt(this.memorySize, 10),
       Timeout: 900,
       Role: this.lambdaRoleArn,
       //TODO: architecture influences the entrypoint. We should review which architecture to use in the end (may impact Playwright viability)
@@ -703,7 +713,7 @@ class PlatformLambda {
       };
     }
 
-    await lambda.createFunction(lambdaConfig).promise();
+    await lambda.send(new CreateFunctionCommand(lambdaConfig));
   }
 }
 

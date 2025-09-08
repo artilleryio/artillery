@@ -1,9 +1,10 @@
 const fs = require('fs-extra');
-const AWS = require('aws-sdk');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const debug = require('debug')('platform:aws-lambda');
 const Table = require('cli-table3');
 const { promisify } = require('node:util');
 const { createBOM } = require('../aws-ecs/legacy/bom');
+const createS3Client = require('../aws-ecs/legacy/create-s3-client');
 
 const _createLambdaBom = async (
   absoluteScriptPath,
@@ -30,7 +31,7 @@ const _createLambdaBom = async (
 };
 
 async function _uploadFileToS3(item, testRunId, bucketName) {
-  const s3 = new AWS.S3();
+  const s3 = createS3Client();
   const prefix = `tests/${testRunId}`;
   let body;
   try {
@@ -46,14 +47,14 @@ async function _uploadFileToS3(item, testRunId, bucketName) {
   const key = prefix + '/' + item.noPrefixPosix;
 
   try {
-    await s3
-      .putObject({
+    await s3.send(
+      new PutObjectCommand({
         Bucket: bucketName,
         Key: key,
         // TODO: stream, not readFileSync
         Body: body
       })
-      .promise();
+    );
 
     debug(`Uploaded ${key}`);
     return;
@@ -77,20 +78,20 @@ async function _syncS3(bomManifest, testRunId, bucketName) {
   }
   metadata.fileCount = fileCount;
 
-  const plainS3 = new AWS.S3();
+  const plainS3 = createS3Client();
   const prefix = `tests/${testRunId}`;
 
   //TODO: add writeTestMetadata with configPath and newScriptPath if needed
   try {
     const key = prefix + '/metadata.json';
-    await plainS3
-      .putObject({
+    await plainS3.send(
+      new PutObjectCommand({
         Bucket: bucketName,
         Key: key,
         // TODO: stream, not readFileSync
         Body: JSON.stringify(metadata)
       })
-      .promise();
+    );
 
     debug(`Uploaded ${key}`);
     return `s3://${bucketName}/${key}`;
@@ -127,6 +128,7 @@ const createAndUploadTestDependencies = async (
   //TODO: add dotenv file if specified
   artillery.log(t.toString());
   artillery.log();
+
   const s3Path = await _syncS3(bom, testRunId, bucketName);
 
   return {

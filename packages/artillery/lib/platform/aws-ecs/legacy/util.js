@@ -2,8 +2,6 @@
 
 const debug = require('debug')('artillery:util');
 
-const AWS = require('aws-sdk');
-
 const chalk = require('chalk');
 
 const _ = require('lodash');
@@ -41,6 +39,7 @@ const supportedRegions = [
 const getAccountId = require('../../aws/aws-get-account-id');
 
 const { S3_BUCKET_NAME_PREFIX } = require('./constants');
+const { paginateListObjectsV2 } = require('@aws-sdk/client-s3');
 
 function atob(data) {
   return Buffer.from(data, 'base64').toString('ascii');
@@ -66,64 +65,30 @@ function formatError(err) {
   );
 }
 
-// lists all objects - responsibility for checking the count is on the caller
-// TODO: prefix should be a parameter
-function listAllObjectsWithPrefix(bucket, prefix, cb) {
-  const s3 = createS3Client();
+async function listAllObjectsWithPrefix(bucketName, prefix) {
+  const s3Client = createS3Client();
+  const allObjects = [];
 
-  const MAGIC_LIMIT = 100;
-
-  let result = [];
-
-  let params = {
-    Bucket: bucket,
-    MaxKeys: MAGIC_LIMIT,
-    Prefix: prefix
-  };
-
-  A.doWhilst(
-    function iteratee(next) {
-      s3.listObjectsV2(params, (s3Err, s3Data) => {
-        if (s3Err) {
-          return next(s3Err);
-        } else {
-          debug(`listObjectsV2: IsTruncated: ${s3Data.IsTruncated}`);
-          debug(
-            `listObjectsV2: KeyCount: ${s3Data.KeyCount} keys in the response`
-          );
-
-          result = result.concat(s3Data.Contents);
-
-          if (s3Data.IsTruncated) {
-            params.ContinuationToken = s3Data.NextContinuationToken;
-            return next(null, true);
-          } else {
-            return next(null, false);
-          }
-        }
-      });
-    },
-    function test(shouldContinue) {
-      return shouldContinue;
-    },
-    function finished(err) {
-      if (err) {
-        return cb(err);
-      } else {
-        debug(`listAllObjectsWithPrefix: returning ${result.length} results`);
-        return cb(null, result);
-      }
+  const paginator = paginateListObjectsV2(
+    { client: s3Client },
+    {
+      Bucket: bucketName,
+      Prefix: prefix,
+      MaxKeys: 1000
     }
   );
-} // listAllObjectsWithPrefix
 
-function credentialsProvided(cb) {
-  const credsProvided = new AWS.Config().credentials !== null;
-  if (cb) {
-    return cb(credsProvided);
-  } else {
-    return credsProvided;
+  try {
+    for await (const page of paginator) {
+      if (page.Contents) {
+        allObjects.push(...page.Contents);
+      }
+    }
+  } catch (error) {
+    throw error;
   }
+
+  return allObjects;
 }
 
 module.exports = {
@@ -133,6 +98,5 @@ module.exports = {
   btoa,
   formatError,
   listAllObjectsWithPrefix,
-  credentialsProvided,
   getBucketName
 };

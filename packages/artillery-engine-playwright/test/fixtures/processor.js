@@ -22,15 +22,15 @@ async function artilleryPlaywrightFunction(page, vuContext, events, test) {
   await test.step('go_to_artillery_io', async () => {
     await retryGoingToPage(page, '/');
 
-    await expect(page.getByText('The Artillery Manifesto')).toBeVisible();
+    await expect(
+      page.getByText('trademark of Artillery Software Inc')
+    ).toBeVisible();
   });
 
   await test.step('go_to_docs', async () => {
     await page.getByRole('link', { name: 'Docs' }).click();
     await expect(page).toHaveURL('/docs');
-    await expect(
-      page.getByText('What’s different about Artillery?')
-    ).toBeVisible();
+    await expect(page.getByText('Get started')).toBeVisible();
   });
 
   events.emit('counter', 'custom_emitter', 1);

@@ -1,15 +1,20 @@
 const assert = require('assert').strict;
-const AWS = require('aws-sdk');
+const {
+  EC2Client,
+  DescribeRouteTablesCommand,
+  DescribeVpcsCommand,
+  DescribeSubnetsCommand
+} = require('@aws-sdk/client-ec2');
 
 class VPCSubnetFinder {
   constructor(opts) {
-    this.ec2 = new AWS.EC2(opts);
+    this.ec2 = new EC2Client(opts);
   }
 
   async getRouteTables(vpcId) {
     try {
-      const rts = await this.ec2
-        .describeRouteTables({
+      const rts = await this.ec2.send(
+        new DescribeRouteTablesCommand({
           Filters: [
             {
               Name: 'vpc-id',
@@ -17,7 +22,7 @@ class VPCSubnetFinder {
             }
           ]
         })
-        .promise();
+      );
 
       return rts.RouteTables;
     } catch (err) {
@@ -27,8 +32,8 @@ class VPCSubnetFinder {
 
   async findDefaultVpc() {
     try {
-      const vpcRes = await this.ec2
-        .describeVpcs({
+      const vpcRes = await this.ec2.send(
+        new DescribeVpcsCommand({
           Filters: [
             {
               Name: 'isDefault',
@@ -36,7 +41,7 @@ class VPCSubnetFinder {
             }
           ]
         })
-        .promise();
+      );
 
       assert.ok(vpcRes.Vpcs.length <= 1);
 
@@ -53,8 +58,8 @@ class VPCSubnetFinder {
   async getSubnets(vpcId) {
     // Get subnets fileterd by VPC id
     try {
-      const subRes = await this.ec2
-        .describeSubnets({
+      const subRes = await this.ec2.send(
+        new DescribeSubnetsCommand({
           Filters: [
             {
               Name: 'vpc-id',
@@ -62,7 +67,7 @@ class VPCSubnetFinder {
             }
           ]
         })
-        .promise();
+      );
 
       return subRes.Subnets;
     } catch (err) {

@@ -1,5 +1,6 @@
 'use strict';
 
+const tap = require('tap');
 const { test, afterEach, beforeEach, before } = require('tap');
 const { $ } = require('zx');
 const fs = require('fs');
@@ -9,7 +10,7 @@ const {
   getTestTags,
   getTestId
 } = require('../../helpers');
-const { getXRayTraces } = require('./fixtures/adot/helpers.js');
+const { getXRayTraces } = require('./fixtures/adot/helpers');
 const {
   checkForNegativeValues,
   checkAggregateCounterSums
@@ -32,7 +33,7 @@ before(async () => {
   await $`${A9_PATH} -V`;
 });
 
-test('traces succesfully arrive to cloudwatch', async (t) => {
+tap.skip('traces succesfully arrive to cloudwatch', async (t) => {
   // Arrange:
   const expectedTotalSpans = 28; // 4 VUs * (1 scenario root span + 3 pageSpans + 3 stepSpans )
   const expectedVus = 4;

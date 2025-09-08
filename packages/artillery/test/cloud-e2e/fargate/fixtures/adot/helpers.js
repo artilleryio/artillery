@@ -2,8 +2,12 @@
 
 const sleep = require('../../../../helpers/sleep.js');
 const got = require('got');
-const AWS = require('aws-sdk');
-const xray = new AWS.XRay({ region: 'us-east-1' });
+const {
+  XRayClient,
+  GetTraceSummariesCommand,
+  BatchGetTracesCommand
+} = require('@aws-sdk/client-xray');
+const xray = new XRayClient({ region: 'us-east-1' });
 
 module.exports = {
   getDatadogSpans,
@@ -77,16 +81,14 @@ async function getXRayTraces(testId, expectedTraceNum) {
       console.log(
         `ADOT Cloudwatch test: Awaiting trace summaries... (retry #${retryNum})`
       );
-      traceSummaries = await xray
-        .getTraceSummaries({
-          StartTime: startTime,
-          EndTime: endTime,
-          FilterExpression: filterExpression,
-          TimeRangeType: 'Event'
-        })
-        .promise()
-        .then((data) => data.TraceSummaries);
-
+      const params = {
+        StartTime: startTime,
+        EndTime: endTime,
+        FilterExpression: filterExpression,
+        TimeRangeType: 'Event'
+      };
+      traceSummaries = (await xray.send(new GetTraceSummariesCommand(params)))
+        .TraceSummaries;
       await sleep(delay);
       retryNum++;
     } catch (err) {
@@ -104,13 +106,11 @@ async function getXRayTraces(testId, expectedTraceNum) {
       `ADOT Cloudwatch test: Awaiting traces... (retry #${retryBatchNum})`
     );
     try {
-      fullTraceData = await xray
-        .batchGetTraces({
-          TraceIds: traceIds
-        })
-        .promise()
-        .then((data) => data.Traces);
-
+      const params = {
+        TraceIds: traceIds
+      };
+      fullTraceData = (await xray.send(new BatchGetTracesCommand(params)))
+        .Traces;
       await sleep(delay);
       retryBatchNum++;
     } catch (err) {

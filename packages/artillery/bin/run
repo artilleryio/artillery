@@ -4,7 +4,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
- require('aws-sdk/lib/maintenance_mode_message').suppress = true;
  const oclif = require('@oclif/core');
  const { createGlobalObject } = require('../lib/artillery-global');
 

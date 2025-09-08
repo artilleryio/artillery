@@ -2,7 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const AWS = require('aws-sdk');
+const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const { randomUUID } = require('node:crypto');
 const { runProcess, sleep } = require('./a9-handler-helpers');
 const {
@@ -15,7 +16,7 @@ const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 
 class MQ {
   constructor({ region, queueUrl, attrs }) {
-    this.sqs = new AWS.SQS({ region });
+    this.sqs = new SQSClient({ region });
     this.queueUrl = queueUrl;
     this.attrs = attrs;
   }
@@ -29,15 +30,15 @@ class MQ {
       return acc;
     }, {});
 
-    return this.sqs
-      .sendMessage({
+    return this.sqs.send(
+      new SendMessageCommand({
         QueueUrl: this.queueUrl,
         MessageBody: JSON.stringify(body),
         MessageAttributes: messageAttributes,
         MessageDeduplicationId: randomUUID(),
         MessageGroupId: this.attrs.testId
       })
-      .promise();
+    );
   }
 }
 
@@ -113,7 +114,7 @@ async function handler(event, context) {
 
   // TODO: Stop Artillery process - relying on Lambda runtime to shut everything down now
 
-  const s3 = new AWS.S3();
+  const s3 = new S3Client();
   await mq.send({ event: 'workerReady' });
 
   let waitingFor = 0;
@@ -127,7 +128,7 @@ async function handler(event, context) {
           Bucket: BUCKET,
           Key: `/${TEST_RUN_ID}/green`
         };
-        await s3.headObject(params).promise();
+        await s3.send(new HeadObjectCommand(params));
         break;
       } catch (_err) {
         await sleep(SLEEP_MSEC);

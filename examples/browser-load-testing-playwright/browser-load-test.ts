@@ -45,12 +45,12 @@ export const scenarios = [
       await test.step('Go to core concepts', async () => {
         await page
           .getByRole('link', {
-            name: 'Review core concepts'
+            name: 'Start a new GitHub Discussion'
           })
           .click();
 
         await page.waitForURL(
-          'https://www.artillery.io/docs/get-started/core-concepts'
+          'https://github.com/artilleryio/artillery/discussions'
         );
       });
     }

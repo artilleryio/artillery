@@ -1,7 +1,5 @@
 const EventEmitter = require('events');
-const https = require('https');
 
-const AWS = require('aws-sdk');
 const { Consumer } = require('sqs-consumer');
 const driftless = require('driftless');
 const debug = require('debug')('sqs-reporter');
@@ -37,9 +35,10 @@ class SqsReporter extends EventEmitter {
     this.messagesProcessed = {};
     this.metricsMessagesFromWorkers = {};
 
-    this.poolSize = typeof process.env.SQS_CONSUMER_POOL_SIZE !== 'undefined'
-      ? parseInt(process.env.SQS_CONSUMER_POOL_SIZE, 10)
-      : Math.max(Math.ceil(this.count / 10), 75);
+    this.poolSize =
+      typeof process.env.SQS_CONSUMER_POOL_SIZE !== 'undefined'
+        ? parseInt(process.env.SQS_CONSUMER_POOL_SIZE, 10)
+        : Math.max(Math.ceil(this.count / 10), 75);
   }
 
   _allWorkersDone() {
@@ -279,14 +278,6 @@ class SqsReporter extends EventEmitter {
         messageAttributeNames: ['testId', 'workerId'],
         visibilityTimeout: 60,
         batchSize: 10,
-        sqs: new AWS.SQS({
-          httpOptions: {
-            agent: new https.Agent({
-              keepAlive: true
-            })
-          },
-          region: self.region
-        }),
         handleMessage: async (message) => {
           let body = null;
           try {

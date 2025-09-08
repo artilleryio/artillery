@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const AWS = require('aws-sdk');
+const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
 const debug = require('debug')('plugin:sqsReporter');
 const uuid = require('node:crypto').randomUUID;
 const { getAQS, sendMessage } = require('./azure-aqs');
@@ -41,7 +41,7 @@ function ArtillerySQSPlugin(script, events) {
   this.aqs = null;
 
   if (process.env.SQS_QUEUE_URL) {
-    this.sqs = new AWS.SQS({
+    this.sqs = new SQSClient({
       region:
         process.env.SQS_REGION || script.config.plugins['sqs-reporter'].region
     });
@@ -127,7 +127,7 @@ ArtillerySQSPlugin.prototype.sendMessage = function (body) {
   }
 };
 
-ArtillerySQSPlugin.prototype.sendSQS = function (body) {
+ArtillerySQSPlugin.prototype.sendSQS = async function (body) {
   this.unsent++;
 
   const payload = JSON.stringify(body);
@@ -140,12 +140,13 @@ ArtillerySQSPlugin.prototype.sendSQS = function (body) {
     MessageGroupId: this.testId
   };
 
-  this.sqs.sendMessage(params, (err, _data) => {
-    if (err) {
-      console.error(err);
-    }
+  try {
+    await this.sqs.send(new SendMessageCommand(params));
+  } catch (err) {
+    console.error(err);
+  } finally {
     this.unsent--;
-  });
+  }
 };
 
 ArtillerySQSPlugin.prototype.sendAQS = async function (body) {

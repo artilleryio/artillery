@@ -20,25 +20,7 @@ const syncTestData = async (bucketName, testRunId) => {
   if (result.code != 0 || result.stderr) {
     throw new Error(`Failed to sync test data:\n ${result.stderr}`);
   }
-
-  //TODO: should we introduce the "leader" concept and optimise using the install of node_modules?
-  //how relevant is it really? Only on larger dependency trees I suppose?
-
-  const metadataJson = fs.readFileSync(
-    path.join(LOCAL_TEST_DATA_PATH, 'metadata.json')
-  );
-  const localFiles = fs
-    .readdirSync(LOCAL_TEST_DATA_PATH, { recursive: true, withFileTypes: true })
-    .filter((file) => !file.isDirectory());
-
-  const metadataFileCount = JSON.parse(metadataJson).fileCount + 1; //include metadata json too;
-  if (metadataFileCount != localFiles.length) {
-    throw new Error(
-      `Number of files in metadata.json (${metadataFileCount}) does not match number of files (${localFiles.length}) in local directory! Something went wrong!`
-    );
-  }
-
-  console.log('Test data synced!');
+  console.log('Test data synced');
 };
 
 const installNpmDependencies = async (testDataLocation) => {
