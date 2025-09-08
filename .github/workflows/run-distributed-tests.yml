@@ -51,7 +51,7 @@ jobs:
 
   run-tests:
     needs: generate-test-matrix
-    timeout-minutes: 60
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -105,7 +105,7 @@ jobs:
   
   run-tests-windows:
     needs: generate-test-matrix
-    timeout-minutes: 60
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     continue-on-error: true
     permissions:

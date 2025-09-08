@@ -1,18 +1,4 @@
 const { spawn } = require('node:child_process');
-const { S3Client, GetBucketLocationCommand } = require('@aws-sdk/client-s3');
-
-async function getBucketRegion(bucketName) {
-  const c = new S3Client({ region: 'us-east-1' });
-  const command = new GetBucketLocationCommand({
-    Bucket: bucketName
-  });
-
-  const response = await c.send(command);
-
-  // Buckets is us-east-1 have a LocationConstraint of null
-  const location = response.LocationConstraint || 'us-east-1';
-  return location;
-}
 
 const sleep = async function (n) {
   return new Promise((resolve, _reject) => {
@@ -55,6 +41,5 @@ async function runProcess(name, args, { env, log }) {
 
 module.exports = {
   runProcess,
-  sleep,
-  getBucketRegion
+  sleep
 };

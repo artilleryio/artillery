@@ -5,7 +5,7 @@
 const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
 const { S3Client, HeadObjectCommand } = require('@aws-sdk/client-s3');
 const { randomUUID } = require('node:crypto');
-const { runProcess, sleep, getBucketRegion } = require('./a9-handler-helpers');
+const { runProcess, sleep } = require('./a9-handler-helpers');
 const {
   syncTestData,
   installNpmDependencies
@@ -114,8 +114,7 @@ async function handler(event, context) {
 
   // TODO: Stop Artillery process - relying on Lambda runtime to shut everything down now
 
-  const region = await getBucketRegion(BUCKET);
-  const s3 = new S3Client({ region });
+  const s3 = new S3Client();
   await mq.send({ event: 'workerReady' });
 
   let waitingFor = 0;
