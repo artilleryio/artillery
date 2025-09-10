@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     autoconf \
     libtool \
-    python3-pip && pip3 install awscli --break-system-packages
+    python3-pip && pip3 install awscli --break-system-packages && pip3 install azure-cli==2.76.0 --break-system-packages
 
 RUN <<EOT
 echo 'ipv4' >> ~/.curlrc
@@ -27,8 +27,6 @@ if [ "$TARGETARCH" = "arm64" ]; then
 echo 'insecure' >> ~/.curlrc
 fi
 EOT
-
-RUN wget https://aka.ms/InstallAzureCLIDeb && bash InstallAzureCLIDeb
 
 ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
