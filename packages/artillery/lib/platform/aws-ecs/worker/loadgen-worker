@@ -394,7 +394,7 @@ check_subscription_status () {
     fi
 
     set +e
-    node ./check-license.mjs
+    node /artillery/check-license.mjs
     if [[ $? -ne 0 ]] ; then
         send_no_license_message
         exit
