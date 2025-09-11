@@ -10,7 +10,7 @@
   "author": "Dennis Martinez",
   "license": "ISC",
   "dependencies": {
-    "cookie-parser": "^1.4.5",
-    "express": "^4.17.1"
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2"
   }
 }
