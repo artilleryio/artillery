@@ -352,9 +352,6 @@ wait_for_go () {
         set -e
 
         if [[ $cp_exit_code -eq 0 ]]; then
-            if [[ "$is_azure" = "yes" ]] ; then
-                check_subscription_status
-            fi
             break
         else
             if [[ $slept -ge $WAIT_TIMEOUT ]]; then
@@ -371,16 +368,20 @@ wait_for_go () {
 }
 
 check_subscription_status () {
+    if [[ ! "$is_azure" = "yes" ]] ; then
+        return
+    fi
+
     local prefix="tests/${test_run_id}/synced_"
 
     mkdir synced_objects
     pushd synced_objects
     az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/synced_*"
     local num=$(ls -a | wc -l)
+    popd
     if [[ $num -lt 7 ]] ; then
         return
     fi
-    popd
 
     if [[ -z "${ARTILLERY_CLOUD_API_KEY:-""}" ]] ; then
         send_no_license_message
@@ -519,6 +520,7 @@ main () {
     signal_ready
     progress "Waiting for green signal"
     wait_for_go
+    check_subscription_status
     progress "Off we go!"
     run_a9
 }
