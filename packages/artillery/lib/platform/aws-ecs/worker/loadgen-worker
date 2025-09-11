@@ -365,6 +365,10 @@ wait_for_go () {
             fi
         fi
     done
+
+    if [[ $# -eq 0 ]] ; then
+        check_subscription_status
+    fi
 }
 
 check_subscription_status () {
@@ -377,9 +381,10 @@ check_subscription_status () {
     mkdir synced_objects
     pushd synced_objects
     az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/synced_*"
-    local num=$(ls -a | wc -l)
+
+    local num=$(ls -a tests/$test_run_id | wc -l)
     popd
-    if [[ $num -lt 7 ]] ; then
+    if [[ $num -lt 8 ]] ; then
         return
     fi
 
@@ -520,7 +525,6 @@ main () {
     signal_ready
     progress "Waiting for green signal"
     wait_for_go
-    check_subscription_status
     progress "Off we go!"
     run_a9
 }
