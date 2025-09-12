@@ -7,7 +7,9 @@ const { QueueConsumer } = require('./aqs-queue-consumer');
 const { SQS_QUEUES_NAME_PREFIX } = require('../aws/constants');
 const { DefaultAzureCredential } = require('@azure/identity');
 const { QueueClient } = require('@azure/storage-queue');
-const { ContainerInstanceManagementClient } = require('@azure/arm-containerinstance');
+const {
+  ContainerInstanceManagementClient
+} = require('@azure/arm-containerinstance');
 const { BlobServiceClient } = require('@azure/storage-blob');
 const { createTest } = require('../aws-ecs/legacy/create-test');
 const util = require('../aws-ecs/legacy/util');
@@ -20,6 +22,7 @@ const path = require('path');
 const { Timeout, sleep } = require('../aws-ecs/legacy/time');
 const dotenv = require('dotenv');
 const fs = require('node:fs');
+const request = require('got');
 
 class PlatformAzureACI {
   constructor(script, variablePayload, opts, platformOpts) {
@@ -27,6 +30,9 @@ class PlatformAzureACI {
     this.variablePayload = variablePayload;
     this.opts = opts;
     this.platformOpts = platformOpts;
+
+    this.cloudKey =
+      this.platformOpts.cliArgs.key || process.env.ARTILLERY_CLOUD_API_KEY;
 
     this.events = new EventEmitter();
 
@@ -40,17 +46,20 @@ class PlatformAzureACI {
     this.azureTenantId =
       process.env.AZURE_TENANT_ID || platformOpts.platformConfig['tenant-id'];
     this.azureSubscriptionId =
-      process.env.AZURE_SUBSCRIPTION_ID || platformOpts.platformConfig['subscription-id'];
+      process.env.AZURE_SUBSCRIPTION_ID ||
+      platformOpts.platformConfig['subscription-id'];
     this.azureClientId = process.env.AZURE_CLIENT_ID;
     this.azureClientSecret = process.env.AZURE_CLIENT_SECRET;
 
     this.storageAccount =
-      process.env.AZURE_STORAGE_ACCOUNT || platformOpts.platformConfig['storage-account'];
+      process.env.AZURE_STORAGE_ACCOUNT ||
+      platformOpts.platformConfig['storage-account'];
     this.blobContainerName =
       process.env.AZURE_STORAGE_BLOB_CONTAINER ||
       platformOpts.platformConfig['blob-container'];
     this.resourceGroupName =
-      process.env.AZURE_RESOURCE_GROUP || platformOpts.platformConfig['resource-group'];
+      process.env.AZURE_RESOURCE_GROUP ||
+      platformOpts.platformConfig['resource-group'];
 
     this.cpu = parseInt(platformOpts.platformConfig.cpu, 10) || 4;
     this.memory = parseInt(platformOpts.platformConfig.memory, 10) || 8;
@@ -77,7 +86,11 @@ class PlatformAzureACI {
       throw err;
     }
 
-    if (!this.storageAccount || !this.blobContainerName || !this.resourceGroupName) {
+    if (
+      !this.storageAccount ||
+      !this.blobContainerName ||
+      !this.resourceGroupName
+    ) {
       const err = new Error('Azure configuration not found');
       err.code = 'AZURE_CONFIG_NOT_FOUND';
       err.url = 'https://docs.art/az/configuration';
@@ -98,6 +111,22 @@ class PlatformAzureACI {
     artillery.log('Blob container:', this.blobContainerName);
     artillery.log('Resource group:', this.resourceGroupName);
 
+    if (this.platformOpts.count > 5) {
+      const ok = await this.checkLicense();
+      if (!ok) {
+        console.log();
+        console.log(`
++--------------------------------------------------+
+| License for Azure integration not found          |
+|                                                  |
+| Load tests on Azure are limited to a maximum of  |
+| 5 workers without a valid license.               |
+| See https://docs.art/az/license for more details |
++--------------------------------------------------+
+`);
+        throw new Error('ERR_LICENSE_REQUIRED');
+      }
+    }
     //
     // Upload test bundle
     //
@@ -114,7 +143,8 @@ class PlatformAzureACI {
       send: async (command) => {
         // command is always an instance of PutObjectCommand() from @aws-sdk/client-s3
         const { Key, Body } = command.input;
-        const blockBlobClient = this.blobContainerClient.getBlockBlobClient(Key);
+        const blockBlobClient =
+          this.blobContainerClient.getBlockBlobClient(Key);
         await blockBlobClient.upload(Body, Body.length);
       }
     };
@@ -168,7 +198,10 @@ class PlatformAzureACI {
     }
 
     if (this.platformOpts.cliArgs.dotenv) {
-      const dotEnvPath = path.resolve(process.cwd(), this.platformOpts.cliArgs.dotenv);
+      const dotEnvPath = path.resolve(
+        process.cwd(),
+        this.platformOpts.cliArgs.dotenv
+      );
       const contents = fs.readFileSync(dotEnvPath);
       const envVars = dotenv.parse(contents);
       this.extraEnvVars = Object.assign({}, this.extraEnvVars, envVars);
@@ -181,7 +214,9 @@ class PlatformAzureACI {
 
     if (this.platformOpts.cliArgs.config) {
       this.artilleryArgs.push('--config');
-      const p = manifest.files.filter((x) => x.orig === this.opts.absoluteConfigPath)[0];
+      const p = manifest.files.filter(
+        (x) => x.orig === this.opts.absoluteConfigPath
+      )[0];
       this.artilleryArgs.push(p.noPrefixPosix);
     }
 
@@ -190,7 +225,9 @@ class PlatformAzureACI {
     }
 
     // This needs to be the last argument for now:
-    const p = manifest.files.filter((x) => x.orig === this.opts.absoluteScriptPath)[0];
+    const p = manifest.files.filter(
+      (x) => x.orig === this.opts.absoluteScriptPath
+    )[0];
     this.artilleryArgs.push(p.noPrefixPosix);
 
     const poolSize =
@@ -314,7 +351,8 @@ class PlatformAzureACI {
       if (i > 0 && i % 10 === 0) {
         const delayMs =
           Math.floor(
-            Math.random() * parseInt(process.env.AZURE_LAUNCH_STAGGER_SEC || '5', 10)
+            Math.random() *
+              parseInt(process.env.AZURE_LAUNCH_STAGGER_SEC || '5', 10)
           ) * 1000;
         await sleep(delayMs);
       }
@@ -352,7 +390,10 @@ class PlatformAzureACI {
         return acc;
       }, {});
 
-      if ((byStatus['Succeeded'] || 0) + (byStatus['Running'] || 0) === this.count) {
+      if (
+        (byStatus['Succeeded'] || 0) + (byStatus['Running'] || 0) ===
+        this.count
+      ) {
         instancesCreated = true;
         break;
       }
@@ -427,7 +468,8 @@ class PlatformAzureACI {
   async runWorker(workerId, opts = { isLeader: false }) {
     const credential = new DefaultAzureCredential();
 
-    const imageVersion = process.env.ARTILLERY_WORKER_IMAGE_VERSION || IMAGE_VERSION;
+    const imageVersion =
+      process.env.ARTILLERY_WORKER_IMAGE_VERSION || IMAGE_VERSION;
     const defaultArchitecture = 'x86_64';
     const containerImageURL =
       process.env.WORKER_IMAGE_URL ||
@@ -489,12 +531,10 @@ class PlatformAzureACI {
       }
     ];
 
-    const cloudKey = process.env.ARTILLERY_CLOUD_API_KEY || this.platformOpts.cliArgs.key;
-
-    if (cloudKey) {
+    if (this.cloudKey) {
       environmentVariables.push({
         name: 'ARTILLERY_CLOUD_API_KEY',
-        secureValue: cloudKey
+        secureValue: this.cloudKey
       });
     }
 
@@ -554,11 +594,12 @@ class PlatformAzureACI {
 
     const containerGroupName = `artillery-test-${this.ts}-${this.testRunId}-${this.count}`;
     try {
-      const containerInstance = await client.containerGroups.beginCreateOrUpdate(
-        this.resourceGroupName,
-        containerGroupName,
-        containerGroup
-      );
+      const containerInstance =
+        await client.containerGroups.beginCreateOrUpdate(
+          this.resourceGroupName,
+          containerGroupName,
+          containerGroup
+        );
 
       this.containerInstances.push(containerInstance);
 
@@ -572,6 +613,44 @@ class PlatformAzureACI {
   }
 
   async stopWorker(_workerId) {}
+
+  async checkLicense() {
+    const baseUrl =
+      process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
+    const res = await request.get(`${baseUrl}/api/user/whoami`, {
+      headers: {
+        'x-auth-token': this.cloudKey
+      },
+      throwHttpErrors: false,
+      retry: {
+        limit: 3
+      }
+    });
+
+    try {
+      const body = JSON.parse(res.body);
+      const activeOrg = body.activeOrg;
+      if (!activeOrg) {
+        return false;
+      }
+      if (!Array.isArray(body.memberships)) {
+        return false;
+      }
+
+      const activeMembership = body.memberships.find(
+        (membership) => membership.id === activeOrg
+      );
+
+      if (!activeMembership) {
+        return false;
+      }
+
+      const plan = activeMembership.plan;
+      return plan === 'business' && plan === 'enterprise';
+    } catch (err) {
+      return false;
+    }
+  }
 }
 
 module.exports = PlatformAzureACI;
