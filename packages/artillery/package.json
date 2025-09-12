@@ -129,7 +129,7 @@
     "cross-spawn": "^7.0.3",
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
-    "dependency-tree": "^10.0.9",
+    "dependency-tree": "^11.2.0",
     "detective-es6": "^4.0.1",
     "dotenv": "^16.0.1",
     "driftless": "^2.0.3",
