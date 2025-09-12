@@ -33,7 +33,7 @@ const https = require('https');
 
 const { QueueConsumer } = require('../../queue-consumer');
 
-const telemetry = require('../../telemetry').init();
+const telemetry = require('../../telemetry');
 const crypto = require('node:crypto');
 
 const prices = require('./prices');
@@ -347,7 +347,7 @@ class PlatformLambda {
       ext: 'beforeExit',
       method: async (event) => {
         try {
-          await telemetry.capture({
+          await telemetry.init().capture({
             event: 'ping',
             awsAccountId: crypto
               .createHash('sha1')
