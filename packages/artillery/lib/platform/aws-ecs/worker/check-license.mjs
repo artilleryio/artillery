@@ -62,7 +62,7 @@ async function main() {
       process.exit(1);
     }
 
-    if (plan === 'business') {
+    if (plan === 'business' || plan === 'enterprise') {
       console.log('License check passed: Business plan detected');
       process.exit(0);
     } else {

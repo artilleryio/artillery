@@ -352,9 +352,6 @@ wait_for_go () {
         set -e
 
         if [[ $cp_exit_code -eq 0 ]]; then
-            if [[ "$is_azure" = "yes" ]] ; then
-                check_subscription_status
-            fi
             break
         else
             if [[ $slept -ge $WAIT_TIMEOUT ]]; then
@@ -368,19 +365,28 @@ wait_for_go () {
             fi
         fi
     done
+
+    if [[ $# -eq 0 ]] ; then
+        check_subscription_status
+    fi
 }
 
 check_subscription_status () {
+    if [[ ! "$is_azure" = "yes" ]] ; then
+        return
+    fi
+
     local prefix="tests/${test_run_id}/synced_"
 
     mkdir synced_objects
     pushd synced_objects
     az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/synced_*"
-    local num=$(ls -a | wc -l)
-    if [[ $num -lt 7 ]] ; then
+
+    local num=$(ls -a tests/$test_run_id | wc -l)
+    popd
+    if [[ $num -lt 8 ]] ; then
         return
     fi
-    popd
 
     if [[ -z "${ARTILLERY_CLOUD_API_KEY:-""}" ]] ; then
         send_no_license_message
@@ -388,7 +394,7 @@ check_subscription_status () {
     fi
 
     set +e
-    node ./check-license.mjs
+    node /artillery/check-license.mjs
     if [[ $? -ne 0 ]] ; then
         send_no_license_message
         exit
