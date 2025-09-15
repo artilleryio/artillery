@@ -17,7 +17,7 @@ const createConsoleReporter = require('../../console-reporter');
 const moment = require('moment');
 
 const { SSMS } = require('@artilleryio/int-core').ssms;
-const telemetry = require('../telemetry').init();
+const telemetry = require('../telemetry');
 
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
@@ -409,10 +409,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         }
       }
       await Promise.allSettled(ps2);
-
-      if (telemetry) {
-        await telemetry.shutdown();
-      }
 
       if (launcher) {
         await launcher.shutdown();

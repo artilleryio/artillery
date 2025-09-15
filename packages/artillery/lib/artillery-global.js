@@ -1,5 +1,5 @@
 const version = require('../package.json').version;
-const telemetry = require('./telemetry').init();
+const telemetry = require('./telemetry');
 
 const { updateGlobalObject } = require('@artilleryio/int-core');
 

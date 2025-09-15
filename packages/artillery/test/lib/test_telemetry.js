@@ -42,7 +42,7 @@ after(() => {
 test('Telemetry', function (t) {
   captureSpy.resetHistory();
 
-  const telemetryClient = telemetry.init();
+  const telemetryClient = telemetry;
 
   telemetryClient.capture('test event');
 
@@ -76,7 +76,7 @@ test('Telemetry with defaults env var', function (t) {
     default2: 2
   });
 
-  const telemetryClient = telemetry.init();
+  const telemetryClient = telemetry;
 
   telemetryClient.capture('test event');
 

@@ -4,7 +4,7 @@
 
 const { Command, Flags, Args } = require('@oclif/core');
 const { CommonRunFlags } = require('../cli/common-flags');
-const telemetry = require('../telemetry').init();
+const telemetry = require('../telemetry');
 
 const runCluster = require('../platform/aws-ecs/legacy/run-cluster');
 const { supportedRegions } = require('../platform/aws-ecs/legacy/util');

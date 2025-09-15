@@ -6,16 +6,9 @@
 
 const { version: artilleryVersion } = require('../package.json');
 const { isCI, name: ciName } = require('ci-info');
-const chalk = require('chalk');
-const {
-  readArtilleryConfig,
-  updateArtilleryConfig
-} = require('./utils-config');
 const debug = require('debug')('telemetry');
 
 const POSTHOG_TOKEN = '_uzX-_WJoVmE_tsLvu0OFD2tpd0HGz72D5sU1zM2hbs';
-
-const noop = () => {};
 
 const notice = () => {
   console.log(
@@ -27,95 +20,59 @@ const isEnabled = () => {
   return typeof process.env.ARTILLERY_DISABLE_TELEMETRY === 'undefined';
 };
 
-const init = () => {
-  const telemetryDisabled = !isEnabled();
+async function capture(eventName, data) {
+  if (!isEnabled()) {
+    return;
+  }
 
   const debugEnabled =
     typeof process.env.ARTILLERY_TELEMETRY_DEBUG !== 'undefined';
 
+  const url = 'https://us.i.posthog.com/i/v0/e/';
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
   let telemetryDefaults = {};
   try {
     telemetryDefaults = JSON.parse(process.env.ARTILLERY_TELEMETRY_DEFAULTS);
-  } catch (err) {
-    // fail silently
+  } catch (_err) {
+    /* empty */
   }
 
-  const telemetry = {
-    capture: noop,
-    shutdown: noop
+  const properties = Object.assign(
+    {
+      ...data,
+      $process_person_profile: false,
+      version: artilleryVersion,
+      os: process.platform,
+      isCi: isCI,
+      ciName: isCI ? ciName : undefined,
+      $ip: 'not-collected'
+    },
+    telemetryDefaults
+  );
+
+  const payload = {
+    api_key: POSTHOG_TOKEN,
+    event: eventName,
+    distinct_id: data.distinctId || 'artillery-core',
+    properties
   };
 
-  const capture = (client) => {
-    return (event, data = {}) => {
-      let eventPayload;
-
-      if (telemetryDisabled) {
-        eventPayload = {
-          event,
-          distinctId: 'artillery-core',
-          properties: {
-            $ip: 'not-collected'
-          }
-        };
-      } else {
-        eventPayload = {
-          event,
-          distinctId: data.distinctId || 'artillery-core',
-          properties: {
-            ...data,
-            version: artilleryVersion,
-            os: process.platform,
-            isCi: isCI,
-            $ip: 'not-collected'
-          }
-        };
-
-        eventPayload.properties = Object.assign(
-          eventPayload.properties,
-          telemetryDefaults
-        );
-
-        if (isCI) {
-          eventPayload.properties.ciName = ciName;
-        }
-      }
-
-      if (debugEnabled) {
-        console.log(
-          chalk.yellow(`Telemetry data: ${JSON.stringify(eventPayload)}`)
-        );
-      }
-
-      try {
-        debug({ eventPayload });
-        client.capture(eventPayload);
-      } catch (err) {
-        debug(err);
-      }
-    };
-  };
-
-  const shutdown = (client) => async () => {
-    try {
-      await client.shutdownAsync();
-    } catch (err) {
-      debug(err);
-    }
-  };
+  if (debugEnabled) {
+    console.log(`Telemetry data: ${JSON.stringify(payload.properties)}`);
+  }
 
   try {
-    const PostHog = require('posthog-node').PostHog;
-    const client = new PostHog(POSTHOG_TOKEN, {
-      flushInterval: 100
+    await fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload)
     });
-
-    telemetry.capture = capture(client);
-    telemetry.shutdown = shutdown(client);
   } catch (err) {
     debug(err);
   }
+}
 
-  return telemetry;
-};
-
-module.exports = { init, notice, isEnabled };
+module.exports = { notice, capture, isEnabled };
