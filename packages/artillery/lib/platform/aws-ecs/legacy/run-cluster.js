@@ -609,8 +609,6 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       }
       await Promise.allSettled(ps2);
 
-      await global.artillery.telemetry?.shutdown();
-
       process.exit(global.artillery.suggestedExitCode || opts.exitCode);
     }
 
