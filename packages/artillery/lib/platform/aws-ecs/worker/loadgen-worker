@@ -159,6 +159,16 @@ send_event_aqs () {
 
 
 install_npm_dependencies () {
+    if [[ $(jq -r .modules "$METADATA_FILE") != "null" ]] ; then
+        echo "Installing required npm dependencies"
+        for dep in $(jq -r '.modules[]' "$METADATA_FILE") ; do
+            echo "installing $dep"
+            npm install --quiet "$dep"
+        done
+    else
+        echo "No extra npm modules to install"
+    fi
+
     if [[ -f "$TEST_DATA/package.json" ]] ; then
         echo "Installing dependencies in package.json"
         if [[ -f "$TEST_DATA/yarn.lock" ]] ; then
@@ -179,16 +189,6 @@ install_npm_dependencies () {
         fi
     else
         npm init -y --quiet
-    fi
-
-    if [[ $(jq -r .modules "$METADATA_FILE") != "null" ]] ; then
-        echo "Installing required npm dependencies"
-        for dep in $(jq -r '.modules[]' "$METADATA_FILE") ; do
-            echo "installing $dep"
-            npm install --quiet "$dep"
-        done
-    else
-        echo "No npm dependencies to install"
     fi
 }
 
