@@ -28,6 +28,10 @@ class PlatformECS {
     this.opts = opts;
     this.platformOpts = platformOpts;
 
+    this.arnPrefx = this.platformOpts.region.startsWith('cn-')
+      ? 'arn:aws-cn'
+      : 'arn:aws';
+
     this.testRunId = platformOpts.testRunId;
     if (!this.testRunId) {
       throw new Error('testRunId is required');
@@ -174,24 +178,8 @@ async function createWorkerRole(accountId, taskRoleName) {
           'ssm:DescribeParameters',
           'ssm:GetParametersByPath'
         ],
-        Resource: [`arn:aws:ssm:*:${accountId}:parameter/artilleryio/*`]
-      },
-      {
-        Effect: 'Allow',
-        Action: [
-          'ecr:BatchCheckLayerAvailability',
-          'ecr:GetDownloadUrlForLayer',
-          'ecr:BatchGetImage',
-          'ecr:ListImages'
-        ],
         Resource: [
-          // TODO: All supported regions
-          'arn:aws:ecr:us-east-1:301676560329:repository/artillery-pro/aws-ecs-node',
-          'arn:aws:ecr:us-west-1:301676560329:repository/artillery-pro/aws-ecs-node',
-          'arn:aws:ecr:eu-west-1:301676560329:repository/artillery-pro/aws-ecs-node',
-          'arn:aws:ecr:eu-central-1:301676560329:repository/artillery-pro/aws-ecs-node',
-          'arn:aws:ecr:ap-south-1:301676560329:repository/artillery-pro/aws-ecs-node',
-          'arn:aws:ecr:ap-northeast-1:301676560329:repository/artillery-pro/aws-ecs-node'
+          `${this.arnPrefx}:ssm:*:${accountId}:parameter/artilleryio/*`
         ]
       },
       {
@@ -203,20 +191,20 @@ async function createWorkerRole(accountId, taskRoleName) {
         Effect: 'Allow',
         Action: ['logs:*'],
         Resource: [
-          `arn:aws:logs:*:${accountId}:log-group:artilleryio-log-group*:*`
+          `${this.arnPrefx}:logs:*:${accountId}:log-group:artilleryio-log-group*:*`
         ]
       },
       {
         Effect: 'Allow',
         Action: ['sqs:*'],
-        Resource: [`arn:aws:sqs:*:${accountId}:artilleryio*`]
+        Resource: [`${this.arnPrefx}:sqs:*:${accountId}:artilleryio*`]
       },
       {
         Effect: 'Allow',
         Action: ['s3:*'],
         Resource: [
-          `arn:aws:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}`,
-          `arn:aws:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}/*`
+          `${this.arnPrefx}:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}`,
+          `${this.arnPrefx}:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}/*`
         ]
       },
       {
