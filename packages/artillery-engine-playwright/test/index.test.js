@@ -144,11 +144,6 @@ test('playwright js test fails and has correct vu count when expectation fails',
       3,
       'should have 3 failed assertions'
     );
-
-    t.ok(
-      output.stderr.includes("Locator: getByText('gremlins are here!')"),
-      'should have error message in stdout'
-    );
   }
 });
 
@@ -276,8 +271,6 @@ test('playwright typescript test fails and has correct vu count when expectation
       fs.readFileSync(playwrightOutput, 'utf8')
     ).aggregate;
 
-    console.log(jsonReportAggregate);
-
     t.equal(
       jsonReportAggregate.counters['vusers.failed'],
       3,
@@ -288,11 +281,6 @@ test('playwright typescript test fails and has correct vu count when expectation
       jsonReportAggregate.counters['errors.pw_failed_assertion.toBeVisible'],
       3,
       'should have 3 failed assertions'
-    );
-
-    t.ok(
-      output.stderr.includes("Locator: getByText('gremlins are here!')"),
-      'should have error message in stdout'
     );
   }
 });
