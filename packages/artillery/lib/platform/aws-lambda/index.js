@@ -92,6 +92,7 @@ class PlatformLambda {
     this.ecrImageUrl = process.env.WORKER_IMAGE_URL;
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
+    this.arnPrefix = this.region.startsWith('cn-') ? 'arn:aws-cn' : 'arn:aws';
 
     this.securityGroupIds =
       platformConfig['security-group-ids']?.split(',') || [];
@@ -521,6 +522,10 @@ class PlatformLambda {
       debug(err);
     }
 
+    const principalService = this.region.startsWith('cn-')
+      ? 'lambda.amazonaws.com.cn'
+      : 'lambda.amazonaws.com';
+
     const res = await iam.send(
       new CreateRoleCommand({
         AssumeRolePolicyDocument: `{
@@ -529,7 +534,7 @@ class PlatformLambda {
           {
             "Effect": "Allow",
             "Principal": {
-              "Service": "lambda.amazonaws.com"
+              "Service": "${principalService}"
             },
             "Action": "sts:AssumeRole"
           }
@@ -544,16 +549,14 @@ class PlatformLambda {
 
     await iam.send(
       new AttachRolePolicyCommand({
-        PolicyArn:
-          'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+        PolicyArn: `${this.arnPrefix}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole`,
         RoleName: ROLE_NAME
       })
     );
 
     await iam.send(
       new AttachRolePolicyCommand({
-        PolicyArn:
-          'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
+        PolicyArn: `${this.arnPrefix}:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole`,
         RoleName: ROLE_NAME
       })
     );
@@ -566,12 +569,12 @@ class PlatformLambda {
           {
             "Effect": "Allow",
             "Action": ["sqs:*"],
-            "Resource": "arn:aws:sqs:*:${this.accountId}:artilleryio*"
+            "Resource": "${this.arnPrefix}:sqs:*:${this.accountId}:artilleryio*"
           },
           {
             "Effect": "Allow",
             "Action": ["s3:HeadObject", "s3:PutObject", "s3:ListBucket", "s3:GetObject", "s3:GetObjectAttributes"],
-            "Resource": [ "arn:aws:s3:::artilleryio-test-data*",  "arn:aws:s3:::artilleryio-test-data*/*" ]
+            "Resource": [ "${this.arnPrefix}:s3:::artilleryio-test-data*",  "${this.arnPrefix}:s3:::artilleryio-test-data*/*" ]
           }
         ]
       }

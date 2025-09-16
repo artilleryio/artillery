@@ -361,7 +361,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     // Allow ARNs for convenience
     // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html
     // We split by :role because role names may contain slash characters (subpaths)
-    if (customRoleName.startsWith('arn:aws:iam')) {
+    if (
+      customRoleName.startsWith('arn:aws:iam') ||
+      customRoleName.startsWith('arn:aws-cn:iam')
+    ) {
       customRoleName = customRoleName.split(':role/')[1];
     }
     context.customTaskRoleName = customRoleName;
@@ -502,6 +505,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     originalScriptPath: scriptPath,
     count: count,
     region: options.region,
+    arnPrefix: options.region.startsWith('cn-') ? 'arn:aws-cn' : 'arn:aws',
     taskName: `${TASK_NAME}_${
       IS_FARGATE ? 'fargate' : ''
     }_${clusterName}_${IMAGE_VERSION.replace(/\./g, '-')}_${Math.floor(
@@ -1092,7 +1096,7 @@ async function createADOTDefinitionIfNeeded(context) {
       secrets: [
         {
           name: 'AOT_CONFIG_CONTENT',
-          valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter${context.adot.SSMParameterPath}`
+          valueFrom: `${context.arnPrefix}:ssm:${context.region}:${context.accountId}:parameter${context.adot.SSMParameterPath}`
         }
       ],
       logConfiguration: {
@@ -1187,7 +1191,7 @@ async function ensureTaskExists(context) {
     .map((secretName) => {
       return {
         name: secretName,
-        valueFrom: `arn:aws:ssm:${context.region}:${context.accountId}:parameter/artilleryio/${secretName}`
+        valueFrom: `${context.arnPrefix}:ssm:${context.region}:${context.accountId}:parameter/artilleryio/${secretName}`
       };
     });
 
