@@ -107,6 +107,10 @@ class PlatformLambda {
       platformConfig['lambda-role-arn'] || platformConfig['lambdaRoleArn'];
 
     this.platformOpts = platformOpts;
+
+    this.cloudKey =
+      this.platformOpts.cliArgs.key || process.env.ARTILLERY_CLOUD_API_KEY;
+
     this.s3LifecycleConfigurationRules = [
       {
         Expiration: { Days: 2 },
@@ -418,7 +422,8 @@ class PlatformLambda {
       ARTILLERY_ARGS: this.artilleryArgs,
       TEST_RUN_ID: this.testRunId,
       BUCKET: this.bucketName,
-      WAIT_FOR_GREEN: true
+      WAIT_FOR_GREEN: true,
+      ARTILLERY_CLOUD_API_KEY: this.cloudKey
     };
 
     debug('Lambda event payload:');
