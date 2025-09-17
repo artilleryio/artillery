@@ -112,6 +112,7 @@
     "@oclif/core": "^4.4.0",
     "@oclif/plugin-help": "^6.2.29",
     "@oclif/plugin-not-found": "^3.2.57",
+    "@upstash/redis": "^1.35.3",
     "archiver": "^5.3.2",
     "artillery-engine-playwright": "*",
     "artillery-plugin-apdex": "*",
