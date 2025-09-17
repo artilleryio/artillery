@@ -16,6 +16,9 @@ const {
   threadId
 } = require('worker_threads');
 
+const { createClient } = require('../../platform/cloud/api');
+const { initStash } = require('../../../lib/stash');
+
 const { createGlobalObject } = require('../../artillery-global');
 
 const core = require('@artilleryio/int-core');
@@ -100,8 +103,31 @@ async function cleanup() {
   });
 }
 
+async function createGlobalStashClient(cliArgs) {
+  let cloud;
+  try {
+    cloud = createClient({
+      apiKey: cliArgs.key || process.env.ARTILLERY_CLOUD_API_KEY
+    });
+  } catch (err) {
+    if (err.name !== 'CloudAPIKeyMissing') {
+      console.error(err);
+    }
+    global.artillery.stash = null;
+  }
+
+  if (cloud) {
+    const whoami = await cloud.whoami();
+    if (whoami.activeOrg) {
+      const details = await cloud.getStashDetails({ orgId: whoami.activeOrg });
+      global.artillery.stash = await initStash(details);
+    }
+  }
+}
+
 async function prepare(opts) {
   await createGlobalObject();
+  await createGlobalStashClient(opts.options.cliArgs);
 
   global.artillery.globalEvents.on('log', (...args) => {
     send({ event: 'log', args });
