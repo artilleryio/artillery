@@ -12,7 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "del-cli": "^4.0.1",
-    "express": "^4.17.1",
-    "multer": "^1.4.2"
+    "express": "^4.20.0",
+    "multer": "^2.0.2"
   }
 }
