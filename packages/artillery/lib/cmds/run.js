@@ -352,6 +352,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         // Properties from the runnable script object:
         testConfig: {
           target: script.config.target,
+          engine: script.config.engine,
           phases: script.config.phases,
           plugins: script.config.plugins,
           environment: script._environment,

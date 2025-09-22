@@ -1628,6 +1628,7 @@ async function launchLeadTask(context) {
     // Properties from the runnable script object:
     testConfig: {
       target: context.runnableScript.config.target,
+      engine: context.runnableScript.config.engine,
       phases: context.runnableScript.config.phases,
       plugins: context.runnableScript.config.plugins,
       environment: context.runnableScript._environment,
