@@ -7,6 +7,9 @@
     ".": {
       "require": "./lib/index.js",
       "types": "./types.d.ts"
+    },
+    "./util": {
+      "require": "./lib/util.js"
     }
   },
   "engines": {
