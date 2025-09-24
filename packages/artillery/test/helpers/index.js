@@ -1,5 +1,4 @@
 const sh = require('execa');
-const temp = require('temp').track();
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -9,7 +8,8 @@ const { createHash } = require('crypto');
 
 async function execute(args, options) {
   try {
-    const fn = temp.path({ suffix: '.txt' });
+    const temporaryFile = (await import('tempy')).temporaryFile;
+    const fn = temporaryFile({ extension: 'txt' });
     const c = sh(a9path, args, options);
     c.stdout.pipe(fs.createWriteStream(fn));
     const result = await c;
