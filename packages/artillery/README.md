@@ -12,7 +12,7 @@
 
 <a href="https://www.artillery.io/">
   <img
-    src="https://www.artillery.io/api/og?title=The%20Complete%20Load%20Testing%20Platform"
+    src="https://www.artillery.io/api/og?title=Full-stack%20reliability%20%26%20performance&description=Scalable%20API%20and%20Playwright%20load%20testing"
   />
 </a>
 
