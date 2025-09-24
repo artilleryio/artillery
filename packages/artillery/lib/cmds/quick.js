@@ -8,7 +8,6 @@ const RunCommand = require('./run');
 const parse = require('url').parse;
 const fs = require('fs');
 const _ = require('lodash');
-const temp = require('temp').track();
 const debug = require('debug')('commands:quick');
 
 const { Command, Flags, Args } = require('@oclif/core');
@@ -70,7 +69,8 @@ class QuickCommand extends Command {
       script.scenarios[0].engine = 'ws';
     }
 
-    const tmpf = temp.path({ suffix: '.yml' });
+    const temporaryFile = (await import('tempy')).temporaryFile;
+    const tmpf = temporaryFile({ extension: 'yml' });
     fs.writeFileSync(tmpf, JSON.stringify(script, null, 2), { flag: 'w' });
 
     const runArgs = [];
