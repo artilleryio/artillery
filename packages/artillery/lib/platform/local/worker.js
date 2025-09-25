@@ -105,7 +105,7 @@ async function cleanup() {
 async function createGlobalStashClient(cliArgs) {
   try {
     global.artillery.stash = await getStash({
-      apiKey: cliArgs.key || process.env.ARTILLERY_CLOUD_API_KEY
+      apiKey: cliArgs?.key || process.env.ARTILLERY_CLOUD_API_KEY
     });
   } catch (error) {
     if (error.name !== 'CloudAPIKeyMissing') {
