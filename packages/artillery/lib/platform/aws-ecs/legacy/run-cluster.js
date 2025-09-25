@@ -17,6 +17,7 @@ const {
   ListQueuesCommand,
   GetQueueAttributesCommand
 } = require('@aws-sdk/client-sqs');
+const { GetObjectCommand } = require('@aws-sdk/client-s3');
 const { IAMClient, GetRoleCommand } = require('@aws-sdk/client-iam');
 // Normal debugging for messages, summaries, and errors:
 const debug = require('debug')('commands:run-test');
@@ -53,7 +54,6 @@ const { VPCSubnetFinder } = require('./find-public-subnets');
 const awsUtil = require('./aws-util');
 const { createTest } = require('./create-test');
 
-const { TestBundle } = require('./test-object');
 const createS3Client = require('./create-s3-client');
 const { getBucketName } = require('./util');
 const getAccountId = require('../../aws/aws-get-account-id');
@@ -91,6 +91,7 @@ let IS_FARGATE = false;
 const TEST_RUN_STATUS = require('./test-run-status');
 const prepareTestExecutionPlan = require('../../../util/prepare-test-execution-plan');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const awsGetDefaultRegion = require('../../aws/aws-get-default-region');
 
 function setupConsoleReporter(quiet) {
   const reporterOpts = {
@@ -220,6 +221,8 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       }
     };
   })();
+
+  global.artillery.awsRegion = (await awsGetDefaultRegion()) || options.region;
 
   let context = {};
   const inputFiles = [].concat(scriptPath, options.config || []);
@@ -636,8 +639,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
     try {
       logProgress('Checking AWS connectivity...');
-
-      context.accountId = await getAccountId();
+      context.accountId = await getAccountId({ region: context.region });
       await Promise.all([
         (async function (context) {
           const bucketName = await getBucketName();
@@ -710,6 +712,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       setCloudwatchRetention(
         `${LOGGROUP_NAME}/${context.clusterName}`,
         LOGGROUP_RETENTION_DAYS,
+        context.region,
         {
           maxRetries: 10,
           waitPerRetry: 2 * 1000
@@ -1288,7 +1291,7 @@ async function checkCustomTaskRole(context) {
     return;
   }
 
-  const iam = new IAMClient();
+  const iam = new IAMClient({ region: global.artillery.awsRegion });
   try {
     const roleData = await iam.send(
       new GetRoleCommand({ RoleName: context.customTaskRoleName })
@@ -1416,11 +1419,14 @@ async function createQueue(context) {
 
 async function getManifest(context) {
   try {
-    const testBundle = new TestBundle(
-      context.namedTest ? context.s3Prefix : context.testId
-    );
-    const metadata = await testBundle.getManifest();
+    const s3 = createS3Client({ region: global.artillery.s3BucketRegion });
+    const params = {
+      Bucket: context.s3Bucket,
+      Key: `tests/${context.testId}/metadata.json`
+    };
 
+    const data = await s3.send(new GetObjectCommand(params));
+    const metadata = JSON.parse(await data.Body.transformToString());
     context.newScriptPath = metadata.scriptPath;
 
     if (metadata.configPath) {

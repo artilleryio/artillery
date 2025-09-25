@@ -3,11 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const debug = require('debug')('util:aws:getAccountId');
-
 const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
 
-module.exports = async function getAccountId() {
-  let stsOpts = {};
+module.exports = async function getAccountId(stsOpts = {}) {
+  if (!stsOpts.region) {
+    stsOpts.region = global.artillery.awsRegion || 'us-east-1';
+  }
+
   if (process.env.ARTILLERY_STS_OPTS) {
     stsOpts = Object.assign(
       stsOpts,

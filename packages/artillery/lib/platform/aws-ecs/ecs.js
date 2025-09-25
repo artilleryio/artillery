@@ -22,6 +22,7 @@ const getAccountId = require('../aws/aws-get-account-id');
 
 const sleep = require('../../util/sleep');
 const { getBucketRegion } = require('../aws/aws-get-bucket-region');
+const awsGetDefaultRegion = require('../aws/aws-get-default-region');
 
 class PlatformECS {
   constructor(script, payload, opts, platformOpts) {
@@ -54,6 +55,9 @@ class PlatformECS {
   }
 
   async init() {
+    global.artillery.awsRegion =
+      (await awsGetDefaultRegion()) || this.platformOpts.region;
+
     this.accountId = await getAccountId();
 
     await ensureSSMParametersExist(this.platformOpts.region);
@@ -132,7 +136,7 @@ async function createIAMResources(accountId, taskRoleName) {
 }
 
 async function createWorkerRole(accountId, taskRoleName) {
-  const iam = new IAMClient();
+  const iam = new IAMClient({ region: global.artillery.awsRegion });
 
   try {
     const res = await iam.send(new GetRoleCommand({ RoleName: taskRoleName }));
