@@ -46,6 +46,7 @@ const getAccountId = require('../aws/aws-get-account-id');
 
 const createSQSQueue = require('../aws/aws-create-sqs-queue');
 const { createAndUploadTestDependencies } = require('./dependencies');
+const awsGetDefaultRegion = require('../aws/aws-get-default-region');
 const pkgVersion = require('../../../package.json').version;
 
 // https://stackoverflow.com/a/66523153
@@ -130,6 +131,7 @@ class PlatformLambda {
   }
 
   async init() {
+    global.artillery.awsRegion = (await awsGetDefaultRegion()) || this.region;
     artillery.log('λ Preparing AWS Lambda function...');
     this.accountId = await getAccountId();
 
@@ -518,7 +520,7 @@ class PlatformLambda {
     const ROLE_NAME = 'artilleryio-default-lambda-role-20230116';
     const POLICY_NAME = 'artilleryio-lambda-policy-20230116';
 
-    const iam = new IAMClient();
+    const iam = new IAMClient({ region: global.artillery.awsRegion });
 
     try {
       const res = await iam.send(new GetRoleCommand({ RoleName: ROLE_NAME }));

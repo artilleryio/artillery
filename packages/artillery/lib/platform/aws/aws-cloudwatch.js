@@ -9,8 +9,15 @@ const allowedRetentionDays = [
   2192, 2557, 2922, 3288, 3653
 ];
 
-async function _putCloudwatchRetentionPolicy(logGroupName, retentionInDays) {
-  const cloudwatchlogs = new CloudWatchLogsClient({ apiVersion: '2014-11-06' });
+async function _putCloudwatchRetentionPolicy(
+  logGroupName,
+  retentionInDays,
+  region
+) {
+  const cloudwatchlogs = new CloudWatchLogsClient({
+    apiVersion: '2014-11-06',
+    region
+  });
   const putRetentionPolicyParams = {
     logGroupName,
     retentionInDays
@@ -24,6 +31,7 @@ async function _putCloudwatchRetentionPolicy(logGroupName, retentionInDays) {
 function setCloudwatchRetention(
   logGroupName,
   retentionInDays,
+  region,
   options = { maxRetries: 5, waitPerRetry: 1000 }
 ) {
   if (!allowedRetentionDays.includes(retentionInDays)) {
@@ -45,7 +53,8 @@ function setCloudwatchRetention(
       try {
         const res = await _putCloudwatchRetentionPolicy(
           logGroupName,
-          retentionInDays
+          retentionInDays,
+          region
         );
         debug(
           `Successfully set CloudWatch Logs retention policy to ${retentionInDays} days`
