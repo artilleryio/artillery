@@ -12,6 +12,8 @@ const EventEmitter = require('events');
 const { setDriftlessInterval, clearDriftless } = require('driftless');
 const debug = require('debug')('ssms');
 
+const MAX_METRIC_NAME_LENGTH = 1024;
+
 class SSMS extends EventEmitter {
   constructor(_options) {
     super();
@@ -153,7 +155,7 @@ class SSMS extends EventEmitter {
       k.match(/^(http|socketio)\.codes.*/)
     );
     for (const n of codeNames) {
-      const code = parseInt(n.split('.codes.')[1]);
+      const code = parseInt(n.split('.codes.')[1], 10);
       result.codes[code] = pd.counters[n];
     }
 
@@ -377,24 +379,32 @@ class SSMS extends EventEmitter {
 
   // TODO: Deprecate
   counter(name, value) {
-    this.incr(name, value);
+    this.incr(name.slice(0, MAX_METRIC_NAME_LENGTH), value);
   }
 
   incr(name, value, t) {
-    this._counters.push(t || Date.now(), name, value);
+    this._counters.push(
+      t || Date.now(),
+      name.slice(0, MAX_METRIC_NAME_LENGTH),
+      value
+    );
   }
 
   // TODO: Deprecate
   summary(name, value) {
-    this.histogram(name, value);
+    this.histogram(name.slice(0, MAX_METRIC_NAME_LENGTH), value);
   }
 
   histogram(name, value, t) {
-    this._histograms.push(t || Date.now(), name, value);
+    this._histograms.push(
+      t || Date.now(),
+      name.slice(0, MAX_METRIC_NAME_LENGTH),
+      value
+    );
   }
 
   rate(name, t) {
-    this._rates.push(t || Date.now(), name);
+    this._rates.push(t || Date.now(), name.slice(0, MAX_METRIC_NAME_LENGTH));
   }
 
   getMetrics(period) {
@@ -626,7 +636,7 @@ function summarizeHistogram(h) {
     min: round(h.min, 1),
     max: round(h.max, 1),
     count: h.count,
-    mean: round(h.sum/h.count, 1),
+    mean: round(h.sum / h.count, 1),
     p50: round(h.getValueAtQuantile(0.5), 1),
     median: round(h.getValueAtQuantile(0.5), 1), // Here for compatibility
     p75: round(h.getValueAtQuantile(0.75), 1),
