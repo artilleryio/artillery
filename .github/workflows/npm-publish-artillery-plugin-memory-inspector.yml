@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     if: "contains(github.event.head_commit.message, 'ci: release v')"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
       packages: write

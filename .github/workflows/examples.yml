@@ -13,7 +13,7 @@ env:
 
 jobs:
   browser-load-test:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     env:
       CWD: ./examples/browser-load-testing-playwright
@@ -40,7 +40,7 @@ jobs:
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
 
   http-metrics-by-endpoint:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     env:
       CWD: ./examples/http-metrics-by-endpoint
@@ -65,7 +65,7 @@ jobs:
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
 
   multiple-scenarios-spec:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     env:
       CWD: ./examples/multiple-scenario-specs
@@ -100,7 +100,7 @@ jobs:
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
 
   using-data-from-csv:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 15
     env:
       CWD: ./examples/using-data-from-csv

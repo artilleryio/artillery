@@ -24,7 +24,7 @@ jobs:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
 
   publish-packages-to-npm:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: >
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.head_commit.message, 'ci: release v')

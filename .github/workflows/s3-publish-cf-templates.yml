@@ -26,7 +26,7 @@ env:
   GH_OIDC_FARGATE_TEMPLATE: ${{ inputs.canary && 'gh-oidc-fargate-canary.yml' || 'gh-oidc-fargate.yml' }}
 jobs:
   put-cloudformation-templates:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
 
     permissions:
       id-token: write

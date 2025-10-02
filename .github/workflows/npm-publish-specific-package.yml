@@ -27,7 +27,7 @@ jobs:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
 
   publish-packages-to-npm:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: publish-fargate-worker-image
     permissions:
       contents: read

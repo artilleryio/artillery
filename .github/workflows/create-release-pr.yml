@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   create_release_pr:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       # these are the packages we auto release (e.g. standalone pkgs like artillery/skytrace/types, and included dependencies like plugins)
       # some non-included dependencies are not released automatically (e.g. posthog, memory-inspector)

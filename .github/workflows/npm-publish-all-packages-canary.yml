@@ -34,7 +34,7 @@ jobs:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: "!contains( github.event.head_commit.message, 'ci: release v')"
     needs: publish-fargate-worker-image
     permissions:
