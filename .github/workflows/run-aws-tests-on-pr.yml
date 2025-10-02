@@ -9,7 +9,7 @@ on:
 
 jobs:
   is-collaborator:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Get User Permission
         id: checkAccess

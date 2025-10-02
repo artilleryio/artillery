@@ -33,7 +33,7 @@ permissions:
 
 jobs:
   generate-test-matrix:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
     steps:
@@ -52,7 +52,7 @@ jobs:
   run-tests:
     needs: generate-test-matrix
     timeout-minutes: 20
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -106,7 +106,7 @@ jobs:
   run-tests-windows:
     needs: generate-test-matrix
     timeout-minutes: 20
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     continue-on-error: true
     permissions:
       contents: read

@@ -31,7 +31,7 @@ permissions:
 
 jobs:
   build_docker_image_amd64:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       # Set by the caller workflow, defaults to github.sha when not passed (e.g. workflow_dispatch against a branch)
       WORKER_VERSION: ${{ inputs.COMMIT_SHA || github.sha }}
@@ -130,7 +130,7 @@ jobs:
           docker push 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }}
         
   build_docker_image_arm64:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: ${{ inputs.SHOULD_BUILD_ARM64 }}
     env:
       # Set by the caller workflow, defaults to github.sha when not passed (e.g. workflow_dispatch against a branch)
