@@ -68,7 +68,124 @@ class PlatformECS {
     );
 
     global.artillery.s3BucketRegion = await getBucketRegion(bucketName);
-    await createIAMResources(this.accountId, this.platformOpts.taskRoleName);
+    await this.createIAMResources(
+      this.accountId,
+      this.platformOpts.taskRoleName
+    );
+  }
+
+  async createIAMResources(accountId, taskRoleName) {
+    const workerRoleArn = await this.createWorkerRole(accountId, taskRoleName);
+
+    return {
+      workerRoleArn
+    };
+  }
+
+  async createWorkerRole(accountId, taskRoleName) {
+    const iam = new IAMClient({ region: global.artillery.awsRegion });
+
+    try {
+      const res = await iam.send(
+        new GetRoleCommand({ RoleName: taskRoleName })
+      );
+      return res.Role.Arn;
+    } catch (err) {
+      debug(err);
+    }
+
+    const createRoleResp = await iam.send(
+      new CreateRoleCommand({
+        AssumeRolePolicyDocument: JSON.stringify({
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: {
+                Service: ['ecs-tasks.amazonaws.com', 'ecs.amazonaws.com']
+              },
+              Action: 'sts:AssumeRole'
+            }
+          ]
+        }),
+        Path: '/',
+        RoleName: taskRoleName
+      })
+    );
+
+    const policyDocument = {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Action: ['ssm:DescribeParameters'],
+          Resource: ['*']
+        },
+        {
+          Effect: 'Allow',
+          Action: [
+            'ssm:GetParameters',
+            'ssm:GetParameter',
+            'ssm:PutParameter',
+            'ssm:DeleteParameter',
+            'ssm:DescribeParameters',
+            'ssm:GetParametersByPath'
+          ],
+          Resource: [
+            `${this.arnPrefx}:ssm:*:${accountId}:parameter/artilleryio/*`
+          ]
+        },
+        {
+          Effect: 'Allow',
+          Action: ['ecr:GetAuthorizationToken'],
+          Resource: ['*']
+        },
+        {
+          Effect: 'Allow',
+          Action: ['logs:*'],
+          Resource: [
+            `${this.arnPrefx}:logs:*:${accountId}:log-group:artilleryio-log-group*:*`
+          ]
+        },
+        {
+          Effect: 'Allow',
+          Action: ['sqs:*'],
+          Resource: [`${this.arnPrefx}:sqs:*:${accountId}:artilleryio*`]
+        },
+        {
+          Effect: 'Allow',
+          Action: ['s3:*'],
+          Resource: [
+            `${this.arnPrefx}:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}`,
+            `${this.arnPrefx}:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}/*`
+          ]
+        },
+        {
+          Effect: 'Allow',
+          Action: ['xray:PutTraceSegments', 'xray:PutTelemetryRecords'],
+          Resource: ['*']
+        }
+      ]
+    };
+
+    const createPolicyResp = await iam.send(
+      new CreatePolicyCommand({
+        PolicyName: 'artilleryio-ecs-worker-policy',
+        Path: '/',
+        PolicyDocument: JSON.stringify(policyDocument)
+      })
+    );
+
+    await iam.send(
+      new AttachRolePolicyCommand({
+        PolicyArn: createPolicyResp.Policy.Arn,
+        RoleName: taskRoleName
+      })
+    );
+
+    debug('Waiting for IAM role to be ready');
+    await sleep(30 * 1000);
+    return createRoleResp.Role.Arn;
   }
 
   async createWorker() {}
@@ -125,118 +242,6 @@ async function ensureSSMParametersExist(region) {
     'String',
     region
   );
-}
-
-async function createIAMResources(accountId, taskRoleName) {
-  const workerRoleArn = await createWorkerRole(accountId, taskRoleName);
-
-  return {
-    workerRoleArn
-  };
-}
-
-async function createWorkerRole(accountId, taskRoleName) {
-  const iam = new IAMClient({ region: global.artillery.awsRegion });
-
-  try {
-    const res = await iam.send(new GetRoleCommand({ RoleName: taskRoleName }));
-    return res.Role.Arn;
-  } catch (err) {
-    debug(err);
-  }
-
-  const createRoleResp = await iam.send(
-    new CreateRoleCommand({
-      AssumeRolePolicyDocument: JSON.stringify({
-        Version: '2012-10-17',
-        Statement: [
-          {
-            Effect: 'Allow',
-            Principal: {
-              Service: ['ecs-tasks.amazonaws.com', 'ecs.amazonaws.com']
-            },
-            Action: 'sts:AssumeRole'
-          }
-        ]
-      }),
-      Path: '/',
-      RoleName: taskRoleName
-    })
-  );
-
-  const policyDocument = {
-    Version: '2012-10-17',
-    Statement: [
-      {
-        Effect: 'Allow',
-        Action: ['ssm:DescribeParameters'],
-        Resource: ['*']
-      },
-      {
-        Effect: 'Allow',
-        Action: [
-          'ssm:GetParameters',
-          'ssm:GetParameter',
-          'ssm:PutParameter',
-          'ssm:DeleteParameter',
-          'ssm:DescribeParameters',
-          'ssm:GetParametersByPath'
-        ],
-        Resource: [
-          `${this.arnPrefx}:ssm:*:${accountId}:parameter/artilleryio/*`
-        ]
-      },
-      {
-        Effect: 'Allow',
-        Action: ['ecr:GetAuthorizationToken'],
-        Resource: ['*']
-      },
-      {
-        Effect: 'Allow',
-        Action: ['logs:*'],
-        Resource: [
-          `${this.arnPrefx}:logs:*:${accountId}:log-group:artilleryio-log-group*:*`
-        ]
-      },
-      {
-        Effect: 'Allow',
-        Action: ['sqs:*'],
-        Resource: [`${this.arnPrefx}:sqs:*:${accountId}:artilleryio*`]
-      },
-      {
-        Effect: 'Allow',
-        Action: ['s3:*'],
-        Resource: [
-          `${this.arnPrefx}:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}`,
-          `${this.arnPrefx}:s3:::${S3_BUCKET_NAME_PREFIX}-${accountId}/*`
-        ]
-      },
-      {
-        Effect: 'Allow',
-        Action: ['xray:PutTraceSegments', 'xray:PutTelemetryRecords'],
-        Resource: ['*']
-      }
-    ]
-  };
-
-  const createPolicyResp = await iam.send(
-    new CreatePolicyCommand({
-      PolicyName: 'artilleryio-ecs-worker-policy',
-      Path: '/',
-      PolicyDocument: JSON.stringify(policyDocument)
-    })
-  );
-
-  await iam.send(
-    new AttachRolePolicyCommand({
-      PolicyArn: createPolicyResp.Policy.Arn,
-      RoleName: taskRoleName
-    })
-  );
-
-  debug('Waiting for IAM role to be ready');
-  await sleep(30 * 1000);
-  return createRoleResp.Role.Arn;
 }
 
 module.exports = PlatformECS;
