@@ -32,11 +32,9 @@ export async function artilleryPlaywrightFunction(
   });
 
   await test.step('go_to_docs', async () => {
-    await page.getByRole('link', { name: 'Docs' }).click();
+    await page.getByRole('link', { name: 'Docs' }).first().click();
     await expect(page).toHaveURL('/docs');
-    await expect(
-      page.getByText('Get started')
-    ).toBeVisible();
+    await expect(page.getByText('Get started')).toBeVisible();
   });
 
   events.emit('counter', 'custom_emitter', 1);

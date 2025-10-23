@@ -28,7 +28,7 @@ async function artilleryPlaywrightFunction(page, vuContext, events, test) {
   });
 
   await test.step('go_to_docs', async () => {
-    await page.getByRole('link', { name: 'Docs' }).click();
+    await page.getByRole('link', { name: 'Docs' }).first().click();
     await expect(page).toHaveURL('/docs');
     await expect(page.getByText('Get started')).toBeVisible();
   });
