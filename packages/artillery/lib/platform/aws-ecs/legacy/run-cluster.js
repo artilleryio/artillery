@@ -1600,6 +1600,10 @@ async function setupDefaultECSParams(context) {
         subnets: context.fargatePublicSubnetIds
       }
     };
+
+    if (context.cliOptions.noAssignPublicIp) {
+      defaultParams.awsvpcConfiguration.assignPublicIp = 'DISABLED';
+    }
   } else {
     defaultParams.launchType = 'EC2';
   }

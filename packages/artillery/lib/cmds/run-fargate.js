@@ -177,6 +177,11 @@ RunCommand.flags = {
   }),
   'max-duration': Flags.string({
     description: 'Maximum duration of the test run'
+  }),
+  'no-assign-public-ip': Flags.boolean({
+    description:
+      'Turn off the default behavior of assigning public IPs to Fargate worker tasks. When this option is used you must make sure tasks have a route to the internet, i.e. via a NAT gateway attached to a private subnet',
+    default: false
   })
 };
 
