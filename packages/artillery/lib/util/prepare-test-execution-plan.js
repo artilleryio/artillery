@@ -151,6 +151,8 @@ async function readPayload(script) {
 }
 
 function transpileTypeScript(entryPoint, outputPath, userExternalPackages) {
+  //TODO: move require to top of file when Lambda bundle size issue is solved
+  //must be conditionally required for now as this package is removed in Lambda for now to avoid bigger package sizes
   const esbuild = require('esbuild-wasm');
 
   esbuild.buildSync({
@@ -162,8 +164,6 @@ function transpileTypeScript(entryPoint, outputPath, userExternalPackages) {
     sourcemap: 'inline',
     external: ['@playwright/test', ...userExternalPackages]
   });
-
-  return outputPath;
 }
 
 function replaceProcessorIfTypescript(script, scriptPath) {
@@ -191,20 +191,15 @@ function replaceProcessorIfTypescript(script, scriptPath) {
     `dist/${processorFileName}.js`
   );
 
-  //TODO: move require to top of file when Lambda bundle size issue is solved
-  //must be conditionally required for now as this package is removed in Lambda for now to avoid bigger package sizes
-  const esbuild = require('esbuild-wasm');
+  if (fs.existsSync(newProcessorPath)) {
+    console.log(`Bundled Typescript file "${newProcessorPath}" already exists - Skipping transpilation`)
+    script.config.processor = newProcessorPath
+    global.artillery.hasTypescriptProcessor = newProcessorPath
+    return script
+  }
 
   try {
-    esbuild.buildSync({
-      entryPoints: [actualProcessorPath],
-      outfile: newProcessorPath,
-      bundle: true,
-      platform: 'node',
-      format: 'cjs',
-      sourcemap: 'inline',
-      external: ['@playwright/test', ...userExternalPackages]
-    });
+    transpileTypeScript(actualProcessorPath, newProcessorPath, userExternalPackages)
   } catch (error) {
     throw new Error(`Failed to compile Typescript processor\n${error.message}`);
   }
