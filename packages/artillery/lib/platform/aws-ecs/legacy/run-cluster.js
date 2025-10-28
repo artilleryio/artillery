@@ -1595,15 +1595,13 @@ async function setupDefaultECSParams(context) {
     defaultParams.networkConfiguration = {
       awsvpcConfiguration: {
         // https://github.com/aws/amazon-ecs-agent/issues/1128
-        assignPublicIp: 'ENABLED',
+        assignPublicIp: context.cliOptions.noAssignPublicIp
+          ? 'DISABLED'
+          : 'ENABLED',
         securityGroups: context.fargateSecurityGroupIds,
         subnets: context.fargatePublicSubnetIds
       }
     };
-
-    if (context.cliOptions.noAssignPublicIp) {
-      defaultParams.awsvpcConfiguration.assignPublicIp = 'DISABLED';
-    }
   } else {
     defaultParams.launchType = 'EC2';
   }
