@@ -37,8 +37,7 @@ export const scenarios = [
         const req = await requestPromise;
       });
       await test.step('Go to docs', async () => {
-        const docs = await page.getByRole('link', { name: 'Docs' });
-        await docs.click();
+        await page.getByRole('link', { name: 'Docs' }).first().click();
         await page.waitForURL('https://www.artillery.io/docs');
       });
 
