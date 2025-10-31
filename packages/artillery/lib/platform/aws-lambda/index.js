@@ -428,6 +428,10 @@ class PlatformLambda {
       ARTILLERY_CLOUD_API_KEY: this.cloudKey
     };
 
+    if (process.env.ARTILLERY_CLOUD_ENDPOINT) {
+      event.ARTILLERY_CLOUD_ENDPOINT = process.env.ARTILLERY_CLOUD_ENDPOINT;
+    }
+
     debug('Lambda event payload:');
     debug({ event });
 
