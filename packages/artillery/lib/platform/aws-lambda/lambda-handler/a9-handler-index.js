@@ -52,7 +52,8 @@ async function handler(event, context) {
     BUCKET,
     ENV,
     WAIT_FOR_GREEN,
-    ARTILLERY_CLOUD_API_KEY
+    ARTILLERY_CLOUD_API_KEY,
+    ARTILLERY_CLOUD_ENDPOINT
   } = event;
 
   console.log('TEST_RUN_ID: ', TEST_RUN_ID);
@@ -147,7 +148,8 @@ async function handler(event, context) {
       ARTILLERY_ARGS,
       TEST_DATA_LOCATION,
       ENV,
-      ARTILLERY_CLOUD_API_KEY
+      ARTILLERY_CLOUD_API_KEY,
+      ARTILLERY_CLOUD_ENDPOINT
     });
 
     if (err || code !== 0) {
@@ -186,7 +188,8 @@ async function execArtillery(options) {
     NODE_BINARY_PATH,
     ARTILLERY_BINARY_PATH,
     TEST_DATA_LOCATION,
-    ARTILLERY_CLOUD_API_KEY
+    ARTILLERY_CLOUD_API_KEY,
+    ARTILLERY_CLOUD_ENDPOINT
   } = options;
 
   const env = Object.assign(
@@ -206,6 +209,7 @@ async function execArtillery(options) {
       // SHIP_LOGS: 'true',
     },
     ARTILLERY_CLOUD_API_KEY ? { ARTILLERY_CLOUD_API_KEY } : {},
+    ARTILLERY_CLOUD_ENDPOINT ? { ARTILLERY_CLOUD_ENDPOINT } : {},
     ENV
   );
 
