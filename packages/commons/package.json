@@ -9,7 +9,7 @@
     "debug": "^4.4.1",
     "deep-for-each": "^3.0.0",
     "espree": "^9.4.1",
-    "jsonpath-plus": "^10.0.0",
+    "jsonpath-plus": "^10.3.0",
     "lodash": "^4.17.19",
     "ms": "^2.1.3"
   },
