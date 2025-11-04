@@ -8,6 +8,6 @@ export const myTest = async (context, ee) => {
   ee.emit('counter', 'hey_from_ts', 1);
 };
 
-export const processorWithError = async (context, ee) => {
+export const processorWithError = async (_context, _ee) => {
   throw new Error('error_from_ts_processor');
 };

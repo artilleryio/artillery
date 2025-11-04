@@ -1,4 +1,4 @@
-'use strict';
+
 
 const { getTestId } = require('../fixtures/helpers.js');
 
@@ -247,7 +247,7 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
       'All spans should have the test_id and vu.uuid attributes'
     );
     t.equal(
-      span.attributes['test_id'],
+      span.attributes.test_id,
       testId,
       'All spans should have the correct test_id attribute value'
     );
@@ -282,8 +282,8 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
     t.ok(
       pageSpansPerUrl[url].some(
         (pageSpan) =>
-          pageSpan.attributes.hasOwnProperty(`web_vitals.${vital}.value`) &&
-          pageSpan.attributes.hasOwnProperty(`web_vitals.${vital}.rating`)
+          Object.hasOwn(pageSpan.attributes, `web_vitals.${vital}.value`) &&
+          Object.hasOwn(pageSpan.attributes, `web_vitals.${vital}.rating`)
       ),
       `${vital} value and rating reported for '${url}' should be added to its page span`
     );

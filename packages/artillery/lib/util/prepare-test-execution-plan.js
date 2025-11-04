@@ -1,7 +1,7 @@
 const csv = require('csv-parse');
 const fs = require('node:fs');
 const path = require('node:path');
-const p = require('util').promisify;
+const p = require('node:util').promisify;
 const debug = require('debug')('artillery');
 
 const {
@@ -138,13 +138,8 @@ async function readPayload(script) {
       },
       payloadSpec.options
     );
-
-    try {
       const parsedData = await p(csv)(data, csvOpts);
       payloadSpec.data = parsedData;
-    } catch (err) {
-      throw err;
-    }
   }
 
   return script;
@@ -175,7 +170,7 @@ function replaceProcessorIfTypescript(script, scriptPath) {
   }
   const extensionType = path.extname(relativeProcessorPath);
 
-  if (extensionType != '.ts') {
+  if (extensionType !== '.ts') {
     return script;
   }
 

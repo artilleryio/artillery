@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach } = require('tap');
 const expectations = require('../../lib/expectations');
 const formatters = require('../../lib/formatters');
@@ -10,7 +8,7 @@ const req = {
 };
 
 global.console = {
-  log: function (message) {
+  log: (message) => {
     loggedMessages.push(message);
   }
 };

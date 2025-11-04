@@ -2,11 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const debug = require('debug')('plugin:expect');
 const chalk = require('chalk');
-const urlparse = require('url').parse;
+const urlparse = require('node:url').parse;
 
 module.exports = {
   pretty: prettyPrint,
@@ -15,7 +13,7 @@ module.exports = {
   silent: silent
 };
 
-function silent(requestExpectation, req, res, userContext) {
+function silent(_requestExpectation, _req, _res, _userContext) {
   return;
 }
 
@@ -24,7 +22,7 @@ function prettyPrint(requestExpectations, req, res, userContext) {
   if (requestExpectations.results.length > 0) {
     console.log(
       `${chalk.blue('*', req.method, urlparse(req.url).path)} ${
-        req.name ? '- ' + req.name : ''
+        req.name ? `- ${req.name}` : ''
       }\n`
     );
   }
@@ -56,7 +54,7 @@ function printExchangeContext(req, res, userContext) {
   console.log(prepend(req.url, '    '));
   console.log(prepend(JSON.stringify(req.json || '', null, 2), '    '));
   console.log(chalk.yellow('  Headers:'));
-  Object.keys(res.headers).forEach(function (h) {
+  Object.keys(res.headers).forEach((h) => {
     console.log(`  ${h}: ${res.headers[h]}`);
   });
   console.log(chalk.yellow('  Body:'));
@@ -67,12 +65,12 @@ function printExchangeContext(req, res, userContext) {
     .filter(
       (varName) => varName !== '$processEnvironment' && varName !== '$env'
     )
-    .forEach(function (varName) {
+    .forEach((varName) => {
       console.log(`    ${varName}: ${userContext.vars[varName]}`);
     });
 }
 
-function jsonPrint(requestExpectations, req, res, userContext) {
+function jsonPrint(requestExpectations, _req, _res, _userContext) {
   console.log(JSON.stringify(requestExpectations));
 }
 
@@ -86,8 +84,6 @@ function prettyError(requestExpectations, req, res, userContext) {
 function prepend(text, str) {
   return text
     .split('\n')
-    .map(function (line) {
-      return str + line;
-    })
+    .map((line) => str + line)
     .join('\n');
 }

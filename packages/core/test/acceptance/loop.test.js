@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -20,18 +18,18 @@ test('simple loop', (t) => {
   const script = require('../scripts/loop.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      let scenarios = report.scenariosCompleted;
-      let requests = report.requestsCompleted;
-      let loopCount = script.scenarios[0].flow[0].count;
-      let expected = scenarios * loopCount * 2;
+      const scenarios = report.scenariosCompleted;
+      const requests = report.requestsCompleted;
+      const loopCount = script.scenarios[0].flow[0].count;
+      const expected = scenarios * loopCount * 2;
       t.equal(
         requests,
         expected,
-        'Should have ' + expected + ' requests for each completed scenario'
+        `Should have ${expected} requests for each completed scenario`
       );
       ee.stop().then(() => {
         t.end();
@@ -45,20 +43,20 @@ test('loop with range', (t) => {
   const script = require('../scripts/loop_range.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      let scenarios = report.scenariosCompleted;
-      let requests = report.requestsCompleted;
-      let expected = scenarios * 3 * 2;
-      let code200 = report.codes[200];
-      let code404 = report.codes[404];
+      const scenarios = report.scenariosCompleted;
+      const requests = report.requestsCompleted;
+      const expected = scenarios * 3 * 2;
+      const code200 = report.codes[200];
+      const code404 = report.codes[404];
 
       t.equal(
         requests,
         expected,
-        'Should have ' + expected + ' requests for each completed scenario'
+        `Should have ${expected} requests for each completed scenario`
       );
       t.ok(code200 > 0, 'There should be a non-zero number of 200s');
 
@@ -76,20 +74,20 @@ test('loop with nested range', (t) => {
   const script = require('../scripts/loop_nested_range.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      let scenarios = report.scenariosCompleted;
-      let requests = report.requestsCompleted;
-      let expected = scenarios * 3 * 2;
-      let code200 = report.codes[200];
-      let code404 = report.codes[404];
+      const scenarios = report.scenariosCompleted;
+      const requests = report.requestsCompleted;
+      const expected = scenarios * 3 * 2;
+      const code200 = report.codes[200];
+      const code404 = report.codes[404];
 
       t.equal(
         requests,
         expected,
-        'Should have ' + expected + ' requests for each completed scenario'
+        `Should have ${expected} requests for each completed scenario`
       );
       t.ok(code200 > 0, 'There should be a non-zero number of 200s');
 

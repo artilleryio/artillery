@@ -25,7 +25,7 @@ const { getBucketRegion } = require('../aws/aws-get-bucket-region');
 const awsGetDefaultRegion = require('../aws/aws-get-default-region');
 
 class PlatformECS {
-  constructor(script, payload, opts, platformOpts) {
+  constructor(_script, _payload, opts, platformOpts) {
     this.opts = opts;
     this.platformOpts = platformOpts;
 

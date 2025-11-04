@@ -1,8 +1,8 @@
-var faker = require('faker');
+var _faker = require('faker');
 var base = require('./_baseProcessor');
 
 module.exports = {
-  doSomethingElse: (userContext, events, done) => {
+  doSomethingElse: (userContext, _events, done) => {
     userContext.vars.something = 'do';
     return done();
   },

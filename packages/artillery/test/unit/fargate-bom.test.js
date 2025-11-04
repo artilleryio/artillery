@@ -1,7 +1,7 @@
-'use strict';
 
-const promisify = require('util').promisify;
-const path = require('path');
+
+const promisify = require('node:util').promisify;
+const path = require('node:path');
 const { test } = require('tap');
 const {
   createBOM,

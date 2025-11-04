@@ -1,9 +1,9 @@
-'use strict';
+
 
 const { createTestServer } = require('../../targets/http-file-upload-server');
 const { test, beforeEach, afterEach } = require('tap');
-const fs = require('fs');
-const crypto = require('crypto');
+const fs = require('node:fs');
+const crypto = require('node:crypto');
 const { $ } = require('zx');
 
 let server;
@@ -14,7 +14,7 @@ beforeEach(async () => {
   port = server.info.port;
 });
 
-afterEach((t) => {
+afterEach((_t) => {
   server.stop();
 });
 

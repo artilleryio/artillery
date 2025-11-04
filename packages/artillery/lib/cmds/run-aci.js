@@ -5,8 +5,6 @@
 
 const { Command, Flags, Args } = require('@oclif/core');
 const { CommonRunFlags } = require('../cli/common-flags');
-const { DefaultAzureCredential } = require('@azure/identity');
-const { BlobServiceClient } = require('@azure/storage-blob');
 
 const RunCommand = require('./run');
 

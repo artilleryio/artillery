@@ -3,7 +3,7 @@ const core = require('../../dispatcher');
 const { handleScriptHook, prepareScript, loadProcessor } =
   core.runner.runnerFuncs;
 const debug = require('debug')('platform:local');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const _ = require('lodash');
 const divideWork = require('../../dist');
 const STATES = require('../worker-states');
@@ -19,7 +19,6 @@ class PlatformLocal {
     this.workers = {};
     this.workerScripts = {};
     this.count = Infinity;
-    return this;
   }
 
   getDesiredWorkerCount() {
@@ -68,7 +67,7 @@ class PlatformLocal {
     // the initial context is stringified and copied to the workers
     const contextVarsString = JSON.stringify(this.contextVars);
 
-    for (const [workerId, w] of Object.entries(this.workers)) {
+    for (const [workerId, _w] of Object.entries(this.workers)) {
       await this.runWorker(workerId, contextVarsString);
       this.workers[workerId].state = STATES.initializing;
     }
@@ -142,7 +141,7 @@ class PlatformLocal {
     // are done
     await this.runHook('after', this.contextVars);
 
-    for (const [workerId, w] of Object.entries(this.workers)) {
+    for (const [workerId, _w] of Object.entries(this.workers)) {
       await this.stopWorker(workerId);
     }
   }

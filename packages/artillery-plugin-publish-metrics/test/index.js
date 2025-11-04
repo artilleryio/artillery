@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { test } = require('tap');
-const path = require('path');
-const EventEmitter = require('events');
-const shelljs = require('shelljs');
-const dogapi = require('dogapi');
+const _path = require('node:path');
+const EventEmitter = require('node:events');
+const _shelljs = require('shelljs');
+const _dogapi = require('dogapi');
 const debug = require('debug')('test');
-const assert = require('assert');
+const _assert = require('node:assert');
 
 const testId = `test${process.hrtime()[0]}${process.hrtime()[1]}`;
 
@@ -32,6 +32,6 @@ test('Basic interface checks', async (t) => {
 
   const events = new EventEmitter();
   const PublishMetrics = require('../index');
-  const plugin = new PublishMetrics.Plugin(script, events);
+  const _plugin = new PublishMetrics.Plugin(script, events);
   t.type(PublishMetrics.Plugin, 'function');
 });

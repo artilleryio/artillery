@@ -1,7 +1,7 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const chalk = require('chalk');
-const fs = require('fs');
+const fs = require('node:fs');
 const { generateTmpReportPath, getTestTags } = require('../../helpers');
 const {
   checkForNegativeValues,

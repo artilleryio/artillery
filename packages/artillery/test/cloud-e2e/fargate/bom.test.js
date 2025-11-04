@@ -1,6 +1,6 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
-const fs = require('fs');
+const fs = require('node:fs');
 const {
   generateTmpReportPath,
   getTestTags,

@@ -306,23 +306,23 @@ test('checks are grouped in the correct order (ok first, fail after)', async (t)
     t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
     t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
     t.ok(
-      relevantLogs[0] == `${chalk.green('ok')}: maxErrorRate < 0` ||
-        relevantLogs[0] == `${chalk.green('ok')}: p99 < 10000`,
+      relevantLogs[0] === `${chalk.green('ok')}: maxErrorRate < 0` ||
+        relevantLogs[0] === `${chalk.green('ok')}: p99 < 10000`,
       'First check should be a passed expectation'
     );
     t.ok(
-      relevantLogs[1] == `${chalk.green('ok')}: maxErrorRate < 0` ||
-        relevantLogs[1] == `${chalk.green('ok')}: p99 < 10000`,
+      relevantLogs[1] === `${chalk.green('ok')}: maxErrorRate < 0` ||
+        relevantLogs[1] === `${chalk.green('ok')}: p99 < 10000`,
       'Second check should be a passed expectation'
     );
     t.ok(
-      relevantLogs[2] == `${chalk.red('fail')}: max < 1` ||
-        relevantLogs[2] == `${chalk.red('fail')}: http.response_time.p95 < 1`,
+      relevantLogs[2] === `${chalk.red('fail')}: max < 1` ||
+        relevantLogs[2] === `${chalk.red('fail')}: http.response_time.p95 < 1`,
       'Third check should be a failed expectation'
     );
     t.ok(
-      relevantLogs[3] == `${chalk.red('fail')}: max < 1` ||
-        relevantLogs[3] == `${chalk.red('fail')}: http.response_time.p95 < 1`,
+      relevantLogs[3] === `${chalk.red('fail')}: max < 1` ||
+        relevantLogs[3] === `${chalk.red('fail')}: http.response_time.p95 < 1`,
       'Fourth check should be a failed expectation'
     );
   }

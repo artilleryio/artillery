@@ -1,5 +1,3 @@
-'use strict';
-
 const debug = require('debug')('plugin:slack');
 const got = require('got');
 const moment = require('moment');
@@ -20,7 +18,7 @@ class SlackPlugin {
       throw new SlackPluginError('Slack webhook URL not provided');
     }
 
-    if (global.artillery && global.artillery.cloudEnabled) {
+    if (global.artillery?.cloudEnabled) {
       debug('Artillery Cloud enabled, configuring Run URL');
       this.cloudEnabled = true;
       const baseUrl =

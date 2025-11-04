@@ -32,14 +32,14 @@ tap.test('Basic metric collection', async (t) => {
   const metrics = mdb.getMetrics(buckets[0]);
 
   t.type(
-    metrics.histograms['sprint_duration'].max,
+    metrics.histograms.sprint_duration.max,
     'number',
     'Histograms should be objects with readable fields'
   );
   t.ok(
-    metrics.histograms['sprint_duration'],
+    metrics.histograms.sprint_duration,
     'Should have a summary for sprint_duration histogram'
   );
-  t.ok(metrics.counters['num_sprints'], 'Should have num_sprints counter');
-  t.ok(metrics.rates['sprints'], 'Should have sprints rate measurement');
+  t.ok(metrics.counters.num_sprints, 'Should have num_sprints counter');
+  t.ok(metrics.rates.sprints, 'Should have sprints rate measurement');
 });

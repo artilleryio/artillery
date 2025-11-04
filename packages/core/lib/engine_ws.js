@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const async = require('async');
 const _ = require('lodash');
 const WebSocket = require('ws');
 const HttpsProxyAgent = require('https-proxy-agent');
 const debug = require('debug')('ws');
-const url = require('url');
+const url = require('node:url');
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const template = engineUtil.template;
 
@@ -20,19 +18,18 @@ function WSEngine(script) {
 }
 
 WSEngine.prototype.createScenario = function (scenarioSpec, ee) {
-  const self = this;
-  const tasks = _.map(scenarioSpec.flow, function (rs) {
+  const tasks = _.map(scenarioSpec.flow, (rs) => {
     if (typeof rs.think !== 'undefined') {
       return engineUtil.createThink(
         rs,
-        _.get(self.config, 'defaults.think', {})
+        _.get(this.config, 'defaults.think', {})
       );
     }
 
-    return self.step(rs, ee);
+    return this.step(rs, ee);
   });
 
-  return self.compile(tasks, scenarioSpec.flow, ee);
+  return this.compile(tasks, scenarioSpec.flow, ee);
 };
 
 function getMessageHandler(context, params, ee, timeout, callback) {
@@ -61,7 +58,7 @@ function getMessageHandler(context, params, ee, timeout, callback) {
     let fauxResponse;
     try {
       fauxResponse = { body: JSON.parse(data) };
-    } catch (err) {
+    } catch (_err) {
       fauxResponse = { body: event.data };
     }
 
@@ -81,20 +78,19 @@ function getMessageHandler(context, params, ee, timeout, callback) {
         debug('captures: ', captures);
 
         // match and capture are strict by default:
-        const haveFailedMatches = _.some(result.matches, function (v) {
-          return !v.success && v.strict !== false;
-        });
+        const haveFailedMatches = _.some(
+          result.matches,
+          (v) => !v.success && v.strict !== false
+        );
 
-        const haveFailedCaptures = _.some(result.captures, function (v) {
-          return v.failed;
-        });
+        const haveFailedCaptures = _.some(result.captures, (v) => v.failed);
 
         if (haveFailedMatches || haveFailedCaptures) {
           // TODO: Emit the details of each failed capture/match
           return callback(new Error('Failed capture or match'), context);
         }
 
-        _.each(result.matches, function (v) {
+        _.each(result.matches, (v) => {
           ee.emit('match', v.success, {
             expected: v.expected,
             got: v.got,
@@ -103,7 +99,7 @@ function getMessageHandler(context, params, ee, timeout, callback) {
           });
         });
 
-        _.each(result.captures, function (v, k) {
+        _.each(result.captures, (v, k) => {
           _.set(context.vars, k, v.value);
         });
 
@@ -114,18 +110,14 @@ function getMessageHandler(context, params, ee, timeout, callback) {
 }
 
 WSEngine.prototype.step = function (requestSpec, ee) {
-  const self = this;
-
   if (requestSpec.loop) {
-    const steps = _.map(requestSpec.loop, function (rs) {
-      return self.step(rs, ee);
-    });
+    const steps = _.map(requestSpec.loop, (rs) => this.step(rs, ee));
 
     return engineUtil.createLoopWithCount(requestSpec.count || -1, steps, {
       loopValue: requestSpec.loopValue || '$loopCount',
       overValues: requestSpec.over,
-      whileTrue: self.config.processor
-        ? self.config.processor[requestSpec.whileTrue]
+      whileTrue: this.config.processor
+        ? this.config.processor[requestSpec.whileTrue]
         : undefined
     });
   }
@@ -133,18 +125,16 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   if (requestSpec.think) {
     return engineUtil.createThink(
       requestSpec,
-      _.get(self.config, 'defaults.think', {})
+      _.get(this.config, 'defaults.think', {})
     );
   }
 
   if (requestSpec.function) {
-    return function (context, callback) {
-      const processFunc = self.config.processor[requestSpec.function];
+    return (context, callback) => {
+      const processFunc = this.config.processor[requestSpec.function];
       if (processFunc) {
         if (processFunc.constructor.name === 'Function') {
-          processFunc(context, ee, function () {
-            return callback(null, context);
-          });
+          processFunc(context, ee, () => callback(null, context));
         } else {
           return processFunc(context, ee)
             .then(() => {
@@ -159,32 +149,31 @@ WSEngine.prototype.step = function (requestSpec, ee) {
   }
 
   if (requestSpec.log) {
-    return function (context, callback) {
+    return (context, callback) => {
       console.log(template(requestSpec.log, context));
-      return process.nextTick(function () {
+      return process.nextTick(() => {
         callback(null, context);
       });
     };
   }
 
   if (requestSpec.connect) {
-    return function (context, callback) {
-      return process.nextTick(function () {
+    return (context, callback) =>
+      process.nextTick(() => {
         callback(null, context);
       });
-    };
   }
 
-  const f = function (context, callback) {
+  const f = (context, callback) => {
     const params = requestSpec.wait || requestSpec.send;
 
     // match exists on a string, so check match is not a prototype
-    let captureOrMatch = _.has(params, 'capture') || _.has(params, 'match');
+    const captureOrMatch = _.has(params, 'capture') || _.has(params, 'match');
 
     if (captureOrMatch) {
       // only process response if we're capturing
-      let timeout =
-        self.config.timeout || _.get(self.config, 'ws.timeout') || 10;
+      const timeout =
+        this.config.timeout || _.get(this.config, 'ws.timeout') || 10;
       context.ws.onmessage = getMessageHandler(
         context,
         params,
@@ -212,7 +201,7 @@ WSEngine.prototype.step = function (requestSpec, ee) {
       ee.emit('rate', 'websocket.send_rate');
       debug('WS send: %s', payload);
 
-      context.ws.send(payload, function (err) {
+      context.ws.send(payload, (err) => {
         if (err) {
           debug(err);
           ee.emit('error', err);
@@ -228,7 +217,7 @@ WSEngine.prototype.step = function (requestSpec, ee) {
       debug('WS wait: %j', params);
     } else {
       // in the end, we could not send anything, so report it and stop
-      let err = 'invalid_step';
+      const err = 'invalid_step';
       debug(err, requestSpec);
       ee.emit('error', err);
       return callback(err, context);
@@ -243,7 +232,7 @@ function getWsOptions(config) {
   const subprotocols = _.get(config, 'ws.subprotocols', []);
   const headers = _.get(config, 'ws.headers', {});
 
-  const subprotocolHeader = _.find(headers, (value, headerName) => {
+  const subprotocolHeader = _.find(headers, (_value, headerName) => {
     return headerName.toLowerCase() === 'sec-websocket-protocol';
   });
 
@@ -323,13 +312,13 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
         wsArgs.options
       );
 
-      ws.on('open', function () {
+      ws.on('open', () => {
         contextWithoutWsArgs.ws = ws;
 
         return cb(null, contextWithoutWsArgs);
       });
 
-      ws.once('error', function (err) {
+      ws.once('error', (err) => {
         debug(err);
         ee.emit('error', err.message || err.code);
 
@@ -347,7 +336,7 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
         debug(err);
       }
 
-      if (context && context.ws) {
+      if (context?.ws) {
         context.ws.close();
       }
 

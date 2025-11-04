@@ -2,10 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const debug = require('debug')('plugin:expect');
-const urlparse = require('url').parse;
+const urlparse = require('node:url').parse;
 const chalk = require('chalk');
 const _ = require('lodash');
 
@@ -34,7 +32,7 @@ function ExpectationsPlugin(script, events) {
     script.config.processor = {};
   }
 
-  script.scenarios.forEach(function (scenario) {
+  script.scenarios.forEach((scenario) => {
     scenario.onError = [].concat(scenario.onError || []);
     scenario.onError.push('expectationsPluginOnError');
 
@@ -51,11 +49,11 @@ function ExpectationsPlugin(script, events) {
     expectationsPluginCheckExpectations;
   script.config.processor.expectationsPluginOnError = expectationsPluginOnError;
 
-  script.config.processor.expectationsPluginSetExpectOptions = function (
+  script.config.processor.expectationsPluginSetExpectOptions = (
     userContext,
-    events,
+    _events,
     done
-  ) {
+  ) => {
     userContext.expectationsPlugin = {};
     userContext.expectationsPlugin.formatter =
       script.config.plugins.expect.formatter ||
@@ -78,9 +76,9 @@ function ExpectationsPlugin(script, events) {
 
 function expectationsPluginOnError(
   scenarioErr,
-  requestParams,
+  _requestParams,
   userContext,
-  events,
+  _events,
   done
 ) {
   if (scenarioErr instanceof FailedExpectationError) {
@@ -119,7 +117,7 @@ function expectationsPluginCheckExpectations(
 
   const results = [];
 
-  let body = maybeParseBody(res);
+  const body = maybeParseBody(res);
   _.each(expectations, (ex) => {
     const checker = Object.keys(ex)[0];
     debug(`checker: ${checker}`);
@@ -212,7 +210,7 @@ function maybeParseBody(res) {
   ) {
     try {
       body = JSON.parse(res.body);
-    } catch (err) {
+    } catch (_err) {
       body = null;
     }
 

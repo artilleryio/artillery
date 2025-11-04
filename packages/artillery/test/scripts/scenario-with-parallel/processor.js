@@ -4,7 +4,7 @@ function beforeReqInParallel(req, context, ee, next) {
   next();
 }
 
-function afterReqInParallel(req, res, context, ee, next) {
+function afterReqInParallel(req, _res, context, ee, next) {
   ee.emit('counter', `afterRequestHook.${req.name}`, 1);
   console.log(`${req.name}=${context.vars[req.name] === req.uuid}`);
   next();

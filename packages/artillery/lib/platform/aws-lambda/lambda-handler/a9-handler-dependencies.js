@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const { runProcess } = require('./a9-handler-helpers');
 
 const syncTestData = async (bucketName, testRunId) => {
@@ -17,7 +17,7 @@ const syncTestData = async (bucketName, testRunId) => {
     { log: true }
   );
 
-  if (result.code != 0 || result.stderr) {
+  if (result.code !== 0 || result.stderr) {
     throw new Error(`Failed to sync test data:\n ${result.stderr}`);
   }
   console.log('Test data synced');

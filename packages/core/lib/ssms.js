@@ -8,7 +8,7 @@
 // https://github.com/DataDog/sketches-js/pull/13
 const { DDSketch } = require('@artilleryio/sketches-js');
 // const {DDSketch} = require('@datadog/sketches-js');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const { setDriftlessInterval, clearDriftless } = require('driftless');
 const debug = require('debug')('ssms');
 
@@ -169,9 +169,7 @@ class SSMS extends EventEmitter {
     }
 
     return {
-      report: function () {
-        return result;
-      }
+      report: () => result
     };
   }
 
@@ -361,8 +359,6 @@ class SSMS extends EventEmitter {
       const h = DDSketch.fromProto(buf);
       object.histograms[name] = h;
     }
-
-    object.period = object.period;
 
     return object;
   }
@@ -656,10 +652,10 @@ function parse(text) {
   return JSON.parse(text, reviver);
 }
 
-function replacer(key, value) {
+function replacer(_key, value) {
   if (isBufferLike(value) && isArray(value.data)) {
     if (value.data.length > 0) {
-      value.data = 'base64:' + Buffer.from(value.data).toString('base64');
+      value.data = `base64:${Buffer.from(value.data).toString('base64')}`;
     } else {
       value.data = '';
     }
@@ -668,7 +664,7 @@ function replacer(key, value) {
   return value;
 }
 
-function reviver(key, value) {
+function reviver(_key, value) {
   if (isBufferLike(value)) {
     if (isArray(value.data)) {
       return Buffer.from(value.data);

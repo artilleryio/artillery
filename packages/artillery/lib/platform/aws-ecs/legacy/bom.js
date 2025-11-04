@@ -1,5 +1,5 @@
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 const A = require('async');
 
 const { isBuiltin } = require('node:module');
@@ -32,7 +32,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   A.waterfall(
     [
       A.constant(absoluteScriptPath),
-      async function (scriptPath) {
+      async (scriptPath) => {
         let scriptData;
         if (scriptPath.toLowerCase().endsWith('.ts')) {
           scriptData = await prepareTestExecutionPlan(
@@ -71,7 +71,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       expandDirectories
     ],
 
-    function (err, context) {
+    (err, context) => {
       if (err) {
         return callback(err, null);
       }
@@ -122,12 +122,12 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       debug(dependencyFiles);
 
-      dependencyFiles.forEach(function (p) {
+      dependencyFiles.forEach((p) => {
         try {
           if (fs.statSync(p)) {
             context.localFilePaths.push(p);
           }
-        } catch (ignoredErr) {}
+        } catch (_ignoredErr) {}
       });
 
       const files = context.localFilePaths.map((p) => {
@@ -186,9 +186,9 @@ function applyScriptChanges(context, next) {
 }
 
 function getPlugins(context, next) {
-  let environmentPlugins = _.reduce(
+  const environmentPlugins = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentPlugins(acc, envSpec, envName) {
+    function getEnvironmentPlugins(acc, envSpec, _envName) {
       acc = acc.concat(Object.keys(envSpec.plugins || []));
       return acc;
     },
@@ -210,9 +210,9 @@ function getPlugins(context, next) {
 }
 
 function getCustomEngines(context, next) {
-  let environmentEngines = _.reduce(
+  const environmentEngines = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentEngines(acc, envSpec, envName) {
+    function getEnvironmentEngines(acc, envSpec, _envName) {
       acc = acc.concat(Object.keys(envSpec.engines || []));
       return acc;
     },
@@ -236,8 +236,7 @@ function getCustomEngines(context, next) {
 
 function getCustomJsDependencies(context, next) {
   if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.processor
+    context.opts.scriptData.config?.processor
   ) {
     //
     // Path to the main processor file:
@@ -268,7 +267,7 @@ function getCustomJsDependencies(context, next) {
         )
         .map((requireString) => {
           return requireString.startsWith('@')
-            ? requireString.split('/')[0] + '/' + requireString.split('/')[1]
+            ? `${requireString.split('/')[0]}/${requireString.split('/')[1]}`
             : requireString.split('/')[0];
         });
       return npmPackages;
@@ -278,7 +277,7 @@ function getCustomJsDependencies(context, next) {
     debug(allNpmDeps);
     const reduced = allNpmDeps.reduce((acc, deps) => {
       deps.forEach((d) => {
-        if (acc.findIndex((x) => x === d) === -1) {
+        if (acc.indexOf(d) === -1) {
           acc.push(d);
         }
       });
@@ -290,7 +289,7 @@ function getCustomJsDependencies(context, next) {
     // Any other local JS files and npm packages:
     //
     const procSrc = fs.readFileSync(procPath);
-    const processorRequires = detective(procSrc);
+    const _processorRequires = detective(procSrc);
     // TODO: Look for and load dir/index.js and get its dependencies,
     // rather than just grabbing the entire directory.
     // NOTE: Some of these may be directories (with an index.js inside)
@@ -316,7 +315,7 @@ function getVariableDataFiles(context, next) {
   // Iterate over environments
 
   function resolvePayloadPaths(obj) {
-    let result = [];
+    const result = [];
     if (obj.payload) {
       if (_.isArray(obj.payload)) {
         obj.payload.forEach((payloadSpec) => {
@@ -359,9 +358,7 @@ function getVariableDataFiles(context, next) {
 
 function getFileUploadPluginFiles(context, next) {
   if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.plugins &&
-    context.opts.scriptData.config.plugins['http-file-uploads']
+    context.opts.scriptData.config?.plugins?.['http-file-uploads']
   ) {
     // Append filePaths array if it's there:
 
@@ -381,8 +378,7 @@ function getFileUploadPluginFiles(context, next) {
 
 function getExtraFiles(context, next) {
   if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.includeFiles
+    context.opts.scriptData.config?.includeFiles
   ) {
     const absPaths = _.map(context.opts.scriptData.config.includeFiles, (p) => {
       const includePath = path.resolve(
@@ -410,7 +406,7 @@ function getDotEnv(context, next) {
     if (fs.statSync(dotEnvPath)) {
       context.localFilePaths.push(dotEnvPath);
     }
-  } catch (ignoredErr) {
+  } catch (_ignoredErr) {
     console.log(`WARNING: could not find dotenv file: ${flags.dotenv}`);
   }
 
@@ -431,7 +427,7 @@ function expandDirectories(context, next) {
     let result = false;
     try {
       result = fs.statSync(p).isDirectory();
-    } catch (fsErr) {}
+    } catch (_fsErr) {}
     return result;
   });
   // Remove directories from the list:
@@ -439,7 +435,7 @@ function expandDirectories(context, next) {
     let result = true;
     try {
       result = !fs.statSync(p).isDirectory();
-    } catch (fsErr) {}
+    } catch (_fsErr) {}
     return result;
   });
 

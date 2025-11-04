@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const debug = require('debug')('plugin:expect');
 const template = global.artillery
   ? global.artillery.util.template
@@ -26,7 +24,7 @@ module.exports = {
   jpath: expectJmesPath
 };
 
-function expectJmesPath(expectation, body, req, res, userContext) {
+function expectJmesPath(expectation, body, _req, _res, _userContext) {
   debug('check jmespath');
   debug('expectation', expectation);
 
@@ -49,11 +47,11 @@ function expectJmesPath(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectCdnHit(expectation, body, req, res, userContext) {
+function expectCdnHit(expectation, _body, _req, res, _userContext) {
   debug('check cdn');
   debug('expectation');
 
-  let result = {
+  const result = {
     ok: false,
     type: 'cdnHit',
     got: 'cache status header not found'
@@ -87,12 +85,12 @@ function expectCdnHit(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectEquals(expectation, body, req, res, userContext) {
+function expectEquals(expectation, body, _req, _res, userContext) {
   debug('check equals');
   debug('expectation:', expectation);
   debug('body:', typeof body);
 
-  let result = {
+  const result = {
     ok: false,
     expected: 'all values to be equal',
     type: 'equals'
@@ -109,14 +107,14 @@ function expectEquals(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectHasHeader(expectation, body, req, res, userContext) {
+function expectHasHeader(expectation, _body, _req, res, userContext) {
   debug('hasHeader');
 
   const expectedHeader = template(expectation.hasHeader, userContext);
 
   debug(expectedHeader);
 
-  let result = {
+  const result = {
     ok: false,
     expected: expectedHeader,
     type: 'hasHeader'
@@ -132,12 +130,12 @@ function expectHasHeader(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectHeaderEquals(expectation, body, req, res, userContext) {
+function expectHeaderEquals(expectation, _body, _req, res, userContext) {
   debug('check header equals');
   debug('expectation:', expectation);
 
   const expected = template(expectation.headerEquals, userContext);
-  let result = {
+  const result = {
     ok: false,
     type: `header ${expected[0]} values equals`
   };
@@ -147,7 +145,7 @@ function expectHeaderEquals(expectation, body, req, res, userContext) {
     result.expected = expected[1];
 
     const valueToCheck = res.headers[expected[0]].toString();
-    debug('valueToCheck = ' + valueToCheck);
+    debug(`valueToCheck = ${valueToCheck}`);
     result.got = valueToCheck;
 
     if (valueToCheck === (expected[1] || '').toString()) {
@@ -161,13 +159,13 @@ function expectHeaderEquals(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectContentType(expectation, body, req, res, userContext) {
+function expectContentType(expectation, body, _req, res, userContext) {
   debug('check contentType');
   debug('expectation:', expectation);
   debug('body:', body === null ? 'null' : typeof body);
 
   const expectedContentType = template(expectation.contentType, userContext);
-  let result = {
+  const result = {
     ok: false,
     expected: expectedContentType,
     type: 'contentType'
@@ -203,12 +201,12 @@ function expectContentType(expectation, body, req, res, userContext) {
   }
 }
 
-function expectStatusCode(expectation, body, req, res, userContext) {
+function expectStatusCode(expectation, _body, _req, res, userContext) {
   debug('check statusCode');
 
   const expectedStatusCode = template(expectation.statusCode, userContext);
 
-  let result = {
+  const result = {
     ok: false,
     expected: expectedStatusCode,
     type: 'statusCode'
@@ -226,7 +224,7 @@ function expectStatusCode(expectation, body, req, res, userContext) {
   return result;
 }
 
-function expectNotStatusCode(expectation, body, req, res, userContext) {
+function expectNotStatusCode(expectation, _body, _req, res, userContext) {
   debug('check notStatusCode');
 
   const expectedNotStatusCode = template(
@@ -234,7 +232,7 @@ function expectNotStatusCode(expectation, body, req, res, userContext) {
     userContext
   );
 
-  let result = {
+  const result = {
     ok: false,
     expected: `Status code different than ${expectedNotStatusCode}`,
     type: 'notStatusCode'
@@ -259,7 +257,7 @@ function checkProperty(
   failureMessage,
   body
 ) {
-  let result = {
+  const result = {
     ok: false,
     expected: expectedProperty,
     type: expectationName
@@ -276,7 +274,7 @@ function checkProperty(
   return result;
 }
 
-function expectHasProperty(expectation, body, req, res, userContext) {
+function expectHasProperty(expectation, body, _req, _res, userContext) {
   const expectationName = 'hasProperty';
   debug(`check ${expectationName}`);
 
@@ -292,7 +290,7 @@ function expectHasProperty(expectation, body, req, res, userContext) {
   );
 }
 
-function expectNotHasProperty(expectation, body, req, res, userContext) {
+function expectNotHasProperty(expectation, body, _req, _res, userContext) {
   const expectationName = 'notHasProperty';
   debug(`check ${expectationName}`);
 
@@ -309,7 +307,7 @@ function expectNotHasProperty(expectation, body, req, res, userContext) {
   );
 }
 
-function expectMatchesRegexp(expectation, body, req, res, userContext) {
+function expectMatchesRegexp(expectation, body, _req, _res, userContext) {
   debug('check valid regexp');
   const expectationName = 'matchesRegexp';
 

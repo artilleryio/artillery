@@ -1,6 +1,6 @@
 const TOKEN_REFRESH_INTERVAL = 1000 * 5; // 5 seconds
 
-export async function refreshTokenIfNeeded(requestParams, vuContext, events) {
+export async function refreshTokenIfNeeded(_requestParams, vuContext, _events) {
   if (!vuContext.tokenExpiryTime || vuContext.tokenExpiryTime < Date.now()) {
     console.log('Fetching new token');
     const token = await fetchToken();

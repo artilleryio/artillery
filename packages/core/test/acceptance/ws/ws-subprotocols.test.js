@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const core = require('../../..');
 const vuserLauncher = core.runner.runner;
@@ -18,7 +16,7 @@ afterEach(() => {
   server.close();
 });
 
-test('Subprotocols - using a known subprotocol', function (t) {
+test('Subprotocols - using a known subprotocol', (t) => {
   const script = require('./scripts/subprotocols.json');
   script.config.target = `ws://127.0.0.1:${port}`;
   vuserLauncher(script).then((ee) => {
@@ -39,7 +37,7 @@ test('Subprotocols - using a known subprotocol', function (t) {
   });
 });
 
-test('Subprotocols - no subprotocol', function (t) {
+test('Subprotocols - no subprotocol', (t) => {
   const script = require('./scripts/subprotocols.json');
   script.config.target = `ws://127.0.0.1:${port}`;
   delete script.config.ws;
@@ -61,7 +59,7 @@ test('Subprotocols - no subprotocol', function (t) {
   });
 });
 
-test('Subprotocols - unknown subprotocol', function (t) {
+test('Subprotocols - unknown subprotocol', (t) => {
   const script = require('./scripts/subprotocols.json');
   script.config.target = `ws://127.0.0.1:${port}`;
 

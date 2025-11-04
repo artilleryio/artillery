@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
 const createReader = require('../../lib/readers');
 const _ = require('lodash');
@@ -14,21 +12,21 @@ const payloadData = [
   ['pony', 'Tiki']
 ];
 
-test('sequence payload reader should read in sequence', function (t) {
+test('sequence payload reader should read in sequence', (t) => {
   const reader = createReader('sequence');
   const readElements = readPayloadData(reader);
 
-  _.each(readElements, function (el, index) {
+  _.each(readElements, (el, index) => {
     t.equal(el, payloadData[index], 'read element matches payload element');
   });
   t.end();
 });
 
-test('random payload reader should pick at random', function (t) {
+test('random payload reader should pick at random', (t) => {
   const reader = createReader('random');
   const readElements = readPayloadData(reader);
 
-  _.each(readElements, function (el) {
+  _.each(readElements, (el) => {
     t.ok(
       _.includes(payloadData, el),
       'read element is one of payload elements'
@@ -37,11 +35,11 @@ test('random payload reader should pick at random', function (t) {
   t.end();
 });
 
-test('create reader should default to random', function (t) {
+test('create reader should default to random', (t) => {
   const reader = createReader();
   const readElements = readPayloadData(reader);
 
-  _.each(readElements, function (el) {
+  _.each(readElements, (el) => {
     t.ok(
       _.includes(payloadData, el),
       'read element is one of payload elements'
@@ -51,7 +49,7 @@ test('create reader should default to random', function (t) {
 });
 
 function readPayloadData(reader) {
-  let readElements = [];
+  const readElements = [];
   readElements[0] = reader(payloadData);
   readElements[1] = reader(payloadData);
   readElements[2] = reader(payloadData);

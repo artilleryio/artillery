@@ -1,5 +1,5 @@
 const { expect } = require('@playwright/test');
-const fs = require('fs');
+const fs = require('node:fs');
 
 async function loginUserAndSaveStorage(page, context) {
   // NOTE: we use the $dirname utility so Playwright can resolve the full path
@@ -34,7 +34,7 @@ async function loginUserAndSaveStorage(page, context) {
     .storageState({ path: `${context.vars.$dirname}/storage.json` });
 }
 
-async function goToProfilePageAndLogout(page, context, events, test) {
+async function goToProfilePageAndLogout(page, context, _events, test) {
   const { step } = test;
   const profileHeaderText = 'Profile (Static Generation, recommended)';
 

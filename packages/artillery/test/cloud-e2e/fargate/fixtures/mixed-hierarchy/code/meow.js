@@ -1,2 +1,2 @@
-const lodash = require('lodash');
+const _lodash = require('lodash');
 module.export = 'meow';

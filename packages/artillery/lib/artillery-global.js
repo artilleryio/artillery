@@ -3,9 +3,7 @@ const telemetry = require('./telemetry');
 
 const { updateGlobalObject } = require('@artilleryio/int-core');
 
-const { parseScript, readScript } = require('./util');
-
-async function createGlobalObject(opts) {
+async function createGlobalObject(_opts) {
   await updateGlobalObject({
     version,
     telemetry
@@ -23,10 +21,11 @@ async function createGlobalObject(opts) {
 
   global.artillery.shutdown =
     global.artillery.shutdown ||
-    async function () {
+    (
+    async () => {
       // TODO: Move graceful shutdown logic into here
       process.exit(global.artillery.suggestedExitCode);
-    };
+    });
 }
 
 module.exports = {

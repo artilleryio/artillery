@@ -1,5 +1,5 @@
 const tap = require('tap');
-const path = require('path');
+const _path = require('node:path');
 
 const { commonPrefix } = require('../../lib/create-bom/create-bom');
 

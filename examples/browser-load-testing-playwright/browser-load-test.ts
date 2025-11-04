@@ -27,14 +27,14 @@ export const scenarios = [
     name: 'check_out_core_concepts_scenario',
     testFunction: async function checkOutArtilleryCoreConceptsFlow(
       page,
-      userContext,
-      events,
+      _userContext,
+      _events,
       test
     ) {
       await test.step('Go to Artillery', async () => {
         const requestPromise = page.waitForRequest('https://artillery.io/');
         await page.goto('https://artillery.io/');
-        const req = await requestPromise;
+        const _req = await requestPromise;
       });
       await test.step('Go to docs', async () => {
         await page.getByRole('link', { name: 'Docs' }).first().click();

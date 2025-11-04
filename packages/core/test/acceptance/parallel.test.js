@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const createTestServer = require('../targets/simple');
@@ -19,17 +17,17 @@ test('parallel requests', (t) => {
   const script = require('../scripts/parallel.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (report) => {
-      let scenarios = report.counters['vusers.completed'];
-      let requests = report.counters['http.responses'];
-      let stepCount = script.scenarios[0].flow[0].parallel.length;
-      let expected = scenarios * stepCount;
+      const scenarios = report.counters['vusers.completed'];
+      const requests = report.counters['http.responses'];
+      const stepCount = script.scenarios[0].flow[0].parallel.length;
+      const expected = scenarios * stepCount;
 
       t.equal(
         requests,
         expected,
-        'Should have ' + stepCount + ' requests for each completed scenario.'
+        `Should have ${stepCount} requests for each completed scenario.`
       );
       t.not(scenarios, 0, 'Should have at least 1 scenario successfully run');
 

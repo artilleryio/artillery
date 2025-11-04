@@ -1,9 +1,7 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const csv = require('csv-parse');
 const async = require('async');
 const { SSMS } = require('../../lib/ssms');
@@ -20,35 +18,37 @@ afterEach(() => {
   server.stop();
 });
 
-test('single payload', function (t) {
+test('single payload', (t) => {
   const fn = path.resolve(__dirname, '../scripts/single_payload.json');
-  let script = require(fn);
+  const script = require(fn);
   script.config.target = `http://127.0.0.1:${port}`;
 
-  let data = fs.readFileSync(path.join(__dirname, '../scripts/data/pets.csv'));
-  csv(data, function (err, parsedData) {
+  const data = fs.readFileSync(
+    path.join(__dirname, '../scripts/data/pets.csv')
+  );
+  csv(data, (err, parsedData) => {
     if (err) {
       t.fail(err);
     }
 
-    runner(script, parsedData, {}).then(function (ee) {
-      ee.on('phaseStarted', function (x) {
+    runner(script, parsedData, {}).then((ee) => {
+      ee.on('phaseStarted', (x) => {
         t.ok(x, 'phaseStarted event emitted');
       });
 
-      ee.on('phaseCompleted', function (x) {
+      ee.on('phaseCompleted', (x) => {
         t.ok(x, 'phaseCompleted event emitted');
       });
 
-      ee.on('stats', function (stats) {
+      ee.on('stats', (stats) => {
         t.ok(stats, 'intermediate stats event emitted');
       });
 
-      ee.on('done', function (nr) {
+      ee.on('done', (nr) => {
         const report = SSMS.legacyReport(nr).report();
 
-        let requests = report.requestsCompleted;
-        let scenarios = report.scenariosCompleted;
+        const _requests = report.requestsCompleted;
+        const _scenarios = report.scenariosCompleted;
         t.ok(
           report.codes[404] > 0,
           'There are some 404s (URLs constructed from pets.csv)'
@@ -67,45 +67,45 @@ test('single payload', function (t) {
   });
 });
 
-test('multiple_payloads', function (t) {
+test('multiple_payloads', (t) => {
   const fn = path.resolve(__dirname, '../scripts/multiple_payloads.json');
-  let script = require(fn);
+  const script = require(fn);
   script.config.target = `http://127.0.0.1:${port}`;
 
   async.map(
     script.config.payload,
-    function (item, callback) {
-      let payloadFile = path.resolve(path.dirname(fn), item.path);
+    (item, callback) => {
+      const payloadFile = path.resolve(path.dirname(fn), item.path);
 
-      let data = fs.readFileSync(payloadFile, 'utf-8');
-      csv(data, function (err, parsedData) {
+      const data = fs.readFileSync(payloadFile, 'utf-8');
+      csv(data, (err, parsedData) => {
         item.data = parsedData;
         return callback(err, item);
       });
     },
-    function (err, results) {
+    (err, _results) => {
       if (err) {
         console.log(err);
         t.fail(err);
       }
 
-      runner(script, script.config.payload, {}).then(function (ee) {
-        ee.on('phaseStarted', function (x) {
+      runner(script, script.config.payload, {}).then((ee) => {
+        ee.on('phaseStarted', (x) => {
           t.ok(x, 'phaseStarted event emitted');
         });
 
-        ee.on('phaseCompleted', function (x) {
+        ee.on('phaseCompleted', (x) => {
           t.ok(x, 'phaseCompleted event emitted');
         });
 
-        ee.on('stats', function (stats) {
+        ee.on('stats', (stats) => {
           t.ok(stats, 'intermediate stats event emitted');
         });
 
-        ee.on('done', function (nr) {
+        ee.on('done', (nr) => {
           const report = SSMS.legacyReport(nr).report();
-          let requests = report.requestsCompleted;
-          let scenarios = report.scenariosCompleted;
+          const _requests = report.requestsCompleted;
+          const _scenarios = report.scenariosCompleted;
           t.ok(
             report.codes[404] > 0,
             'There are some 404s (URLs constructed from pets.csv)'

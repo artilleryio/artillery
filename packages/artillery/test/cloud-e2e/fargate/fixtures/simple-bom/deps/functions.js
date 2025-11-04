@@ -1,17 +1,17 @@
 // required files and modules:
-const dummyUtil = require('./dummy-util');
-const localModDir = require('./local-mod-dir');
-const nonIncludedJson = require('./not-included.json');
+const _dummyUtil = require('./dummy-util');
+const _localModDir = require('./local-mod-dir');
+const _nonIncludedJson = require('./not-included.json');
 
 // required external packages:
-const yaml = require('js-yaml');
-const uuid = require('uuid');
+const _yaml = require('js-yaml');
+const _uuid = require('uuid');
 // const enomod = require('./myenomod'); // won't get detected, rightfully so, but will cause a failure in the worker
 
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
-function checkBundle(req, userContext, events, done) {
+function checkBundle(_req, _userContext, _events, done) {
   let maybeErr = null;
   try {
     // picked up via require() calls in here:

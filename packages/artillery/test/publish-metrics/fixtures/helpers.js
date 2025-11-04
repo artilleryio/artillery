@@ -1,4 +1,4 @@
-'use strict';
+
 
 function getTestId(outputString) {
   const regex = /Test run id: \S+/;

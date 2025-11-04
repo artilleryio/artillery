@@ -1,10 +1,8 @@
-'use strict';
-
 const Hapi = require('@hapi/hapi');
 const uuid = require('uuid');
 
 let REQUEST_COUNT = 0;
-let COOKIES = {};
+const COOKIES = {};
 
 const users = {
   leo: {
@@ -18,7 +16,7 @@ const LARGE_RESPONSE = JSON.stringify({
   data: new Array(1024 * 1024 * 10).join('0')
 });
 
-const validate = async (request, username, password, h) => {
+const validate = async (_request, username, password, _h) => {
   const user = users[username];
   if (!user) {
     return { credentials: null, isValid: false };
@@ -43,14 +41,8 @@ const createTestServer = async (port) => {
     path: '/protected',
     config: {
       auth: 'simple',
-      handler: function (req, h) {
-        return (
-          'secret timestamp for ' +
-          req.auth.credentials.name +
-          ': ' +
-          Date.now()
-        );
-      }
+      handler: (req, _h) =>
+        `secret timestamp for ${req.auth.credentials.name}: ${Date.now()}`
     }
   });
 
@@ -75,7 +67,7 @@ function route(server) {
   server.route({
     method: 'GET',
     path: '/largeResponse',
-    handler: function largeResponse(req, h) {
+    handler: function largeResponse(_req, _h) {
       return LARGE_RESPONSE;
     }
   });
@@ -139,15 +131,13 @@ function route(server) {
   server.route({
     method: 'GET',
     path: '/header',
-    handler: function (request, h) {
-      return h.response().header('x-auth', 'secret');
-    }
+    handler: (_request, h) => h.response().header('x-auth', 'secret')
   });
 
   server.route({
     method: 'GET',
     path: '/expectsHeader',
-    handler: function (request, h) {
+    handler: (request, h) => {
       if (request.headers['x-auth'] && request.headers['x-auth'] === 'secret') {
         return { success: true };
       } else {
@@ -205,26 +195,25 @@ function route(server) {
     {
       method: 'GET',
       path: '/malformed_cookie',
-      handler: function (request, h) {
-        return h.response().header('Set-Cookie', 'malformed').code(200);
-      }
+      handler: (_request, h) =>
+        h.response().header('Set-Cookie', 'malformed').code(200)
     }
   ]);
 }
 
-function ok(req, h) {
+function ok(_req, _h) {
   return 'ok';
 }
 
 const DB = {};
 
-let reporters = [];
+const _reporters = [];
 
-function index(req, h) {
+function index(_req, _h) {
   return 'ok';
 }
 
-function postIndex(req, h) {
+function postIndex(_req, h) {
   return h.response('ok').code(200);
 }
 
@@ -246,7 +235,7 @@ function read(req, h) {
   }
 }
 
-function stats(req, h) {
+function stats(_req, _h) {
   return {
     requestCount: REQUEST_COUNT,
     cookies: COOKIES
@@ -258,7 +247,7 @@ function stats(req, h) {
 // curl -v 0.0.0.0:3003/expectscookie -b 'testCookie=eyJ1aWQiOiIxNWMwMjNkMC02YmMxLTRkODEtYmQ1OS0wNjRmYjhmMGU0YTkifQ==;'
 //
 
-function setsCookie(req, h) {
+function setsCookie(_req, h) {
   const newuid = uuid.v4();
   // console.log('setting testCookie.uid to %j', newuid);
   h.state('testCookie', { uid: newuid });
@@ -280,7 +269,7 @@ function expectsCookie(req, h) {
   }
 }
 
-function getJourneys(req, h) {
+function getJourneys(_req, h) {
   const response = `
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:tns1="http://" xmlns:tns="http://">
   <soap:Header></soap:Header>
@@ -310,7 +299,7 @@ function getJourneys(req, h) {
 function getJourney(req, h) {
   console.log(req.params.id);
   if (req.params.id === '1') {
-    let response = `
+    const response = `
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:tns1="http://" xmlns:tns="http://">
   <soap:Header></soap:Header>
   <soap:Body>
@@ -331,7 +320,7 @@ function getJourney(req, h) {
   return h.response('').code(404);
 }
 
-function getDevices(req, h) {
+function getDevices(_req, h) {
   const response = `
 [
   {

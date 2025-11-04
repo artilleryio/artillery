@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
 const sinon = require('sinon');
 const rewiremock = require('rewiremock/node');
 
 const HttpsProxyAgent = require('https-proxy-agent');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const _ = require('lodash');
 
 const baseScript = {
@@ -28,30 +26,22 @@ const baseScript = {
 };
 
 function setup() {
-  let sandbox;
-  let WebsocketMock;
-  let wsMockInstance;
-  let WebSocketEngine;
-
-  sandbox = sinon.sandbox.create();
+  const sandbox = sinon.sandbox.create();
   rewiremock.enable();
 
   class WsMockInstance extends EventEmitter {
-    constructor() {
-      super();
-    }
     close() {}
   }
 
   WsMockInstance.prototype.send = sandbox.stub().yields();
 
-  wsMockInstance = new WsMockInstance();
+  const wsMockInstance = new WsMockInstance();
 
-  WebsocketMock = sandbox.stub().returns(wsMockInstance);
+  const WebsocketMock = sandbox.stub().returns(wsMockInstance);
 
   rewiremock('ws').with(WebsocketMock);
 
-  WebSocketEngine = require('../../lib/engine_ws');
+  const WebSocketEngine = require('../../lib/engine_ws');
 
   return { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine };
 }

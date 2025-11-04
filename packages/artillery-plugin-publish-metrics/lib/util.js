@@ -8,7 +8,7 @@ const semver = require('semver');
 
 async function sleep(n) {
   return new Promise((resolve, _reject) => {
-    setTimeout(function () {
+    setTimeout(() => {
       resolve();
     }, n);
   });

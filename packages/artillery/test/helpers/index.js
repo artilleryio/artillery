@@ -1,10 +1,10 @@
 const sh = require('execa');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+const fs = require('node:fs');
+const path = require('node:path');
+const os = require('node:os');
 const { getBinPathSync } = require('get-bin-path');
 const a9path = getBinPathSync();
-const { createHash } = require('crypto');
+const { createHash } = require('node:crypto');
 
 async function execute(args, options) {
   try {

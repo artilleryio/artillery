@@ -6,18 +6,18 @@ const runGenericRunnerTest = (script, t) => {
   const startedAt = process.hrtime();
   let completedPhases = 0;
 
-  runner(script).then(function (ee) {
-    ee.on('phaseStarted', function (x) {
+  runner(script).then((ee) => {
+    ee.on('phaseStarted', (x) => {
       t.ok(x, 'phaseStarted event emitted');
     });
-    ee.on('phaseCompleted', function (x) {
+    ee.on('phaseCompleted', (x) => {
       completedPhases++;
       t.ok(x, 'phaseCompleted event emitted');
     });
-    ee.on('stats', function (stats) {
+    ee.on('stats', (stats) => {
       t.ok(stats, 'intermediate stats event emitted');
     });
-    ee.on('done', function (nr) {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       const requests = report.requestsCompleted;
       const scenarios = report.scenariosCompleted;
@@ -32,9 +32,7 @@ const runGenericRunnerTest = (script, t) => {
       const delta = (completedAt[0] * 1e9 + completedAt[1]) / 1e6;
       const minDuration = l.reduce(
         script.config.phases,
-        function (acc, phaseSpec) {
-          return acc + phaseSpec.duration * 1000;
-        },
+        (acc, phaseSpec) => acc + phaseSpec.duration * 1000,
         0
       );
       t.ok(

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 module.exports = {
   jitter: jitter
 };
@@ -21,9 +19,9 @@ function jitter(sApprox) {
     return sApprox;
   }
 
-  let inputs = sApprox.split(':');
-  let nb = parseInt(inputs[0], 10);
-  let approxPercent = parseInt(inputs[1], 10);
+  const inputs = sApprox.split(':');
+  const nb = parseInt(inputs[0], 10);
+  const approxPercent = parseInt(inputs[1], 10);
 
   let approx = approxPercent;
   if (inputs[1].indexOf('%') >= 0) {

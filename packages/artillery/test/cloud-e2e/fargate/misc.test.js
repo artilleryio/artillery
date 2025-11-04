@@ -1,14 +1,14 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const chalk = require('chalk');
-const fs = require('fs');
+const fs = require('node:fs');
 const { generateTmpReportPath, getTestTags } = require('../../helpers');
 const {
   checkForNegativeValues,
   checkAggregateCounterSums
 } = require('../../helpers/expectations');
 
-const path = require('path');
+const path = require('node:path');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
 

@@ -2,17 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const l = require('lodash');
 
 module.exports = create;
 
 // naive implementation of selection with replacement
 function create(list) {
-  let dist = l.reduce(
+  const dist = l.reduce(
     list,
-    function (acc, el, i) {
+    (acc, el, i) => {
       for (let j = 0; j < el.weight * 100; j++) {
         acc.push(i);
       }
@@ -21,8 +19,8 @@ function create(list) {
     []
   );
 
-  return function () {
-    let i = dist[l.random(0, dist.length - 1)];
+  return () => {
+    const i = dist[l.random(0, dist.length - 1)];
     return [i, list[i]];
   };
 }
@@ -45,11 +43,11 @@ function bench() {
 
   const picker = create(items);
 
-  const ITERS = Math.pow(10, 6);
+  const ITERS = 10 ** 6;
   const startedAt = Date.now();
 
-  const picks = l.map(l.range(ITERS), function () {
-    let x = picker()[1];
+  const picks = l.map(l.range(ITERS), () => {
+    const x = picker()[1];
     return x;
   });
 
@@ -61,18 +59,12 @@ function bench() {
     Math.round(ITERS / delta)
   );
 
-  const sumWeights = l.reduce(
-    items,
-    function (acc, item) {
-      return acc + item.weight;
-    },
-    0
-  );
+  const sumWeights = l.reduce(items, (acc, item) => acc + item.weight, 0);
 
   console.log('sumWeights = %s', sumWeights);
 
-  l.each(items, function (p) {
-    let count = l.filter(picks, { value: p.value }).length;
+  l.each(items, (p) => {
+    const count = l.filter(picks, { value: p.value }).length;
     console.log(
       'Count of %s = %s (should be: %s%, is: %s%)',
       p.value,

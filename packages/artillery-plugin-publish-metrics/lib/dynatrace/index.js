@@ -1,8 +1,6 @@
-'use strict';
-
 const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:dynatrace');
-const path = require('path');
+const path = require('node:path');
 const { sleep } = require('../util');
 
 class DynatraceReporter {
@@ -25,7 +23,7 @@ class DynatraceReporter {
     if (config.sendOnlyTraces || config.traces?.sendOnlyTraces) {
       this.onlyTraces = true;
       debug('sendOnlyTraces is true, not initializing metrics');
-      return this;
+      return;
     }
 
     if (
@@ -47,7 +45,7 @@ class DynatraceReporter {
     };
 
     // Configure event if set - if event key is set but its value isn't we use defaults
-    if (config.hasOwnProperty('event')) {
+    if (Object.hasOwn(config, 'event')) {
       this.eventConfig = {
         properties: config.event?.properties || [],
         send: config.event?.send || true,

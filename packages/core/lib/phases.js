@@ -2,15 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const EventEmitter = require('eventemitter3');
 const async = require('async');
 const _ = require('lodash');
 const isUndefined = _.isUndefined;
 const arrivals = require('arrivals');
 const debug = require('debug')('phases');
-const { randomUUID } = require('crypto');
+const { randomUUID } = require('node:crypto');
 const driftless = require('driftless');
 const ms = require('ms');
 
@@ -23,9 +21,9 @@ async function sleep(ms) {
 }
 
 function phaser(phaseSpecs) {
-  let ee = new EventEmitter();
+  const ee = new EventEmitter();
 
-  let tasks = _.map(phaseSpecs, function (spec, i) {
+  const tasks = _.map(phaseSpecs, (spec, i) => {
     [
       'arrivalRate',
       'arrivalCount',
@@ -33,12 +31,12 @@ function phaser(phaseSpecs) {
       'rampTo',
       'duration',
       'maxVusers'
-    ].forEach(function (k) {
-      if (isUndefined(spec[k]) || spec[k] == 'number') {
+    ].forEach((k) => {
+      if (isUndefined(spec[k]) || spec[k] === 'number') {
         return;
       }
 
-      if (k == 'duration' || k == 'pause') {
+      if (k === 'duration' || k === 'pause') {
         //if it's already a number in string format, don't apply ms, as it's the default behaviour, so we don't want to do ms calculations
         //otherwise, ms returns the value in milliseconds, so we need to convert to seconds
         const convertedDuration = Number.isInteger(_.toNumber(spec[k]))
@@ -91,8 +89,8 @@ function phaser(phaseSpecs) {
     console.log('Unknown phase spec\n%j\nThis should not happen', spec);
   });
 
-  ee.run = function () {
-    async.series(tasks, function (err) {
+  ee.run = () => {
+    async.series(tasks, (err) => {
       if (err) {
         debug(err);
       }
@@ -106,11 +104,11 @@ function phaser(phaseSpecs) {
 
 function createPause(spec, ee) {
   const duration = spec.pause * 1000;
-  const task = function (callback) {
+  const task = (callback) => {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
-    setTimeout(function () {
+    setTimeout(() => {
       spec.endTime = Date.now();
       ee.emit('phaseCompleted', spec);
       return callback(null);
@@ -164,7 +162,7 @@ function createRamp(spec, ee) {
   debug(`periodArrivals ${periodArrivals}`);
   debug(`periodTick ${periodTick}`);
 
-  return async function rampTask(callback) {
+  return async function rampTask(_callback) {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
@@ -193,7 +191,7 @@ function createRamp(spec, ee) {
     // ensure we don't go past 1s
     const delay = Math.min(periodTick[currentPeriod], 1000);
     let currentArrivals = 0;
-    let arrivalTimer = driftless.setDriftlessInterval(function arrivals() {
+    const arrivalTimer = driftless.setDriftlessInterval(function arrivals() {
       if (currentArrivals < periodArrivals[currentPeriod]) {
         ee.emit('arrival', spec);
         currentArrivals++;
@@ -207,7 +205,7 @@ function createRamp(spec, ee) {
 }
 
 function createArrivalCount(spec, ee) {
-  const task = function (callback) {
+  const task = (callback) => {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
@@ -216,10 +214,10 @@ function createArrivalCount(spec, ee) {
     if (spec.arrivalCount > 0) {
       const interval = duration / spec.arrivalCount;
       const p = arrivals.uniform.process(interval, duration);
-      p.on('arrival', function () {
+      p.on('arrival', () => {
         ee.emit('arrival', spec);
       });
-      p.on('finished', function () {
+      p.on('finished', () => {
         spec.endTime = Date.now();
         ee.emit('phaseCompleted', spec);
         return callback(null);
@@ -234,7 +232,7 @@ function createArrivalCount(spec, ee) {
 }
 
 function createArrivalRate(spec, ee) {
-  const task = function (callback) {
+  const task = (callback) => {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
@@ -242,10 +240,10 @@ function createArrivalRate(spec, ee) {
     const duration = spec.duration * 1000;
     debug('creating a %s process for arrivalRate', spec.mode);
     const p = arrivals[spec.mode].process(ar, duration);
-    p.on('arrival', function () {
+    p.on('arrival', () => {
       ee.emit('arrival', spec);
     });
-    p.on('finished', function () {
+    p.on('finished', () => {
       spec.endTime = Date.now();
       ee.emit('phaseCompleted', spec);
       return callback(null);

@@ -1,9 +1,7 @@
-'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
 
-const fs = require('fs');
-const path = require('path');
-
-const https = require('https');
+const https = require('node:https');
 const debug = require('debug')('test:target:ws_tls');
 const WebSocketServer = require('ws').Server;
 
@@ -18,7 +16,7 @@ const createTestServer = (port = 9443) => {
       key: options.key,
       cert: options.cert
     },
-    function (req, res) {
+    (_req, res) => {
       res.writeHead(200);
       res.end();
     }
@@ -26,15 +24,15 @@ const createTestServer = (port = 9443) => {
 
   const wss = new WebSocketServer({ server: app });
 
-  wss.on('connection', function (client) {
+  wss.on('connection', (client) => {
     debug('+ client');
-    client.on('message', function (message) {
+    client.on('message', (message) => {
       debug(message);
     });
   });
 
-  return new Promise((resolve, reject) => {
-    app.listen(0, function () {
+  return new Promise((resolve, _reject) => {
+    app.listen(0, () => {
       resolve({ server: app, wss, port: app.address().port });
     });
   });

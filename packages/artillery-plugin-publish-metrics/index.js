@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const NS = 'plugin:publish-metrics';
-const debug = require('debug')(NS);
+const _debug = require('debug')(NS);
 const A = require('async');
 
 const {

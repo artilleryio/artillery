@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
-const debug = require('debug')('plugin:sqsReporter');
+const _debug = require('debug')('plugin:sqsReporter');
 const uuid = require('node:crypto').randomUUID;
 const { getAQS, sendMessage } = require('./azure-aqs');
 
@@ -18,16 +18,14 @@ function ArtillerySQSPlugin(script, events) {
 
   this.unsent = 0;
 
-  const self = this;
-
   // List of objects: [{key: 'SomeKey', value: 'SomeValue'}, ...]
   this.tags = process.env.SQS_TAGS ? JSON.parse(process.env.SQS_TAGS) : [];
   this.testId = null;
-  let messageAttributes = {};
+  const messageAttributes = {};
 
-  this.tags.forEach(function (tag) {
+  this.tags.forEach((tag) => {
     if (tag.key === 'testId') {
-      self.testId = tag.value;
+      this.testId = tag.value;
     }
     messageAttributes[tag.key] = {
       DataType: 'String',
@@ -56,9 +54,8 @@ function ArtillerySQSPlugin(script, events) {
   }
 
   events.on('stats', (statsOriginal) => {
-    let body;
     const serialized = global.artillery.__SSMS.serializeMetrics(statsOriginal);
-    body = {
+    const body = {
       event: 'workerStats',
       stats: serialized
     };

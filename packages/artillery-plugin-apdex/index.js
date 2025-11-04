@@ -2,9 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
-const debug = require('debug')('plugin:apdex');
+const _debug = require('debug')('plugin:apdex');
 
 const METRICS = {
   satisfied: 'apdex.satisfied',
@@ -30,12 +28,12 @@ class ApdexPlugin {
         script.config.processor = {};
       }
 
-      script.scenarios.forEach(function (scenario) {
+      script.scenarios.forEach((scenario) => {
         scenario.afterResponse = [].concat(scenario.afterResponse || []);
         scenario.afterResponse.push('apdexAfterResponse');
       });
 
-      function apdexAfterResponse(req, res, userContext, events, done) {
+      function apdexAfterResponse(_req, res, _userContext, events, done) {
         const total = res.timings.phases.total;
         events.emit('counter', METRICS.satisfied, 0);
         events.emit('counter', METRICS.tolerated, 0);

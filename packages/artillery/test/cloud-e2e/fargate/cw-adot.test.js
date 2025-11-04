@@ -1,9 +1,8 @@
-'use strict';
 
-const tap = require('tap');
-const { test, afterEach, beforeEach, before } = require('tap');
+
+const { afterEach, beforeEach, before } = require('tap');
 const { $ } = require('zx');
-const fs = require('fs');
+const fs = require('node:fs');
 const {
   generateTmpReportPath,
   deleteFile,
@@ -25,7 +24,7 @@ beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-afterEach(async (t) => {
+afterEach(async (_t) => {
   deleteFile(reportFilePath);
 });
 
@@ -57,7 +56,7 @@ tap.skip('traces succesfully arrive to cloudwatch', async (t) => {
   try {
     traceMap = await getXRayTraces(testId, expectedVus);
   } catch (err) {
-    t.fail('Error getting spans from Cloudwatch: ' + err);
+    t.fail(`Error getting spans from Cloudwatch: ${err}`);
   }
 
   const fullSpanObjects = [];

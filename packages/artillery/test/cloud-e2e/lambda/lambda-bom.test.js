@@ -1,5 +1,5 @@
 const tap = require('tap');
-const fs = require('fs');
+const fs = require('node:fs');
 const { $ } = require('zx');
 const {
   getTestTags,

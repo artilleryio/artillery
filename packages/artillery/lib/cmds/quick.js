@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
+
 
 const RunCommand = require('./run');
-const parse = require('url').parse;
-const fs = require('fs');
+const parse = require('node:url').parse;
+const fs = require('node:fs');
 const _ = require('lodash');
-const debug = require('debug')('commands:quick');
+const _debug = require('debug')('commands:quick');
 
 const { Command, Flags, Args } = require('@oclif/core');
 
@@ -32,7 +32,7 @@ class QuickCommand extends Command {
     };
 
     const p = parse(url);
-    const target = p.protocol + '//' + p.host;
+    const target = `${p.protocol}//${p.host}`;
     script.config.target = target;
 
     if (flags.insecure && p.protocol.match(/https/)) {

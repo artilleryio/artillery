@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
+
 
 const debug = require('debug')('cloud');
 const request = require('got');
@@ -10,8 +10,8 @@ const awaitOnEE = require('../../util/await-on-ee');
 const sleep = require('../../util/sleep');
 const util = require('node:util');
 const chokidar = require('chokidar');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const { isCI, name: ciName, GITHUB_ACTIONS } = require('ci-info');
 
 class ArtilleryCloudPlugin {
@@ -24,7 +24,7 @@ class ArtilleryCloudPlugin {
       typeof process.env.ARTILLERY_CLOUD_API_KEY !== 'undefined';
 
     if (!isInteractiveUse && !enabledInCloudWorker) {
-      return this;
+      return;
     }
 
     this.enabled = true;
@@ -135,7 +135,7 @@ class ArtilleryCloudPlugin {
           console.log(stringifyErr);
         }
         for (const args of lines) {
-          text += util.format(...Object.keys(args).map((k) => args[k])) + '\n';
+          text += `${util.format(...Object.keys(args).map((k) => args[k]))}\n`;
         }
 
         try {
@@ -208,8 +208,6 @@ class ArtilleryCloudPlugin {
         }
       }
     });
-
-    return this;
   }
 
   async init() {
@@ -259,7 +257,7 @@ class ArtilleryCloudPlugin {
       if (res.statusCode === 200) {
         postSucceeded = true;
       }
-    } catch (err) {
+    } catch (_err) {
       this.off = true;
     }
 
@@ -289,7 +287,7 @@ class ArtilleryCloudPlugin {
     } catch (_err) {}
 
     const watcher = chokidar.watch(outputDir, {
-      ignored: /(^|[\/\\])\../, // ignore dotfiles
+      ignored: /(^|[/\\])\../, // ignore dotfiles
       persistent: true,
       ignorePermissionErrors: true,
       ignoreInitial: true,
@@ -380,7 +378,7 @@ class ArtilleryCloudPlugin {
         return;
       }
 
-      if (res.status != 'CANCELLATION_REQUESTED') {
+      if (res.status !== 'CANCELLATION_REQUESTED') {
         return;
       }
 
@@ -429,8 +427,8 @@ class ArtilleryCloudPlugin {
         }
       });
 
-      if (res.statusCode != 200) {
-        if (res.statusCode == 401) {
+      if (res.statusCode !== 200) {
+        if (res.statusCode === 401) {
           console.log(
             'Error: API key is invalid. Could not send test data to Artillery Cloud.'
           );
@@ -443,7 +441,7 @@ class ArtilleryCloudPlugin {
           body = JSON.parse(res.body);
         } catch (_err) {}
 
-        if (body && body.requestId) {
+        if (body?.requestId) {
           console.log('Request ID:', body.requestId);
         }
       }

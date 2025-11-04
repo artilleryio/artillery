@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const debug = require('debug')('platform:aws-lambda');
 
-const { randomUUID } = require('crypto');
+const { randomUUID } = require('node:crypto');
 
 const sleep = require('../../util/sleep');
-const path = require('path');
+const path = require('node:path');
 const {
   LambdaClient,
   GetFunctionConfigurationCommand,
@@ -29,7 +29,7 @@ const {
 const createS3Client = require('../aws-ecs/legacy/create-s3-client');
 const { getBucketRegion } = require('../aws/aws-get-bucket-region');
 
-const https = require('https');
+const _https = require('node:https');
 
 const { QueueConsumer } = require('../../queue-consumer');
 
@@ -37,7 +37,6 @@ const telemetry = require('../../telemetry');
 const crypto = require('node:crypto');
 
 const prices = require('./prices');
-const { STATES } = require('../local/artillery-worker-local');
 const _ = require('lodash');
 
 const { SQS_QUEUES_NAME_PREFIX } = require('../aws/constants');
@@ -105,7 +104,7 @@ class PlatformLambda {
 
     this.testRunId = platformOpts.testRunId;
     this.lambdaRoleArn =
-      platformConfig['lambda-role-arn'] || platformConfig['lambdaRoleArn'];
+      platformConfig['lambda-role-arn'] || platformConfig.lambdaRoleArn;
 
     this.platformOpts = platformOpts;
 
@@ -236,12 +235,10 @@ class PlatformLambda {
 
     debug({ bucketName, s3Path, sqsQueueUrl });
 
-    const self = this;
-
     const consumer = new QueueConsumer();
     consumer.create(
       {
-        poolSize: Math.min(self.platformOpts.count, 100)
+        poolSize: Math.min(this.platformOpts.count, 100)
       },
       {
         queueUrl: process.env.SQS_QUEUE_URL || this.sqsQueueUrl,
@@ -276,7 +273,7 @@ class PlatformLambda {
             throw new Error('SQS message with no testId or workerId');
           }
 
-          if (self.testRunId !== attrs.testId.StringValue) {
+          if (this.testRunId !== attrs.testId.StringValue) {
             throw new Error('SQS message for an unknown testId');
           }
 
@@ -300,7 +297,7 @@ class PlatformLambda {
           } else if (body.event === 'workerError') {
             global.artillery.suggestedExitCode = body.exitCode || 1;
 
-            if (body.exitCode != 21) {
+            if (body.exitCode !== 21) {
               this.events.emit(body.event, workerId, {
                 id: workerId,
                 error: new Error(
@@ -311,7 +308,7 @@ class PlatformLambda {
                 logs: body.logs
               });
             }
-          } else if (body.event == 'workerReady') {
+          } else if (body.event === 'workerReady') {
             this.events.emit(body.event, workerId);
             this.waitingReadyCount++;
 
@@ -358,7 +355,7 @@ class PlatformLambda {
             event: 'ping',
             awsAccountId: crypto
               .createHash('sha1')
-              .update(self.accountId)
+              .update(this.accountId)
               .digest('base64')
           });
 
@@ -368,22 +365,22 @@ class PlatformLambda {
         } catch (_err) {}
 
         function round(number, decimals) {
-          const m = Math.pow(10, decimals);
+          const m = 10 ** decimals;
           return Math.round(number * m) / m;
         }
 
         if (event.flags && event.flags.platform === 'aws:lambda') {
           let price = 0;
-          if (!prices[self.region]) {
-            price = prices.base[self.architecture];
+          if (!prices[this.region]) {
+            price = prices.base[this.architecture];
           } else {
-            price = prices[self.region][self.architecture];
+            price = prices[this.region][this.architecture];
           }
 
           const duration = Math.ceil((Date.now() - startedAt) / 1000);
           const total =
-            ((price * self.memorySize) / 1024) *
-            self.platformOpts.count *
+            ((price * this.memorySize) / 1024) *
+            this.platformOpts.count *
             duration;
           const cost = round(total / 10e10, 4);
           console.log(`\nEstimated AWS Lambda cost for this test: $${cost}\n`);
@@ -441,9 +438,10 @@ class PlatformLambda {
     const timeout = this.useVPC ? 240e3 : 120e3;
     let waited = 0;
     let ok = false;
+    let state;
     while (waited < timeout) {
       try {
-        var state = (
+        state = (
           await lambda.send(
             new GetFunctionConfigurationCommand({
               FunctionName: this.functionName
@@ -486,7 +484,7 @@ class PlatformLambda {
     this.count++;
   }
 
-  async stopWorker(workerId) {
+  async stopWorker(_workerId) {
     // TODO: Send message to that worker and have it exit early
   }
 
@@ -659,7 +657,7 @@ class PlatformLambda {
     }
   }
 
-  createFunctionNameWithHash(lambdaConfig) {
+  createFunctionNameWithHash(_lambdaConfig) {
     const changeableConfig = {
       MemorySize: this.memorySize,
       VpcConfig: {
@@ -685,7 +683,7 @@ class PlatformLambda {
   }
 
   async createLambda(opts) {
-    const { bucketName, functionName } = opts;
+    const { functionName } = opts;
 
     const lambda = new LambdaClient({
       apiVersion: '2015-03-31',

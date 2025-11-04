@@ -126,7 +126,7 @@ const schema = Joi.object({
 module.exports = (script) => {
   const { error } = schema.validate(script);
 
-  if (error && error.details.length) {
+  if (error?.details.length) {
     return error.details[0].message;
   }
 };

@@ -1,7 +1,7 @@
-const { createServer } = require('http');
+const { createServer } = require('node:http');
 const WebSocketServer = require('ws').Server;
 
-const createTestServer = (port, host = '127.0.0.1') => {
+const createTestServer = (_port, _host = '127.0.0.1') => {
   const server = createServer();
 
   const wss = new WebSocketServer({
@@ -9,21 +9,21 @@ const createTestServer = (port, host = '127.0.0.1') => {
     handleProtocols
   });
 
-  let MESSAGE_COUNT = 0;
-  let CONNECTION_COUNT = 0;
+  let _MESSAGE_COUNT = 0;
+  let _CONNECTION_COUNT = 0;
 
   wss.on('connection', function connection(ws) {
-    CONNECTION_COUNT++;
+    _CONNECTION_COUNT++;
     console.log('+ connection');
     ws.on('message', function incoming(message) {
-      MESSAGE_COUNT++;
+      _MESSAGE_COUNT++;
       console.log('received: %s', message);
     });
 
     ws.send('something');
   });
 
-  function handleProtocols(protocols, request) {
+  function handleProtocols(protocols, _request) {
     const SUBPROTOCOL = 'my-custom-protocol';
     if (protocols.indexOf(SUBPROTOCOL) > -1) {
       console.log('setting', SUBPROTOCOL);
@@ -34,8 +34,8 @@ const createTestServer = (port, host = '127.0.0.1') => {
     }
   }
 
-  return new Promise((resolve, reject) => {
-    server.listen(0, function () {
+  return new Promise((resolve, _reject) => {
+    server.listen(0, () => {
       resolve({ server, wss, port: server.address().port });
     });
   });

@@ -2,10 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 
 const PosthogEngine = require('..');
 
@@ -37,7 +35,7 @@ const script = {
   ]
 };
 
-test('Engine interface', function (t) {
+test('Engine interface', (t) => {
   const events = new EventEmitter();
   const engine = new PosthogEngine(script, events, {});
   const scenario = engine.createScenario(script.scenarios[0], events);

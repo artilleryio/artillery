@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 /**
  * This script is used to discover all the tests in different test directories that match a specific suffix
@@ -9,17 +9,17 @@ const path = require('path');
 const testLocations = [
   {
     location: 'test/cloud-e2e/fargate',
-    package: 'artillery',
+    packageName: 'artillery',
     suffix: '.test.js'
   },
   {
     location: 'test/cloud-e2e/lambda',
-    package: 'artillery',
+    packageName: 'artillery',
     suffix: '.test.js'
   },
   {
     location: 'test',
-    package: 'artillery-engine-playwright',
+    packageName: 'artillery-engine-playwright',
     suffix: '.aws.js'
   }
 ];
@@ -38,7 +38,7 @@ const addTest = (fileName, baseLocation, packageName, suffix) => {
   tests.names.push(jobName);
   tests.namesToFiles[jobName] = {
     file: `${baseLocation}/${fileName}`,
-    package: packageName
+    packageName: packageName
   };
 };
 
@@ -55,9 +55,9 @@ function scanDirectory(location, baseLocation, packageName, suffix) {
 }
 
 // Scan all the test locations
-for (const { package, location, suffix } of testLocations) {
-  const fullLocation = `packages/${package}/${location}`;
-  scanDirectory(fullLocation, location, package, suffix);
+for (const { packageName, location, suffix } of testLocations) {
+  const fullLocation = `packages/${packageName}/${location}`;
+  scanDirectory(fullLocation, location, packageName, suffix);
 }
 
 // Output the tests object as a JSON string to be used by Github Actions

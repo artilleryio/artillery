@@ -1,9 +1,9 @@
-const { createServer } = require('http');
+const { createServer } = require('node:http');
 const { Server } = require('socket.io');
-const { once } = require('events');
+const { once } = require('node:events');
 
 const createTestServer = async (port) => {
-  function handler(req, res) {
+  function handler(_req, res) {
     res.writeHead(404);
     res.end('No http pages here');
   }
@@ -11,7 +11,7 @@ const createTestServer = async (port) => {
   const httpServer = createServer(handler);
   const io = new Server(httpServer);
 
-  io.on('connection', function (socket) {
+  io.on('connection', (socket) => {
     socket.on('join', (channel) => {
       socket.join(channel);
       socket.emit('new_user_join', `Welcome to ${channel}`);

@@ -1,6 +1,6 @@
 module.exports = { createRandomScore };
 
-function createRandomScore(userContext, events, done) {
+function createRandomScore(userContext, _events, done) {
   const data = {
     timestamp: Date.now(),
     score: Math.floor(Math.random() * 100)

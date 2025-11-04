@@ -1,4 +1,4 @@
-'use strict';
+
 
 const A = require('async');
 const debug = require('debug')('commands:create-test');
@@ -6,9 +6,9 @@ const debug = require('debug')('commands:create-test');
 const { getBucketName } = require('./util');
 const createS3Client = require('./create-s3-client');
 
-const path = require('path');
+const path = require('node:path');
 
-const fs = require('fs');
+const fs = require('node:fs');
 
 const { createBOM, prettyPrint } = require('./bom');
 
@@ -28,7 +28,7 @@ async function createTest(scriptPath, options, callback) {
   debug('script:', absoluteScriptPath);
   debug('root:', contextPath);
 
-  let context = {
+  const context = {
     contextDir: contextPath,
     scriptPath: absoluteScriptPath,
     originalScriptPath: scriptPath,
@@ -51,7 +51,7 @@ async function createTest(scriptPath, options, callback) {
     A.waterfall(
       [
         A.constant(context),
-        async function (context) {
+        async (context) => {
           if (!context.customSyncClient) {
             context.s3Bucket = await getBucketName();
             return context;
@@ -65,7 +65,7 @@ async function createTest(scriptPath, options, callback) {
         syncS3,
         writeTestMetadata
       ],
-      function (err, context) {
+      (err, context) => {
         if (err) {
           console.log(err);
           return;
@@ -85,7 +85,7 @@ async function createTest(scriptPath, options, callback) {
 
 function prepareManifest(context, callback) {
   let fileToAnalyse = context.scriptPath;
-  let extraFiles = [];
+  const extraFiles = [];
   if (context.configPath) {
     debug('context has been provided; extraFiles =', extraFiles);
     fileToAnalyse = context.configPath;
@@ -153,7 +153,7 @@ async function syncS3(context) {
           return eachDone(null, context);
         }
 
-        const key = context.s3Prefix + '/' + item.noPrefixPosix;
+        const key = `${context.s3Prefix}/${item.noPrefixPosix}`;
         await s3.send(
           new PutObjectCommand({
             Bucket: context.s3Bucket,
@@ -204,7 +204,7 @@ async function writeTestMetadata(context) {
     s3 = createS3Client();
   }
 
-  const key = context.s3Prefix + '/metadata.json'; // TODO: Rename to something less likely to clash
+  const key = `${context.s3Prefix}/metadata.json`; // TODO: Rename to something less likely to clash
   debug('metadata location:', `${context.s3Bucket}/${key}`);
   await s3.send(
     new PutObjectCommand({

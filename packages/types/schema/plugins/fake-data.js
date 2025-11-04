@@ -3,9 +3,9 @@ const falso = require('@ngneat/falso');
 const { getFalsoFunctions } = require('artillery-plugin-fake-data');
 
 const buildFalsoObject = () => {
-  let falsoJoiObject = {};
+  const falsoJoiObject = {};
 
-  for (let funcName of getFalsoFunctions()) {
+  for (const funcName of getFalsoFunctions()) {
     falsoJoiObject[funcName] = Joi.object()
       .meta({ title: `Falso Function: ${funcName}` })
       .description(

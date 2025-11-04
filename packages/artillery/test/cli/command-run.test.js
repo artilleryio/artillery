@@ -7,8 +7,8 @@ const {
   generateTmpReportPath
 } = require('../helpers');
 const { checkForNegativeValues } = require('../helpers/expectations');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const execa = require('execa');
 
 let reportFilePath;

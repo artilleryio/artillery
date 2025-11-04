@@ -1,12 +1,12 @@
-'use strict';
 
-const debug = require('debug')('artillery:util');
+
+const _debug = require('debug')('artillery:util');
 
 const chalk = require('chalk');
 
 const _ = require('lodash');
 
-const A = require('async');
+const _A = require('async');
 
 const createS3Client = require('./create-s3-client');
 
@@ -61,7 +61,7 @@ async function getBucketName() {
 
 function formatError(err) {
   return (
-    `${chalk.red('Error')}: ${err.message}` + (err.code ? ` (${err.code})` : '')
+    `${chalk.red('Error')}: ${err.message}${err.code ? ` (${err.code})` : ''}`
   );
 }
 
@@ -77,16 +77,11 @@ async function listAllObjectsWithPrefix(bucketName, prefix) {
       MaxKeys: 1000
     }
   );
-
-  try {
     for await (const page of paginator) {
       if (page.Contents) {
         allObjects.push(...page.Contents);
       }
     }
-  } catch (error) {
-    throw error;
-  }
 
   return allObjects;
 }

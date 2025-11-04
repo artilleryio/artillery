@@ -11,9 +11,9 @@ const _createLambdaBom = async (
   absoluteConfigPath,
   flags
 ) => {
-  let createBomOpts = {};
+  const createBomOpts = {};
   let entryPoint = absoluteScriptPath;
-  let extraFiles = [];
+  const extraFiles = [];
   createBomOpts.scenarioPath = absoluteScriptPath;
   if (absoluteConfigPath) {
     entryPoint = absoluteConfigPath;
@@ -44,9 +44,7 @@ async function _uploadFileToS3(item, testRunId, bucketName) {
     return;
   }
 
-  const key = prefix + '/' + item.noPrefixPosix;
-
-  try {
+  const key = `${prefix}/${item.noPrefixPosix}`;
     await s3.send(
       new PutObjectCommand({
         Bucket: bucketName,
@@ -58,9 +56,6 @@ async function _uploadFileToS3(item, testRunId, bucketName) {
 
     debug(`Uploaded ${key}`);
     return;
-  } catch (err) {
-    throw err;
-  }
 }
 
 async function _syncS3(bomManifest, testRunId, bucketName) {
@@ -80,10 +75,7 @@ async function _syncS3(bomManifest, testRunId, bucketName) {
 
   const plainS3 = createS3Client();
   const prefix = `tests/${testRunId}`;
-
-  //TODO: add writeTestMetadata with configPath and newScriptPath if needed
-  try {
-    const key = prefix + '/metadata.json';
+    const key = `${prefix}/metadata.json`;
     await plainS3.send(
       new PutObjectCommand({
         Bucket: bucketName,
@@ -95,10 +87,6 @@ async function _syncS3(bomManifest, testRunId, bucketName) {
 
     debug(`Uploaded ${key}`);
     return `s3://${bucketName}/${key}`;
-  } catch (err) {
-    //TODO: retry if needed
-    throw err;
-  }
 }
 
 const createAndUploadTestDependencies = async (

@@ -1,5 +1,3 @@
-'use strict';
-
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
@@ -48,9 +46,9 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     ]);
   }
 
-  startHTTPRequestSpan(req, userContext, events, done) {
+  startHTTPRequestSpan(req, userContext, _events, done) {
     const startTime = Date.now();
-    const scenarioSpan = userContext.vars['__httpScenarioSpan'];
+    const scenarioSpan = userContext.vars.__httpScenarioSpan;
     if (!scenarioSpan) {
       return done();
     }
@@ -86,28 +84,28 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
           ...(this.config.attributes || {})
         }
       });
-      const spanMap = userContext.vars['__otlpHTTPRequestSpans'] || {};
+      const spanMap = userContext.vars.__otlpHTTPRequestSpans || {};
       spanMap[req.uuid] = span;
-      userContext.vars['__otlpHTTPRequestSpans'] = spanMap;
+      userContext.vars.__otlpHTTPRequestSpans = spanMap;
       this.pendingRequestSpans++;
     });
     return done();
   }
 
   endHTTPRequestSpan(req, res, userContext, events, done) {
-    const span = userContext.vars['__otlpHTTPRequestSpans']?.[req.uuid];
+    const span = userContext.vars.__otlpHTTPRequestSpans?.[req.uuid];
     if (!span) {
       return done();
     }
 
     let endTime;
 
-    const scenarioSpan = userContext.vars['__httpScenarioSpan'];
+    const _scenarioSpan = userContext.vars.__httpScenarioSpan;
     if (this.config.smartSampling) {
       this.tagResponseOutliers(span, res, this.outlierCriteria);
     }
 
-    if (res.timings && res.timings.phases) {
+    if (res.timings?.phases) {
       // Map timings parameters to attribute names for request phases
       const timingsMap = {
         dns: 'dns_lookup.duration',
@@ -161,7 +159,7 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
 
   otelTraceOnError(err, req, userContext, events, done) {
     const scenarioSpan = userContext.vars.__httpScenarioSpan;
-    const requestSpan = userContext.vars['__otlpHTTPRequestSpans']?.[req.uuid];
+    const requestSpan = userContext.vars.__otlpHTTPRequestSpans?.[req.uuid];
     if (!scenarioSpan) {
       return done();
     }

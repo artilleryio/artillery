@@ -1,4 +1,4 @@
-function getFruit(context, ee, next) {
+function getFruit(_context, ee, next) {
   ee.emit('counter', `fruit.${process.env.FRUIT}`, 1);
   next();
 }

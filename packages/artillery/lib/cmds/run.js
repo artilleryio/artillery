@@ -1,16 +1,16 @@
 const { Command, Flags, Args } = require('@oclif/core');
 const { CommonRunFlags } = require('../cli/common-flags');
 
-const p = require('util').promisify;
-const csv = require('csv-parse');
+const p = require('node:util').promisify;
+const _csv = require('csv-parse');
 const debug = require('debug')('commands:run');
 const dotenv = require('dotenv');
 const _ = require('lodash');
 
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const os = require('os');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const os = require('node:os');
 const createLauncher = require('../launch-platform');
 const createConsoleReporter = require('../../console-reporter');
 
@@ -100,7 +100,7 @@ RunCommand.args = {
 };
 
 let cloud;
-RunCommand.runCommandImplementation = async function (flags, argv, args) {
+RunCommand.runCommandImplementation = async (flags, argv, args) => {
   // Collect all input files for reading/parsing - via args, --config, or -i
   const inputFiles = argv.concat(flags.input || [], flags.config || []);
 
@@ -122,7 +122,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
     try {
       fs.statSync(dotEnvPath);
-    } catch (err) {
+    } catch (_err) {
       console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
     }
     dotenv.config({ path: dotEnvPath });
@@ -138,8 +138,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
   const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
   console.log('Test run id:', testRunId);
   global.artillery.testRunId = testRunId;
-
-  try {
     cloud = new CloudPlugin(null, null, { flags });
     global.artillery.cloudEnabled = cloud.enabled;
 
@@ -224,7 +222,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       runnerOpts.count = 1;
     }
 
-    let platformConfig = {};
+    const platformConfig = {};
     if (flags['platform-opt']) {
       for (const opt of flags['platform-opt']) {
         const [k, v] = opt.split('=');
@@ -253,7 +251,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       await gracefulShutdown({ exitCode: 1 });
     }
 
-    let intermediates = [];
+    const intermediates = [];
 
     const metricsToSuppress = getPluginMetricsToSuppress(script);
     // TODO: Wire up workerLog or something like that
@@ -265,25 +263,25 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     var reporters = [consoleReporter];
     if (process.env.CUSTOM_REPORTERS) {
       const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
-      customReporterNames.forEach(function (name) {
+      customReporterNames.forEach((name) => {
         const createReporter = require(name);
         const reporter = createReporter(launcher.events, flags);
         reporters.push(reporter);
       });
     }
 
-    launcher.events.on('phaseStarted', function (phase) {});
+    launcher.events.on('phaseStarted', (_phase) => {});
 
-    launcher.events.on('stats', function (stats) {
+    launcher.events.on('stats', (stats) => {
       if (artillery.runtimeOptions.legacyReporting) {
-        let report = SSMS.legacyReport(stats).report();
+        const report = SSMS.legacyReport(stats).report();
         intermediates.push(report);
       } else {
         intermediates.push(stats);
       }
     });
 
-    launcher.events.on('done', async function (stats) {
+    launcher.events.on('done', async (stats) => {
       let report;
       if (artillery.runtimeOptions.legacyReporting) {
         report = SSMS.legacyReport(stats).report();
@@ -293,7 +291,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
 
       if (flags.output) {
-        let logfile = getLogFilename(flags.output);
+        const logfile = getLogFilename(flags.output);
         if (!flags.quiet) {
           console.log('Log file: %s', logfile);
         }
@@ -414,7 +412,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         await launcher.shutdown();
       }
 
-      await (async function () {
+      await (async () => {
         if (reporters) {
           for (const r of reporters) {
             if (r.cleanup) {
@@ -441,7 +439,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
           }
           try {
             fs.rmdirSync(path.dirname(global.artillery.hasTypescriptProcessor));
-          } catch (err) {}
+          } catch (_err) {}
         }
         debug('Cleanup finished');
         process.exit(artillery.suggestedExitCode || opts.exitCode);
@@ -449,9 +447,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     }
 
     global.artillery.shutdown = gracefulShutdown;
-  } catch (err) {
-    throw err;
-  }
 };
 
 async function sendTelemetry(script, flags, extraProps) {
@@ -466,17 +461,17 @@ async function sendTelemetry(script, flags, extraProps) {
 
   const properties = {};
 
-  if (script.config && script.config.__createdByQuickCommand) {
-    properties['quick'] = true;
+  if (script.config?.__createdByQuickCommand) {
+    properties.quick = true;
   }
-  if (cloud && cloud.enabled && cloud.user) {
+  if (cloud?.enabled && cloud.user) {
     properties.cloud = cloud.user;
   }
 
-  properties['solo'] = flags.solo;
+  properties.solo = flags.solo;
   try {
     // One-way hash of target endpoint:
-    if (script.config && script.config.target) {
+    if (script.config?.target) {
       const targetHash = hash(script.config.target);
       properties.targetHash = targetHash;
     }
@@ -496,14 +491,14 @@ async function sendTelemetry(script, flags, extraProps) {
 
     let macaddr;
     const nonInternalIpv6Interfaces = [];
-    for (const [iface, descrs] of Object.entries(os.networkInterfaces())) {
+    for (const [_iface, descrs] of Object.entries(os.networkInterfaces())) {
       for (const o of descrs) {
-        if (o.internal == true) {
+        if (o.internal === true) {
           continue;
         }
 
         //prefer ipv4 interface when available
-        if (o.family != 'IPv4') {
+        if (o.family !== 'IPv4') {
           nonInternalIpv6Interfaces.push(o);
           continue;
         }
@@ -594,11 +589,14 @@ async function sendTelemetry(script, flags, extraProps) {
 
       properties.officialMonitoringReporters = script.config.plugins[
         'publish-metrics'
-      ].map((reporter) => {
-        if (OFFICIAL_REPORTERS.includes(reporter.type)) {
-          return reporter.type;
-        }
-      });
+      ]
+        .map((reporter) => {
+          if (OFFICIAL_REPORTERS.includes(reporter.type)) {
+            return reporter.type;
+          }
+          return undefined;
+        })
+        .filter((type) => type !== undefined);
     }
 
     // before/after hooks
@@ -638,7 +636,7 @@ function getLogFilename(output, nameFormat) {
   if (output) {
     try {
       isDir = fs.statSync(output).isDirectory();
-    } catch (err) {
+    } catch (_err) {
       // ENOENT do nothing, handled in checkDirExists before test run
     }
   }

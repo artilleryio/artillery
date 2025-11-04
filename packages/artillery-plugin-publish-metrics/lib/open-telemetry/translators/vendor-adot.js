@@ -1,5 +1,3 @@
-'use strict';
-
 const ADOTSupportedTraceReporters = ['datadog', 'cloudwatch'];
 const ADOTSupportedMetricReporters = [];
 
@@ -90,7 +88,7 @@ const vendorToCollectorConfigTranslators = {
           trace_buffer: 200
         },
         api: {
-          key: '${env:DD_API_KEY}'
+          key: '$' + '{env:DD_API_KEY}'
         }
       };
       collectorConfig.service.pipelines.traces = {
@@ -109,7 +107,7 @@ const vendorToCollectorConfigTranslators = {
         send_batch_max_size: 1024,
         send_batch_size: 200
       };
-      collectorConfig.exporters['awsxray'] = {
+      collectorConfig.exporters.awsxray = {
         region: config.region || 'us-east-1',
         index_all_attributes: 'true'
       };

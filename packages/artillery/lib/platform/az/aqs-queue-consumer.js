@@ -32,8 +32,6 @@ class AzureQueueConsumer extends EventEmitter {
     this.poolSize = opts.poolSize;
 
     this.consumers = [];
-
-    return this;
   }
 
   async start() {

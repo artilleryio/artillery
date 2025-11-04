@@ -7,9 +7,7 @@ const debug = require('debug')('util:aws:ensureS3BucketExists');
 const {
   S3Client,
   PutBucketLifecycleConfigurationCommand,
-  ListObjectsV2Command,
-  CreateBucketCommand,
-  GetBucketLocationCommand
+  CreateBucketCommand
 } = require('@aws-sdk/client-s3');
 
 const getAWSAccountId = require('./aws-get-account-id');

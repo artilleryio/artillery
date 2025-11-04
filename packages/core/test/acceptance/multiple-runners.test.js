@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, afterEach, beforeEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -16,15 +14,15 @@ afterEach(() => {
   server.stop();
 });
 
-test('concurrent runners', function (t) {
-  let script = require('../scripts/hello.json');
+test('concurrent runners', (t) => {
+  const script = require('../scripts/hello.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee1) {
-    runner(script).then(function (ee2) {
+  runner(script).then((ee1) => {
+    runner(script).then((ee2) => {
       let done = 0;
 
-      ee1.on('done', function (nr) {
+      ee1.on('done', (nr) => {
         const report = SSMS.legacyReport(nr).report();
         console.log('HTTP 200 count:', report.codes[200]);
         t.ok(
@@ -41,7 +39,7 @@ test('concurrent runners', function (t) {
         }
       });
 
-      ee2.on('done', function (nr) {
+      ee2.on('done', (nr) => {
         const report = SSMS.legacyReport(nr).report();
         t.ok(
           report.codes[200] <= 20,

@@ -1,6 +1,6 @@
 module.exports = { trackPets };
 
-function trackPets(req, res, context, events, done) {
+function trackPets(_req, res, _context, events, done) {
   // After every response, increment the 'pets_created' counter by 1.
   events.emit('counter', 'pets_created', 1);
 
@@ -18,7 +18,7 @@ function trackPets(req, res, context, events, done) {
 function parseServerTimingLatency(header, timingMetricName) {
   const serverTimings = header.split(',');
 
-  for (let timing of serverTimings) {
+  for (const timing of serverTimings) {
     const timingDetails = timing.split(';');
     if (timingDetails[0] === timingMetricName) {
       return parseFloat(timingDetails[1].split('=')[1]);

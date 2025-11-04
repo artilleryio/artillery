@@ -24,23 +24,17 @@ class Client {
   }
 
   async whoami() {
-    let res;
-    let body;
-    try {
-      res = await request.get(this.whoamiEndpoint, {
-        headers: this.defaultHeaders,
-        throwHttpErrors: false,
-        retry: {
-          limit: 3
-        }
-      });
+    const res = await request.get(this.whoamiEndpoint, {
+      headers: this.defaultHeaders,
+      throwHttpErrors: false,
+      retry: {
+        limit: 3
+      }
+    });
 
-      body = JSON.parse(res.body);
-      this.orgId = body.activeOrg;
-      return body;
-    } catch (err) {
-      throw err;
-    }
+    const body = JSON.parse(res.body);
+    this.orgId = body.activeOrg;
+    return body;
   }
 
   async getStashDetails({ orgId }) {

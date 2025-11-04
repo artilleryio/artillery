@@ -51,7 +51,7 @@ function setCloudwatchRetention(
       opts.incr = (opts.incr || 0) + 1;
 
       try {
-        const res = await _putCloudwatchRetentionPolicy(
+        const _res = await _putCloudwatchRetentionPolicy(
           logGroupName,
           retentionInDays,
           region
@@ -63,7 +63,7 @@ function setCloudwatchRetention(
       } catch (error) {
         const resumeTestMessage =
           'The test will continue without setting the retention policy.';
-        if (error?.code == 'AccessDeniedException') {
+        if (error?.code === 'AccessDeniedException') {
           console.log(`\n${error.message}`);
           console.log(
             '\nWARNING: Missing logs:PutRetentionPolicy permission to set CloudWatch retention policy. Please ensure the IAM role has the necessary permissions:\nhttps://docs.art/fargate#iam-permissions'
@@ -73,7 +73,7 @@ function setCloudwatchRetention(
           return;
         }
 
-        if (error?.code != 'ResourceNotFoundException') {
+        if (error?.code !== 'ResourceNotFoundException') {
           console.log(`\n${error.message}`);
           console.log(
             '\nWARNING: Unexpected error setting CloudWatch retention policy\n'

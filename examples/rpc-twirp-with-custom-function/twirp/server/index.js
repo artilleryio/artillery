@@ -1,4 +1,4 @@
-import { createServer } from 'http';
+import { createServer } from 'node:http';
 import { createTwirpServer } from 'twirpscript';
 import { habderdasherHandler } from './haberdasher/index.js';
 

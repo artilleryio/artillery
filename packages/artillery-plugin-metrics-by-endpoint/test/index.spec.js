@@ -1,10 +1,9 @@
 const { test } = require('tap');
 const { $ } = require('zx');
-const os = require('os');
+const os = require('node:os');
 
 test('reports in console and json report correctly', async (t) => {
-  const reportPath =
-    os.tmpdir() + '/artillery-plugin-metrics-by-endpoint-test.json';
+  const reportPath = `${os.tmpdir()}/artillery-plugin-metrics-by-endpoint-test.json`;
   const output =
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml -o ${reportPath}`;
 
@@ -50,8 +49,7 @@ test("Reports correctly when 'parallel' is used", async (t) => {
   const expectedVusFailed = 0;
   const requestPaths = ['/dino', '/pony', '/armadillo'];
 
-  const reportPath =
-    os.tmpdir() + '/artillery-plugin-metrics-by-endpoint-parallel-test.json';
+  const reportPath = `${os.tmpdir()}/artillery-plugin-metrics-by-endpoint-parallel-test.json`;
   const output =
     await $`../artillery/bin/run run ./test/fixtures/scenario-parallel.yml -o ${reportPath}`;
 
@@ -80,8 +78,7 @@ test("Reports correctly when 'parallel' is used", async (t) => {
 });
 
 test('Reports correctly when `groupDynamicURLs` is set to true (default)', async (t) => {
-  const reportPath =
-    os.tmpdir() + '/artillery-plugin-metrics-by-endpoint-use-path-as-name.json';
+  const reportPath = `${os.tmpdir()}/artillery-plugin-metrics-by-endpoint-use-path-as-name.json`;
   const output =
     await $`../artillery/bin/run run ./test/fixtures/scenario-templated-url.yml -o ${reportPath}`;
 
@@ -104,9 +101,9 @@ test('Reports correctly when `groupDynamicURLs` is set to true (default)', async
   );
   t.equal(
     report.aggregate.counters['plugins.metrics-by-endpoint./pony.codes.200'],
-    4
-  ),
-    'should display counter metrics for /pony as normal';
+    4,
+    'should display counter metrics for /pony as normal'
+  );
 
   t.ok(
     Object.keys(report.aggregate.summaries).includes(
@@ -166,7 +163,7 @@ test('Reports correctly when `groupDynamicURLs` is explicitly set to false', asy
   });
 
   const regularPonyCounter = aggregateCounters.filter(
-    (counter) => counter == 'plugins.metrics-by-endpoint./pony.codes.200'
+    (counter) => counter === 'plugins.metrics-by-endpoint./pony.codes.200'
   );
 
   t.ok(
@@ -178,7 +175,7 @@ test('Reports correctly when `groupDynamicURLs` is explicitly set to false', asy
     `should have counter metrics without the templated url and request name specified, got ${countersWithoutName}`
   );
   t.ok(
-    regularPonyCounter.length == 1,
+    regularPonyCounter.length === 1,
     `should display counter metrics for /pony as normal, got ${regularPonyCounter}`
   );
 });

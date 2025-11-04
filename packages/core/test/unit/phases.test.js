@@ -2,53 +2,51 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
 const createPhaser = require('../../lib/phases');
-const util = require('util');
+const util = require('node:util');
 const _ = require('lodash');
 const debug = require('debug')('test:phases');
 
 //
 // Ref: https://github.com/shoreditch-ops/artillery/issues/215
 //
-test('GH #215 regression', function (t) {
+test('GH #215 regression', (t) => {
   const phaseSpec = { duration: 2, arrivalRate: 20 };
-  let phaser = createPhaser([phaseSpec]);
-  phaser.on('phaseCompleted', function () {
+  const phaser = createPhaser([phaseSpec]);
+  phaser.on('phaseCompleted', () => {
     t.comment('+ phaseCompleted event');
   });
   // The process will lock up if the Node.js bug is triggered and the test
   // will time out.
-  phaser.on('done', function () {
+  phaser.on('done', () => {
     t.comment('+ done event');
     t.end();
   });
   phaser.run();
 });
 
-test('pause', function (t) {
+test('pause', (t) => {
   const phaseSpec = { pause: 5 };
 
   t.plan(4);
 
-  let phaser = createPhaser([phaseSpec]);
-  let startedAt = Date.now();
+  const phaser = createPhaser([phaseSpec]);
+  const startedAt = Date.now();
   let phaseStartedTimestamp;
-  phaser.on('phaseStarted', function (spec) {
+  phaser.on('phaseStarted', (spec) => {
     phaseStartedTimestamp = Date.now();
     t.same(spec, phaseSpec, 'phaseStarted event emitted with correct spec');
   });
-  phaser.on('phaseCompleted', function (spec) {
+  phaser.on('phaseCompleted', (spec) => {
     t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
     t.same(spec, phaseSpec, 'phaseCompleted event emitted with correct spec');
   });
-  phaser.on('done', function () {
-    let delta = Date.now() - startedAt;
+  phaser.on('done', () => {
+    const delta = Date.now() - startedAt;
     t.ok(
       delta >= phaseSpec.pause * 1000,
       util.format(
@@ -62,43 +60,43 @@ test('pause', function (t) {
   phaser.run();
 });
 
-test('arrivalRate set to 0 stays at 0', function (t) {
+test('arrivalRate set to 0 stays at 0', (t) => {
   const phaseSpec = { rampTo: 5, arrivalRate: 0 };
 
   t.plan(1);
-  let phaser = createPhaser([phaseSpec]);
-  phaser.on('phaseStarted', function (spec) {
+  const phaser = createPhaser([phaseSpec]);
+  phaser.on('phaseStarted', (spec) => {
     t.equal(spec.arrivalRate, 0, 'arrivalRate should start as zero');
     t.end();
   });
   phaser.run();
 });
 
-test('modifies duration in phase as expected', async function (t) {
+test('modifies duration in phase as expected', async (t) => {
   const phaseSpec = { duration: '5s', arrivalRate: 3 };
 
   const phaser = createPhaser([phaseSpec]);
 
-  phaser.on('phaseStarted', function (spec) {
+  phaser.on('phaseStarted', (spec) => {
     t.equal(spec.duration, 5, 'duration should be 5');
   });
 
   phaser.run();
 });
 
-test('modifies pause in phase as expected', async function (t) {
+test('modifies pause in phase as expected', async (t) => {
   const phaseSpec = { pause: '2s' };
 
   const phaser = createPhaser([phaseSpec]);
 
-  phaser.on('phaseStarted', function (spec) {
+  phaser.on('phaseStarted', (spec) => {
     t.equal(spec.pause, 2, 'pause should be 2');
   });
 
   phaser.run();
 });
 
-test('throws when duration is invalid', async function (t) {
+test('throws when duration is invalid', async (t) => {
   const phaseSpec = { duration: '5 potatoes', arrivalRate: 3 };
 
   let phaserError;
@@ -115,34 +113,34 @@ test('throws when duration is invalid', async function (t) {
   );
 });
 
-test('arrivalCount', function (t) {
+test('arrivalCount', (t) => {
   const phaseSpec = {
     duration: 10,
     arrivalCount: 5
   };
-  let phaser = createPhaser([phaseSpec]);
+  const phaser = createPhaser([phaseSpec]);
 
   t.plan(5);
 
-  let startedAt = Date.now();
+  const startedAt = Date.now();
   let phaseStartedTimestamp;
   let arrivals = 0;
-  phaser.on('phaseStarted', function (spec) {
+  phaser.on('phaseStarted', (spec) => {
     phaseStartedTimestamp = Date.now();
     t.same(spec, phaseSpec, 'phaseStarted event emitted with correct spec');
   });
-  phaser.on('phaseCompleted', function (spec) {
+  phaser.on('phaseCompleted', (spec) => {
     t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
     t.same(spec, phaseSpec, 'phaseCompleted event emitted with correct spec');
   });
-  phaser.on('arrival', function () {
+  phaser.on('arrival', () => {
     arrivals++;
   });
-  phaser.on('done', function () {
-    let delta = Date.now() - startedAt;
+  phaser.on('done', () => {
+    const delta = Date.now() - startedAt;
     t.ok(
       delta >= phaseSpec.duration * 1000,
       util.format(
@@ -166,7 +164,7 @@ test('arrivalCount', function (t) {
   phaser.run();
 });
 
-test('rampUp', function (t) {
+test('rampUp', (t) => {
   testRamp(t, {
     duration: 15,
     arrivalRate: 1,
@@ -174,7 +172,7 @@ test('rampUp', function (t) {
   });
 });
 
-test('rampDown', function (t) {
+test('rampDown', (t) => {
   testRamp(t, {
     duration: 15,
     arrivalRate: 20,
@@ -182,7 +180,7 @@ test('rampDown', function (t) {
   });
 });
 
-test('ramp with string inputs', function (t) {
+test('ramp with string inputs', (t) => {
   testRamp(t, {
     duration: '15',
     arrivalRate: '20',
@@ -192,13 +190,13 @@ test('ramp with string inputs', function (t) {
 });
 
 function testRamp(t, phaseSpec) {
-  let phaser = createPhaser([phaseSpec]);
+  const phaser = createPhaser([phaseSpec]);
 
   let expected = 0;
-  let periods = Math.abs(phaseSpec.rampTo - phaseSpec.arrivalRate) + 1;
-  let periodLenSec = phaseSpec.duration / periods;
+  const periods = Math.abs(phaseSpec.rampTo - phaseSpec.arrivalRate) + 1;
+  const periodLenSec = phaseSpec.duration / periods;
   for (let i = 1; i <= periods; i++) {
-    let expectedInPeriod = periodLenSec * i;
+    const expectedInPeriod = periodLenSec * i;
     expected += expectedInPeriod;
   }
   expected = Math.floor(expected);
@@ -208,7 +206,7 @@ function testRamp(t, phaseSpec) {
   let startedAt;
   let phaseStartedTimestamp;
   let arrivals = 0;
-  phaser.on('phaseStarted', function (spec) {
+  phaser.on('phaseStarted', (spec) => {
     phaseStartedTimestamp = Date.now();
     t.same(spec, phaseSpec, 'phaseStarted event emitted with correct spec');
     t.equal(
@@ -221,26 +219,24 @@ function testRamp(t, phaseSpec) {
           'duration',
           'maxVusers'
         ],
-        function (k) {
-          return !_.isUndefined(spec[k]) && typeof spec[k] != 'number';
-        }
+        (k) => !_.isUndefined(spec[k]) && typeof spec[k] !== 'number'
       ).length,
       0,
       'spec numeric values should be correctly typed'
     );
   });
-  phaser.on('phaseCompleted', function (spec) {
+  phaser.on('phaseCompleted', (spec) => {
     t.ok(
       Date.now() - phaseStartedTimestamp > 0,
       'phaseCompleted emitted after phaseStarted'
     );
     t.same(spec, phaseSpec, 'phaseCompleted event emitted with correct spec');
   });
-  phaser.on('arrival', function () {
+  phaser.on('arrival', () => {
     arrivals++;
   });
-  phaser.on('done', function () {
-    let delta = Date.now() - startedAt;
+  phaser.on('done', () => {
+    const delta = Date.now() - startedAt;
     t.ok(
       delta >= phaseSpec.duration * 1000,
       util.format(

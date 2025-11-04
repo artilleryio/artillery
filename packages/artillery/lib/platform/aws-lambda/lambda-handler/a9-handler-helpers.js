@@ -1,15 +1,13 @@
 const { spawn } = require('node:child_process');
 
-const sleep = async function (n) {
-  return new Promise((resolve, _reject) => {
-    setTimeout(function () {
+const sleep = async (n) => new Promise((resolve, _reject) => {
+    setTimeout(() => {
       resolve();
     }, n);
   });
-};
 
 async function runProcess(name, args, { env, log }) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     const proc = spawn(name, args, { env });
     let stdout = '';
     let stderr = '';

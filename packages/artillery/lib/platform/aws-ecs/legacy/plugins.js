@@ -2,8 +2,7 @@ module.exports.getAllPluginNames = function () {
   return [...this.getOfficialPlugins(), ...this.getProPlugins()];
 };
 
-module.exports.getOfficialPlugins = function () {
-  return [
+module.exports.getOfficialPlugins = () => [
     'ensure',
     'expect',
     'metrics-by-endpoint',
@@ -11,12 +10,7 @@ module.exports.getOfficialPlugins = function () {
     'apdex',
     'slack'
   ];
-};
 
-module.exports.getOfficialEngines = function () {
-  return ['playwright'];
-};
+module.exports.getOfficialEngines = () => ['playwright'];
 
-module.exports.getProPlugins = function () {
-  return ['http-ssl-auth', 'http-file-uploads', 'sqs-reporter'];
-};
+module.exports.getProPlugins = () => ['http-ssl-auth', 'http-file-uploads', 'sqs-reporter'];

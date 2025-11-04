@@ -2,19 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
 
-const fs = require('fs');
+
+const fs = require('node:fs');
 
 module.exports = Plugin;
 
-function Plugin(config, ee) {
-  ee.on('stats', function (stats) {});
+function Plugin(_config, ee) {
+  ee.on('stats', (_stats) => {});
 
-  ee.on('done', function (stats) {
+  ee.on('done', (stats) => {
     const report = stats.report();
     console.log({ report });
-    fs.appendFileSync('plugin-data.csv', report.requestsCompleted + '\n');
+    fs.appendFileSync('plugin-data.csv', `${report.requestsCompleted}\n`);
   });
 
   return this;

@@ -24,9 +24,9 @@ const debug = require('debug')('commands:run-test');
 // Verbose debugging for responses from AWS API calls, large objects etc:
 const debugVerbose = require('debug')('commands:run-test:v');
 const debugErr = require('debug')('commands:run-test:errors');
-const A = require('async');
-const path = require('path');
-const fs = require('fs');
+const _A = require('async');
+const path = require('node:path');
+const fs = require('node:fs');
 const chalk = require('chalk');
 const defaultOptions = require('rc')('artillery');
 const moment = require('moment');
@@ -39,7 +39,7 @@ const {
   resolveADOTConfigSettings
 } = require('artillery-plugin-publish-metrics');
 
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 
 const _ = require('lodash');
 
@@ -101,9 +101,7 @@ function setupConsoleReporter(quiet) {
   };
 
   if (
-    global.artillery &&
-    global.artillery.version &&
-    global.artillery.version.startsWith('2')
+    global.artillery?.version?.startsWith('2')
   ) {
     delete reporterOpts.outputFormat;
     delete reporterOpts.printPeriod;
@@ -117,8 +115,7 @@ function setupConsoleReporter(quiet) {
 
   // // Disable spinner on v1
   if (
-    global.artillery &&
-    global.artillery.version &&
+    global.artillery?.version &&
     !global.artillery.version.startsWith('2')
   ) {
     consoleReporter.spinner.stop();
@@ -150,12 +147,12 @@ function logProgress(msg, opts = {}) {
   if (typeof opts.showTimestamp === 'undefined') {
     opts.showTimestamp = true;
   }
-  if (global.artillery && global.artillery.log) {
+  if (global.artillery?.log) {
     artillery.logger(opts).log(msg);
   } else {
     consoleReporter.toggleSpinner();
     artillery.log(
-      `${msg} ${chalk.gray('[' + moment().format('HH:mm:ss') + ']')}`
+      `${msg} ${chalk.gray(`[${moment().format('HH:mm:ss')}]`)}`
     );
     consoleReporter.toggleSpinner();
   }
@@ -172,15 +169,15 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   let outputLines = [];
   let truncated = false;
 
-  console.log = (function () {
-    let orig = console.log;
-    return function () {
+  console.log = (() => {
+    const orig = console.log;
+    return (...args) => {
       try {
-        orig.apply(console, arguments);
+        orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
+          outputLines = outputLines.concat(args);
+          for (const x of args) {
             currentSize += String(x).length;
           }
         } else {
@@ -197,15 +194,15 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     };
   })();
 
-  console.error = (function () {
-    let orig = console.error;
-    return function () {
+  console.error = (() => {
+    const orig = console.error;
+    return (...args) => {
       try {
-        orig.apply(console, arguments);
+        orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
+          outputLines = outputLines.concat(args);
+          for (const x of args) {
             currentSize += String(x).length;
           }
         } else {
@@ -237,7 +234,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
     try {
       fs.statSync(absoluteScriptPath);
-    } catch (statErr) {
+    } catch (_statErr) {
       artillery.log('Could not read file:', scriptPath);
       process.exit(1);
     }
@@ -274,12 +271,8 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   if (options.maxDuration) {
-    try {
       const maxDurationMs = timeStringToMs(options.maxDuration);
       context.maxDurationMs = maxDurationMs;
-    } catch (err) {
-      throw err;
-    }
   }
 
   context.tags = parseTags(options.tags);
@@ -404,7 +397,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   if (options.cpu) {
     const n = Number(options.cpu);
-    if (isNaN(n)) {
+    if (Number.isNaN(n)) {
       artillery.log('The value of --cpu must be a number');
       process.exit(1);
     }
@@ -421,7 +414,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   if (options.memory) {
     const n = Number(options.memory);
-    if (isNaN(n)) {
+    if (Number.isNaN(n)) {
       artillery.log('The value of --memory must be a number');
       process.exit(1);
     }
@@ -545,7 +538,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         : [];
   }
 
-  if (global.artillery && global.artillery.telemetry) {
+  if (global.artillery?.telemetry) {
     global.artillery.telemetry.capture('run-test', {
       version: global.artillery.version,
       proVersion: pkg.version,
@@ -641,7 +634,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       logProgress('Checking AWS connectivity...');
       context.accountId = await getAccountId({ region: context.region });
       await Promise.all([
-        (async function (context) {
+        (async (context) => {
           const bucketName = await getBucketName();
           context.s3Bucket = bucketName;
           return context;
@@ -666,7 +659,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       if (context.tags.length > 0) {
         logProgress(
-          'Tags: ' + context.tags.map((t) => t.name + ':' + t.value).join(', ')
+          `Tags: ${context.tags.map((t) => `${t.name}:${t.value}`).join(', ')}`
         );
       }
       logProgress(`Test run ID: ${context.testId}`);
@@ -789,7 +782,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       }
 
       if (context.cliOptions.output) {
-        let logfile = getLogFilename(
+        const logfile = getLogFilename(
           context.cliOptions.output,
           defaultOptions.logFilenameFormat
         );
@@ -964,7 +957,6 @@ async function createArtilleryCluster(context) {
     apiVersion: '2014-11-13',
     region: context.region
   });
-  try {
     await ecs.send(
       new CreateClusterCommand({
         clusterName: ARTILLERY_CLUSTER_NAME,
@@ -981,9 +973,6 @@ async function createArtilleryCluster(context) {
       retries++;
       await sleep(10 * 1000);
     }
-  } catch (err) {
-    throw err;
-  }
 }
 
 //
@@ -1152,7 +1141,7 @@ async function ensureTaskExists(context) {
         }
         defaultUlimits[u.name] = {
           softLimit: u.softLimit,
-          hardLimit: typeof u.hardLimit == 'number' ? u.hardLimit : u.softLimit
+          hardLimit: typeof u.hardLimit === 'number' ? u.hardLimit : u.softLimit
         };
       });
     }
@@ -1223,7 +1212,7 @@ async function ensureTaskExists(context) {
       context.cliOptions.containerDnsServers.split(',');
   }
 
-  let taskDefinition = {
+  const taskDefinition = {
     family: context.taskName,
     containerDefinitions: [artilleryContainerDefinition],
     executionRoleArn: context.taskRoleArn
@@ -1268,7 +1257,7 @@ async function ensureTaskExists(context) {
       );
     }
     return context;
-  } catch (err) {
+  } catch (_err) {
     try {
       const response = await ecs.send(
         new RegisterTaskDefinitionCommand(taskDefinition)
@@ -1292,16 +1281,12 @@ async function checkCustomTaskRole(context) {
   }
 
   const iam = new IAMClient({ region: global.artillery.awsRegion });
-  try {
     const roleData = await iam.send(
       new GetRoleCommand({ RoleName: context.customTaskRoleName })
     );
     context.customRoleArn = roleData.Role.Arn;
     context.taskRoleArn = roleData.Role.Arn;
     debug(roleData);
-  } catch (err) {
-    throw err;
-  }
 }
 
 async function gcQueues(context) {
@@ -1321,7 +1306,7 @@ async function gcQueues(context) {
     debug(err);
   }
 
-  if (data && data.QueueUrls && data.QueueUrls.length > 0) {
+  if (data?.QueueUrls && data.QueueUrls.length > 0) {
     for (const qu of data.QueueUrls) {
       try {
         const data = await sqs.send(
@@ -1330,7 +1315,7 @@ async function gcQueues(context) {
             AttributeNames: ['CreatedTimestamp']
           })
         );
-        const ts = Number(data.Attributes['CreatedTimestamp']) * 1000;
+        const ts = Number(data.Attributes.CreatedTimestamp) * 1000;
         // Delete after 96 hours
         if (Date.now() - ts > 96 * 60 * 60 * 1000) {
           await sqs.send(new DeleteQueueCommand({ QueueUrl: qu }));
@@ -1381,13 +1366,8 @@ async function createQueue(context) {
       VisibilityTimeout: '600' // 10 minutes
     }
   };
-
-  try {
     const result = await sqs.send(new CreateQueueCommand(params));
     context.sqsQueueUrl = result.QueueUrl;
-  } catch (err) {
-    throw err;
-  }
 
   // Wait for the queue to be available:
   let waited = 0;
@@ -1405,7 +1385,7 @@ async function createQueue(context) {
         await sleep(10 * 1000);
         waited += 10 * 1000;
       }
-    } catch (err) {
+    } catch (_err) {
       await sleep(10 * 1000);
       waited += 10 * 1000;
     }
@@ -1528,7 +1508,7 @@ async function generateTaskOverrides(context) {
   });
 
   if (context.dotenv) {
-    let extraEnv = [];
+    const extraEnv = [];
     for (const [name, value] of Object.entries(context.dotenv)) {
       extraEnv.push({ name, value });
     }
@@ -1661,8 +1641,6 @@ async function launchLeadTask(context) {
     name: 'IS_LEADER',
     value: 'true'
   });
-
-  try {
     const runData = await ecs.send(new RunTaskCommand(leaderParams));
     if (runData.failures.length > 0) {
       if (runData.failures.length === context.count) {
@@ -1685,9 +1663,6 @@ async function launchLeadTask(context) {
     artillery.globalEvents.emit('metadata', {
       platformMetadata: { taskArns: context.taskArns }
     });
-  } catch (runErr) {
-    throw runErr;
-  }
 
   return context;
 }
@@ -1712,8 +1687,8 @@ async function ecsRunTask(context) {
       throw new Error('Max retries exceeded');
     }
 
-    let launchCount = tasksRemaining <= 10 ? tasksRemaining : 10;
-    let params = Object.assign(
+    const launchCount = tasksRemaining <= 10 ? tasksRemaining : 10;
+    const params = Object.assign(
       { count: launchCount },
       JSON.parse(JSON.stringify(context.defaultECSParams))
     );
@@ -1825,7 +1800,7 @@ async function waitForTasks2(context) {
     debug('Waiting on pending tasks');
     if (silentWaitTimeout.timedout()) {
       const statusCounts = _.countBy(ecsData.tasks, 'lastStatus');
-      let statusSummary = _.map(statusCounts, (count, status) => {
+      const statusSummary = _.map(statusCounts, (count, status) => {
         const displayStatus =
           status === 'RUNNING' ? 'ready' : status.toLowerCase();
         let displayStatusChalked = displayStatus;
@@ -1838,7 +1813,7 @@ async function waitForTasks2(context) {
         return `${displayStatusChalked}: ${count}`;
       }).join(' / ');
 
-      logProgress('Waiting for workers to start: ' + statusSummary);
+      logProgress(`Waiting for workers to start: ${statusSummary}`);
     }
 
     if (waitTimeout.timedout()) {
@@ -1883,7 +1858,7 @@ async function waitForWorkerSync(context) {
         synced = true;
         break;
       }
-    } catch (err) {
+    } catch (_err) {
       attempts++;
     }
     await sleep(intervalSec * 1000);
@@ -1952,7 +1927,7 @@ async function listen(context, ee) {
           )
         );
       }
-      if (body.exitCode != 21) {
+      if (body.exitCode !== 21) {
         artillery.log(
           chalk.yellow(
             `Worker exited with an error, worker ID = ${attrs.workerId.StringValue}`
@@ -1983,7 +1958,7 @@ async function listen(context, ee) {
       if (body.type === 'ensure') {
         try {
           context.ensureSpec = JSON.parse(util.atob(body.msg));
-        } catch (parseErr) {
+        } catch (_parseErr) {
           console.error('Error processing ensure directive');
         }
       }
@@ -2052,7 +2027,7 @@ function getLogFilename(output, userDefaultFilenameFormat) {
   if (output) {
     try {
       isDir = fs.statSync(output).isDirectory();
-    } catch (err) {
+    } catch (_err) {
       // ENOENT, don't need to do anything
     }
   }

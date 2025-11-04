@@ -1,6 +1,6 @@
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
+const https = require('node:https');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const createTestServer = () => {
   const options = {
@@ -9,14 +9,14 @@ const createTestServer = () => {
     path: '/'
   };
 
-  const server = https.createServer(options, function (req, res) {
+  const server = https.createServer(options, (_req, res) => {
     console.log('+');
     res.writeHead(200);
     res.end('hello\n');
   });
 
-  return new Promise((resolve, reject) => {
-    server.listen(0, function () {
+  return new Promise((resolve, _reject) => {
+    server.listen(0, () => {
       resolve({ server, port: server.address().port });
     });
   });

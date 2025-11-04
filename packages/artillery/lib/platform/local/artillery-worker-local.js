@@ -3,18 +3,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const EventEmitter = require('eventemitter3');
-const { Worker } = require('worker_threads');
-const path = require('path');
+const { Worker } = require('node:worker_threads');
+const path = require('node:path');
 
 const STATES = require('../worker-states');
 
 const awaitOnEE = require('../../util/await-on-ee');
 
 const returnWorkerEnv = (needsSourcemap) => {
-  let env = { ...process.env };
+  const env = { ...process.env };
 
   if (needsSourcemap) {
-    env['NODE_OPTIONS'] = process.env.NODE_OPTIONS
+    env.NODE_OPTIONS = process.env.NODE_OPTIONS
       ? `${process.env.NODE_OPTIONS} --enable-source-maps`
       : '--enable-source-maps';
   }
@@ -45,7 +45,7 @@ class ArtilleryWorker {
     });
 
     //eslint-disable-next-line handle-callback-err
-    this.worker.on('messageerror', (err) => {});
+    this.worker.on('messageerror', (_err) => {});
 
     // TODO: Expose performance metrics via getHeapSnapshot() and performance object.
 

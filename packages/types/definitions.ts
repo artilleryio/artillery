@@ -1,4 +1,4 @@
-import { ExpectPluginConfig, ExpectPluginMetrics } from './plugins/expect';
+import type { ExpectPluginConfig, ExpectPluginMetrics } from './plugins/expect';
 
 export type TestScript = {
   /**

@@ -40,6 +40,7 @@
     "temp": "^0.9.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.3",
     "@oclif/test": "^2.2.10",
     "@types/chai": "^4",
     "@types/gradient-string": "^1.1.2",

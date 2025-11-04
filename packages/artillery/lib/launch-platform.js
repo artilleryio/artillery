@@ -8,7 +8,7 @@ const { loadPlugins, loadPluginsConfig } = require('./load-plugins');
 const EventEmitter = require('eventemitter3');
 const debug = require('debug')('core');
 
-const p = require('util').promisify;
+const p = require('node:util').promisify;
 const _ = require('lodash');
 
 const PlatformLocal = require('./platform/local');
@@ -58,19 +58,17 @@ class Launcher {
     } else if (launcherOpts.platform === 'az:aci') {
       this.platform = new PlatformAzureACI(script, payload, opts, launcherOpts);
     } else {
-      throw new Error('Unknown platform: ' + launcherOpts.platform);
+      throw new Error(`Unknown platform: ${launcherOpts.platform}`);
     }
 
     this.phaseStartedEventsSeen = {};
     this.phaseCompletedEventsSeen = {};
 
     this.eventsByWorker = {};
-
-    return this;
   }
 
   async initWorkerEvents(workerEvents) {
-    workerEvents.on('workerError', (workerId, message) => {
+    workerEvents.on('workerError', (_workerId, message) => {
       const { id, error, level, aggregatable, logs } = message;
 
       if (level !== 'warn') {
@@ -89,7 +87,7 @@ class Launcher {
       this.events.emit('workerError', message);
     });
 
-    workerEvents.on('phaseStarted', (workerId, message) => {
+    workerEvents.on('phaseStarted', (_workerId, message) => {
       // Note - we send only the first event for a phase, not all of them
       if (
         typeof this.phaseStartedEventsSeen[message.phase.index] === 'undefined'
@@ -111,7 +109,7 @@ class Launcher {
       }
     });
 
-    workerEvents.on('phaseCompleted', (workerId, message) => {
+    workerEvents.on('phaseCompleted', (_workerId, message) => {
       if (
         typeof this.phaseCompletedEventsSeen[message.phase.index] ===
         'undefined'
@@ -136,7 +134,7 @@ class Launcher {
     // We are not going to receive stats events from workers
     // which have zero arrivals for a phase. (This can only happen
     // in "distribute" mode.)
-    workerEvents.on('stats', (workerId, message) => {
+    workerEvents.on('stats', (_workerId, message) => {
       const workerStats = SSMS.deserializeMetrics(message.stats);
       const period = workerStats.period;
       if (typeof this.metricsByPeriod[period] === 'undefined') {
@@ -153,11 +151,11 @@ class Launcher {
       );
     });
 
-    workerEvents.on('log', async (workerId, message) => {
+    workerEvents.on('log', async (_workerId, message) => {
       artillery.globalEvents.emit('log', ...message.args);
     });
 
-    workerEvents.on('setSuggestedExitCode', (workerId, message) => {
+    workerEvents.on('setSuggestedExitCode', (_workerId, message) => {
       artillery.suggestedExitCode = message.code;
     });
   }
@@ -289,7 +287,7 @@ class Launcher {
       return acc;
     }, {});
 
-    for (const [logMessage, messageObjects] of Object.entries(readyMessages)) {
+    for (const [_logMessage, messageObjects] of Object.entries(readyMessages)) {
       if (messageObjects[0].error) {
         global.artillery.log(
           `[${messageObjects[0].id}] ${messageObjects[0].error.message}`,
@@ -423,7 +421,7 @@ class Launcher {
 
     // Unload plugins
     // TODO: v3 plugins
-    if (global.artillery && global.artillery.plugins) {
+    if (global.artillery?.plugins) {
       for (const o of global.artillery.plugins) {
         if (o.plugin.cleanup) {
           try {

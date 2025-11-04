@@ -2,9 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const { test, beforeEach, afterEach, before } = require('tap');
 const SocketIoEngine = require('../../lib/engine_socketio');
 
@@ -94,7 +92,7 @@ test('Passive listening', (t) => {
   });
 });
 
-test('Sends event', function (t) {
+test('Sends event', (t) => {
   const testScript = {
     ...script,
     config: {

@@ -1,4 +1,4 @@
-// @ts-ignore
+// @ts-expect-error
 import { z } from 'zod';
 
 const AddressSchema = z.object({

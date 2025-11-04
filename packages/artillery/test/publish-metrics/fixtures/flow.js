@@ -1,10 +1,10 @@
-'use strict';
 
-async function simpleCheck(page, userContext, events, test) {
+
+async function simpleCheck(page, _userContext, _events, test) {
   await test.step('Go to Artillery', async () => {
     const requestPromise = page.waitForRequest('https://artillery.io/');
     await page.goto('https://artillery.io/');
-    const req = await requestPromise;
+    const _req = await requestPromise;
   });
   await test.step('Go to docs', async () => {
     await page.getByRole('link', { name: 'Docs' }).first().click();
@@ -24,11 +24,11 @@ async function simpleCheck(page, userContext, events, test) {
   });
 }
 
-async function simpleError(page, userContext, events, test) {
+async function simpleError(page, _userContext, _events, test) {
   await test.step('Go to Artillery', async () => {
     const requestPromise = page.waitForRequest('https://artillery.io/');
     await page.goto('https://artillery.io/');
-    const req = await requestPromise;
+    const _req = await requestPromise;
   });
   await test.step('Go to docs', async () => {
     await page.getByRole('link', { name: 'Docs' }).first().click();

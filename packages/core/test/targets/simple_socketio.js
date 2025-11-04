@@ -1,4 +1,4 @@
-const http = require('http');
+const http = require('node:http');
 const socketio = require('socket.io');
 const debug = require('debug')('target:socketio');
 
@@ -34,7 +34,7 @@ function createTestServer() {
   io.on('connect', function connection(ws) {
     debug('+ Socket.io connection');
 
-    setTimeout(function () {
+    setTimeout(() => {
       ws.emit('hello', 'whatever');
     }, 500);
 
@@ -73,13 +73,13 @@ function createTestServer() {
     });
   });
 
-  function handler(req, res) {
+  function handler(_req, res) {
     res.writeHead(404);
     res.end('No http pages here');
   }
 
-  return new Promise((resolve, reject) => {
-    server.listen(0, function () {
+  return new Promise((resolve, _reject) => {
+    server.listen(0, () => {
       resolve({ server, io, port: server.address().port });
     });
   });

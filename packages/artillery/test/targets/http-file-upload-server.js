@@ -1,6 +1,6 @@
 const Hapi = require('@hapi/hapi');
-const path = require('path');
-const crypto = require('crypto');
+const path = require('node:path');
+const crypto = require('node:crypto');
 
 const createTestServer = async (port) => {
   const server = Hapi.server({
@@ -11,7 +11,7 @@ const createTestServer = async (port) => {
   server.route({
     method: 'GET',
     path: '/',
-    handler: (request, h) => {
+    handler: (_request, _h) => {
       return {
         status: 'success',
         message: 'Hello!'
@@ -32,7 +32,7 @@ const createTestServer = async (port) => {
         }
       }
     },
-    handler: async (request, h) => {
+    handler: async (request, _h) => {
       const data = request.payload;
       const files = [];
       const fields = {};

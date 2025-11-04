@@ -1,7 +1,7 @@
 const tap = require('tap');
 const { execute, generateTmpReportPath } = require('../helpers');
 const { checkForNegativeValues } = require('../helpers/expectations');
-const fs = require('fs');
+const fs = require('node:fs');
 
 let reportFilePath;
 tap.beforeEach(async (t) => {
@@ -30,7 +30,7 @@ tap.test('async hooks with ESM', async (t) => {
   );
 
   t.equal(
-    json.aggregate.counters['hey_from_esm'],
+    json.aggregate.counters.hey_from_esm,
     10,
     'Should have emitted 10 custom metrics from ts processor'
   );

@@ -1,10 +1,10 @@
-'use strict';
+
 
 const { test } = require('tap');
 const sinon = require('sinon');
 
-const fs = require('fs');
-const os = require('os');
+const fs = require('node:fs');
+const os = require('node:os');
 
 const util = require('../../lib/util');
 const utilConfig = require('../../lib/utils-config');
@@ -16,7 +16,7 @@ test('util - setup', (t) => {
   t.end();
 });
 
-test('formatting durations', function (t) {
+test('formatting durations', (t) => {
   t.equal(
     util.formatDuration(1000),
     '1 second',
@@ -68,7 +68,7 @@ test('formatting durations', function (t) {
   t.end();
 });
 
-test('readArtilleryConfig', function (t) {
+test('readArtilleryConfig', (t) => {
   const readFileSyncStub = sandbox
     .stub(fs, 'readFileSync')
     .withArgs(`${os.homedir()}/.artilleryrc`);
@@ -92,7 +92,7 @@ test('readArtilleryConfig', function (t) {
   t.end();
 });
 
-test('updateArtilleryConfig', function (t) {
+test('updateArtilleryConfig', (t) => {
   const existingConf = {
     property: 'value'
   };
