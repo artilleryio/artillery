@@ -47,6 +47,7 @@ jobs:
       - id: generate-matrix
         run: |
           RESULT=$(node .github/workflows/scripts/get-tests-in-package-location.js)
+          echo $RESULT
           echo "matrix=$RESULT" >> $GITHUB_OUTPUT
 
   run-tests:
