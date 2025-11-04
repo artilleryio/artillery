@@ -34,6 +34,5 @@ app.use(async (req, _ctx, next) => {
 });
 
 createServer(app).listen(PORT, () =>
-  // eslint-disable-next-line no-undef
   console.log(`Server listening on port ${PORT}`)
 );

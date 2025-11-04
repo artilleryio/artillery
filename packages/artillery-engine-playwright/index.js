@@ -184,14 +184,13 @@ class PlaywrightEngine {
         await context.addInitScript(WEB_VITALS_SCRIPT);
         await context.addInitScript(() => {
           ['onLCP', 'onFCP', 'onCLS', 'onTTFB', 'onINP'].forEach((hook) => {
-            // eslint-disable-next-line no-undef
             webVitals[hook]((metric) => {
               console.trace(
                 JSON.stringify({
                   name: metric.name,
                   value: metric.value,
                   metric: metric,
-                  url: window.location.href // eslint-disable-line  no-undef
+                  url: window.location.href
                 })
               );
             });
@@ -220,8 +219,8 @@ class PlaywrightEngine {
           }
 
           try {
-            const performanceTimingJson = await page.evaluate(
-              () => JSON.stringify(window.performance.timing) // eslint-disable-line  no-undef
+            const performanceTimingJson = await page.evaluate(() =>
+              JSON.stringify(window.performance.timing)
             );
             const performanceTiming = JSON.parse(performanceTimingJson);
 
@@ -316,7 +315,7 @@ class PlaywrightEngine {
             const { usedJSHeapSize } = JSON.parse(
               await page.evaluate(() =>
                 JSON.stringify({
-                  usedJSHeapSize: window.performance.memory.usedJSHeapSize // eslint-disable-line  no-undef
+                  usedJSHeapSize: window.performance.memory.usedJSHeapSize
                 })
               )
             );

@@ -270,7 +270,7 @@ function runScenario(script, metrics, runState, contextVars, options) {
         const w = engineUtil.template(scenario.weight, {
           vars: variableValues
         });
-        scenario.weight = Number.isNaN(parseInt(w, 10)) ? 0 : parseInt(w, 10); //eslint-disable-line radix
+        scenario.weight = Number.isNaN(parseInt(w, 10)) ? 0 : parseInt(w, 10);
         debug(
           `scenario ${scenario.name} weight has been set to ${scenario.weight}`
         );

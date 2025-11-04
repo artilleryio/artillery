@@ -1,5 +1,3 @@
-/* eslint-disable no-warning-comments */
-
 const {
   ECSClient,
   CreateClusterCommand,

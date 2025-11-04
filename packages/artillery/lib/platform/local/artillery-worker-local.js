@@ -44,7 +44,6 @@ class ArtilleryWorker {
       this.events.emit('exit', exitCode);
     });
 
-    //eslint-disable-next-line handle-callback-err
     this.worker.on('messageerror', (_err) => {});
 
     // TODO: Expose performance metrics via getHeapSnapshot() and performance object.
