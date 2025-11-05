@@ -186,7 +186,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
         requestSpans.filter(
           (span) =>
             span.attributes['http.status_code'] &&
-            span.attributes['http.status_code'] === statusCode
+            span.attributes['http.status_code'] === Number(statusCode)
         ).length,
         reportSummary.counters[metric],
         `The number of spans with status code ${statusCode} should match the number of requests with that status code`
