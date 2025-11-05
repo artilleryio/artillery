@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { type Page, expect } from '@playwright/test';
 
 export const goToDocsAndSearch = async (page: Page, step) => {
   await step('go_to_artillery_io', async () => {
@@ -8,9 +8,7 @@ export const goToDocsAndSearch = async (page: Page, step) => {
   await step('go_to_docs', async () => {
     await page.getByRole('link', { name: 'Docs' }).first().click();
     await expect(page).toHaveURL('/docs');
-    await expect(
-      page.getByText('Get started')
-    ).toBeVisible();
+    await expect(page.getByText('Get started')).toBeVisible();
   });
 
   await step('search_for_ts_doc_and_goto', async () => {

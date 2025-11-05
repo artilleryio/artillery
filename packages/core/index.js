@@ -1,4 +1,4 @@
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const chalk = require('chalk');
 
 // NOTE: This may be called more than once, and so should be non-destructive
@@ -10,7 +10,7 @@ async function updateGlobalObject(opts = {}) {
     typeof process.env.ARTILLERY_EXTENDED_HTTP_METRICS !== 'undefined';
 
   global.artillery.metrics = global.artillery.metrics || {};
-  global.artillery.metrics.event = async function (msg, opts) {
+  global.artillery.metrics.event = async (msg, opts) => {
     if (opts.level === 'error') {
       console.log(chalk.red(msg));
     } else {
@@ -34,7 +34,7 @@ async function updateGlobalObject(opts = {}) {
       this.extensionEvents.push(event);
     };
 
-  if (!global.artillery.hasOwnProperty('globalEvents')) {
+  if (!Object.hasOwn(global.artillery, 'globalEvents')) {
     Object.defineProperty(global.artillery, 'globalEvents', {
       value: new EventEmitter()
     });
@@ -42,7 +42,7 @@ async function updateGlobalObject(opts = {}) {
 
   global.artillery.__SSMS = require('./lib/ssms').SSMS;
 
-  if (!global.artillery.hasOwnProperty('suggestedExitCode')) {
+  if (!Object.hasOwn(global.artillery, 'suggestedExitCode')) {
     Object.defineProperty(global.artillery, 'suggestedExitCode', {
       get() {
         return global.artillery._exitCode;
@@ -61,19 +61,17 @@ async function updateGlobalObject(opts = {}) {
 
   global.artillery.logger =
     global.artillery.logger ||
-    function (opts) {
-      return {
-        log: (...args) => {
-          global.artillery.globalEvents.emit('log', opts, ...args);
-        }
-      };
-    };
+    ((opts) => ({
+      log: (...args) => {
+        global.artillery.globalEvents.emit('log', opts, ...args);
+      }
+    }));
 
   global.artillery.log =
     global.artillery.log ||
-    function (...args) {
+    ((...args) => {
       global.artillery.globalEvents.emit('log', {}, ...args);
-    };
+    });
 
   if (opts.version) {
     global.artillery.version = opts.version;

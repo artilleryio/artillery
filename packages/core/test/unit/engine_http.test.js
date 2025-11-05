@@ -2,16 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
 const sinon = require('sinon');
 
 const HttpEngine = require('../../lib/engine_http');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const { updateGlobalObject } = require('../../index');
 const nock = require('nock');
-const zlib = require('zlib');
+const zlib = require('node:zlib');
 
 const THINKTIME_SEC = 1;
 
@@ -19,29 +17,29 @@ const script = {
   config: {
     target: 'http://localhost:8888',
     processor: {
-      f: function (context, _ee, next) {
+      f: (context, _ee, next) => {
         context.vars.newVar = 1234;
         return next();
       },
 
-      inc: function (context, _ee, next) {
+      inc: (context, _ee, next) => {
         context.vars.inc = context.vars.$loopCount;
         return next();
       },
 
-      processLoopElement: function (context, _ee, next) {
+      processLoopElement: (context, _ee, next) => {
         context.vars.loopElement = context.vars.$loopElement;
         return next();
       },
 
-      loopChecker: function (context, next) {
+      loopChecker: (context, next) => {
         if (context.vars.someCounter === undefined) {
           context.vars.someCounter = 1;
         }
 
         context.vars.someCounter++;
 
-        let cond = context.vars.someCounter < 3;
+        const cond = context.vars.someCounter < 3;
         console.log(context.vars.someCounter);
         return next(cond);
       }
@@ -67,12 +65,12 @@ const script = {
   ]
 };
 
-test('HTTP engine', function (tap) {
+test('HTTP engine', (tap) => {
   tap.before(async () => await updateGlobalObject());
 
   tap.beforeEach(() => nock.cleanAll());
 
-  tap.test('HTTP engine interface', function (t) {
+  tap.test('HTTP engine interface', (t) => {
     const engine = new HttpEngine(script);
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
@@ -86,7 +84,7 @@ test('HTTP engine', function (tap) {
     t.end();
   });
 
-  tap.test('HTTP virtual user', function (t) {
+  tap.test('HTTP virtual user', (t) => {
     const engine = new HttpEngine(script);
     const ee = new EventEmitter();
     const spy = sinon.spy(console, 'log');
@@ -118,7 +116,7 @@ test('HTTP engine', function (tap) {
 
       const expectedLog = '# This is printed from the script with "log": 1234';
       let seen = false;
-      spy.args.forEach(function (args) {
+      spy.args.forEach((args) => {
         if (args[0] === expectedLog) {
           t.comment(`string: "${args[0]}" found`);
           seen = true;
@@ -268,7 +266,7 @@ test('HTTP engine', function (tap) {
     });
   });
 
-  tap.test('custom headers', function (t) {
+  tap.test('custom headers', (t) => {
     const customHeader = 'x-artillery-header';
     const customHeaderValue = 'abcde';
     const target = nock('http://localhost:8888')
@@ -316,7 +314,7 @@ test('HTTP engine', function (tap) {
     });
   });
 
-  tap.test('custom cookie js', function (t) {
+  tap.test('custom cookie js', (t) => {
     const target = nock('http://localhost:8888')
       .get('/')
       .reply(200, function () {
@@ -333,7 +331,7 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          setCookie: function (requestParams, context, ee, next) {
+          setCookie: (requestParams, _context, _ee, next) => {
             requestParams.cookie = { something: '1234' };
             return next();
           }
@@ -368,7 +366,7 @@ test('HTTP engine', function (tap) {
     });
   });
 
-  tap.test('custom cookie js in loop', function (t) {
+  tap.test('custom cookie js in loop', (t) => {
     const target = nock('http://localhost:8888')
       .get('/')
       .reply(200, function () {
@@ -385,7 +383,7 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          setCookie: function (requestParams, context, ee, next) {
+          setCookie: (requestParams, _context, _ee, next) => {
             requestParams.cookie = { something: '1234' };
             return next();
           }
@@ -425,7 +423,7 @@ test('HTTP engine', function (tap) {
     });
   });
 
-  tap.test('url and uri parameters', function (t) {
+  tap.test('url and uri parameters', (t) => {
     const target = nock('http://localhost:8888')
       .get('/hello?hello=world')
       .reply(200, 'ok');
@@ -434,11 +432,11 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          rewriteUrl: function (req, _context, _ee, next) {
+          rewriteUrl: (req, _context, _ee, next) => {
             req.uri = '/hello';
             return next();
           },
-          printHello: function (_req, _context, _ee, next) {
+          printHello: (_req, _context, _ee, next) => {
             console.log('# hello from printHello hook!');
             return next();
           }
@@ -482,7 +480,7 @@ test('HTTP engine', function (tap) {
 
       const expectedLog = '# hello from printHello hook!';
       let seen = false;
-      spy.args.forEach(function (args) {
+      spy.args.forEach((args) => {
         if (args[0] === expectedLog) {
           t.comment(`string: "${args[0]}" found`);
           seen = true;
@@ -495,14 +493,14 @@ test('HTTP engine', function (tap) {
     });
   });
 
-  tap.test('Query string', function (t) {
-    let endpoint = '';
+  tap.test('Query string', (t) => {
+    const _endpoint = '';
 
     const script = {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          checkArrayValueQuery: function (_req, res, vuContext, _events, next) {
+          checkArrayValueQuery: (_req, _res, _vuContext, _events, next) => {
             t.equal(
               _req.searchParams.toString(),
               'hello=world&ids=1&ids=2&ids=3',
@@ -510,13 +508,7 @@ test('HTTP engine', function (tap) {
             );
             return next();
           },
-          checkTemplateValueQuery: function (
-            _req,
-            res,
-            vuContext,
-            _events,
-            next
-          ) {
+          checkTemplateValueQuery: (_req, _res, _vuContext, _events, next) => {
             t.equal(
               _req.searchParams.toString(),
               'hello=world&ids=1&ids=2&ids=3&name=Nalini',
@@ -524,7 +516,7 @@ test('HTTP engine', function (tap) {
             );
             return next();
           },
-          getName: function (req, context, ee, next) {
+          getName: (_req, context, _ee, next) => {
             context.vars.name = 'Nalini';
             return next();
           }
@@ -594,7 +586,7 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          extractAnswer: function (_req, res, vuContext, _events, next) {
+          extractAnswer: (_req, res, vuContext, _events, next) => {
             vuContext.answer = res.body;
             return next();
           }
@@ -644,7 +636,7 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          setEndpoint: function (context, ee, next) {
+          setEndpoint: (context, ee, next) => {
             t.equal(
               context.scenario.name,
               'beforeScenarioTest',
@@ -713,7 +705,7 @@ test('HTTP engine', function (tap) {
       config: {
         target: 'http://localhost:8888',
         processor: {
-          checkProductsCount: function (context, _ee, next) {
+          checkProductsCount: (context, _ee, next) => {
             t.equal(
               context.scenario.name,
               'afterScenarioTest',
@@ -831,7 +823,7 @@ test('HTTP engine', function (tap) {
       vars: {}
     };
 
-    runScenario(initialContext, function (err) {
+    runScenario(initialContext, (err) => {
       if (err) {
         t.fail();
       }
@@ -851,7 +843,7 @@ test('HTTP engine', function (tap) {
     });
   });
 
-  test('proxies', function (t) {
+  test('proxies', (t) => {
     t.plan(4);
     const script = {
       config: {
@@ -928,7 +920,7 @@ test('HTTP engine', function (tap) {
     delete process.env.HTTPS_PROXY;
   });
 
-  tap.test('followRedirect', function (t) {
+  tap.test('followRedirect', (t) => {
     const target = nock('http://localhost:8888')
       .get('/')
       .reply(302, undefined, {
@@ -1036,7 +1028,7 @@ test('HTTP engine', function (tap) {
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    runScenario(initialContext, function (err) {
+    runScenario(initialContext, (err) => {
       if (err) {
         t.fail();
       }
@@ -1114,7 +1106,7 @@ test('HTTP engine', function (tap) {
       }
     };
 
-    runScenario(initialContext, function (err) {
+    runScenario(initialContext, (err) => {
       if (err) {
         t.fail();
       }

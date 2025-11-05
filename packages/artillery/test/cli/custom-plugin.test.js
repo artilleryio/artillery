@@ -1,7 +1,7 @@
 const { test, beforeEach, before, afterEach } = require('tap');
 const { $ } = require('zx');
-const http = require('http');
-const path = require('path');
+const http = require('node:http');
+const path = require('node:path');
 const { toCorrectPath } = require('../helpers');
 
 const A9 = toCorrectPath(

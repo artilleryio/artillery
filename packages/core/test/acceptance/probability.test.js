@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -20,10 +18,10 @@ test('request probability', (t) => {
   const script = require('../scripts/probability.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      let requests = report.requestsCompleted;
+      const requests = report.requestsCompleted;
       t.ok(
         requests < 130,
         `Should have completed ~10% = ~100 requests in total. Actually completed ${requests} requests`

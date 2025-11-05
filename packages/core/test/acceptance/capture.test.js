@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach } = require('tap');
 const runner = require('../..').runner.runner;
 const nock = require('nock');
@@ -9,7 +7,7 @@ const { SSMS } = require('../../lib/ssms');
 let xmlCapture = null;
 try {
   xmlCapture = require('artillery-xml-capture');
-} catch (e) {}
+} catch (_e) {}
 
 beforeEach(() => nock.cleanAll());
 
@@ -55,8 +53,8 @@ test('Capture - headers', (t) => {
       return { success: true };
     });
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -123,8 +121,8 @@ test('Capture - selector', (t) => {
         </html>`,
       { 'content-type': 'text/html' }
     )
-    .get(/product\/[^\/]+$/)
-    .reply(function (uri) {
+    .get(/product\/[^/]+$/)
+    .reply((uri) => {
       if (productLinks.includes(uri)) {
         return [200];
       }
@@ -132,8 +130,8 @@ test('Capture - selector', (t) => {
       return [404];
     });
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -205,7 +203,7 @@ test('Capture - JSON', (t) => {
   let id;
   const target = nock(script.config.target)
     .persist()
-    .post('/pets', function (body) {
+    .post('/pets', (body) => {
       id = uuid.v4();
       db[id] = {
         ...body,
@@ -214,10 +212,8 @@ test('Capture - JSON', (t) => {
 
       return true;
     })
-    .reply(201, function () {
-      return { id };
-    })
-    .get(/pets\/[^\/]+$/)
+    .reply(201, () => ({ id }))
+    .get(/pets\/[^/]+$/)
     .reply(200);
 
   const data = [
@@ -231,8 +227,8 @@ test('Capture - JSON', (t) => {
     ['pony', 'Tiki']
   ];
 
-  runner(script, data, {}).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script, data, {}).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.ok(report.codes[201] > 0, 'There should be 201s in the test');
@@ -303,7 +299,7 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
   let id;
   const target = nock(script.config.target)
     .persist()
-    .post('/pets', function (body) {
+    .post('/pets', (body) => {
       id = uuid.v4();
       db[id] = {
         ...body,
@@ -312,10 +308,8 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
 
       return true;
     })
-    .reply(201, function () {
-      return { id };
-    })
-    .get(/pets\/[^\/]+$/)
+    .reply(201, () => ({ id }))
+    .get(/pets\/[^/]+$/)
     .reply(200);
 
   const data = [
@@ -329,8 +323,8 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
     ['pony', 'Tiki']
   ];
 
-  runner(script, data, {}).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script, data, {}).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.ok(report.codes[201] > 0, 'There should be 201s in the test');
@@ -418,8 +412,8 @@ test('Capture - XML', (t) => {
 </soap:Envelope>`,
       { 'content-type': 'application/xml' }
     )
-    .get(/journey\/[^\/]+$/)
-    .reply(function (uri) {
+    .get(/journey\/[^/]+$/)
+    .reply((uri) => {
       if (uri.endsWith('/1')) {
         return [
           200,
@@ -455,8 +449,8 @@ test('Capture - XML', (t) => {
     ['pony', 'Tiki']
   ];
 
-  runner(script, data, {}).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script, data, {}).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.ok(target.isDone(), 'Should have made a request to all the endpoints');
@@ -503,7 +497,7 @@ test('Capture - Random value from array', (t) => {
     ]
   };
 
-  const target = nock(script.config.target)
+  const _target = nock(script.config.target)
     .persist()
     .get('/devices')
     .reply(
@@ -538,8 +532,8 @@ test('Capture - Random value from array', (t) => {
       ],
       { 'content-type': 'application/json' }
     )
-    .put(/devices\/[^\/]+$/)
-    .reply(function (uri) {
+    .put(/devices\/[^/]+$/)
+    .reply((uri) => {
       if (
         uri.endsWith('e87c45241a484a3db9730ae4b98678d4') ||
         uri.endsWith('4dcb754442b1285785b81833c77f4a46')
@@ -550,7 +544,7 @@ test('Capture - Random value from array', (t) => {
       return [404];
     });
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
@@ -615,7 +609,7 @@ test('Capture - RegExp', (t) => {
   let id;
   const target = nock(script.config.target)
     .persist()
-    .post('/pets', function (body) {
+    .post('/pets', (body) => {
       id = uuid.v4();
       db[id] = {
         ...body,
@@ -624,13 +618,11 @@ test('Capture - RegExp', (t) => {
 
       return true;
     })
-    .reply(201, function () {
-      return { id };
-    })
-    .get(/pets\/[^\/]+$/)
+    .reply(201, () => ({ id }))
+    .get(/pets\/[^/]+$/)
     .reply(200);
 
-  runner(script, data, {}).then(function (ee) {
+  runner(script, data, {}).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 

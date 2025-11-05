@@ -211,7 +211,7 @@ test('when vendorToCollectorConfigTranslators is called with a datadog config, i
           trace_buffer: 200
         },
         api: {
-          key: '${env:DD_API_KEY}'
+          key: '$' + '{env:DD_API_KEY}'
         }
       }
     },
@@ -313,7 +313,7 @@ test('when getADOTConfig is called with a list of adotRelevantConfigs, it return
           trace_buffer: 200
         },
         api: {
-          key: '${env:DD_API_KEY}'
+          key: '$' + '{env:DD_API_KEY}'
         }
       }
     },
@@ -375,7 +375,7 @@ test('when resolveADOTConfigSettings is called with a configList and a dotenv ob
             trace_buffer: 200
           },
           api: {
-            key: '${env:DD_API_KEY}'
+            key: '$' + '{env:DD_API_KEY}'
           }
         }
       },

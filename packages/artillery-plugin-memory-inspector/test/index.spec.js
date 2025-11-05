@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('node:fs');
 const { startTestServer } = require('./util.js');
 const { test, afterEach } = require('tap');
 const { $ } = require('zx');
@@ -72,7 +72,7 @@ test('cpu and memory metrics display in the aggregate report with the correct na
   for (const [metric, value] of Object.entries(
     report.aggregate.summaries['express-example.memory']
   )) {
-    if (metric == 'count') {
+    if (metric === 'count') {
       continue;
     }
 
@@ -134,7 +134,7 @@ test('cpu and memory metrics display in the aggregate report with a default name
   for (const [metric, value] of Object.entries(
     report.aggregate.summaries[`process_${testServer.currentPid}.memory`]
   )) {
-    if (metric == 'count') {
+    if (metric === 'count') {
       continue;
     }
 
@@ -241,7 +241,7 @@ test('cpu and memory metrics also display in the aggregate report for artillery 
   for (const [metric, value] of Object.entries(
     report.aggregate.summaries['artillery_internal.memory']
   )) {
-    if (metric == 'count') {
+    if (metric === 'count') {
       continue;
     }
 

@@ -1,7 +1,4 @@
-'use strict';
-
 const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace-base');
-const { diag } = require('@opentelemetry/api');
 
 class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
   constructor(exporter, config) {
@@ -42,7 +39,7 @@ class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
   }
   // Export only outliers on shut down as well for http engine
   onShutdown() {
-    this._traces.forEach((traceData, traceId) => {
+    this._traces.forEach((traceData, _traceId) => {
       if (traceData.hasOutlier) {
         traceData.spans.forEach(super.onEnd, this);
       }

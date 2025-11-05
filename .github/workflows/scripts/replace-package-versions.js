@@ -1,11 +1,11 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const packagesDir = '../../../packages';
 const commitSha = process.env.COMMIT_SHA;
 
 const getNewVersion = (version) => {
-  if (!commitSha || commitSha == 'null') {
+  if (!commitSha || commitSha === 'null') {
     return version;
   }
 
@@ -13,7 +13,7 @@ const getNewVersion = (version) => {
   return `${version}-${shortSha}`;
 };
 
-let versionMapping = {};
+const versionMapping = {};
 
 /**
  * This script iterates through every folder in ./packages and replaces their package.version with VERSION-COMMIT_SHA.
@@ -61,7 +61,7 @@ const updateDependencies = (pkg) => {
   } = pkg;
 
   for (const packageNameToReplace of Object.keys(versionMapping)) {
-    if (dependencies && dependencies[packageNameToReplace]) {
+    if (dependencies?.[packageNameToReplace]) {
       //replace the dependency we care about in this package with its corrected canary version
       dependencies[packageNameToReplace] =
         versionMapping[packageNameToReplace].content.version;

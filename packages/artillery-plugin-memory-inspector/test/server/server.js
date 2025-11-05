@@ -1,8 +1,8 @@
-const http = require('http');
+const http = require('node:http');
 const port = process.env.TEST_PORT || 4444;
 
 // Array that will keep growing, causing a memory leak
-let leakyArray = [];
+const leakyArray = [];
 
 const server = http.createServer((req, res) => {
   if (req.url === '/' && req.method === 'GET') {

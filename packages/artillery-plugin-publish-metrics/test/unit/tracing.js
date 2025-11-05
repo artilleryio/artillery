@@ -1,5 +1,3 @@
-'use strict';
-
 const { test } = require('tap');
 const { OTelTraceBase } = require('../../lib/open-telemetry/tracing/base');
 

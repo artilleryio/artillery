@@ -27,22 +27,18 @@ app.post('/users', (req, res) => {
 });
 
 app.get('/users/:id', (req, res) => {
-  db.get(
-    'SELECT * FROM users WHERE id = ?',
-    [req.params.id],
-    function (err, row) {
-      if (err !== null) {
-        res.status(500).send(err);
-        return;
-      }
-
-      if (row === undefined) {
-        res.status(404).send({ error: 'User not found' });
-      } else {
-        res.status(200).send(row);
-      }
+  db.get('SELECT * FROM users WHERE id = ?', [req.params.id], (err, row) => {
+    if (err !== null) {
+      res.status(500).send(err);
+      return;
     }
-  );
+
+    if (row === undefined) {
+      res.status(404).send({ error: 'User not found' });
+    } else {
+      res.status(200).send(row);
+    }
+  });
 });
 
 app.delete('/users/:id', (req, res) => {

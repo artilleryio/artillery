@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-const url = require('url');
+const url = require('node:url');
 
 module.exports = { Plugin: MetricsByEndpoint };
 
@@ -14,7 +14,7 @@ let metricsPrefix;
 let groupDynamicURLs;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
-function MetricsByEndpoint(script, events) {
+function MetricsByEndpoint(script, _events) {
   // if(!global.artillery || !global.artillery.log) {
   //   console.error('artillery-plugin-metrics-endpoint requires Artillery v2');
   //   return;
@@ -52,7 +52,7 @@ function MetricsByEndpoint(script, events) {
   script.config.processor.metricsByEndpoint_beforeRequest =
     metricsByEndpoint_beforeRequest;
 
-  script.scenarios.forEach(function (scenario) {
+  script.scenarios.forEach((scenario) => {
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('metricsByEndpoint_afterResponse');
     scenario.onError = [].concat(scenario.onError || []);
@@ -92,7 +92,7 @@ function getReqName(target, originalRequestUrl, requestName) {
   return useOnlyRequestNames ? requestName : `${baseUrl} (${requestName})`;
 }
 
-function metricsByEndpoint_beforeRequest(req, userContext, events, done) {
+function metricsByEndpoint_beforeRequest(req, userContext, _events, done) {
   if (groupDynamicURLs) {
     req.defaultName = getReqName(userContext.vars.target, req.url, req.name);
   }

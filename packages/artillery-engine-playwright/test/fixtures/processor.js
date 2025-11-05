@@ -18,7 +18,7 @@ const retryGoingToPage = async (page, url) => {
   throw new Error(`Failed to go to page ${url}: ${error}`);
 };
 
-async function artilleryPlaywrightFunction(page, vuContext, events, test) {
+async function artilleryPlaywrightFunction(page, _vuContext, events, test) {
   await test.step('go_to_artillery_io', async () => {
     await retryGoingToPage(page, '/');
 
@@ -36,7 +36,7 @@ async function artilleryPlaywrightFunction(page, vuContext, events, test) {
   events.emit('counter', 'custom_emitter', 1);
 }
 
-async function playwrightFunctionWithFailure(page, vuContext, events, test) {
+async function playwrightFunctionWithFailure(page, _vuContext, events, test) {
   await test.step('go_to_artillery_io', async () => {
     await retryGoingToPage(page, '/');
     await expect(page.getByText('gremlins are here!')).toBeVisible();

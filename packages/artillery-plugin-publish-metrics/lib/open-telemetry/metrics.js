@@ -1,5 +1,3 @@
-'use strict';
-
 const {
   AggregationTemporality,
   MeterProvider,
@@ -26,8 +24,8 @@ class OTelMetricsReporter {
       this.pendingRequests += 1;
 
       // Set the start and end times
-      let startTime = stats.firstMetricAt;
-      let endTime = stats.lastMetricAt;
+      const startTime = stats.firstMetricAt;
+      const endTime = stats.lastMetricAt;
       this.config.attributes.startTime = startTime;
       this.config.attributes.endTime = endTime;
 
@@ -72,7 +70,9 @@ class OTelMetricsReporter {
     if (config.headers) {
       if (config.exporter === 'otlp-grpc') {
         const metadata = new grpc.Metadata();
-        Object.entries(config.headers).forEach(([k, v]) => metadata.set(k, v));
+        Object.entries(config.headers).forEach(([k, v]) => {
+          metadata.set(k, v);
+        });
         this.exporterOpts.metadata = metadata;
       } else {
         this.exporterOpts.headers = config.headers;

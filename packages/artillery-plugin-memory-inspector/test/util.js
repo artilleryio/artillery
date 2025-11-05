@@ -1,5 +1,5 @@
 const portfinder = require('portfinder');
-const { spawn } = require('child_process');
+const { spawn } = require('node:child_process');
 
 const startTestServer = async () => {
   const port = await portfinder.getPortPromise({

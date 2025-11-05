@@ -163,7 +163,7 @@ export type VUEvents = {
 };
 
 export type PlaywrightEngineTestParam = {
-  step: (stepName: string, userActions: Function) => Promise<void>
+  step: (stepName: string, userActions: () => void | Promise<void>) => Promise<void>
 };
 
 export type PlaywrightEngineConfig = {
@@ -315,5 +315,3 @@ export type PayloadConfig = {
       name: string;
     }
 );
-
-export {};

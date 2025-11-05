@@ -1,7 +1,7 @@
-'use strict';
 
-const fs = require('fs');
-const path = require('path');
+
+const fs = require('node:fs');
+const path = require('node:path');
 const YAML = require('js-yaml');
 const debug = require('debug')('util');
 const moment = require('moment');
@@ -14,7 +14,7 @@ const renderVariables = engineUtil._renderVariables;
 const template = engineUtil.template;
 const { contextFuncs } = require('@artilleryio/int-core').runner;
 
-const p = require('util').promisify;
+const p = require('node:util').promisify;
 
 module.exports = {
   readScript,
@@ -50,7 +50,7 @@ async function addOverrides(script, flags) {
   const result = _.mergeWith(
     script,
     o,
-    function customizer(objVal, srcVal, k, obj, src, stack) {
+    function customizer(_objVal, srcVal, _k, _obj, _src, _stack) {
       if (_.isArray(srcVal)) {
         return srcVal;
       } else {
@@ -124,8 +124,7 @@ async function checkConfig(script, scriptPath, flags) {
   if (flags.environment) {
     debug('environment specified: %s', flags.environment);
     if (
-      script.config.environments &&
-      script.config.environments[flags.environment]
+      script.config.environments?.[flags.environment]
     ) {
       _.merge(script.config, script.config.environments[flags.environment]);
     } else {
@@ -192,7 +191,7 @@ async function checkConfig(script, scriptPath, flags) {
   // Resolve all payload paths to absolute paths now:
   //
   const absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
-  _.forEach(script.config.payload, function (payloadSpec) {
+  _.forEach(script.config.payload, (payloadSpec) => {
     const resolvedPathToPayload = path.resolve(
       path.dirname(absoluteScriptPath),
       payloadSpec.path
@@ -278,7 +277,7 @@ function padded(str1, str2, length = 79, formatPadding = chalk.gray) {
 }
 
 function maybeTruncate(str, length) {
-  return str.length > length ? str.slice(0, length - 3) + '...' : str;
+  return str.length > length ? `${str.slice(0, length - 3)}...` : str;
 }
 
 function rainbow(str) {

@@ -6,15 +6,12 @@
 // Artillery Core worker process
 //
 
-'use strict';
+
 
 const {
-  Worker,
-  isMainThread,
   parentPort,
-  workerData,
   threadId
-} = require('worker_threads');
+} = require('node:worker_threads');
 
 const { getStash } = require('../../../lib/stash');
 
@@ -24,13 +21,13 @@ const core = require('@artilleryio/int-core');
 const createRunner = core.runner.runner;
 const debug = require('debug')('artillery:worker');
 
-const path = require('path');
+const _path = require('node:path');
 
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const { loadPlugins, loadPluginsConfig } = require('../../load-plugins');
 
 const EventEmitter = require('eventemitter3');
-const p = require('util').promisify;
+const p = require('node:util').promisify;
 const { loadProcessor } = core.runner.runnerFuncs;
 
 const prepareTestExecutionPlan = require('../../util/prepare-test-execution-plan');
@@ -86,7 +83,7 @@ async function onMessage(message) {
 }
 
 async function cleanup() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     if (shuttingDown) {
       resolve();
     }
@@ -206,7 +203,7 @@ async function prepare(opts) {
 
   // TODO: use await
   createRunner(script, payload, options)
-    .then(function (runner) {
+    .then((runner) => {
       runnerInstance = runner;
 
       runner.on('phaseStarted', onPhaseStarted);
@@ -217,7 +214,7 @@ async function prepare(opts) {
       // TODO: Enum for all event types
       send({ event: 'readyWaiting' });
     })
-    .catch(function (err) {
+    .catch((err) => {
       // TODO: Clean up and exit (error state)
       // TODO: Handle workerError in launcher when readyWaiting
       // is not received and worker exits.

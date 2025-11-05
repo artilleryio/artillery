@@ -1,5 +1,3 @@
-'use strict';
-
 // Map of functions that translate vendor-specific reporter configuration to OpenTelemetry reporter configuration
 const vendorTranslators = {
   honeycomb: (config) => {
@@ -64,7 +62,7 @@ const vendorTranslators = {
     return otelTemplate(config, dynatraceTraceSettings);
   },
   'open-telemetry': (config) => {
-    let newConfig = config;
+    const newConfig = config;
     if (config.traces) {
       newConfig.traces.type = 'open-telemetry';
     }
@@ -82,7 +80,7 @@ const vendorTranslators = {
   }
 };
 
-const otelTemplate = function (config, vendorSpecificSettings) {
+const otelTemplate = (config, vendorSpecificSettings) => {
   const otelConfig = {};
   if (config.traces) {
     otelConfig.serviceName = config.traces.serviceName || config.serviceName;
@@ -110,7 +108,7 @@ function attributeListToObject(attributeList, reporterType) {
       const [key, value] = attribute.split(':');
       attributes[key] = value;
     });
-  } catch (err) {
+  } catch (_err) {
     throw new Error(
       `${
         reporterType[0].toUpperCase() + reporterType.slice(1)

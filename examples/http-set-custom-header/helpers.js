@@ -1,9 +1,9 @@
-const https = require('https');
+const https = require('node:https');
 
 // Set the value of a header to a custom value, which
 // in this example comes from an HTTP call to another
 // API
-function setCustomHeader(req, userContext, ee, next) {
+function setCustomHeader(req, _userContext, _ee, next) {
   let data = '';
 
   https
@@ -14,7 +14,7 @@ function setCustomHeader(req, userContext, ee, next) {
 
       res.on('end', () => {
         // Extract a string composed of letters + spaces + punctuation:
-        const val = data.match(/^<([A-Za-z\!\s]+)/m)[1].trim();
+        const val = data.match(/^<([A-Za-z!\s]+)/m)[1].trim();
         // Use that as the value of our custom header:
         req.headers['x-dino'] = val;
         return next();

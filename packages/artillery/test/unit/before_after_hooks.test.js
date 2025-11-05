@@ -1,15 +1,15 @@
-'use strict';
+
 
 const { test, beforeEach, afterEach } = require('tap');
-const assert = require('assert');
-const http = require('http');
+const assert = require('node:assert');
+const http = require('node:http');
 const { cloneDeep } = require('lodash');
 const createLauncher = require('../../lib/launch-platform');
 const {
   beforeHookBeforeRequest,
   afterHookBeforeRequest
 } = require('./processor');
-const path = require('path');
+const path = require('node:path');
 
 let stats = {};
 const beforeEndpoint = '/auth';
@@ -198,14 +198,14 @@ test('before/after hooks - payload', (t) => {
   });
 });
 
-test('before/after hooks - teardown', async (t) => {
+test('before/after hooks - teardown', async (_t) => {
   targetServer.close();
 });
 
 function runServer() {
   const handleGetReqs = (req, res) => {
     assert.ok(
-      req.headers['authorization'].endsWith(authToken),
+      req.headers.authorization.endsWith(authToken),
       'it should share context vars captured in the "before" hook with the workers'
     );
 

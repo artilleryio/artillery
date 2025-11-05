@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const l = require('lodash');
@@ -19,12 +17,12 @@ afterEach(() => {
   server.close();
 });
 
-test('cookie jar socketio', function (t) {
+test('cookie jar socketio', (t) => {
   const script = require('../scripts/cookies_socketio.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       request(`http://127.0.0.1:${port}/_stats`, { responseType: 'json' })
         .then((res) => {

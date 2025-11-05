@@ -1,5 +1,3 @@
-'use strict';
-
 const { vendorTranslators } = require('./translators/vendor-otel');
 const {
   diag,
@@ -21,10 +19,7 @@ contextManager.enable();
 context.setGlobalContextManager(contextManager);
 
 // DEBUGGING SETUP - setting the OpenTelemetry's internal diagnostic handler here to run when debug is enabled
-if (
-  process.env.DEBUG &&
-  process.env.DEBUG.includes('plugin:publish-metrics:')
-) {
+if (process.env.DEBUG?.includes('plugin:publish-metrics:')) {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.ERROR);
 }
 
@@ -72,7 +67,7 @@ class OTelReporter {
     });
 
     if (!this.metricsConfig && !this.tracesConfig) {
-      return this;
+      return;
     }
 
     // Warn if traces are configured in multiple reporters

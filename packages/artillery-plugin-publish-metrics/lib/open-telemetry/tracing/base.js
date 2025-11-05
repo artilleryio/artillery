@@ -1,5 +1,3 @@
-'use strict';
-
 const grpc = require('@grpc/grpc-js');
 const { traceExporters, validateExporter } = require('../exporters');
 const {
@@ -48,9 +46,9 @@ class OTelTraceConfig {
     if (this.config.headers) {
       if (this.config.exporter && this.config.exporter === 'otlp-grpc') {
         const metadata = new grpc.Metadata();
-        Object.entries(this.config.headers).forEach(([k, v]) =>
-          metadata.set(k, v)
-        );
+        Object.entries(this.config.headers).forEach(([k, v]) => {
+          metadata.set(k, v);
+        });
         this.exporterOpts.metadata = metadata;
       } else {
         this.exporterOpts.headers = this.config.headers;
@@ -102,14 +100,14 @@ class OTelTraceBase {
   }
   setTracer(engine) {
     // Get and set the tracer by engine
-    const tracerName = engine + 'Tracer';
+    const tracerName = `${engine}Tracer`;
     if (!this[tracerName]) {
       this[tracerName] = trace.getTracer(`artillery-${engine}`);
     }
   }
   // Sets the tracer by engine type, starts the scenario span and adds it to the VU context
   startScenarioSpan(engine) {
-    return function (userContext, ee, next) {
+    return function (userContext, _ee, next) {
       let spanName =
         userContext.scenario?.name || `artillery-${engine}-scenario`;
       if (this.config.replaceSpanNameRegex) {
@@ -160,7 +158,7 @@ class OTelTraceBase {
   }
 
   // Placeholder - make onError hook engine agnostic - implement hook for other engines?
-  otelTraceOnError(scenarioErr, req, userContext, ee, done) {
+  otelTraceOnError(_scenarioErr, _req, _userContext, _ee, done) {
     done();
   }
 

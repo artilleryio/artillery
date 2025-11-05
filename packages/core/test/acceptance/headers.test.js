@@ -36,8 +36,8 @@ test('Set header inside request', (t) => {
     ]
   };
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.equal(
@@ -84,8 +84,8 @@ test('Set header from config.http.defaults', (t) => {
     ]
   };
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.equal(
@@ -130,8 +130,8 @@ test('Set header from config.defaults', (t) => {
     ]
   };
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.equal(

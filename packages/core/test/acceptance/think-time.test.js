@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -17,12 +15,12 @@ afterEach(() => {
   server.stop();
 });
 
-test('think', function (t) {
+test('think', (t) => {
   const script = require('../scripts/thinks_http.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.equal(
         Object.keys(report.errors).length,
@@ -42,13 +40,13 @@ test('think', function (t) {
   });
 });
 
-test('think - invalid think time', function (t) {
+test('think - invalid think time', (t) => {
   const script = l.cloneDeep(require('../scripts/thinks_http.json'));
   script.config.target = `http://127.0.0.1:${port}`;
   delete script.scenarios[0].flow;
   script.scenarios[0].flow = [{ think: '1 potatoe' }];
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         Object.keys(report.errors).includes('Invalid think time: 1 potatoe'),
@@ -67,15 +65,15 @@ test('think - invalid think time', function (t) {
   });
 });
 
-test('think - with defaults from config.http.defaults instead', function (t) {
+test('think - with defaults from config.http.defaults instead', (t) => {
   const script = l.cloneDeep(require('../scripts/thinks_http.json'));
   script.config.target = `http://127.0.0.1:${port}`;
   const think = script.config.defaults.think;
   delete script.config.defaults;
   script.config.http = { defaults: { think } };
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(Object.keys(report.errors).length === 0, 'no errors');
       t.ok(Object.keys(report.codes).length === 0, 'stats should be empty');

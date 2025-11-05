@@ -18,7 +18,7 @@ const EventEmitter = require('eventemitter3');
 const debug = require('debug')('platform:azure-aci');
 const { IMAGE_VERSION, WAIT_TIMEOUT } = require('../aws-ecs/legacy/constants');
 const { regionNames } = require('./regions');
-const path = require('path');
+const path = require('node:path');
 const { Timeout, sleep } = require('../aws-ecs/legacy/time');
 const dotenv = require('dotenv');
 const fs = require('node:fs');
@@ -98,8 +98,6 @@ class PlatformAzureACI {
     }
 
     this.containerInstances = [];
-
-    return this;
   }
 
   async init() {
@@ -286,7 +284,7 @@ class PlatformAzureACI {
           } else if (payload.event === 'workerError') {
             global.artillery.suggestedExitCode = payload.exitCode || 1;
 
-            if (payload.exitCode != 21) {
+            if (payload.exitCode !== 21) {
               this.events.emit(payload.event, workerId, {
                 id: workerId,
                 error: new Error(
@@ -297,7 +295,7 @@ class PlatformAzureACI {
                 logs: payload.logs
               });
             }
-          } else if (payload.event == 'workerReady') {
+          } else if (payload.event === 'workerReady') {
             this.events.emit(payload.event, workerId);
             this.waitingReadyCount++;
 
@@ -391,7 +389,7 @@ class PlatformAzureACI {
       }, {});
 
       if (
-        (byStatus['Succeeded'] || 0) + (byStatus['Running'] || 0) ===
+        (byStatus.Succeeded || 0) + (byStatus.Running || 0) ===
         this.count
       ) {
         instancesCreated = true;
@@ -457,7 +455,7 @@ class PlatformAzureACI {
   async sendGoSignal() {
     const Key = `tests/${this.testRunId}/go.json`;
     const blockBlobClient = this.blobContainerClient.getBlockBlobClient(Key);
-    const res = await blockBlobClient.upload('', 0);
+    const _res = await blockBlobClient.upload('', 0);
   }
 
   async createWorker() {
@@ -647,7 +645,7 @@ class PlatformAzureACI {
 
       const plan = activeMembership.plan;
       return plan === 'business' || plan === 'enterprise';
-    } catch (err) {
+    } catch (_err) {
       return false;
     }
   }

@@ -40,6 +40,7 @@
     "temp": "^0.9.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.3",
     "@oclif/test": "^2.2.10",
     "@types/chai": "^4",
     "@types/gradient-string": "^1.1.2",
@@ -48,9 +49,6 @@
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.18.3",
     "chai": "^4",
-    "eslint": "^7.32.0",
-    "eslint-config-oclif": "^5.2.1",
-    "eslint-config-oclif-typescript": "^3.1.11",
     "mocha": "^9",
     "oclif": "^4.14.36",
     "shx": "^0.3.3",
@@ -71,10 +69,10 @@
   },
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
-    "lint": "exit 0",
+    "lint": "npx @biomejs/biome check .",
     "postpack": "shx rm -f oclif.manifest.json",
-    "posttest": "npm -w skytrace run lint",
-    "prepack": "npm -w skytrace run build && oclif manifest",
+    "posttest": "npm run lint",
+    "prepack": "npm run build && oclif manifest",
     "test": "exit 0",
     "version": "oclif readme && git add README.md"
   },

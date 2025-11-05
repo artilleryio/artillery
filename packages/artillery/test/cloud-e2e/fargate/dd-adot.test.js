@@ -1,8 +1,8 @@
-'use strict';
+
 
 const { test, afterEach, beforeEach, before } = require('tap');
 const { $ } = require('zx');
-const fs = require('fs');
+const fs = require('node:fs');
 const {
   generateTmpReportPath,
   deleteFile,
@@ -24,7 +24,7 @@ beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-afterEach(async (t) => {
+afterEach(async (_t) => {
   deleteFile(reportFilePath);
 });
 
@@ -68,7 +68,7 @@ test('traces succesfully arrive to datadog', async (t) => {
       expectedTotalSpans
     );
   } catch (err) {
-    t.fail('Error getting spans from Datadog: ' + err);
+    t.fail(`Error getting spans from Datadog: ${err}`);
   }
 
   const vuSpans = spanList.filter((span) => span.attributes.parent_id === '0');

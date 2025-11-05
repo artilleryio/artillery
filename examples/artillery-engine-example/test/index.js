@@ -2,10 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 
 const ExampleEngine = require('..');
 
@@ -31,7 +29,7 @@ const script = {
   ]
 };
 
-test('Engine interface', async function (t) {
+test('Engine interface', async (t) => {
   const events = new EventEmitter();
   const engine = new ExampleEngine(script, events, {});
   const scenario = engine.createScenario(script.scenarios[0], events);

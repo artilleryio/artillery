@@ -1,4 +1,4 @@
-'use strict';
+
 
 const Hapi = require('@hapi/hapi');
 
@@ -20,6 +20,6 @@ main()
     process.exit(1);
   });
 
-function register(req, h) {
+function register(_req, _h) {
   return { status: 'success' };
 }

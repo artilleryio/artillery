@@ -1,6 +1,6 @@
 module.exports = { maybeSleep, emitCsvCounters };
 
-function maybeSleep(req, context, events, done) {
+function maybeSleep(_req, _context, _events, done) {
   if (Math.random() < 0.7) {
     return done();
   }

@@ -1,11 +1,9 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../../lib/runner').runner;
 // const createTarget = require('./lib/interfakify').create;
 const { updateGlobalObject } = require('../../index');
 const { SSMS } = require('../../lib/ssms');
-const url = require('url');
+const _url = require('node:url');
 const createTestServer = require('../targets/simple');
 
 let server;
@@ -42,7 +40,7 @@ afterEach(() => {
 //   });
 // });
 
-test('environments - override target and phases', function (t) {
+test('environments - override target and phases', (t) => {
   let startedAt;
   const script = require('../scripts/hello_environments.json');
   script.config.environments.staging.target = `http://127.0.0.1:${port}`;
@@ -53,8 +51,8 @@ test('environments - override target and phases', function (t) {
   // target.listen(
   //   url.parse(script.config.environments.staging.target).port || 80
   // );
-  runner(script, null, { environment: 'staging' }).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script, null, { environment: 'staging' }).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       console.log(report);
       const completedAt = process.hrtime(startedAt);

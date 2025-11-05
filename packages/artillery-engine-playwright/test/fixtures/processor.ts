@@ -1,4 +1,4 @@
-import { expect, Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 //this is due to occasional failures in CI due to known unresolved issue (ERR_NETWORK_CHANGED): https://github.com/microsoft/playwright/issues/13062
 const retryGoingToPage = async (page, url) => {

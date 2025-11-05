@@ -6,6 +6,6 @@ export const emitCustomMetric = async (context, ee) => {
   ee.emit('counter', 'hey_from_esm', 1);
 };
 
-export const hookThatThrows = async (context, ee) => {
+export const hookThatThrows = async (_context, _ee) => {
   throw new Error('error_from_async_hook');
 };

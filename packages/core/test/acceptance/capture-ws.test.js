@@ -1,9 +1,9 @@
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
-const http = require('http');
+const http = require('node:http');
 const WebSocket = require('ws');
-const { once } = require('events');
+const { once } = require('node:events');
 
 let targetServer;
 let wss;
@@ -20,8 +20,8 @@ afterEach(() => {
 });
 
 test('Capture WS - JSON', (t) => {
-  wss.on('connection', function (ws) {
-    ws.on('message', function (message) {
+  wss.on('connection', (ws) => {
+    ws.on('message', (message) => {
       t.match(message, /hello (ws|bar|foo)/, 'matches incoming message');
       ws.send(JSON.stringify({ foo: 'bar', baz: 'foo' }));
     });
@@ -52,7 +52,7 @@ test('Capture WS - JSON', (t) => {
     ]
   };
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 

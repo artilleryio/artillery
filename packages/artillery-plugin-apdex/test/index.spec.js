@@ -1,4 +1,4 @@
-const { test, afterEach } = require('tap');
+const { test } = require('tap');
 const { $ } = require('zx');
 
 test('apdex plugin works when other after response hooks are set', async (t) => {

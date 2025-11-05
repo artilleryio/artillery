@@ -13,8 +13,8 @@ const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 const generateId = require('../util/generate-id');
 const dotenv = require('dotenv');
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 class RunCommand extends Command {
   static aliases = ['run:fargate', 'run:ecs', 'run-ecs'];
   // Enable multiple args:
@@ -30,7 +30,7 @@ class RunCommand extends Command {
       const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
       try {
         fs.statSync(dotEnvPath);
-      } catch (err) {
+      } catch (_err) {
         console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
       }
       dotenv.config({ path: dotEnvPath });

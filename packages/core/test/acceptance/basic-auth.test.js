@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -20,12 +18,12 @@ test('HTTP basic auth', (t) => {
   const script = require('../scripts/hello_basic_auth.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      let requests = report.requestsCompleted;
-      let code200 = report.codes[200];
-      let code401 = report.codes[401];
+      const requests = report.requestsCompleted;
+      const code200 = report.codes[200];
+      const code401 = report.codes[401];
 
       t.ok(requests > 0, 'Did not get any requests');
 

@@ -3,7 +3,7 @@ const falso = require('@ngneat/falso');
 const getFalsoFunctions = () =>
   Object.keys(falso).filter((funcName) => {
     //functions that have the function signature we expect start with rand and aren't == rand (which takes an array)
-    if (!funcName.startsWith('rand') && funcName != 'rand') {
+    if (!funcName.startsWith('rand') && funcName !== 'rand') {
       return false;
     }
 
@@ -25,9 +25,9 @@ function ArtilleryPluginFakeData(script, events) {
   const pluginConfig =
     script.config['fake-data'] || script.config.plugins['fake-data'];
 
-  function falsoHandler(context, ee, next) {
+  function falsoHandler(context, _ee, next) {
     falsoFunctions.forEach((funcName) => {
-      context.funcs[`$${funcName}`] = function () {
+      context.funcs[`$${funcName}`] = () => {
         if (pluginConfig[funcName]) {
           return falso[funcName](pluginConfig[funcName]);
         }

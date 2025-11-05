@@ -1,4 +1,4 @@
-const fs = require('fs');
+const fs = require('node:fs');
 
 const packageNames = [];
 fs.readdirSync('packages').forEach((pkg) => {

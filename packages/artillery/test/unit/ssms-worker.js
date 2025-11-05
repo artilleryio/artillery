@@ -6,7 +6,7 @@
 // to record, and posts back metric summaries for buckets as they
 // become available.
 
-const { isMainThread, parentPort, threadId } = require('worker_threads');
+const { isMainThread, parentPort, threadId } = require('node:worker_threads');
 
 const sleep = require('../helpers/sleep');
 

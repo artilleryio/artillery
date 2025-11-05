@@ -5,14 +5,14 @@
 //
 async function checkOutArtilleryCoreConceptsFlow(
   page,
-  userContext,
-  events,
+  _userContext,
+  _events,
   test
 ) {
   await test.step('Go to Artillery', async () => {
     const requestPromise = page.waitForRequest('https://artillery.io/');
     await page.goto('https://artillery.io/');
-    const req = await requestPromise;
+    const _req = await requestPromise;
   });
   await test.step('Go to docs', async () => {
     await page.getByRole('link', { name: 'Docs' }).first().click();
@@ -56,7 +56,7 @@ async function checkPage(page, userContext, events) {
   }
 }
 
-async function multistepWithCustomMetrics(page, userContext, events, test) {
+async function multistepWithCustomMetrics(page, _userContext, _events, test) {
   //1. we get the convenience step() helper from the test object.
   //More information: https://www.artillery.io/docs/reference/engines/playwright#teststep-argument
   const { step } = test;

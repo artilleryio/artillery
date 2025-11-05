@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -16,19 +14,19 @@ afterEach(() => {
   server.stop();
 });
 
-test('arrival phases', function (t) {
+test('arrival phases', (t) => {
   const script = require('../scripts/arrival_phases.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('phaseStarted', function (info) {
+  runner(script).then((ee) => {
+    ee.on('phaseStarted', (info) => {
       console.log('Starting phase: %j - %s', info, new Date());
     });
-    ee.on('phaseCompleted', function () {
+    ee.on('phaseCompleted', () => {
       console.log('Phase completed - %s', new Date());
     });
 
-    ee.on('done', function (nr) {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
       t.equal(report.codes[200], 60, 'Should get 60 status 200 responses');
@@ -41,21 +39,21 @@ test('arrival phases', function (t) {
   });
 });
 
-test('arrival phases - with modified time format', function (t) {
+test('arrival phases - with modified time format', (t) => {
   const script = require('../scripts/arrival_phases_time_format.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   const initialTime = Date.now();
 
-  runner(script).then(function (ee) {
-    ee.on('phaseStarted', function (info) {
+  runner(script).then((ee) => {
+    ee.on('phaseStarted', (info) => {
       console.log('Starting phase: %j - %s', info, new Date());
     });
-    ee.on('phaseCompleted', function () {
+    ee.on('phaseCompleted', () => {
       console.log('Phase completed - %s', new Date());
     });
 
-    ee.on('done', function (nr) {
+    ee.on('done', (nr) => {
       const finalTime = Date.now();
       const report = SSMS.legacyReport(nr).report();
 

@@ -1,4 +1,4 @@
-const assert = require('assert').strict;
+const assert = require('node:assert').strict;
 const {
   EC2Client,
   DescribeRouteTablesCommand,
@@ -12,7 +12,6 @@ class VPCSubnetFinder {
   }
 
   async getRouteTables(vpcId) {
-    try {
       const rts = await this.ec2.send(
         new DescribeRouteTablesCommand({
           Filters: [
@@ -25,13 +24,9 @@ class VPCSubnetFinder {
       );
 
       return rts.RouteTables;
-    } catch (err) {
-      throw err;
-    }
   }
 
   async findDefaultVpc() {
-    try {
       const vpcRes = await this.ec2.send(
         new DescribeVpcsCommand({
           Filters: [
@@ -50,14 +45,9 @@ class VPCSubnetFinder {
       } else {
         return vpcRes.Vpcs[0].VpcId;
       }
-    } catch (err) {
-      throw err;
-    }
   }
 
   async getSubnets(vpcId) {
-    // Get subnets fileterd by VPC id
-    try {
       const subRes = await this.ec2.send(
         new DescribeSubnetsCommand({
           Filters: [
@@ -70,9 +60,6 @@ class VPCSubnetFinder {
       );
 
       return subRes.Subnets;
-    } catch (err) {
-      throw err;
-    }
   }
 
   isSubnetPublic(routeTables, subnetId) {
@@ -120,7 +107,7 @@ class VPCSubnetFinder {
 
     const igwRoutes = subnetTable[0].Routes.filter((route) => {
       // NOTE: there may be no IGW attached to route
-      return route.GatewayId && route.GatewayId.startsWith('igw-');
+      return route.GatewayId?.startsWith('igw-');
     });
 
     return igwRoutes.length > 0;
@@ -155,7 +142,7 @@ async function main() {
   }
 }
 
-if (require.main == module) {
+if (require.main === module) {
   main();
 }
 

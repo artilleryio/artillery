@@ -1,7 +1,5 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const { ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-base');
 const { ExportResultCode } = require('@opentelemetry/core');
 
@@ -23,7 +21,7 @@ class FileSpanExporter extends ConsoleSpanExporter {
       JSON.stringify(this._exportInfo(span))
     );
     if (spansToExport.length > 0) {
-      fs.writeFileSync(this.filePath, spansToExport.join(',\n') + ',', {
+      fs.writeFileSync(this.filePath, `${spansToExport.join(',\n')},`, {
         flag: 'a'
       }); // TODO fix trailing coma
     }
@@ -38,8 +36,9 @@ class FileSpanExporter extends ConsoleSpanExporter {
     if (typeof process.env.LOCAL_WORKER_ID === 'undefined') {
       try {
         // Removing the trailing comma and closing the array
-        const data =
-          fs.readFileSync(this.filePath, 'utf8').slice(0, -1) + '\n]';
+        const data = `${fs
+          .readFileSync(this.filePath, 'utf8')
+          .slice(0, -1)}\n]`;
         fs.writeFileSync(this.filePath, data, { flag: 'w' });
         console.log('File updated successfully.');
       } catch (err) {

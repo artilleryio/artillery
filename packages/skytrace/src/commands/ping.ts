@@ -1,10 +1,10 @@
-const { EventEmitter } = require('events');
-const { promisify: p, format, inspect } = require('util');
-const fs = require('fs');
+const { EventEmitter } = require('node:events');
+const { promisify: p, format } = require('node:util');
+const fs = require('node:fs');
 
-const nodeCrypto = require('node:crypto');
+const _nodeCrypto = require('node:crypto');
 
-const os = require('os');
+const _os = require('node:os');
 
 const sprintf = require('sprintf-js').sprintf;
 const { Command, flags } = require('@oclif/command');
@@ -20,11 +20,11 @@ const YAML = require('js-yaml');
 //const telemetry = require('../telemetry').init();
 const HttpEngine = require('@artilleryio/int-core').engine_http;
 
-import { expectations, formatters } from 'artillery-plugin-expect';
+import { expectations } from 'artillery-plugin-expect';
 
 function fmt(val: any, padTo: number = 8) {
   return chalk.cyan(
-    sprintf(`%-${padTo}s`, typeof val === 'number' ? val + 'ms' : val)
+    sprintf(`%-${padTo}s`, typeof val === 'number' ? `${val}ms` : val)
   );
 }
 
@@ -48,13 +48,8 @@ function parse(str: string) {
     return result;
   }
 
-  let result;
-  try {
-    result = YAML.safeLoad(str);
-    debug('parse: YAML:', str, result);
-  } catch (parseErr) {
-    throw parseErr;
-  }
+  const result: any = YAML.safeLoad(str);
+  debug('parse: YAML:', str, result);
 
   if (typeof result !== 'object') {
     throw new Error('Expected object');
@@ -111,8 +106,8 @@ class PingCommand extends Command {
       this._help();
     }
 
-    let verb;
-    let target;
+    let verb: string;
+    let target: string;
     if (VERBS.indexOf(args.method.toLowerCase()) === -1) {
       verb = 'get';
       target = args.method;
@@ -136,7 +131,7 @@ class PingCommand extends Command {
       options?: any;
     }
 
-    let placeholder: RequestSpec = {};
+    const placeholder: RequestSpec = {};
 
     const script = {
       config: {
@@ -146,7 +141,7 @@ class PingCommand extends Command {
         },
         tls: {},
         processor: {
-          captureRequestDetails: (req, res, context, events, next) => {
+          captureRequestDetails: (req, res, context, _events, next) => {
             context.vars.requestHeaders = res.req._header;
             context.vars.ip = res.ip;
             context.vars.statusCode = res.statusCode;
@@ -195,7 +190,7 @@ class PingCommand extends Command {
 
     // Basic auth:
     if (flags.auth) {
-      let auth;
+      let auth: any;
       try {
         auth = parse(flags.auth);
       } catch (parseErr: any) {
@@ -212,7 +207,7 @@ class PingCommand extends Command {
 
     // JSON body:
     if (flags.json) {
-      let jsonBody;
+      let jsonBody: any;
       try {
         jsonBody = parse(flags.json);
       } catch (parseErr: any) {
@@ -273,7 +268,7 @@ class PingCommand extends Command {
 
     // URL-encoded forms
     if (flags.form) {
-      let form;
+      let form: any;
       try {
         form = parse(flags.form);
       } catch (parseErr: any) {
@@ -311,7 +306,7 @@ class PingCommand extends Command {
     }
 
     // Expectations:
-    let checks = [];
+    const checks = [];
     if (flags.expect?.length > 0) {
       for (const ex of flags.expect) {
         try {
@@ -339,7 +334,7 @@ class PingCommand extends Command {
     const initialContext = {
       vars: {}
     };
-    events.on('error', (errCode) => {});
+    events.on('error', (_errCode) => {});
 
     try {
       debug('ping:vu:start');
@@ -517,11 +512,11 @@ class PingCommand extends Command {
 
       if (checks.length > 0) {
         this.log(chalk.cyan('Expectations:\n'));
-        let results = [];
+        const results = [];
 
         for (const ex of checks) {
           const checker = Object.keys(ex)[0];
-          let result = expectations[checker].call(
+          const result = expectations[checker].call(
             this,
             ex,
             body,
@@ -557,21 +552,13 @@ class PingCommand extends Command {
       process.exit(this.suggestedExitCode);
     } catch (vuErr: any) {
       if (vuErr.code === 'ENOTFOUND') {
-        this.log(chalk.red(vuErr.code + ' - DNS lookup failed on ' + target));
+        this.log(chalk.red(`${vuErr.code} - DNS lookup failed on ${target}`));
       } else {
         console.error(vuErr);
       }
       process.exit(1);
     }
   }
-}
-
-interface TelemetryPing {
-  method: string;
-  usesExpectations: boolean;
-  usesJmesPath: boolean;
-  targetHash: string;
-  distinctId: string;
 }
 
 // TODO: Move this to entrypoint of the CLI

@@ -2,10 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const EventEmitter = require('eventemitter3');
-const path = require('path');
+const path = require('node:path');
 const _ = require('lodash');
 const debug = require('debug')('runner');
 const debugPerf = require('debug')('perf');
@@ -15,7 +13,7 @@ const createPhaser = require('./phases');
 const createReader = require('./readers');
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const wl = require('./weighted-pick');
-const { pathToFileURL } = require('url');
+const { pathToFileURL } = require('node:url');
 
 const Engines = {
   http: require('./engine_http'),
@@ -45,8 +43,8 @@ function loadEngines(
 ) {
   const loadedEngines = _.map(
     Object.assign({}, Engines, script.config.engines),
-    function loadEngine(engineConfig, engineName) {
-      let moduleName = 'artillery-engine-' + engineName;
+    function loadEngine(_engineConfig, engineName) {
+      const moduleName = `artillery-engine-${engineName}`;
       try {
         let Engine;
         if (typeof Engines[engineName] !== 'undefined') {
@@ -103,7 +101,7 @@ async function loadProcessor(script, options) {
 function prepareScript(script, payload) {
   const runnableScript = _.cloneDeep(script);
 
-  _.each(runnableScript.config.phases, function (phaseSpec) {
+  _.each(runnableScript.config.phases, (phaseSpec) => {
     phaseSpec.mode = phaseSpec.mode || runnableScript.config.mode;
   });
 
@@ -121,7 +119,7 @@ function prepareScript(script, payload) {
       ];
     } else {
       runnableScript.config.payload = payload;
-      _.each(runnableScript.config.payload, function (el) {
+      _.each(runnableScript.config.payload, (el) => {
         el.reader = createReader(el.order, el);
       });
     }
@@ -130,7 +128,7 @@ function prepareScript(script, payload) {
   }
 
   // Flatten flows (can have nested arrays of request specs with YAML references):
-  _.each(runnableScript.scenarios, function (scenarioSpec) {
+  _.each(runnableScript.scenarios, (scenarioSpec) => {
     scenarioSpec.flow = _.flatten(scenarioSpec.flow);
   });
 
@@ -138,7 +136,7 @@ function prepareScript(script, payload) {
 }
 
 async function runner(script, payload, options, callback) {
-  let opts = _.assign(
+  const opts = _.assign(
     {
       periodicStats: script.config.statsInterval || 30,
       mode: script.config.mode || 'uniform'
@@ -154,7 +152,7 @@ async function runner(script, payload, options, callback) {
 
   const runnableScript = prepareScript(script, payload);
 
-  let ee = new EventEmitter();
+  const ee = new EventEmitter();
 
   //
   // load engines:
@@ -165,9 +163,9 @@ async function runner(script, payload, options, callback) {
     warnings
   );
 
-  const promise = new Promise(function (resolve, reject) {
-    ee.run = function (contextVars) {
-      let runState = {
+  const promise = new Promise((resolve, _reject) => {
+    ee.run = (contextVars) => {
+      const runState = {
         pendingScenarios: 0,
         // pendingRequests: 0,
         compiledScenarios: null,
@@ -180,7 +178,7 @@ async function runner(script, payload, options, callback) {
       run(runnableScript, ee, opts, runState, contextVars);
     };
 
-    ee.stop = async function (done) {
+    ee.stop = async (_done) => {
       metrics.stop();
     };
 
@@ -202,14 +200,14 @@ function run(script, ee, options, runState, contextVars) {
   const metrics = runState.metrics;
   const intermediates = [];
 
-  let phaser = createPhaser(script.config.phases);
-  let scenarioContext;
+  const phaser = createPhaser(script.config.phases);
+  let _scenarioContext;
 
-  phaser.on('arrival', function (spec) {
+  phaser.on('arrival', (spec) => {
     if (runState.pendingScenarios >= spec.maxVusers) {
       metrics.counter('vusers.skipped', 1);
     } else {
-      scenarioContext = runScenario(
+      _scenarioContext = runScenario(
         script,
         metrics,
         runState,
@@ -218,13 +216,13 @@ function run(script, ee, options, runState, contextVars) {
       );
     }
   });
-  phaser.on('phaseStarted', function (spec) {
+  phaser.on('phaseStarted', (spec) => {
     ee.emit('phaseStarted', spec);
   });
-  phaser.on('phaseCompleted', function (spec) {
+  phaser.on('phaseCompleted', (spec) => {
     ee.emit('phaseCompleted', spec);
   });
-  phaser.on('done', function () {
+  phaser.on('done', () => {
     debug('All phases launched');
 
     const doneYet = setInterval(function checkIfDone() {
@@ -242,7 +240,7 @@ function run(script, ee, options, runState, contextVars) {
     }, 1000);
   });
 
-  metrics.on('metricData', (ts, periodData) => {
+  metrics.on('metricData', (_ts, periodData) => {
     const cloned = SSMS.deserializeMetrics(SSMS.serializeMetrics(periodData));
     intermediates.push(periodData);
     ee.emit('stats', cloned);
@@ -258,7 +256,7 @@ function runScenario(script, metrics, runState, contextVars, options) {
   // Compile scenarios if needed
   //
   if (!runState.compiledScenarios) {
-    _.each(script.scenarios, function (scenario) {
+    _.each(script.scenarios, (scenario) => {
       if (typeof scenario.weight === 'undefined') {
         scenario.weight = 1;
       } else {
@@ -272,7 +270,7 @@ function runScenario(script, metrics, runState, contextVars, options) {
         const w = engineUtil.template(scenario.weight, {
           vars: variableValues
         });
-        scenario.weight = isNaN(parseInt(w)) ? 0 : parseInt(w); //eslint-disable-line radix
+        scenario.weight = Number.isNaN(parseInt(w, 10)) ? 0 : parseInt(w, 10);
         debug(
           `scenario ${scenario.name} weight has been set to ${scenario.weight}`
         );
@@ -282,33 +280,33 @@ function runScenario(script, metrics, runState, contextVars, options) {
     runState.picker = wl(script.scenarios);
 
     runState.scenarioEvents = new EventEmitter();
-    runState.scenarioEvents.on('counter', function (name, value) {
+    runState.scenarioEvents.on('counter', (name, value) => {
       metrics.counter(name, value);
     });
     // TODO: Deprecate
-    runState.scenarioEvents.on('customStat', function (stat) {
+    runState.scenarioEvents.on('customStat', (stat) => {
       metrics.summary(stat.stat, stat.value);
     });
-    runState.scenarioEvents.on('summary', function (name, value) {
+    runState.scenarioEvents.on('summary', (name, value) => {
       metrics.summary(name, value);
     });
-    runState.scenarioEvents.on('histogram', function (name, value) {
+    runState.scenarioEvents.on('histogram', (name, value) => {
       metrics.summary(name, value);
     });
-    runState.scenarioEvents.on('rate', function (name) {
+    runState.scenarioEvents.on('rate', (name) => {
       metrics.rate(name);
     });
-    runState.scenarioEvents.on('started', function () {
+    runState.scenarioEvents.on('started', () => {
       runState.pendingScenarios++;
     });
     // TODO: Take an object so that it can have code, description etc
-    runState.scenarioEvents.on('error', function (errCode) {
+    runState.scenarioEvents.on('error', (errCode) => {
       metrics.counter(`errors.${errCode}`, 1);
     });
 
     runState.compiledScenarios = _.map(
       script.scenarios,
-      function (scenarioSpec, scenarioIndex) {
+      (scenarioSpec, scenarioIndex) => {
         const name = scenarioSpec.engine || script.config.engine || 'http';
         const engine = runState.engines.find((e) => e.__name === name);
 
@@ -377,7 +375,7 @@ function runScenario(script, metrics, runState, contextVars, options) {
     'runScenarioDelta: %s',
     Math.round((runScenarioDelta / 1e6) * 100) / 100
   );
-  runState.compiledScenarios[i](scenarioContext, function (err, context) {
+  runState.compiledScenarios[i](scenarioContext, (err, _context) => {
     runState.pendingScenarios--;
     if (err) {
       debug(err);
@@ -395,15 +393,15 @@ function runScenario(script, metrics, runState, contextVars, options) {
 }
 
 function datafileVariables(script) {
-  let result = {};
+  const result = {};
   if (script.config.payload) {
-    _.each(script.config.payload, function (el) {
+    _.each(script.config.payload, (el) => {
       if (!el.loadAll) {
         // Load individual fields from the CSV into VU context variables
         // If data = [] (i.e. the CSV file is empty, or only has headers and
         // skipHeaders = true), then row could = undefined
-        let row = el.reader(el.data) || [];
-        _.each(el.fields, function (fieldName, j) {
+        const row = el.reader(el.data) || [];
+        _.each(el.fields, (fieldName, j) => {
           result[fieldName] = row[j];
         });
       } else {
@@ -423,9 +421,9 @@ function datafileVariables(script) {
 }
 
 function inlineVariables(script) {
-  let result = {};
+  const result = {};
   if (script.config.variables) {
-    _.each(script.config.variables, function (v, k) {
+    _.each(script.config.variables, (v, k) => {
       let val;
       if (_.isArray(v)) {
         val = _.sample(v);
@@ -473,7 +471,7 @@ function createContext(script, contextVars, additionalProperties = {}) {
   if (script._scriptPath) {
     INITIAL_CONTEXT.vars.$scenarioFile = script._scriptPath;
   }
-  let result = INITIAL_CONTEXT;
+  const result = INITIAL_CONTEXT;
 
   // variables from payloads:
   const variableValues1 = datafileVariables(script);
@@ -516,11 +514,11 @@ function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
   const { loadedEngines: engines } = loadEngines(script, hookEvents);
   const ee = new EventEmitter();
 
-  return new Promise(function (resolve, reject) {
-    ee.on('request', function () {
+  return new Promise((resolve, reject) => {
+    ee.on('request', () => {
       hookEvents.emit(`${hook}TestRequest`);
     });
-    ee.on('error', function (error) {
+    ee.on('error', (error) => {
       hookEvents.emit(`${hook}TestError`, error);
     });
 
@@ -537,7 +535,7 @@ function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
       scenario: script[hook]
     });
 
-    hookScenario(hookContext, function (err, context) {
+    hookScenario(hookContext, (err, context) => {
       if (err) {
         debug(err);
         return reject(err);

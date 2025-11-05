@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 var { test } = require('tap');
 var template = require('@artilleryio/int-commons').engine_util.template;
 
@@ -17,13 +15,13 @@ var bigObject = require('./large-json-payload-7.2mb.json');
 
 var emptyContext = { vars: {} };
 
-test('strings - templating a plain string should return the same string', function (t) {
+test('strings - templating a plain string should return the same string', (t) => {
   t.ok(template('string', emptyContext) === 'string', '');
   t.ok(template('string {}', emptyContext) === 'string {}', '');
   t.end();
 });
 
-test('strings - variables can be substituted', function (t) {
+test('strings - variables can be substituted', (t) => {
   t.ok(
     template('hello {{name}}', { vars: { name: 'Hassy' } }) === 'hello Hassy',
     ''
@@ -43,7 +41,7 @@ test('strings - variables can be substituted', function (t) {
 //   t.end();
 // });
 
-test('arrays can be substituted', function (t) {
+test('arrays can be substituted', (t) => {
   t.same(
     [1, { foo: 'bar' }, null, { foo: null }],
     template([1, { '{{k}}': '{{v}}' }, null, { foo: null }], {
@@ -71,7 +69,7 @@ test('arrays can be substituted', function (t) {
   t.end();
 });
 
-test('buffers - returned as they are', function (t) {
+test('buffers - returned as they are', (t) => {
   t.same(
     template(Buffer.from('hello world'), { vars: {} }),
     Buffer.from('hello world')
@@ -79,7 +77,7 @@ test('buffers - returned as they are', function (t) {
   t.end();
 });
 
-test('buffers - huge buffers are OK', function (t) {
+test('buffers - huge buffers are OK', (t) => {
   const b1 = Buffer.from(JSON.stringify(bigObject));
   const start = Date.now();
   const b2 = template(b1, { vars: {} });
@@ -97,7 +95,7 @@ test('buffers - huge buffers are OK', function (t) {
   t.end();
 });
 
-test('objects can be substituted', function (t) {
+test('objects can be substituted', (t) => {
   t.same(
     template(
       { '{{ k1 }}': '{{ v1 }}', '{{ k2 }}': '{{ v2 }}', foo: null },
@@ -124,7 +122,7 @@ test('objects can be substituted', function (t) {
   t.end();
 });
 
-test('nested objects can be substituted', function (t) {
+test('nested objects can be substituted', (t) => {
   t.same(
     template(
       {

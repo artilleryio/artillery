@@ -1,4 +1,4 @@
-'use strict';
+
 
 const sleep = require('../../../../helpers/sleep.js');
 const got = require('got');
@@ -28,7 +28,7 @@ async function getDatadogSpans(apiKey, appKey, testId, expectedTotalSpans) {
       attributes: {
         filter: {
           from: 'now-15m',
-          query: '@test_id:' + testId,
+          query: `@test_id:${testId}`,
           to: 'now'
         },
         options: {

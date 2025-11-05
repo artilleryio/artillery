@@ -1,9 +1,9 @@
 const cookieParser = require('cookie-parser');
-const { createServer } = require('http');
+const { createServer } = require('node:http');
 const app = require('express')();
 const socketio = require('socket.io');
 const uuid = require('uuid');
-const { once } = require('events');
+const { once } = require('node:events');
 
 const createTestServer = async (port) => {
   app.get('/test-get', handler);
@@ -17,26 +17,26 @@ const createTestServer = async (port) => {
   const http = createServer(app);
   const io = socketio(http);
   const COOKIES = {};
-  let MESSAGE_COUNT = 0;
-  let CONNECTION_COUNT = 0;
+  let _MESSAGE_COUNT = 0;
+  let _CONNECTION_COUNT = 0;
 
   io.on('connection', function connection(ws) {
-    CONNECTION_COUNT++;
+    _CONNECTION_COUNT++;
     console.log('+ Express connection');
     ws.on('echo', function incoming(message) {
-      MESSAGE_COUNT++;
+      _MESSAGE_COUNT++;
       console.log('Express echoing message: %s', message);
       ws.emit('echoed', message);
     });
   });
 
-  function handler(req, res) {
+  function handler(_req, res) {
     console.log('Express send HTTP OK');
     res.writeHead(200);
     res.end(JSON.stringify({ key: 'value' }));
   }
 
-  function setsCookie(req, res) {
+  function setsCookie(_req, res) {
     const newuid = uuid.v4();
     console.log('setting testCookie.uid to %j', newuid);
     res.cookie('testCookie', { uid: newuid }).send('ok');
@@ -58,7 +58,7 @@ const createTestServer = async (port) => {
     }
   }
 
-  function stats(req, res) {
+  function stats(_req, res) {
     return res.json({
       cookies: COOKIES
     });

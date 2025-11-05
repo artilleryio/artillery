@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const core = require('../../..');
 const vuserLauncher = core.runner.runner;
@@ -18,11 +16,11 @@ afterEach(() => {
   server.close();
 });
 
-test('TLS - with rejectUnauthorized false', function (t) {
+test('TLS - with rejectUnauthorized false', (t) => {
   const script = require('./scripts/ws-tls.json');
   script.config.target = `wss://127.0.0.1:${port}`;
-  vuserLauncher(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  vuserLauncher(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       console.log(report);
       t.ok(Object.keys(report.errors).length === 0, 'Test ran without errors');
@@ -34,12 +32,12 @@ test('TLS - with rejectUnauthorized false', function (t) {
   });
 });
 
-test('TLS - with rejectUnauthorized true', function (t) {
+test('TLS - with rejectUnauthorized true', (t) => {
   const script = require('./scripts/ws-tls.json');
   script.config.target = `wss://127.0.0.1:${port}`;
   script.config.ws.rejectUnauthorized = true;
-  vuserLauncher(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  vuserLauncher(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       console.log(report);
       t.equal(

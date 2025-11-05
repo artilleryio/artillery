@@ -29,8 +29,6 @@ class ExampleEngine {
     if (!opts.mandatoryString) {
       throw new Error('mandatoryString setting must be set');
     }
-
-    return this;
   }
 
   // For each scenario in the script using this engine, Artillery calls this function
@@ -71,7 +69,7 @@ class ExampleEngine {
 
     if (rs.log) {
       return function log(context, callback) {
-        return process.nextTick(function () {
+        return process.nextTick(() => {
           callback(null, context);
         });
       };
@@ -82,17 +80,15 @@ class ExampleEngine {
     }
 
     if (rs.function) {
-      return function (context, callback) {
-        let func = self.script.config.processor[rs.function];
+      return (context, callback) => {
+        const func = self.script.config.processor[rs.function];
         if (!func) {
-          return process.nextTick(function () {
+          return process.nextTick(() => {
             callback(null, context);
           });
         }
 
-        return func(context, ee, function () {
-          return callback(null, context);
-        });
+        return func(context, ee, () => callback(null, context));
       };
     }
 

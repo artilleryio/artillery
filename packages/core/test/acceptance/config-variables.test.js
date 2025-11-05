@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -20,8 +18,8 @@ test('config variables', (t) => {
   const script = require('../scripts/config_variables.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(report.codes[200] > 0, 'there are 200s for /');
       t.ok(report.codes[404] > 0, 'there are 404s for /will/404');

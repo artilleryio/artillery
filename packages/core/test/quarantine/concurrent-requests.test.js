@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -16,20 +14,20 @@ afterEach(() => {
   server.stop();
 });
 
-test('scenarios avoided - arrival rate', function (t) {
+test('scenarios avoided - arrival rate', (t) => {
   const script = require('../scripts/concurrent_requests_arrival_rate.json');
   script.config.target = `http://127.0.0.1:${port}`;
   console.log('script', script);
 
-  runner(script).then(function (ee) {
-    ee.on('phaseStarted', function (info) {
+  runner(script).then((ee) => {
+    ee.on('phaseStarted', (info) => {
       console.log('Starting phase: %j - %s', info, new Date());
     });
-    ee.on('phaseCompleted', function () {
+    ee.on('phaseCompleted', () => {
       console.log('Phase completed - %s', new Date());
     });
 
-    ee.on('done', function (nr) {
+    ee.on('done', (nr) => {
       const stats = SSMS.legacyReport(nr).report();
 
       t.equal(stats.codes['200'], 1, 'Should make expected number of requests');
@@ -69,20 +67,20 @@ test('scenarios avoided - arrival rate', function (t) {
 //   });
 // });
 
-test('scenarios avoided - ramp to', function (t) {
+test('scenarios avoided - ramp to', (t) => {
   const script = require('../scripts/concurrent_requests_ramp_to.json');
   script.config.target = `http://127.0.0.1:${port}`;
   console.log('script', script);
 
-  runner(script).then(function (ee) {
-    ee.on('phaseStarted', function (info) {
+  runner(script).then((ee) => {
+    ee.on('phaseStarted', (info) => {
       console.log('Starting phase: %j - %s', info, new Date());
     });
-    ee.on('phaseCompleted', function () {
+    ee.on('phaseCompleted', () => {
       console.log('Phase completed - %s', new Date());
     });
 
-    ee.on('done', function (nr) {
+    ee.on('done', (nr) => {
       const stats = SSMS.legacyReport(nr).report();
       t.ok(stats.codes['200'] > 0, 'should receive some 200s');
       t.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');
@@ -94,19 +92,19 @@ test('scenarios avoided - ramp to', function (t) {
   });
 });
 
-test('scenarios avoided - multiple phases', function (t) {
+test('scenarios avoided - multiple phases', (t) => {
   const script = require('../scripts/concurrent_requests_multiple_phases.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('phaseStarted', function (info) {
+  runner(script).then((ee) => {
+    ee.on('phaseStarted', (info) => {
       console.log('Starting phase: %j - %s', info, new Date());
     });
-    ee.on('phaseCompleted', function () {
+    ee.on('phaseCompleted', () => {
       console.log('Phase completed - %s', new Date());
     });
 
-    ee.on('done', function (nr) {
+    ee.on('done', (nr) => {
       const stats = SSMS.legacyReport(nr).report();
       t.ok(stats.codes['200'] > 0, 'should receive some 200s');
       t.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');

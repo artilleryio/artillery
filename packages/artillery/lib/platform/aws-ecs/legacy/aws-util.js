@@ -26,13 +26,9 @@ async function ecsDescribeTasks(params, region) {
   const results = { tasks: [], failures: [] };
   for (let i = 0; i < taskArnChunks.length; i++) {
     const params2 = Object.assign({}, params, { tasks: taskArnChunks[i] });
-    try {
       const ecsData = await ecs.send(new DescribeTasksCommand(params2));
       results.tasks = results.tasks.concat(ecsData.tasks);
       results.failures = results.failures.concat(ecsData.failures);
-    } catch (err) {
-      throw err;
-    }
   }
   return results;
 }
@@ -55,15 +51,11 @@ function splitIntoSublists(list, maxGroupSize) {
 
 // If parameter exists, do nothing; otherwise set the value
 async function ensureParameterExists(ssmPath, defaultValue, type, region) {
-  try {
     const exists = await parameterExists(ssmPath, region);
     if (exists) {
       return;
     }
     return putParameter(ssmPath, defaultValue, type, region);
-  } catch (err) {
-    throw err;
-  }
 }
 
 async function parameterExists(path, region) {
@@ -110,7 +102,7 @@ async function getParameter(path, region) {
     );
 
     debug({ ssmResponse });
-    return ssmResponse.Parameter && ssmResponse.Parameter.Value;
+    return ssmResponse.Parameter?.Value;
   } catch (ssmErr) {
     if (ssmErr.name === 'ParameterNotFound') {
       return false;

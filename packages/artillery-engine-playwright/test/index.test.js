@@ -1,6 +1,6 @@
 const { test, afterEach, beforeEach } = require('tap');
 const { $ } = require('zx');
-const fs = require('fs');
+const fs = require('node:fs');
 
 const TEST_URL = 'https://www.artillery.io/';
 let playwrightOutput;
@@ -45,7 +45,7 @@ test('playwright js test works and reports data', async (t) => {
   );
 
   t.ok(
-    jsonReportAggregate.counters['custom_emitter'] > 0,
+    jsonReportAggregate.counters.custom_emitter > 0,
     'should have reported custom_emitter'
   );
 
@@ -182,7 +182,7 @@ test('playwright typescript test works and reports data', async (t) => {
   );
 
   t.ok(
-    jsonReportAggregate.counters['custom_emitter'] > 0,
+    jsonReportAggregate.counters.custom_emitter > 0,
     'should have reported custom_emitter'
   );
 

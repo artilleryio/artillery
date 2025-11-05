@@ -1,4 +1,4 @@
-function logOutput(req, res, userContext, events, done) {
+function logOutput(_req, _res, _userContext, events, done) {
   for (let i = 0; i < 10; i++) {
     events.emit(
       'counter',

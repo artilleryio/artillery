@@ -1,16 +1,13 @@
-import * as Core from '@artilleryio/int-core';
-
 import * as EventEmitter from 'node:events';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { promisify } from 'node:util';
+import * as Core from '@artilleryio/int-core';
 
 import { Command, flags } from '@oclif/command';
-import * as YAML from 'js-yaml';
-
-import { Plugin, formatters } from 'artillery-plugin-expect';
-
+import { formatters, Plugin } from 'artillery-plugin-expect';
 import * as gradientString from 'gradient-string';
+import * as YAML from 'js-yaml';
 
 import * as telemetry from '../telemetry';
 
@@ -22,15 +19,14 @@ class RunCommand extends Command {
     const HttpEngine = Core.engine_http;
     const contents: any[] = YAML.loadAll(fs.readFileSync(flowFilePath, 'utf8'));
 
-    const showHttpTimings = opts.showHTTPTimings || contents[0].http?.timings === true;
+    const showHttpTimings =
+      opts.showHTTPTimings || contents[0].http?.timings === true;
 
-    let script;
+    let script: any;
 
-    if (
-      typeof contents[0]['scenarios'] !== 'undefined'
-    ) {
+    if (typeof contents[0].scenarios !== 'undefined') {
       // This is a classic Artillery script with config and scenario in the same file
-      const target = contents[0]['config']?.target || opts.target;
+      const target = contents[0].config?.target || opts.target;
 
       script = {
         config: {
@@ -42,7 +38,7 @@ class RunCommand extends Command {
             }
           }
         },
-        scenarios: [contents[0]['scenarios'][0]]
+        scenarios: [contents[0].scenarios[0]]
       };
     } else {
       // This is a Skytrace scenario - just steps with metadata at the top
@@ -67,23 +63,23 @@ class RunCommand extends Command {
 
     const events = new EventEmitter();
     process.env.LOCAL_WORKER_ID = '1337';
-    const plugin = new Plugin(script, events);
+    const _plugin = new Plugin(script, events);
     const engine = new HttpEngine(script);
     const vu = promisify(engine.createScenario(script.scenarios[0], events));
     const initialContext = {
       vars: {
-          target: script.config?.target || script.target,
-          $environment: script._environment,
-          $processEnvironment: process.env, // TODO: deprecate
-          $env: process.env,
-          $testRunId: global.artillery.testRunId,
+        target: script.config?.target || script.target,
+        $environment: script._environment,
+        $processEnvironment: process.env, // TODO: deprecate
+        $env: process.env,
+        $testRunId: global.artillery.testRunId
       }
     };
 
-    events.on('error', (errCode, uuid) => {});
-    events.on('trace:http:request', (requestParams, uuid) => {});
-    events.on('trace:http:response', (resp, uuid) => {});
-    events.on('trace:http:capture', (result) => {});
+    events.on('error', (_errCode, _uuid) => {});
+    events.on('trace:http:request', (_requestParams, _uuid) => {});
+    events.on('trace:http:response', (_resp, _uuid) => {});
+    events.on('trace:http:capture', (_result) => {});
     events.on(
       'plugin:expect:expectations',
       (expectations, req, res, userContext) => {
@@ -106,14 +102,14 @@ class RunCommand extends Command {
     );
 
     try {
-      const context = await vu(initialContext);
-    } catch (vuErr) {
+      const _context = await vu(initialContext);
+    } catch (_vuErr) {
       // console.log(vuErr);
     }
   }
 
   async run() {
-    const { flags, argv, args } = this.parse(RunCommand);
+    const { flags, argv } = this.parse(RunCommand);
     const flowFilePaths = [path.resolve(process.cwd(), argv[0])];
 
     const banner = `    ───━━━★
@@ -127,7 +123,7 @@ SKYTRACE ──━━★
     const ping = telemetry.init();
     await ping.capture('run-flow', {
       cliTarget: flags.target,
-      cliHTTPTimings: flags.timings,
+      cliHTTPTimings: flags.timings
     });
 
     if (flags.reload) {
@@ -136,7 +132,7 @@ SKYTRACE ──━━★
       this.runFlow(flowFilePaths[0], opts);
       let prevMtime = new Date(0);
       let rerunning = false;
-      fs.watch(flowFilePaths[0], {}, (eventType, fn) => {
+      fs.watch(flowFilePaths[0], {}, (_eventType, fn) => {
         if (!fn) {
           return;
         }

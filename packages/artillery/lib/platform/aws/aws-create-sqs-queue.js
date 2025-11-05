@@ -22,13 +22,8 @@ async function createSQSQueue(region, queueName) {
     }
   };
 
-  let sqsQueueUrl;
-  try {
-    const result = await sqs.send(new CreateQueueCommand(params));
-    sqsQueueUrl = result.QueueUrl;
-  } catch (err) {
-    throw err;
-  }
+  const result = await sqs.send(new CreateQueueCommand(params));
+  const sqsQueueUrl = result.QueueUrl;
 
   // Wait for the queue to be available:
   let waited = 0;
@@ -46,7 +41,7 @@ async function createSQSQueue(region, queueName) {
         await sleep(10 * 1000);
         waited += 10 * 1000;
       }
-    } catch (err) {
+    } catch (_err) {
       await sleep(10 * 1000);
       waited += 10 * 1000;
     }

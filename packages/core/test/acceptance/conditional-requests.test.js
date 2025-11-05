@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const { SSMS } = require('../../lib/ssms');
@@ -20,17 +18,13 @@ test('ifTrue', (t) => {
   const script = require('../scripts/iftrue.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
+  runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      let requests = report.codes[201];
-      let expected = 10;
-      t.equal(
-        requests,
-        expected,
-        'Should have ' + expected + ' 201s (pet created)'
-      );
-      t.equal(report.codes[404], expected, 'Should have ' + expected + '404s');
+      const requests = report.codes[201];
+      const expected = 10;
+      t.equal(requests, expected, `Should have ${expected} 201s (pet created)`);
+      t.equal(report.codes[404], expected, `Should have ${expected}404s`);
       t.notOk(report.codes[200], 'Should not have 200s');
 
       ee.stop().then(() => {

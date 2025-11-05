@@ -3,12 +3,12 @@ module.exports = {
   generateVUToken
 };
 
-function generateSharedToken(context, events, done) {
+function generateSharedToken(context, _events, done) {
   context.vars.sharedToken = `shared-token-${Date.now()}`;
   return done();
 }
 
-function generateVUToken(context, events, done) {
+function generateVUToken(context, _events, done) {
   context.vars.vuToken = `vu-token-${Date.now()}`;
   return done();
 }

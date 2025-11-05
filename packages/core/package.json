@@ -35,8 +35,8 @@
     "ws": "^7.5.7"
   },
   "scripts": {
-    "lint": "eslint --ext \".js,.ts,.tsx\" .",
-    "lint-fix": "npm run lint -- --fix",
+    "lint": "npx @biomejs/biome check .",
+    "lint-fix": "npx @biomejs/biome check --write .",
     "test": "npm run test:unit && npm run test:acceptance",
     "test:unit": "tap --timeout=300 test/unit/*.test.js",
     "test:acceptance": "tap --timeout 300 test/acceptance/*.test.js && tap --timeout=300 test/acceptance/**/*.test.js"

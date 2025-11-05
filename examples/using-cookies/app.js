@@ -23,7 +23,7 @@ app.get('/account', (req, res) => {
   res.json({ user: req.cookies });
 });
 
-app.post('/set-state', (req, res) => {
+app.post('/set-state', (_req, res) => {
   // Cookie will be set from the request, just send a 200 OK response.
   res.sendStatus(200);
 });

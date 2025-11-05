@@ -1,6 +1,6 @@
 const tap = require('tap');
 const { execute } = require('../helpers');
-const path = require('path');
+const path = require('node:path');
 
 tap.test('Workers should be able to set exit codes', async (t) => {
   const scenarioPath = path.resolve(

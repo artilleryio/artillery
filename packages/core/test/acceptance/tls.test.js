@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../../lib/runner').runner;
 const { updateGlobalObject } = require('../../index');
@@ -19,11 +17,11 @@ afterEach(() => {
   server.close();
 });
 
-test('tls strict', function (t) {
+test('tls strict', (t) => {
   const script = require('../scripts/tls-strict.json');
   script.config.target = `https://127.0.0.1:${port}`;
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       console.log(report);
       const rejected = report.errors.DEPTH_ZERO_SELF_SIGNED_CERT;
@@ -37,11 +35,11 @@ test('tls strict', function (t) {
   });
 });
 
-test('tls lax', function (t) {
+test('tls lax', (t) => {
   const script = require('../scripts/tls-lax.json');
   script.config.target = `https://127.0.0.1:${port}`;
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       const rejected = report.errors.DEPTH_ZERO_SELF_SIGNED_CERT;
       const reason =

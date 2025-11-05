@@ -10,7 +10,7 @@ const {
   syncTestData,
   installNpmDependencies
 } = require('./a9-handler-dependencies');
-const path = require('path');
+const path = require('node:path');
 
 const TIMEOUT_THRESHOLD_MSEC = 20 * 1000;
 

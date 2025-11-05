@@ -1,9 +1,6 @@
-'use strict';
-
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
-const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {
   SpanKind,
   SpanStatusCode,
@@ -12,9 +9,6 @@ const {
 } = require('@opentelemetry/api');
 
 class OTelPlaywrightTraceReporter extends OTelTraceBase {
-  constructor(config, script) {
-    super(config, script);
-  }
   run() {
     this.setTracer('playwright');
     attachScenarioHooks(this.script, [
@@ -122,7 +116,7 @@ class OTelPlaywrightTraceReporter extends OTelTraceBase {
                 1
               );
             }
-            let spanName = 'Page: ' + pageUrl;
+            let spanName = `Page: ${pageUrl}`;
             if (this.config.replaceSpanNameRegex) {
               spanName = this.replaceSpanNameRegex(
                 spanName,

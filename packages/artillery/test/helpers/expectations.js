@@ -45,7 +45,7 @@ const checkAggregateCounterSums = (t, report) => {
     t.fail('No aggregate counters found in the report');
   }
 
-  let intermediateCounters = {};
+  const intermediateCounters = {};
 
   for (const intermediate of report.intermediate) {
     for (const key in intermediate.counters) {

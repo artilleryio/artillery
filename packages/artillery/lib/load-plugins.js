@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const debug = require('debug')('core');
-const path = require('path');
+const path = require('node:path');
 
 // Additional paths to load plugins can be set via ARTILLERY_PLUGIN_PATH
 // Additional plugin config mafy be set via ARTILLERY_PLUGINS (as JSON)
@@ -46,11 +46,11 @@ async function loadPlugins(pluginSpecs, testScript) {
 
 async function loadPlugin(name, config, requirePaths, testScript) {
   // TODO: Take scope in directly - don't need the full script
-  let pluginConfigScope = config.scope || testScript.config.pluginsScope;
-  let pluginPrefix = pluginConfigScope
+  const pluginConfigScope = config.scope || testScript.config.pluginsScope;
+  const pluginPrefix = pluginConfigScope
     ? pluginConfigScope
     : 'artillery-plugin-';
-  let requireString = pluginPrefix + name;
+  const requireString = pluginPrefix + name;
   let PluginExport, pluginErr, loadedFrom, version;
 
   for (const p of requirePaths) {

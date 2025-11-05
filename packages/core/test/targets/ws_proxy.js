@@ -1,6 +1,6 @@
 const WebSocketServer = require('ws').Server;
 const debug = require('debug')('test:target:ws_proxy');
-const http = require('http');
+const http = require('node:http');
 const { createProxy } = require('proxy');
 
 const createTestServers = async (wsPort, proxyPort) => {
@@ -28,7 +28,7 @@ const createTestServers = async (wsPort, proxyPort) => {
   wsServer.listen(wsPort);
   proxyServer.listen(proxyPort);
 
-  let maxWaitTime = 1000;
+  const maxWaitTime = 1000;
   let waitTime = 0;
   while (
     !wsServer.listening ||

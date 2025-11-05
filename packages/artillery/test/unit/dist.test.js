@@ -1,4 +1,4 @@
-'use strict';
+
 
 const tap = require('tap');
 const divideWork = require('../../lib/dist');
@@ -210,7 +210,7 @@ tap.test('maxVusers distributes evenly in all phases', (t) => {
 
   const phases = divideWork(script, numWorkers);
   for (let i = 0; i < script.config.phases.length; i++) {
-    let activeMaxVusers = phases
+    const activeMaxVusers = phases
       .map((p) => p.config.phases[i])
       .filter((p) => p.arrivalRate > 0 || p.arrivalCount > 0 || p.rampTo > 0)
       .reduce((sum, p) => sum + p.maxVusers, 0);

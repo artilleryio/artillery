@@ -1,6 +1,6 @@
-const { test, beforeEach } = require('tap');
+const { test } = require('tap');
 const { Plugin } = require('../index');
-const { EventEmitter } = require('events');
+const { EventEmitter } = require('node:events');
 
 const baseScript = {
   config: {
@@ -34,7 +34,7 @@ const baseScript = {
 };
 
 test('beforeRequest and afterResponse', async (t) => {
-  let defaultPluginPrefix = 'plugins.metrics-by-endpoint';
+  const defaultPluginPrefix = 'plugins.metrics-by-endpoint';
   let script;
   let hookArgs;
   let results;

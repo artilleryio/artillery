@@ -47,6 +47,7 @@ jobs:
       - id: generate-matrix
         run: |
           RESULT=$(node .github/workflows/scripts/get-tests-in-package-location.js)
+          echo $RESULT
           echo "matrix=$RESULT" >> $GITHUB_OUTPUT
 
   run-tests:
@@ -99,7 +100,7 @@ jobs:
           echo "ECR_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
           echo "LAMBDA_IMAGE_VERSION=${{ inputs.COMMIT_SHA }}" >> $GITHUB_ENV
       # runs the single test file from `package` workspace in the `file`, as defined in the matrix output
-      - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].package }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
+      - run: npm run test:aws:ci --workspace ${{fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].packageName }} -- --files ${{ fromJson(needs.generate-test-matrix.outputs.matrix).namesToFiles[matrix.testName].file }}
         env:
           FORCE_COLOR: 1
   

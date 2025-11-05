@@ -2,16 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
 const sinon = require('sinon');
 
 const HttpEngine = require('../../lib/engine_http');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const nock = require('nock');
 
-test('url and uri parameters', function (t) {
+test('url and uri parameters', (t) => {
   const target = nock('http://localhost:8888').get('/hello').reply(200, 'ok');
 
   const target2 = nock('http://localhost:8888')
@@ -22,18 +20,18 @@ test('url and uri parameters', function (t) {
     config: {
       target: 'http://localhost:8888',
       processor: {
-        printHello: function (req, context, ee, next) {
+        printHello: (_req, context, _ee, next) => {
           console.log('# output from printHello hook!');
           context.vars.name = 'whatever';
           context.vars.uriList = [{ dev: 'hello', test: 'goodbye' }];
           return next();
         },
-        logDetails: function (res, req, ctx, ee, done) {
+        logDetails: (res, _req, _ctx, _ee, done) => {
           console.log('# output from logDetails hook!');
           console.log(`# ${res.name}`);
           return done();
         },
-        logDetailsAgain: function (res, req, ctx, ee, done) {
+        logDetailsAgain: (res, _req, _ctx, _ee, done) => {
           console.log('# output from logDetailsAgain hook!');
           console.log(`# ${res.name}`);
           return done();
@@ -83,7 +81,7 @@ test('url and uri parameters', function (t) {
     vars: {}
   };
 
-  runScenario(initialContext, function userDone(err, finalContext) {
+  runScenario(initialContext, function userDone(err, _finalContext) {
     if (err) {
       t.fail();
     }

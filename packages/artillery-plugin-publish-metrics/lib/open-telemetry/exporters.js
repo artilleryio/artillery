@@ -1,5 +1,3 @@
-'use strict';
-
 const metricExporters = {
   'otlp-proto'(options) {
     const {

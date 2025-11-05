@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const { test } = require('tap');
-const L = require('lodash');
+const _L = require('lodash');
 const jitter = require('@artilleryio/int-commons').jitter.jitter;
 const util = require('@artilleryio/int-commons').engine_util;
 
-test('jitter', function (t) {
+test('jitter', (t) => {
   t.equal(
     jitter(1000),
     1000,
@@ -23,7 +21,7 @@ test('jitter', function (t) {
 
   let fails1 = 0;
   for (let i = 0; i < 100; i++) {
-    let largeDeviation = jitter('1000:5000');
+    const largeDeviation = jitter('1000:5000');
     if (largeDeviation < 0) {
       t.ok(false, `largeDeviation is ${largeDeviation}; expected >= 0`);
       fails1++;
@@ -35,7 +33,7 @@ test('jitter', function (t) {
 
   let fails2 = 0;
   for (let i = 0; i < 100; i++) {
-    let percentJitter = jitter('5000:20%');
+    const percentJitter = jitter('5000:20%');
     if (percentJitter < 4000 || percentJitter > 6000) {
       t.ok(false, `percentJitter is ${percentJitter}; expected >=4000 <=6000`);
       fails2++;
@@ -48,12 +46,10 @@ test('jitter', function (t) {
   t.end();
 });
 
-test('loop - error handling', function (t) {
-  let steps = [
-    function (context, next) {
-      return next(null, context);
-    },
-    function (context, next) {
+test('loop - error handling', (t) => {
+  const steps = [
+    (context, next) => next(null, context),
+    (context, next) => {
       if (context.vars.$loopCount === 5) {
         return next(new Error('ESOMEERR'), context);
       } else {
@@ -61,8 +57,8 @@ test('loop - error handling', function (t) {
       }
     }
   ];
-  let loop = util.createLoopWithCount(10, steps, {});
-  loop({ vars: {} }, function (err, context) {
+  const loop = util.createLoopWithCount(10, steps, {});
+  loop({ vars: {} }, (err, _context) => {
     t.ok(
       typeof err === 'object' && err.message === 'ESOMEERR',
       'Errors are returned normally from loop steps'
@@ -71,9 +67,9 @@ test('loop - error handling', function (t) {
   });
 });
 
-test('rendering variables', function (t) {
-  let str = 'Hello {{ name }}, hope your {{{ day }}} is going great!';
-  let vars = {
+test('rendering variables', (t) => {
+  const str = 'Hello {{ name }}, hope your {{{ day }}} is going great!';
+  const vars = {
     name: 'Hassy',
     day: 'Friday',
     favoriteThings: {

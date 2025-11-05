@@ -1,6 +1,6 @@
-const { test, afterEach, beforeEach, skip } = require('tap');
+const { afterEach, beforeEach, skip } = require('tap');
 const { $ } = require('zx');
-const fs = require('fs');
+const fs = require('node:fs');
 const { generateTmpReportPath, deleteFile } = require('../../helpers');
 
 const {
@@ -13,7 +13,7 @@ const {
 
 beforeEach(async (t) => {
   t.context.reportFilePath = generateTmpReportPath(t.name, 'json');
-  t.context.tracesFilePath = generateTmpReportPath('spans_' + t.name, 'json');
+  t.context.tracesFilePath = generateTmpReportPath(`spans_${t.name}`, 'json');
 });
 
 afterEach(async (t) => {

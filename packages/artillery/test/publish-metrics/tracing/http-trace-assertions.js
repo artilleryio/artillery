@@ -1,4 +1,4 @@
-'use strict';
+
 
 const { getTestId } = require('../fixtures/helpers.js');
 
@@ -178,7 +178,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
 
   Object.keys(reportSummary.counters)
     .filter((counter) => {
-      counter.startsWith('http.codes.');
+      return counter.startsWith('http.codes.');
     })
     .forEach((metric) => {
       const statusCode = metric.split('.')[2];
@@ -253,12 +253,12 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
 
   // Attributes
   t.equal(
-    spans.filter((span) => span.attributes['test_id']).length,
+    spans.filter((span) => span.attributes.test_id).length,
     spans.length,
     'All spans should have the test_id attribute'
   );
   t.equal(
-    spans.filter((span) => span.attributes['test_id'] === testId).length,
+    spans.filter((span) => span.attributes.test_id === testId).length,
     spans.length,
     'All spans should have the correct test_id attribute value'
   );

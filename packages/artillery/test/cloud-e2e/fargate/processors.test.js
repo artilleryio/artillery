@@ -1,7 +1,7 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const {
   generateTmpReportPath,
   getTestTags,
@@ -74,7 +74,7 @@ test('Run a test with an ESM processor @windows', async (t) => {
   );
 
   t.equal(
-    report.aggregate.counters['hey_from_esm'],
+    report.aggregate.counters.hey_from_esm,
     10,
     'Should have emitted 10 custom metrics from ts processor'
   );

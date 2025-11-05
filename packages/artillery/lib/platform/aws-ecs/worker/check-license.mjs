@@ -1,4 +1,4 @@
-import { setTimeout } from 'timers/promises';
+import { setTimeout } from 'node:timers/promises';
 
 async function main() {
   const url = 'https://app.artillery.io/api/user/whoami';

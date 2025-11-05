@@ -1,0 +1,26 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.3/schema.json",
+  "formatter": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "suspicious": {
+        "noThenProperty": "off",
+        "noExplicitAny": "off"
+      }
+    }
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!**/packages/types",
+      "!**/packages/artillery-engine-playwright/test/**/*.ts",
+      "!**/examples/browser-playwright-reuse-typescript/**/*.ts",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/build"
+    ]
+  }
+}

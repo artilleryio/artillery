@@ -17,9 +17,9 @@ class DinoCommand extends Command {
     const n = message.length + 2;
     const balloon = ` ${'-'.repeat(n)}\n< ${message} >\n ${'-'.repeat(n)}\n`;
 
-    output += balloon + '          \\\n' + '           \\\n';
+    output += `${balloon}          \\\n           \\\n`;
 
-    let i = Math.floor(Math.random() * dinos.length);
+    const i = Math.floor(Math.random() * dinos.length);
     output += dinos[i];
 
     if (flags.rainbow) {

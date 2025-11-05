@@ -1,8 +1,8 @@
 const tap = require('tap');
 const { execute, generateTmpReportPath, deleteFile } = require('../helpers');
 const { checkForNegativeValues } = require('../helpers/expectations');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 let reportFilePath;
 tap.beforeEach(async (t) => {
@@ -30,7 +30,7 @@ tap.test('Can run a Typescript processor', async (t) => {
     'Should have made 2 requests'
   );
   t.equal(
-    json.aggregate.counters['hey_from_ts'],
+    json.aggregate.counters.hey_from_ts,
     2,
     'Should have emitted 2 custom metrics from ts processor'
   );
@@ -75,7 +75,7 @@ tap.test('Runs correctly when package is marked as external', async (t) => {
     'Should have made 2 requests'
   );
   t.equal(
-    json.aggregate.counters['hey_from_ts'],
+    json.aggregate.counters.hey_from_ts,
     2,
     'Should have emitted 2 custom metrics from ts processor'
   );

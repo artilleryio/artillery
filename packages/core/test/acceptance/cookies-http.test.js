@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const l = require('lodash');
@@ -18,12 +16,12 @@ afterEach(() => {
   server.stop();
 });
 
-test('cookie jar http', function (t) {
+test('cookie jar http', (t) => {
   const script = require('../scripts/cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       request(`http://127.0.0.1:${port}/_stats`, { responseType: 'json' })
         .then((res) => {
@@ -47,12 +45,12 @@ test('cookie jar http', function (t) {
   });
 });
 
-test('cookie jar invalid response', function (t) {
+test('cookie jar invalid response', (t) => {
   const script = require('../scripts/cookies_malformed_response.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         report.codes[200] && report.codes[200] > 0,
@@ -71,7 +69,7 @@ test('cookie jar invalid response', function (t) {
   });
 });
 
-test('setting cookie jar parsing options', function (t) {
+test('setting cookie jar parsing options', (t) => {
   const script = require('../scripts/cookies_malformed_response.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -79,8 +77,8 @@ test('setting cookie jar parsing options', function (t) {
     http: { cookieJarOptions: { looseMode: true } }
   });
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         report.codes[200] && report.codes[200] > 0,
@@ -96,12 +94,12 @@ test('setting cookie jar parsing options', function (t) {
   });
 });
 
-test('default cookies', function (t) {
+test('default cookies', (t) => {
   const script = require('../scripts/defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         report.codes[200] && report.codes[200] > 0,
@@ -116,7 +114,7 @@ test('default cookies', function (t) {
   });
 });
 
-test('default cookies from config.http.defaults instead', function (t) {
+test('default cookies from config.http.defaults instead', (t) => {
   const script = l.cloneDeep(require('../scripts/defaults_cookies.json'));
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -124,8 +122,8 @@ test('default cookies from config.http.defaults instead', function (t) {
   delete script.config.defaults;
   script.config.http = { defaults: { cookie } };
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         report.codes[200] && report.codes[200] > 0,
@@ -140,7 +138,7 @@ test('default cookies from config.http.defaults instead', function (t) {
   });
 });
 
-test('default cookies from config.http.defaults should take precedence', function (t) {
+test('default cookies from config.http.defaults should take precedence', (t) => {
   const script = l.cloneDeep(require('../scripts/defaults_cookies.json'));
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -148,8 +146,8 @@ test('default cookies from config.http.defaults should take precedence', functio
   script.config.http = { defaults: { cookie } };
   script.config.defaults.cookie = 'rubbishcookie';
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         report.codes[200] && report.codes[200] > 0,
@@ -164,13 +162,13 @@ test('default cookies from config.http.defaults should take precedence', functio
   });
 });
 
-test('no default cookie', function (t) {
+test('no default cookie', (t) => {
   const script = require('../scripts/defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   delete script.config.defaults.cookie;
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         report.codes[403] && report.codes[403] > 0,
@@ -185,12 +183,12 @@ test('no default cookie', function (t) {
   });
 });
 
-test('no default cookie still sends cookies defined in script', function (t) {
+test('no default cookie still sends cookies defined in script', (t) => {
   const script = require('../scripts/no_defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runner(script).then(function (ee) {
-    ee.on('done', function (nr) {
+  runner(script).then((ee) => {
+    ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       t.ok(
         report.codes[200] && report.codes[200] > 0,

@@ -1,4 +1,4 @@
-import { createServer } from 'http';
+import { createServer } from 'node:http';
 import { createTwirpServer } from 'twirpscript';
 import { habderdasherHandler } from './haberdasher/index.js';
 
@@ -34,6 +34,5 @@ app.use(async (req, _ctx, next) => {
 });
 
 createServer(app).listen(PORT, () =>
-  // eslint-disable-next-line no-undef
   console.log(`Server listening on port ${PORT}`)
 );

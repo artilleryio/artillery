@@ -1,4 +1,4 @@
-function myAfterResponseHandler(req, res, context, ee, next) {
+function myAfterResponseHandler(req, _res, context, _ee, next) {
   //These are being console.logged so they can be asserted on by the test framework on the output
   console.log(`HTTP timeout is: ${req.timeout}`);
   console.log(
