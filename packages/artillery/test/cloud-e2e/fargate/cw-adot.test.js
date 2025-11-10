@@ -1,6 +1,6 @@
 
 
-const { afterEach, beforeEach, before } = require('tap');
+const { afterEach, beforeEach, before, skip } = require('tap');
 const { $ } = require('zx');
 const fs = require('node:fs');
 const {
@@ -32,7 +32,7 @@ before(async () => {
   await $`${A9_PATH} -V`;
 });
 
-tap.skip('traces succesfully arrive to cloudwatch', async (t) => {
+skip('traces succesfully arrive to cloudwatch', async (t) => {
   // Arrange:
   const expectedTotalSpans = 28; // 4 VUs * (1 scenario root span + 3 pageSpans + 3 stepSpans )
   const expectedVus = 4;
