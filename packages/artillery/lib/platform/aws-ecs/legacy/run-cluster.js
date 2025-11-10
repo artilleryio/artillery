@@ -1426,7 +1426,7 @@ async function generateTaskOverrides(context) {
     context.cliOptions.environment
       ? ['--environment', context.cliOptions.environment]
       : [],
-    context.cliOptions['scenario-name']
+    context.cliOptions['scenarioName']
       ? ['--scenario-name', context.cliOptions['scenario-name']]
       : [],
     context.cliOptions.insecure ? ['-k'] : [],
