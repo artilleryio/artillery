@@ -1,5 +1,4 @@
 const debug = require('debug')('console-capture');
-const _sleep = require('./util/sleep');
 
 function setupConsoleCapture() {
   let outputLines = [];
@@ -41,13 +40,13 @@ function setupConsoleCapture() {
 
   console.log = (() => {
     const orig = console.log;
-    return (...args) => {
+    return () => {
       try {
-        orig.apply(console, args);
+        orig.apply(console, arguments);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(args);
-          for (const x of args) {
+          outputLines = outputLines.concat(arguments);
+          for (const x of arguments) {
             currentSize += String(x).length;
           }
         } else {
@@ -66,13 +65,13 @@ function setupConsoleCapture() {
 
   console.error = (() => {
     const orig = console.error;
-    return (...args) => {
+    return () => {
       try {
-        orig.apply(console, args);
+        orig.apply(console, arguments);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(args);
-          for (const x of args) {
+          outputLines = outputLines.concat(arguments);
+          for (const x of arguments) {
             currentSize += String(x).length;
           }
         } else {
