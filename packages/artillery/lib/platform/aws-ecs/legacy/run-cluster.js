@@ -157,66 +157,6 @@ function logProgress(msg, opts = {}) {
 }
 
 async function tryRunCluster(scriptPath, options, artilleryReporter) {
-  const MAX_RETAINED_LOG_SIZE_MB = Number(
-    process.env.MAX_RETAINED_LOG_SIZE_MB || '50'
-  );
-  const MAX_RETAINED_LOG_SIZE = MAX_RETAINED_LOG_SIZE_MB * 1024 * 1024;
-
-  let currentSize = 0;
-  // Override console.log so as not to interfere with the spinner
-  let outputLines = [];
-  let truncated = false;
-
-  console.log = (() => {
-    const orig = console.log;
-    return (...args) => {
-      try {
-        orig.apply(console, args);
-
-        if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(args);
-          for (const x of args) {
-            currentSize += String(x).length;
-          }
-        } else {
-          if (!truncated) {
-            truncated = true;
-            const msg = `[WARNING] Artillery: maximum retained log size exceeded, max size: ${MAX_RETAINED_LOG_SIZE_MB}MB. Further logs won't be retained.\n\n`;
-            process.stdout.write(msg);
-            outputLines = outputLines.concat([msg]);
-          }
-        }
-      } catch (err) {
-        debug(err);
-      }
-    };
-  })();
-
-  console.error = (() => {
-    const orig = console.error;
-    return (...args) => {
-      try {
-        orig.apply(console, args);
-
-        if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(args);
-          for (const x of args) {
-            currentSize += String(x).length;
-          }
-        } else {
-          if (!truncated) {
-            truncated = true;
-            const msg = `[WARNING] Artillery: maximum retained log size exceeded, max size: ${MAX_RETAINED_LOG_SIZE_MB}MB. Further logs won't be retained.\n\n`;
-            process.stdout.write(msg);
-            outputLines = outputLines.concat([msg]);
-          }
-        }
-      } catch (err) {
-        debug(err);
-      }
-    };
-  })();
-
   global.artillery.awsRegion = (await awsGetDefaultRegion()) || options.region;
 
   let context = {};
