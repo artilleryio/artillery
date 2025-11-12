@@ -235,14 +235,18 @@ function getCustomEngines(context, next) {
 }
 
 function getCustomJsDependencies(context, next) {
-  if (
-    context.opts.scriptData.config?.processor
-  ) {
+  if (context.opts.scriptData.config?.processor) {
+    // When using a separate config file, resolve paths relative to the scenario file
+    // Otherwise, resolve relative to the config file
+    const baseDir = context.opts.scenarioPath
+      ? path.dirname(context.opts.scenarioPath)
+      : path.dirname(context.opts.absoluteScriptPath);
+
     //
     // Path to the main processor file:
     //
     const procPath = path.resolve(
-      path.dirname(context.opts.absoluteScriptPath),
+      baseDir,
       context.opts.scriptData.config.processor
     );
     context.localFilePaths.push(procPath);
@@ -250,7 +254,7 @@ function getCustomJsDependencies(context, next) {
     // Get the tree of requires from the main processor file:
     const tree = depTree.toList({
       filename: procPath,
-      directory: path.dirname(context.opts.absoluteScriptPath),
+      directory: baseDir,
       filter: (path) => path.indexOf('node_modules') === -1 // optional
     });
 
@@ -317,23 +321,19 @@ function getVariableDataFiles(context, next) {
   function resolvePayloadPaths(obj) {
     const result = [];
     if (obj.payload) {
+      // When using a separate config file, resolve paths relative to the scenario file
+      // Otherwise, resolve relative to the config file
+      const baseDir = context.opts.scenarioPath
+        ? path.dirname(context.opts.scenarioPath)
+        : path.dirname(context.opts.absoluteScriptPath);
+
       if (_.isArray(obj.payload)) {
         obj.payload.forEach((payloadSpec) => {
-          result.push(
-            path.resolve(
-              path.dirname(context.opts.absoluteScriptPath),
-              payloadSpec.path
-            )
-          );
+          result.push(path.resolve(baseDir, payloadSpec.path));
         });
       } else if (_.isObject(obj.payload)) {
         // isObject returns true for arrays, so this branch must come second
-        result.push(
-          path.resolve(
-            path.dirname(context.opts.absoluteScriptPath),
-            obj.payload.path
-          )
-        );
+        result.push(path.resolve(baseDir, obj.payload.path));
       }
     }
     return result;
@@ -357,16 +357,20 @@ function getVariableDataFiles(context, next) {
 }
 
 function getFileUploadPluginFiles(context, next) {
-  if (
-    context.opts.scriptData.config?.plugins?.['http-file-uploads']
-  ) {
+  if (context.opts.scriptData.config?.plugins?.['http-file-uploads']) {
     // Append filePaths array if it's there:
 
     if (context.opts.scriptData.config.plugins['http-file-uploads'].filePaths) {
+      // When using a separate config file, resolve paths relative to the scenario file
+      // Otherwise, resolve relative to the config file
+      const baseDir = context.opts.scenarioPath
+        ? path.dirname(context.opts.scenarioPath)
+        : path.dirname(context.opts.absoluteScriptPath);
+
       const absPaths = context.opts.scriptData.config.plugins[
         'http-file-uploads'
       ].filePaths.map((p) => {
-        return path.resolve(path.dirname(context.opts.absoluteScriptPath), p);
+        return path.resolve(baseDir, p);
       });
       context.localFilePaths = context.localFilePaths.concat(absPaths);
     }
@@ -377,14 +381,15 @@ function getFileUploadPluginFiles(context, next) {
 }
 
 function getExtraFiles(context, next) {
-  if (
-    context.opts.scriptData.config?.includeFiles
-  ) {
+  if (context.opts.scriptData.config?.includeFiles) {
+    // When using a separate config file, resolve paths relative to the scenario file
+    // Otherwise, resolve relative to the config file
+    const baseDir = context.opts.scenarioPath
+      ? path.dirname(context.opts.scenarioPath)
+      : path.dirname(context.opts.absoluteScriptPath);
+
     const absPaths = _.map(context.opts.scriptData.config.includeFiles, (p) => {
-      const includePath = path.resolve(
-        path.dirname(context.opts.absoluteScriptPath),
-        p
-      );
+      const includePath = path.resolve(baseDir, p);
       debug('includeFile:', includePath);
       return includePath;
     });
