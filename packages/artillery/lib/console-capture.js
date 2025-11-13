@@ -45,7 +45,7 @@ function setupConsoleCapture() {
         orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(args);
+          outputLines = outputLines.concat([args]);
           for (const x of args) {
             currentSize += String(x).length;
           }
@@ -70,7 +70,7 @@ function setupConsoleCapture() {
         orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(args);
+          outputLines = outputLines.concat([args]);
           for (const x of args) {
             currentSize += String(x).length;
           }
