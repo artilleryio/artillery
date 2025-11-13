@@ -40,13 +40,13 @@ function setupConsoleCapture() {
 
   console.log = (() => {
     const orig = console.log;
-    return () => {
+    return (...args) => {
       try {
-        orig.apply(console, arguments);
+        orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
+          outputLines = outputLines.concat(args);
+          for (const x of args) {
             currentSize += String(x).length;
           }
         } else {
@@ -65,13 +65,13 @@ function setupConsoleCapture() {
 
   console.error = (() => {
     const orig = console.error;
-    return () => {
+    return (...args) => {
       try {
-        orig.apply(console, arguments);
+        orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
+          outputLines = outputLines.concat(args);
+          for (const x of args) {
             currentSize += String(x).length;
           }
         } else {
