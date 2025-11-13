@@ -236,17 +236,12 @@ function getCustomEngines(context, next) {
 
 function getCustomJsDependencies(context, next) {
   if (context.opts.scriptData.config?.processor) {
-    // When using a separate config file, resolve paths relative to the scenario file
-    // Otherwise, resolve relative to the config file
-    const baseDir = context.opts.scenarioPath
-      ? path.dirname(context.opts.scenarioPath)
-      : path.dirname(context.opts.absoluteScriptPath);
-
     //
     // Path to the main processor file:
     //
+
     const procPath = path.resolve(
-      baseDir,
+      path.dirname(context.opts.absoluteScriptPath),
       context.opts.scriptData.config.processor
     );
     context.localFilePaths.push(procPath);
@@ -254,7 +249,7 @@ function getCustomJsDependencies(context, next) {
     // Get the tree of requires from the main processor file:
     const tree = depTree.toList({
       filename: procPath,
-      directory: baseDir,
+      directory: path.dirname(context.opts.absoluteScriptPath),
       filter: (path) => path.indexOf('node_modules') === -1 // optional
     });
 
