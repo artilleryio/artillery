@@ -1,5 +1,4 @@
 const debug = require('debug')('console-capture');
-const _sleep = require('./util/sleep');
 
 function setupConsoleCapture() {
   let outputLines = [];

@@ -135,7 +135,7 @@ class ArtilleryCloudPlugin {
           console.log(stringifyErr);
         }
         for (const args of lines) {
-          text += `${util.format(...Object.keys(args).map((k) => args[k]))}\n`;
+          text += util.format(...Object.keys(args).map((k) => args[k])) + '\n';
         }
 
         try {
