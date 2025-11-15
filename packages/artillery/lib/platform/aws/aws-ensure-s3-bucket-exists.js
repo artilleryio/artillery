@@ -7,7 +7,8 @@ const debug = require('debug')('util:aws:ensureS3BucketExists');
 const {
   S3Client,
   PutBucketLifecycleConfigurationCommand,
-  CreateBucketCommand
+  CreateBucketCommand,
+  NoSuchBucket
 } = require('@aws-sdk/client-s3');
 
 const getAWSAccountId = require('./aws-get-account-id');
@@ -57,7 +58,7 @@ module.exports = async function ensureS3BucketExists(
   try {
     location = await getBucketRegion(bucketName);
   } catch (err) {
-    if (err.name === 'NoSuchBucket') {
+    if (err instanceof NoSuchBucket) {
       await s3.send(new CreateBucketCommand({ Bucket: bucketName }));
     } else {
       throw err;

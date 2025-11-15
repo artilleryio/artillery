@@ -6,7 +6,9 @@ const {
   StopTaskCommand,
   DescribeTaskDefinitionCommand,
   RegisterTaskDefinitionCommand,
-  DeregisterTaskDefinitionCommand
+  DeregisterTaskDefinitionCommand,
+  InvalidParameterException,
+  ThrottlingException
 } = require('@aws-sdk/client-ecs');
 const {
   SQSClient,
@@ -15,7 +17,7 @@ const {
   ListQueuesCommand,
   GetQueueAttributesCommand
 } = require('@aws-sdk/client-sqs');
-const { GetObjectCommand } = require('@aws-sdk/client-s3');
+const { GetObjectCommand, NoSuchKey } = require('@aws-sdk/client-s3');
 const { IAMClient, GetRoleCommand } = require('@aws-sdk/client-iam');
 // Normal debugging for messages, summaries, and errors:
 const debug = require('debug')('commands:run-test');
@@ -762,7 +764,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       debug(context.testId, 'done');
     } catch (err) {
       debug(err);
-      if (err.code === 'InvalidParameterException') {
+      if (err instanceof InvalidParameterException) {
         if (
           err.message
             .toLowerCase()
@@ -1353,7 +1355,7 @@ async function getManifest(context) {
 
     return context;
   } catch (err) {
-    if (err.code === 'NoSuchKey') {
+    if (err instanceof NoSuchKey) {
       throw new TestNotFoundError();
     } else {
       throw err;
@@ -1662,7 +1664,7 @@ async function ecsRunTask(context) {
         throw new Error('Not enough ECS capacity');
       }
     } catch (runErr) {
-      if (runErr.code === 'ThrottlingException') {
+      if (runErr instanceof ThrottlingException) {
         artillery.log('ThrottlingException returned from ECS, retrying');
         await sleep(2000 * retries);
         debug('runTask throttled, retrying');
