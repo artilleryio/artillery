@@ -14,7 +14,9 @@ const {
   GetFunctionConfigurationCommand,
   InvokeCommand,
   CreateFunctionCommand,
-  DeleteFunctionCommand
+  DeleteFunctionCommand,
+  ResourceConflictException,
+  ResourceNotFoundException
 } = require('@aws-sdk/client-lambda');
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const { SQSClient, DeleteQueueCommand } = require('@aws-sdk/client-sqs');
@@ -623,7 +625,7 @@ class PlatformLambda {
       });
       return;
     } catch (err) {
-      if (err.code === 'ResourceConflictException') {
+      if (err instanceof ResourceConflictException) {
         debug(
           'Lambda function with this configuration already exists. Using existing function.'
         );
@@ -649,7 +651,7 @@ class PlatformLambda {
 
       return res;
     } catch (err) {
-      if (err.name === 'ResourceNotFoundException') {
+      if (err instanceof ResourceNotFoundException) {
         return null;
       }
 
