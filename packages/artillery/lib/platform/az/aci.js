@@ -644,7 +644,7 @@ class PlatformAzureACI {
       }
 
       const plan = activeMembership.plan;
-      return plan === 'business' || plan === 'enterprise';
+      return plan !== 'developer';
     } catch (_err) {
       return false;
     }
