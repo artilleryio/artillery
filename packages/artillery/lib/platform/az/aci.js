@@ -24,6 +24,20 @@ const dotenv = require('dotenv');
 const fs = require('node:fs');
 const request = require('got');
 
+// Helper to convert readable stream to string
+async function streamToString(readableStream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    readableStream.on('data', (data) => {
+      chunks.push(data.toString());
+    });
+    readableStream.on('end', () => {
+      resolve(chunks.join(''));
+    });
+    readableStream.on('error', reject);
+  });
+}
+
 class PlatformAzureACI {
   constructor(script, variablePayload, opts, platformOpts) {
     this.script = script;
@@ -255,6 +269,28 @@ class PlatformAzureACI {
 
           if (!payload) {
             throw new Error('AQS message with an empty body');
+          }
+
+          // Handle overflow messages stored in blob storage
+          if (payload._overflowRef) {
+            try {
+              const blobClient =
+                this.blobContainerClient.getBlockBlobClient(
+                  payload._overflowRef
+                );
+              const downloadResponse = await blobClient.download(0);
+              const downloaded = await streamToString(
+                downloadResponse.readableStreamBody
+              );
+              const fullMessage = JSON.parse(downloaded);
+              payload = fullMessage.payload;
+              attributes = fullMessage.attributes;
+            } catch (blobErr) {
+              console.error('Failed to fetch worker message:', blobErr);
+              throw new Error(
+                `Failed to fetch worker message: ${payload._overflowRef}`
+              );
+            }
           }
 
           if (!attributes || !attributes.testId || !attributes.workerId) {
@@ -506,6 +542,10 @@ class PlatformAzureACI {
       {
         name: 'AZURE_STORAGE_ACCOUNT',
         value: this.storageAccount
+      },
+      {
+        name: 'AZURE_STORAGE_BLOB_CONTAINER',
+        value: this.blobContainerName
       },
       {
         name: 'AZURE_SUBSCRIPTION_ID',
