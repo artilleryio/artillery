@@ -44,7 +44,26 @@ async function playwrightFunctionWithFailure(page, _vuContext, events, test) {
   events.emit('counter', 'custom_emitter', 1);
 }
 
+async function urlNormalizationTest(page, _vuContext, events, test) {
+  const testUrls = [
+    '/docs?id=123',
+    '/docs?id=456',
+    '/docs?plan=team',
+    '/docs?plan=business',
+    '/docs?id=789&plan=team',
+    '/docs?id=999&plan=business'
+  ];
+
+  for (const url of testUrls) {
+    await test.step(`visit_${url}`, async () => {
+      await retryGoingToPage(page, url);
+      await page.waitForTimeout(100);
+    });
+  }
+}
+
 module.exports = {
   artilleryPlaywrightFunction,
-  playwrightFunctionWithFailure
+  playwrightFunctionWithFailure,
+  urlNormalizationTest
 };

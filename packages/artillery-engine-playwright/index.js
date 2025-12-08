@@ -36,6 +36,10 @@ class PlaywrightEngine {
     this.showAllPageMetrics =
       typeof script.config.engines.playwright.showAllPageMetrics !==
       'undefined';
+    this.stripQueryString =
+      script.config.engines.playwright.stripQueryString || false;
+    this.normalizeQueryString =
+      script.config.engines.playwright.normalizeQueryString !== false;
 
     this.useSeparateBrowserPerVU =
       typeof script.config.engines.playwright.useSeparateBrowserPerVU ===
@@ -97,8 +101,53 @@ class PlaywrightEngine {
 
     const self = this;
 
+    function normalizeUrl(url) {
+      if (!url) return url;
+
+      try {
+        const urlObj = new URL(url);
+
+        // Strip query string if enabled
+        if (self.stripQueryString) {
+          return urlObj.origin + urlObj.pathname;
+        }
+
+        // Normalize query string if enabled
+        if (self.normalizeQueryString && urlObj.search) {
+          const params = new URLSearchParams(urlObj.search);
+          const normalizedParams = [];
+
+          for (const [key, value] of params) {
+            // Replace numeric values with NUMBER, all other values with STRING
+            const normalizedValue = /^-?\d+(\.\d+)?$/.test(value)
+              ? 'NUMBER'
+              : 'STRING';
+            normalizedParams.push([key, normalizedValue]);
+          }
+
+          // Sort parameters alphabetically by key
+          normalizedParams.sort((a, b) => a[0].localeCompare(b[0]));
+
+          // Build the sorted query string
+          const sortedParams = new URLSearchParams(normalizedParams);
+
+          return (
+            urlObj.origin +
+            urlObj.pathname +
+            (sortedParams.toString() ? '?' + sortedParams.toString() : '')
+          );
+        }
+
+        return url;
+      } catch (e) {
+        // If URL parsing fails, return original URL
+        debug('Failed to parse URL for normalization:', e);
+        return url;
+      }
+    }
+
     function getName(url) {
-      return self.aggregateByName && spec.name ? spec.name : url;
+      return self.aggregateByName && spec.name ? spec.name : normalizeUrl(url);
     }
 
     const step = async (stepName, userActions) => {
