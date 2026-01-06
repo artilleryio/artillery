@@ -284,3 +284,57 @@ test('playwright typescript test fails and has correct vu count when expectation
     );
   }
 });
+
+test('playwright url normalization works correctly', async (t) => {
+  const output =
+    await $`../artillery/bin/run run ./test/fixtures/pw-url-normalization.yml --output ${playwrightOutput}`;
+
+  t.equal(
+    output.exitCode,
+    0,
+    `should have exit code 0, got ${output.exitCode}`
+  );
+
+  const jsonReport = JSON.parse(fs.readFileSync(playwrightOutput, 'utf8'));
+  const counters = jsonReport.aggregate.counters;
+  const summaries = jsonReport.aggregate.summaries;
+
+  // Check that numeric parameters were normalized
+  const docsIdMetricKey = `browser.page.domcontentloaded.${TEST_URL}docs?id=NUMBER`;
+  t.ok(
+    counters[docsIdMetricKey] >= 2,
+    'should have normalized /docs?id=123 and /docs?id=456 to /docs?id=NUMBER'
+  );
+
+  // Check that string parameters are normalized
+  const docsPlanMetricKey = `browser.page.domcontentloaded.${TEST_URL}docs?plan=STRING`;
+  t.ok(
+    counters[docsPlanMetricKey] >= 2,
+    'should have normalized /docs?plan=team and /docs?plan=business to /docs?plan=STRING'
+  );
+
+  // Check mixed parameters (both numeric and string)
+  const mixedMetricKey = `browser.page.domcontentloaded.${TEST_URL}docs?id=NUMBER&plan=STRING`;
+  t.ok(
+    counters[mixedMetricKey] >= 2,
+    'should have normalized /docs?id=789&plan=team and /docs?id=999&plan=business to /docs?id=NUMBER&plan=STRING'
+  );
+
+  // Ensure we don’t have the non-normalized metrics
+  t.notOk(
+    counters[`browser.page.domcontentloaded.${TEST_URL}docs?id=123`],
+    'should not have metric for specific id=123'
+  );
+  t.notOk(
+    counters[`browser.page.domcontentloaded.${TEST_URL}docs?id=456`],
+    'should not have metric for specific id=456'
+  );
+  t.notOk(
+    counters[`browser.page.domcontentloaded.${TEST_URL}docs?plan=team`],
+    'should not have metric for specific plan=team'
+  );
+  t.notOk(
+    counters[`browser.page.domcontentloaded.${TEST_URL}docs?plan=business`],
+    'should not have metric for specific plan=business'
+  );
+});

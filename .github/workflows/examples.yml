@@ -17,19 +17,22 @@ jobs:
     timeout-minutes: 10
     env:
       CWD: ./examples/browser-load-testing-playwright
-    defaults:
-      run:
-        working-directory: ${{ env.CWD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Run example
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: "22.x"
+
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
+      # Uses the version from packages/artillery-engine-playwright
+      - name: Install Playwright Browsers
+        run: npm exec --workspace artillery-engine-playwright -- playwright install chromium --with-deps
+
       - name: Run test
         run: |
           $ARTILLERY_BINARY_PATH run browser-load-test.ts --record --tags ${{ env.CLI_TAGS }},group:browser-load-test --note "${{ env.CLI_NOTE }}"

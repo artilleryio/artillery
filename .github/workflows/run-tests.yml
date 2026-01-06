@@ -40,6 +40,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm install
       - run: npm run build
+      - name: Install Playwright Browsers
+        if: matrix.package == 'artillery-engine-playwright'
+        run: npm exec --workspace artillery-engine-playwright -- playwright install chromium --with-deps
       - run: npm run test --workspace ${{ matrix.package }}
         env:
           FORCE_COLOR: 1
@@ -51,7 +54,7 @@ jobs:
           fields: repo,message,commit,author,eventName,job,took,pullRequest
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  
+
   test-windows:
     timeout-minutes: 60
     runs-on: windows-latest
