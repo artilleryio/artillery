@@ -521,6 +521,8 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         if (e.ext === 'beforeExit') {
           ps.push(
             e.method({
+              exitCode: opts.exitCode,
+              earlyStop: opts.earlyStop,
               report: context.aggregateReport,
               flags: context.cliOptions,
               runnerOpts: {
