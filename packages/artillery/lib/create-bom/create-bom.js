@@ -4,12 +4,13 @@
 
 // TODO: async-ify this
 
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 const A = require('async');
 const debug = require('debug')('bom');
 const _ = require('lodash');
 const Table = require('cli-table3');
+const { getCustomJsDependencies } = require('../platform/aws-ecs/legacy/bom');
 
 const { readScript, parseScript } = require('../util');
 
@@ -41,7 +42,7 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       // expandDirectories
     ],
 
-    function (err, context) {
+    (err, context) => {
       if (err) {
         return callback(err, null);
       }
@@ -92,12 +93,12 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       debug(dependencyFiles);
 
-      dependencyFiles.forEach(function (p) {
+      dependencyFiles.forEach((p) => {
         try {
           if (fs.statSync(p)) {
             context.localFilePaths.push(p);
           }
-        } catch (ignoredErr) {}
+        } catch (_ignoredErr) {}
       });
 
       const files = context.localFilePaths.map((p) => {
@@ -130,9 +131,9 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 }
 
 function getPlugins(context, next) {
-  let environmentPlugins = _.reduce(
+  const environmentPlugins = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentPlugins(acc, envSpec, envName) {
+    function getEnvironmentPlugins(acc, envSpec, _envName) {
       acc = acc.concat(Object.keys(envSpec.plugins || []));
       return acc;
     },
@@ -165,25 +166,6 @@ function getCustomEngines(context, next) {
   return next(null, context);
 }
 
-function getCustomJsDependencies(context, next) {
-  if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.processor
-  ) {
-    const procPath = path.resolve(
-      path.dirname(context.opts.absoluteScriptPath),
-      context.opts.scriptData.config.processor
-    );
-    context.localFilePaths.push(procPath);
-
-    debug('got custom JS dependencies');
-    return next(null, context);
-  } else {
-    debug('no custom JS dependencies');
-    return next(null, context);
-  }
-}
-
 function getVariableDataFiles(context, next) {
   // NOTE: Presuming that the script has been run through the functions
   // that normalize the config.payload definition (presume it's an array).
@@ -193,7 +175,7 @@ function getVariableDataFiles(context, next) {
   // Iterate over environments
 
   function resolvePayloadPaths(obj) {
-    let result = [];
+    const result = [];
     if (obj.payload) {
       if (_.isArray(obj.payload)) {
         obj.payload.forEach((payloadSpec) => {
@@ -236,8 +218,7 @@ function getVariableDataFiles(context, next) {
 
 function getExtraFiles(context, next) {
   if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.includeFiles
+    context.opts.scriptData.config?.includeFiles
   ) {
     const absPaths = _.map(context.opts.scriptData.config.includeFiles, (p) => {
       const includePath = path.resolve(

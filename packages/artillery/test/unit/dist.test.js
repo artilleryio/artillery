@@ -1,4 +1,4 @@
-'use strict';
+
 
 const tap = require('tap');
 const divideWork = require('../../lib/dist');
@@ -133,7 +133,11 @@ tap.test('set max vusers', (t) => {
     (partialSum, phase) => partialSum + phase.config.phases[0].maxVusers,
     0
   );
-  t.equal(script.config.phases[0].maxVusers, actualVusers);
+  t.equal(
+    actualVusers,
+    script.config.phases[0].maxVusers,
+    'actual vusers should be equal to maxVusers'
+  );
   t.end();
 });
 
@@ -163,7 +167,7 @@ tap.test('arrivalRate defaults to zero if not present', (t) => {
     0
   );
 
-  t.equal(totalArrivalRate, 0);
+  t.equal(totalArrivalRate, 0, 'arrivalRate should be zero');
   t.end();
 });
 
@@ -206,11 +210,11 @@ tap.test('maxVusers distributes evenly in all phases', (t) => {
 
   const phases = divideWork(script, numWorkers);
   for (let i = 0; i < script.config.phases.length; i++) {
-    let activeMaxVusers = phases
+    const activeMaxVusers = phases
       .map((p) => p.config.phases[i])
       .filter((p) => p.arrivalRate > 0 || p.arrivalCount > 0 || p.rampTo > 0)
       .reduce((sum, p) => sum + p.maxVusers, 0);
-    t.equal(10, activeMaxVusers);
+    t.equal(activeMaxVusers, 10, 'maxVusers is evenly distributed');
   }
   t.end();
 });
@@ -269,12 +273,12 @@ tap.test('payload is distributet between workers and does not repeat', (t) => {
   };
 
   const workerScripts = divideWork(script, numWorkers);
-  const palyoadSet = new Set();
+  const payloadSet = new Set();
   for (const script of workerScripts) {
     for (const payload of script.config.payload) {
       for (const data of payload.data) {
-        t.notOk(palyoadSet.has(data));
-        palyoadSet.add(data);
+        t.ok(!payloadSet.has(data), 'payload is not repeated');
+        payloadSet.add(data);
       }
     }
   }
@@ -359,7 +363,10 @@ tap.test(
         }
       }
     }
-    t.ok(Object.values(palyoadCount).some((count) => count > 1));
+    t.ok(
+      Object.values(palyoadCount).some((count) => count > 1),
+      'some payload is repeated'
+    );
 
     t.end();
   }

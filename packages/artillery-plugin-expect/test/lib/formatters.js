@@ -1,5 +1,3 @@
-'use strict';
-
 const { test, beforeEach } = require('tap');
 const expectations = require('../../lib/expectations');
 const formatters = require('../../lib/formatters');
@@ -10,7 +8,7 @@ const req = {
 };
 
 global.console = {
-  log: function (message) {
+  log: (message) => {
     loggedMessages.push(message);
   }
 };
@@ -38,7 +36,7 @@ test('does not log ok status', async (t) => {
     userContext
   );
 
-  t.equal(loggedMessages.length, 0);
+  t.equal(loggedMessages.length, 0, 'No messages should be logged');
 });
 
 test('logs error with pretty formatter', async (t) => {
@@ -60,5 +58,5 @@ test('logs error with pretty formatter', async (t) => {
     userContext
   );
 
-  t.not(loggedMessages.length, 0);
+  t.not(loggedMessages.length, 0, 'Messages should be logged');
 });

@@ -7,6 +7,6 @@ config:
     playwright: {}
   processor: ./flows.js
 scenarios:
-  - name: "Cloud waitlist signup"
+  - name: "check_out_core_concepts_scenario"
     engine: playwright
-    flowFunction: "cloudWaitlistSignupFlow"
+    flowFunction: "checkOutArtilleryCoreConceptsFlow"

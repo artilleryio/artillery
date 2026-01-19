@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const async = require('async');
 const _ = require('lodash');
 
@@ -26,22 +24,21 @@ function SocketIoEngine(script) {
 }
 
 SocketIoEngine.prototype.createScenario = function (scenarioSpec, ee) {
-  const self = this;
   // Adds scenario overridden configuration into the static config
   this.socketioOpts = { ...this.socketioOpts, ...scenarioSpec.socketio };
 
-  const tasks = _.map(scenarioSpec.flow, function (rs) {
+  const tasks = _.map(scenarioSpec.flow, (rs) => {
     if (typeof rs.think !== 'undefined') {
       return engineUtil.createThink(
         rs,
-        _.get(self.config, 'defaults.think', {})
+        _.get(this.config, 'defaults.think', {})
       );
     }
 
-    return self.step(rs, ee);
+    return this.step(rs, ee);
   });
 
-  return self.compile(tasks, scenarioSpec.flow, ee);
+  return this.compile(tasks, scenarioSpec.flow, ee);
 };
 
 function markEndTime(ee, _, startedAt) {
@@ -117,56 +114,51 @@ function processResponse(ee, data, response, context, callback) {
   const fauxResponse = { body: JSON.stringify(data) };
 
   // Handle the capture or match clauses...
-  engineUtil.captureOrMatch(
-    response,
-    fauxResponse,
-    context,
-    function (err, result) {
-      // Were we unable to invoke captureOrMatch?
-      if (err) {
-        debug(data);
-        ee.emit('error', err);
+  engineUtil.captureOrMatch(response, fauxResponse, context, (err, result) => {
+    // Were we unable to invoke captureOrMatch?
+    if (err) {
+      debug(data);
+      ee.emit('error', err);
 
-        return callback(err, context);
-      }
-
-      if (result !== null) {
-        // Do we have any failed matches?
-        const failedMatches = _.filter(result.matches, (v) => {
-          return !v.success;
-        });
-
-        // How to handle failed matches?
-        if (failedMatches.length > 0) {
-          debug(failedMatches);
-          // TODO: Should log the details of the match somewhere
-          ee.emit('error', 'Failed match');
-          return callback(new Error('Failed match'), context);
-        } else {
-          // Populate the context with captured values
-          _.each(result.captures, function (v, k) {
-            context.vars[k] = v.value;
-          });
-        }
-
-        // Replace the base object context
-        // Question: Should this be JSON object or String?
-        context.vars.$ = fauxResponse.body;
-
-        // Increment the success count...
-        context._successCount++;
-
-        return callback(null, context);
-      }
+      return callback(err, context);
     }
-  );
+
+    if (result !== null) {
+      // Do we have any failed matches?
+      const failedMatches = _.filter(result.matches, (v) => {
+        return !v.success;
+      });
+
+      // How to handle failed matches?
+      if (failedMatches.length > 0) {
+        debug(failedMatches);
+        // TODO: Should log the details of the match somewhere
+        ee.emit('error', 'Failed match');
+        return callback(new Error('Failed match'), context);
+      } else {
+        // Populate the context with captured values
+        _.each(result.captures, (v, k) => {
+          context.vars[k] = v.value;
+        });
+      }
+
+      // Replace the base object context
+      // Question: Should this be JSON object or String?
+      context.vars.$ = fauxResponse.body;
+
+      // Increment the success count...
+      context._successCount++;
+
+      return callback(null, context);
+    }
+  });
 }
 
 SocketIoEngine.prototype.step = function (requestSpec, ee) {
   const self = this;
 
   if (requestSpec.loop) {
-    const steps = _.map(requestSpec.loop, function (rs) {
+    const steps = _.map(requestSpec.loop, (rs) => {
       if (!rs.emit && !rs.loop) {
         return self.httpDelegate.step(rs, ee);
       }
@@ -183,7 +175,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     });
   }
 
-  const f = function (context, callback) {
+  const f = (context, callback) => {
     // Only process emit requests; delegate the rest to the HTTP engine (or think utility)
     if (requestSpec.think) {
       return engineUtil.createThink(
@@ -216,13 +208,13 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
         ]
       : Array.from(requestSpec.emit).map((arg) => template(arg, context));
 
-    const endCallback = function (err, context, needEmit) {
+    const endCallback = (err, context, needEmit) => {
       if (err) {
         debug(err);
       }
 
       if (isAcknowledgeRequired(requestSpec)) {
-        const ackCallback = function (...args) {
+        const ackCallback = (...args) => {
           const response = {
             data: template(
               requestSpec.acknowledge.data || requestSpec.acknowledge.args,
@@ -232,14 +224,14 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
             match: template(requestSpec.acknowledge.match, context)
           };
           // Make sure data, capture or match has a default json spec for parsing socketio responses
-          _.each(response, function (r) {
+          _.each(response, (r) => {
             if (_.isPlainObject(r) && !('json' in r)) {
               r.json = '$.0'; // Default to the first callback argument
             }
           });
 
           // Acknowledge data can take up multiple arguments of the emit callback
-          processResponse(ee, args, response, context, function (err) {
+          processResponse(ee, args, response, context, (err) => {
             if (!err) {
               markEndTime(ee, context, startedAt);
             }
@@ -280,14 +272,14 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
 
       // Listen for the socket.io response on the specified channel
       let done = false;
-      let responseData = [];
+      const responseData = [];
 
       socketio.on(response.channel, function receive(...args) {
         responseData.push(...args);
         if (isValid(responseData, response)) {
           done = true;
 
-          processResponse(ee, responseData, response, context, function (err) {
+          processResponse(ee, responseData, response, context, (err) => {
             if (!err) {
               markEndTime(ee, context, startedAt);
             }
@@ -307,22 +299,16 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
       setTimeout(function responseTimeout() {
         if (!done) {
           if (responseData.length) {
-            processResponse(
-              ee,
-              responseData,
-              response,
-              context,
-              function (err) {
-                if (!err) {
-                  markEndTime(ee, context, startedAt);
-                }
-                // Stop listening on the response channel
-                socketio.off(response.channel);
-
-                // called
-                return endCallback(err, context, false);
+            processResponse(ee, responseData, response, context, (err) => {
+              if (!err) {
+                markEndTime(ee, context, startedAt);
               }
-            );
+              // Stop listening on the response channel
+              socketio.off(response.channel);
+
+              // called
+              return endCallback(err, context, false);
+            });
 
             return;
           }
@@ -341,7 +327,7 @@ SocketIoEngine.prototype.step = function (requestSpec, ee) {
     // Set default namespace in emit action
     requestSpec.namespace = template(requestSpec.namespace, context) || '';
 
-    self.loadContextSocket(requestSpec.namespace, context, function (err) {
+    self.loadContextSocket(requestSpec.namespace, context, (err) => {
       if (err) {
         debug(err);
         ee.emit('error', err.message);
@@ -378,18 +364,18 @@ SocketIoEngine.prototype.loadContextSocket = function (namespace, context, cb) {
 
     wildcardPatch(socket);
 
-    socket.on('*', function () {
+    socket.on('*', () => {
       context.__receivedMessageCount++;
     });
 
-    socket.once('connect', function () {
+    socket.once('connect', () => {
       cb(null, socket);
     });
-    socket.once('connect_error', function (err) {
+    socket.once('connect_error', (err) => {
       cb(err, null);
     });
 
-    socket.once('error', function (err) {
+    socket.once('error', (err) => {
       cb(err, socket);
     });
   } else {
@@ -397,11 +383,11 @@ SocketIoEngine.prototype.loadContextSocket = function (namespace, context, cb) {
   }
 };
 
-SocketIoEngine.prototype.closeContextSockets = function (context) {
+SocketIoEngine.prototype.closeContextSockets = (context) => {
   if (context.sockets && Object.keys(context.sockets).length > 0) {
     const namespaces = Object.keys(context.sockets);
 
-    namespaces.forEach(function (namespace) {
+    namespaces.forEach((namespace) => {
       context.sockets[namespace].disconnect();
     });
   }
@@ -429,9 +415,7 @@ SocketIoEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
     initialContext = self.httpDelegate.setInitialContext(initialContext);
 
     initialContext._pendingRequests = _.size(
-      _.reject(scenarioSpec, function (rs) {
-        return typeof rs.think === 'number';
-      })
+      _.reject(scenarioSpec, (rs) => typeof rs.think === 'number')
     );
 
     const steps = _.flatten([

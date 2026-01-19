@@ -16,7 +16,10 @@ const {
 const {
   PublishMetricsPluginConfigSchema
 } = require('./plugins/publish-metrics');
+const { FakeDataPlugin } = require('./plugins/fake-data');
+const { SlackPluginConfigSchema } = require('./plugins/slack');
 const { TestPhase } = require('./config/phases');
+const { buildArtilleryKeyValue } = require('./joi.helpers');
 
 const TlsConfig = Joi.object({
   rejectUnauthorized: Joi.boolean().meta({
@@ -64,11 +67,26 @@ const PayloadConfig = Joi.object({
     .description('Name of loadAll data') //TODO: loadAll and name used conditionally
 });
 
-const ReplaceableConfig = {
+const ArtilleryBuiltInPlugins = {
+  expect: ExpectPluginConfigSchema,
+  ensure: EnsurePluginConfigSchema,
+  apdex: ApdexPluginConfigSchema,
+  'metrics-by-endpoint': MetricsByEndpointPluginConfigSchema,
+  'publish-metrics': PublishMetricsPluginConfigSchema,
+  'fake-data': FakeDataPlugin,
+  slack: SlackPluginConfigSchema
+};
+
+const ArtilleryBuiltInPluginsInRootConfig = (({ ensure, apdex }) => ({
+  ensure,
+  apdex
+}))(ArtilleryBuiltInPlugins);
+
+const ConfigSchemaWithoutEnvironments = Joi.object({
   target: Joi.string()
     .meta({ title: 'Target' })
     .description(
-      'Endpoint of the system under test, such as a hostname, IP address or a URI.\nhttps://www.artillery.io/docs/reference/test-script#target---target-service'
+      'Endpoint of the system under test, such as a hostname, IP address or a URI.\nIn Playwright tests, this will be used as the baseURL by default.\n\nhttps://www.artillery.io/docs/reference/test-script#target---target-service'
     )
     .example('https://example.com')
     .example('ws://127.0.0.1'),
@@ -77,38 +95,15 @@ const ReplaceableConfig = {
     .meta({ title: 'Phases' })
     .description(
       'A load phase defines how Artillery generates new virtual users (VUs) in a specified time period.\nhttps://www.artillery.io/docs/reference/test-script#phases---load-phases'
-    )
-};
-
-const ArtilleryBuiltInPlugins = {
-  expect: ExpectPluginConfigSchema,
-  ensure: EnsurePluginConfigSchema,
-  apdex: ApdexPluginConfigSchema,
-  'metrics-by-endpoint': MetricsByEndpointPluginConfigSchema,
-  'publish-metrics': PublishMetricsPluginConfigSchema
-};
-
-const ArtilleryBuiltInPluginsInRootConfig = (({ ensure, apdex }) => ({
-  ensure,
-  apdex
-}))(ArtilleryBuiltInPlugins);
-
-const ConfigSchema = Joi.object({
-  ...ReplaceableConfig,
+    ),
   http: HttpConfigSchema.meta({ title: 'HTTP Configuration' }),
   ws: WsConfigSchema.meta({ title: 'Websocket Configuration' }),
   socketio: SocketIoConfigSchema.meta({ title: 'SocketIo Configuration' }),
-  environments: Joi.object()
-    // .rename(/\w\d/, 'something')
-    // .pattern(/\w\d/, Joi.object(ReplaceableConfig))//TODO: this isn't working well. Probably a limitation of https://github.com/kenspirit/joi-to-json#known-limitation. Find alternative?
-    .meta({ title: 'Environments' })
-    .description(
-      'Define environments to run your load test against different configs:\nhttps://www.artillery.io/docs/reference/test-script#environments---config-profiles'
-    ), //TODO: type this properly
-
   processor: Joi.string()
     .meta({ title: 'Processor Function Path' })
-    .description('Path to a CommonJS module to load for this test run.'),
+    .description(
+      'Path to a CommonJS (.js), ESM (.mjs) or Typescript (.ts) module to load for this test run.\nhttps://www.artillery.io/docs/reference/test-script#processor---custom-js-code'
+    ),
   variables: Joi.object()
     .meta({ title: 'Variables' })
     .description('Map of variables to expose to the test run.'),
@@ -118,6 +113,18 @@ const ConfigSchema = Joi.object({
       'Load data from CSV to be used during the test run:\nhttps://www.artillery.io/docs/reference/test-script#payload---loading-data-from-csv-files'
     ),
   tls: TlsConfig.meta({ title: 'TLS Settings' }),
+  bundling: Joi.object({
+    external: Joi.array()
+      .items(Joi.string())
+      .meta({ title: 'External Packages' })
+      .description(
+        'Can be used when using Typescript (.ts) processors. List npm modules to prevent them from being bundled. Use in case there are issues with bundling certain packages.\nhttps://www.artillery.io/docs/reference/test-script#preventing-bundling-of-typescript-packages'
+      )
+  })
+    .meta({ title: 'Bundling' })
+    .description(
+      'Configuration for bundling the test script and its dependencies'
+    ),
   plugins: Joi.object({ ...ArtilleryBuiltInPlugins })
     .meta({ title: 'Plugins' })
     .description(
@@ -128,7 +135,23 @@ const ConfigSchema = Joi.object({
   })
     .meta({ title: 'Engines' })
     .description('Configuration for specific engines used'),
+  includeFiles: Joi.array()
+    .items(Joi.string())
+    .meta({
+      title: 'Include Files'
+    })
+    .description(
+      'List of paths to extra files to include when running distributed tests with AWS Lambda/Fargate: https://www.artillery.io/docs/reference/test-script#includefiles---explicitly-bundling-files-with-the-test'
+    ),
   ...ArtilleryBuiltInPluginsInRootConfig
+}).id('BaseConfigSchema');
+
+const ConfigSchema = ConfigSchemaWithoutEnvironments.keys({
+  environments: buildArtilleryKeyValue(ConfigSchemaWithoutEnvironments)
+    .meta({ title: 'Environments' })
+    .description(
+      'Replace /.*/ with the name of an environment to run your load test against different configs:\nhttps://www.artillery.io/docs/reference/test-script#environments---config-profiles'
+    )
 });
 
 module.exports = {

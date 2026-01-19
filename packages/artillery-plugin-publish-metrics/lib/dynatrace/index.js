@@ -1,8 +1,7 @@
-'use strict';
-
 const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:dynatrace');
-const path = require('path');
+const path = require('node:path');
+const { sleep } = require('../util');
 
 class DynatraceReporter {
   constructor(config, events, script) {
@@ -19,6 +18,12 @@ class DynatraceReporter {
       throw new Error(
         'Dynatrace reporter: both apiToken and envUrl must be set. More info in the docs (https://docs.art/reference/extensions/publish-metrics#dynatrace)'
       );
+    }
+
+    if (config.sendOnlyTraces || config.traces?.sendOnlyTraces) {
+      this.onlyTraces = true;
+      debug('sendOnlyTraces is true, not initializing metrics');
+      return;
     }
 
     if (
@@ -40,7 +45,7 @@ class DynatraceReporter {
     };
 
     // Configure event if set - if event key is set but its value isn't we use defaults
-    if (config.hasOwnProperty('event')) {
+    if (Object.hasOwn(config, 'event')) {
       this.eventConfig = {
         properties: config.event?.properties || [],
         send: config.event?.send || true,
@@ -288,7 +293,7 @@ class DynatraceReporter {
   async waitingForRequest() {
     while (this.pendingRequests > 0) {
       debug('Waiting for pending request ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     }
 
     debug('Pending requests done');
@@ -296,6 +301,9 @@ class DynatraceReporter {
   }
 
   cleanup(done) {
+    if (this.onlyTraces) {
+      return done();
+    }
     if (this.startedEventSent) {
       const timestamp = Date.now();
       this.eventOpts.startTime = timestamp;

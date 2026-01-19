@@ -1,0 +1,27 @@
+config:
+  target: https://iron-session-example.vercel.app/
+  phases:
+    - arrivalRate: 1
+      duration: 10
+  engines:
+    playwright:
+      launchOptions:
+        headless: false
+      contextOptions:
+        # NOTE: we use the $dirname utility so Playwright can resolve the full path
+        storageState: "{{ $dirname }}/storage.json"
+  processor: ./flow.js
+  variables:
+    githubUsername: "bernardobridge"
+  # NOTE: add this if you want to run the test in fargate. make sure to remove headless:false too
+  # includeFiles:
+  #   - ./storage.json
+
+before:
+  engine: playwright
+  flowFunction: loginUserAndSaveStorage
+
+scenarios:
+  - name: go_to_profile_page_and_logout
+    engine: playwright
+    flowFunction: goToProfilePageAndLogout

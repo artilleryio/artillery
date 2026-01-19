@@ -1,0 +1,130 @@
+const { test, beforeEach, afterEach } = require('tap');
+const runner = require('../..').runner.runner;
+const fs = require('node:fs');
+const path = require('node:path');
+const csv = require('csv-parse');
+const async = require('async');
+const { SSMS } = require('../../lib/ssms');
+const createTestServer = require('../targets/simple');
+
+let server;
+let port;
+beforeEach(async () => {
+  server = await createTestServer(0);
+  port = server.info.port;
+});
+
+afterEach(() => {
+  server.stop();
+});
+
+test('single payload', (t) => {
+  const fn = path.resolve(__dirname, '../scripts/single_payload.json');
+  const script = require(fn);
+  script.config.target = `http://127.0.0.1:${port}`;
+
+  const data = fs.readFileSync(
+    path.join(__dirname, '../scripts/data/pets.csv')
+  );
+  csv(data, (err, parsedData) => {
+    if (err) {
+      t.fail(err);
+    }
+
+    runner(script, parsedData, {}).then((ee) => {
+      ee.on('phaseStarted', (x) => {
+        t.ok(x, 'phaseStarted event emitted');
+      });
+
+      ee.on('phaseCompleted', (x) => {
+        t.ok(x, 'phaseCompleted event emitted');
+      });
+
+      ee.on('stats', (stats) => {
+        t.ok(stats, 'intermediate stats event emitted');
+      });
+
+      ee.on('done', (nr) => {
+        const report = SSMS.legacyReport(nr).report();
+
+        const _requests = report.requestsCompleted;
+        const _scenarios = report.scenariosCompleted;
+        t.ok(
+          report.codes[404] > 0,
+          'There are some 404s (URLs constructed from pets.csv)'
+        );
+        t.ok(
+          report.codes[201] > 0,
+          'There are some 201s (POST with valid data from pets.csv)'
+        );
+        ee.stop().then(() => {
+          t.end();
+        });
+      });
+
+      ee.run();
+    });
+  });
+});
+
+test('multiple_payloads', (t) => {
+  const fn = path.resolve(__dirname, '../scripts/multiple_payloads.json');
+  const script = require(fn);
+  script.config.target = `http://127.0.0.1:${port}`;
+
+  async.map(
+    script.config.payload,
+    (item, callback) => {
+      const payloadFile = path.resolve(path.dirname(fn), item.path);
+
+      const data = fs.readFileSync(payloadFile, 'utf-8');
+      csv(data, (err, parsedData) => {
+        item.data = parsedData;
+        return callback(err, item);
+      });
+    },
+    (err, _results) => {
+      if (err) {
+        console.log(err);
+        t.fail(err);
+      }
+
+      runner(script, script.config.payload, {}).then((ee) => {
+        ee.on('phaseStarted', (x) => {
+          t.ok(x, 'phaseStarted event emitted');
+        });
+
+        ee.on('phaseCompleted', (x) => {
+          t.ok(x, 'phaseCompleted event emitted');
+        });
+
+        ee.on('stats', (stats) => {
+          t.ok(stats, 'intermediate stats event emitted');
+        });
+
+        ee.on('done', (nr) => {
+          const report = SSMS.legacyReport(nr).report();
+          const _requests = report.requestsCompleted;
+          const _scenarios = report.scenariosCompleted;
+          t.ok(
+            report.codes[404] > 0,
+            'There are some 404s (URLs constructed from pets.csv)'
+          );
+          t.ok(
+            report.codes[200] > 0,
+            'There are some 200s (URLs constructed from urls.csv)'
+          );
+          t.ok(
+            report.codes[201] > 0,
+            'There are some 201s (POST with valid data from pets.csv)'
+          );
+          ee.stop().then(() => {
+            t.end();
+          });
+        });
+
+        ee.run();
+      });
+    }
+  );
+});

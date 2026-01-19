@@ -4,15 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "func-test": "artillery run --solo -q functional-test.yml",
+    "func-test": "npx artillery run --solo -q functional-test.yml",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "artillery": "^2.0.0-dev10",
-    "artillery-plugin-expect": "^2.0.0-dev1",
     "csv-parse": "^4.16.0"
   }
 }

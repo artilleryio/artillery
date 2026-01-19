@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const async = require('async');
 const _ = require('lodash');
 const request = require('got');
@@ -15,16 +13,18 @@ const USER_AGENT = 'Artillery (https://artillery.io)';
 const engineUtil = require('@artilleryio/int-commons').engine_util;
 const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 const template = engineUtil.template;
-const qs = require('querystring');
+const qs = require('node:querystring');
 const filtrex = require('filtrex');
-const urlparse = require('url').parse;
+const urlparse = require('node:url').parse;
 const FormData = require('form-data');
 const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
 const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
 const decompressResponse = require('decompress-response');
+const fs = require('node:fs');
+const path = require('node:path');
 
-const { promisify } = require('node:util');
+const { promisify, callbackify } = require('node:util');
 
 const crypto = require('node:crypto');
 
@@ -99,7 +99,7 @@ function HttpEngine(script) {
   // That's done when the VU is initialized.
 
   this.maxSockets = Infinity;
-  if (script.config.http && script.config.http.pool) {
+  if (script.config.http?.pool) {
     this.maxSockets = Number(script.config.http.pool);
   }
   const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
@@ -127,8 +127,6 @@ function HttpEngine(script) {
 }
 
 HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
-  var self = this;
-
   ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
   ensurePropertyIsAList(scenarioSpec, 'afterResponse');
   ensurePropertyIsAList(scenarioSpec, 'beforeScenario');
@@ -142,15 +140,11 @@ HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
   // entire scenario spec rather than just the userContext.
   const beforeScenarioFns = _.map(
     scenarioSpec.beforeScenario,
-    function (hookFunctionName) {
-      return { function: hookFunctionName };
-    }
+    (hookFunctionName) => ({ function: hookFunctionName })
   );
   const afterScenarioFns = _.map(
     scenarioSpec.afterScenario,
-    function (hookFunctionName) {
-      return { function: hookFunctionName };
-    }
+    (hookFunctionName) => ({ function: hookFunctionName })
   );
 
   const newFlow = beforeScenarioFns.concat(
@@ -159,26 +153,24 @@ HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
 
   scenarioSpec.flow = newFlow;
 
-  let tasks = _.map(scenarioSpec.flow, function (rs) {
-    return self.step(rs, ee, {
+  const tasks = _.map(scenarioSpec.flow, (rs) =>
+    this.step(rs, ee, {
       beforeRequest: scenarioSpec.beforeRequest,
       afterResponse: scenarioSpec.afterResponse,
       onError: scenarioSpec.onError
-    });
-  });
+    })
+  );
 
-  return self.compile(tasks, scenarioSpec, ee);
+  return this.compile(tasks, scenarioSpec, ee);
 };
 
 HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   opts = opts || {};
-  let self = this;
-  let config = this.config;
+  const self = this;
+  const config = this.config;
 
   if (requestSpec.loop) {
-    let steps = _.map(requestSpec.loop, function (rs) {
-      return self.step(rs, ee, opts);
-    });
+    const steps = _.map(requestSpec.loop, (rs) => self.step(rs, ee, opts));
 
     return engineUtil.createLoopWithCount(requestSpec.count || -1, steps, {
       loopValue: requestSpec.loopValue || '$loopCount',
@@ -191,9 +183,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   if (requestSpec.parallel) {
-    let steps = _.map(requestSpec.parallel, function (rs) {
-      return self.step(rs, ee, opts);
-    });
+    const steps = _.map(requestSpec.parallel, (rs) => self.step(rs, ee, opts));
 
     return engineUtil.createParallel(steps, {
       limitValue: requestSpec.limit
@@ -208,35 +198,39 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
   }
 
   if (typeof requestSpec.log !== 'undefined') {
-    return function (context, callback) {
+    return (context, callback) => {
       console.log(template(requestSpec.log, context));
-      return process.nextTick(function () {
+      return process.nextTick(() => {
         callback(null, context);
       });
     };
   }
 
   if (requestSpec.function) {
-    return function (context, callback) {
-      let processFunc = self.config.processor[requestSpec.function];
+    return (context, callback) => {
+      const processFunc = self.config.processor[requestSpec.function];
       if (processFunc) {
-        return processFunc(context, ee, function (hookErr) {
-          return callback(hookErr, context);
-        });
+        let f;
+        if (processFunc.constructor.name === 'Function') {
+          f = processFunc;
+        } else {
+          f = callbackify(processFunc);
+        }
+        return f(context, ee, (hookErr) => callback(hookErr, context));
       } else {
         debug(`Function "${requestSpec.function}" not defined`);
         debug('processor: %o', self.config.processor);
         ee.emit('error', `Undefined function "${requestSpec.function}"`);
-        return process.nextTick(function () {
+        return process.nextTick(() => {
           callback(null, context);
         });
       }
     };
   }
 
-  let f = function (context, callback) {
-    let method = _.keys(requestSpec)[0].toUpperCase();
-    let params = requestSpec[method.toLowerCase()];
+  const f = (context, callback) => {
+    const method = _.keys(requestSpec)[0].toUpperCase();
+    const params = requestSpec[method.toLowerCase()];
 
     const onErrorHandlers = opts.onError; // only scenario-lever onError handlers are supported
 
@@ -245,15 +239,15 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     // is missing.
     // This will be obsoleted by better script validation.
     if (!params.url && !params.uri) {
-      let err = new Error('an URL must be specified');
+      const err = new Error('an URL must be specified');
       return callback(err, context);
     }
 
-    let tls = config.tls || {};
-    let timeout = config.timeout || _.get(config, 'http.timeout') || 10;
+    const tls = config.tls || {};
+    const timeout = config.timeout || _.get(config, 'http.timeout') || 10;
 
     if (!engineUtil.isProbableEnough(params)) {
-      return process.nextTick(function () {
+      return process.nextTick(() => {
         callback(null, context);
       });
     }
@@ -270,7 +264,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         result = 1; // if the expression is incorrect, just proceed
       }
       if (!result) {
-        return process.nextTick(function () {
+        return process.nextTick(() => {
           callback(null, context);
         });
       }
@@ -280,7 +274,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     const requestParams = _.extend(_.clone(params), {
       url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
       method: method,
-      timeout: timeout * 1000
+      timeout: timeout * 1000,
+      uuid: crypto.randomUUID()
     });
 
     if (context._enableCookieJar) {
@@ -292,7 +287,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
       requestParams.https = _.extend(requestParams.https, tls);
     }
 
-    let functionNames = _.concat(
+    const functionNames = _.concat(
       opts.beforeRequest || [],
       params.beforeRequest || []
     );
@@ -300,21 +295,23 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     async.eachSeries(
       functionNames,
       function iteratee(functionName, next) {
-        let fn = template(functionName, context);
+        const fn = template(functionName, context);
         let processFunc = config.processor[fn];
         if (!processFunc) {
-          processFunc = function (r, c, e, cb) {
-            return cb(null);
-          };
+          processFunc = (_r, _c, _e, cb) => cb(null);
           console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
         }
 
-        processFunc(requestParams, context, ee, function (err) {
-          if (err) {
-            return next(err);
-          }
-          return next(null);
-        });
+        if (processFunc.constructor.name === 'Function') {
+          processFunc(requestParams, context, ee, (err) => {
+            if (err) {
+              return next(err);
+            }
+            return next(null);
+          });
+        } else {
+          processFunc(requestParams, context, ee).then(next).catch(next);
+        }
       },
       function done(err) {
         if (err) {
@@ -371,7 +368,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         if (params.form) {
           requestParams.form = _.reduce(
             requestParams.form,
-            function (acc, v, k) {
+            (acc, v, k) => {
               acc[k] = template(v, context);
               return acc;
             },
@@ -380,20 +377,46 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         if (params.formData) {
+          let fileUpload;
           const f = new FormData();
           requestParams.body = _.reduce(
             requestParams.formData,
-            function (acc, v, k) {
-              // acc[k] = template(v, context);
-              acc.append(k, template(v, context));
+            (acc, v, k) => {
+              let V = template(v, context);
+              let options;
+              if (V && _.isPlainObject(V)) {
+                if (V.contentType) {
+                  options = { contentType: V.contentType };
+                }
+                if (V.fromFile) {
+                  const absPath = path.resolve(
+                    path.dirname(context.vars.$scenarioFile),
+                    V.fromFile
+                  );
+                  fileUpload = absPath;
+                  V = fs.createReadStream(absPath);
+                } else if (V.value) {
+                  V = V.value;
+                }
+              }
+              acc.append(k, V, options);
               return acc;
             },
             f
           );
+          if (params.setContentLengthHeader && fileUpload) {
+            try {
+              requestParams.headers = requestParams.headers || {};
+              requestParams.headers['content-length'] =
+                fs.statSync(fileUpload).size;
+            } catch (err) {
+              debug(`stat() on ${fileUpload} failed with ${err}`);
+            }
+          }
         }
 
         // Assign default headers then overwrite as needed
-        let defaultHeaders = lowcaseKeys(
+        const defaultHeaders = lowcaseKeys(
           config.http.defaults.headers ||
             config.defaults.headers || { 'user-agent': USER_AGENT }
         );
@@ -402,16 +425,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           lowcaseKeys(params.headers),
           lowcaseKeys(requestParams.headers)
         );
-        const templatedHeaders = _.mapValues(
-          combinedHeaders,
-          function (v, k, obj) {
-            return template(v, context);
-          }
+        const templatedHeaders = _.mapValues(combinedHeaders, (v, _k, _obj) =>
+          template(v, context)
         );
         requestParams.headers = templatedHeaders;
 
         // We compute the url here so that the cookies are set properly afterwards
-        let url = maybePrependBase(
+        const url = maybePrependBase(
           template(requestParams.uri || requestParams.url, context),
           config
         );
@@ -434,9 +454,9 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             context._defaultCookie,
             requestParams.cookie
           );
-          Object.keys(cookie).forEach(function (k) {
+          Object.keys(cookie).forEach((k) => {
             context._jar.setCookieSync(
-              k + '=' + template(cookie[k], context),
+              `${k}=${template(cookie[k], context)}`,
               requestParams.url
             );
           });
@@ -457,7 +477,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         requestParams.throwHttpErrors = false;
 
         if (!requestParams.url || !requestParams.url.startsWith('http')) {
-          let err = new Error(`Invalid URL - ${requestParams.url}`);
+          const err = new Error(`Invalid URL - ${requestParams.url}`);
           return callback(err, context);
         }
 
@@ -538,9 +558,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   requestParams,
                   context,
                   ee,
-                  function (asyncErr) {
-                    return done(err, context);
-                  }
+                  (_asyncErr) => done(err, context)
                 );
               }
 
@@ -548,7 +566,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               let haveFailedCaptures = false;
 
               if (result !== null) {
-                ee.emit('trace:http:capture', result, uuid);
+                ee.emit('trace:http:capture', result, requestParams.uuid);
                 if (
                   Object.keys(result.matches).length > 0 ||
                   Object.keys(result.captures).length > 0
@@ -559,18 +577,20 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                 }
 
                 // match and capture are strict by default:
-                haveFailedMatches = _.some(result.matches, function (v, k) {
-                  return !v.success && v.strict !== false;
-                });
+                haveFailedMatches = _.some(
+                  result.matches,
+                  (v, _k) => !v.success && v.strict !== false
+                );
 
-                haveFailedCaptures = _.some(result.captures, function (v, k) {
-                  return v.failed;
-                });
+                haveFailedCaptures = _.some(
+                  result.captures,
+                  (v, _k) => v.failed
+                );
 
                 if (haveFailedMatches || haveFailedCaptures) {
                   // TODO: Emit the details of each failed capture/match
                 } else {
-                  _.each(result.matches, function (v, k) {
+                  _.each(result.matches, (v, _k) => {
                     ee.emit('match', v.success, {
                       expected: v.expected,
                       got: v.got,
@@ -579,27 +599,25 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                     });
                   });
 
-                  _.each(result.captures, function (v, k) {
+                  _.each(result.captures, (v, k) => {
                     _.set(context.vars, k, v.value);
                   });
                 }
               }
 
               // Now run afterResponse processors
-              let functionNames = _.concat(
+              const functionNames = _.concat(
                 opts.afterResponse || [],
                 params.afterResponse || []
               );
               async.eachSeries(
                 functionNames,
                 function iteratee(functionName, next) {
-                  let fn = template(functionName, context);
+                  const fn = template(functionName, context);
                   let processFunc = config.processor[fn];
                   if (!processFunc) {
                     // TODO: DRY - #223
-                    processFunc = function (r, res, c, e, cb) {
-                      return cb(null);
-                    };
+                    processFunc = (_r, _res, _c, _e, cb) => cb(null);
                     console.log(
                       `WARNING: custom function ${fn} could not be found`
                     ); // TODO: a 'warning' event
@@ -608,14 +626,20 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
                   // Got does not have res.body which Request.js used to have, so we attach it here:
                   res.body = body;
 
-                  processFunc(requestParams, res, context, ee, function (err) {
-                    if (err) {
-                      return next(err);
-                    }
-                    return next(null);
-                  });
+                  if (processFunc.constructor.name === 'Function') {
+                    processFunc(requestParams, res, context, ee, (err) => {
+                      if (err) {
+                        return next(err);
+                      }
+                      return next(null);
+                    });
+                  } else {
+                    processFunc(requestParams, res, context, ee)
+                      .then(next)
+                      .catch(next);
+                  }
                 },
-                function (err) {
+                (err) => {
                   if (err) {
                     debug(err);
                     return done(err, context);
@@ -645,7 +669,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         if (!requestParams.url) {
-          let err = new Error('an URL must be specified');
+          const err = new Error('an URL must be specified');
 
           // Run onError hooks and end the scenario
           runOnErrorHooks(
@@ -655,28 +679,25 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
             requestParams,
             context,
             ee,
-            function (asyncErr) {
-              return callback(err, context);
-            }
+            (_asyncErr) => callback(err, context)
           );
         }
 
         requestParams.retry = 0; // disable retries - ignored when using streams
 
-        const uuid = crypto.randomUUID();
         let totalDownloaded = 0;
-        request(requestParams)
-          .on('request', function (req) {
-            ee.emit('trace:http:request', requestParams, uuid);
+        request(_.omit(requestParams, ['uuid']))
+          .on('request', (req) => {
+            ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
             debugRequests('request start: %s', req.path);
             ee.emit('counter', 'http.requests', 1);
             ee.emit('rate', 'http.request_rate');
-            req.on('response', function (res) {
+            req.on('response', (res) => {
               res.on('end', () => {
                 ee.emit('counter', 'http.downloaded_bytes', totalDownloaded);
               });
-              ee.emit('trace:http:response', res, uuid);
+              ee.emit('trace:http:response', res, requestParams.uuid);
               self._handleResponse(
                 requestParams,
                 res,
@@ -690,8 +711,8 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
           .on('downloadProgress', (progress) => {
             totalDownloaded = progress.total;
           })
-          .on('error', function (err, body, res) {
-            ee.emit('trace:http:error', err, uuid);
+          .on('error', (err, _body, _res) => {
+            ee.emit('trace:http:error', err, requestParams.uuid);
             if (err.name === 'HTTPError') {
               return;
             }
@@ -705,9 +726,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               requestParams,
               context,
               ee,
-              function (asyncErr) {
-                return callback(err, context);
-              }
+              (_asyncErr) => callback(err, context)
             );
           })
           .catch((gotErr) => {
@@ -720,9 +739,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               requestParams,
               context,
               ee,
-              function (asyncErr) {
-                return callback(gotErr, context);
-              }
+              (_asyncErr) => callback(gotErr, context)
             );
           });
       }
@@ -746,12 +763,12 @@ HttpEngine.prototype._handleResponse = function (
     res = decompressResponse(res);
   }
 
-  let code = res.statusCode;
+  const code = res.statusCode;
   if (!context._enableCookieJar) {
     const rawCookies = res.headers['set-cookie'];
     if (rawCookies) {
       context._enableCookieJar = true;
-      rawCookies.forEach(function (cookieString) {
+      rawCookies.forEach((cookieString) => {
         try {
           context._jar.setCookieSync(cookieString, url);
         } catch (err) {
@@ -765,10 +782,38 @@ HttpEngine.prototype._handleResponse = function (
     }
   }
 
-  ee.emit('counter', 'http.codes.' + code, 1);
+  ee.emit('counter', `http.codes.${code}`, 1);
   ee.emit('counter', 'http.responses', 1);
   // ee.emit('rate', 'http.response_rate');
   ee.emit('histogram', 'http.response_time', res.timings.phases.firstByte);
+
+  const statusCode = res.statusCode;
+  if (statusCode >= 200 && statusCode < 300) {
+    ee.emit(
+      'histogram',
+      'http.response_time.2xx',
+      res.timings.phases.firstByte
+    );
+  } else if (statusCode >= 300 && statusCode < 400) {
+    ee.emit(
+      'histogram',
+      'http.response_time.3xx',
+      res.timings.phases.firstByte
+    );
+  } else if (statusCode >= 400 && statusCode < 500) {
+    ee.emit(
+      'histogram',
+      'http.response_time.4xx',
+      res.timings.phases.firstByte
+    );
+  } else if (statusCode >= 500 && statusCode < 600) {
+    ee.emit(
+      'histogram',
+      'http.response_time.5xx',
+      res.timings.phases.firstByte
+    );
+  }
+
   if (this.extendedHTTPMetrics) {
     ee.emit('histogram', 'http.dns', res.timings.phases.dns);
     ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
@@ -830,9 +875,14 @@ function lastRequest(res, requestParams) {
 HttpEngine.prototype.setInitialContext = function (initialContext) {
   initialContext._successCount = 0;
 
-  initialContext._defaultStrictCapture =
-    this.config.http.defaults.strictCapture ||
-    this.config.defaults.strictCapture;
+  initialContext._defaultStrictCapture = true;
+  if (
+    this.config.http?.defaults?.strictCapture === false ||
+    this.config.defaults?.strictCapture === false
+  ) {
+    initialContext._defaultStrictCapture = false;
+  }
+
   initialContext._jar = new tough.CookieJar(
     null,
     this.config.http.cookieJarOptions
@@ -874,8 +924,8 @@ HttpEngine.prototype.setInitialContext = function (initialContext) {
   return initialContext;
 };
 
-HttpEngine.prototype.compile = function compile(tasks, scenarioSpec, ee) {
-  let self = this;
+HttpEngine.prototype.compile = function compile(tasks, _scenarioSpec, ee) {
+  const self = this;
 
   return async function scenario(initialContext, callback) {
     initialContext = self.setInitialContext(initialContext);
@@ -906,7 +956,7 @@ function maybePrependBase(uri, config) {
  * Given a dictionary, return a dictionary with all keys lowercased.
  */
 function lowcaseKeys(h) {
-  return _.transform(h, function (result, v, k) {
+  return _.transform(h, (result, v, k) => {
     result[k.toLowerCase()] = v;
   });
 }
@@ -923,8 +973,8 @@ function runOnErrorHooks(
   async.eachSeries(
     functionNames,
     function iteratee(functionName, next) {
-      let processFunc = functions[functionName];
-      processFunc(err, requestParams, context, ee, function (asyncErr) {
+      const processFunc = functions[functionName];
+      processFunc(err, requestParams, context, ee, (asyncErr) => {
         if (asyncErr) {
           return next(asyncErr);
         }

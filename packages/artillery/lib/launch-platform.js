@@ -2,27 +2,33 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const divideWork = require('./dist');
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const { loadPlugins, loadPluginsConfig } = require('./load-plugins');
 
 const EventEmitter = require('eventemitter3');
 const debug = require('debug')('core');
 
-const os = require('os');
-const p = require('util').promisify;
+const p = require('node:util').promisify;
 const _ = require('lodash');
 
 const PlatformLocal = require('./platform/local');
 const PlatformLambda = require('./platform/aws-lambda');
-const STATES = require('./platform/worker-states');
+const PlatformAzureACI = require('./platform/az/aci');
 
 async function createLauncher(script, payload, opts, launcherOpts) {
   launcherOpts = launcherOpts || {
     platform: 'local',
     mode: 'distribute'
   };
-  return new Launcher(script, payload, opts, launcherOpts);
+  let l;
+  try {
+    l = new Launcher(script, payload, opts, launcherOpts);
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+
+  return l;
 }
 class Launcher {
   constructor(script, payload, opts, launcherOpts) {
@@ -30,11 +36,10 @@ class Launcher {
     this.payload = payload;
     this.opts = opts;
 
-    this.workers = {};
+    this.exitedWorkersCount = 0;
     this.workerMessageBuffer = [];
 
     this.metricsByPeriod = {}; // individual intermediates by worker
-    this.mergedPeriodMetrics = []; // merged intermediates for a period
     this.finalReportsByWorker = {};
 
     this.events = new EventEmitter();
@@ -47,38 +52,29 @@ class Launcher {
     this.periodsReportedFor = [];
 
     if (launcherOpts.platform === 'local') {
-      this.count = this.opts.count || Math.max(1, os.cpus().length - 1);
-      debug('Worker thread count:', this.count);
-    }
-
-    if (launcherOpts.platform === 'local') {
-      this.platform = new PlatformLocal(script, payload, opts);
-    } else {
-      // aws:lambda
+      this.platform = new PlatformLocal(script, payload, opts, launcherOpts);
+    } else if (launcherOpts.platform === 'aws:lambda') {
       this.platform = new PlatformLambda(script, payload, opts, launcherOpts);
-    }
-
-    if (launcherOpts.mode === 'distribute') {
-      this.workerScripts = divideWork(this.script, this.count);
-      this.count = this.workerScripts.length;
+    } else if (launcherOpts.platform === 'az:aci') {
+      this.platform = new PlatformAzureACI(script, payload, opts, launcherOpts);
     } else {
-      this.count = this.launcherOpts.count;
-      this.workerScripts = new Array(this.count).fill().map((_) => this.script);
+      throw new Error(`Unknown platform: ${launcherOpts.platform}`);
     }
 
     this.phaseStartedEventsSeen = {};
     this.phaseCompletedEventsSeen = {};
 
     this.eventsByWorker = {};
-
-    return this;
   }
 
   async initWorkerEvents(workerEvents) {
-    workerEvents.on('workerError', (workerId, message) => {
-      this.workers[workerId].state = STATES.stoppedError;
-
+    workerEvents.on('workerError', (_workerId, message) => {
       const { id, error, level, aggregatable, logs } = message;
+
+      if (level !== 'warn') {
+        this.exitedWorkersCount++;
+      }
+
       if (aggregatable) {
         this.workerMessageBuffer.push(message);
       } else {
@@ -91,7 +87,7 @@ class Launcher {
       this.events.emit('workerError', message);
     });
 
-    workerEvents.on('phaseStarted', (workerId, message) => {
+    workerEvents.on('phaseStarted', (_workerId, message) => {
       // Note - we send only the first event for a phase, not all of them
       if (
         typeof this.phaseStartedEventsSeen[message.phase.index] === 'undefined'
@@ -113,7 +109,7 @@ class Launcher {
       }
     });
 
-    workerEvents.on('phaseCompleted', (workerId, message) => {
+    workerEvents.on('phaseCompleted', (_workerId, message) => {
       if (
         typeof this.phaseCompletedEventsSeen[message.phase.index] ===
         'undefined'
@@ -138,7 +134,7 @@ class Launcher {
     // We are not going to receive stats events from workers
     // which have zero arrivals for a phase. (This can only happen
     // in "distribute" mode.)
-    workerEvents.on('stats', (workerId, message) => {
+    workerEvents.on('stats', (_workerId, message) => {
       const workerStats = SSMS.deserializeMetrics(message.stats);
       const period = workerStats.period;
       if (typeof this.metricsByPeriod[period] === 'undefined') {
@@ -149,18 +145,17 @@ class Launcher {
     });
 
     workerEvents.on('done', async (workerId, message) => {
-      this.workers[workerId].state = STATES.completed;
-
+      this.exitedWorkersCount++;
       this.finalReportsByWorker[workerId] = SSMS.deserializeMetrics(
         message.report
       );
     });
 
-    workerEvents.on('log', async (workerId, message) => {
+    workerEvents.on('log', async (_workerId, message) => {
       artillery.globalEvents.emit('log', ...message.args);
     });
 
-    workerEvents.on('setSuggestedExitCode', (workerId, message) => {
+    workerEvents.on('setSuggestedExitCode', (_workerId, message) => {
       artillery.suggestedExitCode = message.code;
     });
   }
@@ -238,13 +233,7 @@ class Launcher {
 
   async handleAllWorkersFinished() {
     const allWorkersDone =
-      Object.keys(this.workers).filter((workerId) => {
-        return (
-          this.workers[workerId].state === STATES.completed ||
-          this.workers[workerId].state === STATES.stoppedError
-        );
-      }).length === this.count;
-
+      this.exitedWorkersCount === this.platform.getDesiredWorkerCount();
     if (allWorkersDone) {
       clearInterval(this.i1);
       clearInterval(this.i2);
@@ -298,7 +287,7 @@ class Launcher {
       return acc;
     }, {});
 
-    for (const [logMessage, messageObjects] of Object.entries(readyMessages)) {
+    for (const [_logMessage, messageObjects] of Object.entries(readyMessages)) {
       if (messageObjects[0].error) {
         global.artillery.log(
           `[${messageObjects[0].id}] ${messageObjects[0].error.message}`,
@@ -321,9 +310,11 @@ class Launcher {
     }
 
     // We always look at the earliest period available so that reports come in chronological order
-    const earliestPeriodAvailable = Object.keys(this.metricsByPeriod)
+    const unreportedPeriods = Object.keys(this.metricsByPeriod)
       .filter((x) => this.periodsReportedFor.indexOf(x) === -1)
-      .sort()[0];
+      .sort();
+
+    const earliestPeriodAvailable = unreportedPeriods[0];
 
     // TODO: better name. One above is earliestNotAlreadyReported
     const earliest = Object.keys(this.metricsByPeriod).sort()[0];
@@ -339,11 +330,12 @@ class Launcher {
 
     // Dynamically adjust the duration we're willing to wait for. This matters on SQS where messages are received
     // in batches of 10 and more workers => need to wait longer.
-    const MAX_WAIT_FOR_PERIOD_MS = (Math.ceil(this.count / 10) * 3 + 30) * 1000;
+    const MAX_WAIT_FOR_PERIOD_MS =
+      (Math.ceil(this.platform.getDesiredWorkerCount() / 10) * 3 + 30) * 1000;
 
     debug({
       now: Date.now(),
-      count: this.count,
+      count: this.platform.getDesiredWorkerCount(),
       earliestPeriodAvailable,
       earliest,
       MAX_WAIT_FOR_PERIOD_MS,
@@ -353,61 +345,53 @@ class Launcher {
     });
 
     const allWorkersReportedForPeriod =
-      this.metricsByPeriod[earliestPeriodAvailable]?.length === this.count;
+      this.metricsByPeriod[earliestPeriodAvailable]?.length ===
+      this.platform.getDesiredWorkerCount();
     const waitedLongEnough =
       Date.now() - Number(earliestPeriodAvailable) > MAX_WAIT_FOR_PERIOD_MS;
-    if (
+
+    if (flushAll) {
+      for (const period of unreportedPeriods) {
+        this.emitIntermediatesForPeriod(period);
+      }
+    } else if (
       typeof earliestPeriodAvailable !== 'undefined' &&
-      (flushAll || allWorkersReportedForPeriod || waitedLongEnough)
+      (allWorkersReportedForPeriod || waitedLongEnough)
     ) {
+      this.emitIntermediatesForPeriod(earliestPeriodAvailable);
       // TODO: autoscaling. Handle workers that drop off or join, and update count
-
-      if (flushAll) {
-        debug('flushAll', earliestPeriodAvailable);
-      } else {
-        if (allWorkersReportedForPeriod) {
-          debug(
-            'Got metrics from all workers for period',
-            earliestPeriodAvailable
-          );
-        }
-        if (waitedLongEnough) {
-          debug('MAX_WAIT_FOR_PERIOD reached', earliestPeriodAvailable);
-        }
-      }
-
-      debug(
-        'Report @',
-        new Date(Number(earliestPeriodAvailable)),
-        'made up of items:',
-        this.metricsByPeriod[String(earliestPeriodAvailable)].length
-      );
-
-      // TODO: Track how many workers provided metrics in the metrics report
-      const stats = SSMS.mergeBuckets(
-        this.metricsByPeriod[String(earliestPeriodAvailable)]
-      )[String(earliestPeriodAvailable)];
-      this.mergedPeriodMetrics.push(stats);
-      // summarize histograms for console reporter
-      stats.summaries = {};
-      for (const [name, value] of Object.entries(stats.histograms || {})) {
-        const summary = SSMS.summarizeHistogram(value);
-        stats.summaries[name] = summary;
-        delete this.metricsByPeriod[String(earliestPeriodAvailable)];
-      }
-
-      this.periodsReportedFor.push(earliestPeriodAvailable);
-
-      debug('Emitting stats event');
-
-      this.pluginEvents.emit('stats', stats);
-      global.artillery.globalEvents.emit('stats', stats);
-      this.pluginEventsLegacy.emit('stats', SSMS.legacyReport(stats));
-
-      this.events.emit('stats', stats);
     } else {
       debug('Waiting for more workerStats before emitting stats event');
     }
+  }
+
+  emitIntermediatesForPeriod(period) {
+    debug(
+      'Report @',
+      new Date(Number(period)),
+      'made up of items:',
+      this.metricsByPeriod[String(period)].length
+    );
+
+    // TODO: Track how many workers provided metrics in the metrics report
+    // summarize histograms for console reporter:
+    const merged = SSMS.mergeBuckets(this.metricsByPeriod[String(period)]);
+    const stats = merged[String(period)];
+
+    stats.summaries = {};
+    for (const [name, value] of Object.entries(stats.histograms || {})) {
+      const summary = SSMS.summarizeHistogram(value);
+      stats.summaries[name] = summary;
+    }
+
+    delete this.metricsByPeriod[String(period)];
+
+    this.periodsReportedFor.push(period);
+    this.pluginEvents.emit('stats', stats);
+    global.artillery.globalEvents.emit('stats', stats);
+    this.pluginEventsLegacy.emit('stats', SSMS.legacyReport(stats));
+
+    this.events.emit('stats', stats);
   }
 
   async run() {
@@ -425,40 +409,8 @@ class Launcher {
       await this.handleAllWorkersFinished();
     }, 2 * 1000);
 
-    const contextVars = await this.platform.init();
-
-    // TODO: only makes sense for "distribute" / "local"
-    for (const script of this.workerScripts) {
-      const w1 = await this.platform.createWorker();
-
-      this.workers[w1.workerId] = {
-        id: w1.workerId,
-        script,
-        state: STATES.initializing
-      };
-      debug(`worker init ok: ${w1.workerId}`);
-    }
-
     await this.initWorkerEvents(this.platform.events);
-
-    for (const [workerId, w] of Object.entries(this.workers)) {
-      await this.platform.prepareWorker(workerId, {
-        script: w.script,
-        payload: this.payload,
-        options: this.opts
-      });
-      this.workers[workerId].state = STATES.preparing;
-    }
-    debug('workers prepared');
-
-    // the initial context is stringified and copied to the workers
-    const contextVarsString = JSON.stringify(contextVars);
-
-    for (const [workerId, w] of Object.entries(this.workers)) {
-      await this.platform.runWorker(workerId, contextVarsString);
-      this.workers[workerId].state = STATES.initializing;
-    }
-
+    await this.platform.startJob();
     debug('workers running');
   }
 
@@ -469,7 +421,7 @@ class Launcher {
 
     // Unload plugins
     // TODO: v3 plugins
-    if (global.artillery && global.artillery.plugins) {
+    if (global.artillery?.plugins) {
       for (const o of global.artillery.plugins) {
         if (o.plugin.cleanup) {
           try {
@@ -480,11 +432,6 @@ class Launcher {
           }
         }
       }
-    }
-
-    // Stop workers
-    for (const [id, w] of Object.entries(this.workers)) {
-      await this.platform.stopWorker(id);
     }
   }
 }

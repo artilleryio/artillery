@@ -1,17 +1,27 @@
 {
   "name": "artillery",
-  "version": "2.0.1",
+  "version": "2.0.27",
   "description": "Cloud-scale load testing. https://www.artillery.io",
-  "main": "./lib",
+  "types": "./types.d.ts",
+  "exports": {
+    ".": {
+      "require": "./lib/index.js",
+      "types": "./types.d.ts"
+    },
+    "./util": {
+      "require": "./lib/util.js"
+    }
+  },
   "engines": {
-    "node": ">= 18.16.1"
+    "node": ">= 22.13.0"
   },
   "files": [
     "/bin",
     "/lib",
     "console-reporter.js",
     "util.js",
-    ".artilleryrc"
+    ".artilleryrc",
+    "types.d.ts"
   ],
   "oclif": {
     "update": {
@@ -43,16 +53,26 @@
     }
   },
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=420 --color test/unit/*.test.js test/cli/*.test.js && bash test/lib/run.sh && tap --no-coverage --color test/testcases/plugins/*.test.js",
-    "test:cloud": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap --no-coverage --timeout=300 test/cloud-e2e/*.test.js",
-    "lint": "eslint --ext \".js,.ts,.tsx\" .",
-    "lint-fix": "npm run lint -- --fix"
-  },
-  "lint-staged": {
-    "**/*.{js,ts,tsx}": "eslint --fix"
+    "test:unit": "tap --timeout=420 test/unit/*.test.js",
+    "test:acceptance": "tap --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap --timeout=420 test/publish-metrics/**/*.test.js && tap --timeout=420 test/integration/**/*.test.js",
+    "test": " npm run test:unit && npm run test:acceptance",
+    "test:windows": "npm run test:unit && tap --timeout=420 test/cli/*.test.js",
+    "test:aws": "tap --timeout=4200 test/cloud-e2e/**/*.test.js",
+    "test:aws:ci": "tap --timeout=4200",
+    "test:aws:windows": "tap --timeout=420 test/cloud-e2e/**/*.test.js --grep \"@windows\"",
+    "lint": "npx @biomejs/biome check .",
+    "lint-fix": "npx @biomejs/biome check --write ."
   },
   "tap": {
-    "check-coverage": false
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
+  },
+  "lint-staged": {
+    "**/*.{js,ts,tsx}": "npx @biomejs/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched"
   },
   "keywords": [
     "load testing",
@@ -85,11 +105,24 @@
   "dependencies": {
     "@artilleryio/int-commons": "*",
     "@artilleryio/int-core": "*",
-    "@aws-sdk/credential-providers": "^3.127.0",
-    "@oclif/core": "^2.8.11",
-    "@oclif/plugin-help": "^5.2.11",
-    "@oclif/plugin-not-found": "^2.3.1",
-    "archiver": "^5.3.1",
+    "@aws-sdk/client-cloudwatch-logs": "^3.879.0",
+    "@aws-sdk/client-ec2": "^3.879.0",
+    "@aws-sdk/client-ecs": "^3.879.0",
+    "@aws-sdk/client-iam": "^3.879.0",
+    "@aws-sdk/client-lambda": "^3.879.0",
+    "@aws-sdk/client-s3": "^3.879.0",
+    "@aws-sdk/client-sqs": "^3.879.0",
+    "@aws-sdk/client-ssm": "^3.879.0",
+    "@aws-sdk/client-sts": "^3.879.0",
+    "@aws-sdk/credential-providers": "^3.840.0",
+    "@azure/arm-containerinstance": "^9.1.0",
+    "@azure/identity": "^4.10.2",
+    "@azure/storage-blob": "^12.27.0",
+    "@azure/storage-queue": "^12.26.0",
+    "@oclif/core": "^4.4.0",
+    "@oclif/plugin-help": "^6.2.29",
+    "@oclif/plugin-not-found": "^3.2.57",
+    "@upstash/redis": "^1.35.3",
     "artillery-engine-playwright": "*",
     "artillery-plugin-apdex": "*",
     "artillery-plugin-ensure": "*",
@@ -97,21 +130,23 @@
     "artillery-plugin-fake-data": "*",
     "artillery-plugin-metrics-by-endpoint": "*",
     "artillery-plugin-publish-metrics": "*",
+    "artillery-plugin-slack": "*",
     "async": "^2.6.4",
-    "aws-sdk": "^2.1338.0",
     "chalk": "^2.4.2",
-    "ci-info": "^3.8.0",
+    "chokidar": "^3.6.0",
+    "ci-info": "^4.1.0",
     "cli-table3": "^0.6.0",
     "cross-spawn": "^7.0.3",
     "csv-parse": "^4.16.3",
     "debug": "^4.3.1",
-    "dependency-tree": "^10.0.9",
-    "detective": "^5.1.0",
+    "dependency-tree": "^11.2.0",
+    "detective-es6": "^4.0.1",
     "dotenv": "^16.0.1",
+    "driftless": "^2.0.3",
+    "esbuild-wasm": "^0.19.12",
     "eventemitter3": "^4.0.4",
     "fs-extra": "^10.1.0",
-    "ip": "^1.1.8",
-    "is-builtin-module": "^2.0.0",
+    "got": "^11.8.5",
     "joi": "^17.6.0",
     "js-yaml": "^3.13.1",
     "jsonwebtoken": "^9.0.1",
@@ -119,24 +154,21 @@
     "moment": "^2.29.4",
     "nanoid": "^3.3.4",
     "ora": "^4.0.4",
-    "posthog-node": "^2.2.3",
-    "sqs-consumer": "5.8.0",
-    "temp": "^0.9.4",
-    "tmp": "0.2.1",
-    "try-require": "^1.2.1",
+    "rc": "^1.2.8",
+    "sqs-consumer": "6.0.2",
+    "tempy": "3.1.0",
     "walk-sync": "^0.2.3",
     "yaml-js": "^0.2.3"
   },
   "devDependencies": {
+    "@aws-sdk/client-xray": "^3.879.0",
+    "@biomejs/biome": "^2.3.3",
     "@hapi/hapi": "^20.1.3",
-    "eslint": "^8.6.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^4.0.0",
     "execa": "^0.10.0",
     "get-bin-path": "^5.1.0",
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
-    "tap": "^16.3.7",
-    "zx": "^4.2.0"
+    "tap": "^19.0.2",
+    "zx": "^8.6.1"
   }
 }

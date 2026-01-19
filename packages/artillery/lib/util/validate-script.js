@@ -105,9 +105,13 @@ const scenarioItem = Joi.object({
 });
 
 const beforeAfterSchema = Joi.object({
-  flow: Joi.any().when('...config.engines', {
+  flow: Joi.when('engine', {
     is: Joi.exist(),
-    then: Joi.array().items(Joi.any()).required(),
+    then: Joi.when('engine', {
+      is: Joi.valid('socketio', 'ws', 'http'),
+      then: Joi.array().items(flowItemSchema).required(),
+      otherwise: Joi.array().items(Joi.any())
+    }),
     otherwise: Joi.array().items(flowItemSchema).required()
   })
 });
@@ -122,7 +126,7 @@ const schema = Joi.object({
 module.exports = (script) => {
   const { error } = schema.validate(script);
 
-  if (error && error.details.length) {
+  if (error?.details.length) {
     return error.details[0].message;
   }
 };

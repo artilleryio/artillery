@@ -1,0 +1,36 @@
+config:
+  environments:
+    local:
+      target: "http://localhost:1234"
+      # This is here to test the case when there are environments,
+      # but they don't define plugins.
+    prod:
+      target: http://asciiart.artillery.io:8080
+    test:
+      target: http://asciiart.artillery.io:8080
+  target: ""
+  # defaults:
+  #   headers:
+  #     user-agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36"
+  phases:
+    - arrivalRate: 1
+      duration: 10
+  processor: './deps/functions.js'
+  payload:
+    - fields: ["name", "zipCode"]
+      path: "./deps/data/user-data.csv"
+    - fields: ["name", "urlFromCSV"]
+      path: "./deps/data/names-{{ $environment }}.csv"
+  includeFiles:
+    - ./deps/data/ # directory
+  # plugins:
+  #   http-file-uploads:
+  #     filePaths:
+  #       - "./deps/README.md"
+  #       - "./deps/files" # directory
+  #   metrics-by-endpoint: {}
+scenarios:
+  - flow:
+      - get:
+          url: "{{ urlFromCSV }}"
+          beforeRequest: "checkBundle"

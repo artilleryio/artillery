@@ -27,5 +27,5 @@ This directory contains a test script (`socket-io.yml`) which demonstrates diffe
 Once the Socket.IO server is up and running, execute the test script:
 
 ```
-artillery run socket-io.yml
+npx artillery run socket-io.yml
 ```

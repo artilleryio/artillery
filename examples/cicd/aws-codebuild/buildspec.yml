@@ -10,9 +10,6 @@ phases:
   build:
     commands:
       - artillery run --output reports/report.json tests/performance/socket-io.yml
-  post_build:
-    commands:
-      - artillery report --output reports/report.html reports/report.json
 
 artifacts:
   files:

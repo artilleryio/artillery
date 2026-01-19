@@ -23,7 +23,7 @@ const exampleTestScripts = [
   'examples/browser-load-testing-playwright/browser-test-with-steps.yml',
   'examples/cicd/aws-codebuild/tests/performance/socket-io.yml',
   'examples/cicd/github-actions/.github/workflows/load-test.yml',
-  'examples/file-uploads/file-uploads.yml',
+  'examples/http-file-uploads/file-uploads.yml',
   'examples/functional-testing-with-expect-plugin/functional-load-tests.yml',
   'examples/generating-vu-tokens/auth-with-token.yml',
   'examples/graphql-api-server/graphql.yaml',

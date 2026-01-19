@@ -1,0 +1,27 @@
+config:
+  target: "https://www.artillery.io"
+  phases:
+    - duration: 2
+      arrivalRate: 2
+  engines:
+    playwright:
+      extendedMetrics: true
+  processor: "../fixtures/flow.js"
+  plugins:
+    publish-metrics:
+      - type: "open-telemetry"
+        traces:
+          replaceSpanNameRegex:
+            - pattern: https://www.artillery.io/docs/get-started/core-concepts
+              as: core_concepts
+            - pattern: https://www.artillery.io/docs
+              as: docs_main
+          exporter: "__test"
+          attributes:
+            environment: 'test'
+            tool: 'Artillery'
+
+scenarios:
+  - engine: playwright
+    name: "trace-playwright-test"
+    testFunction: "simpleCheck"

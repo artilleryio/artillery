@@ -1,6 +1,6 @@
-'use strict';
 
-const EventEmitter = require('events');
+
+const EventEmitter = require('node:events');
 const driftless = require('driftless');
 
 async function sleep(ms) {
@@ -12,7 +12,6 @@ class Timeout extends EventEmitter {
     super();
     this._startedAt = null;
     this._duration = duration;
-    return this;
   }
 
   start() {
@@ -36,7 +35,7 @@ class Timeout extends EventEmitter {
 // Turn a string like 2m into number of milliseconds
 // Supported units: ms, s, m, h
 function timeStringToMs(timeStr) {
-  let rx = /^([0-9]+).+$/i;
+  const rx = /^([0-9]+).+$/i;
 
   if (!rx.test(timeStr)) {
     throw new Error(`Invalid time string: ${timeStr}`);

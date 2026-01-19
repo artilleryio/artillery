@@ -1,8 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
-const url = require('url');
+const url = require('node:url');
 
 module.exports = { Plugin: MetricsByEndpoint };
 
@@ -12,9 +11,10 @@ let useOnlyRequestNames;
 let stripQueryString;
 let ignoreUnnamedRequests;
 let metricsPrefix;
+let groupDynamicURLs;
 
 // NOTE: Will not work with `parallel` - need request UIDs for that
-function MetricsByEndpoint(script, events) {
+function MetricsByEndpoint(script, _events) {
   // if(!global.artillery || !global.artillery.log) {
   //   console.error('artillery-plugin-metrics-endpoint requires Artillery v2');
   //   return;
@@ -43,20 +43,28 @@ function MetricsByEndpoint(script, events) {
   metricsPrefix =
     script.config.plugins['metrics-by-endpoint'].metricsNamespace ||
     'plugins.metrics-by-endpoint';
+  groupDynamicURLs =
+    script.config.plugins['metrics-by-endpoint'].groupDynamicURLs ?? true;
 
   script.config.processor.metricsByEndpoint_afterResponse =
     metricsByEndpoint_afterResponse;
+  script.config.processor.metricsByEndpoint_onError = metricsByEndpoint_onError;
+  script.config.processor.metricsByEndpoint_beforeRequest =
+    metricsByEndpoint_beforeRequest;
 
-  script.scenarios.forEach(function (scenario) {
+  script.scenarios.forEach((scenario) => {
     scenario.afterResponse = [].concat(scenario.afterResponse || []);
     scenario.afterResponse.push('metricsByEndpoint_afterResponse');
+    scenario.onError = [].concat(scenario.onError || []);
+    scenario.onError.push('metricsByEndpoint_onError');
+    scenario.beforeRequest = [].concat(scenario.beforeRequest || []);
+    scenario.beforeRequest.push('metricsByEndpoint_beforeRequest');
   });
 }
 
-function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
-  const targetUrl =
-    userContext.vars.target && url.parse(userContext.vars.target);
-  const requestUrl = url.parse(req.url);
+function calculateBaseUrl(target, originalRequestUrl) {
+  const targetUrl = target && url.parse(target);
+  const requestUrl = url.parse(originalRequestUrl);
 
   let baseUrl = '';
   if (
@@ -71,14 +79,53 @@ function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
   }
   baseUrl += stripQueryString ? requestUrl.pathname : requestUrl.path;
 
-  let reqName = '';
-  if (useOnlyRequestNames && req.name) {
-    reqName += req.name;
-  } else if (req.name) {
-    reqName += `${baseUrl} (${req.name})`;
-  } else if (!ignoreUnnamedRequests) {
-    reqName += baseUrl;
+  return decodeURIComponent(baseUrl);
+}
+
+function getReqName(target, originalRequestUrl, requestName) {
+  const baseUrl = calculateBaseUrl(target, originalRequestUrl);
+
+  if (!requestName) {
+    return ignoreUnnamedRequests ? '' : baseUrl;
   }
+
+  return useOnlyRequestNames ? requestName : `${baseUrl} (${requestName})`;
+}
+
+function metricsByEndpoint_beforeRequest(req, userContext, _events, done) {
+  if (groupDynamicURLs) {
+    req.defaultName = getReqName(userContext.vars.target, req.url, req.name);
+  }
+
+  return done();
+}
+
+function metricsByEndpoint_onError(err, req, userContext, events, done) {
+  //if groupDynamicURLs is true, then req.defaultName is set in beforeRequest
+  //otherwise, we must calculate the reqName here as req.url is the non-templated version
+  const reqName = groupDynamicURLs
+    ? req.defaultName
+    : getReqName(userContext.vars.target, req.url, req.name);
+
+  if (reqName === '') {
+    return done();
+  }
+
+  events.emit(
+    'counter',
+    `${metricsPrefix}.${reqName}.errors.${err.code || err.name}`,
+    1
+  );
+
+  done();
+}
+
+function metricsByEndpoint_afterResponse(req, res, userContext, events, done) {
+  //if groupDynamicURLs is true, then req.defaultName is set in beforeRequest
+  //otherwise, we must calculate the reqName here as req.url is the non-templated version
+  const reqName = groupDynamicURLs
+    ? req.defaultName
+    : getReqName(userContext.vars.target, req.url, req.name);
 
   if (reqName === '') {
     return done();

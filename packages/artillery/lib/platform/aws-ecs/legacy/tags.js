@@ -1,7 +1,7 @@
-'use strict';
+
 
 function parseTags(input) {
-  let tags = [];
+  const tags = [];
   if (input) {
     const tagList = input.split(',').map((x) => x.trim());
     for (const t of tagList) {

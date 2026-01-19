@@ -1,37 +1,47 @@
-# Load testing and smoke testing with real browsers
+# Load testing and smoke testing with headless browsers
 
-<p align="center">
-  <img src="./repo-header.png" alt="Full browser load testing with Artillery + Playwright" width="1012">
-</p>
+Artillery can run Playwright scripts as performance tests. This example shows you how to run a simple load test, a smoke test, and how to track custom metrics for part of the flow.
 
-Ever wished you could run load tests with *real browsers*? Well, now you can! You can combine Artillery with Playwright to run full browser tests, and this example shows you how. We can run both load tests, and smoke tests with headless browsers.
+- [Why load test with headless browsers?](https://www.artillery.io/docs/playwright#why-load-test-with-headless-browsers)
 
-We'd love your feedback! -> [Discussion board](https://github.com/artilleryio/artillery/discussions)
-
-## Pre-requisites
-
-Before running the examples, install Artillery + [`artillery-engine-playwright`](https://github.com/artilleryio/artillery-engine-playwright):
-
-```sh
-npm install
-```
+> [!TIP]
+> Artillery's uses YAML as its default configuration format, but Playwright tests can be written as TypeScript. The examples below are shown as both TypeScript-only, and YAML + TypeScript.
 
 ## Example 1: A simple load test
 
 Run a simple load test using a plain Playwright script (recorded with `playwright codegen` - no Artillery-specific changes required):
 
+
 ```sh
-$(npm bin)/artillery run browser-load-test.yml
+# Run the TypeScript example:
+npx artillery run browser-load-test.ts
+```
+
+```sh
+# The same example configured with a separate YAML config file:
+npx artillery run browser-load-test.yml
 ```
 
 That's it! Artillery will create headless Chrome browsers that will run Playwright scenarios you provide.
 
 ## Example 2: A smoke test
 
-This example shows how we can implement a smoke test (or a synthetic check) using a headless browser. We make use of Artillery's [CSV payload](https://artillery.io/docs/guides/guides/test-script-reference.html#Payload-files) feature to specify the URLs we want to check, and [custom metric API](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) to track custom metrics.
+This example shows how we can implement a smoke test (or a synthetic check) using a headless browser.
+
+We make use of Artillery's [CSV payload](https://artillery.io/docs/guides/guides/test-script-reference.html#Payload-files) feature to specify the URLs we want to check, and [custom metric API](https://artillery.io/docs/guides/guides/extending.html#Tracking-custom-metrics) to track custom metrics.
+
+For every row in the CSV file, we'll load the URL from the first column, and check that the page contains the text specified in the second column.
+
+The test will load each page specified in the CSV file, and check that it contains the text
 
 ```sh
-$(npm bin)/artillery run browser-smoke-test.yml
+# Run the TypeScript example:
+npx artillery run browser-smoke-test.ts
+```
+
+```sh
+# The same example configured with a separate YAML config file:
+npx artillery run browser-smoke-test.yml
 ```
 
 ## Example 3: Tracking custom metrics for part of the flow
@@ -98,6 +108,10 @@ browser.page_domcontentloaded.dominteractive.https://artillery.io/pro/:
   p99: ...................................................... 1380.5
 ```
 
-## Scale out
+## Scaling browser tests
 
-Want to run 1,000 browsers at the same time? 10,000? more? Run your load tests on AWS Fargate with built-in support in Artillery. See our guide for [Load testing on AWS Fargate](https://www.artillery.io/docs/load-testing-at-scale/aws-fargate) for more information.
+Running headless browsers in parallel will quickly exhaust CPU and memory of a single machine.
+
+Artillery has built-in support for cloud-native distributed load testing on AWS Fargate or Azure Container Instances.
+
+See our guide for [Distributed load testing](https://www.artillery.io/docs/load-testing-at-scale) for more information.

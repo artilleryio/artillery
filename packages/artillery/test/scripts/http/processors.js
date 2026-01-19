@@ -1,4 +1,4 @@
-'use strict';
+
 
 function simpleFunction(_context, ee, next) {
   ee.emit('counter', 'simpleFunction', 1);

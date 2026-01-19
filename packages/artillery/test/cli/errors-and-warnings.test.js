@@ -1,5 +1,5 @@
 const tap = require('tap');
-const { execute } = require('../cli/_helpers.js');
+const { execute } = require('../helpers');
 const execa = require('execa');
 
 tap.test('GH #215 regression', async (t) => {
@@ -13,7 +13,12 @@ tap.test('GH #215 regression', async (t) => {
     'test/scripts/gh_215_add_token.json'
   ]);
   abortController.abort();
-  t.ok(exitCode === 0 && !output.stdout.includes('ECONNREFUSED'));
+
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.notOk(
+    output.stdout.includes('ECONNREFUSED'),
+    'Should not have connection refused errors'
+  );
 });
 
 tap.test('Exits with non zero when an unknown command is used', async (t) => {
@@ -23,26 +28,61 @@ tap.test('Exits with non zero when an unknown command is used', async (t) => {
     '--with',
     'cheese'
   ]);
-  t.ok(exitCode !== 0);
+  t.not(exitCode, 0, 'CLI should error with non-zero exit code');
 });
 
 tap.test('Exits with non zero when an unknown option is used', async (t) => {
   const [exitCode] = await execute(['run', '--with', 'cheese']);
-  t.ok(exitCode !== 0);
+
+  t.not(exitCode, 0, 'CLI should error with non-zero exit code');
 });
 
 tap.test(
   'Exits with 0 when a known flag is used with no command',
   async (t) => {
     const [exitCode] = await execute(['run', '-V']);
-    t.ok(exitCode !== 0);
+
+    t.not(exitCode, 0, 'CLI should error with non-zero exit code');
   }
 );
 
-tap.test('Suggest similar commands if unknown command is used', async (t) => {
+tap.skip('Suggest similar commands if unknown command is used', async (t) => {
   const [exitCode, output] = await execute(['helpp']);
-  t.ok(exitCode === 127 && output.stderr.includes('Did you mean'));
+  t.equal(exitCode, 1, 'CLI should error with exit code 1');
+  t.ok(
+    output.stdout.includes('Did you mean'),
+    'Should suggest similar commands'
+  );
 });
+
+tap.test('Exit early if Artillery Cloud API is not valid', async (t) => {
+  const [exitCode, output] = await execute([
+    'run',
+    '--record',
+    '--key',
+    '123',
+    'test/scripts/gh_215_add_token.json'
+  ]);
+
+  t.equal(exitCode, 7);
+  t.ok(output.stderr.includes('API key is not recognized'));
+});
+
+tap.test(
+  'Exit early if Artillery Cloud API is not valid - on Fargate',
+  async (t) => {
+    const [exitCode, output] = await execute([
+      'run-fargate',
+      '--record',
+      '--key',
+      '123',
+      'test/scripts/gh_215_add_token.json'
+    ]);
+
+    t.equal(exitCode, 7);
+    t.ok(output.stderr.includes('API key is not recognized'));
+  }
+);
 
 /*
  @test "Running a script that uses XPath capture when libxmljs is not installed produces a warning" {

@@ -1,0 +1,12 @@
+config:
+  target: "http://doesntmatter"
+  phases:
+    - duration: 10
+      arrivalRate: 10
+      name: "Phase 1"
+  processor: "./processor.js"
+
+scenarios:
+  - beforeScenario: getUser
+    flow:
+      - log: "Username: {{ username }} | Password: {{ password }}"

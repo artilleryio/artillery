@@ -32,7 +32,7 @@ function ArtilleryPluginMemoryInspector(script, events) {
     script.config['memory-inspector'] ||
     script.config.plugins['memory-inspector'];
 
-  async function memoryInspectorHandler(context, ee, next) {
+  async function memoryInspectorHandler(_context, ee, _next) {
     if (typeof process.env.ARTILLERY_INTROSPECT_MEMORY !== 'undefined') {
       //https://nodejs.org/api/process.html#processmemoryusage
       const { rss, heapUsed, heapTotal, external } = process.memoryUsage();
@@ -58,7 +58,7 @@ function ArtilleryPluginMemoryInspector(script, events) {
       );
     }
 
-    for (let { pid, name, unit } of inspectorConfig) {
+    for (const { pid, name, unit } of inspectorConfig) {
       if (!pid) {
         debug(`No pid (${pid}) found. Skipping!`);
         continue;
@@ -75,11 +75,8 @@ function ArtilleryPluginMemoryInspector(script, events) {
         );
       } catch (error) {
         debug(`Could not get usage stats for pid ${pid}.\n${error}`);
-        continue;
       }
     }
-
-    return next();
   }
 
   script.scenarios = script.scenarios.map((scenario) => {

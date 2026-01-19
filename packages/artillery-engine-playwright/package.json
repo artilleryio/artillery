@@ -1,20 +1,32 @@
 {
   "name": "artillery-engine-playwright",
-  "version": "1.1.0",
+  "version": "1.24.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "tap test/*.test.js --timeout 300",
+    "test:aws": "tap test/*.aws.js --timeout 420",
+    "test:aws:ci": "tap --timeout=420"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "keywords": [],
   "author": "",
   "license": "MPL-2.0",
   "dependencies": {
+    "@playwright/browser-chromium": "1.56.1",
+    "@playwright/test": "1.56.1",
     "debug": "^4.3.2",
-    "playwright": "1.39.0",
-    "@playwright/browser-chromium": "1.39.0"
+    "playwright": "1.56.1"
   },
   "devDependencies": {
-    "@playwright/test": "1.39.0"
+    "tap": "^19.0.2",
+    "zx": "^8.1.4"
   }
 }

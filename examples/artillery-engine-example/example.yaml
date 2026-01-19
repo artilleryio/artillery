@@ -8,7 +8,7 @@ config:
   engines:
     example: {}
 scenarios:
-  - name: "A scenario using the custom 'example' engine"
+  - name: "custom_example_engine_scenario"
     engine: example
     flow:
       - doSomething:

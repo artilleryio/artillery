@@ -1,20 +1,37 @@
 name: Publish Docker image for Artillery
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - packages/artillery/package.json
+  workflow_dispatch:
+    # this will override the latest image, so only trigger when you want to publish a new version
+    inputs:
+      COMMIT_SHA:
+        description: 'Commit SHA'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      COMMIT_SHA:
+        description: 'Commit SHA'
+        required: true
+        type: string
+    secrets:
+      DOCKER_USERNAME:
+        description: 'Docker Hub username'
+        required: true
+      DOCKER_PASSWORD:
+        description: 'Docker Hub password'
+        required: true
 
 jobs:
   push_to_registry:
-    if: "contains(github.event.head_commit.message, 'ci: release v')"
     name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.COMMIT_SHA || null }}
+          fetch-depth: 0
 
       - name: Get Artillery version
         run: |
@@ -36,7 +53,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        uses: useblacksmith/build-push-action@v2
         with:
           context: ./packages/artillery
           push: true

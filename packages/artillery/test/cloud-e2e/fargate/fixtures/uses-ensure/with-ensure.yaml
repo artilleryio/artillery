@@ -1,0 +1,17 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  plugins:
+    ensure: {}
+  phases:
+    - duration: 20
+      arrivalRate: 1
+  ensure:
+    p99: 10000
+    thresholds:
+      - "http.response_time.p99": 1
+
+scenarios:
+  - name: run_uses_ensure
+    flow:
+      - get:
+          url: "/dino"

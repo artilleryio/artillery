@@ -2,40 +2,53 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const temp = require('temp');
-const fs = require('fs-extra');
-const spawn = require('cross-spawn');
-const chalk = require('chalk');
-
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 const debug = require('debug')('platform:aws-lambda');
 
-const { randomUUID } = require('crypto');
+const { randomUUID } = require('node:crypto');
 
 const sleep = require('../../util/sleep');
-const path = require('path');
+const path = require('node:path');
+const {
+  LambdaClient,
+  GetFunctionConfigurationCommand,
+  InvokeCommand,
+  CreateFunctionCommand,
+  DeleteFunctionCommand,
+  ResourceConflictException,
+  ResourceNotFoundException
+} = require('@aws-sdk/client-lambda');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const { SQSClient, DeleteQueueCommand } = require('@aws-sdk/client-sqs');
+const {
+  IAMClient,
+  GetRoleCommand,
+  CreateRoleCommand,
+  AttachRolePolicyCommand,
+  CreatePolicyCommand
+} = require('@aws-sdk/client-iam');
 
-const archiver = require('archiver');
-const AWS = require('aws-sdk');
+const createS3Client = require('../aws-ecs/legacy/create-s3-client');
+const { getBucketRegion } = require('../aws/aws-get-bucket-region');
 
-const https = require('https');
+const _https = require('node:https');
 
 const { QueueConsumer } = require('../../queue-consumer');
 
-const { createBOM } = require('../../create-bom/create-bom');
-
-const setDefaultAWSCredentials = require('../aws/aws-set-default-credentials');
-const { promisify } = require('node:util');
-
-const telemetry = require('../../telemetry').init();
+const telemetry = require('../../telemetry');
 const crypto = require('node:crypto');
 
 const prices = require('./prices');
-const { STATES } = require('../local/artillery-worker-local');
+const _ = require('lodash');
 
 const { SQS_QUEUES_NAME_PREFIX } = require('../aws/constants');
+const ensureS3BucketExists = require('../aws/aws-ensure-s3-bucket-exists');
+const getAccountId = require('../aws/aws-get-account-id');
 
 const createSQSQueue = require('../aws/aws-create-sqs-queue');
+const { createAndUploadTestDependencies } = require('./dependencies');
+const awsGetDefaultRegion = require('../aws/aws-get-default-region');
+const pkgVersion = require('../../../package.json').version;
 
 // https://stackoverflow.com/a/66523153
 function memoryToVCPU(memMB) {
@@ -77,48 +90,51 @@ class PlatformLambda {
 
     const platformConfig = platformOpts.platformConfig;
 
+    this.currentVersion = process.env.LAMBDA_IMAGE_VERSION || pkgVersion;
+    this.ecrImageUrl = process.env.WORKER_IMAGE_URL;
     this.architecture = platformConfig.architecture || 'arm64';
     this.region = platformConfig.region || 'us-east-1';
+    this.arnPrefix = this.region.startsWith('cn-') ? 'arn:aws-cn' : 'arn:aws';
 
     this.securityGroupIds =
       platformConfig['security-group-ids']?.split(',') || [];
     this.subnetIds = platformConfig['subnet-ids']?.split(',') || [];
 
+    this.useVPC = this.securityGroupIds.length > 0 && this.subnetIds.length > 0;
+
     this.memorySize = platformConfig['memory-size'] || 4096;
 
-    this.testRunId = platformOpts.testRunId || randomUUID();
+    this.testRunId = platformOpts.testRunId;
     this.lambdaRoleArn =
-      platformConfig['lambda-role-arn'] || platformConfig['lambdaRoleArn'];
+      platformConfig['lambda-role-arn'] || platformConfig.lambdaRoleArn;
 
     this.platformOpts = platformOpts;
+
+    this.cloudKey =
+      this.platformOpts.cliArgs.key || process.env.ARTILLERY_CLOUD_API_KEY;
+
+    this.s3LifecycleConfigurationRules = [
+      {
+        Expiration: { Days: 2 },
+        Filter: { Prefix: '/lambda' },
+        ID: 'RemoveAdHocTestData',
+        Status: 'Enabled'
+      },
+      {
+        Expiration: { Days: 7 },
+        Filter: { Prefix: '/' },
+        ID: 'RemoveTestRunMetadata',
+        Status: 'Enabled'
+      }
+    ];
 
     this.artilleryArgs = [];
   }
 
   async init() {
-    artillery.log(
-      'NOTE: AWS Lambda support is experimental. Not all Artillery features work yet.\nFor details please see https://docs.art/aws-lambda'
-    );
-    artillery.log();
-    artillery.log('λ Creating AWS Lambda function...');
-
-    await setDefaultAWSCredentials(AWS);
-    this.accountId = await this.getAccountId();
-
-    const dirname = temp.mkdirSync(); // TODO: May want a way to override this by the user
-    const zipfile = temp.path({ suffix: '.zip' });
-
-    debug({ dirname, zipfile });
-
-    let createBomOpts = {};
-    let entryPoint = this.opts.absoluteScriptPath;
-    let extraFiles = [];
-    if (this.opts.absoluteConfigPath) {
-      entryPoint = this.opts.absoluteConfigPath;
-      extraFiles.push(this.opts.absoluteScriptPath);
-      createBomOpts.entryPointIsConfig = true;
-    }
-    // TODO: custom package.json path here
+    global.artillery.awsRegion = (await awsGetDefaultRegion()) || this.region;
+    artillery.log('λ Preparing AWS Lambda function...');
+    this.accountId = await getAccountId();
 
     const metadata = {
       region: this.region,
@@ -129,39 +145,23 @@ class PlatformLambda {
     };
     global.artillery.globalEvents.emit('metadata', metadata);
 
-    artillery.log('- Bundling test data');
-    const bom = await promisify(createBOM)(
-      entryPoint,
-      extraFiles,
-      createBomOpts
+    //make sure the bucket exists to send the zip file or the dependencies to
+    const bucketName = await ensureS3BucketExists(
+      this.region,
+      this.s3LifecycleConfigurationRules,
+      true
     );
-    for (const f of bom.files) {
-      artillery.log('  -', f.noPrefix);
-    }
+    this.bucketName = bucketName;
 
-    // Copy handler:
-    fs.copyFileSync(
-      path.resolve(__dirname, 'lambda-handler', 'index.js'),
-      path.join(dirname, 'index.js')
+    global.artillery.s3BucketRegion = await getBucketRegion(bucketName);
+
+    const { bom, s3Path } = await createAndUploadTestDependencies(
+      this.bucketName,
+      this.testRunId,
+      this.opts.absoluteScriptPath,
+      this.opts.absoluteConfigPath,
+      this.platformOpts.cliArgs
     );
-    fs.copyFileSync(
-      path.resolve(__dirname, 'lambda-handler', 'package.json'),
-      path.join(dirname, 'package.json')
-    );
-
-    // FIXME: This may overwrite lambda-handler's index.js or package.json
-    // Copy files that make up the test:
-    for (const o of bom.files) {
-      fs.ensureFileSync(path.join(dirname, o.noPrefix));
-      fs.copyFileSync(o.orig, path.join(dirname, o.noPrefix));
-    }
-
-    if (this.platformOpts.cliArgs.dotenv) {
-      fs.copyFileSync(
-        path.resolve(process.cwd(), this.platformOpts.cliArgs.dotenv),
-        path.join(dirname, path.basename(this.platformOpts.cliArgs.dotenv))
-      );
-    }
 
     this.artilleryArgs.push('run');
 
@@ -203,110 +203,14 @@ class PlatformLambda {
       const p = bom.files.filter(
         (x) => x.orig === this.opts.absoluteConfigPath
       )[0];
-      this.artilleryArgs.push(p.noPrefix);
+      this.artilleryArgs.push(p.noPrefixPosix);
     }
 
     // This needs to be the last argument for now:
     const p = bom.files.filter(
       (x) => x.orig === this.opts.absoluteScriptPath
     )[0];
-    this.artilleryArgs.push(p.noPrefix);
-
-    artillery.log('- Installing dependencies');
-    const { stdout, stderr, status, error } = spawn.sync(
-      'npm',
-      ['install', '--omit', 'dev'],
-      {
-        cwd: dirname
-      }
-    );
-
-    if (error) {
-      artillery.log(stdout?.toString(), stderr?.toString(), status, error);
-    } else {
-      // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    }
-
-    // Install extra plugins & engines
-    if (bom.modules.length > 0) {
-      artillery.log(
-        `- Installing extra engines & plugins: ${bom.modules.join(', ')}`
-      );
-      const { stdout, stderr, status, error } = spawn.sync(
-        'npm',
-        ['install'].concat(bom.modules),
-        { cwd: dirname }
-      );
-      if (error) {
-        artillery.log(stdout?.toString(), stderr?.toString(), status, error);
-      }
-    }
-
-    // Copy this version of Artillery into the Lambda package
-    const a9basepath = path.resolve(__dirname, '..', '..', '..');
-    // TODO: read this from .files in package.json instead:
-    for (const dir of ['bin', 'lib']) {
-      const destdir = path.join(dirname, 'node_modules', 'artillery', dir);
-      const srcdir = path.join(a9basepath, dir);
-      fs.ensureDirSync(destdir);
-      fs.copySync(srcdir, destdir);
-    }
-    for (const fn of ['console-reporter.js', 'util.js']) {
-      const destfn = path.join(dirname, 'node_modules', 'artillery', fn);
-      const srcfn = path.join(a9basepath, fn);
-      fs.copyFileSync(srcfn, destfn);
-    }
-
-    fs.copyFileSync(
-      path.resolve(a9basepath, 'package.json'),
-      path.join(dirname, 'node_modules', 'artillery', 'package.json')
-    );
-
-    const a9cwd = path.join(dirname, 'node_modules', 'artillery');
-    debug({ a9basepath, a9cwd });
-
-    const {
-      stdout: stdout2,
-      stderr: stderr2,
-      status: status2,
-      error: error2
-    } = spawn.sync('npm', ['install', '--omit', 'dev'], { cwd: a9cwd });
-    if (error2) {
-      artillery.log(stdout2?.toString(), stderr2?.toString(), status2, error2);
-    } else {
-      // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    }
-
-    const {
-      stdout: stdout3,
-      stderr: stderr3,
-      status: status3,
-      error: error3
-    } = spawn.sync('npm', ['uninstall', '@artilleryio/platform-fargate'], {
-      cwd: a9cwd
-    });
-    if (error3) {
-      artillery.log(stdout3?.toString(), stderr3?.toString(), status3, error3);
-    } else {
-      // artillery.log('        npm log is in:', temp.path({suffix: '.log'}));
-    }
-
-    fs.removeSync(path.join(dirname, 'node_modules', 'aws-sdk'));
-    fs.removeSync(path.join(a9cwd, 'node_modules', 'typescript'));
-    fs.removeSync(path.join(a9cwd, 'node_modules', 'tap'));
-    fs.removeSync(path.join(a9cwd, 'node_modules', 'prettier'));
-
-    artillery.log('- Creating zip package');
-    await this.createZip(dirname, zipfile);
-
-    artillery.log('Preparing AWS environment...');
-    const bucketName = await this.ensureS3BucketExists();
-    this.bucketName = bucketName;
-
-    const s3path = await this.uploadLambdaZip(bucketName, zipfile);
-    debug({ s3path });
-    this.lambdaZipPath = s3path;
-
+    this.artilleryArgs.push(p.noPrefixPosix);
     // 36 is length of a UUUI v4 string
     const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
       0,
@@ -323,24 +227,20 @@ class PlatformLambda {
       artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
     }
 
-    this.functionName = `artilleryio-${this.testRunId}`;
-    await this.createLambda({
-      bucketName: this.bucketName,
-      functionName: this.functionName,
-      zipPath: this.lambdaZipPath
-    });
+    this.functionName = this.createFunctionNameWithHash();
+
+    await this.createOrUpdateLambdaFunctionIfNeeded();
+
     artillery.log(` - Lambda function: ${this.functionName}`);
     artillery.log(` - Region: ${this.region}`);
     artillery.log(` - AWS account: ${this.accountId}`);
 
-    debug({ bucketName, s3path, sqsQueueUrl });
-
-    const self = this;
+    debug({ bucketName, s3Path, sqsQueueUrl });
 
     const consumer = new QueueConsumer();
     consumer.create(
       {
-        poolSize: Math.min(self.platformOpts.count, 100)
+        poolSize: Math.min(this.platformOpts.count, 100)
       },
       {
         queueUrl: process.env.SQS_QUEUE_URL || this.sqsQueueUrl,
@@ -349,14 +249,6 @@ class PlatformLambda {
         messageAttributeNames: ['testId', 'workerId'],
         visibilityTimeout: 60,
         batchSize: 10,
-        sqs: new AWS.SQS({
-          httpOptions: {
-            agent: new https.Agent({
-              keepAlive: true
-            })
-          },
-          region: this.region
-        }),
         handleMessage: async (message) => {
           let body = null;
           try {
@@ -383,7 +275,7 @@ class PlatformLambda {
             throw new Error('SQS message with no testId or workerId');
           }
 
-          if (self.testRunId !== attrs.testId.StringValue) {
+          if (this.testRunId !== attrs.testId.StringValue) {
             throw new Error('SQS message for an unknown testId');
           }
 
@@ -405,30 +297,34 @@ class PlatformLambda {
             body.id = workerId;
             this.events.emit(body.event, workerId, { phase: body.phase });
           } else if (body.event === 'workerError') {
-            this.events.emit(body.event, workerId, {
-              id: workerId,
-              error: new Error(
-                `A Lambda function has exited with an error. Reason: ${body.reason}`
-              ),
-              level: 'error',
-              aggregatable: false,
-              logs: body.logs
-            });
-          } else if (body.event == 'workerReady') {
+            global.artillery.suggestedExitCode = body.exitCode || 1;
+
+            if (body.exitCode !== 21) {
+              this.events.emit(body.event, workerId, {
+                id: workerId,
+                error: new Error(
+                  `A Lambda function has exited with an error. Reason: ${body.reason}`
+                ),
+                level: 'error',
+                aggregatable: false,
+                logs: body.logs
+              });
+            }
+          } else if (body.event === 'workerReady') {
             this.events.emit(body.event, workerId);
             this.waitingReadyCount++;
 
             // TODO: Do this only for batches of workers with "wait" option set
             if (this.waitingReadyCount === this.count) {
               // TODO: Retry
-              const s3 = new AWS.S3();
-              await s3
-                .putObject({
+              const s3 = createS3Client();
+              await s3.send(
+                new PutObjectCommand({
                   Body: Buffer.from(''),
                   Bucket: this.bucketName,
                   Key: `/${this.testRunId}/green`
                 })
-                .promise();
+              );
             }
           } else {
             debug(body);
@@ -457,11 +353,11 @@ class PlatformLambda {
       ext: 'beforeExit',
       method: async (event) => {
         try {
-          await telemetry.capture({
+          await telemetry.init().capture({
             event: 'ping',
             awsAccountId: crypto
               .createHash('sha1')
-              .update(self.accountId)
+              .update(this.accountId)
               .digest('base64')
           });
 
@@ -471,22 +367,22 @@ class PlatformLambda {
         } catch (_err) {}
 
         function round(number, decimals) {
-          const m = Math.pow(10, decimals);
+          const m = 10 ** decimals;
           return Math.round(number * m) / m;
         }
 
         if (event.flags && event.flags.platform === 'aws:lambda') {
           let price = 0;
-          if (!prices[self.region]) {
-            price = prices.base[self.architecture];
+          if (!prices[this.region]) {
+            price = prices.base[this.architecture];
           } else {
-            price = prices[self.region][self.architecture];
+            price = prices[this.region][this.architecture];
           }
 
           const duration = Math.ceil((Date.now() - startedAt) / 1000);
           const total =
-            ((price * self.memorySize) / 1024) *
-            self.platformOpts.count *
+            ((price * this.memorySize) / 1024) *
+            this.platformOpts.count *
             duration;
           const cost = round(total / 10e10, 4);
           console.log(`\nEstimated AWS Lambda cost for this test: $${cost}\n`);
@@ -495,16 +391,28 @@ class PlatformLambda {
     });
   }
 
+  getDesiredWorkerCount() {
+    return this.platformOpts.count;
+  }
+
+  async startJob() {
+    await this.init();
+
+    for (let i = 0; i < this.platformOpts.count; i++) {
+      const { workerId } = await this.createWorker();
+      this.workers[workerId] = { id: workerId };
+      await this.runWorker(workerId);
+    }
+  }
+
   async createWorker() {
     const workerId = randomUUID();
 
     return { workerId };
   }
 
-  async prepareWorker(workerId) {}
-
   async runWorker(workerId) {
-    const lambda = new AWS.Lambda({
+    const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
     });
@@ -515,8 +423,13 @@ class PlatformLambda {
       ARTILLERY_ARGS: this.artilleryArgs,
       TEST_RUN_ID: this.testRunId,
       BUCKET: this.bucketName,
-      WAIT_FOR_GREEN: true
+      WAIT_FOR_GREEN: true,
+      ARTILLERY_CLOUD_API_KEY: this.cloudKey
     };
+
+    if (process.env.ARTILLERY_CLOUD_ENDPOINT) {
+      event.ARTILLERY_CLOUD_ENDPOINT = process.env.ARTILLERY_CLOUD_ENDPOINT;
+    }
 
     debug('Lambda event payload:');
     debug({ event });
@@ -524,14 +437,18 @@ class PlatformLambda {
     const payload = JSON.stringify(event);
 
     // Wait for the function to be invocable:
+    const timeout = this.useVPC ? 240e3 : 120e3;
     let waited = 0;
     let ok = false;
-    while (waited < 120 * 1000) {
+    let state;
+    while (waited < timeout) {
       try {
-        var state = (
-          await lambda
-            .getFunctionConfiguration({ FunctionName: this.functionName })
-            .promise()
+        state = (
+          await lambda.send(
+            new GetFunctionConfigurationCommand({
+              FunctionName: this.functionName
+            })
+          )
         ).State;
         if (state === 'Active') {
           debug('Lambda function ready:', this.functionName);
@@ -558,18 +475,18 @@ class PlatformLambda {
       );
     }
 
-    await lambda
-      .invoke({
+    await lambda.send(
+      new InvokeCommand({
         FunctionName: this.functionName,
         Payload: payload,
         InvocationType: 'Event'
       })
-      .promise();
+    );
 
     this.count++;
   }
 
-  async stopWorker(workerId) {
+  async stopWorker(_workerId) {
     // TODO: Send message to that worker and have it exit early
   }
 
@@ -578,112 +495,57 @@ class PlatformLambda {
       this.sqsConsumer.stop();
     }
 
-    const s3 = new AWS.S3({ region: this.region });
-    const sqs = new AWS.SQS({ region: this.region });
-    const lambda = new AWS.Lambda({
+    const sqs = new SQSClient({ region: this.region });
+    const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
     });
 
     try {
-      await s3
-        .deleteObject({
-          Bucket: this.bucketName,
-          Key: this.lambdaZipPath
-        })
-        .promise();
-
-      await sqs
-        .deleteQueue({
+      await sqs.send(
+        new DeleteQueueCommand({
           QueueUrl: this.sqsQueueUrl
         })
-        .promise();
+      );
 
-      if (typeof process.env.RETAIN_LAMBDA === 'undefined') {
-        await lambda
-          .deleteFunction({
+      if (process.env.RETAIN_LAMBDA === 'false') {
+        await lambda.send(
+          new DeleteFunctionCommand({
             FunctionName: this.functionName
           })
-          .promise();
+        );
       }
     } catch (err) {
       console.error(err);
     }
   }
 
-  async createZip(src, out) {
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    const stream = fs.createWriteStream(out);
-
-    return new Promise((resolve, reject) => {
-      archive
-        .directory(src, false)
-        .on('error', (err) => reject(err))
-        .pipe(stream);
-
-      stream.on('close', () => resolve());
-      archive.finalize();
-    });
-  }
-
-  // TODO: Move into reusable platform util
-  async ensureS3BucketExists() {
-    const accountId = await this.getAccountId();
-    // S3 and Lambda have to be in the same region, which means we can't reuse
-    // the bucket created by Pro to store Lambda deployment zips
-    const bucketName = `artilleryio-test-data-${this.region}-${accountId}`;
-    const s3 = new AWS.S3({ region: this.region });
-
-    try {
-      await s3.listObjectsV2({ Bucket: bucketName, MaxKeys: 1 }).promise();
-    } catch (s3Err) {
-      if (s3Err.code === 'NoSuchBucket') {
-        const res = await s3.createBucket({ Bucket: bucketName }).promise();
-      } else {
-        throw s3Err;
-      }
-    }
-
-    return bucketName;
-  }
-
-  // TODO: Move into reusable platform util
-  async getAccountId() {
-    let stsOpts = {};
-    if (process.env.ARTILLERY_STS_OPTS) {
-      stsOpts = Object.assign(
-        stsOpts,
-        JSON.parse(process.env.ARTILLERY_STS_OPTS)
-      );
-    }
-
-    const sts = new AWS.STS(stsOpts);
-    const awsAccountId = (await sts.getCallerIdentity({}).promise()).Account;
-    return awsAccountId;
-  }
-
   async createLambdaRole() {
     const ROLE_NAME = 'artilleryio-default-lambda-role-20230116';
     const POLICY_NAME = 'artilleryio-lambda-policy-20230116';
 
-    const iam = new AWS.IAM();
+    const iam = new IAMClient({ region: global.artillery.awsRegion });
 
     try {
-      const res = await iam.getRole({ RoleName: ROLE_NAME }).promise();
+      const res = await iam.send(new GetRoleCommand({ RoleName: ROLE_NAME }));
       return res.Role.Arn;
     } catch (err) {
       debug(err);
     }
 
-    const res = await iam
-      .createRole({
+    const principalService = this.region.startsWith('cn-')
+      ? 'lambda.amazonaws.com.cn'
+      : 'lambda.amazonaws.com';
+
+    const res = await iam.send(
+      new CreateRoleCommand({
         AssumeRolePolicyDocument: `{
         "Version": "2012-10-17",
         "Statement": [
           {
             "Effect": "Allow",
             "Principal": {
-              "Service": "lambda.amazonaws.com"
+              "Service": "${principalService}"
             },
             "Action": "sts:AssumeRole"
           }
@@ -692,40 +554,38 @@ class PlatformLambda {
         Path: '/',
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
     const lambdaRoleArn = res.Role.Arn;
 
-    await iam
-      .attachRolePolicy({
-        PolicyArn:
-          'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
+    await iam.send(
+      new AttachRolePolicyCommand({
+        PolicyArn: `${this.arnPrefix}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole`,
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
-    await iam
-      .attachRolePolicy({
-        PolicyArn:
-          'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole',
+    await iam.send(
+      new AttachRolePolicyCommand({
+        PolicyArn: `${this.arnPrefix}:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole`,
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
-    const iamRes = await iam
-      .createPolicy({
+    const iamRes = await iam.send(
+      new CreatePolicyCommand({
         PolicyDocument: `{
         "Version": "2012-10-17",
         "Statement": [
           {
             "Effect": "Allow",
             "Action": ["sqs:*"],
-            "Resource": "arn:aws:sqs:*:${this.accountId}:artilleryio*"
+            "Resource": "${this.arnPrefix}:sqs:*:${this.accountId}:artilleryio*"
           },
           {
             "Effect": "Allow",
             "Action": ["s3:HeadObject", "s3:PutObject", "s3:ListBucket", "s3:GetObject", "s3:GetObjectAttributes"],
-            "Resource": [ "arn:aws:s3:::artilleryio-test-data*",  "arn:aws:s3:::artilleryio-test-data*/*" ]
+            "Resource": [ "${this.arnPrefix}:s3:::artilleryio-test-data*",  "${this.arnPrefix}:s3:::artilleryio-test-data*/*" ]
           }
         ]
       }
@@ -733,14 +593,14 @@ class PlatformLambda {
         PolicyName: POLICY_NAME,
         Path: '/'
       })
-      .promise();
+    );
 
-    await iam
-      .attachRolePolicy({
+    await iam.send(
+      new AttachRolePolicyCommand({
         PolicyArn: iamRes.Policy.Arn,
         RoleName: ROLE_NAME
       })
-      .promise();
+    );
 
     // See https://stackoverflow.com/a/37438525 for why we need this
     await sleep(10 * 1000);
@@ -748,53 +608,126 @@ class PlatformLambda {
     return lambdaRoleArn;
   }
 
-  async createLambda(opts) {
-    const { bucketName, functionName, zipPath } = opts;
+  async createOrUpdateLambdaFunctionIfNeeded() {
+    const existingLambdaConfig = await this.getLambdaFunctionConfiguration();
 
-    const lambda = new AWS.Lambda({
+    if (existingLambdaConfig) {
+      debug(
+        'Lambda function with this configuration already exists. Using existing function.'
+      );
+      return;
+    }
+
+    try {
+      await this.createLambda({
+        bucketName: this.bucketName,
+        functionName: this.functionName
+      });
+      return;
+    } catch (err) {
+      if (err instanceof ResourceConflictException) {
+        debug(
+          'Lambda function with this configuration already exists. Using existing function.'
+        );
+        return;
+      }
+
+      throw new Error(`Failed to create Lambda Function: \n${err}`);
+    }
+  }
+
+  async getLambdaFunctionConfiguration() {
+    const lambda = new LambdaClient({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    try {
+      const res = await lambda.send(
+        new GetFunctionConfigurationCommand({
+          FunctionName: this.functionName
+        })
+      );
+
+      return res;
+    } catch (err) {
+      if (err instanceof ResourceNotFoundException) {
+        return null;
+      }
+
+      throw new Error(`Failed to get Lambda Function: \n${err}`);
+    }
+  }
+
+  createFunctionNameWithHash(_lambdaConfig) {
+    const changeableConfig = {
+      MemorySize: this.memorySize,
+      VpcConfig: {
+        SecurityGroupIds: this.securityGroupIds,
+        SubnetIds: this.subnetIds
+      }
+    };
+
+    const configHash = crypto
+      .createHash('md5')
+      .update(JSON.stringify(changeableConfig))
+      .digest('hex');
+
+    let name = `artilleryio-v${this.currentVersion.replace(/\./g, '-')}-${
+      this.architecture
+    }-${configHash}`;
+
+    if (name.length > 64) {
+      name = name.slice(0, 64);
+    }
+
+    return name;
+  }
+
+  async createLambda(opts) {
+    const { functionName } = opts;
+
+    const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
     });
 
     const lambdaConfig = {
+      PackageType: 'Image',
       Code: {
-        S3Bucket: bucketName,
-        S3Key: zipPath
+        ImageUri:
+          this.ecrImageUrl ||
+          `248481025674.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}-${this.architecture}`
+      },
+      ImageConfig: {
+        Command: ['a9-handler-index.handler'],
+        EntryPoint: ['/usr/bin/npx', 'aws-lambda-ric']
       },
       FunctionName: functionName,
       Description: 'Artillery.io test',
-      Handler: 'index.handler',
-      MemorySize: this.memorySize,
-      PackageType: 'Zip',
-      Runtime: 'nodejs16.x',
-      Architectures: [this.architecture],
+      MemorySize: parseInt(this.memorySize, 10),
       Timeout: 900,
-      Role: this.lambdaRoleArn
+      Role: this.lambdaRoleArn,
+      //TODO: architecture influences the entrypoint. We should review which architecture to use in the end (may impact Playwright viability)
+      Architectures: [this.architecture],
+      Environment: {
+        Variables: {
+          S3_BUCKET_PATH: this.bucketName,
+          NPM_CONFIG_CACHE: '/tmp/.npm', //TODO: move this to Dockerfile
+          AWS_LAMBDA_LOG_FORMAT: 'JSON', //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
+          ARTILLERY_WORKER_PLATFORM: 'aws:lambda'
+        }
+      }
     };
 
-    if (this.securityGroupIds.length > 0 && this.subnetIds.length > 0) {
+    if (this.useVPC) {
       lambdaConfig.VpcConfig = {
         SecurityGroupIds: this.securityGroupIds,
         SubnetIds: this.subnetIds
       };
     }
 
-    await lambda.createFunction(lambdaConfig).promise();
-  }
-
-  async uploadLambdaZip(bucketName, zipfile) {
-    const key = `lambda/${randomUUID()}.zip`;
-    // TODO: Set lifecycle policy on the bucket/key prefix to delete after 24 hours
-    const s3 = new AWS.S3();
-    const s3res = await s3
-      .putObject({
-        Body: fs.createReadStream(zipfile),
-        Bucket: bucketName,
-        Key: key
-      })
-      .promise();
-
-    return key;
+    await lambda.send(new CreateFunctionCommand(lambdaConfig));
   }
 }
 

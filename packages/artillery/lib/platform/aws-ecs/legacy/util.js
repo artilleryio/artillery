@@ -1,40 +1,45 @@
-'use strict';
 
-const debug = require('debug')('artillery:util');
 
-const AWS = require('aws-sdk');
+const _debug = require('debug')('artillery:util');
 
 const chalk = require('chalk');
 
 const _ = require('lodash');
 
-const A = require('async');
+const _A = require('async');
 
 const createS3Client = require('./create-s3-client');
 
-// NOTE: When updating this list remember to update create-worker-images too
 const supportedRegions = [
   'us-east-1',
-  // 'us-east-2',
+  'us-east-2',
   'us-west-1',
-  // 'us-west-2',
-  // 'ca-central-1',
+  'us-west-2',
+  'us-gov-east-1',
+  'us-gov-west-1',
+  'ca-central-1',
   'eu-west-1',
-  // 'eu-west-2',
-  // 'eu-west-3',
+  'eu-west-2',
+  'eu-west-3',
   'eu-central-1',
+  'eu-north-1',
   'ap-south-1',
-  // 'ap-east-1',
-  // 'ap-northeast-2',
-  // 'ap-southeast-1',
-  // 'ap-southeast-2',
-  'ap-northeast-1'
-  // 'me-south-1',
+  'ap-east-1',
+  'ap-northeast-2',
+  'ap-southeast-1',
+  'ap-southeast-2',
+  'ap-northeast-1',
+  'me-south-1',
+  'il-central-1',
+  'sa-east-1',
+  'cn-north-1',
+  'cn-northwest-1'
 ];
 
 const getAccountId = require('../../aws/aws-get-account-id');
 
 const { S3_BUCKET_NAME_PREFIX } = require('./constants');
+const { paginateListObjectsV2 } = require('@aws-sdk/client-s3');
 
 function atob(data) {
   return Buffer.from(data, 'base64').toString('ascii');
@@ -56,68 +61,29 @@ async function getBucketName() {
 
 function formatError(err) {
   return (
-    `${chalk.red('Error')}: ${err.message}` + (err.code ? ` (${err.code})` : '')
+    `${chalk.red('Error')}: ${err.message}${err.code ? ` (${err.code})` : ''}`
   );
 }
 
-// lists all objects - responsibility for checking the count is on the caller
-// TODO: prefix should be a parameter
-function listAllObjectsWithPrefix(bucket, prefix, cb) {
-  const s3 = createS3Client();
+async function listAllObjectsWithPrefix(bucketName, prefix) {
+  const s3Client = createS3Client();
+  const allObjects = [];
 
-  const MAGIC_LIMIT = 100;
-
-  let result = [];
-
-  let params = {
-    Bucket: bucket,
-    MaxKeys: MAGIC_LIMIT,
-    Prefix: prefix
-  };
-
-  A.doWhilst(
-    function iteratee(next) {
-      s3.listObjectsV2(params, (s3Err, s3Data) => {
-        if (s3Err) {
-          return next(s3Err);
-        } else {
-          debug(`listObjectsV2: IsTruncated: ${s3Data.IsTruncated}`);
-          debug(
-            `listObjectsV2: KeyCount: ${s3Data.KeyCount} keys in the response`
-          );
-
-          result = result.concat(s3Data.Contents);
-
-          if (s3Data.IsTruncated) {
-            params.ContinuationToken = s3Data.NextContinuationToken;
-            return next(null, true);
-          } else {
-            return next(null, false);
-          }
-        }
-      });
-    },
-    function test(shouldContinue) {
-      return shouldContinue;
-    },
-    function finished(err) {
-      if (err) {
-        return cb(err);
-      } else {
-        debug(`listAllObjectsWithPrefix: returning ${result.length} results`);
-        return cb(null, result);
-      }
+  const paginator = paginateListObjectsV2(
+    { client: s3Client },
+    {
+      Bucket: bucketName,
+      Prefix: prefix,
+      MaxKeys: 1000
     }
   );
-} // listAllObjectsWithPrefix
+    for await (const page of paginator) {
+      if (page.Contents) {
+        allObjects.push(...page.Contents);
+      }
+    }
 
-function credentialsProvided(cb) {
-  const credsProvided = new AWS.Config().credentials !== null;
-  if (cb) {
-    return cb(credsProvided);
-  } else {
-    return credsProvided;
-  }
+  return allObjects;
 }
 
 module.exports = {
@@ -127,6 +93,5 @@ module.exports = {
   btoa,
   formatError,
   listAllObjectsWithPrefix,
-  credentialsProvided,
   getBucketName
 };

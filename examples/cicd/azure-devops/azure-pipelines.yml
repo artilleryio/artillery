@@ -26,8 +26,5 @@ steps:
 - script: artillery run --output reports/report.json tests/performance/socket-io.yml
   displayName: 'Execute load tests'
 
-- script: artillery report --output reports/report.html reports/report.json
-  displayName: 'Generate HTML report'
-
 - publish: $(System.DefaultWorkingDirectory)/reports
   artifact: artillery-test-report

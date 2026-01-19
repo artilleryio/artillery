@@ -1,38 +1,31 @@
 const { Command, Flags, Args } = require('@oclif/core');
+const { CommonRunFlags } = require('../cli/common-flags');
 
-const {
-  readScript,
-  parseScript,
-  addOverrides,
-  addVariables,
-  addDefaultPlugins,
-  resolveConfigTemplates,
-  checkConfig
-} = require('../../util');
-
-const p = require('util').promisify;
-const csv = require('csv-parse');
+const p = require('node:util').promisify;
+const _csv = require('csv-parse');
 const debug = require('debug')('commands:run');
-const ip = require('ip');
 const dotenv = require('dotenv');
 const _ = require('lodash');
 
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const os = require('os');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const os = require('node:os');
 const createLauncher = require('../launch-platform');
 const createConsoleReporter = require('../../console-reporter');
 
 const moment = require('moment');
 
 const { SSMS } = require('@artilleryio/int-core').ssms;
-const telemetry = require('../telemetry').init();
-const validateScript = require('../util/validate-script');
+const telemetry = require('../telemetry');
+
 const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
 
-const { customAlphabet } = require('nanoid');
 const parseTagString = require('../util/parse-tag-string');
+
+const generateId = require('../util/generate-id');
+const prepareTestExecutionPlan = require('../util/prepare-test-execution-plan');
+
 class RunCommand extends Command {
   static aliases = ['run'];
   // Enable multiple args:
@@ -41,7 +34,7 @@ class RunCommand extends Command {
   async run() {
     const { flags, argv, args } = await this.parse(RunCommand);
 
-    if (flags.platform === 'aws:fargate') {
+    if (flags.platform === 'aws:ecs') {
       // Delegate to existing implementation
       const RunFargateCommand = require('./run-fargate');
       return await RunFargateCommand.run(argv);
@@ -73,92 +66,29 @@ Examples:
 // TODO: Link to an Examples section in the docs
 
 RunCommand.flags = {
-  target: Flags.string({
-    char: 't',
-    description:
-      'Set target endpoint. Overrides the target already set in the test script'
-  }),
-  output: Flags.string({
-    char: 'o',
-    description: 'Write a JSON report to file'
-  }),
-  insecure: Flags.boolean({
-    char: 'k',
-    description: 'Allow insecure TLS connections; do not use in production'
-  }),
-  quiet: Flags.boolean({
-    char: 'q',
-    description: 'Quiet mode'
-  }),
-  overrides: Flags.string({
-    description: 'Dynamically override values in the test script; a JSON object'
-  }),
-  variables: Flags.string({
-    char: 'v',
-    description:
-      'Set variables available to vusers during the test; a JSON object'
-  }),
+  ...CommonRunFlags,
   // TODO: Deprecation notices for commands below:
-
-  // TODO: Replace with --profile
-  environment: Flags.string({
-    char: 'e',
-    description: 'Use one of the environments specified in config.environments'
-  }),
-  config: Flags.string({
-    char: 'c',
-    description: 'Read configuration for the test from the specified file'
-  }),
   payload: Flags.string({
     char: 'p',
     description: 'Specify a CSV file for dynamic data'
-  }),
-  // multiple allows multiple arguments for the -i flag, which means that e.g.:
-  // artillery -i one.yml -i two.yml main.yml
-  // does not work as expected. Instead of being considered an argument, "main.yml"
-  // is considered to be input for "-i" and oclif then complains about missing
-  // argument
-  input: Flags.string({
-    char: 'i',
-    description: 'Input script file',
-    multiple: true,
-    hidden: true
   }),
   solo: Flags.boolean({
     char: 's',
     description: 'Create only one virtual user'
   }),
-  dotenv: Flags.string({
-    description: 'Path to a dotenv file to load environment variables from'
-  }),
   platform: Flags.string({
     description: 'Runtime platform',
-    default: 'local'
+    default: 'local',
+    options: ['local', 'aws:lambda', 'az:aci']
   }),
   'platform-opt': Flags.string({
     description:
-      'Set a platform-specific option, e.g. --platform region=eu-west-1 for AWS Lambda',
+      'Set a platform-specific option, e.g. --platform-opt region=eu-west-1 for AWS Lambda',
     multiple: true
   }),
   count: Flags.string({
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
-  }),
-  tags: Flags.string({
-    description:
-      'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sqa,service:foo'
-  }),
-  note: Flags.string({
-    description: 'Add a note/annotation to the test run'
-  }),
-  record: Flags.boolean({
-    description: 'Record test run to Artillery Cloud'
-  }),
-  key: Flags.string({
-    description: 'API key for Artillery Cloud'
-  }),
-  'scenario-name': Flags.string({
-    description: 'Name of the specific scenario to run'
   })
 };
 
@@ -169,7 +99,8 @@ RunCommand.args = {
   })
 };
 
-RunCommand.runCommandImplementation = async function (flags, argv, args) {
+let cloud;
+RunCommand.runCommandImplementation = async (flags, argv, args) => {
   // Collect all input files for reading/parsing - via args, --config, or -i
   const inputFiles = argv.concat(flags.input || [], flags.config || []);
 
@@ -191,20 +122,69 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
     try {
       fs.statSync(dotEnvPath);
-    } catch (err) {
+    } catch (_err) {
       console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
     }
     dotenv.config({ path: dotEnvPath });
   }
 
   if (flags.output) {
-    checkDirExists(flags.output);
+    if (!checkDirExists(flags.output)) {
+      console.error('Path does not exist:', flags.output);
+      process.exit(1);
+    }
   }
 
-  try {
-    const script = await prepareTestExecutionPlan(inputFiles, flags, args);
+  const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+  console.log('Test run id:', testRunId);
+  global.artillery.testRunId = testRunId;
+    cloud = new CloudPlugin(null, null, { flags });
+    global.artillery.cloudEnabled = cloud.enabled;
 
-    const runnerOpts = {
+    if (cloud.enabled) {
+      try {
+        await cloud.init();
+      } catch (err) {
+        if (err.name === 'CloudAPIKeyMissing') {
+          console.error(
+            'Error: API key is required to record test results to Artillery Cloud'
+          );
+          console.error(
+            'See https://docs.art/get-started-cloud for more information'
+          );
+
+          await gracefulShutdown({ exitCode: 7 });
+        } else if (err.name === 'APIKeyUnauthorized') {
+          console.error(
+            'Error: API key is not recognized or is not authorized to record tests'
+          );
+
+          await gracefulShutdown({ exitCode: 7 });
+        } else if (err.name === 'PingFailed') {
+          console.error(
+            'Error: unable to reach Artillery Cloud API. This could be due to firewall restrictions on your network'
+          );
+          console.log('https://docs.art/cloud/err-ping');
+          await gracefulShutdown({ exitCode: 7 });
+        } else {
+          console.error(
+            'Error: something went wrong connecting to Artillery Cloud'
+          );
+          console.error('Check https://status.artillery.io for status updates');
+          console.error(err);
+        }
+      }
+    }
+
+    let script;
+    try {
+      script = await prepareTestExecutionPlan(inputFiles, flags, args);
+    } catch (err) {
+      console.error('Error:', err.message);
+      await gracefulShutdown({ exitCode: 1 });
+    }
+
+    var runnerOpts = {
       environment: flags.environment,
       // This is used in the worker to resolve
       // the path to the processor module
@@ -222,6 +202,14 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         value: path.basename(runnerOpts.scriptPath)
       });
     }
+    // Override the "name" tag with the value of --name if set
+    if (flags.name) {
+      for (const t of tagResult.tags) {
+        if (t.name === 'name') {
+          t.value = flags.name;
+        }
+      }
+    }
 
     if (flags.config) {
       runnerOpts.absoluteConfigPath = path.resolve(process.cwd(), flags.config);
@@ -234,18 +222,13 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       runnerOpts.count = 1;
     }
 
-    let platformConfig = {};
+    const platformConfig = {};
     if (flags['platform-opt']) {
       for (const opt of flags['platform-opt']) {
         const [k, v] = opt.split('=');
         platformConfig[k] = v;
       }
     }
-
-    const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-    const testRunId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
-
-    console.log('Test run id:', testRunId);
 
     const launcherOpts = {
       platform: flags.platform,
@@ -256,13 +239,19 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       testRunId
     };
 
-    let launcher = await createLauncher(
+    var launcher = await createLauncher(
       script,
       script.config.payload,
       runnerOpts,
       launcherOpts
     );
-    let intermediates = [];
+
+    if (!launcher) {
+      console.log('Failed to create launcher');
+      await gracefulShutdown({ exitCode: 1 });
+    }
+
+    const intermediates = [];
 
     const metricsToSuppress = getPluginMetricsToSuppress(script);
     // TODO: Wire up workerLog or something like that
@@ -271,28 +260,28 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       metricsToSuppress
     });
 
-    let reporters = [consoleReporter];
+    var reporters = [consoleReporter];
     if (process.env.CUSTOM_REPORTERS) {
       const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
-      customReporterNames.forEach(function (name) {
+      customReporterNames.forEach((name) => {
         const createReporter = require(name);
         const reporter = createReporter(launcher.events, flags);
         reporters.push(reporter);
       });
     }
 
-    launcher.events.on('phaseStarted', function (phase) {});
+    launcher.events.on('phaseStarted', (_phase) => {});
 
-    launcher.events.on('stats', function (stats) {
+    launcher.events.on('stats', (stats) => {
       if (artillery.runtimeOptions.legacyReporting) {
-        let report = SSMS.legacyReport(stats).report();
+        const report = SSMS.legacyReport(stats).report();
         intermediates.push(report);
       } else {
         intermediates.push(stats);
       }
     });
 
-    launcher.events.on('done', async function (stats) {
+    launcher.events.on('done', async (stats) => {
       let report;
       if (artillery.runtimeOptions.legacyReporting) {
         report = SSMS.legacyReport(stats).report();
@@ -302,7 +291,7 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
 
       if (flags.output) {
-        let logfile = getLogFilename(flags.output);
+        const logfile = getLogFilename(flags.output);
         if (!flags.quiet) {
           console.log('Log file: %s', logfile);
         }
@@ -345,8 +334,6 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
     });
 
-    new CloudPlugin(null, null, { flags });
-
     global.artillery.globalEvents.emit('test:init', {
       flags,
       testRunId,
@@ -359,19 +346,28 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
         launchType: flags.platform,
         artilleryVersion: {
           core: global.artillery.version
+        },
+        // Properties from the runnable script object:
+        testConfig: {
+          target: script.config.target,
+          phases: script.config.phases,
+          plugins: script.config.plugins,
+          environment: script._environment,
+          scriptPath: script._scriptPath,
+          configPath: script._configPath
         }
       }
     });
 
     launcher.run();
 
-    let finalReport = {};
-    let shuttingDown = false;
+    var finalReport = {};
+    var shuttingDown = false;
     process.on('SIGINT', async () => {
-      gracefulShutdown({ earlyStop: true });
+      gracefulShutdown({ earlyStop: true, exitCode: 130 });
     });
     process.on('SIGTERM', async () => {
-      gracefulShutdown({ earlyStop: true });
+      gracefulShutdown({ earlyStop: true, exitCode: 143 });
     });
 
     async function gracefulShutdown(opts = { exitCode: 0 }) {
@@ -412,18 +408,38 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
       }
       await Promise.allSettled(ps2);
 
-      await telemetry.shutdown();
+      if (launcher) {
+        await launcher.shutdown();
+      }
 
-      await launcher.shutdown();
-      await (async function () {
-        for (const r of reporters) {
-          if (r.cleanup) {
-            try {
-              await p(r.cleanup.bind(r))();
-            } catch (cleanupErr) {
-              debug(cleanupErr);
+      await (async () => {
+        if (reporters) {
+          for (const r of reporters) {
+            if (r.cleanup) {
+              try {
+                await p(r.cleanup.bind(r))();
+              } catch (cleanupErr) {
+                debug(cleanupErr);
+              }
             }
           }
+        }
+
+        if (
+          global.artillery.hasTypescriptProcessor &&
+          !process.env.ARTILLERY_TS_KEEP_BUNDLE
+        ) {
+          try {
+            fs.unlinkSync(global.artillery.hasTypescriptProcessor);
+          } catch (err) {
+            console.log(
+              `WARNING: Failed to remove typescript bundled file: ${global.artillery.hasTypescriptProcessor}`
+            );
+            console.log(err);
+          }
+          try {
+            fs.rmdirSync(path.dirname(global.artillery.hasTypescriptProcessor));
+          } catch (_err) {}
         }
         debug('Cleanup finished');
         process.exit(artillery.suggestedExitCode || opts.exitCode);
@@ -431,124 +447,31 @@ RunCommand.runCommandImplementation = async function (flags, argv, args) {
     }
 
     global.artillery.shutdown = gracefulShutdown;
-  } catch (err) {
-    throw err;
-  }
 };
 
-async function prepareTestExecutionPlan(inputFiles, flags, args) {
-  let script1 = {};
-
-  for (const fn of inputFiles) {
-    const data = await readScript(fn);
-    const parsedData = await parseScript(data);
-    script1 = _.merge(script1, parsedData);
-  }
-
-  script1 = await checkConfig(script1, inputFiles[0], flags);
-
-  if (flags.config) {
-    const absoluteConfigPath = path.resolve(process.cwd(), flags.config);
-
-    if (script1.config?.processor) {
-      const newPath = path.resolve(
-        path.dirname(absoluteConfigPath),
-        script1.config.processor
-      );
-
-      const stats = fs.statSync(newPath, { throwIfNoEntry: false });
-
-      if (typeof stats === 'undefined') {
-        // No file at that path - backwards compatibility mode:
-        console.log(
-          'WARNING - config.processor is now resolved relative to the config file'
-        );
-        console.log('Expected to find file at:', newPath);
-      } else {
-        script1.config.processor = newPath;
-      }
-    }
-  }
-
-  const script2 = await addOverrides(script1, flags);
-  const script3 = await addVariables(script2, flags);
-  const script4 = await resolveConfigTemplates(script3, flags);
-
-  if (!script4.config.target) {
-    throw new Error('No target specified and no environment chosen');
-  }
-
-  const validationError = validateScript(script4);
-
-  if (validationError) {
-    console.log(`Scenario validation error: ${validationError}`);
-
-    process.exit(1);
-  }
-
-  const script5 = await readPayload(script4);
-
-  if (typeof script5.config.phases === 'undefined' || flags.solo) {
-    script5.config.phases = [
-      {
-        duration: 1,
-        arrivalCount: 1
-      }
-    ];
-  }
-
-  script5.config.statsInterval = script5.config.statsInterval || 30;
-
-  const script6 = addDefaultPlugins(script5);
-  return script6;
-}
-
-async function readPayload(script) {
-  if (!script.config.payload) {
-    return script;
-  }
-
-  for (const payloadSpec of script.config.payload) {
-    const data = fs.readFileSync(payloadSpec.path, 'utf-8');
-
-    const csvOpts = Object.assign(
-      {
-        skip_empty_lines:
-          typeof payloadSpec.skipEmptyLines === 'undefined'
-            ? true
-            : payloadSpec.skipEmptyLines,
-        cast: typeof payloadSpec.cast === 'undefined' ? true : payloadSpec.cast,
-        from_line: payloadSpec.skipHeader === true ? 2 : 1,
-        delimiter: payloadSpec.delimiter || ','
-      },
-      payloadSpec.options
-    );
-
-    try {
-      const parsedData = await p(csv)(data, csvOpts);
-      payloadSpec.data = parsedData;
-    } catch (err) {
-      throw err;
-    }
-  }
-
-  return script;
-}
-
 async function sendTelemetry(script, flags, extraProps) {
+  if (process.env.WORKER_ID) {
+    debug('Telemetry: Running in cloud worker, skipping test run event');
+    return;
+  }
+
   function hash(str) {
     return crypto.createHash('sha1').update(str).digest('base64');
   }
 
   const properties = {};
 
-  if (script.config && script.config.__createdByQuickCommand) {
-    properties['quick'] = true;
+  if (script.config?.__createdByQuickCommand) {
+    properties.quick = true;
   }
-  properties['solo'] = flags.solo;
+  if (cloud?.enabled && cloud.user) {
+    properties.cloud = cloud.user;
+  }
+
+  properties.solo = flags.solo;
   try {
     // One-way hash of target endpoint:
-    if (script.config && script.config.target) {
+    if (script.config?.target) {
       const targetHash = hash(script.config.target);
       properties.targetHash = targetHash;
     }
@@ -559,27 +482,40 @@ async function sendTelemetry(script, flags, extraProps) {
     }
 
     properties.platform = flags.platform;
+
     properties.count = flags.count;
 
     if (properties.targetHash) {
       properties.distinctId = properties.targetHash;
     }
 
-    const ipaddr = ip.address();
     let macaddr;
-    for (const [iface, descrs] of Object.entries(os.networkInterfaces())) {
+    const nonInternalIpv6Interfaces = [];
+    for (const [_iface, descrs] of Object.entries(os.networkInterfaces())) {
       for (const o of descrs) {
-        if (o.address === ipaddr) {
-          macaddr = o.mac;
-          break;
+        if (o.internal === true) {
+          continue;
         }
+
+        //prefer ipv4 interface when available
+        if (o.family !== 'IPv4') {
+          nonInternalIpv6Interfaces.push(o);
+          continue;
+        }
+
+        macaddr = o.mac;
+        break;
       }
+    }
+
+    //default to first ipv6 interface if no ipv4 interface is available
+    if (!macaddr && nonInternalIpv6Interfaces.length > 0) {
+      macaddr = nonInternalIpv6Interfaces[0].mac;
     }
 
     if (macaddr) {
       properties.macHash = hash(macaddr);
     }
-    properties.ipHash = hash(ipaddr);
     properties.hostnameHash = hash(os.hostname());
     properties.usernameHash = hash(os.userInfo().username);
 
@@ -619,6 +555,7 @@ async function sendTelemetry(script, flags, extraProps) {
       properties.plugins = true;
       properties.officialPlugins = [];
       const OFFICIAL_PLUGINS = [
+        'apdex',
         'expect',
         'publish-metrics',
         'metrics-by-endpoint',
@@ -626,13 +563,40 @@ async function sendTelemetry(script, flags, extraProps) {
         'fuzzer',
         'ensure',
         'memory-inspector',
-        'fake-data'
+        'fake-data',
+        'slack'
       ];
       for (const p of OFFICIAL_PLUGINS) {
         if (script.config.plugins[p]) {
           properties.officialPlugins.push(p);
         }
       }
+    }
+
+    // publish-metrics reporters
+    if (script.config.plugins['publish-metrics']) {
+      const OFFICIAL_REPORTERS = [
+        'datadog',
+        'open-telemetry',
+        'newrelic',
+        'splunk',
+        'dynatrace',
+        'cloudwatch',
+        'honeycomb',
+        'mixpanel',
+        'prometheus'
+      ];
+
+      properties.officialMonitoringReporters = script.config.plugins[
+        'publish-metrics'
+      ]
+        .map((reporter) => {
+          if (OFFICIAL_REPORTERS.includes(reporter.type)) {
+            return reporter.type;
+          }
+          return undefined;
+        })
+        .filter((type) => type !== undefined);
     }
 
     // before/after hooks
@@ -661,9 +625,7 @@ function checkDirExists(output) {
     ? fs.existsSync(path.dirname(output))
     : fs.existsSync(output);
 
-  if (!exists) {
-    throw new Error(`Path does not exist: ${output}`);
-  }
+  return exists;
 }
 
 function getLogFilename(output, nameFormat) {
@@ -674,7 +636,7 @@ function getLogFilename(output, nameFormat) {
   if (output) {
     try {
       isDir = fs.statSync(output).isDirectory();
-    } catch (err) {
+    } catch (_err) {
       // ENOENT do nothing, handled in checkDirExists before test run
     }
   }

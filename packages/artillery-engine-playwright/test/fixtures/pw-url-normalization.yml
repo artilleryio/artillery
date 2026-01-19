@@ -1,0 +1,16 @@
+config:
+  target: https://www.artillery.io
+  phases:
+    - duration: 5
+      arrivalRate: 1
+  engines:
+    playwright:
+      extendedMetrics: true
+      stripQueryString: false
+      normalizeQueryString: true
+  processor: "./processor.js"
+
+scenarios:
+  - name: test-url-normalization
+    engine: playwright
+    testFunction: urlNormalizationTest

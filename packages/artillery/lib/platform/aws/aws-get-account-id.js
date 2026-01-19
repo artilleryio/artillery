@@ -3,11 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const debug = require('debug')('util:aws:getAccountId');
+const { STSClient, GetCallerIdentityCommand } = require('@aws-sdk/client-sts');
 
-const AWS = require('aws-sdk');
+module.exports = async function getAccountId(stsOpts = {}) {
+  if (!stsOpts.region) {
+    stsOpts.region = global.artillery.awsRegion || 'us-east-1';
+  }
 
-module.exports = async function getAccountId() {
-  let stsOpts = {};
   if (process.env.ARTILLERY_STS_OPTS) {
     stsOpts = Object.assign(
       stsOpts,
@@ -15,8 +17,9 @@ module.exports = async function getAccountId() {
     );
   }
 
-  const sts = new AWS.STS(stsOpts);
-  const awsAccountId = (await sts.getCallerIdentity({}).promise()).Account;
+  const sts = new STSClient(stsOpts);
+  const result = await sts.send(new GetCallerIdentityCommand({}));
+  const awsAccountId = result.Account;
 
   debug(awsAccountId);
   return awsAccountId;

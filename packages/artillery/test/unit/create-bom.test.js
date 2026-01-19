@@ -1,4 +1,5 @@
 const tap = require('tap');
+const _path = require('node:path');
 
 const { commonPrefix } = require('../../lib/create-bom/create-bom');
 
@@ -6,23 +7,28 @@ tap.test('Test commonPrefix', async (t) => {
   const INPUTS = [
     {
       input: ['/home/user/documents/projectA', '/home/user/documents'],
-      expected: '/home/user/documents/'
+      expected: '/home/user/documents/',
+      sep: '/'
     },
     {
       input: ['/home/user/documents/projectA', '/home'],
-      expected: '/home/'
+      expected: '/home/',
+      sep: '/'
     },
     {
       input: ['/home/user/acme.js', '/home/user/acme.yml'],
-      expected: '/home/user/'
+      expected: '/home/user/',
+      sep: '/'
     },
     {
       input: ['/', '/user/acme.js'],
-      expected: '/'
+      expected: '/',
+      sep: '/'
     },
     {
       input: ['/a/b', '/a/b/c', '/a/d'],
-      expected: '/a/'
+      expected: '/a/',
+      sep: '/'
     },
     {
       input: ['C:\\', 'C:\\hello.txt'],
@@ -40,23 +46,28 @@ tap.test('Test commonPrefix', async (t) => {
     },
     {
       input: ['/'],
-      expected: '/'
+      expected: '/',
+      sep: '/'
     },
     {
       input: ['/', '/hello'],
-      expected: '/'
+      expected: '/',
+      sep: '/'
     },
     {
       input: ['/home/user'],
-      expected: '/home/user/'
+      expected: '/home/user/',
+      sep: '/'
     },
     {
       input: ['/home/user/a', '/home/user/b'],
-      expected: '/home/user/'
+      expected: '/home/user/',
+      sep: '/'
     },
     {
       input: ['/home/user/a', '/var/lib'],
-      expected: ''
+      expected: '',
+      sep: '/'
     },
     {
       input: ['C:\\Users\\Admin', 'D:\\Files'],
@@ -70,19 +81,23 @@ tap.test('Test commonPrefix', async (t) => {
     },
     {
       input: ['C:/Users/Admin/a', 'C:/Users/Admin/b'],
-      expected: 'C:/Users/Admin/'
+      expected: 'C:/Users/Admin/',
+      sep: '/'
     },
     {
       input: ['/home/user/a/c', '/home/user/b/c'],
-      expected: '/home/user/'
+      expected: '/home/user/',
+      sep: '/'
     },
     {
       input: ['/home/user/a/c/d', '/home/user/a/c'],
-      expected: '/home/user/a/c/'
+      expected: '/home/user/a/c/',
+      sep: '/'
     },
     {
       input: ['/home/user', '/home/user'],
-      expected: '/home/user/'
+      expected: '/home/user/',
+      sep: '/'
     },
     {
       input: [123, true, '/home/user'],
@@ -90,11 +105,13 @@ tap.test('Test commonPrefix', async (t) => {
     },
     {
       input: ['/', '/'],
-      expected: '/'
+      expected: '/',
+      sep: '/'
     },
     {
       input: ['/', '/a', '/b'],
-      expected: '/'
+      expected: '/',
+      sep: '/'
     },
     {
       input: ['C:\\'],
@@ -107,7 +124,8 @@ tap.test('Test commonPrefix', async (t) => {
     },
     {
       input: ['/home/user name/a', '/home/user name/b'],
-      expected: '/home/user name/'
+      expected: '/home/user name/',
+      sep: '/'
     }
   ];
 

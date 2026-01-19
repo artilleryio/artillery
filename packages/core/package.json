@@ -1,6 +1,6 @@
 {
   "name": "@artilleryio/int-core",
-  "version": "2.2.2",
+  "version": "2.22.0",
   "main": "./index.js",
   "license": "MPL-2.0",
   "dependencies": {
@@ -13,7 +13,7 @@
     "cheerio": "^1.0.0-rc.10",
     "cookie-parser": "^1.4.3",
     "csv-parse": "^4.16.3",
-    "debug": "^4.3.1",
+    "debug": "^4.4.1",
     "decompress-response": "^6.0.0",
     "deep-for-each": "^3.0.0",
     "driftless": "^2.0.3",
@@ -28,29 +28,36 @@
     "lodash": "^4.17.19",
     "ms": "^2.1.3",
     "protobufjs": "^7.2.4",
-    "proxy": "^1.0.2",
     "socket.io-client": "^4.5.1",
     "socketio-wildcard": "^2.0.0",
-    "tough-cookie": "^4.0.0",
-    "try-require": "^1.2.1",
+    "tough-cookie": "^5.0.0-rc.2",
     "uuid": "^8.0.0",
     "ws": "^7.5.7"
   },
   "scripts": {
-    "lint": "eslint --ext \".js,.ts,.tsx\" .",
-    "lint-fix": "npm run lint -- --fix",
+    "lint": "npx @biomejs/biome check .",
+    "lint-fix": "npx @biomejs/biome check --write .",
     "test": "npm run test:unit && npm run test:acceptance",
-    "test:unit": "tap --no-coverage --color --timeout=300 test/core/unit/*.test.js",
-    "test:acceptance": "bash test/core/run.sh"
+    "test:unit": "tap --timeout=300 test/unit/*.test.js",
+    "test:acceptance": "tap --timeout 300 test/acceptance/*.test.js && tap --timeout=300 test/acceptance/**/*.test.js"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "devDependencies": {
     "@hapi/basic": "^6.0.0",
     "@hapi/hapi": "^20.1.3",
     "express": "^4.16.3",
     "nock": "^11.8.2",
+    "proxy": "^2.1.1",
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
-    "socket.io": "^4.7.1",
-    "tap": "^16.3.7"
+    "socket.io": "^4.8.0",
+    "tap": "^19.0.2"
   }
 }

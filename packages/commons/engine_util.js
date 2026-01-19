@@ -2,14 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const async = require('async');
 const debug = require('debug')('engine_util');
 const deepForEach = require('deep-for-each');
 const espree = require('espree');
 const L = require('lodash');
-const vm = require('vm');
+const vm = require('node:vm');
 const ms = require('ms');
 const A = require('async');
 const { JSONPath: jsonpath } = require('jsonpath-plus');
@@ -19,7 +17,7 @@ const jitter = require('./jitter').jitter;
 let xmlCapture;
 try {
   xmlCapture = require('artillery-xml-capture');
-} catch (e) {
+} catch (_e) {
   xmlCapture = null;
 }
 
@@ -40,15 +38,15 @@ module.exports = {
 function createThink(requestSpec, opts) {
   opts = opts || {};
 
-  let thinkspec = requestSpec.think;
+  const thinkspec = requestSpec.think;
 
-  let f = function think(context, callback) {
-    let templatedThink = template(thinkspec, context);
+  const f = function think(context, callback) {
+    const templatedThink = template(thinkspec, context);
     let thinktime = Number.isInteger(L.toNumber(templatedThink))
       ? ms(`${templatedThink}s`)
       : ms(templatedThink);
 
-    if (typeof thinktime == 'undefined') {
+    if (typeof thinktime === 'undefined') {
       throw new Error(`Invalid think time: ${templatedThink || thinkspec}`);
     }
 
@@ -62,7 +60,7 @@ function createThink(requestSpec, opts) {
       opts.jitter,
       thinktime
     );
-    setTimeout(function () {
+    setTimeout(() => {
       callback(null, context);
     }, thinktime);
   };
@@ -79,13 +77,13 @@ function createLoopWithCount(count, steps, opts) {
       count2 = template(count, context);
     }
 
-    let from = parseLoopCount(count2).from;
-    let to = parseLoopCount(count2).to;
+    const from = parseLoopCount(count2).from;
+    const to = parseLoopCount(count2).to;
 
     let i = from;
     let newContext = context;
-    let loopIndexVar = (opts && opts.loopValue) || '$loopCount';
-    let loopElementVar = (opts && opts.loopElement) || '$loopElement';
+    const loopIndexVar = opts?.loopValue || '$loopCount';
+    const loopElementVar = opts?.loopElement || '$loopElement';
     // Should we stop early because the value of "over" is not an array
     let abortEarly = false;
 
@@ -125,12 +123,10 @@ function createLoopWithCount(count, steps, opts) {
         }
       },
       function repeated(cb) {
-        let zero = function (cb2) {
-          return cb2(null, newContext);
-        };
-        let steps2 = L.flatten([zero, steps]);
+        const zero = (cb2) => cb2(null, newContext);
+        const steps2 = L.flatten([zero, steps]);
 
-        A.waterfall(steps2, function (err, context2) {
+        A.waterfall(steps2, (err, context2) => {
           if (err) {
             return cb(err, context2);
           }
@@ -152,7 +148,7 @@ function createLoopWithCount(count, steps, opts) {
           }
         });
       },
-      function (err, finalContext) {
+      (err, finalContext) => {
         if (typeof finalContext === 'undefined') {
           // this happens if test() returns false immediately, e.g. with
           // nested loops where one of the inner loops goes over an
@@ -166,21 +162,19 @@ function createLoopWithCount(count, steps, opts) {
 }
 
 function createParallel(steps, opts) {
-  let limit = (opts && opts.limitValue) || 100;
+  const limit = opts?.limitValue || 100;
 
   return function aParallel(context, callback) {
-    let newContext = context;
-    let newCallback = callback;
+    const newContext = context;
+    const newCallback = callback;
 
     // Remap the steps array to pass the context into each step.
-    let newSteps = L.map(steps, function (step) {
-      return function (callback) {
-        step(newContext, callback);
-      };
+    const newSteps = L.map(steps, (step) => (callback) => {
+      step(newContext, callback);
     });
 
     // Run each of the steps in parallel.
-    A.parallelLimit(newSteps, limit, function (err, finalContext) {
+    A.parallelLimit(newSteps, limit, (err, _finalContext) => {
       // We don't need to do anything with the array of contexts returned from each step at the moment.
       return newCallback(err, newContext);
     });
@@ -197,7 +191,7 @@ function isProbableEnough(obj) {
     probability = 100;
   }
 
-  let r = L.random(100);
+  const r = L.random(100);
   return r < probability;
 }
 
@@ -221,7 +215,7 @@ function template(o, context, inPlace) {
     }
     const funcCallRegex =
       /{{\s*(\$[A-Za-z0-9_]+\s*\(\s*[A-Za-z0-9_,\s]*\s*\))\s*}}/;
-    let match = o.match(funcCallRegex);
+    const match = o.match(funcCallRegex);
     if (match) {
       // This looks like it could be a function call:
       const syntax = espree.parse(match[1]);
@@ -231,10 +225,11 @@ function template(o, context, inPlace) {
         syntax.body.length === 1 &&
         syntax.body[0].type === 'ExpressionStatement'
       ) {
-        let funcName = syntax.body[0].expression.callee.name;
-        let args = L.map(syntax.body[0].expression.arguments, function (arg) {
-          return arg.value;
-        });
+        const funcName = syntax.body[0].expression.callee.name;
+        const args = L.map(
+          syntax.body[0].expression.arguments,
+          (arg) => arg.value
+        );
         if (funcName in context.funcs) {
           return template(
             o.replace(funcCallRegex, context.funcs[funcName].apply(null, args)),
@@ -294,8 +289,8 @@ function templateObjectOrArray(o, context) {
 }
 
 function renderVariables(str, vars) {
-  const RX = /{{{?[\s$\w\.\[\]\'\"-]+}}}?/g;
-  let rxmatch;
+  const RX = /{{{?[\s$\w.[\]'"-]+}}}?/g;
+  let _rxmatch;
   let result = str.substring(0, str.length);
 
   // Special case for handling integer/boolean/object substitution:
@@ -313,7 +308,7 @@ function renderVariables(str, vars) {
   }
 
   while (result.search(RX) > -1) {
-    let templateStr = result.match(RX)[0];
+    const templateStr = result.match(RX)[0];
     const varName = templateStr.replace(/{/g, '').replace(/}/g, '').trim();
 
     let varValue = L.get(vars, varName);
@@ -329,11 +324,11 @@ function renderVariables(str, vars) {
 
 // Presume code is valid JS code (i.e. that it has been checked elsewhere)
 function evil(sandbox, code) {
-  let context = vm.createContext(sandbox);
-  let script = new vm.Script(code);
+  const context = vm.createContext(sandbox);
+  const script = new vm.Script(code);
   try {
     return script.runInContext(context);
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 }
@@ -346,8 +341,8 @@ function parseLoopCount(countSpec) {
     from = 0;
     to = countSpec;
   } else if (typeof countSpec === 'string') {
-    if (isNaN(Number(countSpec))) {
-      if (/\d\-\d/.test(countSpec)) {
+    if (Number.isNaN(Number(countSpec))) {
+      if (/\d-\d/.test(countSpec)) {
         from = Number(countSpec.split('-')[0]);
         to = Number(countSpec.split('-')[1]);
       } else {
@@ -400,7 +395,7 @@ function captureOrMatch(params, response, context, done) {
     return done(null, null);
   }
 
-  let result = {
+  const result = {
     captures: {},
     matches: {},
     failedCaptures: false
@@ -410,15 +405,15 @@ function captureOrMatch(params, response, context, done) {
   ensurePropertyIsAList(params, 'capture');
   ensurePropertyIsAList(params, 'match');
 
-  let specs = params.capture.concat(params.match);
+  const specs = params.capture.concat(params.match);
 
   async.eachSeries(
     specs,
-    function (spec, next) {
-      let parsedSpec = parseSpec(spec, response);
-      let parser = parsedSpec.parser;
-      let extractor = parsedSpec.extractor;
-      let expr = parsedSpec.expr;
+    (spec, next) => {
+      const parsedSpec = parseSpec(spec, response);
+      const parser = parsedSpec.parser;
+      const extractor = parsedSpec.extractor;
+      const expr = parsedSpec.expr;
 
       // are we looking at body or headers:
       var content = response.body;
@@ -426,7 +421,7 @@ function captureOrMatch(params, response, context, done) {
         content = response.headers;
       }
 
-      parser(content, function (err, doc) {
+      parser(content, (err, doc) => {
         if (err) {
           if (spec.as) {
             result.captures[spec.as] = {
@@ -446,11 +441,11 @@ function captureOrMatch(params, response, context, done) {
           return next(null);
         }
 
-        let extractedValue = extractor(doc, template(expr, context), spec);
+        const extractedValue = extractor(doc, template(expr, context), spec);
 
         if (spec.value !== undefined) {
           // this is a match spec
-          let expected = template(spec.value, context);
+          const expected = template(spec.value, context);
           debug(
             'match: %s, expected: %s, got: %s',
             expr,
@@ -492,7 +487,7 @@ function captureOrMatch(params, response, context, done) {
         return next(null);
       });
     },
-    function (err) {
+    (err) => {
       if (err) {
         return done(err, null);
       } else {
@@ -572,7 +567,7 @@ function dummyParser(body, callback) {
 }
 
 // doc is a JSON object
-function extractJSONPath(doc, expr) {
+function extractJSONPath(doc, expr, opts) {
   // typeof null is 'object' hence the explicit check here
   if (typeof doc !== 'object' || doc === null) {
     return '';
@@ -581,13 +576,17 @@ function extractJSONPath(doc, expr) {
   let results;
 
   try {
-    results = jsonpath(expr, doc);
+    results = jsonpath({ path: expr, json: doc, wrap: opts.multiple ?? true });
   } catch (queryErr) {
     debug(queryErr);
   }
 
   if (!results) {
     return '';
+  }
+
+  if (opts.multiple === false) {
+    return results;
   }
 
   if (results.length > 1) {
@@ -599,8 +598,8 @@ function extractJSONPath(doc, expr) {
 
 // doc is a string or an object (body parsed by Request when headers indicate JSON)
 function extractRegExp(doc, expr, opts) {
-  let group = opts.group;
-  let flags = opts.flags;
+  const group = opts.group;
+  const flags = opts.flags;
   let str;
   if (typeof doc === 'string') {
     str = doc;
@@ -613,7 +612,7 @@ function extractRegExp(doc, expr, opts) {
   } else {
     rx = new RegExp(expr);
   }
-  let match = rx.exec(str);
+  const match = rx.exec(str);
   if (!match) {
     return '';
   }
@@ -638,8 +637,8 @@ function extractHeader(headers, headerName) {
 }
 
 function extractCheerio(doc, expr, opts) {
-  let $ = cheerio.load(doc);
-  let els = $(expr);
+  const $ = cheerio.load(doc);
+  const els = $(expr);
   let i = 0;
   if (typeof opts.index !== 'undefined') {
     if (opts.index === 'random') {

@@ -1,4 +1,10 @@
-const AWS = require('aws-sdk');
+const { ECSClient, DescribeTasksCommand } = require('@aws-sdk/client-ecs');
+const {
+  SSMClient,
+  GetParameterCommand,
+  PutParameterCommand,
+  DeleteParameterCommand
+} = require('@aws-sdk/client-ssm');
 const debug = require('debug')('util');
 
 module.exports = {
@@ -9,22 +15,20 @@ module.exports = {
   ensureParameterExists,
   parameterExists,
   putParameter,
-  getParameter
+  getParameter,
+  deleteParameter
 };
 
 // Wraps ecs.describeTasks to support more than 100 task ARNs in params.tasks
-async function ecsDescribeTasks(params, ecs) {
+async function ecsDescribeTasks(params, region) {
+  const ecs = new ECSClient({ apiVersion: '2014-11-13', region });
   const taskArnChunks = splitIntoSublists(params.tasks, 100);
   const results = { tasks: [], failures: [] };
   for (let i = 0; i < taskArnChunks.length; i++) {
     const params2 = Object.assign({}, params, { tasks: taskArnChunks[i] });
-    try {
-      const ecsData = await ecs.describeTasks(params2).promise();
+      const ecsData = await ecs.send(new DescribeTasksCommand(params2));
       results.tasks = results.tasks.concat(ecsData.tasks);
       results.failures = results.failures.concat(ecsData.failures);
-    } catch (err) {
-      throw err;
-    }
   }
   return results;
 }
@@ -47,42 +51,34 @@ function splitIntoSublists(list, maxGroupSize) {
 
 // If parameter exists, do nothing; otherwise set the value
 async function ensureParameterExists(ssmPath, defaultValue, type, region) {
-  if (region) AWS.config.update({ region });
-
-  try {
-    const exists = await parameterExists(ssmPath);
+    const exists = await parameterExists(ssmPath, region);
     if (exists) {
-      return Promise.resolve();
+      return;
     }
-    return putParameter(ssmPath, defaultValue, type);
-  } catch (err) {
-    return Promise.reject(err);
-  }
+    return putParameter(ssmPath, defaultValue, type, region);
 }
 
 async function parameterExists(path, region) {
-  if (region) AWS.config.update({ region });
-  const ssm = new AWS.SSM({ apiVersion: '2014-11-06' });
+  const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
   const getParams = {
     Name: path,
     WithDecryption: true
   };
 
   try {
-    const ssmResponse = await ssm.getParameter(getParams).promise();
-    return Promise.resolve(true);
+    await ssm.send(new GetParameterCommand(getParams));
+    return true;
   } catch (ssmErr) {
-    if (ssmErr.code === 'ParameterNotFound') {
-      return Promise.resolve(false);
+    if (ssmErr.name === 'ParameterNotFound') {
+      return false;
     } else {
-      return Promise.reject(ssmErr);
+      throw ssmErr;
     }
   }
 }
 
 async function putParameter(path, value, type, region) {
-  if (region) AWS.config.update({ region });
-  const ssm = new AWS.SSM({ apiVersion: '2014-11-06' });
+  const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
 
   const putParams = {
     Name: path,
@@ -91,33 +87,45 @@ async function putParameter(path, value, type, region) {
     Overwrite: true
   };
 
-  try {
-    const ssmResponse = await ssm.putParameter(putParams).promise();
-    return Promise.resolve();
-  } catch (ssmErr) {
-    return Promise.reject(ssmErr);
-  }
+  await ssm.send(new PutParameterCommand(putParams));
 }
 
 async function getParameter(path, region) {
-  if (region) {
-    AWS.config.update({ region });
-  }
-
-  const ssm = new AWS.SSM({ apiVersion: '2014-11-06' });
+  const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
 
   try {
-    const ssmResponse = await ssm
-      .getParameter({
+    const ssmResponse = await ssm.send(
+      new GetParameterCommand({
         Name: path,
         WithDecryption: true
       })
-      .promise();
+    );
 
     debug({ ssmResponse });
-    return ssmResponse.Parameter && ssmResponse.Parameter.Value;
+    return ssmResponse.Parameter?.Value;
   } catch (ssmErr) {
-    if (ssmErr.code === 'ParameterNotFound') {
+    if (ssmErr.name === 'ParameterNotFound') {
+      return false;
+    } else {
+      throw ssmErr;
+    }
+  }
+}
+
+async function deleteParameter(path, region) {
+  const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
+
+  try {
+    const ssmResponse = await ssm.send(
+      new DeleteParameterCommand({
+        Name: path
+      })
+    );
+
+    debug({ ssmResponse });
+    return ssmResponse;
+  } catch (ssmErr) {
+    if (ssmErr.name === 'ParameterNotFound') {
       return false;
     } else {
       throw ssmErr;

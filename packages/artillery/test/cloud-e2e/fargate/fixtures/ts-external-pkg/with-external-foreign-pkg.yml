@@ -1,0 +1,21 @@
+config:
+  target: "http://asciiart.artillery.io:8080"
+  phases:
+    - duration: 2
+      arrivalRate: 1
+      name: "Phase 1"
+  processor: "./processor.ts"
+  bundling:
+    external: ["zod"]
+  variables:
+    address:
+      street: "Main St"
+      city: "Springfield"
+      postCode: "12345"
+      country: "USA"
+
+scenarios:
+  - beforeScenario: checkAddress
+    flow:
+      - get:
+          url: "/"

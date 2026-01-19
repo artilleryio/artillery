@@ -6,15 +6,14 @@
 // Artillery Core worker process
 //
 
-'use strict';
+
 
 const {
-  Worker,
-  isMainThread,
   parentPort,
-  workerData,
   threadId
-} = require('worker_threads');
+} = require('node:worker_threads');
+
+const { getStash } = require('../../../lib/stash');
 
 const { createGlobalObject } = require('../../artillery-global');
 
@@ -22,14 +21,16 @@ const core = require('@artilleryio/int-core');
 const createRunner = core.runner.runner;
 const debug = require('debug')('artillery:worker');
 
-const path = require('path');
+const _path = require('node:path');
 
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const { loadPlugins, loadPluginsConfig } = require('../../load-plugins');
 
 const EventEmitter = require('eventemitter3');
-const p = require('util').promisify;
+const p = require('node:util').promisify;
 const { loadProcessor } = core.runner.runnerFuncs;
+
+const prepareTestExecutionPlan = require('../../util/prepare-test-execution-plan');
 
 process.env.LOCAL_WORKER_ID = threadId;
 
@@ -82,7 +83,7 @@ async function onMessage(message) {
 }
 
 async function cleanup() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve, _reject) => {
     if (shuttingDown) {
       resolve();
     }
@@ -98,15 +99,50 @@ async function cleanup() {
   });
 }
 
+async function createGlobalStashClient(cliArgs) {
+  try {
+    global.artillery.stash = await getStash({
+      apiKey: cliArgs?.key || process.env.ARTILLERY_CLOUD_API_KEY
+    });
+  } catch (error) {
+    if (error.name !== 'CloudAPIKeyMissing') {
+      console.error(error);
+    }
+    global.artillery.stash = null;
+  }
+}
+
 async function prepare(opts) {
   await createGlobalObject();
+  await createGlobalStashClient(opts.options.cliArgs);
 
   global.artillery.globalEvents.on('log', (...args) => {
     send({ event: 'log', args });
   });
 
-  const { script: _script, payload, options } = opts;
-  const script = loadProcessor(_script, options);
+  let _script;
+  if (
+    opts.script.__transpiledTypeScriptPath &&
+    opts.script.__originalScriptPath
+  ) {
+    // Load and process pre-compiled TypeScript file
+    _script = await prepareTestExecutionPlan(
+      [opts.script.__originalScriptPath],
+      opts.options.cliArgs,
+      []
+    );
+  } else {
+    _script = opts.script;
+  }
+
+  const { payload, options } = opts;
+  const script = await loadProcessor(_script, options);
+
+  if (opts.script.__phases) {
+    script.config.phases = opts.script.__phases;
+  }
+
+  global.artillery.testRunId = opts.testRunId;
 
   //
   // load plugins
@@ -167,7 +203,7 @@ async function prepare(opts) {
 
   // TODO: use await
   createRunner(script, payload, options)
-    .then(function (runner) {
+    .then((runner) => {
       runnerInstance = runner;
 
       runner.on('phaseStarted', onPhaseStarted);
@@ -178,7 +214,7 @@ async function prepare(opts) {
       // TODO: Enum for all event types
       send({ event: 'readyWaiting' });
     })
-    .catch(function (err) {
+    .catch((err) => {
       // TODO: Clean up and exit (error state)
       // TODO: Handle workerError in launcher when readyWaiting
       // is not received and worker exits.

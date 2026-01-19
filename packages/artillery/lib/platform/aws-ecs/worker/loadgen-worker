@@ -1,0 +1,691 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+IFS=$'\n\t'
+
+DEBUGX=${DEBUGX:-""}
+DEBUG=${DEBUG:-""}
+
+if [[ -n $DEBUGX ]] ; then
+    set -x
+fi
+
+declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+
+source "$DIR/helpers.sh"
+
+# shellcheck disable=2155
+# declare -r DIR=$(cd "$(dirname "$0")" && pwd)
+
+declare -r ERR_ARGS=10
+declare -r ERR_TEST_DIR_EMPTY=3
+declare -r ERR_SIGNAL_SYNC=4
+declare -r ERR_GO_TIMEOUT=5
+declare -r ERR_CLI_ERROR=6
+declare -r ERR_INTERRUPTED=7
+declare -r ERR_UNKNOWN_PLATFORM=8
+declare -r ERR_DEP=9
+declare -r ERR_DEP_INSTALL=10 # npm install / yarn install failed
+declare -r ERR_NO_LICENSE=11
+declare -r ERR_CLI_ERROR_EXPECT=21
+
+ERR_EXTRA_INFO=""
+
+# shellcheck disable=2155
+declare -r TEST_DATA="$(pwd)/test_data"
+
+WAIT_TIMEOUT=${WAIT_TIMEOUT:-600}
+
+declare -t EXIT_CODE=0
+
+CLI_RUNNING="no"
+CLI_STATUS=
+CLI_PID=
+
+CLEANING_UP="no"
+
+#mode="${MODE:-run}" # "run" or "bootstrap"
+is_azure=
+azure_storage_container_name=
+
+s3_test_data_path=
+cli_args=()
+cli_args_encoded=
+aws_region=
+sqs_queue_url=
+test_run_id=
+s3_run_data_base_path=
+s3_run_data_path=
+
+# This is set once we know if we're on Azure or AWS
+worker_id=
+is_leader=${IS_LEADER:-false} # true or false
+
+declare -r DEPENDENCIES=(jq aws az pwgen node npm yarn tree)
+
+send_message () {
+    local body="$1" # body of the message, a string
+    local type="$2" # type of the message: debug, leader, ensure
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        send_message_aqs "$body" "$type"
+    else
+        send_message_sqs "$body" "$type"
+    fi
+}
+
+send_message_aqs () {
+    set +e
+    set +o pipefail
+
+    local body="$1"
+    local type="$2"
+
+    local aqs_message_payload="{\"msg\":\"$body\",\"type\":\"$type\"}"
+    local aqs_message_attributes="{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}"
+
+    >/dev/null az storage message put \
+        --content "{ \"payload\": $aqs_message_payload, \"attributes\": $aqs_message_attributes }" \
+        --queue-name "$AQS_QUEUE_NAME" \
+        --account-name "$AZURE_STORAGE_ACCOUNT" || true
+
+    set -e
+    set -o pipefail
+}
+
+send_message_sqs () {
+    set +e
+    set +o pipefail
+
+    local body="$1"
+    local type="$2"
+
+    local sqs_message_body="{\"msg\":\"$body\",\"type\":\"$type\"}"
+    local sqs_message_attributes="{\"testId\": {\"StringValue\": \"${test_run_id}\", \"DataType\": \"String\"}, \"workerId\": {\"StringValue\": \"${worker_id}\", \"DataType\": \"String\"}}"
+
+    >/dev/null aws sqs send-message \
+            --queue-url "${sqs_queue_url}" \
+            --message-body "$sqs_message_body" \
+            --message-attributes "$sqs_message_attributes" \
+            --message-group-id "${test_run_id}" \
+            --message-deduplication-id "$(pwgen -A 32 1)" \
+            --region "$aws_region" || true
+
+    set -e
+    set -o pipefail
+}
+
+send_event () {
+    set +e
+    set +o pipefail
+    
+    local payload="$1"
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        send_event_aqs "$payload"
+    else
+        send_event_sqs "$payload"
+    fi
+
+    set -e
+    set -o pipefail
+}
+
+send_event_sqs () {
+    local payload="$1"
+
+    local sqs_message_attributes="{\"testId\": {\"StringValue\": \"${test_run_id}\", \"DataType\": \"String\"}, \"workerId\": {\"StringValue\": \"${worker_id}\", \"DataType\": \"String\"}}"
+
+    >/dev/null aws sqs send-message \
+        --queue-url "${sqs_queue_url}" \
+        --message-body "$payload" \
+        --message-attributes "$sqs_message_attributes" \
+        --message-group-id "${test_run_id}" \
+        --message-deduplication-id "$(pwgen -A 32 1)" \
+        --region "$aws_region"
+}
+
+send_event_aqs () {
+    local payload="$1"
+
+    local aqs_message_attributes="{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}"
+
+    >/dev/null az storage message put \
+        --content "{ \"payload\": $payload, \"attributes\": $aqs_message_attributes }" \
+        --queue-name "$AQS_QUEUE_NAME" \
+        --account-name "$AZURE_STORAGE_ACCOUNT"
+}
+
+
+
+install_npm_dependencies () {
+    if [[ $(jq -r .modules "$METADATA_FILE") != "null" ]] ; then
+        echo "Installing required npm dependencies"
+        for dep in $(jq -r '.modules[]' "$METADATA_FILE") ; do
+            echo "installing $dep"
+            npm install --quiet "$dep"
+        done
+    else
+        echo "No extra npm modules to install"
+    fi
+
+    if [[ -f "$TEST_DATA/package.json" ]] ; then
+        echo "Installing dependencies in package.json"
+        if [[ -f "$TEST_DATA/yarn.lock" ]] ; then
+            # TODO: Test yarn's exit code
+            yarn install
+        else
+            set +e
+            npm install --loglevel=silent
+
+            if [[ -f "npm-debug.log" ]] ; then
+                cat npm-debug.log
+                EXIT_CODE="$ERR_DEP_INSTALL"
+                exit
+            else
+                echo "npm install completed"
+            fi
+            set -e
+        fi
+    else
+        npm init -y --quiet
+    fi
+}
+
+check_dependencies () {
+    for dep in "${DEPENDENCIES[@]}" ; do
+        set +e
+        if ! command -v "$dep" > /dev/null ; then
+            echo "Error: could not find $dep in \$PATH. Please install $dep."
+            exit $ERR_DEP
+        fi
+        set -e
+    done
+}
+
+sync_test_data () {
+    mkdir "$TEST_DATA" || true
+    pushd "$TEST_DATA" >/dev/null
+
+    echo "is_azure: $is_azure"
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        sync_test_data_azure
+    else
+        sync_test_data_s3
+    fi
+
+    debug "$(pwd)"
+    debug "$(ls -a)"
+}
+
+sync_test_data_azure () {
+    # TODO: Exclude node_modules_stream.zip
+    # This recreates the directory structure in the container, i.e. we'll have tests/$test_run_id here with all files under it
+    # So we need to move them all up two levels to the current directory
+    az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/*"
+    local tmpdir="$(mktemp -d)"
+    set +e
+    mv tests/$test_run_id/{.,}* $tmpdir
+    rm -rf tests/$test_run_id
+    mv $tmpdir/{.,}* .
+    set -e
+}
+
+sync_test_data_s3 () {
+    aws s3 sync --exclude node_modules_stream.zip "$s3_test_data_path" . >/dev/null
+}
+
+check_test_data () {
+    file_count=$(find . -maxdepth 1 -name "*" | grep -v '^.$' -c)
+    if [[ ! $file_count -gt 0 ]]; then
+        echo "$TEST_DATA seems to be empty"
+        EXIT_CODE=$ERR_TEST_DIR_EMPTY
+        exit
+    fi
+}
+
+install_dependencies () {
+    pushd "$TEST_DATA" >/dev/null
+
+    local METADATA_FILE="metadata.json"
+
+    debug "$(cat $METADATA_FILE || true)"
+
+    # Needed to install all packages to the dir of the test files.
+    export NODE_PATH="$TEST_DATA:${NODE_PATH:-""}"
+
+    generate_npmrc >> ~/.npmrc
+
+    # Leader: pre-install modules for everyone else
+    if [[ "$is_leader" = "true" ]] ; then
+        send_message "leader npm pack start `date +%s`" "debug"
+        install_npm_dependencies
+
+        if [[ ! -d "node_modules" ]] ; then
+            mkdir node_modules
+            touch node_modules/.artillery
+        fi
+
+        zip -r -q node_modules.zip node_modules # | aws s3 cp - "$s3_test_data_path/node_modules_stream.zip"
+        echo "Modules pre-packaged"
+        
+        # aws s3 mv "$s3_test_data_path/node_modules_stream.zip" "$s3_test_data_path/node_modules.zip"
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            az storage blob upload --overwrite --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --file node_modules.zip --name "tests/$test_run_id/node_modules.zip"
+        else
+            aws s3 cp node_modules.zip "$s3_test_data_path/node_modules.zip"
+        fi
+
+        send_message "leader npm prepack end `date +%s`" "debug"
+        send_message "prepack_end" "leader"
+    else
+        # wait until node_modules.zip is available and unzip, or timeout
+        # TODO: use aws s3api wait object-exists with a custom timeout
+        send_message "follower npm prepack wait start `date +%s`" "debug"
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            wait_for_go "tests/$test_run_id/node_modules.zip"
+        else
+            wait_for_go "$s3_test_data_path/node_modules.zip"
+        fi
+        unzip -o -q node_modules.zip
+        send_message "follower npm prepack wait end `date +%s`" "debug"
+    fi
+
+    tree -I node_modules
+}
+
+signal_ready () {
+    local synced_filename="synced_${worker_id}.json"
+    echo "{ \"worker_id\": \"${worker_id}\" }" >> "$synced_filename"
+    local synced_dest=
+    local cp_status=
+
+    if [[ "$is_azure" = "yes" ]] ; then
+
+        send_event "{\"event\": \"workerReady\"}"
+
+        synced_dest="${azure_storage_container_name}/$synced_filename"
+        az storage blob upload --overwrite --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --file "$synced_filename" --name "tests/$test_run_id/$synced_filename"
+        cp_status=$?
+    else
+        synced_dest="${s3_run_data_path}/${synced_filename}"
+        aws s3 cp "$synced_filename" "$synced_dest" 1>/dev/null 2>/dev/null
+        cp_status=$?
+    fi
+
+    if [[ $cp_status -ne 0 ]]; then
+        echo "could not send synced signal (to: $synced_dest)"
+        EXIT_CODE=$ERR_SIGNAL_SYNC
+        exit
+    else
+        echo "Worker $worker_id synced up & ready"
+    fi
+}
+
+wait_for_go () {
+    local SLEEP=2
+    local slept=0
+    local objpath=
+
+    if [[ "$is_azure" = "yes" ]] ; then
+        objpath="${1:-tests/$test_run_id/go.json}"
+    else
+        objpath="${1:-$s3_run_data_path/go.json}"
+    fi
+
+    echo "Waiting... ($objpath)"
+
+    while true ; do
+        set +e
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            az storage blob download --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --name "$objpath" --file "$(basename $objpath)" 1>/dev/null 2>/dev/null
+        else
+            aws s3 cp "$objpath" . 1>/dev/null 2>/dev/null
+        fi
+
+
+        local cp_exit_code=$?
+        set -e
+
+        if [[ $cp_exit_code -eq 0 ]]; then
+            break
+        else
+            if [[ $slept -ge $WAIT_TIMEOUT ]]; then
+                echo "Timed out waiting for go signal"
+                EXIT_CODE=$ERR_GO_TIMEOUT
+                exit
+            else
+                echo -n "."
+                sleep $SLEEP
+                (( slept = slept + SLEEP ))
+            fi
+        fi
+    done
+
+    if [[ $# -eq 0 ]] ; then
+        check_subscription_status
+    fi
+}
+
+check_subscription_status () {
+    if [[ ! "$is_azure" = "yes" ]] ; then
+        return
+    fi
+
+    local prefix="tests/${test_run_id}/synced_"
+
+    mkdir synced_objects
+    pushd synced_objects
+    az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/synced_*"
+
+    local num=$(ls -a tests/$test_run_id | wc -l)
+    popd
+    if [[ $num -lt 8 ]] ; then
+        return
+    fi
+
+    if [[ -z "${ARTILLERY_CLOUD_API_KEY:-""}" ]] ; then
+        send_no_license_message
+        exit
+    fi
+
+    set +e
+    node /artillery/check-license.mjs
+    if [[ $? -ne 0 ]] ; then
+        send_no_license_message
+        exit
+    fi
+    set -e
+}
+
+send_no_license_message () {
+    set +e
+
+    az storage message put \
+        --content "{\"payload\":{\"event\":\"workerError\",\"reason\":\"License not found - https://docs.art/az/license\", \"exitCode\":$ERR_NO_LICENSE},\"attributes\":{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}}" \
+        --queue-name "$AQS_QUEUE_NAME" \
+        --account-name "$AZURE_STORAGE_ACCOUNT" || true
+
+    set -e
+}
+
+decode_cli_args () {
+    debug "encoded args $cli_args_encoded"
+    local decoded_args=
+    decoded_args=$(echo "$cli_args_encoded" | base64d)
+    debug "decoded: $decoded_args"
+
+    for an_arg in $(echo "$cli_args_encoded" | base64d | jq -r '.[] | @base64') ; do
+        local decoded_arg=
+        decoded_arg="$(printf -- "%s" "$an_arg" | base64d)"
+        debug "decoded CLI arg: %s" "$decoded_arg"
+        cli_args+=("$decoded_arg")
+    done
+}
+
+run_a9 () {
+    # NOTE: node_modules is required for plugins to be loaded
+    export NODE_PATH="$TEST_DATA/node_modules:${NODE_PATH:-""}"
+    export DEBUG=${DEBUG:-"debug:mode:off"} # can set via --launch-config if needed
+
+    export ARTILLERY_PLUGIN_PATH=${ARTILLERY_PLUGIN_PATH:-""}:/artillery/packages/artillery/lib/platform/aws-ecs/legacy/plugins
+
+    export ARTILLERY_PLUGINS="{\"sqs-reporter\":{\"region\": \"${aws_region}\"},\"inspect-script\":{}}"
+    export SQS_TAGS="[{\"key\": \"testId\", \"value\": \"${test_run_id}\"},{\"key\":\"workerId\", \"value\":\"${worker_id}\"}]"
+    
+    if [[ "$is_azure" = "yes" ]] ; then
+        export AZURE_STORAGE_QUEUE_URL=$sqs_queue_url
+    else 
+        export SQS_QUEUE_URL=$sqs_queue_url
+        export SQS_REGION=$aws_region
+    fi
+
+    export ARTILLERY_DISABLE_ENSURE=true
+
+    debug "CLI args:"
+    debug "${cli_args[@]}"
+
+    # set max header size to 32KB -- solves the HPE_HEADER_OVERFLOW error
+    # set max old space size to 12GB - max allocatable on Fargate
+    MAX_OLD_SPACE_SIZE=${MAX_OLD_SPACE_SIZE:-12288}
+    export NODE_OPTIONS="--max-http-header-size=32768 --max-old-space-size=$MAX_OLD_SPACE_SIZE ${NODE_OPTIONS:-""}"
+
+    (set +eu ; ${ARTILLERY_BINARY:-"artillery"} "${cli_args[@]}" ; echo $? > exitCode ; set -eu) | tee output.txt &
+    debug "node processes:"
+    debug "$(pgrep -lfa node)"
+    sleep 5
+    CLI_PID=$(pgrep -lfa node | grep artillery | awk '{print $1}')
+    CLI_RUNNING="yes"
+
+    debug "CLI pid:"
+    debug "$CLI_PID"
+
+    while kill -0 $CLI_PID 2> /dev/null ; do
+        sleep 5 # signal handler will fire after we wake up
+    done
+
+    CLI_RUNNING="no"
+    CLI_STATUS=$(cat exitCode)
+
+    printf "Finished with code %s\n" "$CLI_STATUS"
+
+    case `grep "inspect-script.config.ensure" "output.txt" >/dev/null; echo $?` in
+        0)
+        # ensure spec found
+            echo "got ensure spec"
+            local ensure_spec=$(grep 'inspect-script.config.ensure' "output.txt" |awk -F 'ensure=' '{print $2}'|head -n 1)
+            send_message "$ensure_spec" "ensure"
+            ;;
+        1)
+            # no ensure spec
+            echo "no ensure spec" >&2
+            ;;
+        *)
+            # error - ignore
+            echo "error while looking for ensure spec, ignoring" >&2
+            ;;
+    esac
+
+    # TODO: Upload to Storage Blob if on Azure 
+    if [[ "$is_azure" != "yes" ]] ; then
+        aws s3 cp output.txt "${s3_run_data_path}/worker-log-${worker_id}.txt"
+        echo "log: ${s3_run_data_path}/worker-log-${worker_id}.txt"
+    fi
+
+    if [[ $CLI_STATUS -eq 0 ]] ; then
+        EXIT_CODE=0
+    elif [[ $CLI_STATUS -eq $ERR_CLI_ERROR_EXPECT ]] ; then
+        EXIT_CODE=$ERR_CLI_ERROR_EXPECT
+    else
+        EXIT_CODE=$ERR_CLI_ERROR
+    fi
+
+    exit $EXIT_CODE
+}
+
+main () {
+    debug "$@"
+
+    decode_cli_args
+
+    s3_run_data_path="${s3_run_data_base_path}/${test_run_id}"
+    progress "Test run ID = $test_run_id"
+    progress "Syncing test data"
+    sync_test_data
+    check_test_data
+
+    progress "Installing dependencies"
+    install_dependencies
+
+    progress "Ready to run"
+    signal_ready
+    progress "Waiting for green signal"
+    wait_for_go
+    progress "Off we go!"
+    run_a9
+}
+
+usage () {
+    cat << EOF
+usage: $0 - run worker
+EOF
+}
+
+while getopts "z:p:a:r:q:i:d:t:h?" OPTION
+do
+    case $OPTION in
+        h)
+            usage
+            exit 0
+            ;;
+        z)
+            is_azure="$OPTARG"
+            ;;
+        p)
+            s3_test_data_path="$OPTARG"
+            ;;
+        a)
+            cli_args_encoded="$OPTARG"
+            ;;
+        r)
+            aws_region="$OPTARG"
+            ;;
+        q)
+            # Can also be AQS queue URL
+            sqs_queue_url="$OPTARG"
+            ;;
+        i)
+            test_run_id="$OPTARG"
+            ;;
+        d)
+            s3_run_data_base_path="$OPTARG"
+            ;;
+        t)
+            WAIT_TIMEOUT="$OPTARG"
+            ;;
+       \?)
+            usage
+            exit $ERR_ARGS
+            ;;
+       :)
+           echo "Unknown option: -$OPTARG" >&2; exit 1;;
+       *  ) echo "Unimplemented option: -$OPTARG" >&2; exit 1;;
+    esac
+done
+
+# shellcheck disable=2004
+shift $(($OPTIND - 1)) # remove all args processed by getopts
+
+if [[ ! $# -eq 0 ]] ; then
+    usage
+    EXIT_CODE=$ERR_ARGS
+    exit
+fi
+
+if [[ -z $s3_test_data_path || -z $cli_args_encoded || -z $test_run_id ]] ; then
+    echo "Some required argument(s) not provided, aborting" >&2
+    EXIT_CODE=$ERR_ARGS
+    exit
+fi
+
+if [[ "$is_azure" = "yes" ]] ; then
+    # Remap for convenience
+    azure_storage_container_name="$s3_test_data_path"
+
+    az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+fi
+
+if [[ "$is_azure" != "yes" ]] ; then
+    taskArn=$(curl -s "$ECS_CONTAINER_METADATA_URI_V4/task" \
+              | jq -r ".TaskARN" \
+              | cut -d "/" -f 3)
+fi
+
+worker_id=${WORKER_ID_OVERRIDE:-$(pwgen -A 12 1)}
+worker_id=${taskArn:-$worker_id}
+# make available to Artillery custom scripts/environment
+export WORKER_ID="$worker_id"
+
+progress "============================"
+progress "Worker starting up, ID = $worker_id, version = ${WORKER_VERSION:-unknown}, leader = $is_leader"
+progress "============================"
+
+cleanup () {
+    local sig="$1"
+
+    debug "cleanup called, signal:"
+    debug "$sig"
+
+    if [[ $CLEANING_UP = "no" ]] ; then
+        CLEANING_UP="yes"
+
+        if [[ "$is_azure" = "yes" ]] ; then
+            if [[ "$is_leader" = "true" ]] ; then
+                if [[ -z "${AZURE_RETAIN_BLOBS:-""}" ]] ; then
+                    # This exits with 0 regardless of whether the pattern matches any
+                    # blobs or not so it's OK to run this multiple times
+                    az storage blob delete-batch \
+                        --account-name "$AZURE_STORAGE_ACCOUNT" \
+                        -s "$azure_storage_container_name" \
+                        --pattern "tests/$test_run_id/*"
+                fi
+            fi
+        fi
+
+        # Abnormal exit:
+        if [[ $CLI_RUNNING = "yes" ]] ; then
+            printf "Interrupted with %s, stopping\n" "$sig"
+            EXIT_CODE=$ERR_INTERRUPTED
+            kill -TERM $CLI_PID
+            set +e
+            timeout 20 tail --pid $CLI_PID -f /dev/null
+            if [[ $? -eq 124 ]] ; then
+                # timeout exits with 124 if the process it's waiting on is still running
+                # i.e. if tail is still running it means the Artillery CLI did not exit:
+                kill -KILL $CLI_PID
+                CLI_STATUS=143 # SIGTERM (128 + 15)
+            else
+                # Preserve the exit code of the CLI
+                CLI_STATUS=$(cat exitCode)
+            fi
+            set -e
+            CLI_RUNNING="no"
+        fi
+
+        local sqs_message_body=
+        if [[ $EXIT_CODE -eq 0 ]] ; then
+            sqs_message_body='{"event": "workerDone"}'
+        else
+            # If 137 then something SIGKILL'ed Artillery
+            local extra_info=$(printf "%s" "$$ERR_EXTRA_INFO" | jq -sR)
+            sqs_message_body="{\"event\": \"workerError\", \"exitCode\": \"$EXIT_CODE\" }"
+        fi
+
+        send_event "$sqs_message_body"
+
+        debug "Message body: $sqs_message_body"
+        exit $EXIT_CODE
+    else
+        if [[ ! $sig = "EXIT" ]] ; then
+            # EXIT will always fire after a TERM/INT, so if
+            # that's the case we don't need to print this message.
+            printf "Received %s but cleaning up already\n" "$sig"
+        fi
+    fi
+}
+
+set_trap_with_arg () {
+    func="$1" ; shift
+    for sig ; do
+        # shellcheck disable=2064
+        trap "$func $sig" "$sig"
+    done
+}
+
+set_trap_with_arg cleanup INT TERM EXIT
+
+main "$@"

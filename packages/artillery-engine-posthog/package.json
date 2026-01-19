@@ -4,7 +4,15 @@
   "description": "Load test PostHog with Artillery",
   "main": "index.js",
   "scripts": {
-    "test": "tap test/index.js --no-coverage --color"
+    "test": "tap test/index.js"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "keywords": [
     "posthog",
@@ -13,11 +21,11 @@
   "author": "Artillery <team@artillery.io>",
   "license": "MPL-2.0",
   "devDependencies": {
-    "tap": "^16.3.7"
+    "tap": "^19.0.2"
   },
   "dependencies": {
     "async": "^3.2.4",
     "debug": "^4.3.4",
-    "posthog-node": "^2.2.3"
+    "posthog-node": "^4.2.1"
   }
 }

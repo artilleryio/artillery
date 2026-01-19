@@ -110,38 +110,24 @@ test('validate script', (t) => {
     };
 
     scriptWithCustomEngine.before = {
-      flow: [
-        {
-          get: {
-            url: '/'
-          },
-          data: '123'
-        }
-      ]
+      engine: 'myengine'
     };
 
     t.equal(
       validateScript(scriptWithCustomEngine),
       undefined,
-      'it should not enforce validation for before sections when custom engines are configured'
+      'it should not require flow for before sections when custom engines are configured'
     );
     delete scriptWithCustomEngine.before;
 
     scriptWithCustomEngine.after = {
-      flow: [
-        {
-          get: {
-            url: '/'
-          },
-          data: '123'
-        }
-      ]
+      engine: 'myengine'
     };
 
     t.equal(
       validateScript(scriptWithCustomEngine),
       undefined,
-      'it should not enforce validation for after sections when custom engines are configured'
+      'it should not require flow for after sections when custom engines are configured'
     );
 
     t.end();

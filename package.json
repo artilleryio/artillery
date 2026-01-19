@@ -1,4 +1,6 @@
 {
+  "name": "artillery-monorepo",
+  "packageManager": "^npm@10.8.2",
   "workspaces": [
     "packages/*"
   ],
@@ -11,12 +13,13 @@
     "prepare": "npx simple-git-hooks"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.3",
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^7.6.0",
     "lint-staged": "^13.2.3",
     "prettier": "^2.8.8",
     "simple-git-hooks": "^2.8.1",
-    "turbo": "1.10.7"
+    "turbo": "2.0.11"
   },
   "simple-git-hooks": {
     "commit-msg": "npx commitlint --edit $1",
@@ -24,7 +27,7 @@
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
+      "npx @biomejs/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched",
       "prettier --write"
     ],
     "**/*.json": [

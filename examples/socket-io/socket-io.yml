@@ -5,7 +5,7 @@ config:
       arrivalRate: 25
 
 scenarios:
-  - name: "Emit and validate response"
+  - name: "emit_and_validate_response"
     engine: socketio
     flow:
       - namespace: /personalised
@@ -16,7 +16,7 @@ scenarios:
           channel: "echoResponse"
           data: "Hello from Artillery"
 
-  - name: "Emit and validate acknowledgement"
+  - name: "emit_and_validate_acknowledgment"
     engine: socketio
     flow:
       - namespace: /personalised

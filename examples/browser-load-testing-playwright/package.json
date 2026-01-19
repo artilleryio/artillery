@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "artillery": "^2.0.0-24",
-    "artillery-engine-playwright": "^0.2.1"
-  }
-}

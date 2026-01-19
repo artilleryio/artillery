@@ -19,7 +19,27 @@ const CloudwatchReporterSchema = Joi.object({
     })
   ),
   includeOnly: Joi.array().items(Joi.string()),
-  excluded: Joi.array().items(Joi.string())
+  excluded: Joi.array().items(Joi.string()),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    annotations: Joi.object().unknown(),
+    // smartSampling is still technically configured in the reporters so I am adding it here, even though there is an ongoing discussion to move this to the engine level.
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
+  })
 })
   .unknown(false)
   .meta({ title: 'Cloudwatch Reporter' });
@@ -40,6 +60,25 @@ const DatadogReporterSchema = Joi.object({
     tags: Joi.array().items(Joi.string()),
     alertType: Joi.string().valid('error', 'warning', 'info', 'success'),
     send: artilleryBooleanOrString
+  }),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    tags: Joi.array().items(Joi.string()),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -58,6 +97,25 @@ const NewRelicReporterSchema = Joi.object({
     eventType: Joi.string(),
     attributes: Joi.array().items(Joi.string()),
     send: artilleryBooleanOrString
+  }),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    attributes: Joi.array().items(Joi.string()),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -103,6 +161,25 @@ const DynatraceReporterSchema = Joi.object({
     properties: Joi.array().items(Joi.string()),
     entitySelector: artilleryBooleanOrString,
     send: artilleryBooleanOrString
+  }),
+  sendOnlyTraces: artilleryBooleanOrString,
+  traces: Joi.object({
+    serviceName: Joi.string(),
+    sampleRate: artilleryNumberOrString,
+    useRequestNames: artilleryBooleanOrString,
+    attributes: Joi.array().items(Joi.string()),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -114,20 +191,24 @@ const HoneycombReporterSchema = Joi.object({
   writeKey: Joi.string(),
   dataset: Joi.string(),
   sampleRate: artilleryNumberOrString,
-  enabled: artilleryBooleanOrString
+  enabled: artilleryBooleanOrString,
+  useRequestNames: artilleryBooleanOrString,
+  attributes: Joi.object().unknown(),
+  smartSampling: Joi.object({
+    thresholds: Joi.object({
+      firstByte: artilleryNumberOrString,
+      total: artilleryNumberOrString
+    })
+  }),
+  replaceSpanNameRegex: Joi.array().items(
+    Joi.object({
+      pattern: Joi.string().required(),
+      as: Joi.string().required()
+    })
+  )
 })
   .unknown(false)
   .meta({ title: 'Honeycomb (Tracing) Reporter' });
-
-const LightstepReporterSchema = Joi.object({
-  type: Joi.string().valid('lightstep').required(),
-  accessToken: Joi.string().required(),
-  componentName: Joi.string().required(),
-  tags: Joi.object(),
-  enabled: artilleryBooleanOrString
-})
-  .unknown(false)
-  .meta({ title: 'Lightstep (Tracing) Reporter' });
 
 const MixpanelReporterSchema = Joi.object({
   type: Joi.string().valid('mixpanel').required(),
@@ -181,7 +262,19 @@ const OpenTelemetryReporterSchema = Joi.object({
       .default('otlp-http'),
     sampleRate: artilleryNumberOrString,
     useRequestNames: artilleryBooleanOrString,
-    attributes: Joi.object().unknown()
+    attributes: Joi.object().unknown(),
+    smartSampling: Joi.object({
+      thresholds: Joi.object({
+        firstByte: artilleryNumberOrString,
+        total: artilleryNumberOrString
+      })
+    }),
+    replaceSpanNameRegex: Joi.array().items(
+      Joi.object({
+        pattern: Joi.string().required(),
+        as: Joi.string().required()
+      })
+    )
   })
 })
   .unknown(false)
@@ -198,7 +291,6 @@ const PublishMetricsPluginConfigSchema = Joi.array()
         PrometheusReporterSchema,
         DynatraceReporterSchema,
         HoneycombReporterSchema,
-        LightstepReporterSchema,
         MixpanelReporterSchema,
         StatsdReporterSchema,
         InfluxReporterSchema,

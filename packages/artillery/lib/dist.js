@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
 
-const assert = require('assert');
+
+const assert = require('node:assert');
 const L = require('lodash');
 const isIdlePhase = require('@artilleryio/int-core').isIdlePhase;
 
@@ -175,14 +175,14 @@ function distribute(m, n) {
   m = Number(m);
   n = Number(n);
 
-  let result = [];
+  const result = [];
 
   if (m < n) {
     for (let i = 0; i < n; i++) {
       result.push(i < m ? 1 : 0);
     }
   } else {
-    let baseCount = Math.floor(m / n);
+    const baseCount = Math.floor(m / n);
     let extraItems = m % n;
     for (let i = 0; i < n; i++) {
       result.push(baseCount);

@@ -1,0 +1,20 @@
+# 10 VUs, making 10 calls each to a function that allocates 100MB -> ~10GB total
+# This will fail with default configuration, which is:
+# - 4GB RAM given to workers on Fargate
+# - Node.js memory limit of 4GB
+
+config:
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - arrivalRate: 1
+      duration: 12
+  processor: './processor.js'
+
+scenarios:
+  - flow:
+      - loop:
+          - get:
+              url: "/armadillo"
+              beforeRequest: hogSomeRam
+          - think: 1
+        count: 10

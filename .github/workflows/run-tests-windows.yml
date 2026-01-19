@@ -1,0 +1,53 @@
+name: Run Windows tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      ECR_IMAGE_VERSION:
+        description: 'ECR image version'
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install
+      - run: npm run build
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        env:
+          SHOW_STACK_TRACE: true
+        with:
+          aws-region: eu-west-1
+          role-to-assume: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+          role-session-name: OIDCSession
+          mask-aws-account-id: true
+      - name: Run local windows tests
+        run: npm run test:windows --workspace artillery
+        env:
+          FORCE_COLOR: 1
+      - name: Run AWS windows tests
+        run: npm run test:aws:windows --workspace artillery
+        env:
+          FORCE_COLOR: 1
+          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+          GITHUB_REPO: ${{ github.repository }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          ECR_IMAGE_VERSION: ${{ inputs.ECR_IMAGE_VERSION || github.sha}}
+      - name: Notify about failures
+        if: failure() && github.ref == 'refs/heads/main'
+        uses: 8398a7/action-slack@v3.15.1
+        with:
+          status: ${{ job.status }}
+          fields: repo,message,commit,author,eventName,job,took,pullRequest
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

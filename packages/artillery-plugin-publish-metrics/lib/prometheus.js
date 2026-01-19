@@ -1,9 +1,10 @@
-const http = require('http');
-const https = require('https');
-const fs = require('fs');
+const http = require('node:http');
+const https = require('node:https');
+const fs = require('node:fs');
 const PromClient = require('prom-client');
 const uuid = require('uuid');
 const debug = require('debug')('plugin:publish-metrics:prometheus');
+const { sleep } = require('./util');
 
 const COUNTERS_STATS = 'counters', // counters stats
   RATES_STATS = 'rates', // rates stats
@@ -93,9 +94,9 @@ class PrometheusReporter {
   }
 
   tagsToLabels(tags) {
-    let labels = {};
+    const labels = {};
     tags.forEach((tag) => {
-      let parts = tag.split(':');
+      const parts = tag.split(':');
       labels[parts[0]] = parts[1];
     });
     return labels;
@@ -114,7 +115,7 @@ class PrometheusReporter {
 
       if (stats[COUNTERS_STATS]) {
         for (const cKey in stats[COUNTERS_STATS]) {
-          const transformed = that.toPrometheusKey(cKey);
+          const transformed = this.toPrometheusKey(cKey);
           this.countersStats.inc(
             { metric: transformed },
             stats[COUNTERS_STATS][cKey]
@@ -124,7 +125,7 @@ class PrometheusReporter {
 
       if (stats[RATES_STATS]) {
         for (const rKey in stats[RATES_STATS]) {
-          const transformed = that.toPrometheusKey(rKey);
+          const transformed = this.toPrometheusKey(rKey);
           this.ratesStats.set(
             { metric: transformed },
             stats[RATES_STATS][rKey]
@@ -134,9 +135,9 @@ class PrometheusReporter {
 
       if (stats[SUMMARIES_STATS]) {
         for (const sKey in stats[SUMMARIES_STATS]) {
-          let readings = stats[SUMMARIES_STATS][sKey];
+          const readings = stats[SUMMARIES_STATS][sKey];
           for (const readingKey in readings) {
-            const transformed = `${that.toPrometheusKey(sKey)}_${readingKey}`;
+            const transformed = `${this.toPrometheusKey(sKey)}_${readingKey}`;
             this.summariesStats.set(
               { metric: transformed },
               readings[readingKey]
@@ -164,7 +165,7 @@ class PrometheusReporter {
   async waitingForRequest() {
     do {
       debug('Waiting for pending request ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     } while (this.hasPendingRequest);
 
     debug('Pending requests done');

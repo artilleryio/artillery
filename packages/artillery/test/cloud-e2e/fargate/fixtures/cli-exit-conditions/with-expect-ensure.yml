@@ -1,0 +1,18 @@
+config:
+  target: "http://asciiart.artillery.io:8080"
+  plugins:
+    expect: {}
+    ensure:
+      p99: 10000
+      thresholds:
+        - "http.response_time.p95": 1
+  phases:
+    - duration: 5
+      arrivalRate: 1
+scenarios:
+  - name: expect-ensure-exit-condition-test
+    flow:
+      - get:
+          url: "/"
+          expect:
+            - statusCode: 300

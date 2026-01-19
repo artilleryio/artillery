@@ -16,13 +16,13 @@ The example test script defines 3 environments with different load phases:
 Run the test at low TPS with the `smoke` config environment:
 
 ```sh
-artillery run -e smoke test.yaml
+npx artillery run -e smoke test.yaml
 ```
 
 Run the test at higher TPS with the `preprod` environment:
 
 ```sh
-artillery run -e preprod test.yaml
+npx artillery run -e preprod test.yaml
 ```
 
 If the test script is used in a Jenkins job, those environment names could be an input themselves to allow the user to choose between pre-configured load profiles.

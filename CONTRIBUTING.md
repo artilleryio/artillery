@@ -2,17 +2,18 @@
 
 ## Need to get in touch?
 
-All project discussions should happen in the [issue tracker](https://github.com/artilleryio/artillery/issues) or on [Gitter](https://gitter.im/artilleryio/artillery).
-However if you are a first-time contributor and want some help getting started,
-feel free to get in touch over email:
+All project discussions should happen in the [issue tracker](https://github.com/artilleryio/artillery/issues) or via [Discussions](https://github.com/artilleryio/artillery/discussions).
+
+If you are a first-time contributor and want some help getting started, feel free to get in touch over email:
 
 * Hassy Veldstra - [h@artillery.io](mailto:h@artillery.io?subject=Artillery Contribution Help)
 
 ## Guide for Contributions
 
-* We use the popular Fork+Pull model (more info here: [https://help.github.com/articles/using-pull-requests/](https://help.github.com/articles/using-pull-requests/)]
+* We use the usual Fork+Pull model (more info here: [https://help.github.com/articles/using-pull-requests/](https://help.github.com/articles/using-pull-requests/)]
 * Pull requests that modify or add behavior should have tests, whether it's a new feature or a bug fix. If you're unsure how to structure a test, we can help.
-* Ideally, pull requests should reference an existing [Issue](https://github.com/artilleryio/artillery/issues) to provide opportunity for discussion of any proposed features or changes which aren't a bug fix.
+* We love PRs that fix bugs.
+* Do not add a new feature without discussing it via [Discussions](https://github.com/artilleryio/artillery/discussions) first. We've had to decline feature suggestions submitted via PRs in the past because they duplicate existing functionality, have limited utility to the wider user base, or carry too much maintenance burden. We don't want you to spend your time on something that we will not accept.
 * One logical change per commit please. We'll ask you to rebase PRs containing commits that change several unrelated things.
 * The smaller a PR is the better. Smaller PRs are much easier to review and provide feedback on. Always lean towards smaller PRs.
 * Before you write more than a few lines of code, please make sure:
@@ -35,3 +36,5 @@ feel free to get in touch over email:
 ## Licensing
 
 By sending a patch you certify that you have the rights to and agree for your contribution to be distributed under the terms of [MPL2](https://www.mozilla.org/en-US/MPL/2.0/).
+
+You will also need to sign a CLA before your first PR is merged. A GitHub bot will guide you through that after a new PR is opened.

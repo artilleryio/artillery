@@ -1,0 +1,26 @@
+config:
+  target: "http://asciiart.artillery.io:8080"
+  phases:
+    - duration: 2
+      arrivalRate: 2
+  plugins:
+    publish-metrics:
+      - type: "open-telemetry"
+        traces:
+          useRequestNames: true
+          replaceSpanNameRegex:
+            - pattern: "/armadillo"
+              as: "bombolini"
+          exporter: "__test"
+
+scenarios:
+  - name: "trace-http-test"
+    flow:
+      - get:
+          url: "/dino"
+          name: "dino"
+      - get:
+          url: "/pony"
+      - get:
+          url: "/armadillo"
+          name: "armadillo"

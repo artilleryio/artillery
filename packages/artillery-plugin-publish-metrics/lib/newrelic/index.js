@@ -1,4 +1,5 @@
 const got = require('got');
+const { sleep } = require('../util');
 const debug = require('debug')('plugin:publish-metrics:newrelic');
 
 class NewRelicReporter {
@@ -7,6 +8,11 @@ class NewRelicReporter {
       throw new Error(
         'New Relic reporter: licenseKey must be provided. More info in the docs (https://docs.art/reference/extensions/publish-metrics#newrelic)'
       );
+    }
+    if (config.sendOnlyTraces || config.traces?.sendOnlyTraces) {
+      this.onlyTraces = true;
+      debug('sendOnlyTraces is true, not initializing metrics');
+      return;
     }
 
     // Set each config value as matching user config if exists, else default values
@@ -19,7 +25,7 @@ class NewRelicReporter {
       licenseKey: config.licenseKey
     };
 
-    if (config.hasOwnProperty('event') && !config.event?.accountId) {
+    if (Object.hasOwn(config, 'event') && !config.event?.accountId) {
       throw new Error(
         'New Relic account ID not specified. In order to send events to New Relic `accountId` must be provided'
       );
@@ -241,7 +247,7 @@ class NewRelicReporter {
       json: eventOptions
     };
 
-    debug('Sending ' + eventOptions.phase + ' event to New Relic');
+    debug(`Sending ${eventOptions.phase} event to New Relic`);
     try {
       const res = await got.post(url, options);
 
@@ -254,7 +260,7 @@ class NewRelicReporter {
         `Request to Event API at ${eventOptions.timestamp} Request UUID: `,
         JSON.parse(res.body).uuid
       );
-      debug(eventOptions.phase + ' event sent to New Relic');
+      debug(`${eventOptions.phase} event sent to New Relic`);
     } catch (err) {
       debug(err);
     }
@@ -265,7 +271,7 @@ class NewRelicReporter {
   async waitingForRequest() {
     while (this.pendingRequests > 0) {
       debug('Waiting for pending request...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     }
 
     debug('Pending requests done');
@@ -273,6 +279,10 @@ class NewRelicReporter {
   }
 
   cleanup(done) {
+    if (this.onlyTraces) {
+      return done();
+    }
+
     if (this.startedEventSent) {
       const timestamp = Date.now();
       this.eventOpts.timestamp = timestamp;

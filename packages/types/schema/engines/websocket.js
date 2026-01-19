@@ -3,6 +3,7 @@ const Joi = require('joi').defaults((schema) =>
 );
 
 const { BaseFlowItemAlternatives, LoopOptions } = require('./common');
+const { buildArtilleryKeyValue } = require('../joi.helpers');
 
 //TODO: add metadata
 
@@ -50,7 +51,7 @@ const WsConfigSchema = Joi.object({
   subprotocols: Joi.array()
     .items(Joi.string().valid('json', 'soap', 'wamp', 'xmpp'))
     .meta({ title: 'Websocket sub-protocols' }),
-  headers: Joi.object().meta({ title: 'Headers' }),
+  headers: buildArtilleryKeyValue(Joi.string()).meta({ title: 'Headers' }),
   proxy: Joi.object({
     url: Joi.string().required().meta({ title: 'URL' })
   }).meta({ title: 'Proxy' })

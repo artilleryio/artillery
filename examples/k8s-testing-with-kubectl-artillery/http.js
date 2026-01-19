@@ -38,7 +38,7 @@ app.get('/movies/:id', (req, res) => {
   res.json(response.filter((movie) => movie.id === id).pop());
 });
 
-app.get('/healthz', (req, res) => {
+app.get('/healthz', (_req, res) => {
   if (response.length > 0) {
     res.status(200).send('Ok');
   } else {

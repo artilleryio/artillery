@@ -1,7 +1,7 @@
-'use strict';
 
-const fs = require('fs');
-const path = require('path');
+
+const fs = require('node:fs');
+const path = require('node:path');
 const YAML = require('js-yaml');
 const debug = require('debug')('util');
 const moment = require('moment');
@@ -14,7 +14,7 @@ const renderVariables = engineUtil._renderVariables;
 const template = engineUtil.template;
 const { contextFuncs } = require('@artilleryio/int-core').runner;
 
-const p = require('util').promisify;
+const p = require('node:util').promisify;
 
 module.exports = {
   readScript,
@@ -22,6 +22,7 @@ module.exports = {
   addOverrides,
   addVariables,
   addDefaultPlugins,
+  resolveConfigPath,
   resolveConfigTemplates,
   checkConfig,
   renderVariables,
@@ -49,7 +50,7 @@ async function addOverrides(script, flags) {
   const result = _.mergeWith(
     script,
     o,
-    function customizer(objVal, srcVal, k, obj, src, stack) {
+    function customizer(_objVal, srcVal, _k, _obj, _src, _stack) {
       if (_.isArray(srcVal)) {
         return srcVal;
       } else {
@@ -79,27 +80,32 @@ function addDefaultPlugins(script) {
   const finalScript = _.cloneDeep(script);
 
   if (!script.config.plugins) {
-    finalScript.config.plugins = {}
+    finalScript.config.plugins = {};
   }
 
   const additionalPluginsAndOptions = {
     'metrics-by-endpoint': { suppressOutput: true, stripQueryString: true }
-  }
+  };
 
-  for (const [pluginName, pluginOptions] of Object.entries(additionalPluginsAndOptions)) {
+  for (const [pluginName, pluginOptions] of Object.entries(
+    additionalPluginsAndOptions
+  )) {
     if (!finalScript.config.plugins[pluginName]) {
-      finalScript.config.plugins[pluginName] = pluginOptions
+      finalScript.config.plugins[pluginName] = pluginOptions;
     }
   }
 
-  return finalScript
+  return finalScript;
 }
 
-async function resolveConfigTemplates(script, flags) {
+async function resolveConfigTemplates(script, flags, configPath, scriptPath) {
   const cliVariables = flags.variables ? JSON.parse(flags.variables) : {};
 
   script.config = engineUtil.template(script.config, {
     vars: {
+      $scenarioFile: scriptPath,
+      $dirname: path.dirname(configPath),
+      $testId: global.artillery.testRunId,
       $processEnvironment: process.env,
       $env: process.env,
       $environment: flags.environment,
@@ -118,8 +124,7 @@ async function checkConfig(script, scriptPath, flags) {
   if (flags.environment) {
     debug('environment specified: %s', flags.environment);
     if (
-      script.config.environments &&
-      script.config.environments[flags.environment]
+      script.config.environments?.[flags.environment]
     ) {
       _.merge(script.config, script.config.environments[flags.environment]);
     } else {
@@ -186,13 +191,46 @@ async function checkConfig(script, scriptPath, flags) {
   // Resolve all payload paths to absolute paths now:
   //
   const absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
-  _.forEach(script.config.payload, function (payloadSpec) {
+  _.forEach(script.config.payload, (payloadSpec) => {
     const resolvedPathToPayload = path.resolve(
       path.dirname(absoluteScriptPath),
       payloadSpec.path
     );
     payloadSpec.path = resolvedPathToPayload;
   });
+  script._scriptPath = absoluteScriptPath;
+  return script;
+}
+
+async function resolveConfigPath(script, flags, scriptPath) {
+  if (!flags.config) {
+    script._configPath = scriptPath;
+    return script;
+  }
+
+  const absoluteConfigPath = path.resolve(process.cwd(), flags.config);
+  script._configPath = absoluteConfigPath;
+
+  if (!script.config.processor) {
+    return script;
+  }
+
+  const processorPath = path.resolve(
+    path.dirname(absoluteConfigPath),
+    script.config.processor
+  );
+
+  const stats = fs.statSync(processorPath, { throwIfNoEntry: false });
+
+  if (typeof stats === 'undefined') {
+    // No file at that path - backwards compatibility mode:
+    console.log(
+      'WARNING - config.processor is now resolved relative to the config file'
+    );
+    console.log('Expected to find file at:', processorPath);
+  } else {
+    script.config.processor = processorPath;
+  }
 
   return script;
 }
@@ -239,7 +277,7 @@ function padded(str1, str2, length = 79, formatPadding = chalk.gray) {
 }
 
 function maybeTruncate(str, length) {
-  return str.length > length ? str.slice(0, length - 3) + '...' : str;
+  return str.length > length ? `${str.slice(0, length - 3)}...` : str;
 }
 
 function rainbow(str) {

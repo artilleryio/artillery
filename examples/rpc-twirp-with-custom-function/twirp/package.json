@@ -1,0 +1,12 @@
+{
+  "name": "twirp",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "node ./server/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

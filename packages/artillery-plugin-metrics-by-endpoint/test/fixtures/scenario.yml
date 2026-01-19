@@ -1,0 +1,14 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  phases:
+    - duration: 2
+      arrivalRate: 2
+  plugins:
+    metrics-by-endpoint: {}
+
+scenarios:
+  - flow:
+      - get:
+          url: "/dino"
+      - get:
+          url: "/pony"

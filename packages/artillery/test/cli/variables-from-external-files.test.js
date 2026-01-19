@@ -1,5 +1,5 @@
 const tap = require('tap');
-const { execute } = require('../cli/_helpers.js');
+const { execute } = require('../helpers');
 const execa = require('execa');
 
 /*
@@ -28,11 +28,9 @@ tap.test('Load variables from single CSV successfully', async (t) => {
 
   abortController.abort();
 
-  t.ok(
-    exitCode === 0 &&
-      output.stdout.includes('http.codes.200') &&
-      !output.stdout.includes('http.codes.400')
-  );
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(output.stdout.includes('http.codes.200'), 'Should have 200s');
+  t.notOk(output.stdout.includes('http.codes.400'), 'Should not have 400s');
 });
 
 tap.test(
@@ -47,11 +45,14 @@ tap.test(
       './test/scripts/scenario-payload-with-envs/config/artillery-config.yml'
     ]);
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id') &&
-        (output.stdout.includes('abc12345') ||
-          output.stdout.includes('abc56789'))
+      output.stdout.includes('Successfully ran with id'),
+      'Should display success message'
+    );
+    t.ok(
+      output.stdout.includes('abc12345') || output.stdout.includes('abc56789'),
+      'Should include one of the ids from the csv'
     );
   }
 );

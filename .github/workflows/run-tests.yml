@@ -5,16 +5,33 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
+  generate-matrix-with-packages:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - id: generate-matrix
+        run: |
+          RESULT=$(node .github/workflows/scripts/get-all-packages-by-name.js)
+          echo "matrix=$RESULT" >> $GITHUB_OUTPUT
   test:
     timeout-minutes: 30
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: generate-matrix-with-packages
     permissions:
       contents: read
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [22.x, 24.x]
+        package: ${{fromJson(needs.generate-matrix-with-packages.outputs.matrix)}}
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}
@@ -23,7 +40,10 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: npm install
       - run: npm run build
-      - run: npm run test
+      - name: Install Playwright Browsers
+        if: matrix.package == 'artillery-engine-playwright'
+        run: npm exec --workspace artillery-engine-playwright -- playwright install chromium --with-deps
+      - run: npm run test --workspace ${{ matrix.package }}
         env:
           FORCE_COLOR: 1
       - name: Notify about failures
@@ -31,6 +51,38 @@ jobs:
         uses: 8398a7/action-slack@v3.15.1
         with:
           status: ${{ job.status }}
+          fields: repo,message,commit,author,eventName,job,took,pullRequest
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  test-windows:
+    timeout-minutes: 60
+    runs-on: windows-latest
+    needs: generate-matrix-with-packages
+    continue-on-error: true
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.x
+      - run: npm install
+      - run: npm run build
+      - name: Run windows tests and capture exit code
+        continue-on-error: true
+        run: |
+          npm run test:windows --workspace artillery
+          echo "HAS_PASSED=$?" >> $env:GITHUB_ENV
+        env:
+          FORCE_COLOR: 1
+      - name: Notify about failures
+        if: env.HAS_PASSED == 'False'
+        uses: 8398a7/action-slack@v3.15.1
+        with:
+          status: failure
           fields: repo,message,commit,author,eventName,job,took,pullRequest
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

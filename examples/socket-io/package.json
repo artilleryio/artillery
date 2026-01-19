@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "artillery": "^2.0.0-37",
     "socket.io": "^3.1.2"
   }
 }

@@ -5,9 +5,9 @@ async function awaitOnEE(ee, message, pollMs = 1000, maxWaitMs = Infinity) {
   let args = null;
   let waitedMs = 0;
 
-  ee.once(message, () => {
+  ee.once(message, (...eventArgs) => {
     messageFired = true;
-    args = arguments;
+    args = eventArgs;
   });
 
   while (true && waitedMs < maxWaitMs) {

@@ -32,11 +32,11 @@ Once the API server is up and running, you can run either load tests or function
 To run load tests:
 
 ```shell
-artillery run --environment load functional-load-tests.yml
+npx artillery run --environment load functional-load-tests.yml
 ```
 
 To run functional tests:
 
 ```shell
-artillery run --environment functional functional-load-tests.yml
+npx artillery run --environment functional functional-load-tests.yml
 ```

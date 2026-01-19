@@ -16,6 +16,10 @@ This repo contains examples of how to use various features in Artillery. Every e
 - [multiple-scenario-specs](./multiple-scenario-specs) - organizing your Artillery test codebase into separate scenario files
 - [automated-checks](./automated-checks) - setting up automated checks with `ensure` and `apdex` plugins
 
+### How-tos
+
+- [refresh-auth-token](./refresh-auth-token/) - how to refresh an auth token used by a VU as the test is running
+
 ### End-to-end examples
 
 - [socket-io](./socket-io) - testing a Socket.io service

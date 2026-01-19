@@ -6,12 +6,12 @@ config:
       arrivalRate: 25
 
 scenarios:
-  - name: 'Sending a string'
+  - name: 'sending_a_string'
     engine: ws
     flow:
       - send: 'Artillery'
 
-  - name: 'Sending an object from a function'
+  - name: 'sending_object_from_function'
     engine: ws
     flow:
       - function: 'createRandomScore'

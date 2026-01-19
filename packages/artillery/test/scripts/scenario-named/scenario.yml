@@ -14,3 +14,6 @@ scenarios:
   - name: Test Scenario 3
     flow:
       - log: "Successfully running scenario 3"
+  - name: Test Scenario (4)
+    flow:
+      - log: "Successfully running scenario 4"

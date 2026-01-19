@@ -1,0 +1,69 @@
+name: Publish specific package to NPM
+on:
+  workflow_dispatch:
+    inputs:
+      CHANNEL:
+        description: 'Channel to publish to. Can be "latest" or "canary".'
+        type: choice
+        options:
+          - 'latest'
+          - 'canary'
+        default: 'canary'
+      PACKAGE_FOLDER_NAME:
+        description: 'Name of the package to publish (folder package).'
+        required: true
+      
+jobs:
+  publish-fargate-worker-image:
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    if: ${{ inputs.PACKAGE_FOLDER_NAME == 'artillery' }}
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+      SHOULD_BUILD_ARM64: true
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+
+  publish-packages-to-npm:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: publish-fargate-worker-image
+    permissions:
+      contents: read
+      packages: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@artilleryio'
+      - run: node .github/workflows/scripts/replace-package-versions.js
+        if: ${{ inputs.CHANNEL == 'latest'}}
+      - run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        if: ${{ inputs.CHANNEL == 'canary'}}
+
+      - name: Get corresponding package name from package.json
+        run: |
+            PACKAGE_NAME=$(node -e "console.log(require('./packages/${{ inputs.PACKAGE_FOLDER_NAME }}/package.json').name)")
+            echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
+      
+      - run: npm install -w skytrace --ignore-scripts && npm run build -w skytrace
+        if: ${{ inputs.PACKAGE_FOLDER_NAME == 'skytrace'}}
+        
+      - run: npm -w ${{ env.PACKAGE_NAME }} publish --tag ${{ inputs.CHANNEL }}
+
+  publish-official-docker-image:
+    uses: ./.github/workflows/docker-publish-artillery.yml
+    if: ${{ inputs.PACKAGE_FOLDER_NAME == 'artillery'}}
+    needs: publish-packages-to-npm
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

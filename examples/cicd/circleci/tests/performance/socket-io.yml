@@ -11,7 +11,7 @@ config:
     max: 500
 
 scenarios:
-  - name: "Emit an event"
+  - name: "emit_an_event"
     engine: "socketio"
     flow:
       - emit:

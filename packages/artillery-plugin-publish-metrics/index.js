@@ -3,20 +3,42 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const NS = 'plugin:publish-metrics';
-const debug = require('debug')(NS);
+const _debug = require('debug')(NS);
 const A = require('async');
 
+const {
+  getADOTRelevantReporterConfigs,
+  resolveADOTConfigSettings
+} = require('./lib/open-telemetry/translators/vendor-adot');
+
+// List of reporters that use OpenTelemetry
+const REPORTERS_USING_OTEL = [
+  'open-telemetry',
+  'honeycomb',
+  'newrelic',
+  'datadog',
+  'dynatrace',
+  'cloudwatch'
+];
 module.exports = {
   Plugin,
-  LEGACY_METRICS_FORMAT: false
+  LEGACY_METRICS_FORMAT: false,
+  getADOTRelevantReporterConfigs,
+  resolveADOTConfigSettings
 };
 
 function Plugin(script, events) {
   this.script = script;
   this.events = events;
+  this.pluginConfig = script.config.plugins['publish-metrics'] || [];
 
   this.reporters = [];
-  (script.config.plugins['publish-metrics'] || []).forEach((config) => {
+  this.configsOfReportersUsingOTel = [];
+
+  this.pluginConfig.forEach((config) => {
+    if (REPORTERS_USING_OTEL.includes(config.type)) {
+      this.configsOfReportersUsingOTel.push(config);
+    }
     if (
       config.type === 'datadog' ||
       config.type === 'statsd' ||
@@ -27,12 +49,6 @@ function Plugin(script, events) {
     } else if (config.type === 'splunk') {
       const { createSplunkReporter } = require('./lib/splunk');
       this.reporters.push(createSplunkReporter(config, events, script));
-    } else if (config.type === 'honeycomb') {
-      const { createHoneycombReporter } = require('./lib/honeycomb');
-      this.reporters.push(createHoneycombReporter(config, events, script));
-    } else if (config.type === 'lightstep') {
-      const { createLightstepReporter } = require('./lib/lightstep');
-      this.reporters.push(createLightstepReporter(config, events, script));
     } else if (config.type === 'mixpanel') {
       const { createMixPanelReporter } = require('./lib/mixpanel');
       this.reporters.push(createMixPanelReporter(config, events, script));
@@ -49,8 +65,6 @@ function Plugin(script, events) {
       const { createDynatraceReporter } = require('./lib/dynatrace');
       this.reporters.push(createDynatraceReporter(config, events, script));
     } else if (config.type === 'open-telemetry') {
-      const { createOTelReporter } = require('./lib/open-telemetry');
-      this.reporters.push(createOTelReporter(config, events, script));
     } else {
       events.emit(
         'userWarning',
@@ -62,6 +76,13 @@ function Plugin(script, events) {
       );
     }
   });
+  if (this.configsOfReportersUsingOTel.length > 0) {
+    const { createOTelReporter } = require('./lib/open-telemetry');
+    this.reporters.push(
+      createOTelReporter(this.configsOfReportersUsingOTel, events, script)
+    );
+  }
+
   return this;
 }
 

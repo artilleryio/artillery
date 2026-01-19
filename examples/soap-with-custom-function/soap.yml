@@ -1,0 +1,11 @@
+config:
+  target: "http://localhost:8000"
+  phases:
+    - duration: 2
+      arrivalRate: 4
+      name: "Phase 1"
+  processor: "./processor.js"
+
+scenarios:
+  - flow:
+      - function: "sendSOAPRequest"

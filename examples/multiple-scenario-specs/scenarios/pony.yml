@@ -1,5 +1,5 @@
 scenarios:
-  - name: Pony
+  - name: pony
     flow:
       - get:
           url: "/pony"

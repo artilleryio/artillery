@@ -1,0 +1,12 @@
+scenarios:
+  - beforeScenario: emitCsvCounters
+    flow:
+      - loop:
+          - get:
+              url: "/dino"
+              beforeRequest: maybeSleep
+          - get:
+              url: "/armadillo"
+          - get:
+              url: "/pony"
+        count: 3

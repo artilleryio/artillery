@@ -1,7 +1,7 @@
 exports.init = function init(context, _, done) {
   const socket = context.sockets[''];
   if (socket) {
-    socket.on('*', function () {
+    socket.on('*', () => {
       console.log('Wildcard captured');
     });
   } else {

@@ -1,9 +1,18 @@
 module.exports = {
   attachScenarioHooks,
-  versionCheck
+  versionCheck,
+  sleep
 };
 
 const semver = require('semver');
+
+async function sleep(n) {
+  return new Promise((resolve, _reject) => {
+    setTimeout(() => {
+      resolve();
+    }, n);
+  });
+}
 
 // TODO: Extract into a utility function in Artillery itself
 function versionCheck(range) {

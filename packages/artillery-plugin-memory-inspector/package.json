@@ -1,10 +1,18 @@
 {
   "name": "artillery-plugin-memory-inspector",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Inspect the memory of processes running together with your load tests!",
   "main": "index.js",
   "scripts": {
-    "test": "export ARTILLERY_TELEMETRY_DEFAULTS='{\"source\":\"test-suite\"}' && tap ./test/*.spec.mjs --no-coverage --color --timeout 300"
+    "test": "tap ./test/*.spec.js --timeout 300"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "author": "",
   "license": "MPL-2.0",
@@ -14,7 +22,7 @@
   },
   "devDependencies": {
     "portfinder": "^1.0.32",
-    "tap": "^16.3.7",
-    "zx": "^7.2.3"
+    "tap": "^19.0.2",
+    "zx": "^8.1.4"
   }
 }

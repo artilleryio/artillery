@@ -1,5 +1,4 @@
 const debug = require('debug')('console-capture');
-const sleep = require('./util/sleep');
 
 function setupConsoleCapture() {
   let outputLines = [];
@@ -12,7 +11,7 @@ function setupConsoleCapture() {
   );
   const MAX_RETAINED_LOG_SIZE = MAX_RETAINED_LOG_SIZE_MB * 1024 * 1024;
 
-  const interval = setInterval(function () {
+  const interval = setInterval(() => {
     if (!truncated && outputLines.length - sendFromIndex > 0) {
       const newBatch = outputLines.slice(sendFromIndex, outputLines.length);
       sendFromIndex = outputLines.length;
@@ -39,15 +38,15 @@ function setupConsoleCapture() {
     }
   });
 
-  console.log = (function () {
-    let orig = console.log;
-    return function () {
+  console.log = (() => {
+    const orig = console.log;
+    return (...args) => {
       try {
-        orig.apply(console, arguments);
+        orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
+          outputLines = outputLines.concat([args]);
+          for (const x of args) {
             currentSize += String(x).length;
           }
         } else {
@@ -64,15 +63,15 @@ function setupConsoleCapture() {
     };
   })();
 
-  console.error = (function () {
-    let orig = console.error;
-    return function () {
+  console.error = (() => {
+    const orig = console.error;
+    return (...args) => {
       try {
-        orig.apply(console, arguments);
+        orig.apply(console, args);
 
         if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
+          outputLines = outputLines.concat([args]);
+          for (const x of args) {
             currentSize += String(x).length;
           }
         } else {

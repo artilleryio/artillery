@@ -7,11 +7,11 @@ const { SSMS } = require('@artilleryio/int-core').ssms;
 const sleep = require('../helpers/sleep');
 const data = require('../data/geometric.json');
 const responseTimeHistogramsData = require('../data/response-times-histograms.json');
-const path = require('path');
+const path = require('node:path');
 const _ = require('lodash');
-const fs = require('fs');
+const fs = require('node:fs');
 
-const { Worker } = require('worker_threads');
+const { Worker } = require('node:worker_threads');
 
 const MEASUREMENTS = [];
 
@@ -81,7 +81,7 @@ tap.test('Metric aggregation', async (t) => {
     'plugin.my_custom_plugin.important_counter'
   ];
 
-  const rateNames = [
+  const _rateNames = [
     'vusers.launch_rate',
     'mqtt.message_rate',
     'plugin.my_custom_plugin.op_rate'
@@ -102,7 +102,7 @@ tap.test('Metric aggregation', async (t) => {
       const cname = _.sample(counterNames);
       const workerIndex = _.random(0, workers.length - 1);
 
-      const dest = workers.filter((w) => w.threadId === workerIndex + 1)[0];
+      const [dest] = workers.filter((_w, idx) => idx === workerIndex);
 
       dest.postMessage({ cmd: 'histogram', name: hname, value: dp, ts: ts });
       dest.postMessage({ cmd: 'incr', name: cname, value: 1, ts: ts });
@@ -183,7 +183,7 @@ tap.test('Metric aggregation', async (t) => {
   console.log(Object.keys(metricData).sort(), control.getBucketIds().sort());
 
   const combined = {};
-  for (const [bucket, summaries] of Object.entries(metricData)) {
+  for (const [_bucket, summaries] of Object.entries(metricData)) {
     // summaries = list of metrics objects for a period/bucket from every worker
 
     // these are histogram names tracked in this period (across all workers):
@@ -348,7 +348,7 @@ tap.test('Metric aggregation - merged histograms', async (t) => {
 
   for (const inputData of responseTimeHistogramsData) {
     const [workerIndex, , metricName, metricValue, ts] = inputData;
-    const [dest] = workers.filter((w, idx) => idx === workerIndex);
+    const [dest] = workers.filter((_w, idx) => idx === workerIndex);
 
     dest.postMessage({
       cmd: 'histogram',
@@ -384,7 +384,7 @@ tap.test('Metric aggregation - merged histograms', async (t) => {
   );
 
   const combined = {};
-  for (const [bucket, summaries] of Object.entries(metricData)) {
+  for (const [_bucket, summaries] of Object.entries(metricData)) {
     // summaries = list of metrics objects for a period/bucket from every worker
     // these are histogram names tracked in this period (across all workers):
     const histogramNames = [

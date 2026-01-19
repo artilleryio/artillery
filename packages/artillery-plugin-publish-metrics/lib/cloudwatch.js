@@ -8,6 +8,8 @@ const {
 } = require('@aws-sdk/client-cloudwatch');
 const debug = require('debug')('plugin:publish-metrics:cloudwatch');
 
+const { sleep } = require('./util');
+
 const COUNTERS_STATS = 'counters'; // counters stats
 const RATES_STATS = 'rates'; // rates stats
 const SUMMARIES_STATS = 'summaries'; // summaries stats
@@ -70,15 +72,14 @@ class CloudWatchReporter {
           this.addMetric(
             `${rKey}`,
             stats[RATES_STATS][rKey],
-            (KNOWN_UNITS[RATES_STATS] && KNOWN_UNITS[RATES_STATS][rKey]) ||
-              DEFAULT_UNIT
+            KNOWN_UNITS[RATES_STATS]?.[rKey] || DEFAULT_UNIT
           );
         }
       }
 
       if (stats[SUMMARIES_STATS]) {
         for (const sKey in stats[SUMMARIES_STATS]) {
-          let readings = stats[SUMMARIES_STATS][sKey];
+          const readings = stats[SUMMARIES_STATS][sKey];
           for (const readingKey in readings) {
             if (
               this.options.extended ||
@@ -87,9 +88,7 @@ class CloudWatchReporter {
               this.addMetric(
                 `${sKey}.${readingKey}`,
                 readings[readingKey],
-                (KNOWN_UNITS[SUMMARIES_STATS] &&
-                  KNOWN_UNITS[SUMMARIES_STATS][sKey] &&
-                  KNOWN_UNITS[SUMMARIES_STATS][sKey][readingKey]) ||
+                KNOWN_UNITS[SUMMARIES_STATS]?.[sKey]?.[readingKey] ||
                   DEFAULT_UNIT
               );
             }
@@ -105,7 +104,10 @@ class CloudWatchReporter {
 
   isMetricValid(value) {
     return (
-      value !== undefined && value !== null && !isNaN(value) && isFinite(value)
+      value !== undefined &&
+      value !== null &&
+      !Number.isNaN(value) &&
+      Number.isFinite(value)
     );
   }
 
@@ -134,7 +136,7 @@ class CloudWatchReporter {
       {
         metric,
         pid: process.pid,
-        isMaster: require('cluster').isMaster
+        isMaster: require('node:cluster').isMaster
       },
       'addMetric'
     );
@@ -177,7 +179,7 @@ class CloudWatchReporter {
   async waitingForRequest() {
     do {
       debug('Waiting for pending request ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     } while (this.pendingRequests > 0);
 
     debug('Pending requests done');

@@ -1,13 +1,18 @@
 {
   "name": "artillery-plugin-expect",
-  "version": "2.3.3",
+  "version": "2.21.0",
   "description": "Expectations and assertions for HTTP scenarios",
   "main": "index.js",
-  "engines": {
-    "node": ">= 14.17.6"
-  },
   "scripts": {
     "test": "bash test/run.sh"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "author": "Hassy Veldstra <h@artillery.io>",
   "license": "SEE LICENSE IN LICENSE.txt",
@@ -19,6 +24,6 @@
   },
   "devDependencies": {
     "shelljs": "^0.8.4",
-    "tap": "^16.3.7"
+    "tap": "^19.0.2"
   }
 }

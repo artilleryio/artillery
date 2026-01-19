@@ -1,9 +1,9 @@
-const path = require('path');
-const fs = require('fs');
+const path = require('node:path');
+const fs = require('node:fs');
 const A = require('async');
 
-const isBuiltinModule = require('is-builtin-module');
-const detective = require('detective');
+const { isBuiltin } = require('node:module');
+const detective = require('detective-es6');
 const depTree = require('dependency-tree');
 
 const walkSync = require('walk-sync');
@@ -14,34 +14,64 @@ const BUILTIN_ENGINES = require('./plugins').getOfficialEngines();
 
 const Table = require('cli-table3');
 
+const { resolveConfigTemplates } = require('../../../../util');
+
+const prepareTestExecutionPlan = require('../../../../lib/util/prepare-test-execution-plan');
+const { readScript, parseScript } = require('../../../../util');
+
 // NOTE: Code below presumes that all paths are absolute
 
+//Tests in Fargate run on ubuntu, which uses posix paths
+//This function converts a path to posix path, in case the original path was not posix (e.g. windows runs)
+function _convertToPosixPath(p) {
+  return p.split(path.sep).join(path.posix.sep);
+}
+
+// NOTE: absoluteScriptPath here is actually the absolute path to the config file
 function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   A.waterfall(
     [
       A.constant(absoluteScriptPath),
-      global.artillery.__util.readScript,
-      global.artillery.__util.parseScript,
+      async (scriptPath) => {
+        let scriptData;
+        if (scriptPath.toLowerCase().endsWith('.ts')) {
+          scriptData = await prepareTestExecutionPlan(
+            [scriptPath],
+            opts.flags,
+            []
+          );
+          scriptData.config.processor = scriptPath;
+        } else {
+          const data = await readScript(scriptPath);
+          scriptData = await parseScript(data);
+        }
+
+        return scriptData;
+      },
       (scriptData, next) => {
         return next(null, {
           opts: {
             scriptData,
-            absoluteScriptPath
+            absoluteScriptPath,
+            flags: opts.flags,
+            scenarioPath: opts.scenarioPath // Absolute path to the file that holds scenarios
           },
           localFilePaths: [absoluteScriptPath],
           npmModules: []
         });
       },
+      applyScriptChanges,
       getPlugins,
       getCustomEngines,
       getCustomJsDependencies,
       getVariableDataFiles,
       getFileUploadPluginFiles,
       getExtraFiles,
+      getDotEnv,
       expandDirectories
     ],
 
-    function (err, context) {
+    (err, context) => {
       if (err) {
         return callback(err, null);
       }
@@ -70,6 +100,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         prefix = commonPrefix(context.localFilePaths);
       }
 
+      prefix = _convertToPosixPath(prefix);
       debug('prefix', prefix);
 
       //
@@ -91,16 +122,24 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       debug(dependencyFiles);
 
-      dependencyFiles.forEach(function (p) {
+      dependencyFiles.forEach((p) => {
         try {
           if (fs.statSync(p)) {
             context.localFilePaths.push(p);
           }
-        } catch (ignoredErr) {}
+        } catch (_ignoredErr) {}
       });
 
       const files = context.localFilePaths.map((p) => {
-        return { orig: p, noPrefix: p.substring(prefix.length, p.length) };
+        return {
+          orig: p,
+          noPrefix: p.substring(prefix.length, p.length),
+          origPosix: _convertToPosixPath(p),
+          noPrefixPosix: _convertToPosixPath(p).substring(
+            prefix.length,
+            p.length
+          )
+        };
       });
 
       const pkgPath = _.find(files, (f) => {
@@ -122,7 +161,8 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       return callback(null, {
         files: _.uniqWith(files, _.isEqual),
         modules: _.uniq(context.npmModules),
-        pkgDeps: context.pkgDeps
+        pkgDeps: context.pkgDeps,
+        fullyResolvedConfig: context.opts.scriptData.config
       });
     }
   );
@@ -133,10 +173,22 @@ function isLocalModule(modName) {
   return modName.startsWith('.');
 }
 
+function applyScriptChanges(context, next) {
+  resolveConfigTemplates(
+    context.opts.scriptData,
+    context.opts.flags,
+    context.opts.absoluteScriptPath,
+    context.opts.scenarioPath
+  ).then((resolvedConfig) => {
+    context.opts.scriptData = resolvedConfig;
+    return next(null, context);
+  });
+}
+
 function getPlugins(context, next) {
-  let environmentPlugins = _.reduce(
+  const environmentPlugins = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentPlugins(acc, envSpec, envName) {
+    function getEnvironmentPlugins(acc, envSpec, _envName) {
       acc = acc.concat(Object.keys(envSpec.plugins || []));
       return acc;
     },
@@ -158,9 +210,9 @@ function getPlugins(context, next) {
 }
 
 function getCustomEngines(context, next) {
-  let environmentEngines = _.reduce(
+  const environmentEngines = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentEngines(acc, envSpec, envName) {
+    function getEnvironmentEngines(acc, envSpec, _envName) {
       acc = acc.concat(Object.keys(envSpec.engines || []));
       return acc;
     },
@@ -183,13 +235,11 @@ function getCustomEngines(context, next) {
 }
 
 function getCustomJsDependencies(context, next) {
-  if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.processor
-  ) {
+  if (context.opts.scriptData.config?.processor) {
     //
     // Path to the main processor file:
     //
+
     const procPath = path.resolve(
       path.dirname(context.opts.absoluteScriptPath),
       context.opts.scriptData.config.processor
@@ -212,11 +262,11 @@ function getCustomJsDependencies(context, next) {
       const npmPackages = requires
         .filter(
           (requireString) =>
-            !isBuiltinModule(requireString) && !isLocalModule(requireString)
+            !isBuiltin(requireString) && !isLocalModule(requireString)
         )
         .map((requireString) => {
           return requireString.startsWith('@')
-            ? requireString.split('/')[0] + '/' + requireString.split('/')[1]
+            ? `${requireString.split('/')[0]}/${requireString.split('/')[1]}`
             : requireString.split('/')[0];
         });
       return npmPackages;
@@ -226,7 +276,7 @@ function getCustomJsDependencies(context, next) {
     debug(allNpmDeps);
     const reduced = allNpmDeps.reduce((acc, deps) => {
       deps.forEach((d) => {
-        if (acc.findIndex((x) => x === d) === -1) {
+        if (acc.indexOf(d) === -1) {
           acc.push(d);
         }
       });
@@ -238,13 +288,17 @@ function getCustomJsDependencies(context, next) {
     // Any other local JS files and npm packages:
     //
     const procSrc = fs.readFileSync(procPath);
-    const processorRequires = detective(procSrc);
+    const _processorRequires = detective(procSrc);
     // TODO: Look for and load dir/index.js and get its dependencies,
     // rather than just grabbing the entire directory.
     // NOTE: Some of these may be directories (with an index.js inside)
     // Could be JSON files too.
     context.localFilePaths = context.localFilePaths.concat(tree);
     context.npmModules = context.npmModules.concat(reduced);
+    // Remove duplicate entries for the same file when invoked on a single .ts script
+    // See line 44 - the config.processor property is always set on .ts files, which leads to
+    // multiple entries in the localFilePaths array for the same file
+    context.localFilePaths = _.uniq(context.localFilePaths);
     debug('got custom JS dependencies');
     return next(null, context);
   } else {
@@ -260,25 +314,21 @@ function getVariableDataFiles(context, next) {
   // Iterate over environments
 
   function resolvePayloadPaths(obj) {
-    let result = [];
+    const result = [];
     if (obj.payload) {
+      // When using a separate config file, resolve paths relative to the scenario file
+      // Otherwise, resolve relative to the config file
+      const baseDir = context.opts.scenarioPath
+        ? path.dirname(context.opts.scenarioPath)
+        : path.dirname(context.opts.absoluteScriptPath);
+
       if (_.isArray(obj.payload)) {
         obj.payload.forEach((payloadSpec) => {
-          result.push(
-            path.resolve(
-              path.dirname(context.opts.absoluteScriptPath),
-              payloadSpec.path
-            )
-          );
+          result.push(path.resolve(baseDir, payloadSpec.path));
         });
       } else if (_.isObject(obj.payload)) {
         // isObject returns true for arrays, so this branch must come second
-        result.push(
-          path.resolve(
-            path.dirname(context.opts.absoluteScriptPath),
-            obj.payload.path
-          )
-        );
+        result.push(path.resolve(baseDir, obj.payload.path));
       }
     }
     return result;
@@ -302,18 +352,20 @@ function getVariableDataFiles(context, next) {
 }
 
 function getFileUploadPluginFiles(context, next) {
-  if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.plugins &&
-    context.opts.scriptData.config.plugins['http-file-uploads']
-  ) {
+  if (context.opts.scriptData.config?.plugins?.['http-file-uploads']) {
     // Append filePaths array if it's there:
 
     if (context.opts.scriptData.config.plugins['http-file-uploads'].filePaths) {
+      // When using a separate config file, resolve paths relative to the scenario file
+      // Otherwise, resolve relative to the config file
+      const baseDir = context.opts.scenarioPath
+        ? path.dirname(context.opts.scenarioPath)
+        : path.dirname(context.opts.absoluteScriptPath);
+
       const absPaths = context.opts.scriptData.config.plugins[
         'http-file-uploads'
       ].filePaths.map((p) => {
-        return path.resolve(path.dirname(context.opts.absoluteScriptPath), p);
+        return path.resolve(baseDir, p);
       });
       context.localFilePaths = context.localFilePaths.concat(absPaths);
     }
@@ -324,15 +376,15 @@ function getFileUploadPluginFiles(context, next) {
 }
 
 function getExtraFiles(context, next) {
-  if (
-    context.opts.scriptData.config &&
-    context.opts.scriptData.config.includeFiles
-  ) {
+  if (context.opts.scriptData.config?.includeFiles) {
+    // When using a separate config file, resolve paths relative to the scenario file
+    // Otherwise, resolve relative to the config file
+    const baseDir = context.opts.scenarioPath
+      ? path.dirname(context.opts.scenarioPath)
+      : path.dirname(context.opts.absoluteScriptPath);
+
     const absPaths = _.map(context.opts.scriptData.config.includeFiles, (p) => {
-      const includePath = path.resolve(
-        path.dirname(context.opts.absoluteScriptPath),
-        p
-      );
+      const includePath = path.resolve(baseDir, p);
       debug('includeFile:', includePath);
       return includePath;
     });
@@ -341,6 +393,24 @@ function getExtraFiles(context, next) {
   } else {
     return next(null, context);
   }
+}
+
+function getDotEnv(context, next) {
+  const flags = context.opts.flags;
+  if (!flags.dotenv || flags.platform === 'aws:ecs') {
+    return next(null, context);
+  }
+
+  const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
+  try {
+    if (fs.statSync(dotEnvPath)) {
+      context.localFilePaths.push(dotEnvPath);
+    }
+  } catch (_ignoredErr) {
+    console.log(`WARNING: could not find dotenv file: ${flags.dotenv}`);
+  }
+
+  return next(null, context);
 }
 
 function expandDirectories(context, next) {
@@ -357,7 +427,7 @@ function expandDirectories(context, next) {
     let result = false;
     try {
       result = fs.statSync(p).isDirectory();
-    } catch (fsErr) {}
+    } catch (_fsErr) {}
     return result;
   });
   // Remove directories from the list:
@@ -365,7 +435,7 @@ function expandDirectories(context, next) {
     let result = true;
     try {
       result = !fs.statSync(p).isDirectory();
-    } catch (fsErr) {}
+    } catch (_fsErr) {}
     return result;
   });
 
@@ -444,4 +514,10 @@ function prettyPrint(manifest) {
   artillery.log();
 }
 
-module.exports = { createBOM, commonPrefix, prettyPrint };
+module.exports = {
+  createBOM,
+  commonPrefix,
+  prettyPrint,
+  applyScriptChanges,
+  getCustomJsDependencies
+};

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
+
 
 const ora = require('ora');
 const _ = require('lodash');
@@ -38,8 +38,6 @@ function ConsoleReporter(opts) {
   this.reportScenarioLatency = !!opts.reportScenarioLatency;
   this.startTime = null;
 
-  let self = this;
-
   global.artillery.globalEvents.on('log', (opts, ...args) => {
     let logger;
     if (typeof opts.level !== 'undefined' && opts.level !== 'info') {
@@ -49,7 +47,7 @@ function ConsoleReporter(opts) {
     }
 
     if (opts.showTimestamp) {
-      args.push(chalk.gray('[' + moment().format('HH:mm:ss') + ']'));
+      args.push(chalk.gray(`[${moment().format('HH:mm:ss')}]`));
     }
 
     this.spinner.clear();
@@ -78,12 +76,16 @@ ConsoleReporter.prototype.phaseStarted = function phaseStarted(phase) {
     return this;
   }
 
+  const phaseDuration = phase.duration || phase.pause;
+  //only append s when phaseDuration is a number or number-like string (like from env variables). otherwise it's a converted unit (e.g. 5min)
+  const durationString = Number.isInteger(_.toNumber(phaseDuration)) ? `${phaseDuration}s` : `${phaseDuration}`;
+
   artillery.log(
     `Phase started: ${chalk.green(
       phase.name ? phase.name : 'unnamed'
     )} (index: ${phase.index}, duration: ${
-      phase.duration || phase.pause
-    }s) ${formatTimestamp(new Date())}\n`
+      durationString
+    }) ${formatTimestamp(new Date())}\n`
   );
 };
 
@@ -92,12 +94,16 @@ ConsoleReporter.prototype.phaseCompleted = function phaseCompleted(phase) {
     return this;
   }
 
+  const phaseDuration = phase.duration || phase.pause;
+  //only append s when phaseDuration is a number or number-like string (like from env variables). otherwise it's a converted unit (e.g. 5min)
+  const durationString = Number.isInteger(_.toNumber(phaseDuration)) ? `${phaseDuration}s` : `${phaseDuration}`;
+
   artillery.log(
     `Phase completed: ${chalk.green(
       phase.name ? phase.name : 'unnamed'
     )} (index: ${phase.index}, duration: ${
-      phase.duration || phase.pause
-    }s) ${formatTimestamp(new Date())}\n`
+      durationString
+    }) ${formatTimestamp(new Date())}\n`
   );
 
   return this;
@@ -184,7 +190,7 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
     if (typeof report.period !== 'undefined') {
       // FIXME: up to bound should be included in the report
       // Add underline
-      const txt = 'Metrics for period to: ' + timeWindowEnd;
+      const txt = `Metrics for period to: ${timeWindowEnd}`;
       artillery.log(
         underline(txt) +
           '\n' +
@@ -219,7 +225,7 @@ ConsoleReporter.prototype.printReport = function printReport(report, opts) {
       .sortBy([(x) => x.length])
       .value();
 
-    if (sortedByLen.length == 0) {
+    if (sortedByLen.length === 0) {
       // No scenarios launched or completed, no requests made or completed etc. Nothing happened.
       artillery.log('No measurements recorded during this period');
       return;
@@ -277,8 +283,8 @@ if (this.outputFormat === 'classic') {
   // We only want to show this for the aggregate report:
   if (opts.showScenarioCounts && report.scenarioCounts) {
     artillery.log('Scenario counts:');
-    _.each(report.scenarioCounts, function (count, name) {
-      let percentage =
+    _.each(report.scenarioCounts, (count, name) => {
+      const percentage =
         Math.round((count / report.scenariosCreated) * 100 * 1000) / 1000;
       artillery.log('  %s: %s (%s%)', name, count, percentage);
     });
@@ -286,19 +292,19 @@ if (this.outputFormat === 'classic') {
 
   if (_.keys(report.codes).length !== 0) {
     artillery.log('Codes:');
-    _.each(report.codes, function (count, code) {
+    _.each(report.codes, (count, code) => {
       artillery.log('  %s: %s', code, count);
     });
   }
   if (_.keys(report.errors).length !== 0) {
     artillery.log('Errors:');
-    _.each(report.errors, function (count, code) {
+    _.each(report.errors, (count, code) => {
       artillery.log('  %s: %s', code, count);
     });
   }
 
   if (_.size(report.summaries) > 0 || _.size(report.counters) > 0) {
-    _.each(report.summaries, function (r, n) {
+    _.each(report.summaries, (r, n) => {
       if (excludeFromReporting(n)) return;
 
       artillery.log('%s:', n);
@@ -310,7 +316,7 @@ if (this.outputFormat === 'classic') {
     });
   }
 
-  _.each(report.customStats, function (r, n) {
+  _.each(report.customStats, (r, n) => {
     artillery.log('%s:', n);
     artillery.log('  min: %s', r.min);
     artillery.log('  max: %s', r.max);
@@ -319,7 +325,7 @@ if (this.outputFormat === 'classic') {
     artillery.log('  p99: %s', r.p99);
   });
 
-  _.each(report.counters, function (value, name) {
+  _.each(report.counters, (value, name) => {
     // Only show user/custom metrics in this mode, but none of the internally generated ones:
     if (excludeFromReporting(name)) return;
     artillery.log('%s: %s', name, value);
@@ -395,7 +401,7 @@ function padded(str1, str2) {
 
 function printRates(rates, report) {
   return rates.sort().map((name) => {
-    return padded(`${name}:`, report.rates[name]) + '/sec';
+    return `${padded(`${name}:`, report.rates[name])}/sec`;
   });
 }
 

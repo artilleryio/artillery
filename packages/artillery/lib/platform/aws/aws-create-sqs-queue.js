@@ -1,10 +1,14 @@
-const AWS = require('aws-sdk');
+const {
+  SQSClient,
+  CreateQueueCommand,
+  ListQueuesCommand
+} = require('@aws-sdk/client-sqs');
 const debug = require('debug')('artillery:aws-create-sqs-queue');
 const sleep = require('../../util/sleep');
 
 // TODO: Add timestamp to SQS queue name for automatic GC
 async function createSQSQueue(region, queueName) {
-  const sqs = new AWS.SQS({
+  const sqs = new SQSClient({
     region
   });
 
@@ -18,22 +22,17 @@ async function createSQSQueue(region, queueName) {
     }
   };
 
-  let sqsQueueUrl;
-  try {
-    const result = await sqs.createQueue(params).promise();
-    sqsQueueUrl = result.QueueUrl;
-  } catch (err) {
-    throw err;
-  }
+  const result = await sqs.send(new CreateQueueCommand(params));
+  const sqsQueueUrl = result.QueueUrl;
 
   // Wait for the queue to be available:
   let waited = 0;
   let ok = false;
   while (waited < 120 * 1000) {
     try {
-      const results = await sqs
-        .listQueues({ QueueNamePrefix: queueName })
-        .promise();
+      const results = await sqs.send(
+        new ListQueuesCommand({ QueueNamePrefix: queueName })
+      );
       if (results.QueueUrls && results.QueueUrls.length === 1) {
         debug('SQS queue created:', queueName);
         ok = true;
@@ -42,7 +41,7 @@ async function createSQSQueue(region, queueName) {
         await sleep(10 * 1000);
         waited += 10 * 1000;
       }
-    } catch (err) {
+    } catch (_err) {
       await sleep(10 * 1000);
       waited += 10 * 1000;
     }

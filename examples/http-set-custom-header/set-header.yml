@@ -5,7 +5,7 @@ config:
     - duration: 1
       arrivalCount: 1
 scenarios:
-  - name: Set custom header
+  - name: set_custom_header
     flow:
       - get:
           url: "/"

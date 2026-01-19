@@ -1,0 +1,11 @@
+config:
+  target: http://asciiart.artillery.io:8080
+  processor: ./helpers.js
+  payload:
+    - path: ./test.csv
+      fields:
+        - number
+        - name
+  phases:
+    - duration: 30
+      arrivalRate: 1

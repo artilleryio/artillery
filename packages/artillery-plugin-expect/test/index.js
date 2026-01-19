@@ -1,14 +1,14 @@
-'use strict';
-
 const { test } = require('tap');
 const createDebug = require('debug');
-const EventEmitter = require('events');
+const EventEmitter = require('node:events');
 
-const debug = createDebug('expect-plugin:test');
+const _debug = createDebug('expect-plugin:test');
 const chalk = require('chalk');
 
 const shelljs = require('shelljs');
-const path = require('path');
+const path = require('node:path');
+const os = require('node:os');
+const _fs = require('node:fs');
 
 //
 // We only need this when running unit tests. When the plugin actually runs inside
@@ -322,8 +322,8 @@ test('Expectation: headerEquals', async (t) => {
 });
 
 test('Integration with Artillery', async (t) => {
-  shelljs.env['ARTILLERY_PLUGIN_PATH'] = path.resolve(__dirname, '..', '..');
-  shelljs.env['PATH'] = process.env.PATH;
+  shelljs.env.ARTILLERY_PLUGIN_PATH = path.resolve(__dirname, '..', '..');
+  shelljs.env.PATH = process.env.PATH;
   const result = shelljs.exec(
     `${__dirname}/../../../node_modules/.bin/artillery run --solo -q ${__dirname}/pets-test.yaml`,
     {
@@ -345,17 +345,29 @@ test('Integration with Artillery', async (t) => {
     console.log('Artillery output:');
     console.log(output);
   }
-  t.equal(EXPECTED_EXPECTATION_COUNT, actualCount);
+  t.equal(
+    actualCount,
+    EXPECTED_EXPECTATION_COUNT,
+    'Expectation count should match'
+  );
 
-  t.equal(output.indexOf(`${chalk.green('ok')} contentType json`) > -1, true);
-  t.equal(output.indexOf(`${chalk.green('ok')} statusCode 404`) > -1, true);
-  t.equal(output.indexOf('Errors:') === -1, true);
-  t.equal(result.code, 0);
+  t.equal(
+    output.indexOf(`${chalk.green('ok')} contentType json`) > -1,
+    true,
+    'Should print ok contentType expectation'
+  );
+  t.equal(
+    output.indexOf(`${chalk.green('ok')} statusCode 404`) > -1,
+    true,
+    'Should print ok statusCode expectation'
+  );
+  t.equal(output.indexOf('Errors:') === -1, true, 'Should not print errors');
+  t.equal(result.code, 0, 'Should exit with code 0');
 });
 
 test('Produce metrics', async (t) => {
-  shelljs.env['ARTILLERY_PLUGIN_PATH'] = path.resolve(__dirname, '..', '..');
-  shelljs.env['PATH'] = process.env.PATH;
+  shelljs.env.ARTILLERY_PLUGIN_PATH = path.resolve(__dirname, '..', '..');
+  shelljs.env.PATH = process.env.PATH;
   const result = shelljs.exec(
     `${__dirname}/../../../node_modules/.bin/artillery run --solo ${__dirname}/pets-test.yaml`,
     {
@@ -365,13 +377,17 @@ test('Produce metrics', async (t) => {
 
   const output = result.stdout;
 
-  t.equal(output.indexOf('expect.ok') > -1, true);
-  t.equal(result.code, 0);
+  t.equal(
+    output.indexOf('expect.ok') > -1,
+    true,
+    'Should print expect.ok metrics'
+  );
+  t.equal(result.code, 0, 'Should exit with code 0');
 });
 
 test('Report failures as errors by request name', async (t) => {
-  shelljs.env['ARTILLERY_PLUGIN_PATH'] = path.resolve(__dirname, '..', '..');
-  shelljs.env['PATH'] = process.env.PATH;
+  shelljs.env.ARTILLERY_PLUGIN_PATH = path.resolve(__dirname, '..', '..');
+  shelljs.env.PATH = process.env.PATH;
   const result = shelljs.exec(
     `${__dirname}/../../../node_modules/.bin/artillery run --solo ${__dirname}/pets-fail-test.yaml`,
     {
@@ -381,8 +397,59 @@ test('Report failures as errors by request name', async (t) => {
 
   const output = result.stdout;
 
-  t.true(
-    output.indexOf('errors.Failed expectations for request unicorns') > -1
+  t.ok(
+    output.indexOf('errors.Failed expectations for request unicorns') > -1,
+    'Should print errors for request unicorns'
   );
-  t.true(result.code !== 0);
+  t.not(result.code, 0, 'Should exit with non-zero code');
+});
+
+test("Works as expected with 'parallel'", async (t) => {
+  const expectedVus = 4;
+  const expectedVusFailed = 0;
+  const shouldFail = 4;
+  const shouldPass = 8;
+  shelljs.env.ARTILLERY_PLUGIN_PATH = path.resolve(__dirname, '..', '..');
+  shelljs.env.PATH = process.env.PATH;
+
+  const reportPath = `${os.tmpdir()}/artillery-plugin-expect-parallel-test.json`;
+
+  const result = shelljs.exec(
+    `${__dirname}/../../../node_modules/.bin/artillery run ${__dirname}/parallel.yml -o ${reportPath}`,
+    {
+      silent: false
+    }
+  );
+
+  const output = result.stdout;
+
+  const report = require(reportPath);
+  console.log(report.aggregate.counters);
+
+  t.equal(
+    output.indexOf('expect.ok') > -1,
+    true,
+    'Should print expect.ok metrics'
+  );
+  t.ok(result.code !== 0, 'Should exit with non zero code');
+  t.equal(
+    report.aggregate.counters['vusers.created'],
+    expectedVus,
+    `${expectedVus} VUs should have been created`
+  );
+  t.equal(
+    report.aggregate.counters['vusers.failed'],
+    expectedVusFailed,
+    `${expectedVusFailed} VUs should have failed`
+  );
+  t.equal(
+    report.aggregate.counters['plugins.expect.ok'],
+    shouldPass,
+    `${shouldPass} expectations should have passed`
+  );
+  t.equal(
+    report.aggregate.counters['plugins.expect.failed'],
+    shouldFail,
+    `${shouldFail} expectations should have failed`
+  );
 });

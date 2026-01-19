@@ -3,12 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const EventEmitter = require('eventemitter3');
-const { Worker } = require('worker_threads');
-const path = require('path');
+const { Worker } = require('node:worker_threads');
+const path = require('node:path');
 
 const STATES = require('../worker-states');
 
 const awaitOnEE = require('../../util/await-on-ee');
+
+const returnWorkerEnv = (needsSourcemap) => {
+  const env = { ...process.env };
+
+  if (needsSourcemap) {
+    env.NODE_OPTIONS = process.env.NODE_OPTIONS
+      ? `${process.env.NODE_OPTIONS} --enable-source-maps`
+      : '--enable-source-maps';
+  }
+
+  return env;
+};
 
 class ArtilleryWorker {
   constructor(opts) {
@@ -20,14 +32,19 @@ class ArtilleryWorker {
   async init(_opts) {
     this.state = STATES.initializing;
 
-    this.worker = new Worker(path.join(__dirname, 'worker.js'));
+    const workerEnv = returnWorkerEnv(global.artillery.hasTypescriptProcessor);
+
+    this.worker = new Worker(path.join(__dirname, 'worker.js'), {
+      env: workerEnv
+    });
     this.workerId = this.worker.threadId;
     this.worker.on('error', this.onError.bind(this));
     // TODO:
     this.worker.on('exit', (exitCode) => {
       this.events.emit('exit', exitCode);
     });
-    this.worker.on('messageerror', (err) => {});
+
+    this.worker.on('messageerror', (_err) => {});
 
     // TODO: Expose performance metrics via getHeapSnapshot() and performance object.
 
@@ -86,9 +103,24 @@ class ArtilleryWorker {
     this.state = STATES.preparing;
 
     const { script, payload, options } = opts;
+    let scriptForWorker = script;
+
+    if (script.__transpiledTypeScriptPath && script.__originalScriptPath) {
+      scriptForWorker = {
+        __transpiledTypeScriptPath: script.__transpiledTypeScriptPath,
+        __originalScriptPath: script.__originalScriptPath,
+        __phases: script.config?.phases
+      };
+    }
+
     this.worker.postMessage({
       command: 'prepare',
-      opts: { script, payload, options }
+      opts: {
+        script: scriptForWorker,
+        payload,
+        options,
+        testRunId: global.artillery.testRunId
+      }
     });
 
     await awaitOnEE(this.workerEvents, 'readyWaiting', 50);

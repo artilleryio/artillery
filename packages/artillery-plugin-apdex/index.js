@@ -2,15 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
-const debug = require('debug')('plugin:apdex');
+const _debug = require('debug')('plugin:apdex');
 
 const METRICS = {
   satisfied: 'apdex.satisfied',
   tolerated: 'apdex.tolerated',
   frustrated: 'apdex.frustrated'
 };
+
 class ApdexPlugin {
   constructor(script, _events) {
     this.script = script;
@@ -21,20 +20,20 @@ class ApdexPlugin {
       typeof process.env.LOCAL_WORKER_ID !== 'undefined'
     ) {
       const t =
-        script.config.apdex?.threshold ||
-        script.config.plugins.apdex?.threshold ||
+        script.config.apdex?.threshold ??
+        script.config.plugins?.apdex?.threshold ??
         500;
 
       if (!script.config.processor) {
         script.config.processor = {};
       }
 
-      script.scenarios.forEach(function (scenario) {
+      script.scenarios.forEach((scenario) => {
         scenario.afterResponse = [].concat(scenario.afterResponse || []);
         scenario.afterResponse.push('apdexAfterResponse');
       });
 
-      function apdexAfterResponse(req, res, userContext, events, done) {
+      function apdexAfterResponse(_req, res, _userContext, events, done) {
         const total = res.timings.phases.total;
         events.emit('counter', METRICS.satisfied, 0);
         events.emit('counter', METRICS.tolerated, 0);
@@ -59,10 +58,11 @@ class ApdexPlugin {
     global.artillery.ext({
       ext: 'beforeExit',
       method: async (testInfo) => {
-        if (
-          typeof this.script?.config?.apdex === 'undefined' ||
-          typeof process.env.ARTILLERY_DISABLE_ENSURE !== 'undefined'
-        ) {
+        const hasApdexConfig =
+          this.script?.config?.apdex !== undefined ||
+          this.script?.config?.plugins?.apdex !== undefined;
+
+        if (!hasApdexConfig) {
           return;
         }
 

@@ -18,8 +18,6 @@ class PosthogEngine {
     if (!this.apiKey) {
       throw new Error('no PostHog API key provided');
     }
-
-    return this;
   }
 
   customHandler(rs, ee) {
@@ -100,7 +98,7 @@ class PosthogEngine {
     if (rs.log) {
       return function log(context, callback) {
         console.log(self.helpers.template(rs.log, context));
-        return process.nextTick(function () {
+        return process.nextTick(() => {
           callback(null, context);
         });
       };
@@ -114,17 +112,15 @@ class PosthogEngine {
     }
 
     if (rs.function) {
-      return function (context, callback) {
-        let func = self.script.config.processor[rs.function];
+      return (context, callback) => {
+        const func = self.script.config.processor[rs.function];
         if (!func) {
-          return process.nextTick(function () {
+          return process.nextTick(() => {
             callback(null, context);
           });
         }
 
-        return func(context, ee, function (hookErr) {
-          return callback(hookErr, context);
-        });
+        return func(context, ee, (hookErr) => callback(hookErr, context));
       };
     }
 
@@ -132,13 +128,11 @@ class PosthogEngine {
     if (customResult !== undefined) {
       return customResult;
     } else {
-      return function (context, callback) {
-        return callback(null, context);
-      };
+      return (context, callback) => callback(null, context);
     }
   }
 
-  compile(tasks, scenarioSpec, ee) {
+  compile(tasks, _scenarioSpec, ee) {
     const self = this;
     return function scenario(initialContext, callback) {
       const init = function init(next) {
@@ -151,7 +145,7 @@ class PosthogEngine {
         return next(null, initialContext);
       };
 
-      let steps = [init].concat(tasks);
+      const steps = [init].concat(tasks);
 
       A.waterfall(steps, function done(err, context) {
         if (err) {
@@ -159,7 +153,7 @@ class PosthogEngine {
         }
 
         if (context.postHogClient) {
-          callbackify(context.postHogClient.shutdownAsync)((postHogErr) => {
+          callbackify(context.postHogClient.shutdown)((postHogErr) => {
             // Ignore PostHog error as there's nothing we can do anyway
             debug(postHogErr);
             return callback(err, context);

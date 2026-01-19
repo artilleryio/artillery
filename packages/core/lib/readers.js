@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
-
 const _ = require('lodash');
 
 module.exports = createReader;
@@ -25,8 +23,8 @@ function createReader(order, spec) {
 
 function createSequencedReader() {
   let i = 0;
-  return function (data) {
-    let result = data[i];
+  return (data) => {
+    const result = data[i];
     if (i < data.length - 1) {
       i++;
     } else {
@@ -39,14 +37,14 @@ function createSequencedReader() {
 function createEverythingReader(spec) {
   let parsedData;
 
-  return function (data) {
+  return (data) => {
     if (!parsedData) {
       parsedData = [];
 
       // Parse the row into an object based on the fields spec
       if (spec.fields?.length > 0) {
         for (const row of data) {
-          let o = {};
+          const o = {};
           for (let i = 0; i < spec.fields.length; i++) {
             const fieldName = spec.fields[i];
             o[fieldName] = row[i];
@@ -64,7 +62,5 @@ function createEverythingReader(spec) {
 }
 
 function createRandomReader() {
-  return function (data) {
-    return data[Math.max(0, _.random(0, data.length - 1))];
-  };
+  return (data) => data[Math.max(0, _.random(0, data.length - 1))];
 }

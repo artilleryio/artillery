@@ -1,4 +1,5 @@
 const { Command, Flags, Args } = require('@oclif/core');
+const { CommonRunFlags } = require('../cli/common-flags');
 
 const RunCommand = require('./run');
 
@@ -50,77 +51,19 @@ Examples:
     $ artillery run:lambda --region us-east-1 --count 10 my-test.yml
 `;
 RunLambdaCommand.flags = {
-  target: Flags.string({
-    char: 't',
-    description:
-      'Set target endpoint. Overrides the target already set in the test script'
-  }),
-  output: Flags.string({
-    char: 'o',
-    description: 'Write a JSON report to file'
-  }),
-  insecure: Flags.boolean({
-    char: 'k',
-    description: 'Allow insecure TLS connections; do not use in production'
-  }),
-  overrides: Flags.string({
-    description: 'Dynamically override values in the test script; a JSON object'
-  }),
-  variables: Flags.string({
-    char: 'v',
-    description:
-      'Set variables available to vusers during the test; a JSON object'
-  }),
-  // TODO: Replace with --profile
-  environment: Flags.string({
-    char: 'e',
-    description: 'Use one of the environments specified in config.environments'
-  }),
-  config: Flags.string({
-    char: 'c',
-    description: 'Read configuration for the test from the specified file'
-  }),
+  ...CommonRunFlags,
   payload: Flags.string({
     char: 'p',
     description: 'Specify a CSV file for dynamic data'
-  }),
-  // multiple allows multiple arguments for the -i flag, which means that e.g.:
-  // artillery -i one.yml -i two.yml main.yml
-  // does not work as expected. Instead of being considered an argument, "main.yml"
-  // is considered to be input for "-i" and oclif then complains about missing
-  // argument
-  input: Flags.string({
-    char: 'i',
-    description: 'Input script file',
-    multiple: true,
-    hidden: true
-  }),
-  dotenv: Flags.string({
-    description: 'Path to a dotenv file to load environment variables from'
   }),
   count: Flags.string({
     // locally defaults to number of CPUs with mode = distribute
     default: '1'
   }),
-  tags: Flags.string({
-    description:
-      'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sqa,service:foo'
-  }),
-  note: Flags.string({
-    description: 'Add a note/annotation to the test run'
-  }),
-  record: Flags.boolean({
-    description: 'Record test run to Artillery Cloud'
-  }),
-  key: Flags.string({
-    description: 'API key for Artillery Cloud'
-  }),
-  'scenario-name': Flags.string({
-    description: 'Name of the specific scenario to run'
-  }),
   architecture: Flags.string({
     description: 'Architecture of the Lambda function',
-    default: 'arm64'
+    default: 'arm64',
+    options: ['arm64', 'x86_64']
   }),
   'memory-size': Flags.string({
     description: 'Memory size of the Lambda function',

@@ -2,7 +2,7 @@ config:
   target: http://asciiart.artillery.io:8080
   phases:
     - arrivalCount: 300
-      duration: 300
+      duration: 5min
   payload:
     - path: "./csv/urls.csv"
       fields:

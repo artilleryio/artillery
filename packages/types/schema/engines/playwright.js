@@ -32,6 +32,11 @@ const PlaywrightConfigSchema = Joi.object({
     .description(
       'Default maximum navigation time (in seconds) for Playwright navigation methods, like `page.goto()`.\nhttps://playwright.dev/docs/api/class-browsercontext#browser-context-set-default-navigation-timeout'
     ),
+  testIdAttribute: Joi.string()
+    .meta({ title: 'Test ID Attribute' })
+    .description(
+      'When set, changes the attribute used by locator `page.getByTestId` in Playwright. \n https://playwright.dev/docs/api/class-framelocator#frame-locator-get-by-test-id'
+    ),
   extendedMetrics: artilleryBooleanOrString
     .meta({ title: 'Playwright Extended Metrics' })
     .description(
@@ -51,7 +56,24 @@ const PlaywrightConfigSchema = Joi.object({
     .meta({ title: 'Playwright context options' })
     .description(
       'Arguments for the `browser.newContext()` call in Playwright.\nhttps://playwright.dev/docs/api/class-browser#browser-new-context'
+    ),
+  useSeparateBrowserPerVU: artilleryBooleanOrString
+    .meta({ title: 'Use a separate browser process for each VU' })
+    .description(
+      'If enabled, a new browser process will be created for each VU. By default Artillery uses new browser contexts for new VUs.\nWARNING: Using this option is discouraged as it will increase CPU/memory usage of your tests.\nhttps://www.artillery.io/docs/reference/engines/playwright#configuration'
+    ),
+  stripQueryString: artilleryBooleanOrString
+    .meta({ title: 'Strip Query String' })
+    .description(
+      'Strip query strings from page URLs when generating metrics. Similar to the metrics-by-endpoint plugin for HTTP tests.'
     )
+    .default(false),
+  normalizeQueryString: artilleryBooleanOrString
+    .meta({ title: 'Normalize Query String' })
+    .description(
+      'Replace parameter values in query strings with placeholders when generating metrics. Numeric values become NUMBER, string values become STRING. For example, /page?id=123 becomes /page?id=NUMBER and /page?name=john becomes /page?name=STRING'
+    )
+    .default(true)
 });
 
 module.exports = {

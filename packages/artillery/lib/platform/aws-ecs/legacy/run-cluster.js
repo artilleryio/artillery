@@ -1,22 +1,45 @@
-/* eslint-disable no-warning-comments */
-
-const AWS = require('aws-sdk');
+const {
+  ECSClient,
+  CreateClusterCommand,
+  DescribeClustersCommand,
+  RunTaskCommand,
+  StopTaskCommand,
+  DescribeTaskDefinitionCommand,
+  RegisterTaskDefinitionCommand,
+  DeregisterTaskDefinitionCommand,
+  InvalidParameterException,
+  ThrottlingException
+} = require('@aws-sdk/client-ecs');
+const {
+  SQSClient,
+  CreateQueueCommand,
+  DeleteQueueCommand,
+  ListQueuesCommand,
+  GetQueueAttributesCommand
+} = require('@aws-sdk/client-sqs');
+const { GetObjectCommand, NoSuchKey } = require('@aws-sdk/client-s3');
+const { IAMClient, GetRoleCommand } = require('@aws-sdk/client-iam');
 // Normal debugging for messages, summaries, and errors:
 const debug = require('debug')('commands:run-test');
 // Verbose debugging for responses from AWS API calls, large objects etc:
 const debugVerbose = require('debug')('commands:run-test:v');
 const debugErr = require('debug')('commands:run-test:errors');
-const A = require('async');
-const { customAlphabet } = require('nanoid');
-const path = require('path');
-const fs = require('fs');
+const _A = require('async');
+const path = require('node:path');
+const fs = require('node:fs');
 const chalk = require('chalk');
 const defaultOptions = require('rc')('artillery');
 const moment = require('moment');
 
 const EnsurePlugin = require('artillery-plugin-ensure');
+const SlackPlugin = require('artillery-plugin-slack');
 
-const EventEmitter = require('events');
+const {
+  getADOTRelevantReporterConfigs,
+  resolveADOTConfigSettings
+} = require('artillery-plugin-publish-metrics');
+
+const EventEmitter = require('node:events');
 
 const _ = require('lodash');
 
@@ -31,16 +54,14 @@ const { VPCSubnetFinder } = require('./find-public-subnets');
 const awsUtil = require('./aws-util');
 const { createTest } = require('./create-test');
 
-const { TestBundle } = require('./test-object');
 const createS3Client = require('./create-s3-client');
 const { getBucketName } = require('./util');
 const getAccountId = require('../../aws/aws-get-account-id');
+const { setCloudwatchRetention } = require('../../aws/aws-cloudwatch');
 
-const dotenvParse = require('dotenv').parse;
+const dotenv = require('dotenv');
 
 const util = require('./util');
-
-const setDefaultAWSCredentials = require('../../aws/aws-set-default-credentials');
 
 module.exports = runCluster;
 
@@ -52,6 +73,7 @@ const {
   TASK_NAME,
   SQS_QUEUES_NAME_PREFIX,
   LOGGROUP_NAME,
+  LOGGROUP_RETENTION_DAYS,
   IMAGE_VERSION,
   WAIT_TIMEOUT,
   ARTILLERY_CLUSTER_NAME,
@@ -67,17 +89,19 @@ const {
 let IS_FARGATE = false;
 
 const TEST_RUN_STATUS = require('./test-run-status');
+const prepareTestExecutionPlan = require('../../../util/prepare-test-execution-plan');
+const { PutObjectCommand } = require('@aws-sdk/client-s3');
+const awsGetDefaultRegion = require('../../aws/aws-get-default-region');
 
-function setupConsoleReporter() {
+function setupConsoleReporter(quiet) {
   const reporterOpts = {
     outputFormat: 'classic',
-    printPeriod: false
+    printPeriod: false,
+    quiet: quiet
   };
 
   if (
-    global.artillery &&
-    global.artillery.version &&
-    global.artillery.version.startsWith('2')
+    global.artillery?.version?.startsWith('2')
   ) {
     delete reporterOpts.outputFormat;
     delete reporterOpts.printPeriod;
@@ -91,8 +115,7 @@ function setupConsoleReporter() {
 
   // // Disable spinner on v1
   if (
-    global.artillery &&
-    global.artillery.version &&
+    global.artillery?.version &&
     !global.artillery.version.startsWith('2')
   ) {
     consoleReporter.spinner.stop();
@@ -110,11 +133,7 @@ function setupConsoleReporter() {
 }
 
 function runCluster(scriptPath, options) {
-  if (process.env.DEBUG) {
-    AWS.config.logger = console;
-  }
-
-  const artilleryReporter = setupConsoleReporter();
+  const artilleryReporter = setupConsoleReporter(options.quiet);
 
   // camelCase all flag names, e.g. `launch-config` becomes launchConfig
   const options2 = {};
@@ -128,86 +147,26 @@ function logProgress(msg, opts = {}) {
   if (typeof opts.showTimestamp === 'undefined') {
     opts.showTimestamp = true;
   }
-  if (global.artillery && global.artillery.log) {
+  if (global.artillery?.log) {
     artillery.logger(opts).log(msg);
   } else {
     consoleReporter.toggleSpinner();
     artillery.log(
-      `${msg} ${chalk.gray('[' + moment().format('HH:mm:ss') + ']')}`
+      `${msg} ${chalk.gray(`[${moment().format('HH:mm:ss')}]`)}`
     );
     consoleReporter.toggleSpinner();
   }
 }
 
 async function tryRunCluster(scriptPath, options, artilleryReporter) {
-  const MAX_RETAINED_LOG_SIZE_MB = Number(
-    process.env.MAX_RETAINED_LOG_SIZE_MB || '50'
-  );
-  const MAX_RETAINED_LOG_SIZE = MAX_RETAINED_LOG_SIZE_MB * 1024 * 1024;
-
-  let currentSize = 0;
-  // Override console.log so as not to interfere with the spinner
-  let outputLines = [];
-  let truncated = false;
-
-  console.log = (function () {
-    let orig = console.log;
-    return function () {
-      try {
-        orig.apply(console, arguments);
-
-        if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
-            currentSize += String(x).length;
-          }
-        } else {
-          if (!truncated) {
-            truncated = true;
-            const msg = `[WARNING] Artillery: maximum retained log size exceeded, max size: ${MAX_RETAINED_LOG_SIZE_MB}MB. Further logs won't be retained.\n\n`;
-            process.stdout.write(msg);
-            outputLines = outputLines.concat([msg]);
-          }
-        }
-      } catch (err) {
-        debug(err);
-      }
-    };
-  })();
-
-  console.error = (function () {
-    let orig = console.error;
-    return function () {
-      try {
-        orig.apply(console, arguments);
-
-        if (currentSize < MAX_RETAINED_LOG_SIZE) {
-          outputLines = outputLines.concat(arguments);
-          for (const x of arguments) {
-            currentSize += String(x).length;
-          }
-        } else {
-          if (!truncated) {
-            truncated = true;
-            const msg = `[WARNING] Artillery: maximum retained log size exceeded, max size: ${MAX_RETAINED_LOG_SIZE_MB}MB. Further logs won't be retained.\n\n`;
-            process.stdout.write(msg);
-            outputLines = outputLines.concat([msg]);
-          }
-        }
-      } catch (err) {
-        debug(err);
-      }
-    };
-  })();
-
-  try {
-    await setDefaultAWSCredentials(AWS);
-  } catch (err) {
-    console.error(err);
-    process.exit(1);
-  }
+  global.artillery.awsRegion = (await awsGetDefaultRegion()) || options.region;
 
   let context = {};
+  const inputFiles = [].concat(scriptPath, options.config || []);
+  const runnableScript = await prepareTestExecutionPlan(inputFiles, options);
+
+  context.runnableScript = runnableScript;
+
   let absoluteScriptPath;
   if (typeof scriptPath !== 'undefined') {
     absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
@@ -215,17 +174,36 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
     try {
       fs.statSync(absoluteScriptPath);
-    } catch (statErr) {
+    } catch (_statErr) {
       artillery.log('Could not read file:', scriptPath);
       process.exit(1);
     }
   }
 
   if (options.dotenv) {
-    const contents = fs.readFileSync(
-      path.resolve(process.cwd(), options.dotenv)
-    );
-    context.dotenv = dotenvParse(contents);
+    const dotEnvPath = path.resolve(process.cwd(), options.dotenv);
+    const contents = fs.readFileSync(dotEnvPath);
+    context.dotenv = dotenv.parse(contents);
+  }
+
+  const cloudKey = options.key || process.env.ARTILLERY_CLOUD_API_KEY;
+  if (cloudKey) {
+    const cloudEndpoint = process.env.ARTILLERY_CLOUD_ENDPOINT;
+    // Explicitly make Artillery Cloud API key available to workers (if it's set)
+    // Relying on the fact that contents of context.dotenv gets passed onto workers
+    // for it
+    context.dotenv = {
+      ...context.dotenv,
+      ARTILLERY_CLOUD_API_KEY: cloudKey
+    };
+
+    // Explicitly make Artillery Cloud endpoint available to workers (if it's set)
+    if (cloudEndpoint) {
+      context.dotenv = {
+        ...context.dotenv,
+        ARTILLERY_CLOUD_ENDPOINT: cloudEndpoint
+      };
+    }
   }
 
   if (options.bundle) {
@@ -233,12 +211,8 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   if (options.maxDuration) {
-    try {
       const maxDurationMs = timeStringToMs(options.maxDuration);
       context.maxDurationMs = maxDurationMs;
-    } catch (err) {
-      throw err;
-    }
   }
 
   context.tags = parseTags(options.tags);
@@ -268,10 +242,17 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     }
   }
 
+  if (options.name) {
+    for (const t of context.tags) {
+      if (t.name === 'name') {
+        t.value = options.name;
+      }
+    }
+  }
+
   context.extraSecrets = options.secret || [];
 
-  const idf = customAlphabet('3456789abcdefghjkmnpqrtwxyz');
-  context.testId = `t${idf(4)}_${idf(29)}_${idf(4)}`;
+  context.testId = global.artillery.testRunId;
 
   if (context.namedTest) {
     context.s3Prefix = options.bundle;
@@ -314,7 +295,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     // Allow ARNs for convenience
     // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html
     // We split by :role because role names may contain slash characters (subpaths)
-    if (customRoleName.startsWith('arn:aws:iam')) {
+    if (
+      customRoleName.startsWith('arn:aws:iam') ||
+      customRoleName.startsWith('arn:aws-cn:iam')
+    ) {
       customRoleName = customRoleName.split(':role/')[1];
     }
     context.customTaskRoleName = customRoleName;
@@ -353,7 +337,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   if (options.cpu) {
     const n = Number(options.cpu);
-    if (isNaN(n)) {
+    if (Number.isNaN(n)) {
       artillery.log('The value of --cpu must be a number');
       process.exit(1);
     }
@@ -370,7 +354,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
   if (options.memory) {
     const n = Number(options.memory);
-    if (isNaN(n)) {
+    if (Number.isNaN(n)) {
       artillery.log('The value of --memory must be a number');
       process.exit(1);
     }
@@ -454,34 +438,23 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     scriptPath: absoluteScriptPath,
     originalScriptPath: scriptPath,
     count: count,
+    region: options.region,
+    arnPrefix: options.region.startsWith('cn-') ? 'arn:aws-cn' : 'arn:aws',
     taskName: `${TASK_NAME}_${
       IS_FARGATE ? 'fargate' : ''
-    }_${clusterName}_${IMAGE_VERSION}_${Math.floor(Math.random() * 1e6)}`,
+    }_${clusterName}_${IMAGE_VERSION.replace(/\./g, '-')}_${Math.floor(
+      Math.random() * 1e6
+    )}`,
     clusterName: clusterName,
     logGroupName: LOGGROUP_NAME,
     cliOptions: options,
     isFargate: IS_FARGATE,
+    isCapacitySpot: typeof options.spot !== 'undefined',
     configTableName: '',
     status: TEST_RUN_STATUS.INITIALIZING,
     packageJsonPath,
     taskArns: []
   });
-
-  if (
-    typeof options.region !== 'undefined' &&
-    util.supportedRegions.indexOf(options.region) === -1
-  ) {
-    console.log(
-      `Unsupported region (${
-        options.region
-      }) provided. Please specify one of: ${util.supportedRegions.join(', ')} `
-    );
-    process.exit(1);
-  }
-
-  if (typeof options.region !== 'undefined') {
-    context.region = options.region;
-  }
 
   let subnetIds = [];
   if (options.publicSubnetIds) {
@@ -505,7 +478,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         : [];
   }
 
-  if (global.artillery && global.artillery.telemetry) {
+  if (global.artillery?.telemetry) {
     global.artillery.telemetry.capture('run-test', {
       version: global.artillery.version,
       proVersion: pkg.version,
@@ -574,18 +547,22 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       }
       await Promise.allSettled(ps2);
 
-      await global.artillery.telemetry?.shutdown();
-
       process.exit(global.artillery.suggestedExitCode || opts.exitCode);
     }
 
     global.artillery.shutdown = gracefulShutdown;
 
     process.on('SIGINT', async () => {
+      if (shuttingDown) {
+        return;
+      }
       console.log('Stopping test run (SIGINT received)...');
       await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
     process.on('SIGTERM', async () => {
+      if (shuttingDown) {
+        return;
+      }
       console.log('Stopping test run (SIGTERM received)...');
       await gracefulShutdown({ exitCode: 1, earlyStop: true });
     });
@@ -595,10 +572,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
     try {
       logProgress('Checking AWS connectivity...');
-
-      context.accountId = await getAccountId();
+      context.accountId = await getAccountId({ region: context.region });
       await Promise.all([
-        (async function (context) {
+        (async (context) => {
           const bucketName = await getBucketName();
           context.s3Bucket = bucketName;
           return context;
@@ -607,6 +583,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       logProgress('Checking cluster...');
       const clusterExists = await checkTargetCluster(context);
+
       if (!clusterExists) {
         if (typeof context.cliOptions.cluster === 'undefined') {
           // User did not specify a cluster with --cluster, and ARTILLERY_CLUSTER_NAME
@@ -622,7 +599,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       if (context.tags.length > 0) {
         logProgress(
-          'Tags: ' + context.tags.map((t) => t.name + ':' + t.value).join(', ')
+          `Tags: ${context.tags.map((t) => `${t.name}:${t.value}`).join(', ')}`
         );
       }
       logProgress(`Test run ID: ${context.testId}`);
@@ -637,16 +614,19 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   Region:      ${context.region}
   Count:       ${context.count}
   Cluster:     ${context.clusterName}
-  Launch type: ${context.cliOptions.launchType}
+  Launch type: ${context.cliOptions.launchType} ${
+          context.isFargate && context.isCapacitySpot ? '(Spot)' : '(On-demand)'
+        }
 `,
         { showTimestamp: false }
       );
 
       await createQueue(context);
       await checkCustomTaskRole(context);
-      await ensureTaskExists(context);
       logProgress('Preparing test bundle...');
       await createTestBundle(context);
+      await createADOTDefinitionIfNeeded(context);
+      await ensureTaskExists(context);
       await getManifest(context);
       await generateTaskOverrides(context);
 
@@ -661,6 +641,16 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         listen(context, artilleryReporter.reporterEvents);
         await launchLeadTask(context);
       }
+
+      setCloudwatchRetention(
+        `${LOGGROUP_NAME}/${context.clusterName}`,
+        LOGGROUP_RETENTION_DAYS,
+        context.region,
+        {
+          maxRetries: 10,
+          waitPerRetry: 2 * 1000
+        }
+      );
 
       if (
         context.status !== TEST_RUN_STATUS.EARLY_STOP &&
@@ -725,8 +715,14 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         new EnsurePlugin.Plugin({ config: { ensure: context.ensureSpec } });
       }
 
+      if (context.fullyResolvedConfig?.plugins?.slack) {
+        new SlackPlugin.Plugin({
+          config: context.fullyResolvedConfig
+        });
+      }
+
       if (context.cliOptions.output) {
-        let logfile = getLogFilename(
+        const logfile = getLogFilename(
           context.cliOptions.output,
           defaultOptions.logFilenameFormat
         );
@@ -768,16 +764,14 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       debug(context.testId, 'done');
     } catch (err) {
       debug(err);
-      if (err.code === 'InvalidParameterException') {
+      if (err instanceof InvalidParameterException) {
         if (
           err.message
             .toLowerCase()
             .indexOf('no container instances were found') !== -1
         ) {
           artillery.log(
-            chalk.yellow(
-              'The cluster has no active instances. We need some instances.'
-            )
+            chalk.yellow('The ECS cluster has no active EC2 instances')
           );
         } else {
           artillery.log(err);
@@ -817,20 +811,27 @@ async function cleanupResources(context) {
       context.sqsReporter.stop();
     }
 
+    if (context.adot?.SSMParameterPath) {
+      await awsUtil.deleteParameter(
+        context.adot.SSMParameterPath,
+        context.region
+      );
+    }
+
     if (context.taskArns && context.taskArns.length > 0) {
       for (const taskArn of context.taskArns) {
         try {
-          const ecs = new AWS.ECS({
+          const ecs = new ECSClient({
             apiVersion: '2014-11-13',
             region: context.region
           });
-          await ecs
-            .stopTask({
+          await ecs.send(
+            new StopTaskCommand({
               task: taskArn,
               cluster: context.clusterName,
               reason: 'Test cleanup'
             })
-            .promise();
+          );
         } catch (err) {
           // TODO: Retry if appropriate, give the user more information
           // to be able to fall back to manual intervention if possible.
@@ -892,14 +893,16 @@ function checkFargateResourceConfig(cpu, memory) {
 }
 
 async function createArtilleryCluster(context) {
-  const ecs = new AWS.ECS({ apiVersion: '2014-11-13', region: context.region });
-  try {
-    await ecs
-      .createCluster({
+  const ecs = new ECSClient({
+    apiVersion: '2014-11-13',
+    region: context.region
+  });
+    await ecs.send(
+      new CreateClusterCommand({
         clusterName: ARTILLERY_CLUSTER_NAME,
-        capacityProviders: ['FARGATE']
+        capacityProviders: ['FARGATE_SPOT']
       })
-      .promise();
+    );
 
     let retries = 0;
     while (retries < 12) {
@@ -910,20 +913,20 @@ async function createArtilleryCluster(context) {
       retries++;
       await sleep(10 * 1000);
     }
-  } catch (err) {
-    throw err;
-  }
 }
 
 //
 // Check that ECS cluster exists:
 //
 async function checkTargetCluster(context) {
-  const ecs = new AWS.ECS({ apiVersion: '2014-11-13', region: context.region });
+  const ecs = new ECSClient({
+    apiVersion: '2014-11-13',
+    region: context.region
+  });
   try {
-    const response = await ecs
-      .describeClusters({ clusters: [context.clusterName] })
-      .promise();
+    const response = await ecs.send(
+      new DescribeClustersCommand({ clusters: [context.clusterName] })
+    );
     debug(response);
     if (response.clusters.length === 0 || response.failures.length > 0) {
       debugVerbose(response);
@@ -968,170 +971,248 @@ async function maybeGetSubnetIdsForFargate(context) {
 }
 
 async function createTestBundle(context) {
-  return new Promise((resolve, reject) => {
-    createTest(
-      context.scriptPath,
-      {
-        name: context.testId,
-        config: context.cliOptions.config,
-        packageJsonPath: context.packageJsonPath
-      },
-      function (err, _result) {
-        if (err) {
-          return reject(err);
-        } else {
-          return resolve(context);
+  const result = await createTest(context.scriptPath, {
+    name: context.testId,
+    config: context.cliOptions.config,
+    packageJsonPath: context.packageJsonPath,
+    flags: context.cliOptions
+  });
+
+  context.fullyResolvedConfig = result.manifest.fullyResolvedConfig;
+
+  return context;
+}
+
+async function createADOTDefinitionIfNeeded(context) {
+  const publishMetricsConfig =
+    context.fullyResolvedConfig.plugins?.['publish-metrics'];
+  if (!publishMetricsConfig) {
+    debug('No publish-metrics plugin set, skipping ADOT configuration');
+    return context;
+  }
+
+  const adotRelevantConfigs =
+    getADOTRelevantReporterConfigs(publishMetricsConfig);
+  if (adotRelevantConfigs.length === 0) {
+    debug('No ADOT relevant reporter configs set, skipping ADOT configuration');
+    return context;
+  }
+
+  try {
+    const { adotEnvVars, adotConfig } = resolveADOTConfigSettings({
+      configList: adotRelevantConfigs,
+      dotenv: { ...context.dotenv }
+    });
+
+    context.dotenv = Object.assign(context.dotenv || {}, adotEnvVars);
+
+    context.adot = {
+      SSMParameterPath: `/artilleryio/OTEL_CONFIG_${context.testId}`
+    };
+
+    await awsUtil.putParameter(
+      context.adot.SSMParameterPath,
+      JSON.stringify(adotConfig),
+      'String',
+      context.region
+    );
+
+    context.adot.taskDefinition = {
+      name: 'adot-collector',
+      image: 'amazon/aws-otel-collector:v0.39.0',
+      command: [
+        '--config=/etc/ecs/container-insights/otel-task-metrics-config.yaml'
+      ],
+      secrets: [
+        {
+          name: 'AOT_CONFIG_CONTENT',
+          valueFrom: `${context.arnPrefix}:ssm:${context.region}:${context.accountId}:parameter${context.adot.SSMParameterPath}`
+        }
+      ],
+      logConfiguration: {
+        logDriver: 'awslogs',
+        options: {
+          'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+          'awslogs-region': context.region,
+          'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+          'awslogs-create-group': 'true'
         }
       }
-    );
-  });
+    };
+  } catch (err) {
+    throw new Error(err);
+  }
+  return context;
 }
 
 async function ensureTaskExists(context) {
-  return new Promise((resolve, reject) => {
-    const ecs = new AWS.ECS({
-      apiVersion: '2014-11-13',
-      region: context.region
-    });
+  const ecs = new ECSClient({
+    apiVersion: '2014-11-13',
+    region: context.region
+  });
 
-    // Note: these are integers for container definitions, and strings for task definitions (on Fargate)
-    // Defaults have to be Fargate-compatible
-    // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#task_size
-    let cpu = 4096;
-    let memory = 8192;
+  // Note: these are integers for container definitions, and strings for task definitions (on Fargate)
+  // Defaults have to be Fargate-compatible
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#task_size
+  let cpu = 4096;
+  let memory = 8192;
 
-    const defaultUlimits = {
-      nofile: {
-        softLimit: 8192,
-        hardLimit: 8192
-      }
-    };
-    let ulimits = [];
+  const defaultUlimits = {
+    nofile: {
+      softLimit: 8192,
+      hardLimit: 8192
+    }
+  };
+  let ulimits = [];
 
-    if (context.cliOptions.launchConfig) {
-      const lc = context.cliOptions.launchConfig;
-      if (lc.cpu) {
-        cpu = parseInt(lc.cpu, 10);
-      }
-      if (lc.memory) {
-        memory = parseInt(lc.memory, 10);
-      }
-
-      if (lc.ulimits) {
-        lc.ulimits.forEach((u) => {
-          if (!defaultUlimits[u.name]) {
-            defaultUlimits[u.name] = {};
-          }
-          defaultUlimits[u.name] = {
-            softLimit: u.softLimit,
-            hardLimit:
-              typeof u.hardLimit == 'number' ? u.hardLimit : u.softLimit
-          };
-        });
-      }
-
-      // TODO: Check this earlier to return an error faster.
-      if (context.isFargate) {
-        const configErr = checkFargateResourceConfig(cpu, memory);
-        if (configErr) {
-          return reject(configErr);
-        }
-      }
+  if (context.cliOptions.launchConfig) {
+    const lc = context.cliOptions.launchConfig;
+    if (lc.cpu) {
+      cpu = parseInt(lc.cpu, 10);
+    }
+    if (lc.memory) {
+      memory = parseInt(lc.memory, 10);
     }
 
-    ulimits = Object.keys(defaultUlimits).map((name) => {
-      return {
-        name: name,
-        softLimit: defaultUlimits[name].softLimit,
-        hardLimit: defaultUlimits[name].hardLimit
-      };
-    });
+    if (lc.ulimits) {
+      lc.ulimits.forEach((u) => {
+        if (!defaultUlimits[u.name]) {
+          defaultUlimits[u.name] = {};
+        }
+        defaultUlimits[u.name] = {
+          softLimit: u.softLimit,
+          hardLimit: typeof u.hardLimit === 'number' ? u.hardLimit : u.softLimit
+        };
+      });
+    }
 
-    const imageUrl =
-      process.env.WORKER_IMAGE_URL ||
-      `301676560329.dkr.ecr.${context.region}.amazonaws.com/artillery-pro/aws-ecs-node:v2-${IMAGE_VERSION}`;
+    // TODO: Check this earlier to return an error faster.
+    if (context.isFargate) {
+      const configErr = checkFargateResourceConfig(cpu, memory);
+      if (configErr) {
+        throw configErr;
+      }
+    }
+  }
 
-    // ['NPM_TOKEN', 'NPM_REGISTRY', 'NPM_SCOPE', 'NPM_SCOPE_REGISTRY', 'NPMRC', 'ARTIFACTORY_AUTH', 'ARTIFACTORY_EMAIL']
-    const secrets = [].concat(context.extraSecrets).map((secretName) => {
+  ulimits = Object.keys(defaultUlimits).map((name) => {
+    return {
+      name: name,
+      softLimit: defaultUlimits[name].softLimit,
+      hardLimit: defaultUlimits[name].hardLimit
+    };
+  });
+
+  const defaultArchitecture = 'x86_64';
+  const imageUrl =
+    process.env.WORKER_IMAGE_URL ||
+    `public.ecr.aws/d8a4z9o5/artillery-worker:${IMAGE_VERSION}-${defaultArchitecture}`;
+
+  const secrets = [
+    'NPM_TOKEN',
+    'NPM_REGISTRY',
+    'NPM_SCOPE',
+    'NPM_SCOPE_REGISTRY',
+    'NPMRC',
+    'ARTIFACTORY_AUTH',
+    'ARTIFACTORY_EMAIL'
+  ]
+    .concat(context.extraSecrets)
+    .map((secretName) => {
       return {
         name: secretName,
-        valueFrom: `arn:aws:ssm:${context.backendRegion}:${context.accountId}:parameter/artilleryio/${secretName}`
+        valueFrom: `${context.arnPrefix}:ssm:${context.region}:${context.accountId}:parameter/artilleryio/${secretName}`
       };
     });
 
-    let taskDefinition = {
-      family: context.taskName,
-      containerDefinitions: [
-        {
-          name: 'artillery',
-          image: imageUrl,
-          cpu: cpu,
-          command: [],
-          memory: memory,
-          secrets: secrets,
-          ulimits: ulimits,
-          essential: true,
-          logConfiguration: {
-            logDriver: 'awslogs',
-            options: {
-              'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
-              'awslogs-region': context.region,
-              'awslogs-stream-prefix': `artilleryio/${context.testId}`,
-              'awslogs-create-group': 'true',
-              mode: 'non-blocking'
-            }
-          }
-        }
-      ],
-      executionRoleArn: context.taskRoleArn
-    };
-    context.taskDefinition = taskDefinition;
-
-    if (context.isFargate) {
-      taskDefinition.networkMode = 'awsvpc';
-      taskDefinition.requiresCompatibilities = ['FARGATE'];
-      taskDefinition.cpu = String(cpu);
-      taskDefinition.memory = String(memory);
-      // NOTE: This role must exist.
-      // This value cannot be an override, meaning it's hardcoded into the task definition.
-      // That in turn means that if the role is updated then the task definition needs to be
-      // recreated too
-      taskDefinition.executionRoleArn = context.taskRoleArn; // TODO: A separate role for Fargate
-    }
-
-    const params = {
-      taskDefinition: context.taskName
-    };
-
-    debug('Task definition\n', JSON.stringify(taskDefinition, null, 4));
-
-    ecs.describeTaskDefinition(params, function (err, _data) {
-      if (err) {
-        ecs.registerTaskDefinition(taskDefinition, function (err, response) {
-          if (err) {
-            artillery.log(err);
-            artillery.log('Could not create ECS task, please try again');
-            return reject(err);
-          } else {
-            debug('OK: ECS task registered');
-            debugVerbose(JSON.stringify(response, null, 4));
-            context.taskDefinitionArn =
-              response.taskDefinition.taskDefinitionArn;
-            debug(`Task definition ARN: ${context.taskDefinitionArn}`);
-            return resolve(context);
-          }
-        });
-      } else {
-        debug('OK: ECS task exists');
-        if (process.env.ECR_IMAGE_VERSION) {
-          debug(
-            'ECR_IMAGE_VERSION is set, but the task definition was already in place.'
-          );
-        }
-        return resolve(context);
+  const artilleryContainerDefinition = {
+    name: 'artillery',
+    image: imageUrl,
+    cpu: cpu,
+    command: [],
+    entryPoint: ['/artillery/loadgen-worker'],
+    memory: memory,
+    secrets: secrets,
+    ulimits: ulimits,
+    essential: true,
+    logConfiguration: {
+      logDriver: 'awslogs',
+      options: {
+        'awslogs-group': `${context.logGroupName}/${context.clusterName}`,
+        'awslogs-region': context.region,
+        'awslogs-stream-prefix': `artilleryio/${context.testId}`,
+        'awslogs-create-group': 'true',
+        mode: 'non-blocking'
       }
-    });
-  });
+    }
+  };
+
+  if (context.cliOptions.containerDnsServers) {
+    artilleryContainerDefinition.dnsServers =
+      context.cliOptions.containerDnsServers.split(',');
+  }
+
+  const taskDefinition = {
+    family: context.taskName,
+    containerDefinitions: [artilleryContainerDefinition],
+    executionRoleArn: context.taskRoleArn
+  };
+
+  if (typeof context.adot !== 'undefined') {
+    taskDefinition.containerDefinitions.push(context.adot.taskDefinition);
+  }
+
+  context.taskDefinition = taskDefinition;
+
+  if (!context.isFargate && taskDefinition.containerDefinitions.length > 1) {
+    // Limits for sidecar have to be set explicitly on ECS EC2
+    taskDefinition.containerDefinitions[1].memory = 1024;
+    taskDefinition.containerDefinitions[1].cpu = 1024;
+  }
+
+  if (context.isFargate) {
+    taskDefinition.networkMode = 'awsvpc';
+    taskDefinition.requiresCompatibilities = ['FARGATE'];
+    taskDefinition.cpu = String(cpu);
+    taskDefinition.memory = String(memory);
+    // NOTE: This role must exist.
+    // This value cannot be an override, meaning it's hardcoded into the task definition.
+    // That in turn means that if the role is updated then the task definition needs to be
+    // recreated too
+    taskDefinition.executionRoleArn = context.taskRoleArn; // TODO: A separate role for Fargate
+  }
+
+  const params = {
+    taskDefinition: context.taskName
+  };
+
+  debug('Task definition\n', JSON.stringify(taskDefinition, null, 4));
+
+  try {
+    await ecs.send(new DescribeTaskDefinitionCommand(params));
+    debug('OK: ECS task exists');
+    if (process.env.ECR_IMAGE_VERSION) {
+      debug(
+        'ECR_IMAGE_VERSION is set, but the task definition was already in place.'
+      );
+    }
+    return context;
+  } catch (_err) {
+    try {
+      const response = await ecs.send(
+        new RegisterTaskDefinitionCommand(taskDefinition)
+      );
+      debug('OK: ECS task registered');
+      debugVerbose(JSON.stringify(response, null, 4));
+      context.taskDefinitionArn = response.taskDefinition.taskDefinitionArn;
+      debug(`Task definition ARN: ${context.taskDefinitionArn}`);
+      return context;
+    } catch (registerErr) {
+      artillery.log(registerErr);
+      artillery.log('Could not create ECS task, please try again');
+      throw registerErr;
+    }
+  }
 }
 
 async function checkCustomTaskRole(context) {
@@ -1139,49 +1220,45 @@ async function checkCustomTaskRole(context) {
     return;
   }
 
-  const iam = new AWS.IAM();
-  try {
-    const roleData = await iam
-      .getRole({ RoleName: context.customTaskRoleName })
-      .promise();
+  const iam = new IAMClient({ region: global.artillery.awsRegion });
+    const roleData = await iam.send(
+      new GetRoleCommand({ RoleName: context.customTaskRoleName })
+    );
     context.customRoleArn = roleData.Role.Arn;
     context.taskRoleArn = roleData.Role.Arn;
     debug(roleData);
-  } catch (err) {
-    throw err;
-  }
 }
 
 async function gcQueues(context) {
-  const sqs = new AWS.SQS({
+  const sqs = new SQSClient({
     region: context.region
   });
 
   let data;
   try {
-    data = await sqs
-      .listQueues({
+    data = await sqs.send(
+      new ListQueuesCommand({
         QueueNamePrefix: SQS_QUEUES_NAME_PREFIX,
         MaxResults: 1000
       })
-      .promise();
+    );
   } catch (err) {
     debug(err);
   }
 
-  if (data && data.QueueUrls && data.QueueUrls.length > 0) {
+  if (data?.QueueUrls && data.QueueUrls.length > 0) {
     for (const qu of data.QueueUrls) {
       try {
-        const data = await sqs
-          .getQueueAttributes({
+        const data = await sqs.send(
+          new GetQueueAttributesCommand({
             QueueUrl: qu,
             AttributeNames: ['CreatedTimestamp']
           })
-          .promise();
-        const ts = Number(data.Attributes['CreatedTimestamp']) * 1000;
+        );
+        const ts = Number(data.Attributes.CreatedTimestamp) * 1000;
         // Delete after 96 hours
         if (Date.now() - ts > 96 * 60 * 60 * 1000) {
-          await sqs.deleteQueue({ QueueUrl: qu }).promise();
+          await sqs.send(new DeleteQueueCommand({ QueueUrl: qu }));
         }
       } catch (err) {
         // TODO: Filter on errors which may be ignored, e.g.:
@@ -1199,12 +1276,12 @@ async function deleteQueue(context) {
     return;
   }
 
-  const sqs = new AWS.SQS({
+  const sqs = new SQSClient({
     region: context.region
   });
 
   try {
-    await sqs.deleteQueue({ QueueUrl: context.sqsQueueUrl }).promise();
+    await sqs.send(new DeleteQueueCommand({ QueueUrl: context.sqsQueueUrl }));
   } catch (err) {
     console.error(`Unable to clean up SQS queue. URL: ${context.sqsQueueUrl}`);
     debug(err);
@@ -1212,7 +1289,7 @@ async function deleteQueue(context) {
 }
 
 async function createQueue(context) {
-  const sqs = new AWS.SQS({
+  const sqs = new SQSClient({
     region: context.region
   });
 
@@ -1229,22 +1306,17 @@ async function createQueue(context) {
       VisibilityTimeout: '600' // 10 minutes
     }
   };
-
-  try {
-    const result = await sqs.createQueue(params).promise();
+    const result = await sqs.send(new CreateQueueCommand(params));
     context.sqsQueueUrl = result.QueueUrl;
-  } catch (err) {
-    throw err;
-  }
 
   // Wait for the queue to be available:
   let waited = 0;
   let ok = false;
   while (waited < 120 * 1000) {
     try {
-      const results = await sqs
-        .listQueues({ QueueNamePrefix: queueName })
-        .promise();
+      const results = await sqs.send(
+        new ListQueuesCommand({ QueueNamePrefix: queueName })
+      );
       if (results.QueueUrls && results.QueueUrls.length === 1) {
         debug('SQS queue created:', queueName);
         ok = true;
@@ -1253,7 +1325,7 @@ async function createQueue(context) {
         await sleep(10 * 1000);
         waited += 10 * 1000;
       }
-    } catch (err) {
+    } catch (_err) {
       await sleep(10 * 1000);
       waited += 10 * 1000;
     }
@@ -1267,11 +1339,14 @@ async function createQueue(context) {
 
 async function getManifest(context) {
   try {
-    const testBundle = new TestBundle(
-      context.namedTest ? context.s3Prefix : context.testId
-    );
-    const metadata = await testBundle.getManifest();
+    const s3 = createS3Client({ region: global.artillery.s3BucketRegion });
+    const params = {
+      Bucket: context.s3Bucket,
+      Key: `tests/${context.testId}/metadata.json`
+    };
 
+    const data = await s3.send(new GetObjectCommand(params));
+    const metadata = JSON.parse(await data.Body.transformToString());
     context.newScriptPath = metadata.scriptPath;
 
     if (metadata.configPath) {
@@ -1280,7 +1355,7 @@ async function getManifest(context) {
 
     return context;
   } catch (err) {
-    if (err.code === 'NoSuchKey') {
+    if (err instanceof NoSuchKey) {
       throw new TestNotFoundError();
     } else {
       throw err;
@@ -1293,13 +1368,16 @@ async function generateTaskOverrides(context) {
     context.cliOptions.environment
       ? ['--environment', context.cliOptions.environment]
       : [],
-    context.cliOptions['scenario-name']
+    context.cliOptions['scenarioName']
       ? ['--scenario-name', context.cliOptions['scenario-name']]
       : [],
     context.cliOptions.insecure ? ['-k'] : [],
     context.cliOptions.target ? ['-t', context.cliOptions.target] : [],
     context.cliOptions.overrides
       ? ['--overrides', context.cliOptions.overrides]
+      : [],
+    context.cliOptions.variables
+      ? ['--variables', context.cliOptions.variables]
       : [],
     context.configPath ? ['--config', context.configPath] : []
   );
@@ -1311,6 +1389,12 @@ async function generateTaskOverrides(context) {
   const s3path = `s3://${context.s3Bucket}/tests/${
     context.namedTest ? context.s3Prefix : context.testId
   }`;
+  const adotOverride = [
+    {
+      name: 'adot-collector',
+      environment: []
+    }
+  ];
 
   const overrides = {
     containerOverrides: [
@@ -1322,7 +1406,7 @@ async function generateTaskOverrides(context) {
           '-a',
           util.btoa(JSON.stringify(cliArgs)),
           '-r',
-          context.region || context.backendRegion,
+          context.region,
           '-q',
           process.env.SQS_QUEUE_URL || context.sqsQueueUrl,
           '-i',
@@ -1336,9 +1420,14 @@ async function generateTaskOverrides(context) {
           {
             name: 'AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE',
             value: '1'
+          },
+          {
+            name: 'ARTILLERY_TEST_RUN_ID',
+            value: global.artillery.testRunId
           }
         ]
-      }
+      },
+      ...(context.adot ? adotOverride : [])
     ],
     taskRoleArn: context.taskRoleArn
   };
@@ -1347,18 +1436,28 @@ async function generateTaskOverrides(context) {
     overrides.taskRoleArn = context.customRoleArn;
   }
 
+  if (context.cliOptions.taskEphemeralStorage) {
+    overrides.ephemeralStorage = {
+      sizeInGiB: context.cliOptions.taskEphemeralStorage
+    };
+  }
+
   overrides.containerOverrides[0].environment.push({
     name: 'USE_V2',
     value: 'true'
   });
 
   if (context.dotenv) {
-    let extraEnv = [];
+    const extraEnv = [];
     for (const [name, value] of Object.entries(context.dotenv)) {
       extraEnv.push({ name, value });
     }
     overrides.containerOverrides[0].environment =
       overrides.containerOverrides[0].environment.concat(extraEnv);
+    if (overrides.containerOverrides[1]) {
+      overrides.containerOverrides[1].environment =
+        overrides.containerOverrides[1].environment.concat(extraEnv);
+    }
   }
 
   if (context.cliOptions.launchConfig) {
@@ -1366,6 +1465,10 @@ async function generateTaskOverrides(context) {
     if (lc.environment) {
       overrides.containerOverrides[0].environment =
         overrides.containerOverrides[0].environment.concat(lc.environment);
+      if (overrides.containerOverrides[1]) {
+        overrides.containerOverrides[1].environment =
+          overrides.containerOverrides[1].environment.concat(lc.environment);
+      }
     }
 
     //
@@ -1395,17 +1498,32 @@ async function setupDefaultECSParams(context) {
   };
 
   if (context.isFargate) {
+    if (context.isCapacitySpot) {
+      defaultParams.capacityProviderStrategy = [
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+          base: 0
+        }
+      ];
+    } else {
+      // On-demand capacity
+      defaultParams.launchType = 'FARGATE';
+    }
     // Networking config: private subnets of the VPC that the ECS cluster
     // is in. Don't need public subnets.
-    defaultParams.launchType = 'FARGATE';
     defaultParams.networkConfiguration = {
       awsvpcConfiguration: {
         // https://github.com/aws/amazon-ecs-agent/issues/1128
-        assignPublicIp: 'ENABLED',
+        assignPublicIp: context.cliOptions.noAssignPublicIp
+          ? 'DISABLED'
+          : 'ENABLED',
         securityGroups: context.fargateSecurityGroupIds,
         subnets: context.fargatePublicSubnetIds
       }
     };
+  } else {
+    defaultParams.launchType = 'EC2';
   }
 
   context.defaultECSParams = defaultParams;
@@ -1419,6 +1537,7 @@ async function launchLeadTask(context) {
     cluster: context.clusterName,
     region: context.region,
     launchType: context.cliOptions.launchType,
+    isFargateSpot: context.isCapacitySpot,
     count: context.count,
     sqsQueueUrl: context.sqsQueueUrl,
     tags: context.tags,
@@ -1433,14 +1552,26 @@ async function launchLeadTask(context) {
     }),
     artilleryVersion: JSON.stringify({
       core: global.artillery.version
-    })
+    }),
+    // Properties from the runnable script object:
+    testConfig: {
+      target: context.runnableScript.config.target,
+      phases: context.runnableScript.config.phases,
+      plugins: context.runnableScript.config.plugins,
+      environment: context.runnableScript._environment,
+      scriptPath: context.runnableScript._scriptPath,
+      configPath: context.runnableScript._configPath
+    }
   };
 
   artillery.globalEvents.emit('metadata', metadata);
 
   context.status = TEST_RUN_STATUS.LAUNCHING_WORKERS;
 
-  const ecs = new AWS.ECS({ apiVersion: '2014-11-13', region: context.region });
+  const ecs = new ECSClient({
+    apiVersion: '2014-11-13',
+    region: context.region
+  });
 
   const leaderParams = Object.assign(
     { count: 1 },
@@ -1450,9 +1581,7 @@ async function launchLeadTask(context) {
     name: 'IS_LEADER',
     value: 'true'
   });
-
-  try {
-    const runData = await ecs.runTask(leaderParams).promise();
+    const runData = await ecs.send(new RunTaskCommand(leaderParams));
     if (runData.failures.length > 0) {
       if (runData.failures.length === context.count) {
         artillery.log('ERROR: Worker start failure');
@@ -1474,9 +1603,6 @@ async function launchLeadTask(context) {
     artillery.globalEvents.emit('metadata', {
       platformMetadata: { taskArns: context.taskArns }
     });
-  } catch (runErr) {
-    throw runErr;
-  }
 
   return context;
 }
@@ -1484,7 +1610,10 @@ async function launchLeadTask(context) {
 // TODO: When launching >20 containers on Fargate, adjust WAIT_TIMEOUT dynamically to
 // add extra time spent in waiting between runTask calls: WAIT_TIMEOUT + worker_count.
 async function ecsRunTask(context) {
-  const ecs = new AWS.ECS({ apiVersion: '2014-11-13', region: context.region });
+  const ecs = new ECSClient({
+    apiVersion: '2014-11-13',
+    region: context.region
+  });
   let tasksRemaining = context.count - 1;
   let retries = 0;
 
@@ -1498,8 +1627,8 @@ async function ecsRunTask(context) {
       throw new Error('Max retries exceeded');
     }
 
-    let launchCount = tasksRemaining <= 10 ? tasksRemaining : 10;
-    let params = Object.assign(
+    const launchCount = tasksRemaining <= 10 ? tasksRemaining : 10;
+    const params = Object.assign(
       { count: launchCount },
       JSON.parse(JSON.stringify(context.defaultECSParams))
     );
@@ -1510,7 +1639,20 @@ async function ecsRunTask(context) {
     });
 
     try {
-      const runData = await ecs.runTask(params).promise();
+      const runData = await ecs.send(new RunTaskCommand(params));
+
+      const launchedTasksCount = runData.tasks?.length || 0;
+      tasksRemaining -= launchedTasksCount;
+
+      if (launchedTasksCount > 0) {
+        const newTaskArns = runData.tasks.map((task) => task.taskArn);
+        context.taskArns = context.taskArns.concat(newTaskArns);
+        artillery.globalEvents.emit('metadata', {
+          platformMetadata: { taskArns: newTaskArns }
+        });
+        debug(`Launched ${launchedTasksCount} tasks`);
+      }
+
       if (runData.failures.length > 0) {
         artillery.log('Some workers failed to start');
         const uniqueReasons = [
@@ -1521,19 +1663,8 @@ async function ecsRunTask(context) {
         await sleep(10 * 1000);
         throw new Error('Not enough ECS capacity');
       }
-
-      if (runData.tasks?.length > 0) {
-        context.taskArns = context.taskArns.concat(
-          runData.tasks.map((task) => task.taskArn)
-        );
-        debug(`Launched ${launchCount} tasks`);
-        tasksRemaining -= launchCount;
-        await sleep(250);
-      } else {
-        retries++;
-      }
     } catch (runErr) {
-      if (runErr.code === 'ThrottlingException') {
+      if (runErr instanceof ThrottlingException) {
         artillery.log('ThrottlingException returned from ECS, retrying');
         await sleep(2000 * retries);
         debug('runTask throttled, retrying');
@@ -1555,8 +1686,6 @@ async function ecsRunTask(context) {
 }
 
 async function waitForTasks2(context) {
-  const ecs = new AWS.ECS({ apiVersion: '2014-11-13', region: context.region });
-
   const params = {
     tasks: context.taskArns,
     cluster: context.clusterName
@@ -1571,7 +1700,7 @@ async function waitForTasks2(context) {
   while (context.status !== TEST_RUN_STATUS.TERMINATING) {
     let ecsData;
     try {
-      ecsData = await awsUtil.ecsDescribeTasks(params, ecs);
+      ecsData = await awsUtil.ecsDescribeTasks(params, context.region);
     } catch (err) {
       // TODO: Inspect err for any conditions in which we may want to abort immediately.
       // Otherwise, let the timeout run to completion.
@@ -1611,7 +1740,7 @@ async function waitForTasks2(context) {
     debug('Waiting on pending tasks');
     if (silentWaitTimeout.timedout()) {
       const statusCounts = _.countBy(ecsData.tasks, 'lastStatus');
-      let statusSummary = _.map(statusCounts, (count, status) => {
+      const statusSummary = _.map(statusCounts, (count, status) => {
         const displayStatus =
           status === 'RUNNING' ? 'ready' : status.toLowerCase();
         let displayStatusChalked = displayStatus;
@@ -1624,7 +1753,7 @@ async function waitForTasks2(context) {
         return `${displayStatusChalked}: ${count}`;
       }).join(' / ');
 
-      logProgress('Waiting for workers to start: ' + statusSummary);
+      logProgress(`Waiting for workers to start: ${statusSummary}`);
     }
 
     if (waitTimeout.timedout()) {
@@ -1649,68 +1778,47 @@ async function waitForTasks2(context) {
 }
 
 async function waitForWorkerSync(context) {
-  return new Promise((resolve, reject) => {
-    const MAGIC_PREFIX = 'synced_';
-    const prefix = `test-runs/${context.testId}/${MAGIC_PREFIX}`;
+  const MAGIC_PREFIX = 'synced_';
+  const prefix = `test-runs/${context.testId}/${MAGIC_PREFIX}`;
 
-    const intervalSec = 10;
-    const times = WAIT_TIMEOUT / intervalSec;
+  const intervalSec = 10;
+  const times = WAIT_TIMEOUT / intervalSec;
+  let attempts = 0;
+  let synced = false;
 
-    A.retry(
-      { times: times, interval: intervalSec * 1000 },
-      // we wrap the function since async#retry will retry ONLY when an
-      // error is returned
-      function wrapForRetry(next) {
-        util.listAllObjectsWithPrefix(
-          context.s3Bucket,
-          prefix,
-          (err, objects) => {
-            // NOTE: err here is an S3 error
-            if (err) {
-              next(err);
-            } else {
-              debug({ objects });
-
-              // TODO: context.count is how many we requested, but we need to handle the case when not everything started
-              if (objects.length !== context.count) {
-                debug(
-                  `expected ${context.count} sync acks but got ${objects.length}`
-                );
-                // this tells async#retry to retry
-                return next(new Error('Timed out waiting for workers to sync'));
-              } else {
-                return next(null);
-              }
-            }
-          }
-        );
-      },
-      (err) => {
-        if (err) {
-          return reject(err);
-        } else {
-          debug('all workers synced');
-          return resolve(context);
-        }
+  while (attempts < times) {
+    try {
+      const objects = await util.listAllObjectsWithPrefix(
+        context.s3Bucket,
+        prefix
+      );
+      if (objects.length !== context.count) {
+        attempts++;
+      } else {
+        synced = true;
+        break;
       }
-    ); // A.retry
-  });
+    } catch (_err) {
+      attempts++;
+    }
+    await sleep(intervalSec * 1000);
+  }
+
+  if (synced) {
+    return context;
+  } else {
+    throw new Error('Timed out waiting for worker sync');
+  }
 }
 
 async function sendGoSignal(context) {
   const s3 = createS3Client();
-  try {
-    await s3
-      .putObject({
-        Body: context.testId,
-        Bucket: context.s3Bucket,
-        Key: `test-runs/${context.testId}/go.json`
-      })
-      .promise();
-  } catch (err) {
-    throw err;
-  }
-
+  const params = {
+    Body: context.testId,
+    Bucket: context.s3Bucket,
+    Key: `test-runs/${context.testId}/go.json`
+  };
+  await s3.send(new PutObjectCommand(params));
   return context;
 }
 
@@ -1759,11 +1867,14 @@ async function listen(context, ee) {
           )
         );
       }
-      artillery.log(
-        chalk.yellow(
-          `Worker exited with an error, worker ID = ${attrs.workerId.StringValue}`
-        )
-      );
+      if (body.exitCode !== 21) {
+        artillery.log(
+          chalk.yellow(
+            `Worker exited with an error, worker ID = ${attrs.workerId.StringValue}`
+          )
+        );
+      }
+
       // TODO: Copy log over and print path to log file so that user may inspect it - in a temporary location
       global.artillery.suggestedExitCode = body.exitCode || 1;
     });
@@ -1787,9 +1898,13 @@ async function listen(context, ee) {
       if (body.type === 'ensure') {
         try {
           context.ensureSpec = JSON.parse(util.atob(body.msg));
-        } catch (parseErr) {
+        } catch (_parseErr) {
           console.error('Error processing ensure directive');
         }
+      }
+
+      if (body.type === 'leader' && body.msg === 'prepack_end') {
+        ee.emit('prepack_end');
       }
     });
 
@@ -1807,6 +1922,14 @@ async function listen(context, ee) {
       ee.emit('stats', stats);
     });
 
+    r.on('phaseStarted', (phase) => {
+      global.artillery.globalEvents.emit('phaseStarted', phase);
+    });
+
+    r.on('phaseCompleted', (phase) => {
+      global.artillery.globalEvents.emit('phaseCompleted', phase);
+    });
+
     r.start();
   });
 }
@@ -1816,11 +1939,16 @@ async function deregisterTaskDefinition(context) {
     return;
   }
 
-  const ecs = new AWS.ECS({ apiVersion: '2014-11-13', region: context.region });
+  const ecs = new ECSClient({
+    apiVersion: '2014-11-13',
+    region: context.region
+  });
   try {
-    await ecs
-      .deregisterTaskDefinition({ taskDefinition: context.taskDefinitionArn })
-      .promise();
+    await ecs.send(
+      new DeregisterTaskDefinitionCommand({
+        taskDefinition: context.taskDefinitionArn
+      })
+    );
     debug(`Deregistered ${context.taskDefinitionArn}`);
   } catch (err) {
     artillery.log(err);
@@ -1839,7 +1967,7 @@ function getLogFilename(output, userDefaultFilenameFormat) {
   if (output) {
     try {
       isDir = fs.statSync(output).isDirectory();
-    } catch (err) {
+    } catch (_err) {
       // ENOENT, don't need to do anything
     }
   }

@@ -1,0 +1,30 @@
+{
+  "config": {
+    "target": "http://127.0.0.1:3003",
+    "phases": [{ "duration": 10, "arrivalRate": 5 }],
+    "payload": [
+      {
+        "path": "./data/pets.csv",
+        "fields": ["species", "name"]
+      },
+      {
+        "path": "./data/urls.csv",
+        "fields": ["url"]
+      }
+    ]
+  },
+  "scenarios": [
+    {
+      "flow": [
+        { "get": { "url": "{{{url}}}" } },
+        { "get": { "url": "/{{{name}}}" } },
+        {
+          "post": {
+            "url": "/pets",
+            "json": { "name": "{{ name }}", "species": "{{ species }}" }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -3,14 +3,12 @@
   "version": "1.0.0",
   "description": "Artillery.io Starter Kit",
   "scripts": {
-    "sample_task_01": "artillery run ./scenarios/sample_task_01.yaml -o ./reports/sample_report_01.json",
-    "sample_task_02": "artillery run ./scenarios/sample_task_02.yaml -o ./reports/sample_report_02.json"
+    "sample_task_01": "npx artillery run ./scenarios/sample_task_01.yaml -o ./reports/sample_report_01.json",
+    "sample_task_02": "npx artillery run ./scenarios/sample_task_02.yaml -o ./reports/sample_report_02.json"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "artillery": "^1.6.2",
-    "artillery-plugin-expect": "^1.3.0",
     "faker": "^5.5.3"
   }
 }

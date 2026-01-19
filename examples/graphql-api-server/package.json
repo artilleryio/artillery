@@ -14,7 +14,6 @@
     "graphql": "^15.6.0"
   },
   "devDependencies": {
-    "artillery": "^1.7.9",
     "prisma": "^3.1.1"
   }
 }

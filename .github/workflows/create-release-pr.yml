@@ -1,0 +1,81 @@
+name: Create Release PR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create_release_pr:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    env:
+      # these are the packages we auto release (e.g. standalone pkgs like artillery/skytrace/types, and included dependencies like plugins)
+      # some non-included dependencies are not released automatically (e.g. posthog, memory-inspector)
+      # this list should be kept in sync with npm-publish-all-packages.yml
+      PACKAGES_TO_RELEASE: "\
+        artillery-engine-playwright,\
+        artillery-plugin-apdex,\
+        artillery-plugin-ensure,\
+        artillery-plugin-expect,\
+        artillery-plugin-fake-data,\
+        artillery-plugin-metrics-by-endpoint,\
+        artillery-plugin-publish-metrics,\
+        artillery-plugin-slack,\
+        commons,\
+        core,\
+        artillery"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Replace package folder name with actual name from package.json
+        run: |
+          for package in $(echo $PACKAGES_TO_RELEASE | tr "," "\n"); do
+            PACKAGE_NAME=$(node -e "console.log(require('./packages/$package/package.json').name)")
+            PACKAGES_TO_RELEASE=${PACKAGES_TO_RELEASE/$package/$PACKAGE_NAME}
+            echo "PACKAGES_TO_RELEASE=$PACKAGES_TO_RELEASE" >> "$GITHUB_ENV"
+          done
+
+      # all packages receive minor version bump, except for artillery which receives a patch version bump as convention
+      - name: Update package versions
+        run: |
+          for package in $(echo ${{ env.PACKAGES_TO_RELEASE }} | tr "," "\n"); do
+            if [ "$package" = "artillery" ]; then
+              npm version patch --workspace $package
+            else
+              npm version minor --workspace $package
+            fi
+          done
+
+      - name: Get new Artillery version
+        run: |
+          ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
+          echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> "$GITHUB_ENV"
+
+      - name: Create branch
+        run: |
+          export BRANCH_NAME=release/artillery-v${{ env.ARTILLERY_VERSION }}-$(date '+%Y-%m-%d-%H-%M-%S')
+          echo "BRANCH_NAME=$BRANCH_NAME" >> "$GITHUB_ENV"
+          git checkout -b $BRANCH_NAME
+          git push --set-upstream origin $BRANCH_NAME
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Add changes to commit
+        run: git add .
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "${{ github.actor }}"
+          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+          RELEASE_COMMIT_MSG="ci: release v${{ env.ARTILLERY_VERSION }} artillery" >> "$GITHUB_ENV"
+          git commit -m "ci: release v${{ env.ARTILLERY_VERSION }} artillery"
+          git push
+
+      - name: create pull request
+        run: gh pr create -B main -H ${{ env.BRANCH_NAME }} --body 'Release v${{ env.ARTILLERY_VERSION }}. Created by Github action' --fill
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

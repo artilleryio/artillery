@@ -12,8 +12,38 @@ env:
   CLI_NOTE: Running&nbsp;from&nbsp;the&nbsp;Official&nbsp;Artillery&nbsp;Github&nbsp;Action!&nbsp;😀
 
 jobs:
+  browser-load-test:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
+    env:
+      CWD: ./examples/browser-load-testing-playwright
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "22.x"
+
+      - name: Install dependencies
+        run: npm install
+
+      # Uses the version from packages/artillery-engine-playwright
+      - name: Install Playwright Browsers
+        run: npm exec --workspace artillery-engine-playwright -- playwright install chromium --with-deps
+
+      - name: Run test
+        run: |
+          $ARTILLERY_BINARY_PATH run browser-load-test.ts --record --tags ${{ env.CLI_TAGS }},group:browser-load-test --note "${{ env.CLI_NOTE }}"
+        working-directory: ${{ env.CWD }}
+        env:
+          ARTILLERY_BINARY_PATH: ${{ env.ARTILLERY_BINARY_PATH }}
+          ARTILLERY_CLOUD_ENDPOINT: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+          ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+
   http-metrics-by-endpoint:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     env:
       CWD: ./examples/http-metrics-by-endpoint
@@ -38,7 +68,7 @@ jobs:
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
 
   multiple-scenarios-spec:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     env:
       CWD: ./examples/multiple-scenario-specs
@@ -73,7 +103,7 @@ jobs:
           ARTILLERY_CLOUD_API_KEY: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
 
   using-data-from-csv:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 15
     env:
       CWD: ./examples/using-data-from-csv

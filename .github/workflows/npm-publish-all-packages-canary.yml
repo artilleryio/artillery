@@ -1,4 +1,4 @@
-name: Publish canary of Artillery CLI to npm
+name: Publish packages to NPM (canary)
 on:
   push:
     branches:
@@ -11,30 +11,49 @@ on:
       - 'packages/artillery-plugin-ensure/**'
       - 'packages/artillery-plugin-expect/**'
       - 'packages/artillery-plugin-metrics-by-endpoint/**'
-      - 'packages/artillery-plugin-publish-metrics/**'      
+      - 'packages/artillery-plugin-publish-metrics/**'
+      - 'packages/artillery-plugin-fake-data/**'
+      - 'packages/artillery-plugin-slack/**'
       - 'packages/commons/**'
       - 'packages/core/**'
       - 'packages/skytrace/**'
       - 'packages/artillery-plugin-memory-inspector/**'
       
 jobs:
+  publish-fargate-worker-image:
+    if: "!contains( github.event.head_commit.message, 'ci: release v')"
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+      USE_COMMIT_SHA_IN_VERSION: true
+      SHOULD_BUILD_ARM64: false
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+
   build:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    if: "!contains( github.event.head_commit.message, 'ci: release v')"
+    needs: publish-fargate-worker-image
     permissions:
       contents: read
       packages: write
     env:
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    outputs:
+      ARTILLERY_VERSION: ${{ steps.get-artillery-version.outputs.ARTILLERY_VERSION }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: | 
-          export COMMIT_SHA=$(git rev-parse --short HEAD)
-          node .github/workflows/scripts/replace-package-versions-with-commit-sha.js
+      - run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ github.sha }}
       # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
       - run: npm -w @artilleryio/int-commons publish --tag canary
       - run: npm -w @artilleryio/int-core publish --tag canary
@@ -46,9 +65,41 @@ jobs:
       - run: npm -w artillery-engine-posthog publish --tag canary
       - run: npm -w artillery-engine-playwright publish --tag canary
       - run: npm -w artillery-plugin-fake-data publish --tag canary
+      - run: npm -w artillery-plugin-slack publish --tag canary
       - run: npm -w artillery publish --tag canary
+      - id: get-artillery-version
+        run: |
+          ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
+          echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> $GITHUB_OUTPUT
       # Skytrace is a Typescript Package and needs to install -> build -> publish
       - run: npm install -w skytrace --ignore-scripts
       - run: npm run build -w skytrace
       - run: npm -w skytrace publish --tag canary
       - run: npm -w artillery-plugin-memory-inspector publish --tag canary
+
+  run-distributed-tests:
+    uses: ./.github/workflows/run-distributed-tests.yml
+    needs: build
+    with:
+      ARTILLERY_VERSION_OVERRIDE: ${{ needs.build.outputs.ARTILLERY_VERSION }}
+      HAS_ARM64_BUILD: false
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ARTILLERY_CLOUD_ENDPOINT_TEST: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY_TEST: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+      AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+
+  publish-cloudformation-templates-canary-to-s3:
+    uses: ./.github/workflows/s3-publish-cf-templates.yml
+    needs: run-distributed-tests
+    with:
+      canary: true
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ASSET_UPLOAD_ROLE_ARN: ${{ secrets.AWS_ASSET_UPLOAD_ROLE_ARN }}

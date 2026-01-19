@@ -14,7 +14,7 @@ class QueueConsumer extends EventEmitter {
       sqsConsumer.on('error', (err) => {
         // TODO: Ignore "SQSError: SQS delete message failed:" errors
 
-        if (err.message && err.message.match(/ReceiptHandle.+expired/i)) {
+        if (err.message?.match(/ReceiptHandle.+expired/i)) {
           debug(err.name, err.message);
         } else {
           sqsConsumer.stop();
@@ -36,9 +36,8 @@ class QueueConsumer extends EventEmitter {
     return this;
   }
 
-  constructor(opts) {
+  constructor(_opts) {
     super();
-    return this;
   }
 
   start() {

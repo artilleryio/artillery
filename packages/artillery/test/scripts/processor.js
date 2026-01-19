@@ -1,4 +1,4 @@
-'use strict';
+
 
 module.exports = {
   printHello: printHello,
@@ -7,7 +7,7 @@ module.exports = {
   checkGlobal: checkGlobal
 };
 
-function printHello(req, ctx, events, done) {
+function printHello(_req, _ctx, _events, done) {
   console.log('# hello from processor');
   return done();
 }
@@ -15,23 +15,23 @@ function printHello(req, ctx, events, done) {
 // Ref: https://github.com/shoreditch-ops/artillery/issues/184
 // See hello.json - testing that scenario-level beforeRequest is handled
 // correctly.
-function doNothing(req, ctx, events, done) {
+function _doNothing(_req, _ctx, _events, done) {
   return done();
 }
 
 // this function is called in a loop
-function createNewVar(ctx, events, done) {
+function createNewVar(ctx, _events, done) {
   ctx.vars.newVar = ctx.vars.$loopCount;
   console.log(`createNewVar: ${ctx.vars.$loopCount}`);
   return done();
 }
 
-function rewriteUrl(req, ctx, events, done) {
+function rewriteUrl(req, _ctx, _events, done) {
   req.url = '/';
   return done();
 }
 
-function checkGlobal(ctx, events, done) {
+function checkGlobal(_ctx, _events, done) {
   if (!global.artillery) {
     return done(new Error('global artillery object not found'));
   } else {

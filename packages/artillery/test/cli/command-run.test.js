@@ -1,8 +1,20 @@
 const tap = require('tap');
-const { execute, deleteFile, getRootPath } = require('../cli/_helpers.js');
-const fs = require('fs');
-const path = require('path');
+const {
+  execute,
+  deleteFile,
+  getRootPath,
+  returnTmpPath,
+  generateTmpReportPath
+} = require('../helpers');
+const { checkForNegativeValues } = require('../helpers/expectations');
+const fs = require('node:fs');
+const path = require('node:path');
 const execa = require('execa');
+
+let reportFilePath;
+tap.beforeEach(async (t) => {
+  reportFilePath = generateTmpReportPath(t.name, 'json');
+});
 
 tap.test('Run a simple script', async (t) => {
   const [exitCode, output] = await execute([
@@ -12,7 +24,8 @@ tap.test('Run a simple script', async (t) => {
     'test/scripts/hello.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
 });
 
 tap.test(
@@ -26,7 +39,9 @@ tap.test(
       '-o',
       'totally/bogus/path'
     ]);
-    t.ok(exitCode !== 0 && output.stderr.includes('Path does not exist'));
+
+    t.not(exitCode, 0, 'CLI should exit with error code (non-zero)');
+    t.ok(output.stderr.includes('Path does not exist'), 'Should log error');
   }
 );
 
@@ -38,7 +53,8 @@ tap.test(
       'test/scripts/environments.yaml'
     ]);
 
-    t.ok(exitCode !== 0 && output.stderr.includes('No target specified'));
+    t.not(exitCode, 0, 'CLI should exit with error code (non-zero)');
+    t.ok(output.stderr.includes('No target specified'), 'Should log error');
   }
 );
 
@@ -52,9 +68,10 @@ tap.test(
       'test/scripts/scenario-config-different-folder/config/config-processor-backward-compatibility.yml'
     ]);
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id myTestId123')
+      output.stdout.includes('Successfully ran with id myTestId123'),
+      'Should log success'
     );
   }
 );
@@ -69,9 +86,10 @@ tap.test(
       'test/scripts/scenario-config-different-folder/config/config.yml'
     ]);
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
-      exitCode === 0 &&
-        output.stdout.includes('Successfully ran with id myTestId123')
+      output.stdout.includes('Successfully ran with id myTestId123'),
+      'Should log success'
     );
   }
 );
@@ -85,13 +103,14 @@ tap.test('Environment specified with -e should be used', async (t) => {
   ]);
 
   // Here if the right environment is not picked up, we'll get ECONNREFUSED errors in the report
-  t.ok(exitCode === 0 && !output.stdout.includes('ECONNREFUSED'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.notOk(
+    output.stdout.includes('ECONNREFUSED'),
+    'Should not have connection refused errors'
+  );
 });
 
 tap.test('Can specify scenario to run by name', async (t) => {
-  const reportFile = 'report-with-scenario-by-name.json';
-  const reportFilePath = await getRootPath(reportFile);
-
   const [exitCode, output] = await execute([
     'run',
     '--scenario-name',
@@ -101,17 +120,51 @@ tap.test('Can specify scenario to run by name', async (t) => {
     'test/scripts/scenario-named/scenario.yml'
   ]);
 
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
   t.ok(
-    exitCode === 0 && output.stdout.includes('Successfully running scenario 2')
+    output.stdout.includes('Successfully running scenario 2'),
+    'Should log success'
   );
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
+  t.equal(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario 2'],
+    6,
+    'Should have created 6 vusers for the right scenario'
+  );
+  t.type(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario 1'],
+    'undefined',
+    'Should not have created vusers for the wrong scenario'
+  );
+});
+
+tap.test('Can specify scenario to run by name', async (t) => {
+  const [exitCode, output] = await execute([
+    'run',
+    '--scenario-name',
+    'Test Scenario (4)',
+    '-o',
+    `${reportFilePath}`,
+    'test/scripts/scenario-named/scenario.yml'
+  ]);
+
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
   t.ok(
-    deleteFile(reportFilePath) &&
-      json.aggregate.counters['vusers.created_by_name.Test Scenario 2'] === 6 &&
-      typeof json.aggregate.counters[
-        'vusers.created_by_name.Test Scenario 1'
-      ] === 'undefined'
+    output.stdout.includes('Successfully running scenario 4'),
+    'Should log success'
+  );
+  const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+  t.equal(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario (4)'],
+    6,
+    'Should have created 6 vusers for the right scenario'
+  );
+  t.type(
+    json.aggregate.counters['vusers.created_by_name.Test Scenario 1'],
+    'undefined',
+    'Should not have created vusers for the wrong scenario'
   );
 });
 
@@ -121,28 +174,30 @@ tap.test(
     const [exitCode, output] = await execute([
       'run',
       '--scenario-name',
-      'Test Scenario 4',
+      'Test Scenario 5',
       'test/scripts/scenario-named/scenario.yml'
     ]);
 
     t.equal(exitCode, 11);
     t.ok(
       output.stdout.includes(
-        'Error: Scenario Test Scenario 4 not found in script. Make sure your chosen scenario matches the one in your script exactly.'
-      )
+        'Error: Scenario Test Scenario 5 not found in script. Make sure your chosen scenario matches the one in your script exactly.'
+      ),
+      'Should log error when scenario not found'
     );
   }
 );
 
 tap.test('Run a script with one payload command line', async (t) => {
-  const [, output] = await execute([
+  const [exitCode, output] = await execute([
     'run',
     'test/scripts/single_payload.json',
     '-p',
     'test/scripts/pets.csv'
   ]);
 
-  t.ok(output.stdout.includes('Summary report'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
 });
 
 tap.test('Run a script with one payload json config', async (t) => {
@@ -151,7 +206,8 @@ tap.test('Run a script with one payload json config', async (t) => {
     'test/scripts/single_payload_object.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
 });
 
 tap.test(
@@ -162,7 +218,8 @@ tap.test(
       'test/scripts/single_payload_options.json'
     ]);
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
   }
 );
 
@@ -176,55 +233,57 @@ tap.test(
       'test/scripts/multiple_payloads.json'
     ]);
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
   }
 );
 
 tap.test(
   'Loads metrics-by-endpoint plugin by default, with output supressed',
   async (t) => {
-    const reportFile = 'report-metrics-by-endpoint.json';
-    const reportFilePath = await getRootPath(reportFile);
     const [exitCode, output] = await execute([
       'run',
       'test/scripts/hello.json',
       '--config',
       './test/scripts/hello_config.json',
       '-o',
-      `${reportFile}`
+      `${reportFilePath}`
     ]);
 
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
     const pluginPrefix = 'plugins.metrics-by-endpoint';
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(!output.stdout.includes(pluginPrefix), 'Should not log plugin output');
     t.ok(
-      deleteFile(reportFilePath) &&
-        exitCode === 0 &&
-        !output.stdout.includes(pluginPrefix) &&
-        Object.keys(json.aggregate.counters).some((key) =>
-          key.includes(pluginPrefix)
-        ) &&
-        Object.keys(json.aggregate.summaries).some((key) =>
-          key.includes(pluginPrefix)
-        )
+      Object.keys(json.aggregate.counters).some((key) =>
+        key.includes(pluginPrefix)
+      ),
+      'Should have plugin counters in report'
+    );
+    t.ok(
+      Object.keys(json.aggregate.summaries).some((key) =>
+        key.includes(pluginPrefix)
+      ),
+      'Should have plugin summaries in report'
     );
   }
 );
 
 tap.test('Run a script overwriting default options (output)', async (t) => {
-  const reportFile = 'artillery_report_custom.json';
   const [exitCode, output] = await execute([
     'run',
     '--config',
     'test/scripts/hello_config.json',
     'test/scripts/hello.json',
     '-o',
-    reportFile
+    reportFilePath
   ]);
 
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
   t.ok(
-    exitCode === 0 &&
-      output.stdout.includes('Log file: artillery_report_custom.json')
+    output.stdout.includes(`Log file: ${reportFilePath}`),
+    'Should log output file'
   );
 });
 
@@ -242,7 +301,7 @@ tap.test(
       JSON.stringify(variableOverride)
     ]);
 
-    t.ok(exitCode === 0);
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
       output.stdout.includes(`foo is ${variableOverride.myVar}`),
       'Templated foo nested config variable is not showing'
@@ -277,7 +336,7 @@ tap.test(
       JSON.stringify(variableOverride)
     ]);
 
-    t.ok(exitCode === 0);
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
     t.ok(
       output.stdout.includes(`other is ${variableOverride.myVar}`),
       'other variable from config variable not showing'
@@ -305,47 +364,50 @@ tap.test('Script using hook functions', async (t) => {
     'test/scripts/hello.json'
   ]);
 
-  t.ok(exitCode === 0 && output.stdout.includes('hello from processor'));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(
+    output.stdout.includes('hello from processor'),
+    'Should log processor output'
+  );
 });
 
+//TODO: review these 2 test assertions
 tap.test('Hook functions - can rewrite the URL', async (t) => {
   // Ref: https://github.com/shoreditch-ops/artillery/issues/185
-  const reportFile = 'report-hook.json';
-  const reportFilePath = await getRootPath(reportFile);
   const [exitCode] = await execute([
     'run',
     '--config',
     'test/scripts/hello_config.json',
     'test/scripts/hello.json',
     '-o',
-    reportFile
+    reportFilePath
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(
-    deleteFile(reportFilePath) &&
-      exitCode === 0 &&
-      json.aggregate.counters['http.codes.200']
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    json.aggregate.counters['http.codes.200'],
+    3,
+    'Should have 3 successful 200 requests'
   );
 });
 
 tap.test('Environment variables can be loaded from dotenv files', async (t) => {
-  const reportFile = 'report-with-dotenv.json';
-  const reportFilePath = await getRootPath(reportFile);
   const [exitCode] = await execute([
     'run',
     '--dotenv',
     'test/scripts/with-dotenv/my-vars',
     'test/scripts/with-dotenv/with-dotenv.yml',
     '-o',
-    reportFile
+    reportFilePath
   ]);
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.ok(
-    deleteFile(reportFilePath) &&
-      exitCode === 0 &&
-      json.aggregate.counters['http.codes.200']
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    json.aggregate.counters['http.codes.200'],
+    1,
+    'Should have 1 successful 200 requests'
   );
 });
 
@@ -358,20 +420,25 @@ tap.test('Environment variables can be loaded using $env', async (t) => {
     NESTED_HEADER_VALUE: 'abc123'
   };
 
-  const reportFile = 'report-with-env.json';
-  const reportFilePath = await getRootPath(reportFile);
   const [exitCode, result] = await execute(
-    ['run', 'test/scripts/with-process-env/with-env.yml', '-o', reportFile],
+    ['run', 'test/scripts/with-process-env/with-env.yml', '-o', reportFilePath],
     { env: { ...variables } }
   );
   const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    json.aggregate.counters['http.codes.200'],
+    2,
+    'Should have 2 successful 200 requests'
+  );
   t.ok(
-    deleteFile(reportFilePath) &&
-      exitCode === 0 &&
-      json.aggregate.counters['http.codes.200'] === 2 &&
-      result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
-      result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
+    result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`),
+    'Should log environment variable from processor func'
+  );
+  t.ok(
+    result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`),
+    'Should log header variable from processor func'
   );
 });
 
@@ -386,25 +453,30 @@ tap.test(
       NESTED_HEADER_VALUE: 'abc123'
     };
 
-    const reportFile = 'report-with-processEnvironment.json';
-    const reportFilePath = await getRootPath(reportFile);
     const [exitCode, result] = await execute(
       [
         'run',
         'test/scripts/with-process-env/with-processEnvironment.yml',
         '-o',
-        reportFile
+        reportFilePath
       ],
       { env: { ...variables } }
     );
     const json = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.equal(
+      json.aggregate.counters['http.codes.200'],
+      2,
+      'Should have 2 successful 200 requests'
+    );
     t.ok(
-      deleteFile(reportFilePath) &&
-        exitCode === 0 &&
-        json.aggregate.counters['http.codes.200'] === 2 &&
-        result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`) &&
-        result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`)
+      result.stdout.includes(`Environment is ${variables.ENVIRONMENT}`),
+      'Should log environment variable from processor func'
+    );
+    t.ok(
+      result.stdout.includes(`Header is ${variables.NESTED_HEADER_VALUE}`),
+      'Should log header variable from processor func'
     );
   }
 );
@@ -416,15 +488,13 @@ tap.test('Script using a plugin', async (t) => {
     signal: abortController.signal
   });
 
-  const reportFile = 'report-with-plugin.json';
-  const reportFilePath = await getRootPath(reportFile);
   const pluginFile = 'plugin-data.csv';
   const pluginFilePath = await getRootPath(pluginFile);
 
   const pluginPath = path.resolve(__dirname, '..', 'plugins');
 
   const [exitCode] = await execute(
-    ['run', '--output', reportFile, 'test/scripts/hello_plugin.json'],
+    ['run', '--output', reportFilePath, 'test/scripts/hello_plugin.json'],
     { env: { ARTILLERY_PLUGIN_PATH: pluginPath } }
   );
   abortController.abort();
@@ -433,20 +503,22 @@ tap.test('Script using a plugin', async (t) => {
     .aggregate.counters['http.requests'];
   const pluginCount = Number(fs.readFileSync(pluginFilePath, 'utf8'));
 
-  t.ok(
-    deleteFile(reportFilePath) &&
-      deleteFile(pluginFilePath) &&
-      exitCode === 0 &&
-      reportCount === pluginCount
+  t.ok(deleteFile(pluginFilePath));
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.equal(
+    reportCount,
+    pluginCount,
+    'Should have same number of requests in report as plugin'
+  );
+  checkForNegativeValues(
+    t,
+    JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
   );
 });
 
 tap.test(
   'The --overrides option may be used to change the script',
   async (t) => {
-    const reportFile = 'report-with-override.json';
-    const reportFilePath = await getRootPath(reportFile);
-
     const [exitCode] = await execute(
       [
         'run',
@@ -455,7 +527,7 @@ tap.test(
         '--overrides',
         '{"config": {"environments": {"dev":{"target":"http://localhost:3003"}}, "phases": [{"arrivalCount": 1, "duration": 1}]}}',
         '-o',
-        reportFile,
+        reportFilePath,
         'test/scripts/environments.yaml'
       ],
       { env: { ARTILLERY_USE_LEGACY_REPORT_FORMAT: '1' } }
@@ -464,7 +536,8 @@ tap.test(
     const reportCount = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'))
       .aggregate.scenariosCreated;
 
-    t.ok(deleteFile(reportFilePath) && exitCode === 0 && reportCount === 1);
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.equal(reportCount, 1, 'Should have created 1 scenario');
   }
 );
 
@@ -480,7 +553,7 @@ tap.test(
       'test/scripts.environments.yaml'
     ]);
 
-    t.ok(exitCode === 1);
+    t.equal(exitCode, 1, 'CLI should error with code 1');
   }
 );
 
@@ -491,18 +564,19 @@ tap.test(
     // We compare them to the max amount of arrivals we expect from the script # Note: v2.0.0-22 generates 20+ arrivals, almost double
     const totalRequests = 7;
 
-    const reportMultipleFile = 'multiple_workers.json';
-    const reportMultipleFilePath = await getRootPath(reportMultipleFile);
-
-    const reportSingleFile = 'single_worker.json';
-    const reportSingleFilePath = await getRootPath(reportSingleFile);
+    const reportMultipleFilePath = returnTmpPath(
+      `multiple_workers-${Date.now()}.json`
+    );
+    const reportSingleFilePath = returnTmpPath(
+      `single_worker-${Date.now()}.json`
+    );
 
     const [exitCodeMultiple] = await execute(
-      ['run', '-o', reportMultipleFile, 'test/scripts/ramp.json'],
+      ['run', '-o', reportMultipleFilePath, 'test/scripts/ramp.json'],
       { env: { WORKERS: 7 } }
     );
     const [exitCodeSingle] = await execute(
-      ['run', '-o', reportSingleFile, 'test/scripts/ramp.json'],
+      ['run', '-o', reportSingleFilePath, 'test/scripts/ramp.json'],
       { env: { WORKERS: 1 } }
     );
 
@@ -512,13 +586,18 @@ tap.test(
     const singleCount = JSON.parse(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
-    t.ok(
-      deleteFile(reportMultipleFilePath) &&
-        deleteFile(reportSingleFilePath) &&
-        exitCodeMultiple === 0 &&
-        exitCodeSingle === 0 &&
-        multipleCount === totalRequests &&
-        singleCount === totalRequests
+
+    t.equal(exitCodeMultiple, 0, 'CLI should exit with code 0');
+    t.equal(exitCodeSingle, 0, 'CLI should exit with code 0');
+    t.equal(
+      multipleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
+    );
+    t.equal(
+      singleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
     );
   }
 );
@@ -530,23 +609,29 @@ tap.test(
     // check single worker and multiple workers now generate same throughput
     const totalRequests = 10;
 
-    const reportMultipleFile = 'multiple_workers.json';
-    const reportMultipleFilePath = await getRootPath(reportMultipleFile);
-
-    const reportSingleFile = 'single_worker.json';
-    const reportSingleFilePath = await getRootPath(reportSingleFile);
+    const reportMultipleFilePath = returnTmpPath(
+      `multiple_workers-${Date.now()}.json`
+    );
+    const reportSingleFilePath = returnTmpPath(
+      `single_worker-${Date.now()}.json`
+    );
 
     const [exitCodeMultiple] = await execute(
       [
         'run',
         '-o',
-        reportMultipleFile,
+        reportMultipleFilePath,
         'test/scripts/ramp-regression-1682.json'
       ],
       { env: { WORKERS: 7 } }
     );
     const [exitCodeSingle] = await execute(
-      ['run', '-o', reportSingleFile, 'test/scripts/ramp-regression-1682.json'],
+      [
+        'run',
+        '-o',
+        reportSingleFilePath,
+        'test/scripts/ramp-regression-1682.json'
+      ],
       { env: { WORKERS: 1 } }
     );
 
@@ -556,13 +641,18 @@ tap.test(
     const singleCount = JSON.parse(
       fs.readFileSync(reportSingleFilePath, 'utf8')
     ).aggregate.counters['vusers.created'];
-    t.ok(
-      deleteFile(reportMultipleFilePath) &&
-        deleteFile(reportSingleFilePath) &&
-        exitCodeMultiple === 0 &&
-        exitCodeSingle === 0 &&
-        multipleCount === totalRequests &&
-        singleCount === totalRequests
+
+    t.equal(exitCodeMultiple, 0, 'CLI should exit with code 0');
+    t.equal(exitCodeSingle, 0, 'CLI should exit with code 0');
+    t.equal(
+      multipleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
+    );
+    t.equal(
+      singleCount,
+      totalRequests,
+      `Should have created ${totalRequests} scenarios`
     );
   }
 );
@@ -582,6 +672,63 @@ tap.test(
       { env: { WORKERS: 7 } }
     );
 
-    t.ok(exitCode === 0 && output.stdout.includes('Summary report'));
+    t.equal(exitCode, 0, 'CLI should exit with code 0');
+    t.ok(output.stdout.includes('Summary report'), 'Should log Summary report');
   }
 );
+
+tap.test("Script with 'parallel' behaves as expected", async (t) => {
+  const expectedVus = 2;
+  const expectedRequests = 6; // 1 scenario * 3 requests * 2 VUs
+  const requestNames = ['Dinosaur', 'Pony', 'Armadillo'];
+  const [exitCode, output] = await execute([
+    'run',
+    'test/scripts/scenario-with-parallel/scenario.yml',
+    '-o',
+    `${reportFilePath}`
+  ]);
+
+  const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
+
+  t.equal(exitCode, 0, 'CLI should exit with code 0');
+  t.ok(
+    !output.stdout.includes('false'),
+    'Request uuid available in request hooks should be correctly mapped to requests'
+  );
+  for (const name of requestNames) {
+    t.equal(
+      report.aggregate.counters[`beforeRequestHook.${name}`],
+      expectedVus,
+      `Should have created ${expectedVus} requests for ${name} request`
+    );
+    t.equal(
+      report.aggregate.counters[`afterRequestHook.${name}`],
+      expectedVus,
+      `AfterRequest hook should of ran ${expectedVus} times for ${name} request`
+    );
+  }
+
+  t.equal(
+    report.aggregate.counters['vusers.created'],
+    expectedVus,
+    `Should have created ${expectedVus} scenarios`
+  );
+  t.equal(
+    report.aggregate.counters['vusers.completed'],
+    expectedVus,
+    'All VUs should have succeeded'
+  );
+  t.equal(
+    report.aggregate.counters['http.requests'],
+    expectedRequests,
+    `Should have made ${expectedRequests} requests`
+  );
+  t.equal(
+    report.aggregate.counters['http.codes.200'],
+    expectedRequests,
+    `Should have made ${expectedRequests} successful requests`
+  );
+
+  checkForNegativeValues(t, report);
+  deleteFile(reportFilePath);
+});

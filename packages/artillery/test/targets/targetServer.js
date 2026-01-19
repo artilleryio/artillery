@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-'use strict';
+
 
 const Hapi = require('@hapi/hapi');
 
@@ -48,7 +48,7 @@ function double(req, h) {
 
   const number = Number(req.payload.number);
 
-  if (isNaN(number)) {
+  if (Number.isNaN(number)) {
     return h.response().code(400);
   }
 
@@ -68,7 +68,7 @@ function inc(req, h) {
 
   const number = Number(req.payload.number);
 
-  if (isNaN(number)) {
+  if (Number.isNaN(number)) {
     return h.response().code(400);
   }
 

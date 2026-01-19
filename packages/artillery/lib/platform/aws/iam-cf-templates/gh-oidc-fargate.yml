@@ -1,0 +1,241 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates an ArtilleryGitHubOIDCForFargateRole IAM role with permissions needed to run Artillery Fargate tests from a specified GitHub repository. An OIDC identity provider for Github will also be created if it is not already present in the account.
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "GitHub"
+        Parameters:
+          - GitHubRepository
+          - GitHubBranch
+      - Label:
+          default: "AWS IAM"
+        Parameters:
+          - GitHubOIDCProviderExists
+
+    ParameterLabels:
+      GitHubRepository:
+        default: "GitHub repository"
+      GitHubBranch:
+        default: "GitHub branch"
+      GitHubOIDCProviderExists:
+        default: "GitHub OIDC identity provider already created for the account?"
+
+Parameters:
+  GitHubRepository:
+    Type: String
+    Default: ""
+    Description: The GitHub repository (orgname/reponame) to be allowed to assume the created IAM role using OIDC (e.g. "artilleryio/artillery").
+
+  GitHubBranch:
+    Type: String
+    Default: "*"
+    Description: (Optional) Use when you want to allow only a specific branch within the specified Github repository to assume this IAM role using OIDC (e.g. "main"). If not set, defaults to "*" (all branches). 
+
+  GitHubOIDCProviderExists:
+    Type: String
+    Default: 'No'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Description: This will let CloudFormation know whether it needs to create the provider. (If it exists, can be found at Services -> IAM -> Identity providers as 'token.actions.githubusercontent.com').
+
+Conditions:
+  IsGHRepoSet:
+    !Not [!Equals [!Ref GitHubRepository, ""]]
+
+  CreateOIDCProvider:
+    !Equals [!Ref GitHubOIDCProviderExists, "No"]
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOIDCProvider
+    Properties:
+      Url: "https://token.actions.githubusercontent.com"
+      ClientIdList:
+        - "sts.amazonaws.com"
+      ThumbprintList:
+        - "6938fd4d98bab03faadb97b34396831e3780ee11"
+
+  ArtilleryGitHubOIDCForFargateRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      RoleName: "ArtilleryGitHubOIDCForFargateRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Federated: 
+                Fn::If:
+                  - CreateOIDCProvider
+                  - !Ref GitHubOIDCProvider
+                  - !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Action: "sts:AssumeRoleWithWebIdentity"
+            Condition: {
+              StringEquals:
+                {
+                  "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+                },
+              StringLike:
+                {
+                  "token.actions.githubusercontent.com:sub": !Sub "repo:${GitHubRepository}:${GitHubBranch}"
+                }
+            }
+      Path: "/"
+      Policies:
+        - PolicyName: "ArtilleryGitHubOIDCForFargatePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: "CreateOrGetECSRole"
+                Effect: "Allow"
+                Action:
+                  - "iam:CreateRole"
+                  - "iam:GetRole"
+                  - "iam:AttachRolePolicy"
+                  - "iam:PassRole"
+                Resource:
+                  Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/artilleryio-ecs-worker-role"
+              - Sid: "CreateECSPolicy"
+                Effect: "Allow"
+                Action:
+                  - "iam:CreatePolicy"
+                Resource:
+                  Fn::Sub: "arn:aws:iam::${AWS::AccountId}:policy/artilleryio-ecs-worker-policy"
+              - Effect: "Allow"
+                Action:
+                  - "iam:CreateServiceLinkedRole"
+                Resource:
+                  - "arn:aws:iam::*:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS*"
+                Condition:
+                  StringLike:
+                    iam:AWSServiceName: "ecs.amazonaws.com"
+              - Effect: "Allow"
+                Action:
+                  - "iam:PassRole"
+                Resource:
+                  - Fn::Sub: "arn:aws:iam::${AWS::AccountId}:role/artilleryio-ecs-worker-role"
+              - Sid: "SQSPermissions"
+                Effect: "Allow"
+                Action:
+                  - "sqs:*"
+                Resource:
+                  Fn::Sub: "arn:aws:sqs:*:${AWS::AccountId}:artilleryio*"
+              - Sid: "SQSListQueues"
+                Effect: "Allow"
+                Action:
+                  - "sqs:ListQueues"
+                Resource: "*"
+              - Sid: "ECSPermissionsGeneral"
+                Effect: "Allow"
+                Action:
+                  - "ecs:ListClusters"
+                  - "ecs:CreateCluster"
+                  - "ecs:RegisterTaskDefinition"
+                  - "ecs:DeregisterTaskDefinition"
+                Resource: "*"
+              - Sid: "ECSPermissionsScopedToCluster"
+                Effect: "Allow"
+                Action:
+                  - "ecs:DescribeClusters"
+                  - "ecs:ListContainerInstances"
+                Resource:
+                  Fn::Sub: "arn:aws:ecs:*:${AWS::AccountId}:cluster/*"
+              - Sid: "ECSPermissionsScopedWithCondition"
+                Effect: "Allow"
+                Action:
+                  - "ecs:SubmitTaskStateChange"
+                  - "ecs:DescribeTasks"
+                  - "ecs:ListTasks"
+                  - "ecs:ListTaskDefinitions"
+                  - "ecs:DescribeTaskDefinition"
+                  - "ecs:StartTask"
+                  - "ecs:StopTask"
+                  - "ecs:RunTask"
+                Condition:
+                  ArnEquals:
+                    ecs:cluster:
+                      Fn::Sub: "arn:aws:ecs:*:${AWS::AccountId}:cluster/*"
+                Resource: "*"
+              - Sid: "S3Permissions"
+                Effect: "Allow"
+                Action:
+                  - "s3:CreateBucket"
+                  - "s3:DeleteObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectAcl"
+                  - "s3:GetObjectTagging"
+                  - "s3:GetObjectVersion"
+                  - "s3:PutObject"
+                  - "s3:PutObjectAcl"
+                  - "s3:ListBucket"
+                  - "s3:GetBucketLocation"
+                  - "s3:GetBucketLogging"
+                  - "s3:GetBucketPolicy"
+                  - "s3:GetBucketTagging"
+                  - "s3:PutBucketPolicy"
+                  - "s3:PutBucketTagging"
+                  - "s3:PutMetricsConfiguration"
+                  - "s3:GetLifecycleConfiguration"
+                  - "s3:PutLifecycleConfiguration"
+                Resource:
+                  - "arn:aws:s3:::artilleryio-test-data-*"
+                  - "arn:aws:s3:::artilleryio-test-data-*/*"
+              - Sid: "LogsPermissions"
+                Effect: "Allow"
+                Action:
+                  - "logs:PutRetentionPolicy"
+                Resource:
+                  - Fn::Sub: "arn:aws:logs:*:${AWS::AccountId}:log-group:artilleryio-log-group/*"
+              - Effect: "Allow"
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - Fn::Sub: "arn:aws:secretsmanager:*:${AWS::AccountId}:secret:artilleryio/*"
+              - Effect: "Allow"
+                Action:
+                  - "ssm:PutParameter"
+                  - "ssm:GetParameter"
+                  - "ssm:GetParameters"
+                  - "ssm:DeleteParameter"
+                  - "ssm:DescribeParameters"
+                  - "ssm:GetParametersByPath"
+                Resource:
+                  - Fn::Sub: "arn:aws:ssm:us-east-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:us-east-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:us-west-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:us-west-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ca-central-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-west-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-west-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-west-3:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-central-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:eu-north-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-south-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-east-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-northeast-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-northeast-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-southeast-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:ap-southeast-2:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:me-south-1:${AWS::AccountId}:parameter/artilleryio/*"
+                  - Fn::Sub: "arn:aws:ssm:sa-east-1:${AWS::AccountId}:parameter/artilleryio/*"
+              - Effect: "Allow"
+                Action:
+                  - "ec2:DescribeRouteTables"
+                  - "ec2:DescribeVpcs"
+                  - "ec2:DescribeSubnets"
+                Resource: "*"
+
+Outputs:
+  RoleArn:
+    Description: "ARN of the created IAM Role"
+    Value:
+      Fn::GetAtt:
+        - "ArtilleryGitHubOIDCForFargateRole"
+        - "Arn"
+  OIDCProviderArn:
+    Condition: CreateOIDCProvider
+    Description: "ARN of the newly created OIDC provider"
+    Value: !Ref GitHubOIDCProvider

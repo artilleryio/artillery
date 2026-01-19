@@ -1,6 +1,6 @@
 {
   "name": "@artilleryio/types",
-  "version": "0.4.1",
+  "version": "0.11.0",
   "files": [
     "./definitions.ts",
     "./schema.json"
@@ -8,10 +8,18 @@
   "license": "MPL-2.0",
   "scripts": {
     "pretest": "npm run build",
-    "test": "tap --ts --no-coverage --color --timeout 60 test/**/*.test.ts",
+    "test": "tap --timeout 120 test/**/*.test.ts",
     "build": "node generate-schema.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build && npm test"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true,
+    "test-env": [
+      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ]
   },
   "devDependencies": {
     "@types/tap": "^15.0.8",
@@ -19,8 +27,11 @@
     "joi": "^17.6.0",
     "joi-to-json": "^4.1.0",
     "js-yaml": "^4.1.0",
-    "tap": "^16.3.8",
+    "tap": "^19.0.2",
     "ts-node": "^10.9.1",
     "typescript-json-schema": "^0.59.0"
+  },
+  "dependencies": {
+    "artillery-plugin-fake-data": "*"
   }
 }

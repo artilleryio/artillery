@@ -1,4 +1,5 @@
 const got = require('got');
+const { sleep } = require('../util');
 const debug = require('debug')('plugin:publish-metrics:splunk');
 
 class SplunkReporter {
@@ -212,7 +213,7 @@ class SplunkReporter {
   async waitingForRequest() {
     while (this.pendingRequests > 0) {
       debug('Waiting for pending request ...');
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await sleep(500);
     }
 
     debug('Pending requests done');

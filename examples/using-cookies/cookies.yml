@@ -1,7 +1,7 @@
 config:
   target: "http://localhost:3000"
   phases:
-    - duration: 600
+    - duration: 10min
       arrivalRate: 25
   variables:
     email:
@@ -16,7 +16,7 @@ scenarios:
   # email and set it in a cookie, which will get returned in the response.
   # The subsequent request to /account will return the value of the
   # email from the saved cookie.
-  - name: "Login and verify cookie"
+  - name: "login_and_verify_cookie"
     flow:
     - post:
         url: "/login"
@@ -32,7 +32,7 @@ scenarios:
   # In this scenario, we'll manually set cookie values when making a
   # request to /set-state, and validating the value saved in the cookie
   # in a request to /state.
-  - name: "Set cookie values"
+  - name: "set_cookie_values"
     flow:
       - post:
           url: "/login"

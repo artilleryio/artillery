@@ -3,34 +3,94 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { Command, Flags, Args } = require('@oclif/core');
-const telemetry = require('../telemetry').init();
-const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
+const { CommonRunFlags } = require('../cli/common-flags');
+const telemetry = require('../telemetry');
 
 const runCluster = require('../platform/aws-ecs/legacy/run-cluster');
+const { supportedRegions } = require('../platform/aws-ecs/legacy/util');
 const PlatformECS = require('../platform/aws-ecs/ecs');
 const { ECS_WORKER_ROLE_NAME } = require('../platform/aws/constants');
-
+const { Plugin: CloudPlugin } = require('../platform/cloud/cloud');
+const generateId = require('../util/generate-id');
+const dotenv = require('dotenv');
+const path = require('node:path');
+const fs = require('node:fs');
 class RunCommand extends Command {
-  static aliases = ['run:fargate'];
+  static aliases = ['run:fargate', 'run:ecs', 'run-ecs'];
   // Enable multiple args:
   static strict = false;
 
   async run() {
     const { flags, _argv, args } = await this.parse(RunCommand);
-
     flags['platform-opt'] = [`region=${flags.region}`];
 
     flags.platform = 'aws:ecs';
 
-    new CloudPlugin(null, null, { flags });
+    if (flags.dotenv) {
+      const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
+      try {
+        fs.statSync(dotEnvPath);
+      } catch (_err) {
+        console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
+      }
+      dotenv.config({ path: dotEnvPath });
+    }
 
-    const ECS = new PlatformECS(null, null, {}, { testRunId: 'foo' });
+    const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
+    global.artillery.testRunId = testRunId;
+
+    const cloud = new CloudPlugin(null, null, { flags });
+    global.artillery.cloudEnabled = cloud.enabled;
+    if (cloud.enabled) {
+      try {
+        await cloud.init();
+      } catch (err) {
+        if (err.name === 'CloudAPIKeyMissing') {
+          console.error(
+            'Error: API key is required to record test results to Artillery Cloud'
+          );
+          console.error(
+            'See https://docs.art/get-started-cloud for more information'
+          );
+
+          process.exit(7);
+        } else if (err.name === 'APIKeyUnauthorized') {
+          console.error(
+            'Error: API key is not recognized or is not authorized to record tests'
+          );
+
+          process.exit(7);
+        } else if (err.name === 'PingFailed') {
+          console.error(
+            'Error: unable to reach Artillery Cloud API. This could be due to firewall restrictions on your network'
+          );
+          console.log('Please see https://docs.art/cloud/err-ping');
+          process.exit(7);
+        } else {
+          console.error(
+            'Error: something went wrong connecting to Artillery Cloud'
+          );
+          console.error('Check https://status.artillery.io for status updates');
+          console.error(err);
+        }
+      }
+    }
+
+    flags.taskRoleName = flags['task-role-name'] || ECS_WORKER_ROLE_NAME;
+
+    const ECS = new PlatformECS(
+      null,
+      null,
+      {},
+      {
+        testRunId: 'foo',
+        region: flags.region,
+        taskRoleName: flags.taskRoleName
+      }
+    );
     await ECS.init();
 
-    flags.taskRoleName = ECS_WORKER_ROLE_NAME;
     process.env.USE_NOOP_BACKEND_STORE = 'true';
-
-    flags.region = flags.region || 'us-east-1';
 
     telemetry.capture('run:fargate', {
       region: flags.region,
@@ -42,16 +102,6 @@ class RunCommand extends Command {
   }
 }
 
-const runTestDescriptions = {
-  count: 'Number of load generator workers to launch',
-  cluster: 'Name of the Fargate/ECS cluster to run the test on',
-  region: 'The AWS region to run in',
-  packages:
-    'Path to package.json file which lists dependencies for the test script',
-  maxDuration: 'Maximum duration of the test run',
-  dotenv: 'Path to a .env file to load environment variables from'
-};
-
 RunCommand.description = `launch a test using AWS ECS/Fargate
 
 Examples:
@@ -62,86 +112,76 @@ Examples:
 `;
 
 RunCommand.flags = {
+  ...CommonRunFlags,
   count: Flags.integer({
-    description: runTestDescriptions.count
+    description: 'Number of load generator workers to launch'
   }),
   cluster: Flags.string({
-    description: runTestDescriptions.cluster
+    description: 'Name of the Fargate/ECS cluster to run the test on'
   }),
   region: Flags.string({
     char: 'r',
-    description: runTestDescriptions.region
+    description: 'The AWS region to run in',
+    options: supportedRegions,
+    default: 'us-east-1'
   }),
   secret: Flags.string({
-    multiple: true
-  }),
-  // TODO: Descriptions
-  'launch-type': Flags.string({}),
-  'launch-config': Flags.string({}),
-  'subnet-ids': Flags.string({}),
-  'security-group-ids': Flags.string({}),
-  'task-role-name': Flags.string({}),
-  target: Flags.string({
-    char: 't',
+    multiple: true,
     description:
-      'Set target endpoint. Overrides the target already set in the test script'
+      'Make secrets available to workers. The secret must exist in SSM parameter store for the given region, under /artilleryio/<SECRET_NAME>'
+  }),
+  'launch-type': Flags.string({
+    description: 'The launch type to use for the test. Defaults to Fargate.',
+    options: ['ecs:fargate', 'ecs:ec2']
+  }),
+  spot: Flags.boolean({
+    description:
+      'Use Fargate Spot (https://docs.art/fargate-spot) Ignored when --launch-type is set to ecs:ec2'
+  }),
+  'launch-config': Flags.string({
+    description:
+      'JSON to customize launch configuration of ECS/Fargate tasks (see https://www.artillery.io/docs/reference/cli/run-fargate#using---launch-config)'
+  }),
+  'container-dns-servers': Flags.string({
+    description:
+      'Comma-separated list of DNS servers for Artillery container. Maps to dnsServers parameter in ECS container definition'
+  }),
+  'task-ephemeral-storage': Flags.string({
+    description:
+      'Ephemeral storage in GiB for the worker task. Maps to ephemeralStorage parameter in ECS container definition. Fargate-only.',
+    type: 'integer'
+  }),
+
+  'subnet-ids': Flags.string({
+    description:
+      'Comma-separated list of AWS VPC subnet IDs to launch Fargate tasks in'
+  }),
+  'security-group-ids': Flags.string({
+    description:
+      'Comma-separated list of AWS VPC security group IDs to launch Fargate tasks in'
+  }),
+  'task-role-name': Flags.string({
+    description: 'Custom IAM role name for Fargate containers to assume'
   }),
   cpu: Flags.string({
     description:
-      'Set task vCPU on Fargate. Value may be set as a number of vCPUs between 1-16 (e.g. 4), or as number of vCPU units (e.g. 4096)',
-    default: '4'
+      'Set task vCPU on Fargate (defaults to 4 vCPU). Value may be set as a number of vCPUs between 1-16 (e.g. 4), or as number of vCPU units (e.g. 4096).'
   }),
   memory: Flags.string({
     description:
-      'Set task memory on Fargate. Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)',
-    default: '8'
+      'Set task memory on Fargate (defaults to 8 GB). Value may be set as number of GB between 1-120 (e.g. 8), or as MiB (e.g. 8192)'
   }),
-  output: Flags.string({
-    char: 'o',
-    description: 'Write a JSON report to file'
-  }),
-  insecure: Flags.boolean({
-    char: 'k',
-    description: 'Allow insecure TLS connections; do not use in production'
-  }),
-  environment: Flags.string({
-    char: 'e',
-    description: 'Use one of the environments specified in config.environments'
-  }),
-  config: Flags.string({
-    description: 'Read configuration for the test from the specified file'
-  }),
-  'scenario-name': Flags.string({
-    description: 'Name of the specific scenario to run'
-  }),
-  overrides: Flags.string({
-    description: 'Dynamically override values in the test script; a JSON object'
-  }),
-  input: Flags.string({
-    char: 'i',
-    description: 'Input script file',
-    multiple: true,
-    hidden: true
-  }),
-  tags: Flags.string({
-    description:
-      'Comma-separated list of tags in key:value format to tag the test run, for example: --tags team:sre,service:foo'
-  }),
-  note: Flags.string({}), // TODO: description
   packages: Flags.string({
-    description: runTestDescriptions.packages
+    description:
+      'Path to package.json file which lists dependencies for the test script'
   }),
   'max-duration': Flags.string({
-    description: runTestDescriptions.maxDuration
+    description: 'Maximum duration of the test run'
   }),
-  dotenv: Flags.string({
-    description: runTestDescriptions.dotenv
-  }),
-  record: Flags.boolean({
-    description: 'Record test run to Artillery Cloud'
-  }),
-  key: Flags.string({
-    description: 'API key for Artillery Cloud'
+  'no-assign-public-ip': Flags.boolean({
+    description:
+      'Turn off the default behavior of assigning public IPs to Fargate worker tasks. When this option is used you must make sure tasks have a route to the internet, i.e. via a NAT gateway attached to a private subnet',
+    default: false
   })
 };
 

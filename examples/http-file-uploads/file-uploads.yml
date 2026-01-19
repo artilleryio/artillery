@@ -1,0 +1,27 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 10min
+      arrivalRate: 25
+
+  # To randomize the files to upload during the test scenario,
+  # set up variables with the names of the files to use. These
+  # files are placed in the `/files` directory.
+  variables:
+    filename:
+      - "artillery-logo.jpg"
+      - "artillery-installation.pdf"
+      - "sre-fundamental-rules.png"
+
+scenarios:
+  - flow:
+    # The HTTP server has an endpoint (POST /upload) that accepts files
+    # through the `document` field.
+    - post:
+        url: "/upload"
+        formData:
+          document:
+            # The `fromFile` attribute tells Artillery to upload the
+            # specified file. If the file cannot be read, this scenario
+            # will report an ENOENT error.
+            fromFile: "./files/{{ filename }}"

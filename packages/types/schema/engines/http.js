@@ -12,7 +12,8 @@ const { ExpectPluginImplementationSchema } = require('../plugins/expect');
 
 const {
   artilleryNumberOrString,
-  artilleryBooleanOrString
+  artilleryBooleanOrString,
+  buildArtilleryKeyValue
 } = require('../joi.helpers');
 
 const CaptureSchema = Joi.alternatives()
@@ -66,15 +67,22 @@ const SharedHttpMethodProperties = {
     .description(
       'Descriptive name for your URL. Certain plugins and features use this name instead of the full URL due to dynamic request urls.'
     ),
-  headers: Joi.object().meta({ title: 'Headers' }),
-  cookie: Joi.object() //TODO: maybe make this a [name: string]: string
-    .meta({ title: 'Cookies' }),
+  headers: buildArtilleryKeyValue(Joi.string())
+    .meta({ title: 'Request Headers' })
+    .description(
+      'Headers to be used in this request. Replace *. with your header name, and set string value.'
+    ),
+  cookie: buildArtilleryKeyValue(Joi.string())
+    .meta({ title: 'Request Cookies' })
+    .description(
+      'Cookies to be used in this request. Replace *. with your cookie name, and set string value.'
+    ),
   followRedirect: artilleryBooleanOrString
     .meta({ title: 'Disable redirect following' })
     .description(
       'Artillery follows redirects by default.\nSet this option to `false` to stop following redirects.'
     ),
-  qs: Joi.object().meta({ title: 'Query string object' }),
+  qs: Joi.object().meta({ title: 'Query string object' }), //TODO: add proper schema to this one. potential bug in joi-to-schema in generating from alternatives
   gzip: artilleryBooleanOrString
     .meta({ title: 'Compression' })
     .default(true)
@@ -116,16 +124,23 @@ const HttpMethodPropertiesWithBody = {
   ...SharedHttpMethodProperties,
   json: Joi.any().meta({ title: 'JSON response body' }),
   body: Joi.any().meta({ title: 'Raw response body' }),
-  form: Joi.object()
+  form: buildArtilleryKeyValue(Joi.string())
     .meta({ title: 'Url-encoded Form' })
     .description(
       'https://www.artillery.io/docs/reference/engines/http#url-encoded-forms-applicationx-www-form-urlencoded'
     ),
-  formData: Joi.object()
+  formData: Joi.object() //TODO: add proper schema to this one. not working due to artillery pro plugin
     .meta({ title: 'Multipart Forms' })
     .description(
       'https://www.artillery.io/docs/reference/engines/http#multipart-forms-multipartform-data'
-    )
+    ),
+  setContentLengthHeader: artilleryBooleanOrString
+    .meta({
+      title: 'Set Content-Length header'
+    })
+    .description(
+      'Set the Content-Length header. Used only for the file upload requests.'
+    ) //TODO: add link when docs are available
 };
 
 const BaseWithHttp = [
@@ -176,14 +191,16 @@ const HttpFlowItemSchema = Joi.alternatives()
   .id('HttpFlowItemSchema');
 
 const HttpDefaultsConfigSchema = Joi.object({
-  headers: Joi.object()
-    .meta({ title: 'Request Headers' })
+  headers: buildArtilleryKeyValue(Joi.string())
+    .meta({ title: 'Default Headers' })
     .description(
-      'Default headers to be used in all requests.\nhttps://www.artillery.io/docs/reference/engines/http#default-configuration'
+      'Default headers to be used in all requests. Replace *. with your header name, and set string value.\nhttps://www.artillery.io/docs/reference/engines/http#default-configuration'
     ),
-  cookie: Joi.object()
-    .meta({ title: 'Request Cookies' })
-    .description('Default cookies to be used in all requests.'),
+  cookie: buildArtilleryKeyValue(Joi.string())
+    .meta({ title: 'Default Cookies' })
+    .description(
+      'Default cookies to be used in all requests. Replace *. with your cookie name, and set string value.'
+    ),
   strictCapture: Joi.alternatives(Joi.boolean(), Joi.string())
     .meta({ title: 'Strict capture' })
     .description(

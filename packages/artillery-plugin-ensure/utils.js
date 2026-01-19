@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const crypto = require('node:crypto');
 const debug = require('debug')('plugin:ensure');
 
 const hashString = (str) => {
@@ -8,7 +8,7 @@ const hashString = (str) => {
 };
 
 function replaceMetricsWithHashes(replacementsArray, targetString) {
-  let skippedMetrics = [];
+  const skippedMetrics = [];
 
   replacementsArray.forEach((str) => {
     if (targetString.includes(str)) {
@@ -32,7 +32,7 @@ function replaceMetricsWithHashes(replacementsArray, targetString) {
 }
 
 function getHashedVarToValueMap(varsWithHashes) {
-  let hashedMetrics = {};
+  const hashedMetrics = {};
 
   for (const metric of Object.values(varsWithHashes)) {
     hashedMetrics[metric.hash] = metric.value;

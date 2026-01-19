@@ -1,5 +1,5 @@
-const fs = require('fs');
-const os = require('os');
+const fs = require('node:fs');
+const os = require('node:os');
 
 const configFilePath = `${os.homedir()}/.artilleryrc`;
 
@@ -8,7 +8,7 @@ function readArtilleryConfig() {
     const config = fs.readFileSync(configFilePath, 'utf-8');
 
     return JSON.parse(config);
-  } catch (err) {
+  } catch (_err) {
     return {};
   }
 }

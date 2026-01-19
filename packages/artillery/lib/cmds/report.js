@@ -1,27 +1,10 @@
 const { Command, Flags, Args } = require('@oclif/core');
 
-const fs = require('fs');
-const path = require('path');
-const _ = require('lodash');
-const telemetry = require('../telemetry').init();
+const chalk = require('chalk');
 
 class ReportCommand extends Command {
   async run() {
-    telemetry.capture('report generate');
-    const { flags, args } = await this.parse(ReportCommand);
-    const output = flags.output || args.file + '.html'; // TODO: path.resolve
-    const data = JSON.parse(fs.readFileSync(args.file, 'utf-8'));
-    data.intermediate.forEach((o) => delete o.latencies); // TODO: still needed?
-    data.name = args.file.match(/([^\/]*)$/)[0];
-    const templateFn = path.join(
-      path.dirname(__filename),
-      '../report/index.html.ejs'
-    );
-    const template = fs.readFileSync(templateFn, 'utf-8');
-    const compiledTemplate = _.template(template);
-    const html = compiledTemplate({ report: JSON.stringify(data, null, 2) });
-    fs.writeFileSync(output, html, { encoding: 'utf-8', flag: 'w' });
-    console.log('Report generated: %s', output);
+    console.error(deprecationNotice);
   }
 }
 
@@ -34,6 +17,17 @@ ReportCommand.flags = {
     description: 'Write HTML report to specified location'
   })
 };
+
+const deprecationNotice = `
+┌───────────────────────────────────────────────────────────────────────┐
+|  ${chalk.blue(
+  'The "report" command has been deprecated and is no longer supported'
+)}  |
+|                                                                       |
+|  You can use Artillery Cloud (https://app.artillery.io) to visualize  |
+|  test results, create custom reports, and share them with your team.  |
+└───────────────────────────────────────────────────────────────────────┘
+`;
 
 ReportCommand.args = { file: Args.string() };
 

@@ -26,15 +26,15 @@ class MixPanelReporter {
     debug('init done');
   }
 
-  sendToMixPanel(config, events, script) {
+  sendToMixPanel(_config, events, script) {
     events.on('stats', (stats) => {
       const report = this.formatProperties(stats);
-      let env = script._environment
+      const env = script._environment
         ? script._environment.toUpperCase()
         : script.config.target;
 
       this.mixpanel.track(
-        `${env}-${script.scenarios[0]['name'] || 'Artillery.io'}`,
+        `${env}-${script.scenarios[0].name || 'Artillery.io'}`,
         report
       );
     });
