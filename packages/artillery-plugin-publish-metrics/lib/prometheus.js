@@ -106,9 +106,8 @@ class PrometheusReporter {
     return candidate.replace(/\s|\./g, '_').toLowerCase();
   }
 
-  sendMetrics(config, events) {
-    let that = this;
-    const eventType = config.sendMetricsAtSummary ? 'done' : 'stats';
+  sendMetrics(_config, events) {
+    const eventType = _config.sendMetricsAtSummary ? 'done' : 'stats';
 
     events.on(eventType, (stats) => {
       debug('On stats event: %O', stats);
