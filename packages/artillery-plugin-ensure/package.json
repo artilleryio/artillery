@@ -22,7 +22,7 @@
   "dependencies": {
     "chalk": "^2.4.2",
     "debug": "^4.4.3",
-    "filtrex": "^3.1.0"
+    "filtrex": "^2.2.3"
   },
   "devDependencies": {
     "tap": "^19.0.2",
