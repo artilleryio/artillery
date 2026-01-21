@@ -20,7 +20,7 @@
   "author": "Hassy Veldstra <h@artillery.io>",
   "license": "MPL-2.0",
   "dependencies": {
-    "debug": "^4.3.2"
+    "debug": "^4.4.3"
   },
   "devDependencies": {
     "tap": "^19.0.2",
