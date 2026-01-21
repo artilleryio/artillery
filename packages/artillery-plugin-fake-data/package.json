@@ -11,6 +11,6 @@
   },
   "license": "MPL-2.0",
   "dependencies": {
-    "@ngneat/falso": "^7.1.1"
+    "@ngneat/falso": "^8.0.2"
   }
 }

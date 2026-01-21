@@ -21,8 +21,8 @@
   "license": "MPL-2.0",
   "dependencies": {
     "chalk": "^2.4.2",
-    "debug": "^4.3.3",
-    "filtrex": "^2.2.3"
+    "debug": "^4.4.3",
+    "filtrex": "^3.1.0"
   },
   "devDependencies": {
     "tap": "^19.0.2",

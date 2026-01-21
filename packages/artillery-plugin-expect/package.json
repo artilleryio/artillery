@@ -18,7 +18,7 @@
   "license": "SEE LICENSE IN LICENSE.txt",
   "dependencies": {
     "chalk": "^4.1.2",
-    "debug": "^4.3.2",
+    "debug": "^4.4.3",
     "jmespath": "^0.16.0",
     "lodash": "^4.17.21"
   },
