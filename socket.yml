@@ -1,0 +1,8 @@
+version: 2
+
+projectIgnorePaths:
+  - "examples"
+
+githubApp:
+  enabled: true
+  dependencyOverviewEnabled: true
