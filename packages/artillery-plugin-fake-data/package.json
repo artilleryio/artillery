@@ -1,6 +1,6 @@
 {
   "name": "artillery-plugin-fake-data",
-  "version": "1.18.0",
+  "version": "1.19.0",
   "description": "Add fake test data easily to your Artillery test scripts.",
   "main": "index.js",
   "publishConfig": {
