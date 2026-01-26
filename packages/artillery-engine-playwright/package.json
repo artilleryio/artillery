@@ -20,10 +20,10 @@
   "author": "",
   "license": "MPL-2.0",
   "dependencies": {
-    "@playwright/browser-chromium": "1.57.0",
-    "@playwright/test": "1.57.0",
+    "@playwright/browser-chromium": "1.58.0",
+    "@playwright/test": "1.58.0",
     "debug": "^4.4.3",
-    "playwright": "1.57.0"
+    "playwright": "1.58.0"
   },
   "devDependencies": {
     "tap": "^19.0.2",
