@@ -1,6 +1,7 @@
 const EventEmitter = require('node:events');
 
 const { Consumer } = require('sqs-consumer');
+const { S3Client, GetObjectCommand } = require('@aws-sdk/client-s3');
 const driftless = require('driftless');
 const debug = require('debug')('sqs-reporter');
 const debugV = require('debug')('sqs-reporter:v');
@@ -39,10 +40,26 @@ class SqsReporter extends EventEmitter {
       typeof process.env.SQS_CONSUMER_POOL_SIZE !== 'undefined'
         ? parseInt(process.env.SQS_CONSUMER_POOL_SIZE, 10)
         : Math.max(Math.ceil(this.count / 10), 75);
+
+    this.s3 = null;
+    this.s3Bucket = process.env.ARTILLERY_S3_BUCKET || null;
+    if (this.s3Bucket) {
+      this.s3 = new S3Client({ region: opts.region });
+    }
   }
 
   _allWorkersDone() {
     return Object.keys(this.workerState).length === this.count;
+  }
+
+  async _fetchFromS3(s3Key) {
+    const response = await this.s3.send(
+      new GetObjectCommand({
+        Bucket: this.s3Bucket,
+        Key: s3Key
+      })
+    );
+    return JSON.parse(await response.Body.transformToString());
   }
 
   stop() {
@@ -295,6 +312,19 @@ class SqsReporter extends EventEmitter {
 
           if (!body) {
             throw new Error();
+          }
+
+          // Handle overflow messages stored in S3
+          if (body._overflowRef && this.s3 && this.s3Bucket) {
+            try {
+              debug('Fetching overflow payload from S3: %s', body._overflowRef);
+              body = await this._fetchFromS3(body._overflowRef);
+            } catch (s3Err) {
+              console.error('Failed to fetch overflow message from S3:', s3Err);
+              throw new Error(
+                `Failed to fetch overflow message: ${body._overflowRef}`
+              );
+            }
           }
 
           const attrs = message.MessageAttributes;

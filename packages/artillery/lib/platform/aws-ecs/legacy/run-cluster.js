@@ -1424,6 +1424,10 @@ async function generateTaskOverrides(context) {
           {
             name: 'ARTILLERY_TEST_RUN_ID',
             value: global.artillery.testRunId
+          },
+          {
+            name: 'ARTILLERY_S3_BUCKET',
+            value: context.s3Bucket
           }
         ]
       },
