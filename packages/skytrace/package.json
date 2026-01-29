@@ -46,7 +46,7 @@
     "@types/gradient-string": "^1.1.2",
     "@types/inquirer": "^8.2.5",
     "@types/js-yaml": "^4.0.5",
-    "@types/mocha": "^9.0.0",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^16.18.3",
     "chai": "^4",
     "mocha": "^9",
