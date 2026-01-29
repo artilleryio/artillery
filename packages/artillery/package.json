@@ -1,6 +1,6 @@
 {
   "name": "artillery",
-  "version": "2.0.28",
+  "version": "2.0.29",
   "description": "Cloud-scale load testing. https://www.artillery.io",
   "types": "./types.d.ts",
   "exports": {
