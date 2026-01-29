@@ -1,4 +1,4 @@
-const request = require('got');
+const { cloudHttpClient: request } = require('./http-client');
 
 class Client {
   constructor({ apiKey, baseUrl }) {
@@ -25,11 +25,7 @@ class Client {
 
   async whoami() {
     const res = await request.get(this.whoamiEndpoint, {
-      headers: this.defaultHeaders,
-      throwHttpErrors: false,
-      retry: {
-        limit: 3
-      }
+      headers: this.defaultHeaders
     });
 
     const body = JSON.parse(res.body);
@@ -43,11 +39,7 @@ class Client {
     const res = await request.get(
       `${this.baseUrl}/api/org/${currentOrgId}/stash`,
       {
-        headers: this.defaultHeaders,
-        throwHttpErrors: false,
-        retry: {
-          limit: 3
-        }
+        headers: this.defaultHeaders
       }
     );
 
