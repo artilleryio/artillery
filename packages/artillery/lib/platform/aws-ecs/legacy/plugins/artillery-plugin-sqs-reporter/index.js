@@ -3,9 +3,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { SQSClient, SendMessageCommand } = require('@aws-sdk/client-sqs');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 const _debug = require('debug')('plugin:sqsReporter');
 const uuid = require('node:crypto').randomUUID;
 const { getAQS, sendMessage } = require('./azure-aqs');
+
+// SQS has 1MB message limit. Use 950KB threshold for safety margin.
+const SQS_SIZE_LIMIT = 950 * 1024;
 
 module.exports = {
   Plugin: ArtillerySQSPlugin,
@@ -47,6 +51,15 @@ function ArtillerySQSPlugin(script, events) {
     this.queueUrl =
       process.env.SQS_QUEUE_URL ||
       script.config.plugins['sqs-reporter'].queueUrl;
+  }
+
+  this.s3 = null;
+  this.s3Bucket = process.env.ARTILLERY_S3_BUCKET || null;
+  if (this.sqs && this.s3Bucket) {
+    this.s3 = new S3Client({
+      region:
+        process.env.SQS_REGION || script.config.plugins['sqs-reporter'].region
+    });
   }
 
   if (process.env.AZURE_STORAGE_QUEUE_URL) {
@@ -128,16 +141,46 @@ ArtillerySQSPlugin.prototype.sendSQS = async function (body) {
   this.unsent++;
 
   const payload = JSON.stringify(body);
-
-  const params = {
-    MessageBody: payload,
-    QueueUrl: this.queueUrl,
-    MessageAttributes: this.messageAttributes,
-    MessageDeduplicationId: uuid(),
-    MessageGroupId: this.testId
-  };
+  const payloadSize = Buffer.byteLength(payload, 'utf8');
 
   try {
+    let messageBody = payload;
+
+    // Upload to S3 if payload exceeds SQS limit
+    if (payloadSize > SQS_SIZE_LIMIT && this.s3 && this.s3Bucket) {
+      const workerId = this.tags.find((t) => t.key === 'workerId')?.value;
+      const messageId = uuid();
+      const s3Key = `tests/${this.testId}/overflow/${workerId}/${messageId}.json`;
+
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.s3Bucket,
+          Key: s3Key,
+          Body: payload,
+          ContentType: 'application/json'
+        })
+      );
+
+      messageBody = JSON.stringify({
+        event: body.event,
+        _overflowRef: s3Key
+      });
+
+      _debug(
+        'Payload %d bytes exceeded limit, uploaded to S3: %s',
+        payloadSize,
+        s3Key
+      );
+    }
+
+    const params = {
+      MessageBody: messageBody,
+      QueueUrl: this.queueUrl,
+      MessageAttributes: this.messageAttributes,
+      MessageDeduplicationId: uuid(),
+      MessageGroupId: this.testId
+    };
+
     await this.sqs.send(new SendMessageCommand(params));
   } catch (err) {
     console.error(err);
