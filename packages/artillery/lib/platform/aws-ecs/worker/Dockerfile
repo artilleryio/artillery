@@ -46,7 +46,7 @@ COPY package.json package.json
 ## Copy Fargate worker files
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/loadgen-worker /artillery/loadgen-worker
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/helpers.sh
-COPY ./packages/artillery/lib/platform/aws-ecs/worker/check-license.mjs /artillery/check-license.mjs
+
 # Install dependencies
 RUN npm install -w artillery --ignore-scripts --omit=dev
 RUN npm install aws-lambda-ric
