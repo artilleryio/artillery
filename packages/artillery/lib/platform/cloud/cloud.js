@@ -5,7 +5,7 @@
 
 
 const debug = require('debug')('cloud');
-const request = require('got');
+const { cloudHttpClient: request } = require('./http-client');
 const awaitOnEE = require('../../util/await-on-ee');
 const sleep = require('../../util/sleep');
 const util = require('node:util');
@@ -223,10 +223,7 @@ class ArtilleryCloudPlugin {
     try {
       res = await request.get(this.whoamiEndpoint, {
         headers: this.defaultHeaders,
-        throwHttpErrors: false,
-        retry: {
-          limit: 0
-        }
+        retry: { limit: 0 }
       });
 
       body = JSON.parse(res.body);
@@ -247,11 +244,7 @@ class ArtilleryCloudPlugin {
     let postSucceeded = false;
     try {
       res = await request.post(this.pingEndpoint, {
-        headers: this.defaultHeaders,
-        throwHttpErrors: false,
-        retry: {
-          limit: 3
-        }
+        headers: this.defaultHeaders
       });
 
       if (res.statusCode === 200) {
@@ -315,9 +308,9 @@ class ArtilleryCloudPlugin {
 
     let url;
     try {
+      // TODO: This could get rejected if a limit is exceeded so need to handle that case
       const res = await request.post(this.getAssetUploadUrls, {
         headers: this.defaultHeaders,
-        throwHttpErrors: false,
         json: payload
       });
 
@@ -398,8 +391,7 @@ class ArtilleryCloudPlugin {
 
     try {
       const res = await request.get(this.getLoadTestEndpoint, {
-        headers: this.defaultHeaders,
-        throwHttpErrors: false
+        headers: this.defaultHeaders
       });
 
       return JSON.parse(res.body);
@@ -420,11 +412,7 @@ class ArtilleryCloudPlugin {
             testRunId: this.testRunId
           })
         },
-        throwHttpErrors: false,
-        retry: {
-          limit: 2,
-          methods: ['POST']
-        }
+        retry: { limit: 2 }
       });
 
       if (res.statusCode !== 200) {
