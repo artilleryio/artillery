@@ -123,7 +123,12 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       return callback(null, {
         files: _.uniqWith(files, _.isEqual),
-        modules: _.uniq(context.npmModules),
+        modules: _.uniq(context.npmModules).filter(
+          (m) =>
+            m !== 'artillery' &&
+            m !== 'playwright' &&
+            !m.startsWith('@playwright/')
+        ),
         pkgDeps: context.pkgDeps
       });
     }
