@@ -1,6 +1,6 @@
 {
   "name": "@artilleryio/int-commons",
-  "version": "2.20.0",
+  "version": "2.21.0",
   "main": "./index.js",
   "license": "MPL-2.0",
   "dependencies": {
