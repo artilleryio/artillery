@@ -53,10 +53,6 @@ class OTelMetricsReporter {
       }
     };
 
-    this.meterProvider = new MeterProvider({
-      resource: this.resource
-    });
-
     this.debug('Configuring Metric Exporter');
 
     // Setting configuration options for exporter
@@ -90,7 +86,10 @@ class OTelMetricsReporter {
     // Clear the reader's interval so it only collects and exports when we manually call it (otherwise we get duplicated reports causing incorrect aggregated data results)
     clearInterval(this.theReader._interval);
 
-    this.meterProvider.addMetricReader(this.theReader);
+    this.meterProvider = new MeterProvider({
+      resource: this.resource,
+      readers: [this.theReader]
+    });
     metrics.setGlobalMeterProvider(this.meterProvider);
 
     this.meter = this.meterProvider.getMeter(this.config.meterName);

@@ -7,7 +7,7 @@ class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
   }
 
   onEnd(span) {
-    if (span.instrumentationLibrary.name === 'artillery-playwright') {
+    if (span.instrumentationScope.name === 'artillery-playwright') {
       super.onEnd(span);
     } else {
       const traceId = span.spanContext().traceId;
@@ -29,7 +29,7 @@ class OutlierDetectionBatchSpanProcessor extends BatchSpanProcessor {
 
       // The trace ends when the root span ends, so we only filter and send data when the span that ended is the root span
       // The traces that do not have outlier spans are dropped and the rest is sent to buffer/export
-      if (!span.parentSpanId) {
+      if (!span.parentSpanContext?.spanId) {
         if (traceData.hasOutlier) {
           traceData.spans.forEach(super.onEnd, this);
         }

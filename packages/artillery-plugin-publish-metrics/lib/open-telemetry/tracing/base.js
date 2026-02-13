@@ -4,7 +4,6 @@ const {
   OutlierDetectionBatchSpanProcessor
 } = require('../outlier-detection-processor');
 
-const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
 const {
   BasicTracerProvider,
   TraceIdRatioBasedSampler,
@@ -34,8 +33,6 @@ class OTelTraceConfig {
         root: new TraceIdRatioBasedSampler(this.config.sampleRate)
       });
     }
-
-    this.tracerProvider = new BasicTracerProvider(this.tracerOpts);
 
     this.debug('Configuring Exporter');
     this.exporterOpts = {};
@@ -72,8 +69,11 @@ class OTelTraceConfig {
       ? OutlierDetectionBatchSpanProcessor
       : BatchSpanProcessor;
 
-    this.tracerProvider.addSpanProcessor(new Processor(this.exporter));
-    this.tracerProvider.register();
+    this.tracerProvider = new BasicTracerProvider({
+      ...this.tracerOpts,
+      spanProcessors: [new Processor(this.exporter)]
+    });
+    trace.setGlobalTracerProvider(this.tracerProvider);
   }
 
   async shutDown() {
@@ -122,7 +122,7 @@ class OTelTraceBase {
         attributes: {
           'vu.uuid': userContext.vars.$uuid,
           test_id: userContext.vars.$testId,
-          [SemanticAttributes.PEER_SERVICE]: this.config.serviceName
+          'peer.service': this.config.serviceName
         }
       });
 

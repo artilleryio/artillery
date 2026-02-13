@@ -1,7 +1,14 @@
 const { attachScenarioHooks } = require('../../util');
 const { OTelTraceBase } = require('./base');
 
-const { SemanticAttributes } = require('@opentelemetry/semantic-conventions');
+const {
+  ATTR_URL_FULL,
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_URL_SCHEME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_USER_AGENT_ORIGINAL
+} = require('@opentelemetry/semantic-conventions');
 const {
   SpanKind,
   SpanStatusCode,
@@ -69,18 +76,23 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
       if (url.username || url.password) {
         parsedUrl = url.origin + url.pathname + url.search + url.hash;
       }
+      const urlValue = parsedUrl || url.href;
+      const schemeValue = url.port || (url.protocol === 'http' ? 80 : 443);
       const span = this.httpTracer.startSpan(spanName, {
         startTime,
         kind: SpanKind.CLIENT,
         attributes: {
           'vu.uuid': userContext.vars.$uuid,
           test_id: userContext.vars.$testId,
-          [SemanticAttributes.HTTP_URL]: parsedUrl || url.href,
-          // We set the port if it is specified, if not we set to a default port based on the protocol
-          [SemanticAttributes.HTTP_SCHEME]:
-            url.port || (url.protocol === 'http' ? 80 : 443),
-          [SemanticAttributes.HTTP_METHOD]: req.method,
-          [SemanticAttributes.NET_HOST_NAME]: url.hostname,
+          // Emit both old (compat) and new (spec) attribute names
+          'http.url': urlValue,
+          [ATTR_URL_FULL]: urlValue,
+          'http.scheme': schemeValue,
+          [ATTR_URL_SCHEME]: schemeValue,
+          'http.method': req.method,
+          [ATTR_HTTP_REQUEST_METHOD]: req.method,
+          'net.host.name': url.hostname,
+          [ATTR_SERVER_ADDRESS]: url.hostname,
           ...(this.config.attributes || {})
         }
       });
@@ -125,13 +137,21 @@ class OTelHTTPTraceReporter extends OTelTraceBase {
     }
     try {
       span.setAttributes({
-        [SemanticAttributes.HTTP_STATUS_CODE]: res.statusCode,
-        [SemanticAttributes.HTTP_FLAVOR]: res.httpVersion,
-        [SemanticAttributes.HTTP_USER_AGENT]: req.headers['user-agent']
+        // Emit both old (compat) and new (spec) attribute names
+        'http.status_code': res.statusCode,
+        [ATTR_HTTP_RESPONSE_STATUS_CODE]: res.statusCode,
+        'http.flavor': res.httpVersion,
+        'network.protocol.version': res.httpVersion,
+        'http.user_agent': req.headers['user-agent'],
+        [ATTR_USER_AGENT_ORIGINAL]: req.headers['user-agent']
       });
       if (res.headers['content-length']) {
         span.setAttribute(
-          SemanticAttributes.HTTP_REQUEST_CONTENT_LENGTH,
+          'http.request_content_length',
+          res.headers['content-length']
+        );
+        span.setAttribute(
+          'http.request.body.size',
           res.headers['content-length']
         );
       }

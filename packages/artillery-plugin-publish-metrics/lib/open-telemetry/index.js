@@ -5,10 +5,11 @@ const {
   DiagLogLevel,
   context
 } = require('@opentelemetry/api');
-const { Resource } = require('@opentelemetry/resources');
 const {
-  SemanticResourceAttributes
-} = require('@opentelemetry/semantic-conventions');
+  resourceFromAttributes,
+  defaultResource
+} = require('@opentelemetry/resources');
+const { ATTR_SERVICE_NAME } = require('@opentelemetry/semantic-conventions');
 const {
   AsyncLocalStorageContextManager
 } = require('@opentelemetry/context-async-hooks');
@@ -77,13 +78,12 @@ class OTelReporter {
     this.getEngines(this.script.scenarios || []);
 
     // Setting resources here as they are used by both metrics and traces and need to be set in a central place where OTel setup is initialised and before any data is generated
-    this.resource = Resource.default().merge(
-      new Resource(
+    this.resource = defaultResource().merge(
+      resourceFromAttributes(
         Object.assign(
           {},
           {
-            [SemanticResourceAttributes.SERVICE_NAME]:
-              this.serviceName || 'Artillery-test'
+            [ATTR_SERVICE_NAME]: this.serviceName || 'Artillery-test'
           },
           this.resourceAttributes
         )
