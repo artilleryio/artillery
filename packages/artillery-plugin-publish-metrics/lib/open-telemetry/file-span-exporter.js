@@ -16,6 +16,15 @@ class FileSpanExporter extends ConsoleSpanExporter {
     }
   }
 
+  // Override to maintain backwards-compatible output format.
+  // SDK 2.x _exportInfo outputs parentSpanContext (object) instead of parentId (string).
+  // We add parentId back so test assertions and consumers can use span.parentId.
+  _exportInfo(span) {
+    const info = super._exportInfo(span);
+    info.parentId = span.parentSpanContext?.spanId;
+    return info;
+  }
+
   _sendSpans(spans, done) {
     const spansToExport = spans.map((span) =>
       JSON.stringify(this._exportInfo(span))
