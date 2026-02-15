@@ -5,7 +5,7 @@
   "license": "MPL-2.0",
   "dependencies": {
     "async": "^2.6.4",
-    "cheerio": "^1.1.2",
+    "cheerio": "^1.2.0",
     "debug": "^4.4.3",
     "deep-for-each": "^3.0.0",
     "espree": "^10.3.0",

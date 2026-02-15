@@ -27,7 +27,7 @@
     "@oclif/plugin-plugins": "^2.1.6",
     "artillery-plugin-expect": "*",
     "chalk": "^4.1.2",
-    "cheerio": "^1.0.0-rc.10",
+    "cheerio": "^1.2.0",
     "ci-info": "^3.9.0",
     "cli-highlight": "^2.1.11",
     "debug": "^4.3.1",
