@@ -1182,5 +1182,297 @@ test('HTTP engine', (tap) => {
     });
   });
 
+  // --- Tests added for Got v14 upgrade regression coverage ---
+
+  tap.test('timeout - request fails after configured timeout', async (t) => {
+    const target = nock('http://localhost:8888')
+      .get('/slow')
+      .delay(3000)
+      .reply(200, 'ok');
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        timeout: 1 // 1 second
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/slow' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const errors = [];
+    ee.on('error', (errCode) => {
+      errors.push(errCode);
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.ok(err, 'Should error on timeout');
+        t.match(
+          err.code || err.message,
+          /TIMEOUT|timeout|ETIMEDOUT/i,
+          'Error should indicate timeout'
+        );
+        t.end();
+        resolve();
+      });
+    });
+
+    nock.cleanAll();
+  });
+
+  tap.test('retry disabled - only one request attempt on error', async (t) => {
+    let requestCount = 0;
+    const target = nock('http://localhost:8888')
+      .get('/fail')
+      .times(5)
+      .reply(() => {
+        requestCount++;
+        return [500, 'Internal Server Error'];
+      });
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/fail' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const counters = {};
+    ee.on('counter', (name, val) => {
+      counters[name] = (counters[name] || 0) + val;
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.notOk(err, 'Should not error (throwHttpErrors is false)');
+        t.equal(requestCount, 1, 'Should make exactly 1 request (no retries)');
+        t.equal(
+          counters['http.requests'],
+          1,
+          'http.requests counter should be 1'
+        );
+        t.equal(
+          counters['http.codes.500'],
+          1,
+          'Should record the 500 status code'
+        );
+        t.end();
+        resolve();
+      });
+    });
+  });
+
+  tap.test('timings.phases shape', async (t) => {
+    const http = require('node:http');
+    const srv = http.createServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      res.end('ok');
+    });
+
+    await new Promise((resolve) => srv.listen(0, resolve));
+    const srvPort = srv.address().port;
+
+    const script = {
+      config: {
+        target: `http://127.0.0.1:${srvPort}`,
+        http: { extendedMetrics: true }
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const histograms = {};
+    ee.on('histogram', (name, value) => {
+      histograms[name] = value;
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.notOk(err, 'Should complete without error');
+
+        t.ok(
+          'http.response_time' in histograms,
+          'Should emit http.response_time (firstByte)'
+        );
+        t.type(
+          histograms['http.response_time'],
+          'number',
+          'firstByte should be a number'
+        );
+
+        t.ok('http.dns' in histograms, 'Should emit http.dns');
+        t.type(histograms['http.dns'], 'number', 'dns should be a number');
+
+        t.ok('http.tcp' in histograms, 'Should emit http.tcp');
+        t.type(histograms['http.tcp'], 'number', 'tcp should be a number');
+
+        t.ok('http.total' in histograms, 'Should emit http.total');
+        t.type(histograms['http.total'], 'number', 'total should be a number');
+
+        srv.close();
+        t.end();
+        resolve();
+      });
+    });
+  });
+
+  tap.test('error name - HTTPError check', async (t) => {
+    // Verify that Got v14 still uses 'HTTPError' as the error name
+    // when throwHttpErrors is true
+    const got = (await import('got')).default;
+    try {
+      const target = nock('http://localhost:8888')
+        .get('/not-found')
+        .reply(404, 'Not Found');
+      await got('http://localhost:8888/not-found', {
+        retry: { limit: 0 },
+        throwHttpErrors: true
+      });
+      t.fail('Should have thrown');
+    } catch (err) {
+      t.equal(err.name, 'HTTPError', 'Error name should be HTTPError');
+      t.equal(err.response.statusCode, 404, 'Should have 404 status');
+    }
+    t.end();
+  });
+
+  tap.test('downloadProgress - bytes metric emitted', async (t) => {
+    const responseBody = 'x'.repeat(1024);
+    const target = nock('http://localhost:8888')
+      .get('/download')
+      .reply(200, responseBody);
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/download' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const counters = {};
+    ee.on('counter', (name, val) => {
+      counters[name] = (counters[name] || 0) + val;
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.notOk(err, 'Should complete without error');
+        t.ok(
+          'http.downloaded_bytes' in counters,
+          'Should emit http.downloaded_bytes counter'
+        );
+        t.ok(
+          counters['http.downloaded_bytes'] >= 0,
+          'downloaded_bytes should be >= 0'
+        );
+        t.end();
+        resolve();
+      });
+    });
+  });
+
+  tap.test(
+    'GOT_OPTION_NAMES - unknown options do not cause errors',
+    async (t) => {
+      const target = nock('http://localhost:8888')
+        .get('/options-test')
+        .reply(200, 'ok');
+
+      const script = {
+        config: {
+          target: 'http://localhost:8888',
+          processor: {
+            addUnknownOption: (req, _ctx, _ee, next) => {
+              // Add options that should be filtered out by _.pick
+              req.uuid = 'test-uuid-123';
+              req.customThing = 'should-be-stripped';
+              req.capture = { json: '$.foo', as: 'bar' };
+              req.name = 'my-request';
+              return next();
+            }
+          }
+        },
+        scenarios: [
+          {
+            flow: [
+              {
+                get: {
+                  url: '/options-test',
+                  beforeRequest: 'addUnknownOption'
+                }
+              }
+            ]
+          }
+        ]
+      };
+
+      const engine = new HttpEngine(script);
+      await engine.init();
+      const ee = new EventEmitter();
+
+      const counters = {};
+      ee.on('counter', (name, val) => {
+        counters[name] = (counters[name] || 0) + val;
+      });
+
+      const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+      await new Promise((resolve) => {
+        runScenario({ vars: {} }, function userDone(err) {
+          t.notOk(
+            err,
+            'Should not error even with unknown options on requestParams'
+          );
+          t.equal(
+            counters['http.codes.200'],
+            1,
+            'Request should succeed with 200'
+          );
+          t.ok(target.isDone(), 'Should have made the request');
+          t.end();
+          resolve();
+        });
+      });
+    }
+  );
+
   tap.end();
 });
