@@ -1,4 +1,4 @@
-const { cloudHttpClient: request } = require('./http-client');
+const { getCloudHttpClient } = require('./http-client');
 
 class Client {
   constructor({ apiKey, baseUrl }) {
@@ -24,6 +24,7 @@ class Client {
   }
 
   async whoami() {
+    const request = await getCloudHttpClient();
     const res = await request.get(this.whoamiEndpoint, {
       headers: this.defaultHeaders
     });
@@ -34,6 +35,7 @@ class Client {
   }
 
   async getStashDetails({ orgId }) {
+    const request = await getCloudHttpClient();
     const currentOrgId = orgId || this.orgId;
 
     const res = await request.get(

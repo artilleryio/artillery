@@ -146,7 +146,7 @@
     "esbuild-wasm": "^0.19.12",
     "eventemitter3": "^5.0.4",
     "fs-extra": "^11.3.3",
-    "got": "^11.8.5",
+    "got": "^14.6.6",
     "joi": "^17.13.3",
     "js-yaml": "^3.14.1",
     "jsonwebtoken": "^9.0.3",
