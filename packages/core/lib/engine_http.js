@@ -271,8 +271,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
     }
 
     const tls = config.tls || {};
-    const timeoutSec = config.timeout || _.get(config, 'http.timeout') || 10;
-    const timeout = { response: timeoutSec * 1000 };
+    const timeout = config.timeout || _.get(config, 'http.timeout') || 10;
 
     if (!engineUtil.isProbableEnough(params)) {
       return process.nextTick(() => {
@@ -712,10 +711,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         }
 
         requestParams.retry = { limit: 0 }; // disable retries - ignored when using streams
+        // Convert scalar seconds to Got v14 timeout object right before request
+        const gotOptions = _.pick(requestParams, GOT_OPTION_NAMES);
+        gotOptions.timeout = { response: requestParams.timeout * 1000 };
 
         let totalDownloaded = 0;
         self
-          .request(_.pick(requestParams, GOT_OPTION_NAMES))
+          .request(gotOptions)
           .on('request', (req) => {
             ee.emit('trace:http:request', requestParams, requestParams.uuid);
 
