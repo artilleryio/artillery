@@ -22,7 +22,7 @@ const path = require('node:path');
 const { Timeout, sleep } = require('../aws-ecs/legacy/time');
 const dotenv = require('dotenv');
 const fs = require('node:fs');
-const request = require('got');
+// got is loaded lazily via await import('got')
 
 // Helper to convert readable stream to string
 async function streamToString(readableStream) {
@@ -653,6 +653,7 @@ class PlatformAzureACI {
   async stopWorker(_workerId) {}
 
   async checkLicense() {
+    const request = (await import('got')).default;
     const baseUrl =
       process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
     const res = await request.get(`${baseUrl}/api/user/whoami`, {

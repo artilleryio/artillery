@@ -1,13 +1,16 @@
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const l = require('lodash');
-const request = require('got');
+let request;
 const { SSMS } = require('../../lib/ssms');
 const createTestServer = require('../targets/simple');
 
 let server;
 let port;
 beforeEach(async () => {
+  if (!request) {
+    request = (await import('got')).default;
+  }
   server = await createTestServer(0);
   port = server.info.port;
 });

@@ -1,7 +1,7 @@
 const { test, beforeEach, afterEach } = require('tap');
 const runner = require('../..').runner.runner;
 const l = require('lodash');
-const request = require('got');
+let request;
 const { SSMS } = require('../../lib/ssms');
 const createTestServer = require('../targets/express_socketio');
 
@@ -9,6 +9,9 @@ let server;
 let port;
 
 beforeEach(async () => {
+  if (!request) {
+    request = (await import('got')).default;
+  }
   server = await createTestServer();
   port = server.address().port;
 });

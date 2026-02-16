@@ -1,4 +1,3 @@
-const got = require('got');
 const { sleep } = require('../util');
 const debug = require('debug')('plugin:publish-metrics:newrelic');
 
@@ -193,6 +192,7 @@ class NewRelicReporter {
 
   async sendStats(url, licenseKey, body) {
     this.pendingRequests += 1;
+    const got = (await import('got')).default;
     const headers = {
       'Content-Type': 'application/json; charset=UTF-8',
       'Api-Key': licenseKey
@@ -237,6 +237,7 @@ class NewRelicReporter {
 
   async sendEvent(url, licenseKey, eventOptions) {
     this.pendingRequests += 1;
+    const got = (await import('got')).default;
     const headers = {
       'Content-Type': 'application/json; charset=UTF-8',
       'Api-Key': licenseKey

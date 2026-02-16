@@ -70,8 +70,9 @@ test('HTTP engine', (tap) => {
 
   tap.beforeEach(() => nock.cleanAll());
 
-  tap.test('HTTP engine interface', (t) => {
+  tap.test('HTTP engine interface', async (t) => {
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
@@ -84,8 +85,9 @@ test('HTTP engine', (tap) => {
     t.end();
   });
 
-  tap.test('HTTP virtual user', (t) => {
+  tap.test('HTTP virtual user', async (t) => {
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const spy = sinon.spy(console, 'log');
     const runScenario = engine.createScenario(script.scenarios[0], ee);
@@ -101,49 +103,53 @@ test('HTTP engine', (tap) => {
     t.plan(8);
 
     const startedAt = Date.now();
-    runScenario(initialContext, function userDone(err, finalContext) {
-      const finishedAt = Date.now();
-      t.ok(!err, 'Virtual user should finish successfully');
-      t.equal(
-        finalContext.vars.newVar,
-        1234,
-        'Function spec should execute and set variable'
-      );
-      t.ok(
-        finishedAt - startedAt >= THINKTIME_SEC * 1000,
-        'User should have spent some time thinking'
-      );
+    await new Promise((resolve) => {
+      runScenario(initialContext, function userDone(err, finalContext) {
+        const finishedAt = Date.now();
+        t.ok(!err, 'Virtual user should finish successfully');
+        t.equal(
+          finalContext.vars.newVar,
+          1234,
+          'Function spec should execute and set variable'
+        );
+        t.ok(
+          finishedAt - startedAt >= THINKTIME_SEC * 1000,
+          'User should have spent some time thinking'
+        );
 
-      const expectedLog = '# This is printed from the script with "log": 1234';
-      let seen = false;
-      spy.args.forEach((args) => {
-        if (args[0] === expectedLog) {
-          t.comment(`string: "${args[0]}" found`);
-          seen = true;
-        }
+        const expectedLog =
+          '# This is printed from the script with "log": 1234';
+        let seen = false;
+        spy.args.forEach((args) => {
+          if (args[0] === expectedLog) {
+            t.comment(`string: "${args[0]}" found`);
+            seen = true;
+          }
+        });
+        t.ok(seen, 'log worked');
+        console.log.restore(); // unwrap the spy
+        // loop count starts at 0, hence 2 rather than 3 here:
+        t.equal(
+          finalContext.vars.inc,
+          2,
+          'Function should have been called in a loop'
+        );
+        t.equal(
+          finalContext.vars.loopElement,
+          'world',
+          'loopElement should be set by custom function'
+        );
+
+        // someCounter is set by a whileTrue hook function:
+        t.equal(
+          finalContext.vars.someCounter,
+          3,
+          'whileTrue should have aborted the loop'
+        );
+
+        t.end();
+        resolve();
       });
-      t.ok(seen, 'log worked');
-      console.log.restore(); // unwrap the spy
-      // loop count starts at 0, hence 2 rather than 3 here:
-      t.equal(
-        finalContext.vars.inc,
-        2,
-        'Function should have been called in a loop'
-      );
-      t.equal(
-        finalContext.vars.loopElement,
-        'world',
-        'loopElement should be set by custom function'
-      );
-
-      // someCounter is set by a whileTrue hook function:
-      t.equal(
-        finalContext.vars.someCounter,
-        3,
-        'whileTrue should have aborted the loop'
-      );
-
-      t.end();
     });
 
     function onStarted() {
@@ -151,7 +157,7 @@ test('HTTP engine', (tap) => {
     }
   });
 
-  tap.test('extendedMetrics', (t) => {
+  tap.test('extendedMetrics', async (t) => {
     const histograms = new Set();
     const additionalMetrics = [
       'http.dns',
@@ -180,6 +186,7 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
@@ -187,24 +194,27 @@ test('HTTP engine', (tap) => {
       histograms.add(name);
     });
 
-    runScenario({ vars: {} }, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        if (err) {
+          t.fail();
+        }
 
-      additionalMetrics.forEach((metric) => {
-        t.ok(
-          histograms.has(metric),
-          `it should track additional metric ${metric}`
-        );
+        additionalMetrics.forEach((metric) => {
+          t.ok(
+            histograms.has(metric),
+            `it should track additional metric ${metric}`
+          );
+        });
+
+        t.ok(target.isDone(), 'Should have made a request to /');
+        t.end();
+        resolve();
       });
-
-      t.ok(target.isDone(), 'Should have made a request to /');
-      t.end();
     });
   });
 
-  tap.test('gzip - compressed responses', (t) => {
+  tap.test('gzip - compressed responses', async (t) => {
     const responseStatus = 'ok';
     const target = nock('http://localhost:8888')
       .get('/')
@@ -248,25 +258,29 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    runScenario({ vars: {} }, function userDone(err, context) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err, context) {
+        if (err) {
+          t.fail();
+        }
 
-      t.equal(
-        context.vars.status,
-        responseStatus,
-        'it should decompress the response'
-      );
-      t.ok(target.isDone(), 'Should have made a request to /');
-      t.end();
+        t.equal(
+          context.vars.status,
+          responseStatus,
+          'it should decompress the response'
+        );
+        t.ok(target.isDone(), 'Should have made a request to /');
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('custom headers', (t) => {
+  tap.test('custom headers', async (t) => {
     const customHeader = 'x-artillery-header';
     const customHeaderValue = 'abcde';
     const target = nock('http://localhost:8888')
@@ -300,21 +314,25 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    runScenario({ vars: {} }, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        if (err) {
+          t.fail();
+        }
 
-      t.ok(target.isDone(), 'Should have made a request to /');
+        t.ok(target.isDone(), 'Should have made a request to /');
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('custom cookie js', (t) => {
+  tap.test('custom cookie js', async (t) => {
     const target = nock('http://localhost:8888')
       .get('/')
       .reply(200, function () {
@@ -352,21 +370,25 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    runScenario({ vars: {} }, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        if (err) {
+          t.fail();
+        }
 
-      t.ok(target.isDone(), 'Should have made a request to /');
+        t.ok(target.isDone(), 'Should have made a request to /');
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('custom cookie js in loop', (t) => {
+  tap.test('custom cookie js in loop', async (t) => {
     const target = nock('http://localhost:8888')
       .get('/')
       .reply(200, function () {
@@ -409,21 +431,25 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    runScenario({ vars: {} }, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        if (err) {
+          t.fail();
+        }
 
-      t.ok(target.isDone(), 'Should have made a request to /');
+        t.ok(target.isDone(), 'Should have made a request to /');
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('url and uri parameters', (t) => {
+  tap.test('url and uri parameters', async (t) => {
     const target = nock('http://localhost:8888')
       .get('/hello?hello=world')
       .reply(200, 'ok');
@@ -463,6 +489,7 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const spy = sinon.spy(console, 'log');
     const runScenario = engine.createScenario(script.scenarios[0], ee);
@@ -471,29 +498,32 @@ test('HTTP engine', (tap) => {
       vars: {}
     };
 
-    runScenario(initialContext, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
-
-      t.ok(target.isDone(), 'Should have made a request to /hello');
-
-      const expectedLog = '# hello from printHello hook!';
-      let seen = false;
-      spy.args.forEach((args) => {
-        if (args[0] === expectedLog) {
-          t.comment(`string: "${args[0]}" found`);
-          seen = true;
+    await new Promise((resolve) => {
+      runScenario(initialContext, function userDone(err) {
+        if (err) {
+          t.fail();
         }
-      });
-      t.ok(seen, 'scenario-level beforeRequest worked');
-      console.log.restore(); // unwrap the spy
 
-      t.end();
+        t.ok(target.isDone(), 'Should have made a request to /hello');
+
+        const expectedLog = '# hello from printHello hook!';
+        let seen = false;
+        spy.args.forEach((args) => {
+          if (args[0] === expectedLog) {
+            t.comment(`string: "${args[0]}" found`);
+            seen = true;
+          }
+        });
+        t.ok(seen, 'scenario-level beforeRequest worked');
+        console.log.restore(); // unwrap the spy
+
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('Query string', (t) => {
+  tap.test('Query string', async (t) => {
     const _endpoint = '';
 
     const script = {
@@ -560,6 +590,7 @@ test('HTTP engine', (tap) => {
       .reply(200, 'ok');
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
@@ -567,17 +598,20 @@ test('HTTP engine', (tap) => {
       vars: {}
     };
 
-    runScenario(initialContext, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario(initialContext, function userDone(err) {
+        if (err) {
+          t.fail();
+        }
 
-      t.ok(target.isDone(), 'Should have made a request to /blah');
-      t.end();
+        t.ok(target.isDone(), 'Should have made a request to /blah');
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('hooks - afterResponse', (t) => {
+  tap.test('hooks - afterResponse', async (t) => {
     const answer = 'the answer is 42';
 
     nock('http://localhost:8888').get('/answer').reply(200, answer);
@@ -608,6 +642,7 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
@@ -615,22 +650,25 @@ test('HTTP engine', (tap) => {
       vars: {}
     };
 
-    runScenario(initialContext, function userDone(err, finalContext) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario(initialContext, function userDone(err, finalContext) {
+        if (err) {
+          t.fail();
+        }
 
-      t.equal(
-        finalContext.answer,
-        answer,
-        'afterResponse hook should run and extract answer'
-      );
+        t.equal(
+          finalContext.answer,
+          answer,
+          'afterResponse hook should run and extract answer'
+        );
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('hooks - beforeScenario', (t) => {
+  tap.test('hooks - beforeScenario', async (t) => {
     const endpoint = '/products';
     const script = {
       config: {
@@ -673,6 +711,7 @@ test('HTTP engine', (tap) => {
     const target = nock(script.config.target).get(endpoint).reply(200, 'ok');
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
@@ -681,24 +720,27 @@ test('HTTP engine', (tap) => {
       scenario: script.scenarios[0]
     };
 
-    runScenario(initialContext, function userDone(err, finalContext) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario(initialContext, function userDone(err, finalContext) {
+        if (err) {
+          t.fail();
+        }
 
-      t.equal(
-        finalContext.vars.endpoint,
-        endpoint,
-        'it should set context vars before running the scenario'
-      );
+        t.equal(
+          finalContext.vars.endpoint,
+          endpoint,
+          'it should set context vars before running the scenario'
+        );
 
-      t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
+        t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('hooks - afterScenario', (t) => {
+  tap.test('hooks - afterScenario', async (t) => {
     const endpoint = '/products';
     const productsCount = 123;
     const script = {
@@ -756,6 +798,7 @@ test('HTTP engine', (tap) => {
       );
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
@@ -764,18 +807,21 @@ test('HTTP engine', (tap) => {
       scenario: script.scenarios[0]
     };
 
-    runScenario(initialContext, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario(initialContext, function userDone(err) {
+        if (err) {
+          t.fail();
+        }
 
-      t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
+        t.ok(target.isDone(), `Should have made a request to ${endpoint}`);
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('Redirects', (t) => {
+  tap.test('Redirects', async (t) => {
     const script = {
       config: {
         target: 'http://localhost:8888'
@@ -797,6 +843,7 @@ test('HTTP engine', (tap) => {
       ]
     };
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
 
     const counters = {};
@@ -823,27 +870,30 @@ test('HTTP engine', (tap) => {
       vars: {}
     };
 
-    runScenario(initialContext, (err) => {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario(initialContext, (err) => {
+        if (err) {
+          t.fail();
+        }
 
-      t.ok(target.isDone(), 'Should have made a request to both endpoints');
+        t.ok(target.isDone(), 'Should have made a request to both endpoints');
 
-      t.equal(
-        Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1).length,
-        2,
-        'Should have seen 2 unique response codes'
-      );
+        t.equal(
+          Object.keys(counters).filter((s) => s.indexOf('.codes.') > -1).length,
+          2,
+          'Should have seen 2 unique response codes'
+        );
 
-      t.equal(counters['http.codes.302'], 1, 'Should have 1 302 response');
-      t.equal(counters['http.codes.200'], 1, 'Should have 1 200 response');
+        t.equal(counters['http.codes.302'], 1, 'Should have 1 302 response');
+        t.equal(counters['http.codes.200'], 1, 'Should have 1 200 response');
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  test('proxies', (t) => {
+  test('proxies', async (t) => {
     t.plan(4);
     const script = {
       config: {
@@ -863,6 +913,7 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     t.ok(
       engine._httpAgent.proxy === undefined,
       'by default nothing is proxied (http)'
@@ -875,11 +926,12 @@ test('HTTP engine', (tap) => {
     const httpProxy = 'http://proxy.url';
     const httpsProxy = 'https://proxy.url';
 
-    t.test('HTTP_PROXY', (t) => {
+    t.test('HTTP_PROXY', async (t) => {
       const httpProxy = 'http://proxy.url';
 
       process.env.HTTP_PROXY = httpProxy;
       const engine = new HttpEngine(script);
+      await engine.init();
 
       t.equal(
         engine._httpAgent.proxy.origin,
@@ -896,10 +948,11 @@ test('HTTP engine', (tap) => {
       t.end();
     });
 
-    t.test('HTTP_PROXY and HTTPS_PROXY', (t) => {
+    t.test('HTTP_PROXY and HTTPS_PROXY', async (t) => {
       process.env.HTTP_PROXY = httpProxy;
       process.env.HTTPS_PROXY = httpsProxy;
       const engine = new HttpEngine(script);
+      await engine.init();
 
       t.equal(
         engine._httpAgent.proxy.origin,
@@ -920,7 +973,7 @@ test('HTTP engine', (tap) => {
     delete process.env.HTTPS_PROXY;
   });
 
-  tap.test('followRedirect', (t) => {
+  tap.test('followRedirect', async (t) => {
     const target = nock('http://localhost:8888')
       .get('/')
       .reply(302, undefined, {
@@ -948,6 +1001,7 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const counters = {};
 
@@ -957,28 +1011,31 @@ test('HTTP engine', (tap) => {
 
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    runScenario({ vars: {} }, function userDone(err) {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        if (err) {
+          t.fail();
+        }
 
-      t.equal(counters['http.codes.302'], 1);
-      t.equal(
-        counters['http.codes.200'],
-        undefined,
-        'it should not follow redirects if followRedirect is false (1)'
-      );
-      t.ok(
-        target.pendingMocks().length === 1 &&
-          target.pendingMocks()[0].endsWith('/do-not-follow'),
-        'it should not follow redirects if followRedirect is false (2)'
-      );
+        t.equal(counters['http.codes.302'], 1);
+        t.equal(
+          counters['http.codes.200'],
+          undefined,
+          'it should not follow redirects if followRedirect is false (1)'
+        );
+        t.ok(
+          target.pendingMocks().length === 1 &&
+            target.pendingMocks()[0].endsWith('/do-not-follow'),
+          'it should not follow redirects if followRedirect is false (2)'
+        );
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('Forms - urlencoded', (t) => {
+  tap.test('Forms - urlencoded', async (t) => {
     const initialContext = {
       vars: {
         location: 'Lahinch',
@@ -1025,21 +1082,25 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
     const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-    runScenario(initialContext, (err) => {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario(initialContext, (err) => {
+        if (err) {
+          t.fail();
+        }
 
-      t.ok(target.isDone(), 'Should have made a request to /submit');
+        t.ok(target.isDone(), 'Should have made a request to /submit');
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
 
-  tap.test('Forms - formData multipart', (t) => {
+  tap.test('Forms - formData multipart', async (t) => {
     nock('http://localhost:8888')
       .post(
         '/submit',
@@ -1081,6 +1142,7 @@ test('HTTP engine', (tap) => {
     };
 
     const engine = new HttpEngine(script);
+    await engine.init();
     const ee = new EventEmitter();
 
     const counters = {};
@@ -1106,16 +1168,311 @@ test('HTTP engine', (tap) => {
       }
     };
 
-    runScenario(initialContext, (err) => {
-      if (err) {
-        t.fail();
-      }
+    await new Promise((resolve) => {
+      runScenario(initialContext, (err) => {
+        if (err) {
+          t.fail();
+        }
 
-      t.equal(counters['http.codes.200'], 1, 'Should have one 200 response');
+        t.equal(counters['http.codes.200'], 1, 'Should have one 200 response');
 
-      t.end();
+        t.end();
+        resolve();
+      });
     });
   });
+
+  // --- Tests added for Got v14 upgrade regression coverage ---
+
+  tap.test('timeout - request fails after configured timeout', async (t) => {
+    const target = nock('http://localhost:8888')
+      .get('/slow')
+      .delay(3000)
+      .reply(200, 'ok');
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888',
+        timeout: 1 // 1 second
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/slow' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const errors = [];
+    ee.on('error', (errCode) => {
+      errors.push(errCode);
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.ok(err, 'Should error on timeout');
+        t.match(
+          err.code || err.message,
+          /TIMEOUT|timeout|ETIMEDOUT/i,
+          'Error should indicate timeout'
+        );
+        t.end();
+        resolve();
+      });
+    });
+
+    nock.cleanAll();
+  });
+
+  tap.test('retry disabled - only one request attempt on error', async (t) => {
+    let requestCount = 0;
+    const target = nock('http://localhost:8888')
+      .get('/fail')
+      .times(5)
+      .reply(() => {
+        requestCount++;
+        return [500, 'Internal Server Error'];
+      });
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/fail' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const counters = {};
+    ee.on('counter', (name, val) => {
+      counters[name] = (counters[name] || 0) + val;
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.notOk(err, 'Should not error (throwHttpErrors is false)');
+        t.equal(requestCount, 1, 'Should make exactly 1 request (no retries)');
+        t.equal(
+          counters['http.requests'],
+          1,
+          'http.requests counter should be 1'
+        );
+        t.equal(
+          counters['http.codes.500'],
+          1,
+          'Should record the 500 status code'
+        );
+        t.end();
+        resolve();
+      });
+    });
+  });
+
+  tap.test('timings.phases shape', async (t) => {
+    const http = require('node:http');
+    const srv = http.createServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      res.end('ok');
+    });
+
+    await new Promise((resolve) => srv.listen(0, resolve));
+    const srvPort = srv.address().port;
+
+    const script = {
+      config: {
+        target: `http://127.0.0.1:${srvPort}`,
+        http: { extendedMetrics: true }
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const histograms = {};
+    ee.on('histogram', (name, value) => {
+      histograms[name] = value;
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.notOk(err, 'Should complete without error');
+
+        t.ok(
+          'http.response_time' in histograms,
+          'Should emit http.response_time (firstByte)'
+        );
+        t.type(
+          histograms['http.response_time'],
+          'number',
+          'firstByte should be a number'
+        );
+
+        t.ok('http.dns' in histograms, 'Should emit http.dns');
+        t.type(histograms['http.dns'], 'number', 'dns should be a number');
+
+        t.ok('http.tcp' in histograms, 'Should emit http.tcp');
+        t.type(histograms['http.tcp'], 'number', 'tcp should be a number');
+
+        t.ok('http.total' in histograms, 'Should emit http.total');
+        t.type(histograms['http.total'], 'number', 'total should be a number');
+
+        srv.close();
+        t.end();
+        resolve();
+      });
+    });
+  });
+
+  tap.test('error name - HTTPError check', async (t) => {
+    // Verify that Got v14 still uses 'HTTPError' as the error name
+    // when throwHttpErrors is true
+    const got = (await import('got')).default;
+    try {
+      const target = nock('http://localhost:8888')
+        .get('/not-found')
+        .reply(404, 'Not Found');
+      await got('http://localhost:8888/not-found', {
+        retry: { limit: 0 },
+        throwHttpErrors: true
+      });
+      t.fail('Should have thrown');
+    } catch (err) {
+      t.equal(err.name, 'HTTPError', 'Error name should be HTTPError');
+      t.equal(err.response.statusCode, 404, 'Should have 404 status');
+    }
+    t.end();
+  });
+
+  tap.test('downloadProgress - bytes metric emitted', async (t) => {
+    const responseBody = 'x'.repeat(1024);
+    const target = nock('http://localhost:8888')
+      .get('/download')
+      .reply(200, responseBody);
+
+    const script = {
+      config: {
+        target: 'http://localhost:8888'
+      },
+      scenarios: [
+        {
+          flow: [{ get: { url: '/download' } }]
+        }
+      ]
+    };
+
+    const engine = new HttpEngine(script);
+    await engine.init();
+    const ee = new EventEmitter();
+
+    const counters = {};
+    ee.on('counter', (name, val) => {
+      counters[name] = (counters[name] || 0) + val;
+    });
+
+    const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+    await new Promise((resolve) => {
+      runScenario({ vars: {} }, function userDone(err) {
+        t.notOk(err, 'Should complete without error');
+        t.ok(
+          'http.downloaded_bytes' in counters,
+          'Should emit http.downloaded_bytes counter'
+        );
+        t.ok(
+          counters['http.downloaded_bytes'] >= 0,
+          'downloaded_bytes should be >= 0'
+        );
+        t.end();
+        resolve();
+      });
+    });
+  });
+
+  tap.test(
+    'GOT_OPTION_NAMES - unknown options do not cause errors',
+    async (t) => {
+      const target = nock('http://localhost:8888')
+        .get('/options-test')
+        .reply(200, 'ok');
+
+      const script = {
+        config: {
+          target: 'http://localhost:8888',
+          processor: {
+            addUnknownOption: (req, _ctx, _ee, next) => {
+              // Add options that should be filtered out by _.pick
+              req.uuid = 'test-uuid-123';
+              req.customThing = 'should-be-stripped';
+              req.capture = { json: '$.foo', as: 'bar' };
+              req.name = 'my-request';
+              return next();
+            }
+          }
+        },
+        scenarios: [
+          {
+            flow: [
+              {
+                get: {
+                  url: '/options-test',
+                  beforeRequest: 'addUnknownOption'
+                }
+              }
+            ]
+          }
+        ]
+      };
+
+      const engine = new HttpEngine(script);
+      await engine.init();
+      const ee = new EventEmitter();
+
+      const counters = {};
+      ee.on('counter', (name, val) => {
+        counters[name] = (counters[name] || 0) + val;
+      });
+
+      const runScenario = engine.createScenario(script.scenarios[0], ee);
+
+      await new Promise((resolve) => {
+        runScenario({ vars: {} }, function userDone(err) {
+          t.notOk(
+            err,
+            'Should not error even with unknown options on requestParams'
+          );
+          t.equal(
+            counters['http.codes.200'],
+            1,
+            'Request should succeed with 200'
+          );
+          t.ok(target.isDone(), 'Should have made the request');
+          t.end();
+          resolve();
+        });
+      });
+    }
+  );
 
   tap.end();
 });

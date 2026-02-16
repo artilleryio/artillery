@@ -5,7 +5,7 @@
 
 
 const debug = require('debug')('cloud');
-const { cloudHttpClient: request } = require('./http-client');
+const { getCloudHttpClient } = require('./http-client');
 const awaitOnEE = require('../../util/await-on-ee');
 const sleep = require('../../util/sleep');
 const util = require('node:util');
@@ -211,6 +211,8 @@ class ArtilleryCloudPlugin {
   }
 
   async init() {
+    this.request = await getCloudHttpClient();
+
     if (!this.apiKey) {
       const err = new Error();
       err.name = 'CloudAPIKeyMissing';
@@ -221,7 +223,7 @@ class ArtilleryCloudPlugin {
     let res;
     let body;
     try {
-      res = await request.get(this.whoamiEndpoint, {
+      res = await this.request.get(this.whoamiEndpoint, {
         headers: this.defaultHeaders,
         retry: { limit: 0 }
       });
@@ -243,7 +245,7 @@ class ArtilleryCloudPlugin {
 
     let postSucceeded = false;
     try {
-      res = await request.post(this.pingEndpoint, {
+      res = await this.request.post(this.pingEndpoint, {
         headers: this.defaultHeaders
       });
 
@@ -309,7 +311,7 @@ class ArtilleryCloudPlugin {
     let url;
     try {
       // TODO: This could get rejected if a limit is exceeded so need to handle that case
-      const res = await request.post(this.getAssetUploadUrls, {
+      const res = await this.request.post(this.getAssetUploadUrls, {
         headers: this.defaultHeaders,
         json: payload
       });
@@ -328,7 +330,7 @@ class ArtilleryCloudPlugin {
 
     const fileStream = fs.createReadStream(localFilename);
     try {
-      const _response = await request.put(url, {
+      const _response = await this.request.put(url, {
         body: fileStream
       });
     } catch (error) {
@@ -390,7 +392,7 @@ class ArtilleryCloudPlugin {
     debug('☁️', 'Getting load test status');
 
     try {
-      const res = await request.get(this.getLoadTestEndpoint, {
+      const res = await this.request.get(this.getLoadTestEndpoint, {
         headers: this.defaultHeaders
       });
 
@@ -404,7 +406,7 @@ class ArtilleryCloudPlugin {
     debug('☁️', eventName, eventPayload);
 
     try {
-      const res = await request.post(this.eventsEndpoint, {
+      const res = await this.request.post(this.eventsEndpoint, {
         headers: this.defaultHeaders,
         json: {
           eventType: eventName,

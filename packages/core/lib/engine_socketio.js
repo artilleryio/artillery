@@ -23,6 +23,10 @@ function SocketIoEngine(script) {
   this.httpDelegate = new EngineHttp(script);
 }
 
+SocketIoEngine.prototype.init = async function () {
+  await this.httpDelegate.init();
+};
+
 SocketIoEngine.prototype.createScenario = function (scenarioSpec, ee) {
   // Adds scenario overridden configuration into the static config
   this.socketioOpts = { ...this.socketioOpts, ...scenarioSpec.socketio };
