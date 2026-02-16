@@ -163,6 +163,16 @@ async function runner(script, payload, options, callback) {
     warnings
   );
 
+  for (const e of runnerEngines) {
+    if (
+      e &&
+      typeof e.init === 'function' &&
+      e.init.constructor.name === 'AsyncFunction'
+    ) {
+      await e.init();
+    }
+  }
+
   const promise = new Promise((resolve, _reject) => {
     ee.run = (contextVars) => {
       const runState = {
@@ -506,12 +516,23 @@ function $randomString(length = 10) {
   return s;
 }
 
-function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
+async function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
   if (!script[hook]) {
     return {};
   }
 
   const { loadedEngines: engines } = loadEngines(script, hookEvents);
+
+  for (const e of engines) {
+    if (
+      e &&
+      typeof e.init === 'function' &&
+      e.init.constructor.name === 'AsyncFunction'
+    ) {
+      await e.init();
+    }
+  }
+
   const ee = new EventEmitter();
 
   return new Promise((resolve, reject) => {
