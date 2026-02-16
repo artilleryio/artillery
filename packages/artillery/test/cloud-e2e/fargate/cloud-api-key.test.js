@@ -1,7 +1,8 @@
 const { test, before, beforeEach } = require('tap');
 const { $ } = require('zx');
 const fs = require('node:fs');
-const got = require('got');
+let got;
+before(async () => { got = (await import('got')).default; });
 const {
   generateTmpReportPath,
   getTestTags,

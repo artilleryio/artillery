@@ -1,7 +1,6 @@
 
 
 const sleep = require('../../../../helpers/sleep.js');
-const got = require('got');
 const {
   XRayClient,
   GetTraceSummariesCommand,
@@ -15,6 +14,7 @@ module.exports = {
 };
 
 async function getDatadogSpans(apiKey, appKey, testId, expectedTotalSpans) {
+  const got = (await import('got')).default;
   const url = 'https://api.datadoghq.com/api/v2/spans/events/search';
   const headers = {
     Accept: 'application/json',
