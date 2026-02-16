@@ -13,6 +13,6 @@
   "license": "MPL-2.0",
   "dependencies": {
     "debug": "^4.4.3",
-    "got": "^11.8.5"
+    "got": "^14.6.6"
   }
 }

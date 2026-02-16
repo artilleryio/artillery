@@ -1,4 +1,3 @@
-const got = require('got');
 const debug = require('debug')('plugin:publish-metrics:dynatrace');
 const path = require('node:path');
 const { sleep } = require('../util');
@@ -265,6 +264,7 @@ class DynatraceReporter {
 
   async sendRequest(url, options, type = 'metrics') {
     this.pendingRequests += 1;
+    const got = (await import('got')).default;
 
     debug(`Sending ${type} to Dynatrace`);
     try {

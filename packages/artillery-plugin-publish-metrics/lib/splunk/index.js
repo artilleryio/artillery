@@ -1,4 +1,3 @@
-const got = require('got');
 const { sleep } = require('../util');
 const debug = require('debug')('plugin:publish-metrics:splunk');
 
@@ -179,6 +178,7 @@ class SplunkReporter {
 
   async sendRequest(url, payload, type) {
     this.pendingRequests += 1;
+    const got = (await import('got')).default;
     const options = this.formRequest(payload);
 
     debug(`Sending ${type} to Splunk`);
