@@ -1507,7 +1507,8 @@ async function setupDefaultECSParams(context) {
   const defaultParams = {
     taskDefinition: context.taskName,
     cluster: context.clusterName,
-    overrides: context.taskOverrides
+    overrides: context.taskOverrides,
+    startedBy: context.testId
   };
 
   if (context.isFargate) {
