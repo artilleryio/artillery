@@ -502,6 +502,11 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       shuttingDown = true;
 
+      if (context.heartbeatIntervalId) {
+        clearInterval(context.heartbeatIntervalId);
+        context.heartbeatIntervalId = null;
+      }
+
       if (opts.earlyStop) {
         if (context.status !== TEST_RUN_STATUS.ERROR) {
           // Retain ERROR status if already set elsewhere
@@ -673,6 +678,10 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
         context.status !== TEST_RUN_STATUS.EARLY_STOP &&
         context.status !== TEST_RUN_STATUS.TERMINATING
       ) {
+        // Start heartbeat before waitForWorkerSync so that workers that are
+        // already up can see heartbeats while the rest of the pool provisions.
+        // With 500+ Fargate tasks this window can be 10+ minutes.
+        context.heartbeatIntervalId = startHeartbeat(context);
         logProgress('Waiting for workers to come online...');
         await waitForWorkerSync(context);
         await sendGoSignal(context);
@@ -1824,6 +1833,31 @@ async function sendGoSignal(context) {
   };
   await s3.send(new PutObjectCommand(params));
   return context;
+}
+
+async function writeHeartbeat(context) {
+  const s3 = createS3Client();
+  const timestamp = Date.now();
+  const params = {
+    Body: '',
+    Bucket: context.s3Bucket,
+    Key: `test-runs/${context.testId}/heartbeat/${timestamp}.json`
+  };
+  try {
+    await s3.send(new PutObjectCommand(params));
+    debug('Heartbeat written: %s', timestamp);
+  } catch (err) {
+    debug('Heartbeat write failed: %s', err.message);
+    // Non-fatal. Workers tolerate missed heartbeats via 180s threshold.
+  }
+}
+
+function startHeartbeat(context) {
+  writeHeartbeat(context).catch(debug);
+  const intervalId = setInterval(() => {
+    writeHeartbeat(context).catch(debug);
+  }, 60 * 1000);
+  return intervalId;
 }
 
 async function listen(context, ee) {

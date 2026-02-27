@@ -28,6 +28,7 @@ declare -r ERR_DEP=9
 declare -r ERR_DEP_INSTALL=10 # npm install / yarn install failed
 declare -r ERR_NO_LICENSE=11
 declare -r ERR_CLI_ERROR_EXPECT=21
+declare -r ERR_HEARTBEAT_TIMEOUT=12
 
 ERR_EXTRA_INFO=""
 
@@ -392,6 +393,82 @@ decode_cli_args () {
     done
 }
 
+check_heartbeat () {
+    if [[ "$is_azure" = "yes" ]] ; then
+        return  # TODO: implement Azure blob storage equivalent
+    fi
+
+    local heartbeat_prefix="${s3_run_data_path}/heartbeat/"
+    # Extract bucket and key prefix from s3:// URI for s3api calls
+    local hb_no_scheme="${heartbeat_prefix#s3://}"
+    local hb_bucket="${hb_no_scheme%%/*}"
+    local hb_key_prefix="${hb_no_scheme#*/}"
+    local threshold=180
+    local check_interval=60
+    local grace_period=180
+    local started_at=$SECONDS
+
+    debug "Heartbeat monitor started (grace=${grace_period}s, threshold=${threshold}s)"
+
+    while true ; do
+        sleep $check_interval
+
+        local elapsed=$(( SECONDS - started_at ))
+        if [[ $elapsed -lt $grace_period ]] ; then
+            debug "Heartbeat: grace period (${elapsed}s < ${grace_period}s)"
+            continue
+        fi
+
+        set +e
+        local latest_key
+        latest_key=$(aws s3api list-objects-v2 \
+            --bucket "$hb_bucket" \
+            --prefix "$hb_key_prefix" \
+            --query 'sort_by(Contents, &Key)[-1].Key' \
+            --output text \
+            --region "$aws_region" 2>/dev/null)
+        local ls_exit=$?
+        set -e
+
+        if [[ $ls_exit -ne 0 ]] ; then
+            debug "Heartbeat: S3 list failed, skipping"
+            continue
+        fi
+
+        if [[ -z "$latest_key" ]] || [[ "$latest_key" = "None" ]] ; then
+            printf "ERROR: No CLI heartbeat detected. Terminating worker.\n"
+            # check_heartbeat runs in a background subshell, so EXIT_CODE
+            # assignments here are invisible to the parent. Write the exit
+            # code to a file so the parent can pick it up after the loop.
+            echo "$ERR_HEARTBEAT_TIMEOUT" > /tmp/heartbeat_timeout
+            if [[ "$CLI_RUNNING" = "yes" ]] && [[ -n "$CLI_PID" ]] ; then
+                kill -TERM $CLI_PID 2>/dev/null || true
+            fi
+            exit $ERR_HEARTBEAT_TIMEOUT
+        fi
+
+        local latest_filename="${latest_key##*/}"
+        local latest_ts=${latest_filename%.json}
+        # %3N (nanoseconds truncated to ms) requires GNU coreutils date.
+        # Available on Amazon Linux / Fargate; falls back to second precision elsewhere.
+        local now_ms=$(date +%s%3N 2>/dev/null || echo $(( $(date +%s) * 1000 )))
+        local age_ms=$(( now_ms - latest_ts ))
+        local age_s=$(( age_ms / 1000 ))
+
+        debug "Heartbeat: latest=${latest_ts}, age=${age_s}s"
+
+        if [[ $age_s -gt $threshold ]] ; then
+            printf "ERROR: CLI heartbeat expired (%ds old). Terminating worker.\n" "$age_s"
+            # See comment above re: subshell variable isolation.
+            echo "$ERR_HEARTBEAT_TIMEOUT" > /tmp/heartbeat_timeout
+            if [[ "$CLI_RUNNING" = "yes" ]] && [[ -n "$CLI_PID" ]] ; then
+                kill -TERM $CLI_PID 2>/dev/null || true
+            fi
+            exit $ERR_HEARTBEAT_TIMEOUT
+        fi
+    done
+}
+
 run_a9 () {
     # NOTE: node_modules is required for plugins to be loaded
     export NODE_PATH="$TEST_DATA/node_modules:${NODE_PATH:-""}"
@@ -426,6 +503,9 @@ run_a9 () {
     CLI_PID=$(pgrep -lfa node | grep artillery | awk '{print $1}')
     CLI_RUNNING="yes"
 
+    check_heartbeat &
+    HEARTBEAT_PID=$!
+
     debug "CLI pid:"
     debug "$CLI_PID"
 
@@ -434,6 +514,8 @@ run_a9 () {
     done
 
     CLI_RUNNING="no"
+    kill $HEARTBEAT_PID 2>/dev/null || true
+    wait $HEARTBEAT_PID 2>/dev/null || true
     CLI_STATUS=$(cat exitCode)
 
     printf "Finished with code %s\n" "$CLI_STATUS"
@@ -455,13 +537,16 @@ run_a9 () {
             ;;
     esac
 
-    # TODO: Upload to Storage Blob if on Azure 
+    # TODO: Upload to Storage Blob if on Azure
     if [[ "$is_azure" != "yes" ]] ; then
         aws s3 cp output.txt "${s3_run_data_path}/worker-log-${worker_id}.txt"
         echo "log: ${s3_run_data_path}/worker-log-${worker_id}.txt"
     fi
 
-    if [[ $CLI_STATUS -eq 0 ]] ; then
+    if [[ -f /tmp/heartbeat_timeout ]] ; then
+        EXIT_CODE=$(cat /tmp/heartbeat_timeout)
+        rm -f /tmp/heartbeat_timeout
+    elif [[ $CLI_STATUS -eq 0 ]] ; then
         EXIT_CODE=0
     elif [[ $CLI_STATUS -eq $ERR_CLI_ERROR_EXPECT ]] ; then
         EXIT_CODE=$ERR_CLI_ERROR_EXPECT
