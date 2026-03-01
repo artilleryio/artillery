@@ -1,0 +1,63 @@
+config:
+  target: "https://api-with-bugs.practicesoftwaretesting.com"
+  
+  plugins:
+    # built-in plugin to generate data with Falso
+    # https://www.artillery.io/docs/reference/extensions/fake-data
+    fake-data: {}
+    expect: {}
+  
+  # This makes loadCustomJsonPayload() function available which we're using in the scenario
+  processor: './helpers.mjs'
+  
+  # Load email and password fields from a CSV file
+  payload:
+    - path: "./credentials.csv"
+      fields:
+        - email
+        - password
+
+scenarios:
+  - name: Register and login
+    # This will run before every request and load and template a JSON payload if set with jsonFromFile property
+    beforeRequest: loadCustomJsonPayload
+    flow:
+      - post:
+          url: "/users/register"
+          jsonFromFile:
+            path: "./payload1.json"
+            withVariables:
+              first_name: "{{ $randFirstName() }}"
+              # last_name: "{{ $randLastName() }}"
+              last_name: "Doe" # Falso often produces values with non ASCII characters such as "é" which the application seems to reject
+              address: "{{ $randStreetAddress() }}"
+              city: "{{ $randCity() }}"
+              state: "{{ $randState() }}"
+              country:  "{{ $randCountry() }}"
+              postcode: "{{ $randZipCode() }}"
+              phone: "{{ $randPhoneNumber() }}"
+              dob: "1990-01-01"
+              email: "{{ email }}"
+              password: "{{ password }}"
+          capture:
+            - json: $.id
+              as: newUserId
+          expect:
+            statusCode: 201
+
+      - log: "User registered, user id: ${{ newUserId }}"
+
+      - post:
+          url: "/users/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: $.access_token
+              as: accessToken
+          expect:
+            statusCode: 200
+
+      - log: "user logged in, access token: {{ accessToken }}"
+
+        
