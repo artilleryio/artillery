@@ -6,7 +6,7 @@
   "author": "Dennis Martinez",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.17.1",
+    "express": "^4.22.1",
     "server-timing": "^3.3.1"
   }
 }

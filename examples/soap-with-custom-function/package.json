@@ -8,6 +8,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "soap": "^1.0.0"
+    "soap": "^1.6.3"
   }
 }
