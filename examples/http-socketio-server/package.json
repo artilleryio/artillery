@@ -10,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cookie-parser": "^1.4.5",
-    "express": "^4.17.1",
-    "socket.io": "^3.1.2"
+    "cookie-parser": "^1.4.7",
+    "express": "^4.22.1",
+    "socket.io": "^4.8.3"
   }
 }
