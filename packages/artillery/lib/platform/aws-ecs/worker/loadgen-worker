@@ -398,11 +398,7 @@ check_heartbeat () {
         return  # TODO: implement Azure blob storage equivalent
     fi
 
-    local heartbeat_prefix="${s3_run_data_path}/heartbeat/"
-    # Extract bucket and key prefix from s3:// URI for s3api calls
-    local hb_no_scheme="${heartbeat_prefix#s3://}"
-    local hb_bucket="${hb_no_scheme%%/*}"
-    local hb_key_prefix="${hb_no_scheme#*/}"
+    local heartbeat_key="${s3_run_data_path}/heartbeat.json"
     local threshold=180
     local check_interval=60
     local grace_period=180
@@ -420,35 +416,32 @@ check_heartbeat () {
         fi
 
         set +e
-        local latest_key
-        latest_key=$(aws s3api list-objects-v2 \
-            --bucket "$hb_bucket" \
-            --prefix "$hb_key_prefix" \
-            --query 'sort_by(Contents, &Key)[-1].Key' \
-            --output text \
-            --region "$aws_region" 2>/dev/null)
-        local ls_exit=$?
+        aws s3 cp "$heartbeat_key" /tmp/heartbeat.json \
+            --region "$aws_region" 2>/dev/null
+        local cp_exit=$?
         set -e
 
-        if [[ $ls_exit -ne 0 ]] ; then
-            debug "Heartbeat: S3 list failed, skipping"
+        if [[ $cp_exit -ne 0 ]] ; then
+            printf "WARNING: Heartbeat S3 fetch failed (exit=%d), retrying next cycle\n" "$cp_exit"
             continue
         fi
 
-        if [[ -z "$latest_key" ]] || [[ "$latest_key" = "None" ]] ; then
+        local latest_ts
+        latest_ts=$(cat /tmp/heartbeat.json 2>/dev/null)
+
+        if [[ -z "$latest_ts" ]] ; then
             printf "ERROR: No CLI heartbeat detected. Terminating worker.\n"
-            # check_heartbeat runs in a background subshell, so EXIT_CODE
-            # assignments here are invisible to the parent. Write the exit
-            # code to a file so the parent can pick it up after the loop.
             echo "$ERR_HEARTBEAT_TIMEOUT" > /tmp/heartbeat_timeout
             if [[ "$CLI_RUNNING" = "yes" ]] && [[ -n "$CLI_PID" ]] ; then
                 kill -TERM $CLI_PID 2>/dev/null || true
+                sleep 15
+                if kill -0 $CLI_PID 2>/dev/null ; then
+                    kill -KILL $CLI_PID 2>/dev/null || true
+                fi
             fi
             exit $ERR_HEARTBEAT_TIMEOUT
         fi
 
-        local latest_filename="${latest_key##*/}"
-        local latest_ts=${latest_filename%.json}
         # %3N (nanoseconds truncated to ms) requires GNU coreutils date.
         # Available on Amazon Linux / Fargate; falls back to second precision elsewhere.
         local now_ms=$(date +%s%3N 2>/dev/null || echo $(( $(date +%s) * 1000 )))
@@ -459,10 +452,13 @@ check_heartbeat () {
 
         if [[ $age_s -gt $threshold ]] ; then
             printf "ERROR: CLI heartbeat expired (%ds old). Terminating worker.\n" "$age_s"
-            # See comment above re: subshell variable isolation.
             echo "$ERR_HEARTBEAT_TIMEOUT" > /tmp/heartbeat_timeout
             if [[ "$CLI_RUNNING" = "yes" ]] && [[ -n "$CLI_PID" ]] ; then
                 kill -TERM $CLI_PID 2>/dev/null || true
+                sleep 15
+                if kill -0 $CLI_PID 2>/dev/null ; then
+                    kill -KILL $CLI_PID 2>/dev/null || true
+                fi
             fi
             exit $ERR_HEARTBEAT_TIMEOUT
         fi
@@ -510,6 +506,10 @@ run_a9 () {
     debug "$CLI_PID"
 
     while kill -0 $CLI_PID 2> /dev/null ; do
+        if [[ -f /tmp/heartbeat_timeout ]] ; then
+            kill -KILL $CLI_PID 2>/dev/null || true
+            break
+        fi
         sleep 5 # signal handler will fire after we wake up
     done
 

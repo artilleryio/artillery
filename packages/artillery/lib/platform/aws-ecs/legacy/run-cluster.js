@@ -1828,7 +1828,7 @@ async function waitForWorkerSync(context) {
 async function sendGoSignal(context) {
   const s3 = createS3Client();
   const params = {
-    Body: context.testId,
+    Body: Buffer.from(context.testId),
     Bucket: context.s3Bucket,
     Key: `test-runs/${context.testId}/go.json`
   };
@@ -1838,15 +1838,14 @@ async function sendGoSignal(context) {
 
 async function writeHeartbeat(context) {
   const s3 = createS3Client();
-  const timestamp = Date.now();
   const params = {
-    Body: '',
+    Body: Buffer.from(String(Date.now())),
     Bucket: context.s3Bucket,
-    Key: `test-runs/${context.testId}/heartbeat/${timestamp}.json`
+    Key: `test-runs/${context.testId}/heartbeat.json`
   };
   try {
     await s3.send(new PutObjectCommand(params));
-    debug('Heartbeat written: %s', timestamp);
+    debug('Heartbeat written: %s', params.Body.toString());
   } catch (err) {
     debug('Heartbeat write failed: %s', err.message);
     // Non-fatal. Workers tolerate missed heartbeats via 180s threshold.
