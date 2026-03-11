@@ -229,6 +229,23 @@ const HttpConfigSchema = Joi.object({
     .description(
       'Enable tracking of additional HTTP metrics.\nhttps://www.artillery.io/docs/reference/engines/http#additional-performance-metrics'
     ),
+  distributedTracing: Joi.alternatives().try(
+    artilleryBooleanOrString,
+    Joi.object({
+      enabled: artilleryBooleanOrString.default(true)
+        .meta({ title: 'Enable distributed tracing' })
+        .description('Whether to add W3C Trace Context headers to requests'),
+      sampled: artilleryBooleanOrString.default(true)
+        .meta({ title: 'Set sampled flag' })
+        .description('Whether to set the sampled flag in trace-flags (default: true)'),
+      traceIdPrefix: Joi.string().max(8).default('a9')
+        .meta({ title: 'Trace ID prefix' })
+        .description('Prefix for generated trace IDs (max 8 hex characters, default: "a9")')
+    })
+  ).meta({ title: 'Distributed Tracing' })
+    .description(
+      'Enable W3C Trace Context propagation for distributed tracing.\nhttps://www.w3.org/TR/trace-context/'
+    ),
   defaults: HttpDefaultsConfigSchema.meta({
     title: 'Configure Default Settings for all requests'
   })

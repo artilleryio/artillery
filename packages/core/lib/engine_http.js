@@ -153,6 +153,62 @@ HttpEngine.prototype.init = async function () {
   this.request = (await import('got')).default;
 };
 
+HttpEngine.prototype._isDistributedTracingEnabled = function (config) {
+  const dtConfig = config.http?.distributedTracing;
+  if (!dtConfig) {
+    return false;
+  }
+  
+  // Handle both boolean and object forms
+  if (typeof dtConfig === 'boolean') {
+    return dtConfig;
+  }
+  
+  if (typeof dtConfig === 'object' && dtConfig.enabled !== undefined) {
+    return dtConfig.enabled;
+  }
+  
+  // Default to true if distributedTracing is set but enabled is not specified
+  return true;
+};
+
+HttpEngine.prototype._generateTraceparent = function (config) {
+  // W3C Trace Context format: version-trace-id-parent-id-trace-flags
+  const version = '00';
+  
+  // Get configuration
+  const dtConfig = config.http?.distributedTracing;
+  let sampled = true; // Default to sampled
+  let traceIdPrefix = 'a9'; // Default prefix
+  
+  if (typeof dtConfig === 'object') {
+    if (dtConfig.sampled !== undefined) {
+      sampled = dtConfig.sampled;
+    }
+    if (dtConfig.traceIdPrefix !== undefined) {
+      traceIdPrefix = dtConfig.traceIdPrefix;
+    }
+  }
+  
+  // Validate and normalize prefix (must be valid hex, max 8 chars)
+  traceIdPrefix = traceIdPrefix.toLowerCase().replace(/[^0-9a-f]/g, '').slice(0, 8);
+  if (traceIdPrefix.length === 0) {
+    traceIdPrefix = 'a9'; // Fallback to default if invalid
+  }
+  
+  // Generate trace-id with prefix (32 hex chars total)
+  const remainingBytes = Math.ceil((32 - traceIdPrefix.length) / 2);
+  const randomPart = crypto.randomBytes(remainingBytes).toString('hex');
+  const traceId = (traceIdPrefix + randomPart).slice(0, 32);
+  
+  // Generate 8-byte parent-id (16 hex chars)
+  const parentId = crypto.randomBytes(8).toString('hex');
+  
+  const traceFlags = sampled ? '01' : '00';
+  
+  return `${version}-${traceId}-${parentId}-${traceFlags}`;
+};
+
 HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
   ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
   ensurePropertyIsAList(scenarioSpec, 'afterResponse');
@@ -714,6 +770,13 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
         // Convert scalar seconds to Got v14 timeout object right before request
         const gotOptions = _.pick(requestParams, GOT_OPTION_NAMES);
         gotOptions.timeout = { response: requestParams.timeout * 1000 };
+
+        // Add W3C Trace Context headers if distributed tracing is enabled
+        if (self._isDistributedTracingEnabled(config)) {
+          const traceparent = self._generateTraceparent(config);
+          gotOptions.headers = gotOptions.headers || {};
+          gotOptions.headers.traceparent = traceparent;
+        }
 
         let totalDownloaded = 0;
         self
