@@ -1,0 +1,15 @@
+{
+  "name": "using-json-payload-templates",
+  "version": "1.0.0",
+  "description": "This examples shows a solution for testing an HTTP API using JSON payloads which are loaded from external JSON files, with optional templating of values inside those JSON files.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "handlebars": "^4.7.8"
+  }
+}
