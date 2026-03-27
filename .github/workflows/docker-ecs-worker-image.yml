@@ -40,13 +40,13 @@ jobs:
         registry: [ public, private ]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ env.WORKER_VERSION }}
           fetch-depth: 0
       
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
       
       - name: Replace package version
         if: ${{ inputs.USE_COMMIT_SHA_IN_VERSION || false }}
@@ -71,7 +71,7 @@ jobs:
       
       - name: Configure AWS Credentials (Public ECR)
         if: matrix.registry == 'public'
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1
         with:
           aws-region: us-east-1
           audience: sts.amazonaws.com
@@ -82,7 +82,7 @@ jobs:
       - name: Login to Amazon (Public ECR)
         if: matrix.registry == 'public'
         id: login-ecr-public
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@2fc7aceee09e9e4a7105c0d060c656fad0b4f63d # v1
         with:
           registry-type: public
       
@@ -102,7 +102,7 @@ jobs:
 
       - name: Configure AWS Credentials (Private ECR)
         if: matrix.registry == 'private'
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1
         with:
           aws-region: eu-west-1
           audience: sts.amazonaws.com
@@ -113,7 +113,7 @@ jobs:
       - name: Login to Amazon (Private ECR)
         if: matrix.registry == 'private'
         id: login-ecr-private
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@2fc7aceee09e9e4a7105c0d060c656fad0b4f63d # v1
     
       - name: Build the Docker image (Private ECR)
         if: matrix.registry == 'private'
@@ -140,13 +140,13 @@ jobs:
         registry: [ public, private ]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ env.WORKER_VERSION }}
           fetch-depth: 0
       
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
       
       - name: Replace package version
         if: ${{ inputs.USE_COMMIT_SHA_IN_VERSION || false }}
@@ -171,7 +171,7 @@ jobs:
       
       - name: Configure AWS Credentials (Public ECR)
         if: matrix.registry == 'public'
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1
         with:
           aws-region: us-east-1
           audience: sts.amazonaws.com
@@ -182,7 +182,7 @@ jobs:
       - name: Login to Amazon (Public ECR)
         if: matrix.registry == 'public'
         id: login-ecr-public
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@2fc7aceee09e9e4a7105c0d060c656fad0b4f63d # v1
         with:
           registry-type: public
       
@@ -202,7 +202,7 @@ jobs:
 
       - name: Configure AWS Credentials (Private ECR)
         if: matrix.registry == 'private'
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@67fbcbb121271f7775d2e7715933280b06314838 # v1
         with:
           aws-region: eu-west-1
           audience: sts.amazonaws.com
@@ -213,7 +213,7 @@ jobs:
       - name: Login to Amazon (Private ECR)
         if: matrix.registry == 'private'
         id: login-ecr-private
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@2fc7aceee09e9e4a7105c0d060c656fad0b4f63d # v1
 
       - name: Build the Docker image (Private ECR)
         if: matrix.registry == 'private'

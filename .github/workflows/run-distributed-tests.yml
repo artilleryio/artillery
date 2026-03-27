@@ -37,11 +37,11 @@ jobs:
     outputs:
       matrix: ${{ steps.generate-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ inputs.COMMIT_SHA || null }}
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
         with:
           node-version: 22.x
       - id: generate-matrix
@@ -70,11 +70,11 @@ jobs:
       GITHUB_ACTOR: ${{ github.actor }}
       HAS_ARM64_BUILD: ${{ inputs.HAS_ARM64_BUILD }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ inputs.COMMIT_SHA || null }} # in a PR we make a collaborator check, otherwise this would override pull_request_target
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2
         env:
           SHOW_STACK_TRACE: true
         with:
@@ -83,7 +83,7 @@ jobs:
           role-session-name: OIDCSession
           mask-aws-account-id: true
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
           node-version: 22.x
       - run: .github/workflows/scripts/npm-command-retry.sh install
@@ -121,11 +121,11 @@ jobs:
       GITHUB_ACTOR: ${{ github.actor }}
       HAS_ARM64_BUILD: ${{ inputs.HAS_ARM64_BUILD }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
         with:
           ref: ${{ inputs.COMMIT_SHA || null }} # in a PR we make a collaborator check, otherwise this would override pull_request_target
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@5fd3084fc36e372ff1fff382a39b10d03659f355 # v2
         env:
           SHOW_STACK_TRACE: true
         with:
@@ -134,7 +134,7 @@ jobs:
           role-session-name: OIDCSession
           mask-aws-account-id: true
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@7c12f8017d5436eb855f1ed4399f037a36fbd9e8 # v2
         with:
           node-version: 22.x
       - run: .github/workflows/scripts/npm-command-retry.sh install
