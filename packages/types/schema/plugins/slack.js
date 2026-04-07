@@ -3,7 +3,8 @@ const Joi = require('joi');
 const { artilleryNumberOrString } = require('../joi.helpers');
 
 const SlackPluginConfigSchema = Joi.object({
-  webhookUrl: artilleryNumberOrString
+  webhookUrl: artilleryNumberOrString,
+  notifyOnFailureOnly: Joi.boolean()
 })
   .unknown(false)
   .meta({ title: 'Slack Plugin' });

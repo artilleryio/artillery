@@ -243,6 +243,16 @@ class SlackPlugin {
   }
 
   async sendReport(report, ensureChecks) {
+    if (this.config.notifyOnFailureOnly) {
+      const hasFailed =
+        this.exitCode !== 0 || (ensureChecks && ensureChecks.failed > 0);
+      if (!hasFailed) {
+        debug('Test passed, notifyOnFailureOnly is set, skipping notification');
+        this.finished = true;
+        return;
+      }
+    }
+
     const got = (await import('got')).default;
     const payload = this.assembleSlackPayload(report, ensureChecks);
     try {
