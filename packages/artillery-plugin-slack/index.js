@@ -25,6 +25,13 @@ class SlackPlugin {
       this.cloudTestRunUrl = `${baseUrl}/load-tests/${global.artillery.testRunId}`;
     }
 
+    const nameTag = (global.artillery.testInfo?.tags || []).find(
+      (t) => t.name === 'name'
+    );
+    if (nameTag) {
+      this.testName = nameTag.value;
+    }
+
     if (
       this.script.config.plugins.ensure &&
       Object.keys(this.script.config.plugins.ensure).length > 0
@@ -119,10 +126,11 @@ class SlackPlugin {
     const exitCode =
       this.exitCode !== undefined && this.exitCode !== null ? this.exitCode : 0;
 
+    const testLabel = this.testName ? ` (${this.testName})` : '';
     const headerText =
       exitCode === 0
-        ? '🟢 Artillery test run finished'
-        : '🔴 Artillery test run failed';
+        ? `🟢 Artillery test run finished${testLabel}`
+        : `🔴 Artillery test run failed${testLabel}`;
 
     const payloadTemplate = {
       text: headerText,
