@@ -247,13 +247,13 @@ class SlackPlugin {
       });
     }
 
+    // TODO: stringify in the caller
     return JSON.stringify(payloadTemplate);
   }
 
   async sendReport(report, ensureChecks) {
     if (this.config.notifyOnFailureOnly) {
-      const hasFailed =
-        this.exitCode !== 0 || (ensureChecks && ensureChecks.failed > 0);
+      const hasFailed = this.exitCode !== 0;
       if (!hasFailed) {
         debug('Test passed, notifyOnFailureOnly is set, skipping notification');
         this.finished = true;
