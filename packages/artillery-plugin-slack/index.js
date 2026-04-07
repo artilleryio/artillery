@@ -261,8 +261,16 @@ class SlackPlugin {
       }
     }
 
-    const got = (await import('got')).default;
     const payload = this.assembleSlackPayload(report, ensureChecks);
+
+    if (process.env.ARTILLERY_SLACK_PLUGIN_DEBUG) {
+      console.log('Slack plugin payload:');
+      console.log(payload);
+      this.finished = true;
+      return;
+    }
+
+    const got = (await import('got')).default;
     try {
       const res = await got.post(this.config.webhookUrl, {
         headers: {
