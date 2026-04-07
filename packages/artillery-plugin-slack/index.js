@@ -1,6 +1,8 @@
 const debug = require('debug')('plugin:slack');
 const moment = require('moment');
 
+const MAX_SLACK_TEST_NAME_LENGTH = 80;
+
 class SlackPlugin {
   constructor(script, events) {
     this.script = script;
@@ -29,7 +31,7 @@ class SlackPlugin {
       (t) => t.name === 'name'
     );
     if (nameTag) {
-      this.testName = nameTag.value;
+      this.testName = truncateForSlackHeader(nameTag.value);
     }
 
     if (
@@ -329,6 +331,23 @@ function formatDuration(durationInMs) {
 // from artillery/lib/util.js
 function maybePluralize(amount, singular, plural = `${singular}s`) {
   return amount === 1 ? singular : plural;
+}
+
+function truncateForSlackHeader(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (normalized.length <= MAX_SLACK_TEST_NAME_LENGTH) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, MAX_SLACK_TEST_NAME_LENGTH - 1)}…`;
 }
 
 module.exports = {
