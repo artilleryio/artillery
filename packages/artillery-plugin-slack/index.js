@@ -1,6 +1,8 @@
 const debug = require('debug')('plugin:slack');
 const moment = require('moment');
 
+const MAX_SLACK_TEST_NAME_LENGTH = 80;
+
 class SlackPlugin {
   constructor(script, events) {
     this.script = script;
@@ -23,6 +25,13 @@ class SlackPlugin {
       const baseUrl =
         process.env.ARTILLERY_CLOUD_ENDPOINT || 'https://app.artillery.io';
       this.cloudTestRunUrl = `${baseUrl}/load-tests/${global.artillery.testRunId}`;
+    }
+
+    const nameTag = (global.artillery.testInfo?.tags || []).find(
+      (t) => t.name === 'name'
+    );
+    if (nameTag) {
+      this.testName = truncateForSlackHeader(nameTag.value);
     }
 
     if (
@@ -119,10 +128,11 @@ class SlackPlugin {
     const exitCode =
       this.exitCode !== undefined && this.exitCode !== null ? this.exitCode : 0;
 
+    const testLabel = this.testName ? ` (${this.testName})` : '';
     const headerText =
       exitCode === 0
-        ? '🟢 Artillery test run finished'
-        : '🔴 Artillery test run failed';
+        ? `🟢 Artillery test run finished${testLabel}`
+        : `🔴 Artillery test run failed${testLabel}`;
 
     const payloadTemplate = {
       text: headerText,
@@ -239,12 +249,30 @@ class SlackPlugin {
       });
     }
 
+    // TODO: stringify in the caller
     return JSON.stringify(payloadTemplate);
   }
 
   async sendReport(report, ensureChecks) {
-    const got = (await import('got')).default;
+    if (this.config.notifyOnFailureOnly) {
+      const hasFailed = this.exitCode !== 0;
+      if (!hasFailed) {
+        debug('Test passed, notifyOnFailureOnly is set, skipping notification');
+        this.finished = true;
+        return;
+      }
+    }
+
     const payload = this.assembleSlackPayload(report, ensureChecks);
+
+    if (process.env.ARTILLERY_SLACK_PLUGIN_DEBUG) {
+      console.log('Slack plugin payload:');
+      console.log(payload);
+      this.finished = true;
+      return;
+    }
+
+    const got = (await import('got')).default;
     try {
       const res = await got.post(this.config.webhookUrl, {
         headers: {
@@ -303,6 +331,23 @@ function formatDuration(durationInMs) {
 // from artillery/lib/util.js
 function maybePluralize(amount, singular, plural = `${singular}s`) {
   return amount === 1 ? singular : plural;
+}
+
+function truncateForSlackHeader(value) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (normalized.length <= MAX_SLACK_TEST_NAME_LENGTH) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, MAX_SLACK_TEST_NAME_LENGTH - 1)}…`;
 }
 
 module.exports = {

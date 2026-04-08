@@ -407,7 +407,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       options.launchType === 'ecs:fargate') || // --launch-type ecs:fargate
     typeof options.launchType === 'undefined';
 
-  global.artillery.globalEvents.emit('test:init', {
+  global.artillery.testInfo = {
     flags: options,
     testRunId: context.testId,
     tags: context.tags,
@@ -418,7 +418,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       tags: context.tags,
       launchType: options.launchType
     }
-  });
+  };
+
+  global.artillery.globalEvents.emit('test:init', global.artillery.testInfo);
 
   let packageJsonPath;
   if (options.packages) {

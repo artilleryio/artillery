@@ -334,7 +334,7 @@ RunCommand.runCommandImplementation = async (flags, argv, args) => {
       }
     });
 
-    global.artillery.globalEvents.emit('test:init', {
+    global.artillery.testInfo = {
       flags,
       testRunId,
       tags: tagResult.tags,
@@ -357,7 +357,9 @@ RunCommand.runCommandImplementation = async (flags, argv, args) => {
           configPath: script._configPath
         }
       }
-    });
+    };
+
+    global.artillery.globalEvents.emit('test:init', global.artillery.testInfo);
 
     launcher.run();
 
