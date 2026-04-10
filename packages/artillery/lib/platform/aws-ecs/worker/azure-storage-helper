@@ -1,0 +1,224 @@
+#!/opt/azure-sdk/bin/python3
+"""
+Lightweight replacement for the `az` CLI commands used by the Artillery
+Fargate worker (loadgen-worker).
+
+Implements only the 6 subcommands actually used:
+  login                    - validate service principal credentials
+  blob upload              - upload a local file as a blob
+  blob download            - download a single blob to a local file
+  blob download-batch      - download blobs matching a glob pattern
+  blob delete-batch        - delete blobs matching a glob pattern
+  queue send               - send a message to Azure Queue Storage
+
+Uses the azure-storage-blob, azure-storage-queue, and azure-identity
+Python SDKs (~6MB installed) instead of the full azure-cli (~800MB).
+
+Auth: reads AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID, and
+AZURE_STORAGE_ACCOUNT from the environment — the same env vars that the
+worker already sets for `az login --service-principal`.
+"""
+
+import fnmatch
+import os
+import sys
+
+from azure.identity import ClientSecretCredential
+from azure.storage.blob import BlobServiceClient
+from azure.storage.queue import QueueClient
+
+
+# ---------------------------------------------------------------------------
+# Auth / client helpers
+# ---------------------------------------------------------------------------
+
+def get_credential():
+    """Service principal credential from env vars."""
+    return ClientSecretCredential(
+        tenant_id=os.environ["AZURE_TENANT_ID"],
+        client_id=os.environ["AZURE_CLIENT_ID"],
+        client_secret=os.environ["AZURE_CLIENT_SECRET"],
+    )
+
+
+def get_blob_service_client():
+    account = os.environ["AZURE_STORAGE_ACCOUNT"]
+    return BlobServiceClient(
+        account_url=f"https://{account}.blob.core.windows.net",
+        credential=get_credential(),
+    )
+
+
+def get_queue_client(queue_name):
+    account = os.environ["AZURE_STORAGE_ACCOUNT"]
+    return QueueClient(
+        account_url=f"https://{account}.queue.core.windows.net",
+        queue_name=queue_name,
+        credential=get_credential(),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Commands
+# ---------------------------------------------------------------------------
+
+def cmd_login():
+    """Validate credentials by fetching a token.
+
+    Replaces: az login --service-principal -u $ID -p $SECRET --tenant $TENANT
+    The SDK doesn't need a separate login step — each client authenticates
+    on first use. This command exists so the worker can fail fast if creds
+    are invalid, before starting any real work.
+    """
+    cred = get_credential()
+    cred.get_token("https://storage.azure.com/.default")
+
+
+def cmd_blob_upload(args):
+    """Upload a local file to a blob (overwrites if exists).
+
+    Usage: blob upload <local-file> <container> <blob-name>
+    Replaces: az storage blob upload --overwrite --account-name X
+              --container-name C --file F --name N
+    """
+    local_file, container, blob_name = args[0], args[1], args[2]
+    blob = get_blob_service_client().get_blob_client(
+        container=container, blob=blob_name
+    )
+    with open(local_file, "rb") as f:
+        blob.upload_blob(f, overwrite=True)
+
+
+def cmd_blob_download(args):
+    """Download a single blob to a local file.
+
+    Usage: blob download <container> <blob-name> <dest-file>
+    Replaces: az storage blob download --account-name X
+              --container-name C --name N --file F
+    """
+    container, blob_name, dest = args[0], args[1], args[2]
+    blob = get_blob_service_client().get_blob_client(
+        container=container, blob=blob_name
+    )
+    with open(dest, "wb") as f:
+        data = blob.download_blob()
+        data.readinto(f)
+
+
+def cmd_blob_download_batch(args):
+    """Download blobs matching a glob pattern, preserving directory structure.
+
+    Usage: blob download-batch <container> <dest-dir> --pattern <pattern>
+    Replaces: az storage blob download-batch -d . --account-name X
+              -s C --pattern P
+
+    Blob names like "tests/abc123/foo.yaml" are written to
+    <dest-dir>/tests/abc123/foo.yaml, matching az CLI behavior.
+    """
+    container = args[0]
+    dest_dir = args[1]
+    pattern = _extract_flag(args, "--pattern")
+
+    container_client = get_blob_service_client().get_container_client(container)
+    for blob in container_client.list_blobs():
+        if pattern and not fnmatch.fnmatch(blob.name, pattern):
+            continue
+        dest_path = os.path.join(dest_dir, blob.name)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        blob_client = container_client.get_blob_client(blob.name)
+        with open(dest_path, "wb") as f:
+            blob_client.download_blob().readinto(f)
+
+
+def cmd_blob_delete_batch(args):
+    """Delete blobs matching a glob pattern.
+
+    Usage: blob delete-batch <container> --pattern <pattern>
+    Replaces: az storage blob delete-batch --account-name X
+              -s C --pattern P
+
+    Silently succeeds if no blobs match (same as az CLI behavior).
+    """
+    container = args[0]
+    pattern = _extract_flag(args, "--pattern")
+
+    container_client = get_blob_service_client().get_container_client(container)
+    for blob in container_client.list_blobs():
+        if pattern and not fnmatch.fnmatch(blob.name, pattern):
+            continue
+        container_client.delete_blob(blob.name)
+
+
+def cmd_queue_send(args):
+    """Send a message to Azure Queue Storage.
+
+    Usage: queue send <queue-name> <message-content>
+    Replaces: az storage message put --content M --queue-name Q
+              --account-name X
+    """
+    queue_name, content = args[0], args[1]
+    get_queue_client(queue_name).send_message(content)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _extract_flag(args, flag):
+    """Extract a --flag value from an args list."""
+    for i, a in enumerate(args):
+        if a == flag and i + 1 < len(args):
+            return args[i + 1]
+    return None
+
+
+USAGE = """\
+Usage: azure-storage-helper <command> [args...]
+
+Commands:
+  login
+  blob upload <file> <container> <name>
+  blob download <container> <name> <dest>
+  blob download-batch <container> <dest> --pattern <pat>
+  blob delete-batch <container> --pattern <pat>
+  queue send <queue-name> <message>
+"""
+
+BLOB_DISPATCH = {
+    "upload": cmd_blob_upload,
+    "download": cmd_blob_download,
+    "download-batch": cmd_blob_download_batch,
+    "delete-batch": cmd_blob_delete_batch,
+}
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(USAGE, file=sys.stderr)
+        sys.exit(1)
+
+    cmd = sys.argv[1]
+    rest = sys.argv[2:]
+
+    if cmd in ("-h", "--help"):
+        print(USAGE)
+        sys.exit(0)
+    elif cmd == "login":
+        cmd_login()
+    elif cmd == "blob":
+        if not rest or rest[0] not in BLOB_DISPATCH:
+            print(USAGE, file=sys.stderr)
+            sys.exit(1)
+        BLOB_DISPATCH[rest[0]](rest[1:])
+    elif cmd == "queue":
+        if not rest or rest[0] != "send":
+            print(USAGE, file=sys.stderr)
+            sys.exit(1)
+        cmd_queue_send(rest[1:])
+    else:
+        print(f"Unknown command: {cmd}", file=sys.stderr)
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
