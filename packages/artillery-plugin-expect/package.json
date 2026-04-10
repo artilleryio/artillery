@@ -20,7 +20,7 @@
     "chalk": "^4.1.2",
     "debug": "^4.4.3",
     "jmespath": "^0.16.0",
-    "lodash": "^4.17.21"
+    "lodash": "^4.18.0"
   },
   "devDependencies": {
     "shelljs": "^0.8.4",

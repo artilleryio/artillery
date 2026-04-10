@@ -10,7 +10,7 @@
     "deep-for-each": "^3.0.0",
     "espree": "^10.3.0",
     "jsonpath-plus": "^10.3.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.18.0",
     "ms": "^2.1.3"
   },
   "scripts": {

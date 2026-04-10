@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:24.14.1-bookworm-slim
 LABEL maintainer="team@artillery.io"
 
 WORKDIR /home/node/artillery
