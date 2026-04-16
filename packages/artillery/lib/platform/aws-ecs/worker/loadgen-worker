@@ -62,7 +62,7 @@ s3_run_data_path=
 worker_id=
 is_leader=${IS_LEADER:-false} # true or false
 
-declare -r DEPENDENCIES=(jq aws az pwgen node npm yarn tree)
+declare -r DEPENDENCIES=(jq aws azure-storage-helper pwgen node npm yarn tree)
 
 send_message () {
     local body="$1" # body of the message, a string
@@ -85,10 +85,9 @@ send_message_aqs () {
     local aqs_message_payload="{\"msg\":\"$body\",\"type\":\"$type\"}"
     local aqs_message_attributes="{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}"
 
-    >/dev/null az storage message put \
-        --content "{ \"payload\": $aqs_message_payload, \"attributes\": $aqs_message_attributes }" \
-        --queue-name "$AQS_QUEUE_NAME" \
-        --account-name "$AZURE_STORAGE_ACCOUNT" || true
+    >/dev/null azure-storage-helper queue send \
+        "$AQS_QUEUE_NAME" \
+        "{ \"payload\": $aqs_message_payload, \"attributes\": $aqs_message_attributes }" || true
 
     set -e
     set -o pipefail
@@ -151,10 +150,9 @@ send_event_aqs () {
 
     local aqs_message_attributes="{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}"
 
-    >/dev/null az storage message put \
-        --content "{ \"payload\": $payload, \"attributes\": $aqs_message_attributes }" \
-        --queue-name "$AQS_QUEUE_NAME" \
-        --account-name "$AZURE_STORAGE_ACCOUNT"
+    >/dev/null azure-storage-helper queue send \
+        "$AQS_QUEUE_NAME" \
+        "{ \"payload\": $payload, \"attributes\": $aqs_message_attributes }"
 }
 
 
@@ -224,7 +222,7 @@ sync_test_data_azure () {
     # TODO: Exclude node_modules_stream.zip
     # This recreates the directory structure in the container, i.e. we'll have tests/$test_run_id here with all files under it
     # So we need to move them all up two levels to the current directory
-    az storage blob download-batch -d . --account-name "$AZURE_STORAGE_ACCOUNT" -s "$azure_storage_container_name" --pattern "tests/$test_run_id/*"
+    azure-storage-helper blob download-batch "$azure_storage_container_name" . --pattern "tests/$test_run_id/*"
     local tmpdir="$(mktemp -d)"
     set +e
     mv tests/$test_run_id/{.,}* $tmpdir
@@ -274,7 +272,7 @@ install_dependencies () {
         # aws s3 mv "$s3_test_data_path/node_modules_stream.zip" "$s3_test_data_path/node_modules.zip"
 
         if [[ "$is_azure" = "yes" ]] ; then
-            az storage blob upload --overwrite --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --file node_modules.zip --name "tests/$test_run_id/node_modules.zip"
+            azure-storage-helper blob upload node_modules.zip "$azure_storage_container_name" "tests/$test_run_id/node_modules.zip"
         else
             aws s3 cp node_modules.zip "$s3_test_data_path/node_modules.zip"
         fi
@@ -309,7 +307,7 @@ signal_ready () {
         send_event "{\"event\": \"workerReady\"}"
 
         synced_dest="${azure_storage_container_name}/$synced_filename"
-        az storage blob upload --overwrite --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --file "$synced_filename" --name "tests/$test_run_id/$synced_filename"
+        azure-storage-helper blob upload "$synced_filename" "$azure_storage_container_name" "tests/$test_run_id/$synced_filename"
         cp_status=$?
     else
         synced_dest="${s3_run_data_path}/${synced_filename}"
@@ -343,7 +341,7 @@ wait_for_go () {
         set +e
 
         if [[ "$is_azure" = "yes" ]] ; then
-            az storage blob download --account-name "$AZURE_STORAGE_ACCOUNT" --container-name "$azure_storage_container_name" --name "$objpath" --file "$(basename $objpath)" 1>/dev/null 2>/dev/null
+            azure-storage-helper blob download "$azure_storage_container_name" "$objpath" "$(basename $objpath)" 1>/dev/null 2>/dev/null
         else
             aws s3 cp "$objpath" . 1>/dev/null 2>/dev/null
         fi
@@ -371,10 +369,9 @@ wait_for_go () {
 send_no_license_message () {
     set +e
 
-    az storage message put \
-        --content "{\"payload\":{\"event\":\"workerError\",\"reason\":\"License not found - https://docs.art/az/license\", \"exitCode\":$ERR_NO_LICENSE},\"attributes\":{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}}" \
-        --queue-name "$AQS_QUEUE_NAME" \
-        --account-name "$AZURE_STORAGE_ACCOUNT" || true
+    azure-storage-helper queue send \
+        "$AQS_QUEUE_NAME" \
+        "{\"payload\":{\"event\":\"workerError\",\"reason\":\"License not found - https://docs.art/az/license\", \"exitCode\":$ERR_NO_LICENSE},\"attributes\":{\"testId\": \"${test_run_id}\", \"workerId\": \"${worker_id}\"}}" || true
 
     set -e
 }
@@ -646,7 +643,9 @@ if [[ "$is_azure" = "yes" ]] ; then
     # Remap for convenience
     azure_storage_container_name="$s3_test_data_path"
 
-    az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+    # SDK authenticates lazily per-request, but we validate creds upfront
+    # to fail fast if they're invalid (same purpose as the old az login call)
+    azure-storage-helper login
 fi
 
 if [[ "$is_azure" != "yes" ]] ; then
@@ -678,9 +677,8 @@ cleanup () {
                 if [[ -z "${AZURE_RETAIN_BLOBS:-""}" ]] ; then
                     # This exits with 0 regardless of whether the pattern matches any
                     # blobs or not so it's OK to run this multiple times
-                    az storage blob delete-batch \
-                        --account-name "$AZURE_STORAGE_ACCOUNT" \
-                        -s "$azure_storage_container_name" \
+                    azure-storage-helper blob delete-batch \
+                        "$azure_storage_container_name" \
                         --pattern "tests/$test_run_id/*"
                 fi
             fi

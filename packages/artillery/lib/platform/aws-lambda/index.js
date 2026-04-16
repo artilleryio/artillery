@@ -701,7 +701,7 @@ class PlatformLambda {
       },
       ImageConfig: {
         Command: ['a9-handler-index.handler'],
-        EntryPoint: ['/usr/bin/npx', 'aws-lambda-ric']
+        EntryPoint: ['/usr/local/bin/npx', 'aws-lambda-ric']
       },
       FunctionName: functionName,
       Description: 'Artillery.io test',
