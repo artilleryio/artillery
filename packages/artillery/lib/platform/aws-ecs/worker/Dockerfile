@@ -106,17 +106,14 @@ WORKDIR ${FUNCTION_DIR}
 COPY --from=builder ${FUNCTION_DIR}/node_modules ${FUNCTION_DIR}/node_modules
 
 # ********************************
-# NOTE: Playwright version here comes from the playwright package inside
-# node_modules (currently 1.58.1). This must be kept consistent with the
+# NOTE: Playwright version here must be kept consistent with the
 # version in artillery-engine-playwright's package.json.
 # ********************************
 #
 # --with-deps installs Chromium's required system libraries via apt:
 # X11 (libx11, libxcomposite, libxdamage...), NSS/NSPR (TLS/certs),
 # fonts/fontconfig/freetype, ALSA (audio), mesa/EGL (graphics).
-# These are the same deps the old Playwright base image provided, minus
-# the Firefox/WebKit ones we never needed.
-RUN npx playwright install --with-deps chromium
+RUN npx playwright@1.59.1 install --with-deps chromium
 
 # --- Runtime system packages ---
 # These are required by the Fargate worker shell scripts (loadgen-worker):
