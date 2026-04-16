@@ -146,9 +146,12 @@ RUN corepack enable
 
 # --- AWS CLI v2 (copied from builder, ~200MB) ---
 # The standalone v2 installer bundles its own Python runtime, so no system
-# python3 dependency. Only two paths to copy.
+# python3 dependency. Only the install directory needs copying.
+# /usr/local/bin/aws must be a symlink (not a copied binary) because aws
+# is a PyInstaller bundle that locates libpython relative to the real
+# binary path. COPY resolves symlinks, so we recreate it manually.
 COPY --from=builder /usr/local/aws-cli /usr/local/aws-cli
-COPY --from=builder /usr/local/bin/aws /usr/local/bin/aws
+RUN ln -s /usr/local/aws-cli/v2/current/bin/aws /usr/local/bin/aws
 
 # --- Azure Storage SDK + helper script (copied from builder) ---
 # The venv is self-contained except for the python3 interpreter symlink.
