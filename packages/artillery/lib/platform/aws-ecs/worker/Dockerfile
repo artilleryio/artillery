@@ -125,7 +125,9 @@ RUN npx playwright install --with-deps chromium
 #   curl     - ECS metadata endpoint, general HTTP
 #   git      - user test repos may need it
 #   zip      - leader packs node_modules.zip for follower workers
+#   unzip    - followers unpack node_modules.zip from leader
 #   tree     - debug logging of test directory structure
+#   procps   - pgrep, used to find Artillery CLI PID
 #   python3  - required by azure-storage-helper (its venv references system python3)
 #   bash     - worker scripts are bash (base slim image only has dash)
 # --no-install-recommends avoids pulling in suggested packages we don't need.
@@ -136,7 +138,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     zip \
+    unzip \
     tree \
+    procps \
     python3 \
     && rm -rf /var/lib/apt/lists/*
 
