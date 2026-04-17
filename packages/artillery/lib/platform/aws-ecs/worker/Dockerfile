@@ -104,6 +104,14 @@ ARG FUNCTION_DIR="/artillery"
 RUN mkdir -p ${FUNCTION_DIR}
 WORKDIR ${FUNCTION_DIR}
 
+# aws-lambda-ric >=4.0.0 resolves the handler module via
+# path.resolve(process.env.LAMBDA_TASK_ROOT, '', '<handler>') + .js/.mjs.
+# AWS's own Lambda base images pre-set LAMBDA_TASK_ROOT=/var/task; on a
+# non-AWS base like DHI it's unset or defaults to /var/task, neither of
+# which matches our layout. Pin it explicitly to where the handler files
+# live so Lambda can find a9-handler-index.js.
+ENV LAMBDA_TASK_ROOT=${FUNCTION_DIR}
+
 # Copy node_modules first, separately from the rest of the application code.
 # This lets Docker cache the expensive playwright browser install step below
 # — it only re-runs when dependencies change, not when source code changes.
