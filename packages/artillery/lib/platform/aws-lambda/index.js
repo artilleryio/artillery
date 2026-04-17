@@ -701,7 +701,13 @@ class PlatformLambda {
       },
       ImageConfig: {
         Command: ['a9-handler-index.handler'],
-        EntryPoint: ['/usr/local/bin/npx', 'aws-lambda-ric']
+        EntryPoint: ['/usr/local/bin/npx', 'aws-lambda-ric'],
+        // aws-lambda-ric's bin script uses process.cwd() as appRoot, then
+        // resolves the handler module (a9-handler-index) relative to that.
+        // Our Dockerfile sets WORKDIR /artillery, but the DHI base doesn't
+        // carry it through in a way Lambda's container runtime picks up.
+        // Pinning WorkingDirectory here removes the ambiguity.
+        WorkingDirectory: '/artillery'
       },
       FunctionName: functionName,
       Description: 'Artillery.io test',
