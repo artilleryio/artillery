@@ -216,16 +216,6 @@ COPY --from=builder ${FUNCTION_DIR}/a9-handler-dependencies.js ${FUNCTION_DIR}/
 COPY --from=builder ${FUNCTION_DIR}/a9-handler-helpers.js ${FUNCTION_DIR}/
 COPY --from=builder ${FUNCTION_DIR}/a9-handler-index.js ${FUNCTION_DIR}/
 
-# aws-lambda-ric invokes the handler as a bare specifier ("a9-handler-index").
-# Node resolves bare names only via node_modules, so the files at /artillery/
-# aren't reachable without help. Expose each handler file inside node_modules
-# as a symlink — Node follows the symlink and treats the target dir
-# (/artillery) as __dirname, so the relative require('./a9-handler-helpers')
-# calls inside the handler still resolve.
-RUN ln -s /artillery/a9-handler-index.js        /artillery/node_modules/a9-handler-index.js \
- && ln -s /artillery/a9-handler-helpers.js      /artillery/node_modules/a9-handler-helpers.js \
- && ln -s /artillery/a9-handler-dependencies.js /artillery/node_modules/a9-handler-dependencies.js
-
 # Fargate worker scripts — copied from the build context (not builder stage)
 # because they may change independently of npm dependencies.
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/loadgen-worker /artillery/loadgen-worker
