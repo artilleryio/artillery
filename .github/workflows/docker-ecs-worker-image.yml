@@ -24,6 +24,12 @@ on:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN:
         description: 'ARN of the IAM role to assume to push the image to ECR.'
         required: true
+      DHI_USERNAME:
+        description: 'Docker Hub username with DHI entitlement (used to pull dhi.io base image).'
+        required: true
+      DHI_TOKEN:
+        description: 'Docker Hub PAT with DHI entitlement.'
+        required: true
 
 permissions:
   id-token: write
@@ -47,7 +53,14 @@ jobs:
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
-      
+
+      - name: Login to Docker Hardened Images (dhi.io)
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DHI_USERNAME }}
+          password: ${{ secrets.DHI_TOKEN }}
+
       - name: Replace package version
         if: ${{ inputs.USE_COMMIT_SHA_IN_VERSION || false }}
         run: node .github/workflows/scripts/replace-package-versions.js
@@ -147,7 +160,14 @@ jobs:
       
       - name: Set up QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
-      
+
+      - name: Login to Docker Hardened Images (dhi.io)
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DHI_USERNAME }}
+          password: ${{ secrets.DHI_TOKEN }}
+
       - name: Replace package version
         if: ${{ inputs.USE_COMMIT_SHA_IN_VERSION || false }}
         run: node .github/workflows/scripts/replace-package-versions.js

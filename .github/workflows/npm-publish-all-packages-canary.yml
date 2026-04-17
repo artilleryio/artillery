@@ -32,6 +32,8 @@ jobs:
       SHOULD_BUILD_ARM64: false
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+      DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+      DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
 
   build:
     runs-on: blacksmith-4vcpu-ubuntu-2404

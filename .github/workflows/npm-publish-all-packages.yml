@@ -22,6 +22,8 @@ jobs:
       SHOULD_BUILD_ARM64: true
     secrets:
       ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+      DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+      DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
 
   publish-packages-to-npm:
     runs-on: blacksmith-4vcpu-ubuntu-2404
