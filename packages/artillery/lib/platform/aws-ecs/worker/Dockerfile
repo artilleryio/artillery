@@ -6,7 +6,7 @@
 # This keeps ~500MB of build toolchain (g++, cmake, headers) out of the
 # final image.
 # =============================================================================
-FROM node:24.14.1-bookworm-slim AS builder
+FROM dhi.io/node:24-debian13-sfw-dev@sha256:df8622ac78486f140b81a64ba50d3e8ab6bed6d3455af89dd8ab8c32bfa066b3 AS builder
 
 # Build tools required to compile aws-lambda-ric (native C++ addon via
 # node-gyp). This set adds ~500MB but none of it reaches the final image.
@@ -79,19 +79,23 @@ RUN npm cache clean --force && rm ./package.json
 # =============================================================================
 # Stage 2: Runtime
 #
-# Uses the same slim base as the standalone Artillery Docker image
-# (packages/artillery/Dockerfile). Key size savings vs the old approach:
+# Base: Docker Hardened Images (DHI) Node 24 on Debian 13 (Trixie),
+# -sfw-dev variant (ships Socket Firewall tooling alongside dev tools).
+# Pinned by multi-arch index digest so amd64 + arm64 builds both resolve
+# from the same immutable index. Bump the digest intentionally when DHI
+# ships CVE rebuilds.
 #
-# OLD: mcr.microsoft.com/playwright:v1.58.1 base image (~2GB)
-#   - Ships all 3 browsers (Chromium + Firefox + WebKit) + system deps for
-#     all of them. Even after `rm -rf /ms-playwright/firefox* webkit*`, the
-#     system libraries for Firefox and WebKit stay behind.
-#
-# NEW: node:24.14.1-bookworm-slim (~210MB) + chromium-only playwright install
-#   - Installs ONLY Chromium and its specific system deps (X11, NSS, fonts,
-#     ALSA, mesa). No Firefox/WebKit libraries. Saves ~800-900MB.
+# Dual-use invariant: this image is consumed by
+#   (a) the Fargate worker — ENTRYPOINT overridden by the ECS task
+#       definition to /artillery/loadgen-worker (bash script);
+#   (b) the Artillery GitHub Action — runs the Dockerfile ENTRYPOINT
+#       /artillery/packages/artillery/bin/run directly.
+# GitHub Actions requires the container to run as root to access
+# GITHUB_WORKSPACE. DO NOT add a USER instruction and DO NOT switch to
+# a DHI variant that defaults to a nonroot user (e.g. -sfw-ent-dev,
+# -prod, distroless) without re-validating the GHA path.
 # =============================================================================
-FROM node:24.14.1-bookworm-slim
+FROM dhi.io/node:24-debian13-sfw-dev@sha256:df8622ac78486f140b81a64ba50d3e8ab6bed6d3455af89dd8ab8c32bfa066b3
 
 ARG TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
