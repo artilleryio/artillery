@@ -106,11 +106,14 @@ WORKDIR ${FUNCTION_DIR}
 
 # aws-lambda-ric >=4.0.0 resolves the handler module via
 # path.resolve(process.env.LAMBDA_TASK_ROOT, '', '<handler>') + .js/.mjs.
-# AWS's own Lambda base images pre-set LAMBDA_TASK_ROOT=/var/task; on a
-# non-AWS base like DHI it's unset or defaults to /var/task, neither of
-# which matches our layout. Pin it explicitly to where the handler files
-# live so Lambda can find a9-handler-index.js.
-ENV LAMBDA_TASK_ROOT=${FUNCTION_DIR}
+# LAMBDA_TASK_ROOT is a *reserved* env var per AWS docs — user-set values
+# (Dockerfile ENV or function Environment) get overridden by Lambda at
+# runtime back to its convention (/var/task). So instead of fighting the
+# env var, make /var/task a symlink to our actual install dir. Lambda
+# then resolves handlers at /var/task/a9-handler-*.js, Node follows the
+# symlink so __dirname is /artillery, and relative requires + bare
+# node_modules lookups resolve against /artillery/ as intended.
+RUN rm -rf /var/task && ln -s ${FUNCTION_DIR} /var/task
 
 # Copy node_modules first, separately from the rest of the application code.
 # This lets Docker cache the expensive playwright browser install step below
