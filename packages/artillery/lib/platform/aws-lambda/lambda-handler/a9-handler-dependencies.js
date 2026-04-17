@@ -38,6 +38,7 @@ const installNpmDependencies = async (testDataLocation) => {
     await runProcess('npm', ['install', dep, '--prefix', testDataLocation], {
       log: true,
       env: {
+        ...process.env,
         HOME: testDataLocation
       }
     });
@@ -47,6 +48,7 @@ const installNpmDependencies = async (testDataLocation) => {
     await runProcess('npm', ['init', '-y', '--quiet'], {
       log: true,
       env: {
+        ...process.env,
         HOME: testDataLocation
       }
     });
@@ -58,6 +60,7 @@ const installNpmDependencies = async (testDataLocation) => {
     {
       log: true,
       env: {
+        ...process.env,
         HOME: testDataLocation
       }
     }
