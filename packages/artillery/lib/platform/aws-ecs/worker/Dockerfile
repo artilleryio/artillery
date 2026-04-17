@@ -109,18 +109,8 @@ WORKDIR ${FUNCTION_DIR}
 # — it only re-runs when dependencies change, not when source code changes.
 COPY --from=builder ${FUNCTION_DIR}/node_modules ${FUNCTION_DIR}/node_modules
 
-# ********************************
-# NOTE: Playwright version here must be kept consistent with the
-# version in artillery-engine-playwright's package.json.
-# ********************************
-#
-# --with-deps installs Chromium's required system libraries via apt:
-# X11 (libx11, libxcomposite, libxdamage...), NSS/NSPR (TLS/certs),
-# fonts/fontconfig/freetype, ALSA (audio), mesa/EGL (graphics).
-RUN npx playwright@1.59.1 install --with-deps chromium
-
 # --- Runtime system packages ---
-# These are required by the Fargate worker shell scripts (loadgen-worker):
+# Worker shell script (loadgen-worker) tools:
 #   jq       - JSON parsing for metadata, SQS messages
 #   pwgen    - generate deduplication IDs for SQS messages
 #   curl     - ECS metadata endpoint, general HTTP
@@ -131,6 +121,16 @@ RUN npx playwright@1.59.1 install --with-deps chromium
 #   procps   - pgrep, used to find Artillery CLI PID
 #   python3  - required by azure-storage-helper (its venv references system python3)
 #   bash     - worker scripts are bash (base slim image only has dash)
+#
+# Chromium runtime libs (list mirrors Playwright 1.59.1's own Debian 13
+# profile from playwright-core/src/server/registry/nativeDeps.ts). We
+# install them explicitly instead of using `playwright install --with-deps`
+# because --with-deps also tries to pull xvfb + x11-common + xfonts-*,
+# whose dpkg postinst scripts fail on the DHI Debian 13 hardened base
+# (hardened base lacks some system scaffolding those packages assume).
+# xvfb and friends are only needed for non-headless test modes, which we
+# don't use — so dropping them is both safe and smaller. Several libs
+# carry the `t64` suffix on Trixie due to the 64-bit time_t transition.
 # --no-install-recommends avoids pulling in suggested packages we don't need.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
@@ -143,7 +143,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tree \
     procps \
     python3 \
+    libasound2t64 \
+    libatk-bridge2.0-0t64 \
+    libatk1.0-0t64 \
+    libatspi2.0-0t64 \
+    libcairo2 \
+    libcups2t64 \
+    libdbus-1-3 \
+    libdrm2 \
+    libgbm1 \
+    libglib2.0-0t64 \
+    libnspr4 \
+    libnss3 \
+    libpango-1.0-0 \
+    libx11-6 \
+    libxcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libxrandr2 \
     && rm -rf /var/lib/apt/lists/*
+
+# Playwright version is sourced from node_modules (pinned in
+# artillery-engine-playwright's package.json). Keep these in sync.
+# No --with-deps: we installed the chromium libs explicitly above.
+RUN npx playwright install chromium
 
 # The worker script (loadgen-worker) checks for `yarn` in its DEPENDENCIES
 # array. Node 24 ships corepack but `yarn` isn't on $PATH until enabled.
