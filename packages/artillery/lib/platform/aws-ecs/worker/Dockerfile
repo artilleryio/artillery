@@ -38,8 +38,8 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" \
 
 # --- Azure Storage SDK (replaces the full azure-cli) ---
 # The old Dockerfile installed azure-cli==2.76.0 (~800MB-1GB) but only used
-# 6 subcommands: login, blob upload/download/download-batch/delete-batch,
-# and queue send. We replace it with 3 targeted Python SDK packages (~6MB):
+# 5 subcommands: login, blob upload/download/download-batch, and queue send.
+# We replace it with 3 targeted Python SDK packages (~6MB):
 #   azure-storage-blob   - blob operations
 #   azure-storage-queue  - queue message operations
 #   azure-identity       - service principal authentication

@@ -278,7 +278,7 @@ class PlatformAzureACI {
                 this.blobContainerClient.getBlockBlobClient(
                   payload._overflowRef
                 );
-              const downloadResponse = await blobClient.download(0);
+              const downloadResponse = await blobClient.download();
               const downloaded = await streamToString(
                 downloadResponse.readableStreamBody
               );
