@@ -3,12 +3,11 @@
 Lightweight replacement for the `az` CLI commands used by the Artillery
 Fargate worker (loadgen-worker).
 
-Implements only the 6 subcommands actually used:
+Implements only the 5 subcommands actually used:
   login                    - validate service principal credentials
   blob upload              - upload a local file as a blob
   blob download            - download a single blob to a local file
   blob download-batch      - download blobs matching a glob pattern
-  blob delete-batch        - delete blobs matching a glob pattern
   queue send               - send a message to Azure Queue Storage
 
 Uses the azure-storage-blob, azure-storage-queue, and azure-identity
@@ -130,25 +129,6 @@ def cmd_blob_download_batch(args):
             blob_client.download_blob().readinto(f)
 
 
-def cmd_blob_delete_batch(args):
-    """Delete blobs matching a glob pattern.
-
-    Usage: blob delete-batch <container> --pattern <pattern>
-    Replaces: az storage blob delete-batch --account-name X
-              -s C --pattern P
-
-    Silently succeeds if no blobs match (same as az CLI behavior).
-    """
-    container = args[0]
-    pattern = _extract_flag(args, "--pattern")
-
-    container_client = get_blob_service_client().get_container_client(container)
-    for blob in container_client.list_blobs():
-        if pattern and not fnmatch.fnmatch(blob.name, pattern):
-            continue
-        container_client.delete_blob(blob.name)
-
-
 def cmd_queue_send(args):
     """Send a message to Azure Queue Storage.
 
@@ -180,7 +160,6 @@ Commands:
   blob upload <file> <container> <name>
   blob download <container> <name> <dest>
   blob download-batch <container> <dest> --pattern <pat>
-  blob delete-batch <container> --pattern <pat>
   queue send <queue-name> <message>
 """
 
@@ -188,7 +167,6 @@ BLOB_DISPATCH = {
     "upload": cmd_blob_upload,
     "download": cmd_blob_download,
     "download-batch": cmd_blob_download_batch,
-    "delete-batch": cmd_blob_delete_batch,
 }
 
 

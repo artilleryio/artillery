@@ -672,17 +672,10 @@ cleanup () {
     if [[ $CLEANING_UP = "no" ]] ; then
         CLEANING_UP="yes"
 
-        if [[ "$is_azure" = "yes" ]] ; then
-            if [[ "$is_leader" = "true" ]] ; then
-                if [[ -z "${AZURE_RETAIN_BLOBS:-""}" ]] ; then
-                    # This exits with 0 regardless of whether the pattern matches any
-                    # blobs or not so it's OK to run this multiple times
-                    azure-storage-helper blob delete-batch \
-                        "$azure_storage_container_name" \
-                        --pattern "tests/$test_run_id/*"
-                fi
-            fi
-        fi
+        # Note: workers no longer clean up test artifacts from blob/object
+        # storage. On Fargate, S3 lifecycle rules handle retention. On Azure,
+        # users are expected to configure a blob lifecycle management policy
+        # on the storage account (see the Azure setup docs).
 
         # Abnormal exit:
         if [[ $CLI_RUNNING = "yes" ]] ; then
