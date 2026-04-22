@@ -177,6 +177,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrandr2 \
     && rm -rf /var/lib/apt/lists/*
 
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
+
 # Playwright version is sourced from node_modules (pinned in
 # artillery-engine-playwright's package.json). Keep these in sync.
 # No --with-deps: we installed the chromium libs explicitly above.
