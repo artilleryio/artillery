@@ -1,0 +1,10 @@
+config:
+  target: "http://example.com"
+  phases:
+    - duration: 1
+      arrivalRate: 1
+  processor: "./processor.js"
+scenarios:
+  - flow:
+      - get:
+          url: "/"
