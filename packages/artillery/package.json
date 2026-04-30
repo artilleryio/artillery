@@ -140,8 +140,6 @@
     "cross-spawn": "^7.0.6",
     "csv-parse": "^4.16.3",
     "debug": "^4.4.3",
-    "dependency-tree": "^11.2.0",
-    "detective-es6": "^5.0.1",
     "dotenv": "^16.6.1",
     "driftless": "^2.0.3",
     "esbuild-wasm": "^0.19.12",
