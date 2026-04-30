@@ -3,7 +3,7 @@ const { PutObjectCommand } = require('@aws-sdk/client-s3');
 const debug = require('debug')('platform:aws-lambda');
 const Table = require('cli-table3');
 const { promisify } = require('node:util');
-const { createBOM } = require('../aws-ecs/legacy/bom');
+const { createBOM, enrichPackageJson } = require('../aws-ecs/legacy/bom');
 const createS3Client = require('../aws-ecs/legacy/create-s3-client');
 
 const _createLambdaBom = async (
@@ -30,7 +30,7 @@ const _createLambdaBom = async (
   return bom;
 };
 
-async function _uploadFileToS3(item, testRunId, bucketName) {
+async function _uploadFileToS3(item, testRunId, bucketName, moduleVersions) {
   const s3 = createS3Client();
   const prefix = `tests/${testRunId}`;
   let body;
@@ -42,6 +42,10 @@ async function _uploadFileToS3(item, testRunId, bucketName) {
 
   if (!body) {
     return;
+  }
+
+  if (item.noPrefix === 'package.json') {
+    body = Buffer.from(enrichPackageJson(body.toString(), moduleVersions));
   }
 
   const key = `${prefix}/${item.noPrefixPosix}`;
@@ -68,7 +72,12 @@ async function _syncS3(bomManifest, testRunId, bucketName) {
   //TODO: parallelise this
   let fileCount = 0;
   for (const file of bomManifest.files) {
-    await _uploadFileToS3(file, testRunId, bucketName);
+    await _uploadFileToS3(
+      file,
+      testRunId,
+      bucketName,
+      bomManifest.moduleVersions
+    );
     fileCount++;
   }
   metadata.fileCount = fileCount;
