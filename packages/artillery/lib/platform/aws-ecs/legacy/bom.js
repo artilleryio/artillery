@@ -7,6 +7,8 @@ const { isBuiltin } = require('node:module');
 const walkSync = require('walk-sync');
 const debug = require('debug')('bom');
 const _ = require('lodash');
+const esbuild = require('esbuild-wasm');
+
 const BUILTIN_PLUGINS = require('./plugins').getAllPluginNames();
 const BUILTIN_ENGINES = require('./plugins').getOfficialEngines();
 
@@ -330,12 +332,6 @@ function ensureEsbuildInitialized(esbuild) {
 }
 
 async function traceDependencies(entries, resolveRoot) {
-  // Lazy-required: esbuild-wasm has historically been stripped from the
-  // Lambda image to control size. Lazy require keeps this module loadable
-  // when esbuild-wasm isn't installed (e.g. inside the Lambda function
-  // when only YAML/JSON scripts are used and trace is never invoked).
-  const esbuild = require('esbuild-wasm');
-
   const unresolved = [];
 
   const recoverPlugin = {
