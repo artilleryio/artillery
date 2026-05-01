@@ -3,12 +3,12 @@ const fs = require('node:fs');
 const A = require('async');
 
 const { isBuiltin } = require('node:module');
-const detective = require('detective-es6');
-const depTree = require('dependency-tree');
 
 const walkSync = require('walk-sync');
 const debug = require('debug')('bom');
 const _ = require('lodash');
+const esbuild = require('esbuild-wasm');
+
 const BUILTIN_PLUGINS = require('./plugins').getAllPluginNames();
 const BUILTIN_ENGINES = require('./plugins').getOfficialEngines();
 
@@ -158,24 +158,37 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         context.pkgDeps = [];
       }
 
+      const modules = _.uniq(context.npmModules).filter(
+        (m) =>
+          m !== 'artillery' &&
+          m !== 'playwright' &&
+          !m.startsWith('@playwright/')
+      );
+
+      const moduleVersions = context.moduleVersions || {};
+      const unresolvedImports = context.unresolvedImports || [];
+
+      const declaredDeps = new Set(context.pkgDeps);
+      const externals = [];
+      for (const m of modules) {
+        if (!declaredDeps.has(m)) {
+          externals.push({ name: m, reason: 'not-in-package-json' });
+        }
+      }
+      for (const u of unresolvedImports) {
+        externals.push({ name: u.name, reason: u.reason });
+      }
+
       return callback(null, {
         files: _.uniqWith(files, _.isEqual),
-        modules: _.uniq(context.npmModules).filter(
-          (m) =>
-            m !== 'artillery' &&
-            m !== 'playwright' &&
-            !m.startsWith('@playwright/')
-        ),
+        modules,
         pkgDeps: context.pkgDeps,
-        fullyResolvedConfig: context.opts.scriptData.config
+        fullyResolvedConfig: context.opts.scriptData.config,
+        moduleVersions,
+        externals
       });
     }
   );
-}
-
-function isLocalModule(modName) {
-  // NOTE: Absolute paths not supported
-  return modName.startsWith('.');
 }
 
 function applyScriptChanges(context, next) {
@@ -239,76 +252,189 @@ function getCustomEngines(context, next) {
   return next(null, context);
 }
 
-function getCustomJsDependencies(context, next) {
-  if (context.opts.scriptData.config?.processor) {
-    //
-    // Path to the main processor file:
-    //
+// async waterfall passes ONE arg to async functions and reads the result via
+// the returned promise — no `next` callback. Throws propagate as errors.
+async function getCustomJsDependencies(context) {
+  const scriptPath = context.opts.absoluteScriptPath;
+  const isTypeScriptEntry = scriptPath.toLowerCase().endsWith('.ts');
+  const resolveRoot = path.dirname(scriptPath);
 
-    const procPath = path.resolve(
-      path.dirname(context.opts.absoluteScriptPath),
-      context.opts.scriptData.config.processor
-    );
-    context.localFilePaths.push(procPath);
+  const entries = [];
 
-    // Get the tree of requires from the main processor file:
-    const tree = depTree.toList({
-      filename: procPath,
-      directory: path.dirname(context.opts.absoluteScriptPath),
-      filter: (path) => path.indexOf('node_modules') === -1 // optional
-    });
+  // .ts script entry: trace the script itself (handles imports in script body
+  // when prepareTestExecutionPlan ingests TypeScript modules).
+  if (isTypeScriptEntry) {
+    entries.push(scriptPath);
+  }
 
-    debug('tree');
-    debug(tree);
+  // Pick the user-declared processor path. If prepareTestExecutionPlan
+  // bundled a .ts processor to dist/ and stashed __originalProcessor, use that
+  // — we want to trace the original source, not the already-bundled output.
+  const originalProcessor = context.opts.scriptData.__originalProcessor;
+  const declaredProcessor = context.opts.scriptData.config?.processor;
+  let processorEntry = null;
 
-    function getNpmDependencies(filename) {
-      const src = fs.readFileSync(filename);
-      const requires = detective(src);
-      const npmPackages = requires
-        .filter(
-          (requireString) =>
-            !isBuiltin(requireString) && !isLocalModule(requireString)
-        )
-        .map((requireString) => {
-          return requireString.startsWith('@')
-            ? `${requireString.split('/')[0]}/${requireString.split('/')[1]}`
-            : requireString.split('/')[0];
+  if (originalProcessor) {
+    processorEntry = originalProcessor;
+  } else if (declaredProcessor) {
+    const resolved = path.resolve(resolveRoot, declaredProcessor);
+    // bom.js applyScriptChanges sets config.processor = scriptPath for .ts
+    // entries (preserving older dep-tree behaviour). Avoid double-tracing.
+    if (resolved !== scriptPath) {
+      processorEntry = resolved;
+    }
+  }
+
+  if (processorEntry && !entries.includes(processorEntry)) {
+    entries.push(processorEntry);
+  }
+
+  context.moduleVersions = context.moduleVersions || {};
+  context.unresolvedImports = context.unresolvedImports || [];
+
+  if (entries.length === 0) {
+    debug('no custom JS dependencies');
+    return context;
+  }
+
+  const traceResult = await traceDependencies(entries, resolveRoot);
+
+  context.localFilePaths = _.uniq(
+    context.localFilePaths.concat(traceResult.localFiles)
+  );
+  context.npmModules = context.npmModules.concat(traceResult.npmPackages);
+
+  for (const pkg of traceResult.npmPackages) {
+    if (context.moduleVersions[pkg]) continue;
+    const version = resolvePackageVersion(pkg, resolveRoot);
+    if (version) context.moduleVersions[pkg] = version;
+  }
+
+  context.unresolvedImports = context.unresolvedImports.concat(
+    traceResult.unresolved
+  );
+
+  debug('got custom JS dependencies via esbuild');
+  return context;
+}
+
+// esbuild-wasm's initialize() can only be called once per process. Memoize
+// the promise so concurrent or repeat trace calls share a single init.
+// This is the only call site for initialize() in the codebase
+// (prepare-test-execution-plan.js uses buildSync, which doesn't need init),
+// so we don't need to defend against external "already initialized" errors.
+let esbuildInitPromise = null;
+function ensureEsbuildInitialized(esbuild) {
+  if (!esbuildInitPromise) {
+    esbuildInitPromise = esbuild.initialize({});
+  }
+  return esbuildInitPromise;
+}
+
+async function traceDependencies(entries, resolveRoot) {
+  const unresolved = [];
+
+  const recoverPlugin = {
+    name: 'artillery-recover-unresolved',
+    setup(build) {
+      build.onResolve({ filter: /^\.{1,2}\// }, (args) => {
+        const candidate = path.resolve(args.resolveDir, args.path);
+        const exts = [
+          '',
+          '.js',
+          '.mjs',
+          '.cjs',
+          '.ts',
+          '.tsx',
+          '.json',
+          '/index.js',
+          '/index.mjs',
+          '/index.cjs',
+          '/index.ts',
+          '/index.tsx'
+        ];
+        for (const ext of exts) {
+          try {
+            if (fs.statSync(candidate + ext).isFile()) {
+              return null;
+            }
+          } catch (_e) {}
+        }
+        unresolved.push({
+          name: args.path,
+          reason: 'unresolved-relative',
+          importer: args.importer
         });
-      return npmPackages;
+        return { path: args.path, external: true };
+      });
+    }
+  };
+
+  // esbuild-wasm doesn't support plugins via buildSync. Need the async API,
+  // which in turn requires a one-time initialize(). prepareTestExecutionPlan
+  // uses buildSync directly without initialize — that path stays sync and
+  // doesn't conflict with this one (initialize is idempotent within a
+  // single process; buildSync works either way).
+  await ensureEsbuildInitialized(esbuild);
+
+  const result = await esbuild.build({
+    entryPoints: entries,
+    bundle: true,
+    write: false,
+    metafile: true,
+    packages: 'external',
+    platform: 'node',
+    format: 'cjs',
+    logLevel: 'silent',
+    absWorkingDir: resolveRoot,
+    plugins: [recoverPlugin]
+  });
+
+  const localFiles = new Set();
+  const npmPackages = new Set();
+
+  for (const inputPath of Object.keys(result.metafile.inputs)) {
+    const input = result.metafile.inputs[inputPath];
+    const absInputPath = path.isAbsolute(inputPath)
+      ? inputPath
+      : path.resolve(resolveRoot, inputPath);
+
+    if (!absInputPath.includes(`${path.sep}node_modules${path.sep}`)) {
+      localFiles.add(absInputPath);
     }
 
-    const allNpmDeps = tree.map(getNpmDependencies);
-    debug(allNpmDeps);
-    const reduced = allNpmDeps.reduce((acc, deps) => {
-      deps.forEach((d) => {
-        if (acc.indexOf(d) === -1) {
-          acc.push(d);
-        }
-      });
-      return acc;
-    }, []);
-    debug(reduced);
+    for (const imp of input.imports || []) {
+      if (!imp.external) continue;
+      if (isBuiltin(imp.path)) continue;
+      const pkgName = extractPackageName(imp.path);
+      if (pkgName) npmPackages.add(pkgName);
+    }
+  }
 
-    //
-    // Any other local JS files and npm packages:
-    //
-    const procSrc = fs.readFileSync(procPath);
-    const _processorRequires = detective(procSrc);
-    // TODO: Look for and load dir/index.js and get its dependencies,
-    // rather than just grabbing the entire directory.
-    // NOTE: Some of these may be directories (with an index.js inside)
-    // Could be JSON files too.
-    context.localFilePaths = context.localFilePaths.concat(tree);
-    context.npmModules = context.npmModules.concat(reduced);
-    // Remove duplicate entries for the same file when invoked on a single .ts script
-    // See line 44 - the config.processor property is always set on .ts files, which leads to
-    // multiple entries in the localFilePaths array for the same file
-    context.localFilePaths = _.uniq(context.localFilePaths);
-    debug('got custom JS dependencies');
-    return next(null, context);
-  } else {
-    debug('no custom JS dependencies');
-    return next(null, context);
+  return {
+    localFiles: Array.from(localFiles),
+    npmPackages: Array.from(npmPackages),
+    unresolved
+  };
+}
+
+function extractPackageName(spec) {
+  if (spec.startsWith('@')) {
+    const parts = spec.split('/');
+    return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : null;
+  }
+  return spec.split('/')[0];
+}
+
+function resolvePackageVersion(pkgName, resolveRoot) {
+  try {
+    const pkgJsonPath = require.resolve(`${pkgName}/package.json`, {
+      paths: [resolveRoot]
+    });
+    const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+    return pkg.version || null;
+  } catch (_err) {
+    return null;
   }
 }
 
@@ -509,14 +635,69 @@ function prettyPrint(manifest) {
     t.push([f.noPrefix, 'file']);
   }
   for (const m of manifest.modules) {
-    t.push([
-      m,
-      'package',
-      manifest.pkgDeps.indexOf(m) === -1 ? 'not in package.json' : ''
-    ]);
+    const version = manifest.moduleVersions?.[m];
+    const notes = [];
+    if (manifest.pkgDeps.indexOf(m) === -1) notes.push('not in package.json');
+    if (version) notes.push(`v${version}`);
+    t.push([m, 'package', notes.join(' · ')]);
   }
   artillery.log(t.toString());
+
+  const unresolvedExternals = (manifest.externals || []).filter(
+    (e) => e.reason !== 'not-in-package-json'
+  );
+  if (unresolvedExternals.length > 0) {
+    artillery.log('Unresolved imports:');
+    const u = new Table({ head: ['Name', 'Reason'] });
+    for (const e of unresolvedExternals) {
+      u.push([e.name, e.reason]);
+    }
+    artillery.log(u.toString());
+  }
   artillery.log();
+}
+
+function enrichPackageJson(content, moduleVersions) {
+  const pkg = typeof content === 'string' ? JSON.parse(content) : content;
+
+  const filterBundled = (deps) => {
+    if (!deps) return deps;
+    const filtered = {};
+    for (const [name, version] of Object.entries(deps)) {
+      if (
+        name !== 'artillery' &&
+        name !== 'playwright' &&
+        !name.startsWith('@playwright/')
+      ) {
+        filtered[name] = version;
+      }
+    }
+    return filtered;
+  };
+
+  pkg.dependencies = filterBundled(pkg.dependencies) || {};
+  pkg.devDependencies = filterBundled(pkg.devDependencies);
+
+  // Add detected modules that aren't already declared. Pin to exact version
+  // so the remote runner installs what we observed locally.
+  if (moduleVersions) {
+    for (const [name, version] of Object.entries(moduleVersions)) {
+      if (!version) continue;
+      if (
+        name === 'artillery' ||
+        name === 'playwright' ||
+        name.startsWith('@playwright/')
+      )
+        continue;
+      const inDeps = pkg.dependencies && pkg.dependencies[name];
+      const inDev = pkg.devDependencies && pkg.devDependencies[name];
+      if (!inDeps && !inDev) {
+        pkg.dependencies[name] = version;
+      }
+    }
+  }
+
+  return JSON.stringify(pkg, null, 2);
 }
 
 module.exports = {
@@ -524,5 +705,5 @@ module.exports = {
   commonPrefix,
   prettyPrint,
   applyScriptChanges,
-  getCustomJsDependencies
+  enrichPackageJson
 };

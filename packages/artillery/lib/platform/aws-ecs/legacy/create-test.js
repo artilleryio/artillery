@@ -10,7 +10,7 @@ const path = require('node:path');
 
 const fs = require('node:fs');
 
-const { createBOM, prettyPrint } = require('./bom');
+const { createBOM, prettyPrint, enrichPackageJson } = require('./bom');
 
 const { PutObjectCommand } = require('@aws-sdk/client-s3');
 
@@ -153,26 +153,12 @@ async function syncS3(context) {
           return eachDone(null, context);
         }
 
-        // Filter bundled packages from package.json before upload
+        // Filter bundled packages from package.json and enrich with detected
+        // module versions before upload.
         if (item.noPrefix === 'package.json') {
-          const pkg = JSON.parse(body.toString());
-          const filterBundled = (deps) => {
-            if (!deps) return deps;
-            const filtered = {};
-            for (const [name, version] of Object.entries(deps)) {
-              if (
-                name !== 'artillery' &&
-                name !== 'playwright' &&
-                !name.startsWith('@playwright/')
-              ) {
-                filtered[name] = version;
-              }
-            }
-            return filtered;
-          };
-          pkg.dependencies = filterBundled(pkg.dependencies);
-          pkg.devDependencies = filterBundled(pkg.devDependencies);
-          body = Buffer.from(JSON.stringify(pkg, null, 2));
+          body = Buffer.from(
+            enrichPackageJson(body.toString(), context.manifest.moduleVersions)
+          );
         }
 
         const key = `${context.s3Prefix}/${item.noPrefixPosix}`;

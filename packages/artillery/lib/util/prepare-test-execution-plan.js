@@ -178,6 +178,9 @@ function replaceProcessorIfTypescript(script, scriptPath) {
     path.dirname(scriptPath),
     relativeProcessorPath
   );
+  // Stashed for the BOM trace pass which needs the original .ts source,
+  // not the dist/ bundle that runtime loads.
+  script.__originalProcessor = actualProcessorPath;
   const processorFileName = path.basename(actualProcessorPath, extensionType);
 
   const processorDir = path.dirname(actualProcessorPath);
