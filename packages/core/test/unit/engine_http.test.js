@@ -1410,6 +1410,79 @@ test('HTTP engine', (tap) => {
   });
 
   tap.test(
+    'agent socket timeout - mirrors http.timeout',
+    async (t) => {
+      // agentkeepalive defaults its socket-inactivity `timeout` to a hardcoded
+      // 8000ms floor (Math.max(freeSocketTimeout * 2, 8000)). Without this fix,
+      // any request whose origin took >8s to send the first response byte
+      // would be killed with ERR_SOCKET_TIMEOUT regardless of http.timeout.
+      // The agent should now mirror http.timeout (or top-level timeout).
+
+      t.test('without timeout config, falls back to agentkeepalive default', async (t) => {
+        const engine = new HttpEngine({
+          config: { target: 'http://localhost:8888' },
+          scenarios: [{ flow: [] }]
+        });
+        await engine.init();
+        // agentkeepalive default: Math.max(freeSocketTimeout * 2, 8000) = 8000
+        t.equal(
+          engine._httpsAgent.options.timeout,
+          8000,
+          'agent timeout should fall back to agentkeepalive default (8000ms)'
+        );
+        t.end();
+      });
+
+      t.test('http.timeout sets agent timeout', async (t) => {
+        const engine = new HttpEngine({
+          config: { target: 'http://localhost:8888', http: { timeout: 30 } },
+          scenarios: [{ flow: [] }]
+        });
+        await engine.init();
+        t.equal(
+          engine._httpsAgent.options.timeout,
+          30000,
+          'agent timeout should be 30000ms when http.timeout is 30'
+        );
+        t.end();
+      });
+
+      t.test('top-level timeout also sets agent timeout', async (t) => {
+        const engine = new HttpEngine({
+          config: { target: 'http://localhost:8888', timeout: 45 },
+          scenarios: [{ flow: [] }]
+        });
+        await engine.init();
+        t.equal(
+          engine._httpsAgent.options.timeout,
+          45000,
+          'agent timeout should be 45000ms when top-level timeout is 45'
+        );
+        t.end();
+      });
+
+      t.test('http.timeout < 8s preserves the 8s floor', async (t) => {
+        // Backward-compat: never go below the pre-existing 8s floor, even if
+        // http.timeout is configured smaller (got's response timeout will
+        // fire first in that case).
+        const engine = new HttpEngine({
+          config: { target: 'http://localhost:8888', http: { timeout: 3 } },
+          scenarios: [{ flow: [] }]
+        });
+        await engine.init();
+        t.equal(
+          engine._httpsAgent.options.timeout,
+          8000,
+          'agent timeout should not drop below 8000ms (pre-existing floor)'
+        );
+        t.end();
+      });
+
+      t.end();
+    }
+  );
+
+  tap.test(
     'GOT_OPTION_NAMES - unknown options do not cause errors',
     async (t) => {
       const target = nock('http://localhost:8888')
