@@ -46,9 +46,7 @@ class ArtilleryCloudPlugin {
 
     let testEndInfo = {};
 
-    // This value is available in cloud workers only. With interactive use, it'll be set
-    // in the test:init event handler.
-    this.testRunId = process.env.ARTILLERY_TEST_RUN_ID;
+    this.testRunId = process.env.ARTILLERY_TEST_RUN_ID || global.artillery?.testRunId;
 
     if (isInteractiveUse) {
       global.artillery.globalEvents.on('test:init', async (testInfo) => {
