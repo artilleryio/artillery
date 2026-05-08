@@ -42,6 +42,11 @@ class ArtilleryCloudPlugin {
       'x-auth-token': this.apiKey
     };
     this.unprocessedLogsCounter = 0;
+    // In-flight `_event()` POSTs (testrun:metrics, testrun:event,
+    // testrun:aggregatereport, etc.). Drained in onShutdown before
+    // testrun:end is sent, so the API doesn't see those POSTs as
+    // stragglers landing after the run has been finalised.
+    this.pendingEventRequests = 0;
     this.cancellationRequestedBy = '';
 
     let testEndInfo = {};
@@ -189,6 +194,13 @@ class ArtilleryCloudPlugin {
         }
 
         await this.waitOnUnprocessedLogs(5 * 60 * 1000); //just waiting for ee is not enough, as the api call takes time
+
+        // Drain any other in-flight event POSTs (stats / done / phase
+        // events / addmetadata / ...) so they reach the API before
+        // testrun:end finalises the run. EventEmitter.emit does not
+        // await async listeners, so without this drain the POSTs race
+        // testrun:end and the trailing ones get rejected.
+        await this.waitOnPendingEventRequests(60 * 1000);
 
         if (isInteractiveUse) {
           await this._event('testrun:end', {
@@ -359,6 +371,20 @@ class ArtilleryCloudPlugin {
     return true;
   }
 
+  async waitOnPendingEventRequests(maxWaitTime) {
+    let waitedTime = 0;
+    while (this.pendingEventRequests > 0 && waitedTime < maxWaitTime) {
+      debug(
+        'waiting on pending event requests',
+        this.pendingEventRequests
+      );
+      await sleep(500);
+      waitedTime += 500;
+    }
+
+    return true;
+  }
+
   setGetStatusInterval() {
     const interval = setInterval(async () => {
       if (this.cancellationRequestedBy) {
@@ -403,6 +429,7 @@ class ArtilleryCloudPlugin {
   async _event(eventName, eventPayload) {
     debug('☁️', eventName, eventPayload);
 
+    this.pendingEventRequests += 1;
     try {
       const res = await this.request.post(this.eventsEndpoint, {
         headers: this.defaultHeaders,
@@ -436,6 +463,8 @@ class ArtilleryCloudPlugin {
       debug('☁️', eventName, 'sent');
     } catch (err) {
       debug(err);
+    } finally {
+      this.pendingEventRequests -= 1;
     }
   }
 
