@@ -5,7 +5,8 @@
 
 
 const debug = require('debug')('cloud');
-const { getCloudHttpClient } = require('./http-client');
+const debugErrors = require('debug')('cloud:errors');
+const { getCloudHttpClient, getGot } = require('./http-client');
 const awaitOnEE = require('../../util/await-on-ee');
 const sleep = require('../../util/sleep');
 const util = require('node:util');
@@ -144,7 +145,7 @@ class ArtilleryCloudPlugin {
         try {
           await this._event('testrun:textlog', { lines: text, ts });
         } catch (err) {
-          debug(err);
+          debugErrors(err);
         } finally {
           this.unprocessedLogsCounter -= 1;
         }
@@ -311,44 +312,91 @@ class ArtilleryCloudPlugin {
   }
 
   async _uploadAsset(localFilename) {
-    const payload = {
-      testRunId: this.testRunId,
-      filenames: [path.basename(localFilename)]
-    };
+    const filename = path.basename(localFilename);
 
-    debug(payload);
-
-    let url;
     try {
-      // TODO: This could get rejected if a limit is exceeded so need to handle that case
-      const res = await this.request.post(this.getAssetUploadUrls, {
-        headers: this.defaultHeaders,
-        json: payload
-      });
+      // Get upload URL
+      const payload = {
+        testRunId: this.testRunId,
+        filenames: [filename]
+      };
+      debug(payload);
 
-      const body = JSON.parse(res.body);
-      debug(body);
+      let url;
+      try {
+        const res = await this.request.post(this.getAssetUploadUrls, {
+          headers: this.defaultHeaders,
+          json: payload
+        });
 
-      url = body.urls[path.basename(localFilename)];
-    } catch (err) {
-      debug(err);
-    }
+        if (res.statusCode !== 200) {
+          console.error(
+            `Could not get upload URL for Playwright trace recording: ${filename} (HTTP ${res.statusCode})`
+          );
+          debug('asset-upload-urls body:', String(res.body).slice(0, 500));
+          return;
+        }
 
-    if (!url) {
-      return;
-    }
+        const body = JSON.parse(res.body);
+        url = body.urls && body.urls[filename];
+      } catch (err) {
+        console.error(
+          'Could not get upload URL for Playwright trace recording:',
+          filename,
+          err.code || err.name,
+          err.message
+        );
+        debugErrors(err.stack);
+        return;
+      }
 
-    const fileStream = fs.createReadStream(localFilename);
-    try {
-      const _response = await this.request.put(url, {
-        body: fileStream
-      });
-    } catch (error) {
-      console.error('Failed to upload Playwright trace recording:', error);
-      console.log(error.code, error.name, error.message, error.stack);
+      if (!url) {
+        console.error('Could not get upload URL for Playwright trace recording');
+        return;
+      }
+
+      // Upload file using vanilla got client.
+      // Here we want:
+      //   - `throwHttpErrors: true` (got's default): non-2xx throws
+      //   - `retry: { limit: 0 }`: no got-level retry. Streams can't
+      //     be replayed
+      //   - explicit Content-Length: avoids Transfer-Encoding: chunked,
+      //     which some corporate proxies / TLS interceptors handle
+      //     badly on PUT.
+      //
+      const got = await getGot();
+
+      let size;
+      try {
+        size = fs.statSync(localFilename).size;
+      } catch (err) {
+        debugErrors('could not stat trace file:', err);
+        return;
+      }
+
+      try {
+        const response = await got.put(url, {
+          body: fs.createReadStream(localFilename),
+          headers: { 'content-length': String(size) },
+          retry: { limit: 0 },
+          timeout: { request: 5 * 60 * 1000 }
+        });
+      } catch (error) {
+        console.error(
+          'Failed to upload Playwright trace recording:',
+          filename,
+          error.code || error.name,
+          error.message
+        );
+        if (error.response) {
+          debugErrors('S3 status:', error.response.statusCode);
+          debugErrors('S3 headers:', error.response.headers);
+          debugErrors('S3 body:', String(error.response.body).slice(0, 500));
+        }
+        debugErrors(error.stack);
+      }
     } finally {
       this.uploading--;
-      artillery.globalEvents.emit('counter', 'browser.traces.uploaded', 1);
       try {
         fs.unlinkSync(localFilename);
       } catch (err) {

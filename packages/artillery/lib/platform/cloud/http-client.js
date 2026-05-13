@@ -5,10 +5,18 @@
 const DEFAULT_TIMEOUT_MS = 20 * 10000;
 const DEFAULT_RETRY_LIMIT = 3;
 
+let _got;
+async function getGot() {
+  if (!_got) {
+    _got = (await import('got')).default;
+  }
+  return _got;
+}
+
 let _client;
 async function getCloudHttpClient() {
   if (!_client) {
-    const got = (await import('got')).default;
+    const got = await getGot();
     _client = got.extend({
       timeout: { response: DEFAULT_TIMEOUT_MS },
       retry: {
@@ -21,4 +29,4 @@ async function getCloudHttpClient() {
   return _client;
 }
 
-module.exports = { getCloudHttpClient };
+module.exports = { getCloudHttpClient, getGot };
