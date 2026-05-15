@@ -58,6 +58,21 @@ const DEFAULT_AGENT_OPTIONS = {
   keepAliveMsec: 1000
 };
 
+// agentkeepalive defaults `timeout` (active socket inactivity) to a hardcoded
+// floor of 8000ms (Math.max(freeSocketTimeout * 2, 8000)). When a request's
+// origin doesn't send response bytes within 8s, the socket is destroyed with
+// `error.code = 'ERR_SOCKET_TIMEOUT'` regardless of the user's configured
+// `http.timeout`. Mirror `http.timeout` (or top-level `timeout`) into the agent
+// so the YAML config becomes the actual binding constraint.
+function deriveAgentTimeoutMs(scriptConfig) {
+  const timeoutSec =
+    scriptConfig?.timeout || scriptConfig?.http?.timeout;
+  if (typeof timeoutSec !== 'number') return undefined;
+  // Never go below the existing 8s floor — preserves current behaviour for
+  // users who explicitly configure a smaller http.timeout.
+  return Math.max(8000, timeoutSec * 1000);
+}
+
 function createAgents(proxies, opts) {
   const agentOpts = Object.assign({}, DEFAULT_AGENT_OPTIONS, opts);
 
@@ -129,6 +144,10 @@ function HttpEngine(script) {
     maxSockets: this.maxSockets,
     maxFreeSockets: this.maxSockets
   });
+  const agentTimeoutMs = deriveAgentTimeoutMs(script.config);
+  if (agentTimeoutMs !== undefined) {
+    agentOpts.timeout = agentTimeoutMs;
+  }
 
   const agents = createAgents(
     {
@@ -1003,6 +1022,10 @@ HttpEngine.prototype.setInitialContext = function (initialContext) {
       maxSockets: 1,
       maxFreeSockets: 1
     });
+    const agentTimeoutMs = deriveAgentTimeoutMs(this.config);
+    if (agentTimeoutMs !== undefined) {
+      agentOpts.timeout = agentTimeoutMs;
+    }
 
     const agents = createAgents(
       {
