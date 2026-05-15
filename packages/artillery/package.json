@@ -123,6 +123,7 @@
     "@oclif/core": "^4.8.0",
     "@oclif/plugin-help": "^6.2.36",
     "@oclif/plugin-not-found": "^3.2.73",
+    "@smithy/core": "^3.24.0",
     "@upstash/redis": "^1.36.1",
     "artillery-engine-playwright": "*",
     "artillery-plugin-apdex": "*",

@@ -1,8 +1,8 @@
-const { loadConfig } = require('@smithy/node-config-provider');
 const {
+  loadConfig,
   NODE_REGION_CONFIG_FILE_OPTIONS,
   NODE_REGION_CONFIG_OPTIONS
-} = require('@smithy/config-resolver');
+} = require('@smithy/core/config');
 const debug = require('debug')('util:aws:get-default-region');
 
 let defaultRegionAlreadyChecked = false;
