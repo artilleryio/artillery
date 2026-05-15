@@ -207,17 +207,6 @@ COPY --from=builder /opt/azure-sdk /opt/azure-sdk
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/azure-storage-helper /usr/local/bin/azure-storage-helper
 RUN chmod +x /usr/local/bin/azure-storage-helper
 
-# --- curl: IPv4 preference + arm64 SSL workaround ---
-# Forces IPv4 to avoid DNS/connectivity issues in some container networks.
-# The arm64 'insecure' flag works around a curl SSL_ERROR_SYSCALL bug:
-# https://github.com/curl/curl/issues/14154
-RUN <<EOT
-echo 'ipv4' >> ~/.curlrc
-if [ "$TARGETARCH" = "arm64" ]; then
-echo 'insecure' >> ~/.curlrc
-fi
-EOT
-
 ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
 
