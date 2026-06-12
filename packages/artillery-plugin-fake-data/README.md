@@ -1,8 +1,14 @@
 # artillery-plugin-fake-data
 
-## Easy randomised test data leveraging falso
+## Easy randomised test data leveraging Faker
 
-With this plugin, you can add random test data using [falso](https://ngneat.github.io/falso/docs) straight into YAML, giving you a wide range of test data options to choose from. You'll also be able to use the same functions in your `beforeRequest`/`afterResponse` hooks. Check the documentation for more information.
+With this plugin, you can add random test data using [Faker](https://fakerjs.dev/api/) straight into YAML, giving you a wide range of test data options to choose from. You'll also be able to use the same functions in your `beforeRequest`/`afterResponse` hooks. Check the documentation for more information.
+
+Faker functions are exposed with flattened names: `faker.internet.email()` becomes `$internetEmail()`, `faker.person.fullName()` becomes `$personFullName()`, and so on.
+
+### Migrating from falso
+
+Earlier versions of this plugin used [falso](https://ngneat.github.io/falso/). The most commonly used falso-style names (e.g. `$randEmail`, `$randFullName`, `$randPassword`) still work as deprecated aliases, but will be removed in a future release. Function configuration options now use Faker's option shapes (e.g. `internetPassword: { length: 5 }` instead of `randPassword: { size: 5 }`). See the [plugin documentation](https://www.artillery.io/docs/reference/extensions/fake-data) for a migration table.
 
 ## Documentation
 

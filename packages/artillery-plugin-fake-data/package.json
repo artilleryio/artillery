@@ -7,10 +7,18 @@
     "access": "public"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "tap ./test/*.spec.js --timeout 120"
+  },
+  "tap": {
+    "disable-coverage": true,
+    "allow-empty-coverage": true,
+    "color": true
   },
   "license": "MPL-2.0",
   "dependencies": {
-    "@ngneat/falso": "^8.0.2"
+    "@faker-js/faker": "10.4.0"
+  },
+  "devDependencies": {
+    "tap": "^19.0.2"
   }
 }
