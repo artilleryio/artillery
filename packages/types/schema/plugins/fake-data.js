@@ -1,28 +1,38 @@
 const Joi = require('joi');
-const falso = require('@ngneat/falso');
-const { getFalsoFunctions } = require('artillery-plugin-fake-data');
+const {
+  getFakerFunctions,
+  getDeprecatedAliases
+} = require('artillery-plugin-fake-data');
 
-const buildFalsoObject = () => {
-  const falsoJoiObject = {};
+const buildFakerObject = () => {
+  const fakerJoiObject = {};
 
-  for (const funcName of getFalsoFunctions()) {
-    falsoJoiObject[funcName] = Joi.object()
-      .meta({ title: `Falso Function: ${funcName}` })
+  for (const funcName of getFakerFunctions()) {
+    fakerJoiObject[funcName] = Joi.object()
+      .meta({ title: `Faker Function: ${funcName}` })
       .description(
-        'For information on what parameters this function takes, check the falso documentation: https://ngneat.github.io/falso/docs/getting-started'
+        'For information on what options this function takes, check the Faker documentation: https://fakerjs.dev/api/'
       );
   }
 
-  return falsoJoiObject;
+  for (const aliasName of Object.keys(getDeprecatedAliases())) {
+    fakerJoiObject[aliasName] = Joi.object()
+      .meta({ title: `Deprecated Alias: ${aliasName}` })
+      .description(
+        'Deprecated alias kept for backwards compatibility. Use the equivalent Faker function name instead.'
+      );
+  }
+
+  return fakerJoiObject;
 };
 
 const FakeDataPlugin = Joi.object({
-  ...buildFalsoObject()
+  ...buildFakerObject()
 })
   .unknown(false)
   .meta({ title: 'Fake Data Plugin' })
   .description(
-    'This plugin adds access to random realistic test data generation using falso. You can configure the parameters of each function in the config. \nFor more information, check our documentation: https://www.artillery.io/docs/reference/extensions/fake-data'
+    'This plugin adds access to random realistic test data generation using Faker. You can configure the options of each function in the config. \nFor more information, check our documentation: https://www.artillery.io/docs/reference/extensions/fake-data'
   );
 
 module.exports = {
