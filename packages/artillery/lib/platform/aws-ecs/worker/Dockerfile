@@ -133,7 +133,7 @@ COPY --from=builder ${FUNCTION_DIR}/node_modules ${FUNCTION_DIR}/node_modules
 #   python3  - required by azure-storage-helper (its venv references system python3)
 #   bash     - worker scripts are bash (base slim image only has dash)
 #
-# Chromium runtime libs (list mirrors Playwright 1.60.0's own Debian 13
+# Chromium runtime libs (list mirrors Playwright 1.61.0's own Debian 13
 # profile from playwright-core/src/server/registry/nativeDeps.ts). We
 # install them explicitly instead of using `playwright install --with-deps`
 # because --with-deps also tries to pull xvfb + x11-common + xfonts-*,
