@@ -33,7 +33,7 @@
     "debug": "^4.3.1",
     "gradient-string": "^2.0.2",
     "jmespath": "^0.16.0",
-    "js-yaml": "^3.13.1",
+    "js-yaml": "^4.1.1",
     "mime-types": "2.1.35",
     "posthog-node": "^4.2.1",
     "sprintf-js": "^1.1.2",
