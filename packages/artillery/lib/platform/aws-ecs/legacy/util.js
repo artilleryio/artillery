@@ -1,5 +1,3 @@
-
-
 const _debug = require('debug')('artillery:util');
 
 const chalk = require('chalk');
@@ -33,7 +31,8 @@ const supportedRegions = [
   'il-central-1',
   'sa-east-1',
   'cn-north-1',
-  'cn-northwest-1'
+  'cn-northwest-1',
+  'ap-southeast-5'
 ];
 
 const getAccountId = require('../../aws/aws-get-account-id');
@@ -60,9 +59,7 @@ async function getBucketName() {
 }
 
 function formatError(err) {
-  return (
-    `${chalk.red('Error')}: ${err.message}${err.code ? ` (${err.code})` : ''}`
-  );
+  return `${chalk.red('Error')}: ${err.message}${err.code ? ` (${err.code})` : ''}`;
 }
 
 async function listAllObjectsWithPrefix(bucketName, prefix) {
@@ -77,11 +74,11 @@ async function listAllObjectsWithPrefix(bucketName, prefix) {
       MaxKeys: 1000
     }
   );
-    for await (const page of paginator) {
-      if (page.Contents) {
-        allObjects.push(...page.Contents);
-      }
+  for await (const page of paginator) {
+    if (page.Contents) {
+      allObjects.push(...page.Contents);
     }
+  }
 
   return allObjects;
 }
