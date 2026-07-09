@@ -334,32 +334,35 @@ function ensureEsbuildInitialized(esbuild) {
 async function traceDependencies(entries, resolveRoot) {
   const unresolved = [];
 
+  // Marker used to break recursion when we re-enter our own onResolve via
+  // build.resolve() below.
+  const RESOLVING = { artilleryRecoverResolving: true };
+
   const recoverPlugin = {
     name: 'artillery-recover-unresolved',
     setup(build) {
-      build.onResolve({ filter: /^\.{1,2}\// }, (args) => {
-        const candidate = path.resolve(args.resolveDir, args.path);
-        const exts = [
-          '',
-          '.js',
-          '.mjs',
-          '.cjs',
-          '.ts',
-          '.tsx',
-          '.json',
-          '/index.js',
-          '/index.mjs',
-          '/index.cjs',
-          '/index.ts',
-          '/index.tsx'
-        ];
-        for (const ext of exts) {
-          try {
-            if (fs.statSync(candidate + ext).isFile()) {
-              return null;
-            }
-          } catch (_e) {}
+      // Intercept relative imports ('.', '..', './x', '../x') only to
+      // recover from resolution failures: delegate to esbuild's own
+      // resolver first, and mark the import as external (so the build
+      // doesn't fail) only if esbuild itself can't resolve it.
+      build.onResolve({ filter: /^\.{1,2}(\/|$)/ }, async (args) => {
+        if (args.pluginData === RESOLVING) {
+          // Re-entered via build.resolve() — let esbuild's default
+          // resolver handle it.
+          return null;
         }
+
+        const result = await build.resolve(args.path, {
+          resolveDir: args.resolveDir,
+          importer: args.importer,
+          kind: args.kind,
+          pluginData: RESOLVING
+        });
+
+        if (result.errors.length === 0) {
+          return result;
+        }
+
         unresolved.push({
           name: args.path,
           reason: 'unresolved-relative',
@@ -419,6 +422,13 @@ async function traceDependencies(entries, resolveRoot) {
 }
 
 function extractPackageName(spec) {
+  // Relative or absolute specifiers are never npm packages. Without this
+  // guard an unresolved '../x' import (kept external by recoverPlugin)
+  // becomes a "package" named '..' and ends up npm-installed on remote
+  // workers.
+  if (spec.startsWith('.') || spec.startsWith('/') || path.isAbsolute(spec)) {
+    return null;
+  }
   if (spec.startsWith('@')) {
     const parts = spec.split('/');
     return parts.length >= 2 ? `${parts[0]}/${parts[1]}` : null;
