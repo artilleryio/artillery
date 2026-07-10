@@ -4,9 +4,7 @@
 
 const { test } = require('tap');
 const sinon = require('sinon');
-const rewiremock = require('rewiremock/node');
 
-const HttpsProxyAgent = require('https-proxy-agent');
 const EventEmitter = require('node:events');
 const _ = require('lodash');
 
@@ -25,9 +23,8 @@ const baseScript = {
   ]
 };
 
-function setup() {
+function setup(t) {
   const sandbox = sinon.sandbox.create();
-  rewiremock.enable();
 
   class WsMockInstance extends EventEmitter {
     close() {}
@@ -39,20 +36,19 @@ function setup() {
 
   const WebsocketMock = sandbox.stub().returns(wsMockInstance);
 
-  rewiremock('ws').with(WebsocketMock);
-
-  const WebSocketEngine = require('../../lib/engine_ws');
+  const WebSocketEngine = t.mockRequire('../../lib/engine_ws', {
+    ws: WebsocketMock
+  });
 
   return { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine };
 }
 
 function teardown(sandbox) {
   sandbox.restore();
-  rewiremock.disable();
 }
 
 test('WebSocket engine - proxy', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup(t);
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -80,8 +76,12 @@ test('WebSocket engine - proxy', (t) => {
     const [, , websocketOptions] = WebsocketMock.args[0];
 
     t.ok(!err, 'Virtual user finished successfully');
-    t.ok(
-      websocketOptions.agent instanceof HttpsProxyAgent,
+    // Note: constructor name check instead of instanceof - t.mockRequire
+    // loads the engine's dependency graph from a fresh cache, so class
+    // identities differ from this file's require()d copies
+    t.equal(
+      websocketOptions.agent?.constructor?.name,
+      'HttpsProxyAgent',
       'Passes an agent to the WebSocket constructor'
     );
     t.ok(
@@ -100,7 +100,7 @@ test('WebSocket engine - proxy', (t) => {
 });
 
 test('WebSocket engine - connect action (string)', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup(t);
 
   const script = _.cloneDeep(baseScript);
 
@@ -143,7 +143,7 @@ test('WebSocket engine - connect action (string)', (t) => {
 });
 
 test('WebSocket engine - connect action (function)', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup(t);
   t.plan(4);
   const script = _.cloneDeep(baseScript);
 
@@ -203,7 +203,7 @@ test('WebSocket engine - connect action (function)', (t) => {
 });
 
 test('WebSocket engine - connect action (object)', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup(t);
 
   const script = _.cloneDeep(baseScript);
 
