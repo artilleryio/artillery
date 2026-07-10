@@ -1,13 +1,21 @@
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../../lib/runner').runner;
+let runner;
 // const createTarget = require('./lib/interfakify').create;
-const { updateGlobalObject } = require('../../index');
-const { SSMS } = require('../../lib/ssms');
+let updateGlobalObject;
+let SSMS;
 const _url = require('node:url');
 const createTestServer = require('../targets/simple');
 
 let server;
 let port;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../lib/runner.ts')).runner;
+  ({ SSMS } = await import('../../lib/ssms.ts'));
+  ({ updateGlobalObject } = await import('../../index.ts'));
+});
 beforeEach(async () => {
   await updateGlobalObject();
   server = await createTestServer(0);

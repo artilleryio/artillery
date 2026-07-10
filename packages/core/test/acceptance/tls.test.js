@@ -1,11 +1,19 @@
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../../lib/runner').runner;
-const { updateGlobalObject } = require('../../index');
-const { SSMS } = require('../../lib/ssms');
+let runner;
+let updateGlobalObject;
+let SSMS;
 const createTestServer = require('../targets/simple_tls');
 
 let server;
 let port;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../lib/runner.ts')).runner;
+  ({ SSMS } = await import('../../lib/ssms.ts'));
+  ({ updateGlobalObject } = await import('../../index.ts'));
+});
 beforeEach(async () => {
   await updateGlobalObject();
   const serverInfo = await createTestServer();

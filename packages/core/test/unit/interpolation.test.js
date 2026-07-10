@@ -5,9 +5,15 @@
 const { test } = require('tap');
 const sinon = require('sinon');
 
-const HttpEngine = require('../../lib/engine_http');
+let HttpEngine;
 const EventEmitter = require('node:events');
 const nock = require('nock');
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  HttpEngine = (await import('../../lib/engine_http.ts')).default;
+});
 
 test('url and uri parameters', async (t) => {
   const target = nock('http://localhost:8888').get('/hello').reply(200, 'ok');

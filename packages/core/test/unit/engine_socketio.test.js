@@ -4,9 +4,9 @@
 
 const EventEmitter = require('node:events');
 const { test, beforeEach, afterEach, before } = require('tap');
-const SocketIoEngine = require('../../lib/engine_socketio');
+let SocketIoEngine;
 
-const { updateGlobalObject } = require('../../index');
+let updateGlobalObject;
 
 const createTestServer = require('../targets/simple_socketio');
 
@@ -40,6 +40,13 @@ const scriptWithoutEmits = {
 
 let ioServer;
 let server;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  ({ updateGlobalObject } = await import('../../index.ts'));
+  SocketIoEngine = (await import('../../lib/engine_socketio.ts')).default;
+});
 let port;
 beforeEach(async () => {
   const serverInfo = await createTestServer();

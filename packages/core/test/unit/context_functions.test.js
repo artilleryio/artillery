@@ -1,5 +1,11 @@
 const { test } = require('tap');
-const { contextFuncs } = require('../../lib/runner');
+let contextFuncs;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  ({ contextFuncs } = await import('../../lib/runner.ts'));
+});
 
 test('$randomString should return a string of the specified length', async (t) => {
   const testStringOfLength = (length) => {

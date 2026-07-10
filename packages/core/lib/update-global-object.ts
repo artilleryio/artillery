@@ -1,8 +1,10 @@
-const EventEmitter = require('node:events');
-const chalk = require('chalk');
+import { EventEmitter } from 'node:events';
+import { engine_util } from '@artilleryio/int-commons';
+import chalk from 'chalk';
+import { SSMS } from './ssms.ts';
 
 // NOTE: This may be called more than once, and so should be non-destructive
-async function updateGlobalObject(opts = {}) {
+async function updateGlobalObject(opts: any = {}) {
   global.artillery = global.artillery || {};
 
   global.artillery.runtimeOptions = global.artillery.runtimeOptions || {};
@@ -12,7 +14,7 @@ async function updateGlobalObject(opts = {}) {
   global.artillery.metrics = global.artillery.metrics || {};
   global.artillery.metrics.event = async (msg, opts) => {
     if (opts.level === 'error') {
-      console.log(chalk.red(msg));
+      console.log((chalk as any).red(msg));
     } else {
       console.log(msg);
     }
@@ -20,8 +22,7 @@ async function updateGlobalObject(opts = {}) {
 
   global.artillery.util = global.artillery.util || {};
 
-  global.artillery.util.template =
-    require('@artilleryio/int-commons').engine_util.template;
+  global.artillery.util.template = engine_util.template;
 
   global.artillery.plugins = global.artillery.plugins || [];
 
@@ -40,7 +41,7 @@ async function updateGlobalObject(opts = {}) {
     });
   }
 
-  global.artillery.__SSMS = require('./lib/ssms').SSMS;
+  global.artillery.__SSMS = SSMS;
 
   if (!Object.hasOwn(global.artillery, 'suggestedExitCode')) {
     Object.defineProperty(global.artillery, 'suggestedExitCode', {
@@ -87,10 +88,4 @@ async function main() {
 
 main();
 
-module.exports = {
-  runner: require('./lib/runner'),
-  engine_http: require('./lib/engine_http'),
-  ssms: require('./lib/ssms'),
-  isIdlePhase: require('./lib/is-idle-phase'),
-  updateGlobalObject
-};
+export { updateGlobalObject };

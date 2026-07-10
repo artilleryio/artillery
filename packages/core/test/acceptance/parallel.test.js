@@ -1,9 +1,15 @@
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+let runner;
 const createTestServer = require('../targets/simple');
 
 let server;
 let port;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+});
 beforeEach(async () => {
   server = await createTestServer(0);
   port = server.info.port;

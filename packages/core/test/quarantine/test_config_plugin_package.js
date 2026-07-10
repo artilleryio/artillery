@@ -3,8 +3,14 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { test } = require('tap');
-const runner = require('../..').runner.runner;
+let runner;
 const path = require('node:path');
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+});
 
 test('Plugin package name inside plugin config', (t) => {
   runTest(t, path.resolve(__dirname, '../scripts/plugin_packaged_inner.json'));

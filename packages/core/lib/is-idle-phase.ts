@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-function isIdlePhase(phase) {
+export default function isIdlePhase(phase) {
   return (
     (phase.arrivalRate === 0 && !phase.rampTo) ||
     phase.arrivalCount === 0 ||
@@ -10,5 +10,3 @@ function isIdlePhase(phase) {
     phase.pause > 0
   );
 }
-
-module.exports = isIdlePhase;

@@ -2,37 +2,45 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const EventEmitter = require('eventemitter3');
-const path = require('node:path');
-const _ = require('lodash');
-const debug = require('debug')('runner');
-const debugPerf = require('debug')('perf');
-const uuidv4 = require('uuid').v4;
-const { SSMS } = require('./ssms');
-const createPhaser = require('./phases');
-const createReader = require('./readers');
-const engineUtil = require('@artilleryio/int-commons').engine_util;
-const wl = require('./weighted-pick');
-const { pathToFileURL } = require('node:url');
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { engine_util as engineUtil } from '@artilleryio/int-commons';
+import createDebug from 'debug';
+import { EventEmitter } from 'eventemitter3';
+import _ from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
+import HttpEngine from './engine_http.ts';
+import SocketIoEngine from './engine_socketio.ts';
+import WSEngine from './engine_ws.ts';
+import createPhaser from './phases.ts';
+import createReader from './readers.ts';
+import { SSMS } from './ssms.ts';
+import wl from './weighted-pick.ts';
+
+const debug = createDebug('runner');
+const debugPerf = createDebug('perf');
+
+const require = createRequire(import.meta.url);
 
 const Engines = {
-  http: require('./engine_http'),
-  ws: require('./engine_ws'),
-  socketio: require('./engine_socketio')
+  http: HttpEngine,
+  ws: WSEngine,
+  socketio: SocketIoEngine
 };
 
-module.exports = {
-  runner: runner,
-  contextFuncs: {
-    $randomString,
-    $randomNumber
-  },
-  runnerFuncs: {
-    handleScriptHook,
-    prepareScript,
-    loadProcessor
-  }
+const contextFuncs = {
+  $randomString,
+  $randomNumber
 };
+
+const runnerFuncs = {
+  handleScriptHook,
+  prepareScript,
+  loadProcessor
+};
+
+export { runner, contextFuncs, runnerFuncs };
 
 async function loadEngines(
   script,
@@ -159,7 +167,7 @@ async function runner(script, payload, options, callback) {
 
   const runnableScript = prepareScript(script, payload);
 
-  const ee = new EventEmitter();
+  const ee: any = new EventEmitter();
 
   //
   // load engines:
@@ -463,7 +471,7 @@ function createContext(script, contextVars, additionalProperties = {}) {
     'funcs'
   ]);
 
-  const INITIAL_CONTEXT = {
+  const INITIAL_CONTEXT: any = {
     vars: Object.assign(
       {
         target: script.config.target,

@@ -2,17 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const EventEmitter = require('eventemitter3');
-const async = require('async');
-const _ = require('lodash');
-const isUndefined = _.isUndefined;
-const arrivals = require('arrivals');
-const debug = require('debug')('phases');
-const { randomUUID } = require('node:crypto');
-const driftless = require('driftless');
-const ms = require('ms');
+import { randomUUID } from 'node:crypto';
+import arrivals from 'arrivals';
+import async from 'async';
+import createDebug from 'debug';
+import driftless from 'driftless';
+import { EventEmitter } from 'eventemitter3';
+import _ from 'lodash';
+import ms from 'ms';
 
-module.exports = phaser;
+const debug = createDebug('phases');
+const isUndefined = _.isUndefined;
+
+export default phaser;
 
 async function sleep(ms) {
   return new Promise((resolve) => {
@@ -21,7 +23,7 @@ async function sleep(ms) {
 }
 
 function phaser(phaseSpecs) {
-  const ee = new EventEmitter();
+  const ee: any = new EventEmitter();
 
   const tasks = _.map(phaseSpecs, (spec, i) => {
     [

@@ -3,10 +3,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { test } = require('tap');
-const createPhaser = require('../../lib/phases');
+let createPhaser;
 const util = require('node:util');
 const _ = require('lodash');
 const debug = require('debug')('test:phases');
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  createPhaser = (await import('../../lib/phases.ts')).default;
+});
 
 //
 // Ref: https://github.com/shoreditch-ops/artillery/issues/215

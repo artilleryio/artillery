@@ -2,11 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const _ = require('lodash');
+import _ from 'lodash';
 
-module.exports = createReader;
-
-function createReader(order, spec) {
+export default function createReader(order, spec?) {
   if (order === 'sequence') {
     return createSequencedReader();
   } else if (

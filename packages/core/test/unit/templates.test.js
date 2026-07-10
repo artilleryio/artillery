@@ -5,7 +5,7 @@
 var { test } = require('tap');
 var template = require('@artilleryio/int-commons').engine_util.template;
 
-const { contextFuncs } = require('../../lib/runner');
+let contextFuncs;
 
 var bigObject = require('./large-json-payload-7.2mb.json');
 
@@ -14,6 +14,12 @@ var bigObject = require('./large-json-payload-7.2mb.json');
 // functions that aren't defined
 
 var emptyContext = { vars: {} };
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  ({ contextFuncs } = await import('../../lib/runner.ts'));
+});
 
 test('strings - templating a plain string should return the same string', (t) => {
   t.ok(template('string', emptyContext) === 'string', '');

@@ -2,19 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const async = require('async');
-const _ = require('lodash');
+import { engine_util as engineUtil } from '@artilleryio/int-commons';
+import async from 'async';
+import createDebug from 'debug';
+import deepEqual from 'fast-deep-equal';
+import _ from 'lodash';
+import io from 'socket.io-client';
+import sioWildcard from 'socketio-wildcard';
+import EngineHttp from './engine_http.ts';
 
-const io = require('socket.io-client');
-const wildcardPatch = require('socketio-wildcard')(io.Manager);
+const wildcardPatch = sioWildcard((io as any).Manager);
 
-const deepEqual = require('fast-deep-equal');
-const debug = require('debug')('socketio');
-const engineUtil = require('@artilleryio/int-commons').engine_util;
-const EngineHttp = require('./engine_http');
+const debug = createDebug('socketio');
 const template = engineUtil.template;
 
-module.exports = SocketIoEngine;
+export default SocketIoEngine;
 
 function SocketIoEngine(script) {
   this.config = script.config;

@@ -6,16 +6,20 @@
 
 // Use our own fork of DDSketch until this PR is merged into main:
 // https://github.com/DataDog/sketches-js/pull/13
-const { DDSketch } = require('@artilleryio/sketches-js');
-// const {DDSketch} = require('@datadog/sketches-js');
-const EventEmitter = require('node:events');
-const { setDriftlessInterval, clearDriftless } = require('driftless');
-const debug = require('debug')('ssms');
+import { EventEmitter } from 'node:events';
+import { DDSketch } from '@artilleryio/sketches-js';
+import createDebug from 'debug';
+import { clearDriftless, setDriftlessInterval } from 'driftless';
+
+const debug = createDebug('ssms');
 
 const MAX_METRIC_NAME_LENGTH = 1024;
 
 class SSMS extends EventEmitter {
-  constructor(_options) {
+  // Untyped JS class - properties assigned dynamically
+  [key: string]: any;
+
+  constructor(_options?) {
     super();
 
     this.opts = _options || {};
@@ -270,7 +274,7 @@ class SSMS extends EventEmitter {
   // Aggregate at lower resolution, i.e. combine three distinct periods of 10s into one of 30s
   // Note: does not check that periods are contiguous, everything is simply merged together
   static pack(periods) {
-    const result = {
+    const result: any = {
       counters: {},
       histograms: {},
       rates: {}
@@ -356,7 +360,7 @@ class SSMS extends EventEmitter {
   static deserializeMetrics(pd) {
     const object = parse(pd);
     for (const [name, buf] of Object.entries(object.histograms)) {
-      const h = DDSketch.fromProto(buf);
+      const h = DDSketch.fromProto(buf as any);
       object.histograms[name] = h;
     }
 
@@ -378,7 +382,7 @@ class SSMS extends EventEmitter {
     this.incr(name.slice(0, MAX_METRIC_NAME_LENGTH), value);
   }
 
-  incr(name, value, t) {
+  incr(name, value, t?) {
     this._counters.push(
       t || Date.now(),
       name.slice(0, MAX_METRIC_NAME_LENGTH),
@@ -391,7 +395,7 @@ class SSMS extends EventEmitter {
     this.histogram(name.slice(0, MAX_METRIC_NAME_LENGTH), value);
   }
 
-  histogram(name, value, t) {
+  histogram(name, value, t?) {
     this._histograms.push(
       t || Date.now(),
       name.slice(0, MAX_METRIC_NAME_LENGTH),
@@ -399,12 +403,12 @@ class SSMS extends EventEmitter {
     );
   }
 
-  rate(name, t) {
+  rate(name, t?) {
     this._rates.push(t || Date.now(), name.slice(0, MAX_METRIC_NAME_LENGTH));
   }
 
   getMetrics(period) {
-    const result = {};
+    const result: any = {};
 
     const counters = this._aggregatedCounters[period];
     const histograms = this._aggregatedHistograms[period];
@@ -644,7 +648,7 @@ function summarizeHistogram(h) {
 }
 
 /// ///////////////////////////////////////////
-function stringify(value, space) {
+function stringify(value, space?) {
   return JSON.stringify(value, replacer, space);
 }
 
@@ -715,8 +719,4 @@ function max(values) {
   return m === Number.NEGATIVE_INFINITY ? undefined : m;
 }
 
-module.exports = {
-  SSMS,
-  summarizeHistogram,
-  normalizeTs
-};
+export { SSMS, summarizeHistogram, normalizeTs };

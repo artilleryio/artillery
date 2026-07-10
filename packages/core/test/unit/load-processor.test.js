@@ -6,9 +6,15 @@
 
 const { test } = require('tap');
 const path = require('node:path');
-const { loadProcessor } = require('../../lib/runner').runnerFuncs;
+let loadProcessor;
 
 const scriptPath = path.join(__dirname, 'dummy-script.yml');
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  ({ loadProcessor } = (await import('../../lib/runner.ts')).runnerFuncs);
+});
 
 function makeScript(processorPath) {
   return {

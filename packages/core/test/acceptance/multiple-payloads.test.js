@@ -1,14 +1,21 @@
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+let runner;
 const fs = require('node:fs');
 const path = require('node:path');
 const csv = require('csv-parse');
 const async = require('async');
-const { SSMS } = require('../../lib/ssms');
+let SSMS;
 const createTestServer = require('../targets/simple');
 
 let server;
 let port;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+  ({ SSMS } = await import('../../lib/ssms.ts'));
+});
 beforeEach(async () => {
   server = await createTestServer(0);
   port = server.info.port;

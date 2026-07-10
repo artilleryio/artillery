@@ -5,13 +5,20 @@
 const { test } = require('tap');
 const sinon = require('sinon');
 
-const HttpEngine = require('../../lib/engine_http');
+let HttpEngine;
 const EventEmitter = require('node:events');
-const { updateGlobalObject } = require('../../index');
+let updateGlobalObject;
 const nock = require('nock');
 const zlib = require('node:zlib');
 
 const THINKTIME_SEC = 1;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  ({ updateGlobalObject } = await import('../../index.ts'));
+  HttpEngine = (await import('../../lib/engine_http.ts')).default;
+});
 
 const script = {
   config: {

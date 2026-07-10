@@ -2,32 +2,32 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const async = require('async');
-const _ = require('lodash');
-const tough = require('tough-cookie');
-const debug = require('debug')('http');
-const debugRequests = require('debug')('http:request');
-const debugResponse = require('debug')('http:response');
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import qs from 'node:querystring';
+import { parse as urlparse } from 'node:url';
+import { callbackify, promisify } from 'node:util';
+import { engine_util as engineUtil } from '@artilleryio/int-commons';
+import HttpAgent from 'agentkeepalive';
+import async from 'async';
+import createDebug from 'debug';
+import decompressResponse from 'decompress-response';
+import filtrex from 'filtrex';
+import FormData from 'form-data';
+import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
+import _ from 'lodash';
+import * as tough from 'tough-cookie';
+
+const debug = createDebug('http');
+const debugRequests = createDebug('http:request');
+const debugResponse = createDebug('http:response');
 const USER_AGENT = 'Artillery (https://artillery.io)';
-const engineUtil = require('@artilleryio/int-commons').engine_util;
 const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 const template = engineUtil.template;
-const qs = require('node:querystring');
-const filtrex = require('filtrex');
-const urlparse = require('node:url').parse;
-const FormData = require('form-data');
-const HttpAgent = require('agentkeepalive');
 const { HttpsAgent } = HttpAgent;
-const { HttpProxyAgent, HttpsProxyAgent } = require('hpagent');
-const decompressResponse = require('decompress-response');
-const fs = require('node:fs');
-const path = require('node:path');
 
-const { promisify, callbackify } = require('node:util');
-
-const crypto = require('node:crypto');
-
-module.exports = HttpEngine;
+export default HttpEngine;
 
 const GOT_OPTION_NAMES = [
   'url',
@@ -140,7 +140,7 @@ function HttpEngine(script) {
   if (script.config.http?.pool) {
     this.maxSockets = Number(script.config.http.pool);
   }
-  const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+  const agentOpts: any = Object.assign(DEFAULT_AGENT_OPTIONS, {
     maxSockets: this.maxSockets,
     maxFreeSockets: this.maxSockets
   });
@@ -172,7 +172,7 @@ HttpEngine.prototype.init = async function () {
   this.request = (await import('got')).default;
 };
 
-HttpEngine.prototype._isDistributedTracingEnabled = function (config) {
+HttpEngine.prototype._isDistributedTracingEnabled = (config) => {
   const dtConfig = config.http?.distributedTracing;
   if (!dtConfig) {
     return false;
@@ -191,7 +191,7 @@ HttpEngine.prototype._isDistributedTracingEnabled = function (config) {
   return true;
 };
 
-HttpEngine.prototype._generateTraceparent = function (config) {
+HttpEngine.prototype._generateTraceparent = (config) => {
   // W3C Trace Context format: version-trace-id-parent-id-trace-flags
   const version = '00';
   
@@ -585,7 +585,7 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
 
         function responseProcessor(isLast, res, body, done) {
           if (process.env.DEBUG) {
-            let requestInfo = {
+            let requestInfo: any = {
               url: requestParams.url,
               method: requestParams.method,
               headers: requestParams.headers
@@ -1018,7 +1018,7 @@ HttpEngine.prototype.setInitialContext = function (initialContext) {
     initialContext._httpsAgent = this._httpsAgent;
   } else {
     // Create agents just for this VU
-    const agentOpts = Object.assign(DEFAULT_AGENT_OPTIONS, {
+    const agentOpts: any = Object.assign(DEFAULT_AGENT_OPTIONS, {
       maxSockets: 1,
       maxFreeSockets: 1
     });
@@ -1078,9 +1078,9 @@ function maybePrependBase(uri, config) {
 /*
  * Given a dictionary, return a dictionary with all keys lowercased.
  */
-function lowcaseKeys(h) {
+function lowcaseKeys(h): any {
   return _.transform(h, (result, v, k) => {
-    result[k.toLowerCase()] = v;
+    result[String(k).toLowerCase()] = v;
   });
 }
 

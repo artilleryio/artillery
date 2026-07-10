@@ -10,7 +10,13 @@ var { test } = require('tap');
 var l = require('lodash');
 var nockify = require('./lib/nockify');
 
-var httpWorker = require('../../lib/engine_http');
+let httpWorker;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  httpWorker = (await import('../../lib/engine_http.ts')).default;
+});
 // nockify does not support payloads yet
 var scripts = [
   ['hello', require('../scripts/hello.json')],

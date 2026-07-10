@@ -2,9 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const l = require('lodash');
+import { pathToFileURL } from 'node:url';
+import l from 'lodash';
 
-module.exports = create;
+export default create;
 
 // naive implementation of selection with replacement
 function create(list) {
@@ -75,6 +76,9 @@ function bench() {
   });
 }
 
-if (require.main === module) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   bench();
 }

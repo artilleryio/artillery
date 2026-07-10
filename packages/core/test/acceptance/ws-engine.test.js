@@ -1,11 +1,17 @@
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+let runner;
 const http = require('node:http');
 const WebSocket = require('ws');
 const { once } = require('node:events');
 
 let server;
 let wsServer;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+});
 beforeEach(async () => {
   const httpServer = http.createServer();
   wsServer = new WebSocket.Server({ server: httpServer });

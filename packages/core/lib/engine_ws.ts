@@ -2,16 +2,22 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const async = require('async');
-const _ = require('lodash');
-const WebSocket = require('ws');
-const HttpsProxyAgent = require('https-proxy-agent');
-const debug = require('debug')('ws');
-const url = require('node:url');
-const engineUtil = require('@artilleryio/int-commons').engine_util;
+import url from 'node:url';
+import { engine_util as engineUtil } from '@artilleryio/int-commons';
+import async from 'async';
+import createDebug from 'debug';
+import HttpsProxyAgent from 'https-proxy-agent';
+import _ from 'lodash';
+import WebSocket from 'ws';
+
+const debug = createDebug('ws');
 const template = engineUtil.template;
 
-module.exports = WSEngine;
+// Injectable dependencies - module namespaces are frozen, so tests
+// replace the WebSocket implementation through this mutable object
+export const _deps = { WebSocket };
+
+export default WSEngine;
 
 function WSEngine(script) {
   this.config = script.config;
@@ -306,7 +312,7 @@ WSEngine.prototype.compile = function (tasks, scenarioSpec, ee) {
 
     function one(context, cb) {
       const { wsArgs, ...contextWithoutWsArgs } = context;
-      const ws = new WebSocket(
+      const ws = new _deps.WebSocket(
         wsArgs.target,
         wsArgs.subprotocols,
         wsArgs.options
@@ -354,7 +360,7 @@ function getWsConfig(config) {
 
     debug('Set proxy: %s, options: %s', proxyUrl, proxyOptions);
 
-    const agent = new HttpsProxyAgent({
+    const agent = new (HttpsProxyAgent as any)({
       ...url.parse(proxyUrl),
       ...proxyOptions
     });

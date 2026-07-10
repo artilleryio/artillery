@@ -1,12 +1,19 @@
 const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+let runner;
 const l = require('lodash');
 let request;
-const { SSMS } = require('../../lib/ssms');
+let SSMS;
 const createTestServer = require('../targets/express_socketio');
 
 let server;
 let port;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+  ({ SSMS } = await import('../../lib/ssms.ts'));
+});
 
 beforeEach(async () => {
   if (!request) {
