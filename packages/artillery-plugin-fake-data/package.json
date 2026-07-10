@@ -12,7 +12,10 @@
   "tap": {
     "disable-coverage": true,
     "allow-empty-coverage": true,
-    "color": true
+    "color": true,
+    "plugin": [
+      "!@tapjs/typescript"
+    ]
   },
   "license": "MPL-2.0",
   "dependencies": {

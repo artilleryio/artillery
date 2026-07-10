@@ -16,10 +16,12 @@
     "@biomejs/biome": "^2.3.3",
     "@commitlint/cli": "^9.1.2",
     "@commitlint/config-conventional": "^7.6.0",
+    "@types/node": "^22.20.1",
     "lint-staged": "^13.2.3",
     "prettier": "^2.8.8",
     "simple-git-hooks": "^2.8.1",
-    "turbo": "2.0.11"
+    "turbo": "2.0.11",
+    "typescript": "^5.9.3"
   },
   "simple-git-hooks": {
     "commit-msg": "npx commitlint --edit $1",

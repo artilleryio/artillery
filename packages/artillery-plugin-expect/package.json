@@ -12,6 +12,9 @@
     "color": true,
     "test-env": [
       "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ],
+    "plugin": [
+      "!@tapjs/typescript"
     ]
   },
   "author": "Hassy Veldstra <h@artillery.io>",

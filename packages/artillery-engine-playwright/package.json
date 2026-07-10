@@ -14,6 +14,9 @@
     "color": true,
     "test-env": [
       "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
+    ],
+    "plugin": [
+      "!@tapjs/typescript"
     ]
   },
   "keywords": [],
