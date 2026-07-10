@@ -9,6 +9,7 @@ const _ = require('lodash');
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const crypto = require('node:crypto');
 const os = require('node:os');
 const createLauncher = require('../launch-platform');
@@ -263,11 +264,15 @@ RunCommand.runCommandImplementation = async (flags, argv, args) => {
     var reporters = [consoleReporter];
     if (process.env.CUSTOM_REPORTERS) {
       const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
-      customReporterNames.forEach((name) => {
-        const createReporter = require(name);
+      for (const name of customReporterNames) {
+        // Resolve with CJS semantics, load with import() - handles both
+        // CJS and ESM reporters, including ESM with top-level await
+        const reporterPath = require.resolve(name);
+        const ns = await import(pathToFileURL(reporterPath).href);
+        const createReporter = ns.default ?? ns;
         const reporter = createReporter(launcher.events, flags);
         reporters.push(reporter);
-      });
+      }
     }
 
     launcher.events.on('phaseStarted', (_phase) => {});

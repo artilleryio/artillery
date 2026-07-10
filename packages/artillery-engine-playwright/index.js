@@ -7,7 +7,9 @@ class PlaywrightEngine {
     this.target = script.config.target;
 
     this.config = script.config?.engines?.playwright || {};
-    this.processor = script.config.processor || {};
+    // Copy - the processor object may be shared and must not be mutated
+    // in place (e.g. a frozen module namespace object)
+    this.processor = Object.assign({}, script.config.processor);
 
     if (script.$rewriteMetricName) {
       this.processor.$rewriteMetricName = script.$rewriteMetricName;

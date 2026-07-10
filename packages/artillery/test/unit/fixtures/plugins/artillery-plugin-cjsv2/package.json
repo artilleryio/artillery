@@ -1,0 +1,5 @@
+{
+  "name": "artillery-plugin-cjsv2",
+  "private": true,
+  "main": "index.js"
+}

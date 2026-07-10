@@ -34,41 +34,47 @@ module.exports = {
   }
 };
 
-function loadEngines(
+async function loadEngines(
   script,
   ee,
   warnings = {
     engines: {}
   }
 ) {
-  const loadedEngines = _.map(
-    Object.assign({}, Engines, script.config.engines),
-    function loadEngine(_engineConfig, engineName) {
-      const moduleName = `artillery-engine-${engineName}`;
-      try {
-        let Engine;
-        if (typeof Engines[engineName] !== 'undefined') {
-          Engine = Engines[engineName];
-        } else {
-          Engine = require(moduleName);
-        }
-        const engine = new Engine(script, ee, engineUtil);
-        engine.__name = engineName;
-        return engine;
-      } catch (err) {
-        console.log(
-          'WARNING: engine %s specified but module %s could not be loaded',
-          engineName,
-          moduleName
-        );
-        console.log(err.stack);
-        warnings.engines[engineName] = {
-          message: 'Could not load',
-          error: err
-        };
+  const engineSpecs = Object.assign({}, Engines, script.config.engines);
+  const loadedEngines = [];
+
+  for (const engineName of Object.keys(engineSpecs)) {
+    const moduleName = `artillery-engine-${engineName}`;
+    try {
+      let Engine;
+      if (typeof Engines[engineName] !== 'undefined') {
+        Engine = Engines[engineName];
+      } else {
+        // Resolve with CJS semantics (bare specifiers, directories via
+        // package.json "main"), load with import() - handles both CJS
+        // and ESM engines, including ESM with top-level await
+        const enginePath = require.resolve(moduleName);
+        const ns = await import(pathToFileURL(enginePath).href);
+        Engine = ns.default ?? ns;
       }
+      const engine = new Engine(script, ee, engineUtil);
+      engine.__name = engineName;
+      loadedEngines.push(engine);
+    } catch (err) {
+      console.log(
+        'WARNING: engine %s specified but module %s could not be loaded',
+        engineName,
+        moduleName
+      );
+      console.log(err.stack);
+      warnings.engines[engineName] = {
+        message: 'Could not load',
+        error: err
+      };
+      loadedEngines.push(undefined);
     }
-  );
+  }
 
   return { loadedEngines, warnings };
 }
@@ -81,18 +87,19 @@ async function loadProcessor(script, options) {
       script.config.processor
     );
 
-    if (processorPath.endsWith('.mjs')) {
-      const fileUrl = pathToFileURL(processorPath);
-      const exports = await import(fileUrl.href);
-      script.config.processor = Object.assign(
-        {},
-        script.config.processor,
-        exports
-      );
-    } else {
-      // CJS (possibly transplied from TS)
-      script.config.processor = require(processorPath);
-    }
+    // Resolve with CJS semantics first (handles extensionless paths and
+    // directories); fall back to the path as-is
+    let resolvedPath = processorPath;
+    try {
+      resolvedPath = require.resolve(processorPath);
+    } catch (_err) {}
+
+    // import() loads both CJS and ESM (including ESM with top-level
+    // await). Normalize the result into a plain mutable object: module
+    // namespace objects are frozen, and engines/plugins may attach
+    // properties to the processor object later (e.g. $rewriteMetricName)
+    const ns = await import(pathToFileURL(resolvedPath).href);
+    script.config.processor = Object.assign({}, ns.default ?? {}, ns);
   }
 
   return script;
@@ -157,7 +164,7 @@ async function runner(script, payload, options, callback) {
   //
   // load engines:
   //
-  const { loadedEngines: runnerEngines } = loadEngines(
+  const { loadedEngines: runnerEngines } = await loadEngines(
     runnableScript,
     ee,
     warnings
@@ -521,7 +528,7 @@ async function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
     return {};
   }
 
-  const { loadedEngines: engines } = loadEngines(script, hookEvents);
+  const { loadedEngines: engines } = await loadEngines(script, hookEvents);
 
   for (const e of engines) {
     if (
