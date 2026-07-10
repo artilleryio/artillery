@@ -2,18 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const async = require('async');
-const debug = require('debug')('engine_util');
-const deepForEach = require('deep-for-each');
-const espree = require('espree');
-const L = require('lodash');
-const vm = require('node:vm');
-const ms = require('ms');
-const A = require('async');
-const { JSONPath: jsonpath } = require('jsonpath-plus');
-const cheerio = require('cheerio');
-const jitter = require('./jitter').jitter;
+import { createRequire } from 'node:module';
+import vm from 'node:vm';
+import async from 'async';
+import * as cheerio from 'cheerio';
+import createDebug from 'debug';
+import deepForEach from 'deep-for-each';
+import * as espree from 'espree';
+import { JSONPath as jsonpath } from 'jsonpath-plus';
+import L from 'lodash';
+import ms from 'ms';
+import { jitter } from './jitter.ts';
 
+const debug = createDebug('engine_util');
+const A = async;
+
+const require = createRequire(import.meta.url);
+
+// Optional dependency - loaded lazily and kept synchronous (no
+// top-level await: the package must stay require()-able)
 let xmlCapture;
 try {
   xmlCapture = require('artillery-xml-capture');
@@ -23,16 +30,16 @@ try {
 
 // TODO Write tests
 
-module.exports = {
-  createThink: createThink,
-  createLoopWithCount: createLoopWithCount,
-  createParallel: createParallel,
-  isProbableEnough: isProbableEnough,
-  template: template,
+export {
+  createThink,
+  createLoopWithCount,
+  createParallel,
+  isProbableEnough,
+  template,
   captureOrMatch,
-  evil: evil,
-  ensurePropertyIsAList: ensurePropertyIsAList,
-  _renderVariables: renderVariables
+  evil,
+  ensurePropertyIsAList,
+  renderVariables as _renderVariables
 };
 
 function createThink(requestSpec, opts) {
@@ -195,7 +202,7 @@ function isProbableEnough(obj) {
   return r < probability;
 }
 
-function template(o, context, inPlace) {
+function template(o, context, inPlace?) {
   let result;
 
   if (typeof o === 'undefined') {
@@ -395,7 +402,7 @@ function captureOrMatch(params, response, context, done) {
     return done(null, null);
   }
 
-  const result = {
+  const result: any = {
     captures: {},
     matches: {},
     failedCaptures: false
@@ -644,7 +651,7 @@ function extractCheerio(doc, expr, opts) {
     if (opts.index === 'random') {
       i = Math.ceil(Math.random() * els.get().length - 1);
     } else if (opts.index === 'last') {
-      i = els.get().length() - 1;
+      i = els.get().length - 1;
     } else if (typeof Number(opts.index) === 'number') {
       i = Number(opts.index);
     }

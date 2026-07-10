@@ -1,7 +1,8 @@
 {
   "name": "@artilleryio/int-commons",
   "version": "2.24.0",
-  "main": "./index.js",
+  "type": "module",
+  "main": "./index.ts",
   "license": "MPL-2.0",
   "dependencies": {
     "async": "^2.6.4",
