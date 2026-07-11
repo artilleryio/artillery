@@ -39,6 +39,39 @@ test('Processor with missing relative import surfaces in externals', async (t) =
   t.equal(unresolved[0].name, './not-here', 'records the original specifier');
 });
 
+// Regression: relative imports that a naive resolver probe misses (ESM-style
+// '.js' specifier for a '.ts' file, directory import via package.json "main")
+// used to be marked external and then classified as an npm package named
+// '..' — which remote workers would try to `npm install`.
+test('relative imports resolved by esbuild never become npm modules', async (t) => {
+  const script = path.join(FIXTURES, 'processor-relative-resolve', 'script.yml');
+  const bom = await createBOMAsync(script, [], {
+    scenarioPath: script,
+    flags: {}
+  });
+
+  t.equal(
+    bom.modules.filter((m) => m.startsWith('.') || m.startsWith('/')).length,
+    0,
+    'no relative/absolute specifiers in modules'
+  );
+  t.equal(bom.externals.length, 0, 'no unresolved imports');
+
+  const fileNames = bom.files.map((f) => f.noPrefix).sort();
+  t.ok(
+    fileNames.includes('scenarios/processor.ts'),
+    'processor included'
+  );
+  t.ok(
+    fileNames.includes('shared/helper.ts'),
+    ".js specifier resolved to .ts file and included"
+  );
+  t.ok(
+    fileNames.includes('lib/src.js'),
+    'directory import resolved via package.json main and included'
+  );
+});
+
 test('npm module imported but not declared in package.json', async (t) => {
   const script = path.join(FIXTURES, 'processor-undeclared-pkg', 'script.yml');
   const bom = await createBOMAsync(script, [], {
