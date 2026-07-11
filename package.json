@@ -10,7 +10,8 @@
     "lint": "turbo run lint  --continue",
     "lint-fix": "turbo run lint-fix  --continue",
     "format": "npx prettier -w ./packages/**/*.{js,ts,json}",
-    "prepare": "npx simple-git-hooks"
+    "prepare": "npx simple-git-hooks",
+    "typecheck": "tsc -p tsconfig.json"
   },
   "overrides": {
     "engine.io-client": {
