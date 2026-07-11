@@ -2,7 +2,7 @@
   "name": "artillery-plugin-apdex",
   "version": "1.24.0",
   "description": "Calculate and report Apdex scores",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "tap ./test/*.spec.js --timeout 300"
   },
@@ -22,5 +22,6 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "tap": "^19.2.5"
-  }
+  },
+  "type": "module"
 }

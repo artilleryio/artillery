@@ -1,5 +1,11 @@
 const { test } = require('tap');
-const { replaceMetricsWithHashes, hashString } = require('../utils');
+let replaceMetricsWithHashes, hashString;
+
+const __tap = require('tap');
+// Module under test is an ES module - load before tests run
+__tap.before(async () => {
+  ({ replaceMetricsWithHashes, hashString } = await import('../utils.ts'));
+});
 
 test('works with boolean operators', async (t) => {
   const metricA = 'someMetricA';

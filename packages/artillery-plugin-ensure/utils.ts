@@ -1,5 +1,7 @@
-const crypto = require('node:crypto');
-const debug = require('debug')('plugin:ensure');
+import crypto from 'node:crypto';
+import createDebug from 'debug';
+
+const debug = createDebug('plugin:ensure');
 
 const hashString = (str) => {
   const hash = crypto.createHash('sha256'); // sha256 is a good choice for uniqueness and speed
@@ -34,15 +36,11 @@ function replaceMetricsWithHashes(replacementsArray, targetString) {
 function getHashedVarToValueMap(varsWithHashes) {
   const hashedMetrics = {};
 
-  for (const metric of Object.values(varsWithHashes)) {
+  for (const metric of Object.values(varsWithHashes) as any[]) {
     hashedMetrics[metric.hash] = metric.value;
   }
 
   return hashedMetrics;
 }
 
-module.exports = {
-  hashString,
-  replaceMetricsWithHashes,
-  getHashedVarToValueMap
-};
+export { hashString, replaceMetricsWithHashes, getHashedVarToValueMap };

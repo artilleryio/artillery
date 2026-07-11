@@ -2,16 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const debug = require('debug')('plugin:ensure');
-const filtrex = require('filtrex').compileExpression;
-const chalk = require('chalk');
-const {
+import chalkModule from 'chalk';
+
+const chalk: any = chalkModule;
+
+import createDebug from 'debug';
+import { compileExpression as filtrex } from 'filtrex';
+import {
+  getHashedVarToValueMap, 
   hashString,
-  replaceMetricsWithHashes,
-  getHashedVarToValueMap
-} = require('./utils');
+  replaceMetricsWithHashes
+} from './utils.ts';
+
+const debug = createDebug('plugin:ensure');
 
 class EnsurePlugin {
+  // Untyped JS class - properties assigned dynamically
+  [key: string]: any;
+
   constructor(script, events) {
     // If running in Artillery v1, do nothing
     // If running in Artillery v2, we only want to run on the main thread
@@ -132,7 +140,7 @@ class EnsurePlugin {
             Object.keys(vars),
             expr
           );
-          let f = () => {};
+          let f: any = () => {};
           try {
             f = filtrex(hashedExpression);
           } catch (err) {
@@ -161,7 +169,7 @@ class EnsurePlugin {
             expression
           );
 
-          let f = () => {};
+          let f: any = () => {};
           try {
             f = filtrex(hashedExpression);
           } catch (err) {
@@ -189,7 +197,7 @@ class EnsurePlugin {
           Object.keys(vars),
           expression
         );
-        let f = () => {};
+        let f: any = () => {};
         try {
           f = filtrex(hashedExpression);
         } catch (err) {
@@ -214,7 +222,7 @@ class EnsurePlugin {
         expression
       );
 
-      let f = () => {};
+      let f: any = () => {};
       try {
         f = filtrex(hashedExpression);
       } catch (err) {
@@ -244,6 +252,4 @@ class EnsurePlugin {
   }
 }
 
-module.exports = {
-  Plugin: EnsurePlugin
-};
+export { EnsurePlugin as Plugin };

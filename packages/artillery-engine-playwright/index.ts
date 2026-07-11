@@ -1,7 +1,12 @@
-const debug = require('debug')('engine:playwright');
-const { chromium, selectors } = require('playwright');
+import createDebug from 'debug';
+import { chromium, selectors } from 'playwright';
+
+const debug = createDebug('engine:playwright');
 
 class PlaywrightEngine {
+  // Untyped JS class - properties assigned dynamically
+  [key: string]: any;
+
   constructor(script) {
     debug('constructor');
     this.target = script.config.target;
@@ -235,7 +240,7 @@ class PlaywrightEngine {
         await context.addInitScript(WEB_VITALS_SCRIPT);
         await context.addInitScript(() => {
           ['onLCP', 'onFCP', 'onCLS', 'onTTFB', 'onINP'].forEach((hook) => {
-            webVitals[hook]((metric) => {
+            (globalThis as any).webVitals[hook]((metric) => {
               console.trace(
                 JSON.stringify({
                   name: metric.name,
@@ -366,7 +371,8 @@ class PlaywrightEngine {
             const { usedJSHeapSize } = JSON.parse(
               await page.evaluate(() =>
                 JSON.stringify({
-                  usedJSHeapSize: window.performance.memory.usedJSHeapSize
+                  usedJSHeapSize: (window.performance as any).memory
+                    .usedJSHeapSize
                 })
               )
             );
@@ -506,4 +512,4 @@ class PlaywrightEngine {
   }
 }
 
-module.exports = PlaywrightEngine;
+export default PlaywrightEngine;

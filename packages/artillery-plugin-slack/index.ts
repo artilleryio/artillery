@@ -1,9 +1,14 @@
-const debug = require('debug')('plugin:slack');
-const moment = require('moment');
+import createDebug from 'debug';
+import moment from 'moment';
+
+const debug = createDebug('plugin:slack');
 
 const MAX_SLACK_TEST_NAME_LENGTH = 80;
 
 class SlackPlugin {
+  // Untyped JS class - properties assigned dynamically
+  [key: string]: any;
+
   constructor(script, events) {
     this.script = script;
     this.events = events;
@@ -134,7 +139,7 @@ class SlackPlugin {
         ? `🟢 Artillery test run finished${testLabel}`
         : `🔴 Artillery test run failed${testLabel}`;
 
-    const payloadTemplate = {
+    const payloadTemplate: any = {
       text: headerText,
       blocks: [
         {
@@ -229,7 +234,9 @@ class SlackPlugin {
       ]
     });
 
-    payloadTemplate.blocks = payloadTemplate.blocks.concat(metricBlocks);
+    payloadTemplate.blocks = payloadTemplate.blocks.concat(
+      metricBlocks as any
+    );
 
     if (this.cloudEnabled) {
       payloadTemplate.blocks.push({
@@ -280,7 +287,7 @@ class SlackPlugin {
         },
         body: payload
       });
-      debug('Slack response:', res.status, res.statusText);
+      debug('Slack response:', (res as any).status, (res as any).statusText);
       this.finished = true;
     } catch (err) {
       this.finished = true;
@@ -350,7 +357,6 @@ function truncateForSlackHeader(value) {
   return `${normalized.slice(0, MAX_SLACK_TEST_NAME_LENGTH - 1)}…`;
 }
 
-module.exports = {
-  Plugin: SlackPlugin,
-  LEGACY_METRICS_FORMAT: false
-};
+const LEGACY_METRICS_FORMAT = false;
+
+export { SlackPlugin as Plugin, LEGACY_METRICS_FORMAT };

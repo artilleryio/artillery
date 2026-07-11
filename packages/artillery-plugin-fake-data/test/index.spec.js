@@ -1,11 +1,15 @@
 'use strict';
 
 const { test } = require('tap');
-const {
-  Plugin,
-  getFakerFunctions,
-  getDeprecatedAliases
-} = require('../index');
+let Plugin, getFakerFunctions, getDeprecatedAliases;
+
+const __tap = require('tap');
+// Module under test is an ES module - load before tests run
+__tap.before(async () => {
+  ({ Plugin, getFakerFunctions, getDeprecatedAliases } = await import(
+    '../index.ts'
+  ));
+});
 
 const makeScript = (pluginConfig = {}) => ({
   config: {

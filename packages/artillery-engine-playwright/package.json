@@ -2,7 +2,7 @@
   "name": "artillery-engine-playwright",
   "version": "1.30.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "tap test/*.test.js --timeout 300",
     "test:aws": "tap test/*.aws.js --timeout 420",
@@ -31,5 +31,6 @@
   "devDependencies": {
     "tap": "^19.0.2",
     "zx": "^8.1.4"
-  }
+  },
+  "type": "module"
 }

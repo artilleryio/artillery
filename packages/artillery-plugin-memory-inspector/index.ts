@@ -1,5 +1,7 @@
-const pidusage = require('pidusage');
-const debug = require('debug')('plugin:memory-inspector');
+import createDebug from 'debug';
+import pidusage from 'pidusage';
+
+const debug = createDebug('plugin:memory-inspector');
 
 const fromBytesToUnit = (value, unit) => {
   const allowedUnits = {
@@ -88,12 +90,17 @@ function ArtilleryPluginMemoryInspector(script, events) {
   if (!script.config.processor) {
     script.config.processor = {};
   }
+  // In the main thread config.processor may still be an unresolved
+  // path (a string). Attaching functions to it was a silent no-op
+  // under sloppy mode; ES modules are strict, so guard explicitly.
+  // Workers load the processor into an object before plugins run.
+  const canAttach = typeof script.config.processor === 'object';
 
-  script.config.processor.memoryInspectorHandler = memoryInspectorHandler;
+  if (canAttach) {
+    script.config.processor.memoryInspectorHandler = memoryInspectorHandler;
+  }
 
   return this;
 }
 
-module.exports = {
-  Plugin: ArtilleryPluginMemoryInspector
-};
+export { ArtilleryPluginMemoryInspector as Plugin };

@@ -2,17 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const debug = require('debug')('plugin:expect');
-const urlparse = require('node:url').parse;
-const chalk = require('chalk');
-const _ = require('lodash');
+import { parse as urlparse } from 'node:url';
+import chalkModule from 'chalk';
 
-const EXPECTATIONS = require('./lib/expectations');
-const FORMATTERS = require('./lib/formatters');
+const chalk: any = chalkModule;
 
-module.exports.Plugin = ExpectationsPlugin;
-module.exports.expectations = EXPECTATIONS;
-module.exports.formatters = FORMATTERS;
+import createDebug from 'debug';
+import _ from 'lodash';
+import * as EXPECTATIONS from './lib/expectations.ts';
+import * as FORMATTERS from './lib/formatters.ts';
+
+const debug = createDebug('plugin:expect');
+
+export {
+  ExpectationsPlugin as Plugin,
+  EXPECTATIONS as expectations,
+  FORMATTERS as formatters
+};
 
 function ExpectationsPlugin(script, events) {
   if (!global.artillery || !global.artillery.log) {
@@ -31,6 +37,11 @@ function ExpectationsPlugin(script, events) {
   if (!script.config.processor) {
     script.config.processor = {};
   }
+  // In the main thread config.processor may still be an unresolved
+  // path (a string). Attaching functions to it was a silent no-op
+  // under sloppy mode; ES modules are strict, so guard explicitly.
+  // Workers load the processor into an object before plugins run.
+  const canAttach = typeof script.config.processor === 'object';
 
   script.scenarios.forEach((scenario) => {
     scenario.onError = [].concat(scenario.onError || []);
@@ -44,6 +55,10 @@ function ExpectationsPlugin(script, events) {
 
     scenario.afterScenario = [].concat(scenario.afterScenario || []);
   });
+
+  if (!canAttach) {
+    return;
+  }
 
   script.config.processor.expectationsPluginCheckExpectations =
     expectationsPluginCheckExpectations;

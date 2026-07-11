@@ -2,15 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const debug = require('debug')('plugin:expect');
-const chalk = require('chalk');
-const urlparse = require('node:url').parse;
+import { parse as urlparse } from 'node:url';
+import chalkModule from 'chalk';
 
-module.exports = {
-  pretty: prettyPrint,
-  json: jsonPrint,
-  prettyError: prettyError,
-  silent: silent
+const chalk: any = chalkModule;
+
+import createDebug from 'debug';
+
+const debug = createDebug('plugin:expect');
+
+export {
+  prettyPrint as pretty,
+  jsonPrint as json,
+  prettyError,
+  silent
 };
 
 function silent(_requestExpectation, _req, _res, _userContext) {

@@ -2,7 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const _debug = require('debug')('plugin:apdex');
+import createDebug from 'debug';
+
+const _debug = createDebug('plugin:apdex');
 
 const METRICS = {
   satisfied: 'apdex.satisfied',
@@ -11,6 +13,9 @@ const METRICS = {
 };
 
 class ApdexPlugin {
+  // Untyped JS class - properties assigned dynamically
+  [key: string]: any;
+
   constructor(script, _events) {
     this.script = script;
 
@@ -27,6 +32,11 @@ class ApdexPlugin {
       if (!script.config.processor) {
         script.config.processor = {};
       }
+      // In the main thread config.processor may still be an unresolved
+      // path (a string). Attaching functions to it was a silent no-op
+      // under sloppy mode; ES modules are strict, so guard explicitly.
+      // Workers load the processor into an object before plugins run.
+      const canAttach = typeof script.config.processor === 'object';
 
       script.scenarios.forEach((scenario) => {
         scenario.afterResponse = [].concat(scenario.afterResponse || []);
@@ -50,7 +60,9 @@ class ApdexPlugin {
         return done();
       }
 
-      script.config.processor.apdexAfterResponse = apdexAfterResponse;
+      if (canAttach) {
+        script.config.processor.apdexAfterResponse = apdexAfterResponse;
+      }
 
       return;
     }
@@ -97,6 +109,4 @@ class ApdexPlugin {
   }
 }
 
-module.exports = {
-  Plugin: ApdexPlugin
-};
+export { ApdexPlugin as Plugin };

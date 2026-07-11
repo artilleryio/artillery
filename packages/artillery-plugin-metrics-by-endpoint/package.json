@@ -2,7 +2,7 @@
   "name": "artillery-plugin-metrics-by-endpoint",
   "version": "1.27.0",
   "description": "Per-endpoint breakdown of latency and response codes for Artillery HTTP tests.",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "npm run test:unit && npm run test:acceptance",
     "test:acceptance": "tap ./test/*.spec.js --timeout 300",
@@ -28,5 +28,6 @@
   "devDependencies": {
     "tap": "^19.0.2",
     "zx": "^8.1.4"
-  }
+  },
+  "type": "module"
 }

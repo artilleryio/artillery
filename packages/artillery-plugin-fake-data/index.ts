@@ -1,4 +1,4 @@
-const { faker } = require('@faker-js/faker');
+import { faker } from '@faker-js/faker';
 
 // Modules that don't expose simple data-generation functions
 const SKIPPED_MODULES = new Set(['helpers', 'definitions', 'rawDefinitions']);
@@ -98,7 +98,9 @@ function ArtilleryPluginFakeData(script, events) {
     script.config['fake-data'] || script.config.plugins['fake-data'];
 
   function fakeDataHandler(context, _ee, next) {
-    for (const [funcName, fakerFunc] of Object.entries(fakerFunctionMap)) {
+    for (const [funcName, fakerFunc] of Object.entries(
+      fakerFunctionMap
+    ) as [string, any][]) {
       context.funcs[`$${funcName}`] = () => {
         if (pluginConfig[funcName]) {
           return fakerFunc(pluginConfig[funcName]);
@@ -132,14 +134,23 @@ function ArtilleryPluginFakeData(script, events) {
   if (!script.config.processor) {
     script.config.processor = {};
   }
+  // In the main thread config.processor may still be an unresolved
+  // path (a string). Attaching functions to it was a silent no-op
+  // under sloppy mode; ES modules are strict, so guard explicitly.
+  // Workers load the processor into an object before plugins run.
+  const canAttach = typeof script.config.processor === 'object';
 
-  script.config.processor.fakeDataHandler = fakeDataHandler;
+  if (canAttach) {
+    script.config.processor.fakeDataHandler = fakeDataHandler;
+  }
 
   return this;
 }
 
-module.exports = {
-  Plugin: ArtilleryPluginFakeData,
+const getDeprecatedAliases = () => ({ ...DEPRECATED_ALIASES });
+
+export {
+  ArtilleryPluginFakeData as Plugin,
   getFakerFunctions,
-  getDeprecatedAliases: () => ({ ...DEPRECATED_ALIASES })
+  getDeprecatedAliases
 };

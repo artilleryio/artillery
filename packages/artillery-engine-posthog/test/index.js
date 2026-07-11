@@ -5,7 +5,13 @@
 const { test } = require('tap');
 const EventEmitter = require('node:events');
 
-const PosthogEngine = require('..');
+let PosthogEngine;
+
+const __tap = require('tap');
+// Module under test is an ES module - load before tests run
+__tap.before(async () => {
+  PosthogEngine = (await import('../index.ts')).default;
+});
 
 const script = {
   config: {

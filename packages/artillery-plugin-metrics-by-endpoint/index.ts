@@ -1,11 +1,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-const url = require('node:url');
+import url from 'node:url';
+import createDebug from 'debug';
 
-module.exports = { Plugin: MetricsByEndpoint };
+export { MetricsByEndpoint as Plugin };
 
-const debug = require('debug')('plugin:metrics-by-endpoint');
+const debug = createDebug('plugin:metrics-by-endpoint');
 
 let useOnlyRequestNames;
 let stripQueryString;
@@ -33,6 +34,11 @@ function MetricsByEndpoint(script, _events) {
   if (!script.config.processor) {
     script.config.processor = {};
   }
+  // In the main thread config.processor may still be an unresolved
+  // path (a string). Attaching functions to it was a silent no-op
+  // under sloppy mode; ES modules are strict, so guard explicitly.
+  // Workers load the processor into an object before plugins run.
+  const canAttach = typeof script.config.processor === 'object';
 
   useOnlyRequestNames =
     script.config.plugins['metrics-by-endpoint'].useOnlyRequestNames || false;
@@ -46,11 +52,14 @@ function MetricsByEndpoint(script, _events) {
   groupDynamicURLs =
     script.config.plugins['metrics-by-endpoint'].groupDynamicURLs ?? true;
 
-  script.config.processor.metricsByEndpoint_afterResponse =
-    metricsByEndpoint_afterResponse;
-  script.config.processor.metricsByEndpoint_onError = metricsByEndpoint_onError;
-  script.config.processor.metricsByEndpoint_beforeRequest =
-    metricsByEndpoint_beforeRequest;
+  if (canAttach) {
+    script.config.processor.metricsByEndpoint_afterResponse =
+      metricsByEndpoint_afterResponse;
+    script.config.processor.metricsByEndpoint_onError =
+      metricsByEndpoint_onError;
+    script.config.processor.metricsByEndpoint_beforeRequest =
+      metricsByEndpoint_beforeRequest;
+  }
 
   script.scenarios.forEach((scenario) => {
     scenario.afterResponse = [].concat(scenario.afterResponse || []);

@@ -1,6 +1,13 @@
 const { test, beforeEach } = require('tap');
-const expectations = require('../../lib/expectations');
-const formatters = require('../../lib/formatters');
+
+let expectations, formatters;
+
+const __tap = require('tap');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  expectations = await import('../../lib/expectations.ts');
+  formatters = await import('../../lib/formatters.ts');
+});
 
 let loggedMessages = [];
 const req = {

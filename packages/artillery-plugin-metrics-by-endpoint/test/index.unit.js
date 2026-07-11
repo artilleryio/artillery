@@ -1,5 +1,11 @@
 const { test } = require('tap');
-const { Plugin } = require('../index');
+let Plugin;
+
+const __tap = require('tap');
+// Module under test is an ES module - load before tests run
+__tap.before(async () => {
+  ({ Plugin } = await import('../index.ts'));
+});
 const { EventEmitter } = require('node:events');
 
 const baseScript = {

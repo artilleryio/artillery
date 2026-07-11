@@ -2,11 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const debug = require('debug')('engine:posthog');
-const A = require('async');
-const { PostHog } = require('posthog-node');
-const { callbackify } = require('node:util');
+import { callbackify } from 'node:util';
+import A from 'async';
+import createDebug from 'debug';
+import { PostHog } from 'posthog-node';
+
+const debug = createDebug('engine:posthog');
 class PosthogEngine {
+  // Untyped JS class - properties assigned dynamically
+  [key: string]: any;
+
   constructor(script, ee, helpers) {
     this.script = script;
     this.ee = ee;
@@ -163,4 +168,4 @@ class PosthogEngine {
     };
   }
 }
-module.exports = PosthogEngine;
+export default PosthogEngine;

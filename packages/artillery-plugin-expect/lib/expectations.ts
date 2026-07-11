@@ -2,33 +2,38 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const debug = require('debug')('plugin:expect');
+import { createRequire } from 'node:module';
+import createDebug from 'debug';
+import jmespath from 'jmespath';
+import _ from 'lodash';
+
+const debug = createDebug('plugin:expect');
+
+const require = createRequire(import.meta.url);
 const template = global.artillery
   ? global.artillery.util.template
   : require('artillery/util').template;
-const _ = require('lodash');
-const jmespath = require('jmespath');
 
-module.exports = {
-  contentType: expectContentType,
-  statusCode: expectStatusCode,
-  notStatusCode: expectNotStatusCode,
-  hasHeader: expectHasHeader,
-  headerEquals: expectHeaderEquals,
-  hasProperty: expectHasProperty,
-  equals: expectEquals,
-  matchesRegexp: expectMatchesRegexp,
-  notHasProperty: expectNotHasProperty,
-  cdnHit: expectCdnHit,
-  jmespath: expectJmesPath,
-  jpath: expectJmesPath
+export {
+  expectContentType as contentType,
+  expectStatusCode as statusCode,
+  expectNotStatusCode as notStatusCode,
+  expectHasHeader as hasHeader,
+  expectHeaderEquals as headerEquals,
+  expectHasProperty as hasProperty,
+  expectEquals as equals,
+  expectMatchesRegexp as matchesRegexp,
+  expectNotHasProperty as notHasProperty,
+  expectCdnHit as cdnHit,
+  expectJmesPath as jmespath,
+  expectJmesPath as jpath
 };
 
 function expectJmesPath(expectation, body, _req, _res, _userContext) {
   debug('check jmespath');
   debug('expectation', expectation);
 
-  const result = {
+  const result: any = {
     expected: expectation.description || expectation.jmespath,
     type: expectation.jmespath ? 'jmespath' : 'jpath'
   };
@@ -51,7 +56,7 @@ function expectCdnHit(expectation, _body, _req, res, _userContext) {
   debug('check cdn');
   debug('expectation');
 
-  const result = {
+  const result: any = {
     ok: false,
     type: 'cdnHit',
     got: 'cache status header not found'
@@ -90,7 +95,7 @@ function expectEquals(expectation, body, _req, _res, userContext) {
   debug('expectation:', expectation);
   debug('body:', typeof body);
 
-  const result = {
+  const result: any = {
     ok: false,
     expected: 'all values to be equal',
     type: 'equals'
@@ -114,7 +119,7 @@ function expectHasHeader(expectation, _body, _req, res, userContext) {
 
   debug(expectedHeader);
 
-  const result = {
+  const result: any = {
     ok: false,
     expected: expectedHeader,
     type: 'hasHeader'
@@ -135,7 +140,7 @@ function expectHeaderEquals(expectation, _body, _req, res, userContext) {
   debug('expectation:', expectation);
 
   const expected = template(expectation.headerEquals, userContext);
-  const result = {
+  const result: any = {
     ok: false,
     type: `header ${expected[0]} values equals`
   };
@@ -165,7 +170,7 @@ function expectContentType(expectation, body, _req, res, userContext) {
   debug('body:', body === null ? 'null' : typeof body);
 
   const expectedContentType = template(expectation.contentType, userContext);
-  const result = {
+  const result: any = {
     ok: false,
     expected: expectedContentType,
     type: 'contentType'
@@ -206,7 +211,7 @@ function expectStatusCode(expectation, _body, _req, res, userContext) {
 
   const expectedStatusCode = template(expectation.statusCode, userContext);
 
-  const result = {
+  const result: any = {
     ok: false,
     expected: expectedStatusCode,
     type: 'statusCode'
@@ -232,7 +237,7 @@ function expectNotStatusCode(expectation, _body, _req, res, userContext) {
     userContext
   );
 
-  const result = {
+  const result: any = {
     ok: false,
     expected: `Status code different than ${expectedNotStatusCode}`,
     type: 'notStatusCode'
@@ -257,7 +262,7 @@ function checkProperty(
   failureMessage,
   body
 ) {
-  const result = {
+  const result: any = {
     ok: false,
     expected: expectedProperty,
     type: expectationName

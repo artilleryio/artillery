@@ -26,7 +26,7 @@ test('Basic interface checks', async (t) => {
     scenarios: []
   };
 
-  const ExpectationsPlugin = require('../index');
+  const ExpectationsPlugin = await import('../index.ts');
   const events = new EventEmitter();
   const plugin = new ExpectationsPlugin.Plugin(script, events);
 
@@ -35,7 +35,7 @@ test('Basic interface checks', async (t) => {
 });
 
 test('Expectation: statusCode', async (t) => {
-  const expectations = require('../lib/expectations');
+  const expectations = await import('../lib/expectations.ts');
 
   const data = [
     // expectation - value received - user context - expected result
@@ -64,7 +64,7 @@ test('Expectation: statusCode', async (t) => {
 });
 
 test('Expectation: notStatusCode', async (t) => {
-  const expectations = require('../lib/expectations');
+  const expectations = await import('../lib/expectations.ts');
 
   const data = [
     // expectation - value received - user context - expected result
@@ -114,7 +114,7 @@ test('Expectation: notStatusCode', async (t) => {
 });
 
 test('Expectation: validRegex', async (t) => {
-  const expectations = require('../lib/expectations');
+  const expectations = await import('../lib/expectations.ts');
 
   const result = expectations.matchesRegexp(
     {
@@ -131,7 +131,7 @@ test('Expectation: validRegex', async (t) => {
 });
 
 test('Expectation: hasProperty', async (t) => {
-  const expectations = require('../lib/expectations');
+  const expectations = await import('../lib/expectations.ts');
 
   const data = [
     // expectation - body received - user context - expected result
@@ -172,7 +172,7 @@ test('Expectation: hasProperty', async (t) => {
 });
 
 test('Expectation: notHasProperty', async (t) => {
-  const expectations = require('../lib/expectations');
+  const expectations = await import('../lib/expectations.ts');
 
   const data = [
     // expectation - body received - user context - expected result
@@ -213,7 +213,7 @@ test('Expectation: notHasProperty', async (t) => {
 });
 
 test('Expectation: contentType', async (t) => {
-  const expectations = require('../lib/expectations');
+  const expectations = await import('../lib/expectations.ts');
 
   const data = [
     // expectation - body received - res.headers.content-type - user context - expected result
@@ -253,7 +253,7 @@ test('Expectation: contentType', async (t) => {
 });
 
 test('Expectation: headerEquals', async (t) => {
-  const expectations = require('../lib/expectations');
+  const expectations = await import('../lib/expectations.ts');
 
   // expectation - response object - user context - expected result
   const data = [
