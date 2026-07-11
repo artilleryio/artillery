@@ -12,6 +12,11 @@
     "format": "npx prettier -w ./packages/**/*.{js,ts,json}",
     "prepare": "npx simple-git-hooks"
   },
+  "overrides": {
+    "engine.io-client": {
+      "ws": "^8.20.1"
+    }
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.3.3",
     "@commitlint/cli": "^9.1.2",
