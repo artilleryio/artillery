@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 let runner;
 // const createTarget = require('./lib/interfakify').create;
 let updateGlobalObject;
@@ -9,7 +10,7 @@ const createTestServer = require('../targets/simple');
 let server;
 let port;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   runner = (await import('../../lib/runner.ts')).runner;
@@ -48,7 +49,7 @@ afterEach(() => {
 //   });
 // });
 
-test('environments - override target and phases', (t) => {
+test('environments - override target and phases', (t, done) => {
   let startedAt;
   const script = require('../scripts/hello_environments.json');
   script.config.environments.staging.target = `http://127.0.0.1:${port}`;
@@ -66,10 +67,10 @@ test('environments - override target and phases', (t) => {
       const completedAt = process.hrtime(startedAt);
       const delta = (completedAt[0] * 1e9 + completedAt[1]) / 1e6;
 
-      t.ok(report.codes[200], 'stats should not be empty');
-      t.ok(delta >= 20 * 1000, "should've run for 20 seconds");
+      assert.ok(report.codes[200], 'stats should not be empty');
+      assert.ok(delta >= 20 * 1000, "should've run for 20 seconds");
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     startedAt = process.hrtime();

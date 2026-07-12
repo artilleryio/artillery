@@ -2,14 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const sinon = require('sinon');
 
 let HttpEngine;
 const EventEmitter = require('node:events');
 const nock = require('nock');
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   HttpEngine = (await import('../../lib/engine_http.ts')).default;
@@ -91,11 +92,11 @@ test('url and uri parameters', async (t) => {
   await new Promise((resolve) => {
     runScenario(initialContext, function userDone(err, _finalContext) {
       if (err) {
-        t.fail();
+        assert.fail();
       }
 
-      t.ok(target.isDone(), 'Should have made a request to /hello');
-      t.ok(target2.isDone(), 'Should have made a request to /goodbye');
+      assert.ok(target.isDone(), 'Should have made a request to /hello');
+      assert.ok(target2.isDone(), 'Should have made a request to /goodbye');
 
       [
         '# output from printHello hook!',
@@ -107,15 +108,15 @@ test('url and uri parameters', async (t) => {
         let seen = false;
         spy.args.forEach((args) => {
           if (args[0] === expectedOutput) {
-            t.comment(`string: "${args[0]}" found`);
+            t.diagnostic(`string: "${args[0]}" found`);
             seen = true;
           }
         });
-        t.ok(seen);
+        assert.ok(seen);
       });
       console.log.restore(); // unwrap the spy
 
-      t.end();
+      
       resolve();
     });
   });

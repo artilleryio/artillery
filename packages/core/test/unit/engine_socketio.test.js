@@ -3,7 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const EventEmitter = require('node:events');
-const { test, beforeEach, afterEach, before } = require('tap');
+const { test, beforeEach, afterEach, before } = require('node:test');
+const assert = require('node:assert');
 let SocketIoEngine;
 
 let updateGlobalObject;
@@ -41,11 +42,12 @@ const scriptWithoutEmits = {
 let ioServer;
 let server;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   ({ updateGlobalObject } = await import('../../index.ts'));
   SocketIoEngine = (await import('../../lib/engine_socketio.ts')).default;
+  await updateGlobalObject();
 });
 let port;
 beforeEach(async () => {
@@ -54,13 +56,11 @@ beforeEach(async () => {
   server = serverInfo.server;
   port = serverInfo.port;
 });
-before(async () => await updateGlobalObject());
-
 afterEach(() => {
   server.close();
 });
 
-test('SocketIo engine interface', (t) => {
+test('SocketIo engine interface', (t, done) => {
   script.config.target = `http://localhost:${port}`;
 
   const engine = new SocketIoEngine(script);
@@ -68,13 +68,13 @@ test('SocketIo engine interface', (t) => {
 
   const runScenario = engine.createScenario(script.scenarios[0], ee);
 
-  t.ok(engine, 'Can init the engine');
-  t.type(runScenario, 'function', 'Can create a virtual user function');
+  assert.ok(engine, 'Can init the engine');
+  assert.strictEqual(typeof runScenario, 'function', 'Can create a virtual user function');
 
-  t.end();
+  done();
 });
 
-test('Passive listening', (t) => {
+test('Passive listening', (t, done) => {
   scriptWithoutEmits.config.target = `http://127.0.0.1:${port}`;
   const engine = new SocketIoEngine(scriptWithoutEmits);
   const ee = new EventEmitter();
@@ -88,18 +88,14 @@ test('Passive listening', (t) => {
   };
 
   runScenario(initialContext, function userDone(err, finalContext) {
-    t.ok(!err, 'Scenario completed with no errors');
-    t.equal(
-      finalContext.__receivedMessageCount,
-      1,
-      'Should have received one message upon connecting'
-    );
+    assert.ok(!err, 'Scenario completed with no errors');
+    assert.strictEqual(finalContext.__receivedMessageCount, 1, 'Should have received one message upon connecting');
 
-    t.end();
+    done();
   });
 });
 
-test('Sends event', (t) => {
+test('Sends event', (t, done) => {
   const testScript = {
     ...script,
     config: {
@@ -122,14 +118,14 @@ test('Sends event', (t) => {
 
   ioServer.of('/').on('connection', (ws) => {
     ws.on(channel, (msg1, msg2, cb) => {
-      t.same([msg1, msg2], messages, 'Emits messages');
+      assert.deepEqual([msg1, msg2], messages, 'Emits messages');
 
       cb();
     });
   });
 
   runScenario(initialContext, function userDone(err) {
-    t.ok(!err, 'Scenario completed with no errors');
-    t.end();
+    assert.ok(!err, 'Scenario completed with no errors');
+    done();
   });
 });

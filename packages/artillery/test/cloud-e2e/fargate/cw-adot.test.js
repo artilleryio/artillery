@@ -1,6 +1,8 @@
 
 
-const { afterEach, beforeEach, before, skip } = require('tap');
+const { afterEach, beforeEach, before, test } = require('node:test');
+const assert = require('node:assert');
+const skip = test.skip;
 const { $ } = require('zx');
 const fs = require('node:fs');
 const {
@@ -56,84 +58,34 @@ skip('traces succesfully arrive to cloudwatch', async (t) => {
   try {
     traceMap = await getXRayTraces(testId, expectedVus);
   } catch (err) {
-    t.fail(`Error getting spans from Cloudwatch: ${err}`);
+    assert.fail(`Error getting spans from Cloudwatch: ${err}`);
   }
 
   const fullSpanObjects = [];
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.equal(
-    traceMap.reduce((acc, trace) => acc + trace.length, 0),
-    expectedTotalSpans,
-    'Total num of spans in AWS XRay should match expected Total Spans'
-  );
-  t.equal(
-    traceMap.length,
-    report.aggregate.counters['vusers.created'],
-    'Num of traces arrived to AWS XRay should match num of vusers created in report'
-  );
-  t.equal(
-    report.aggregate.counters['vusers.created'],
-    expectedVus,
-    `${expectedVus} VUs should have been created`
-  );
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.strictEqual(traceMap.reduce((acc, trace) => acc + trace.length, 0), expectedTotalSpans, 'Total num of spans in AWS XRay should match expected Total Spans');
+  assert.strictEqual(traceMap.length, report.aggregate.counters['vusers.created'], 'Num of traces arrived to AWS XRay should match num of vusers created in report');
+  assert.strictEqual(report.aggregate.counters['vusers.created'], expectedVus, `${expectedVus} VUs should have been created`);
 
   traceMap.forEach((trace) => {
     fullSpanObjects.push(trace.filter((span) => span.name === scenarioName)[0]);
     fullSpanObjects.concat(
       trace.filter((span) => span.name === scenarioName)[0]?.subsegments
     );
-    t.equal(
-      trace.length,
-      expectedSpansPerVu,
-      `Each trace should have ${expectedSpansPerVu} spans total`
-    );
-    t.equal(
-      trace.filter((span) => span.name === scenarioName).length,
-      1,
-      'Each trace should have one scenario span'
-    );
-    t.equal(
-      trace.filter((span) => span.name.includes('Page: ')).length,
-      expectedPageSpansPerVu,
-      'Each trace should have 3 page spans'
-    );
-    t.equal(
-      trace.filter((span) => !span.name.includes('Page: ')).length - 1,
-      expectedStepSpansPerVu,
-      'Each trace should have 3 step spans'
-    );
-    t.equal(
-      trace.filter((span) => !!span.error).length,
-      expectedVusFailed,
-      'Each trace should have 0 failed VUs'
-    );
-    t.equal(
-      trace.filter((span) => span.parent_id).length,
-      trace.filter((span) => span.name === scenarioName)[0]?.subsegments
-        ?.length,
-      'All page and step spans should be nested under scenario span'
-    );
+    assert.strictEqual(trace.length, expectedSpansPerVu, `Each trace should have ${expectedSpansPerVu} spans total`);
+    assert.strictEqual(trace.filter((span) => span.name === scenarioName).length, 1, 'Each trace should have one scenario span');
+    assert.strictEqual(trace.filter((span) => span.name.includes('Page: ')).length, expectedPageSpansPerVu, 'Each trace should have 3 page spans');
+    assert.strictEqual(trace.filter((span) => !span.name.includes('Page: ')).length - 1, expectedStepSpansPerVu, 'Each trace should have 3 step spans');
+    assert.strictEqual(trace.filter((span) => !!span.error).length, expectedVusFailed, 'Each trace should have 0 failed VUs');
+    assert.strictEqual(trace.filter((span) => span.parent_id).length, trace.filter((span) => span.name === scenarioName)[0]?.subsegments
+        ?.length, 'All page and step spans should be nested under scenario span');
   });
 
-  t.ok(
-    fullSpanObjects.every(
+  assert.ok(fullSpanObjects.every(
       (span) => span?.annotations?.testType === annotation.testType
-    ),
-    'All spans should have the correct annotation set from test script'
-  );
-  t.ok(
-    fullSpanObjects.every((span) => span?.annotations?.test_id === testId),
-    'All spans should have the correct test id annotation set'
-  );
-  t.equal(
-    report.aggregate.counters['vusers.failed'],
-    expectedVusFailed,
-    'Should have 0 failed VUs'
-  );
-  t.equal(
-    traceMap.filter((trace) => trace.some((span) => !!span.error)).length,
-    report.aggregate.counters['vusers.failed'],
-    'Num of traces with error should match failed VUs in report'
-  );
+    ), 'All spans should have the correct annotation set from test script');
+  assert.ok(fullSpanObjects.every((span) => span?.annotations?.test_id === testId), 'All spans should have the correct test id annotation set');
+  assert.strictEqual(report.aggregate.counters['vusers.failed'], expectedVusFailed, 'Should have 0 failed VUs');
+  assert.strictEqual(traceMap.filter((trace) => trace.some((span) => !!span.error)).length, report.aggregate.counters['vusers.failed'], 'Num of traces with error should match failed VUs in report');
 });

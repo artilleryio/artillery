@@ -1,4 +1,5 @@
-const { test, before, beforeEach } = require('tap');
+const { test, before, beforeEach } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('node:fs');
@@ -24,26 +25,15 @@ beforeEach(async (t) => {
 test('CLI should exit with non-zero exit code when there are failed expectations in workers', async (t) => {
   try {
     await $`${A9_PATH} run-fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
-    t.equal(output.exitCode, 21, 'CLI Exit Code should be 21');
+    assert.strictEqual(output.exitCode, 21, 'CLI Exit Code should be 21');
 
-    t.ok(
-      !output.stderr.includes('Worker exited with an error'),
-      'Should not have worker exit error message in stdout'
-    );
+    assert.ok(!output.stderr.includes('Worker exited with an error'), 'Should not have worker exit error message in stdout');
 
     const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['vusers.completed'],
-      10,
-      'Should have 10 total VUs'
-    );
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      10,
-      'Should have 10 "200 OK" responses'
-    );
+    assert.strictEqual(report.aggregate.counters['vusers.completed'], 10, 'Should have 10 total VUs');
+    assert.strictEqual(report.aggregate.counters['http.codes.200'], 10, 'Should have 10 "200 OK" responses');
 
     checkForNegativeValues(t, report);
     checkAggregateCounterSums(t, report);
@@ -55,25 +45,15 @@ test('Ensure (with new interface) should still run when workers exit from expect
 
   try {
     await $`${A9_PATH} run:fargate ${__dirname}/fixtures/cli-exit-conditions/with-expect-ensure.yml --record --tags ${baseTags} --output ${reportFilePath} --count 2`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p95 < 1`)
-    );
-    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes(`${chalk.red('fail')}: http.response_time.p95 < 1`));
+    assert.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
 
     const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['vusers.completed'],
-      10,
-      'Should have 10 total VUs'
-    );
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      10,
-      'Should have 10 "200 OK" responses'
-    );
+    assert.strictEqual(report.aggregate.counters['vusers.completed'], 10, 'Should have 10 total VUs');
+    assert.strictEqual(report.aggregate.counters['http.codes.200'], 10, 'Should have 10 "200 OK" responses');
     checkForNegativeValues(t, report);
   }
 });

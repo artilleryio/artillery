@@ -1,9 +1,10 @@
 
 
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const divideWork = require('../../lib/dist');
 
-tap.test('divideWork for arrivalCount single phase', (t) => {
+tap.test('divideWork for arrivalCount single phase', (_t, done) => {
   const numWorkers = 5;
   const expectedWorkers = 1; // arrivalCount uses only the first worker
   const script = {
@@ -26,26 +27,18 @@ tap.test('divideWork for arrivalCount single phase', (t) => {
 
   const phases = divideWork(script, numWorkers);
 
-  t.equal(
-    phases.length,
-    expectedWorkers,
-    'it distributes work to a single worker'
-  );
-  t.equal(
-    phases.filter(
+  assert.strictEqual(phases.length, expectedWorkers, 'it distributes work to a single worker');
+  assert.strictEqual(phases.filter(
       (phase) =>
         phase.config.phases.length === script.config.phases.length &&
         'arrivalCount' in phase.config.phases[0]
-    ).length,
-    1,
-    'arrivalCount is assigned to just one worker'
-  );
-  t.equal(phases.length, expectedWorkers, 'asleep workers are not returned');
+    ).length, 1, 'arrivalCount is assigned to just one worker');
+  assert.strictEqual(phases.length, expectedWorkers, 'asleep workers are not returned');
 
-  t.end();
+  done();
 });
 
-tap.test('divideWork for arrivalCount multiple phases', (t) => {
+tap.test('divideWork for arrivalCount multiple phases', (_t, done) => {
   // The second phase garantees that all workers are used
   // i.e: no worker is sleeping in all phases
   const numWorkers = 5;
@@ -72,41 +65,30 @@ tap.test('divideWork for arrivalCount multiple phases', (t) => {
 
   const phases = divideWork(script, numWorkers);
 
-  t.equal(phases.length, numWorkers, 'it distributes work to all workers');
-  t.equal(
-    phases.filter(
+  assert.strictEqual(phases.length, numWorkers, 'it distributes work to all workers');
+  assert.strictEqual(phases.filter(
       (phase) =>
         phase.config.phases.length === script.config.phases.length &&
         'arrivalCount' in phase.config.phases[0]
-    ).length,
-    1,
-    'arrivalCount is assigned to just one worker'
-  );
-  t.equal(
-    phases.filter(
+    ).length, 1, 'arrivalCount is assigned to just one worker');
+  assert.strictEqual(phases.filter(
       (phase) =>
         phase.config.phases.length === script.config.phases.length &&
         'pause' in phase.config.phases[0]
-    ).length,
-    numWorkers - 1,
-    'arrivalCount is replaced with a pause phase in all but one of the worker scripts'
-  );
+    ).length, numWorkers - 1, 'arrivalCount is replaced with a pause phase in all but one of the worker scripts');
 
-  t.ok(
-    phases
+  assert.ok(phases
       .slice(1)
       .every(
         (phase) =>
           'pause' in phase.config.phases[0] &&
           phase.config.phases[0].name === script.config.phases[0].name
-      ),
-    'pause phases created to replace arrivalCounts keep the same name as the original arrivalCount phase'
-  );
+      ), 'pause phases created to replace arrivalCounts keep the same name as the original arrivalCount phase');
 
-  t.end();
+  done();
 });
 
-tap.test('set max vusers', (t) => {
+tap.test('set max vusers', (_t, done) => {
   const numWorkers = 5;
   const script = {
     config: {
@@ -133,15 +115,11 @@ tap.test('set max vusers', (t) => {
     (partialSum, phase) => partialSum + phase.config.phases[0].maxVusers,
     0
   );
-  t.equal(
-    actualVusers,
-    script.config.phases[0].maxVusers,
-    'actual vusers should be equal to maxVusers'
-  );
-  t.end();
+  assert.strictEqual(actualVusers, script.config.phases[0].maxVusers, 'actual vusers should be equal to maxVusers');
+  done();
 });
 
-tap.test('arrivalRate defaults to zero if not present', (t) => {
+tap.test('arrivalRate defaults to zero if not present', (_t, done) => {
   const numWorkers = 5;
   const script = {
     config: {
@@ -167,11 +145,11 @@ tap.test('arrivalRate defaults to zero if not present', (t) => {
     0
   );
 
-  t.equal(totalArrivalRate, 0, 'arrivalRate should be zero');
-  t.end();
+  assert.strictEqual(totalArrivalRate, 0, 'arrivalRate should be zero');
+  done();
 });
 
-tap.test('maxVusers distributes evenly in all phases', (t) => {
+tap.test('maxVusers distributes evenly in all phases', (_t, done) => {
   const numWorkers = 7;
   const maxVusers = 10;
   const script = {
@@ -214,12 +192,12 @@ tap.test('maxVusers distributes evenly in all phases', (t) => {
       .map((p) => p.config.phases[i])
       .filter((p) => p.arrivalRate > 0 || p.arrivalCount > 0 || p.rampTo > 0)
       .reduce((sum, p) => sum + p.maxVusers, 0);
-    t.equal(activeMaxVusers, 10, 'maxVusers is evenly distributed');
+    assert.strictEqual(activeMaxVusers, 10, 'maxVusers is evenly distributed');
   }
-  t.end();
+  done();
 });
 
-tap.test('payload is distributet between workers and does not repeat', (t) => {
+tap.test('payload is distributet between workers and does not repeat', (_t, done) => {
   const numWorkers = 7;
   const maxVusers = 10;
   const script = {
@@ -277,17 +255,17 @@ tap.test('payload is distributet between workers and does not repeat', (t) => {
   for (const script of workerScripts) {
     for (const payload of script.config.payload) {
       for (const data of payload.data) {
-        t.ok(!payloadSet.has(data), 'payload is not repeated');
+        assert.ok(!payloadSet.has(data), 'payload is not repeated');
         payloadSet.add(data);
       }
     }
   }
-  t.end();
+  done();
 });
 
 tap.test(
   'payloads DO repeat when distributed between workers, when there are more workers than palyoads',
-  (t) => {
+  (_t, done) => {
     const numWorkers = 7;
     const maxVusers = 10;
     const script = {
@@ -363,11 +341,8 @@ tap.test(
         }
       }
     }
-    t.ok(
-      Object.values(palyoadCount).some((count) => count > 1),
-      'some payload is repeated'
-    );
+    assert.ok(Object.values(palyoadCount).some((count) => count > 1), 'some payload is repeated');
 
-    t.end();
+    done();
   }
 );

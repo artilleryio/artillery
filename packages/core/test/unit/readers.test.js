@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 let createReader;
 const _ = require('lodash');
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   createReader = (await import('../../lib/readers.ts')).default;
@@ -18,40 +19,34 @@ const payloadData = [
   ['pony', 'Tiki']
 ];
 
-test('sequence payload reader should read in sequence', (t) => {
+test('sequence payload reader should read in sequence', (t, done) => {
   const reader = createReader('sequence');
   const readElements = readPayloadData(reader);
 
   _.each(readElements, (el, index) => {
-    t.equal(el, payloadData[index], 'read element matches payload element');
+    assert.strictEqual(el, payloadData[index], 'read element matches payload element');
   });
-  t.end();
+  done();
 });
 
-test('random payload reader should pick at random', (t) => {
+test('random payload reader should pick at random', (t, done) => {
   const reader = createReader('random');
   const readElements = readPayloadData(reader);
 
   _.each(readElements, (el) => {
-    t.ok(
-      _.includes(payloadData, el),
-      'read element is one of payload elements'
-    );
+    assert.ok(_.includes(payloadData, el), 'read element is one of payload elements');
   });
-  t.end();
+  done();
 });
 
-test('create reader should default to random', (t) => {
+test('create reader should default to random', (t, done) => {
   const reader = createReader();
   const readElements = readPayloadData(reader);
 
   _.each(readElements, (el) => {
-    t.ok(
-      _.includes(payloadData, el),
-      'read element is one of payload elements'
-    );
+    assert.ok(_.includes(payloadData, el), 'read element is one of payload elements');
   });
-  t.end();
+  done();
 });
 
 function readPayloadData(reader) {

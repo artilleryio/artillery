@@ -1,4 +1,9 @@
-const { afterEach, beforeEach, skip } = require('tap');
+const { afterEach, beforeEach, test } = require('node:test');
+const assert = require('node:assert');
+
+// Per-test state (was tap's t.context; node:test has no context bag)
+const ctx = {};
+const skip = test.skip;
 const { $ } = require('zx');
 const fs = require('node:fs');
 const { generateTmpReportPath, deleteFile } = require('../../helpers');
@@ -12,13 +17,13 @@ const {
 } = require('./playwright-trace-assertions.js');
 
 beforeEach(async (t) => {
-  t.context.reportFilePath = generateTmpReportPath(t.name, 'json');
-  t.context.tracesFilePath = generateTmpReportPath(`spans_${t.name}`, 'json');
+  ctx.reportFilePath = generateTmpReportPath(t.name, 'json');
+  ctx.tracesFilePath = generateTmpReportPath(`spans_${t.name}`, 'json');
 });
 
-afterEach(async (t) => {
-  deleteFile(t.context.reportFilePath);
-  deleteFile(t.context.tracesFilePath);
+afterEach(async (_t) => {
+  deleteFile(ctx.reportFilePath);
+  deleteFile(ctx.tracesFilePath);
 });
 
 /* To write a test for the publish-metrics tracing you need to:
@@ -42,7 +47,7 @@ skip('OTel reporter correctly records trace data for playwright engine test runs
             type: 'open-telemetry',
             traces: {
               exporter: '__test',
-              __outputPath: t.context.tracesFilePath,
+              __outputPath: ctx.tracesFilePath,
               replaceSpanNameRegex: [
                 {
                   pattern:
@@ -99,18 +104,18 @@ skip('OTel reporter correctly records trace data for playwright engine test runs
   try {
     output =
       await $`artillery run ${__dirname}/../fixtures/playwright-trace.yml -o ${
-        t.context.reportFilePath
+        ctx.reportFilePath
       } --overrides ${JSON.stringify(override)}`;
   } catch (err) {
-    t.fail(err);
+    assert.fail(err);
   }
 
   // Assemble all test run data into one object for assertions (output of the test run, artillery report summary and exported spans)
   const testRunData = {
     output,
-    reportSummary: JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'))
+    reportSummary: JSON.parse(fs.readFileSync(ctx.reportFilePath, 'utf8'))
       .aggregate,
-    spans: JSON.parse(fs.readFileSync(t.context.tracesFilePath, 'utf8'))
+    spans: JSON.parse(fs.readFileSync(ctx.tracesFilePath, 'utf8'))
   };
 
   // Run assertions
@@ -118,7 +123,7 @@ skip('OTel reporter correctly records trace data for playwright engine test runs
     await runPlaywrightTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
     console.error(err);
-    t.fail(err);
+    assert.fail(err);
   }
 });
 
@@ -132,7 +137,7 @@ skip('OTel reporter correctly records trace data for playwright engine test runs
             type: 'open-telemetry',
             traces: {
               exporter: '__test',
-              __outputPath: t.context.tracesFilePath,
+              __outputPath: ctx.tracesFilePath,
               replaceSpanNameRegex: [
                 { pattern: 'https://www.artillery.io/docs', as: 'docs_main' },
                 { pattern: 'Go to core concepts', as: 'bombolini' }
@@ -186,18 +191,18 @@ skip('OTel reporter correctly records trace data for playwright engine test runs
   try {
     output =
       await $`artillery run ${__dirname}/../fixtures/playwright-trace.yml -o ${
-        t.context.reportFilePath
+        ctx.reportFilePath
       } --overrides ${JSON.stringify(override)}`;
   } catch (err) {
-    t.fail(err);
+    assert.fail(err);
   }
 
   // Assembling all test run data into one object for assertions (output of the test run, artillery report summary and exported spans)
   const testRunData = {
     output,
-    reportSummary: JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'))
+    reportSummary: JSON.parse(fs.readFileSync(ctx.reportFilePath, 'utf8'))
       .aggregate,
-    spans: JSON.parse(fs.readFileSync(t.context.tracesFilePath, 'utf8'))
+    spans: JSON.parse(fs.readFileSync(ctx.tracesFilePath, 'utf8'))
   };
 
   // Run assertions
@@ -205,6 +210,6 @@ skip('OTel reporter correctly records trace data for playwright engine test runs
     await runPlaywrightTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
     console.error(err);
-    t.fail(err);
+    assert.fail(err);
   }
 });

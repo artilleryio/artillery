@@ -1,7 +1,8 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 const core = require('../../..');
 const vuserLauncher = core.runner.runner;
-const { SSMS } = require('../../../lib/ssms');
+const { SSMS } = require('../../../lib/ssms.ts');
 const createTestServer = require('../../targets/ws_tls');
 
 let server;
@@ -16,23 +17,23 @@ afterEach(() => {
   server.close();
 });
 
-test('TLS - with rejectUnauthorized false', (t) => {
+test('TLS - with rejectUnauthorized false', (t, done) => {
   const script = require('./scripts/ws-tls.json');
   script.config.target = `wss://127.0.0.1:${port}`;
   vuserLauncher(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       console.log(report);
-      t.ok(Object.keys(report.errors).length === 0, 'Test ran without errors');
+      assert.ok(Object.keys(report.errors).length === 0, 'Test ran without errors');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('TLS - with rejectUnauthorized true', (t) => {
+test('TLS - with rejectUnauthorized true', (t, done) => {
   const script = require('./scripts/ws-tls.json');
   script.config.target = `wss://127.0.0.1:${port}`;
   script.config.ws.rejectUnauthorized = true;
@@ -40,13 +41,9 @@ test('TLS - with rejectUnauthorized true', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
       console.log(report);
-      t.equal(
-        Object.keys(report.errors).length,
-        2,
-        `Test should run with two errors. Got: ${Object.keys(report.errors)}`
-      );
+      assert.strictEqual(Object.keys(report.errors).length, 2, `Test should run with two errors. Got: ${Object.keys(report.errors)}`);
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();

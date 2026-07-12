@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 let runner;
 const l = require('lodash');
 let request;
@@ -8,7 +9,7 @@ const createTestServer = require('../targets/simple');
 let server;
 let port;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   runner = (await import('../../index.ts')).runner.runner;
@@ -26,7 +27,7 @@ afterEach(() => {
   server.stop();
 });
 
-test('cookie jar http', (t) => {
+test('cookie jar http', (t, done) => {
   const script = require('../scripts/cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -38,48 +39,42 @@ test('cookie jar http', (t) => {
           var ok =
             report.scenariosCompleted &&
             l.size(res.body.cookies) === report.scenariosCompleted;
-          t.ok(ok, 'Each scenario had a unique cookie');
+          assert.ok(ok, 'Each scenario had a unique cookie');
           if (!ok) {
             console.log(res.body);
             console.log(report);
           }
           ee.stop().then(() => {
-            t.end();
+            done();
           });
         })
         .catch((err) => {
-          t.fail(err);
+          assert.fail(err);
         });
     });
     ee.run();
   });
 });
 
-test('cookie jar invalid response', (t) => {
+test('cookie jar invalid response', (t, done) => {
   const script = require('../scripts/cookies_malformed_response.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(
-        report.codes[200] && report.codes[200] > 0,
-        'There should be some 200s'
-      );
-      t.ok(
-        report.errors.cookie_parse_error_invalid_cookie &&
-          report.errors.cookie_parse_error_invalid_cookie > 0,
-        'There shoud be some cookie errors'
-      );
+      assert.ok(report.codes[200] && report.codes[200] > 0, 'There should be some 200s');
+      assert.ok(report.errors.cookie_parse_error_invalid_cookie &&
+          report.errors.cookie_parse_error_invalid_cookie > 0, 'There shoud be some cookie errors');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('setting cookie jar parsing options', (t) => {
+test('setting cookie jar parsing options', (t, done) => {
   const script = require('../scripts/cookies_malformed_response.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -90,41 +85,35 @@ test('setting cookie jar parsing options', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(
-        report.codes[200] && report.codes[200] > 0,
-        'There should be some 200s'
-      );
+      assert.ok(report.codes[200] && report.codes[200] > 0, 'There should be some 200s');
 
-      t.ok(Object.keys(report.errors).length === 0, 'There shoud be no errors');
+      assert.ok(Object.keys(report.errors).length === 0, 'There shoud be no errors');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('default cookies', (t) => {
+test('default cookies', (t, done) => {
   const script = require('../scripts/defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(
-        report.codes[200] && report.codes[200] > 0,
-        'There should be some 200s'
-      );
-      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      assert.ok(report.codes[200] && report.codes[200] > 0, 'There should be some 200s');
+      assert.ok(report.codes[403] === undefined, 'There should be no 403s');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('default cookies from config.http.defaults instead', (t) => {
+test('default cookies from config.http.defaults instead', (t, done) => {
   const script = l.cloneDeep(require('../scripts/defaults_cookies.json'));
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -135,20 +124,17 @@ test('default cookies from config.http.defaults instead', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(
-        report.codes[200] && report.codes[200] > 0,
-        'There should be some 200s'
-      );
-      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      assert.ok(report.codes[200] && report.codes[200] > 0, 'There should be some 200s');
+      assert.ok(report.codes[403] === undefined, 'There should be no 403s');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('default cookies from config.http.defaults should take precedence', (t) => {
+test('default cookies from config.http.defaults should take precedence', (t, done) => {
   const script = l.cloneDeep(require('../scripts/defaults_cookies.json'));
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -159,20 +145,17 @@ test('default cookies from config.http.defaults should take precedence', (t) => 
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(
-        report.codes[200] && report.codes[200] > 0,
-        'There should be some 200s'
-      );
-      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      assert.ok(report.codes[200] && report.codes[200] > 0, 'There should be some 200s');
+      assert.ok(report.codes[403] === undefined, 'There should be no 403s');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('no default cookie', (t) => {
+test('no default cookie', (t, done) => {
   const script = require('../scripts/defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -180,33 +163,27 @@ test('no default cookie', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(
-        report.codes[403] && report.codes[403] > 0,
-        'There should be some 403s'
-      );
-      t.ok(report.codes[200] === undefined, 'There should be no 200s');
+      assert.ok(report.codes[403] && report.codes[403] > 0, 'There should be some 403s');
+      assert.ok(report.codes[200] === undefined, 'There should be no 200s');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('no default cookie still sends cookies defined in script', (t) => {
+test('no default cookie still sends cookies defined in script', (t, done) => {
   const script = require('../scripts/no_defaults_cookies.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
-      t.ok(
-        report.codes[200] && report.codes[200] > 0,
-        'There should be some 200s'
-      );
-      t.ok(report.codes[403] === undefined, 'There should be no 403s');
+      assert.ok(report.codes[200] && report.codes[200] > 0, 'There should be some 200s');
+      assert.ok(report.codes[403] === undefined, 'There should be no 403s');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();

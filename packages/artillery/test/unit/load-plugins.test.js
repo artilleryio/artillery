@@ -4,7 +4,8 @@
 
 
 
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const path = require('node:path');
 const { loadPlugin, loadPlugins } = require('../../lib/load-plugins');
 
@@ -22,21 +23,21 @@ const MATRIX = [
 ];
 
 for (const { name, version, kind } of MATRIX) {
-  test(`loadPlugin - ${name}`, async (t) => {
+  test(`loadPlugin - ${name}`, async (_t) => {
     const result = await loadPlugin(name, {}, requirePaths, testScript);
 
-    t.equal(result.isLoaded, true, 'plugin is loaded');
-    t.equal(result.version, version, `detected as v${version}`);
+    assert.strictEqual(result.isLoaded, true, 'plugin is loaded');
+    assert.strictEqual(result.version, version, `detected as v${version}`);
 
     const instance =
       version === 1
         ? new result.PluginExport({}, null)
         : new result.PluginExport.Plugin({}, null);
-    t.equal(instance.kind, kind, 'plugin constructor works');
+    assert.strictEqual(instance.kind, kind, 'plugin constructor works');
   });
 }
 
-test('loadPlugin - missing plugin reports MODULE_NOT_FOUND', async (t) => {
+test('loadPlugin - missing plugin reports MODULE_NOT_FOUND', async (_t) => {
   const result = await loadPlugin(
     'does-not-exist',
     {},
@@ -44,16 +45,16 @@ test('loadPlugin - missing plugin reports MODULE_NOT_FOUND', async (t) => {
     testScript
   );
 
-  t.equal(result.isLoaded, false, 'plugin is not loaded');
-  t.equal(result.error.code, 'MODULE_NOT_FOUND', 'error code preserved');
-  t.match(result.msg, /could not be found/, 'warning message set');
+  assert.strictEqual(result.isLoaded, false, 'plugin is not loaded');
+  assert.strictEqual(result.error.code, 'MODULE_NOT_FOUND', 'error code preserved');
+  assert.match(result.msg, /could not be found/, 'warning message set');
 });
 
 test('loadPlugins - resolves via ARTILLERY_PLUGIN_PATH', async (t) => {
   const previous = process.env.ARTILLERY_PLUGIN_PATH;
   process.env.ARTILLERY_PLUGIN_PATH = fixturesDir;
 
-  t.teardown(() => {
+  t.after(() => {
     if (previous === undefined) {
       delete process.env.ARTILLERY_PLUGIN_PATH;
     } else {
@@ -66,8 +67,8 @@ test('loadPlugins - resolves via ARTILLERY_PLUGIN_PATH', async (t) => {
     testScript
   );
 
-  t.equal(results.cjsv2.isLoaded, true, 'CJS plugin loaded via plugin path');
-  t.equal(results.cjsv2.version, 2, 'CJS plugin detected as v2');
-  t.equal(results.esmnamed.isLoaded, true, 'ESM plugin loaded via plugin path');
-  t.equal(results.esmnamed.version, 2, 'ESM plugin detected as v2');
+  assert.strictEqual(results.cjsv2.isLoaded, true, 'CJS plugin loaded via plugin path');
+  assert.strictEqual(results.cjsv2.version, 2, 'CJS plugin detected as v2');
+  assert.strictEqual(results.esmnamed.isLoaded, true, 'ESM plugin loaded via plugin path');
+  assert.strictEqual(results.esmnamed.version, 2, 'ESM plugin detected as v2');
 });

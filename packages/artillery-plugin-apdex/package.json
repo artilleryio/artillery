@@ -4,24 +4,11 @@
   "description": "Calculate and report Apdex scores",
   "main": "index.ts",
   "scripts": {
-    "test": "tap ./test/*.spec.js --timeout 300"
-  },
-  "tap": {
-    "disable-coverage": true,
-    "allow-empty-coverage": true,
-    "color": true,
-    "test-env": [
-      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
-    ],
-    "plugin": [
-      "!@tapjs/typescript"
-    ]
+    "test": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.spec.js\""
   },
   "keywords": [],
   "author": "",
   "license": "MPL-2.0",
-  "devDependencies": {
-    "tap": "^19.2.5"
-  },
+  "devDependencies": {},
   "type": "module"
 }

@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 const { runGenericRunnerTest } = require('./helper');
 const createTestServer = require('../../targets/socketio_args');
 
@@ -13,9 +14,9 @@ afterEach(() => {
   server.close();
 });
 
-test('socketio with args works', (t) => {
+test('socketio with args works', async () => {
   const script = require('../../scripts/hello_socketio_with_args.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runGenericRunnerTest(script, t);
+  await runGenericRunnerTest(script);
 });

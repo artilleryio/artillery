@@ -1,8 +1,9 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const { execute } = require('../helpers');
 const execa = require('execa');
 
-tap.test('GH #215 regression', async (t) => {
+tap.test('GH #215 regression', async (_t) => {
   const abortController = new AbortController();
   execa('node', ['./test/targets/gh_215_target.js'], {
     signal: abortController.signal
@@ -14,48 +15,42 @@ tap.test('GH #215 regression', async (t) => {
   ]);
   abortController.abort();
 
-  t.equal(exitCode, 0, 'CLI should exit with code 0');
-  t.notOk(
-    output.stdout.includes('ECONNREFUSED'),
-    'Should not have connection refused errors'
-  );
+  assert.strictEqual(exitCode, 0, 'CLI should exit with code 0');
+  assert.ok(!(output.stdout.includes('ECONNREFUSED')), 'Should not have connection refused errors');
 });
 
-tap.test('Exits with non zero when an unknown command is used', async (t) => {
+tap.test('Exits with non zero when an unknown command is used', async (_t) => {
   const [exitCode] = await execute([
     'run',
     'makemeasandwich',
     '--with',
     'cheese'
   ]);
-  t.not(exitCode, 0, 'CLI should error with non-zero exit code');
+  assert.notStrictEqual(exitCode, 0, 'CLI should error with non-zero exit code');
 });
 
-tap.test('Exits with non zero when an unknown option is used', async (t) => {
+tap.test('Exits with non zero when an unknown option is used', async (_t) => {
   const [exitCode] = await execute(['run', '--with', 'cheese']);
 
-  t.not(exitCode, 0, 'CLI should error with non-zero exit code');
+  assert.notStrictEqual(exitCode, 0, 'CLI should error with non-zero exit code');
 });
 
 tap.test(
   'Exits with 0 when a known flag is used with no command',
-  async (t) => {
+  async (_t) => {
     const [exitCode] = await execute(['run', '-V']);
 
-    t.not(exitCode, 0, 'CLI should error with non-zero exit code');
+    assert.notStrictEqual(exitCode, 0, 'CLI should error with non-zero exit code');
   }
 );
 
-tap.skip('Suggest similar commands if unknown command is used', async (t) => {
+tap.skip('Suggest similar commands if unknown command is used', async (_t) => {
   const [exitCode, output] = await execute(['helpp']);
-  t.equal(exitCode, 1, 'CLI should error with exit code 1');
-  t.ok(
-    output.stdout.includes('Did you mean'),
-    'Should suggest similar commands'
-  );
+  assert.strictEqual(exitCode, 1, 'CLI should error with exit code 1');
+  assert.ok(output.stdout.includes('Did you mean'), 'Should suggest similar commands');
 });
 
-tap.test('Exit early if Artillery Cloud API is not valid', async (t) => {
+tap.test('Exit early if Artillery Cloud API is not valid', async (_t) => {
   const [exitCode, output] = await execute([
     'run',
     '--record',
@@ -64,13 +59,13 @@ tap.test('Exit early if Artillery Cloud API is not valid', async (t) => {
     'test/scripts/gh_215_add_token.json'
   ]);
 
-  t.equal(exitCode, 7);
-  t.ok(output.stderr.includes('API key is not recognized'));
+  assert.strictEqual(exitCode, 7);
+  assert.ok(output.stderr.includes('API key is not recognized'));
 });
 
 tap.test(
   'Exit early if Artillery Cloud API is not valid - on Fargate',
-  async (t) => {
+  async (_t) => {
     const [exitCode, output] = await execute([
       'run-fargate',
       '--record',
@@ -79,8 +74,8 @@ tap.test(
       'test/scripts/gh_215_add_token.json'
     ]);
 
-    t.equal(exitCode, 7);
-    t.ok(output.stderr.includes('API key is not recognized'));
+    assert.strictEqual(exitCode, 7);
+    assert.ok(output.stderr.includes('API key is not recognized'));
   }
 );
 

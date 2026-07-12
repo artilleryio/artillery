@@ -1,7 +1,8 @@
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 let Plugin;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Module under test is an ES module - load before tests run
 __tap.before(async () => {
   ({ Plugin } = await import('../index.ts'));
@@ -91,38 +92,38 @@ test('beforeRequest and afterResponse', async (t) => {
     };
   });
 
-  t.test(
+  await t.test(
     'sets up beforeRequest and afterResponse hook correctly',
     async (t) => {
       new Plugin(script, hookArgs.events);
 
       // check afterResponse is in processor
-      t.hasProp(script.config.processor, 'metricsByEndpoint_afterResponse');
-      t.hasProp(script.config.processor, 'metricsByEndpoint_beforeRequest');
+      assert.ok('metricsByEndpoint_afterResponse' in script.config.processor);
+      assert.ok('metricsByEndpoint_beforeRequest' in script.config.processor);
 
       // check afterResponse is each scenario
       script.scenarios.forEach((scenario) => {
-        t.equal(scenario.afterResponse.length, 1);
-        t.equal(scenario.afterResponse[0], 'metricsByEndpoint_afterResponse');
+        assert.strictEqual(scenario.afterResponse.length, 1);
+        assert.strictEqual(scenario.afterResponse[0], 'metricsByEndpoint_afterResponse');
       });
 
       // check beforeRequest is each scenario
       script.scenarios.forEach((scenario) => {
-        t.equal(scenario.beforeRequest.length, 1);
-        t.equal(scenario.beforeRequest[0], 'metricsByEndpoint_beforeRequest');
+        assert.strictEqual(scenario.beforeRequest.length, 1);
+        assert.strictEqual(scenario.beforeRequest[0], 'metricsByEndpoint_beforeRequest');
       });
     }
   );
 
-  t.test('only runs plugin inside workers', async (t) => {
+  await t.test('only runs plugin inside workers', async (t) => {
     delete process.env.LOCAL_WORKER_ID;
     script.config.processor = {};
     new Plugin(script, hookArgs.events);
 
-    t.equal(Object.keys(script.config.processor).length, 0);
+    assert.strictEqual(Object.keys(script.config.processor).length, 0);
   });
 
-  t.test(
+  await t.test(
     'emits counter and histogram metrics correctly with basic configuration',
     async (t) => {
       new Plugin(script, hookArgs.events);
@@ -142,26 +143,17 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(
-        results.counters[0].name,
-        `${defaultPluginPrefix}./dino.codes.203`
-      );
-      t.equal(results.counters[0].value, 1);
+      assert.strictEqual(results.counters[0].name, `${defaultPluginPrefix}./dino.codes.203`);
+      assert.strictEqual(results.counters[0].value, 1);
 
-      t.equal(
-        results.histograms[0].name,
-        `${defaultPluginPrefix}.response_time./dino`
-      );
-      t.equal(
-        results.histograms[0].value,
-        hookArgs.res.timings.phases.firstByte
-      );
+      assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.response_time./dino`);
+      assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
 
-      t.equal(results.calledDone, true);
+      assert.strictEqual(results.calledDone, true);
     }
   );
 
-  t.test(
+  await t.test(
     'uses request url hostname over target hostname if they differ',
     async (t) => {
       const requestUrlWithoutProtocol = 'www.artillery.io/docs';
@@ -183,26 +175,17 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(
-        results.counters[0].name,
-        `${defaultPluginPrefix}.${requestUrlWithoutProtocol}.codes.203`
-      );
-      t.equal(results.counters[0].value, 1);
+      assert.strictEqual(results.counters[0].name, `${defaultPluginPrefix}.${requestUrlWithoutProtocol}.codes.203`);
+      assert.strictEqual(results.counters[0].value, 1);
 
-      t.equal(
-        results.histograms[0].name,
-        `${defaultPluginPrefix}.response_time.${requestUrlWithoutProtocol}`
-      );
-      t.equal(
-        results.histograms[0].value,
-        hookArgs.res.timings.phases.firstByte
-      );
+      assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.response_time.${requestUrlWithoutProtocol}`);
+      assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
 
-      t.equal(results.calledDone, true);
+      assert.strictEqual(results.calledDone, true);
     }
   );
 
-  t.test('uses request url port over target port if they differ', async (t) => {
+  await t.test('uses request url port over target port if they differ', async (t) => {
     const pathWithPort = ':8081/dino';
     const requestWithPort = `${hookArgs.userContext.vars.target}${pathWithPort}`;
     hookArgs.req.url = requestWithPort;
@@ -223,22 +206,16 @@ test('beforeRequest and afterResponse', async (t) => {
       hookArgs.done
     );
 
-    t.equal(
-      results.counters[0].name,
-      `${defaultPluginPrefix}.${pathWithPort}.codes.203`
-    );
-    t.equal(results.counters[0].value, 1);
+    assert.strictEqual(results.counters[0].name, `${defaultPluginPrefix}.${pathWithPort}.codes.203`);
+    assert.strictEqual(results.counters[0].value, 1);
 
-    t.equal(
-      results.histograms[0].name,
-      `${defaultPluginPrefix}.response_time.${pathWithPort}`
-    );
-    t.equal(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
+    assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.response_time.${pathWithPort}`);
+    assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
 
-    t.equal(results.calledDone, true);
+    assert.strictEqual(results.calledDone, true);
   });
 
-  t.test('emits histogram metrics correctly with server-timing', async (t) => {
+  await t.test('emits histogram metrics correctly with server-timing', async (t) => {
     new Plugin(script, hookArgs.events);
 
     const serverTiming = 105;
@@ -259,21 +236,15 @@ test('beforeRequest and afterResponse', async (t) => {
       hookArgs.done
     );
 
-    t.equal(
-      results.histograms[0].name,
-      `${defaultPluginPrefix}.server-timing./dino`
-    );
-    t.equal(results.histograms[0].value, serverTiming);
-    t.equal(
-      results.histograms[1].name,
-      `${defaultPluginPrefix}.response_time./dino`
-    );
-    t.equal(results.histograms[1].value, hookArgs.res.timings.phases.firstByte);
+    assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.server-timing./dino`);
+    assert.strictEqual(results.histograms[0].value, serverTiming);
+    assert.strictEqual(results.histograms[1].name, `${defaultPluginPrefix}.response_time./dino`);
+    assert.strictEqual(results.histograms[1].value, hookArgs.res.timings.phases.firstByte);
 
-    t.equal(results.calledDone, true);
+    assert.strictEqual(results.calledDone, true);
   });
 
-  t.test(
+  await t.test(
     'sets server timing to -1 if server timing header does not match correctly',
     async (t) => {
       new Plugin(script, hookArgs.events);
@@ -296,25 +267,16 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(
-        results.histograms[0].name,
-        `${defaultPluginPrefix}.server-timing./dino`
-      );
-      t.equal(results.histograms[0].value, -1);
-      t.equal(
-        results.histograms[1].name,
-        `${defaultPluginPrefix}.response_time./dino`
-      );
-      t.equal(
-        results.histograms[1].value,
-        hookArgs.res.timings.phases.firstByte
-      );
+      assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.server-timing./dino`);
+      assert.strictEqual(results.histograms[0].value, -1);
+      assert.strictEqual(results.histograms[1].name, `${defaultPluginPrefix}.response_time./dino`);
+      assert.strictEqual(results.histograms[1].value, hookArgs.res.timings.phases.firstByte);
 
-      t.equal(results.calledDone, true);
+      assert.strictEqual(results.calledDone, true);
     }
   );
 
-  t.test('includes req name in metric name if req.name is set', async (t) => {
+  await t.test('includes req name in metric name if req.name is set', async (t) => {
     new Plugin(script, hookArgs.events);
 
     const reqName = 'bunnyRequest123';
@@ -335,20 +297,14 @@ test('beforeRequest and afterResponse', async (t) => {
       hookArgs.done
     );
 
-    t.equal(
-      results.counters[0].name,
-      `${defaultPluginPrefix}./dino (${reqName}).codes.203`
-    );
-    t.equal(results.counters[0].value, 1);
+    assert.strictEqual(results.counters[0].name, `${defaultPluginPrefix}./dino (${reqName}).codes.203`);
+    assert.strictEqual(results.counters[0].value, 1);
 
-    t.equal(
-      results.histograms[0].name,
-      `${defaultPluginPrefix}.response_time./dino (${reqName})`
-    );
-    t.equal(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
+    assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.response_time./dino (${reqName})`);
+    assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
   });
 
-  t.test(
+  await t.test(
     'uses req name if req.name and useOnlyRequestNames are set',
     async (t) => {
       script.config.plugins['metrics-by-endpoint'] = {
@@ -374,24 +330,15 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(
-        results.counters[0].name,
-        `${defaultPluginPrefix}.${reqName}.codes.203`
-      );
-      t.equal(results.counters[0].value, 1);
+      assert.strictEqual(results.counters[0].name, `${defaultPluginPrefix}.${reqName}.codes.203`);
+      assert.strictEqual(results.counters[0].value, 1);
 
-      t.equal(
-        results.histograms[0].name,
-        `${defaultPluginPrefix}.response_time.${reqName}`
-      );
-      t.equal(
-        results.histograms[0].value,
-        hookArgs.res.timings.phases.firstByte
-      );
+      assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.response_time.${reqName}`);
+      assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
     }
   );
 
-  t.test(
+  await t.test(
     'overrides default prefix if metricsNamespace option is set',
     async (t) => {
       const metricsNamespace = 'my-metrics';
@@ -415,21 +362,15 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(results.counters[0].name, `${metricsNamespace}./dino.codes.203`);
-      t.equal(results.counters[0].value, 1);
+      assert.strictEqual(results.counters[0].name, `${metricsNamespace}./dino.codes.203`);
+      assert.strictEqual(results.counters[0].value, 1);
 
-      t.equal(
-        results.histograms[0].name,
-        `${metricsNamespace}.response_time./dino`
-      );
-      t.equal(
-        results.histograms[0].value,
-        hookArgs.res.timings.phases.firstByte
-      );
+      assert.strictEqual(results.histograms[0].name, `${metricsNamespace}.response_time./dino`);
+      assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
     }
   );
 
-  t.test(
+  await t.test(
     'no metrics are emitted if ignoreUnnamedRequests is set and no name is set',
     async (t) => {
       script.config.plugins['metrics-by-endpoint'] = {
@@ -452,12 +393,12 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(results.counters.length, 0);
-      t.equal(results.histograms.length, 0);
+      assert.strictEqual(results.counters.length, 0);
+      assert.strictEqual(results.histograms.length, 0);
     }
   );
 
-  t.test(
+  await t.test(
     'metrics are emitted if ignoreUnnamedRequests is set and name is set',
     async (t) => {
       script.config.plugins['metrics-by-endpoint'] = {
@@ -481,24 +422,15 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(
-        results.counters[0].name,
-        `${defaultPluginPrefix}./dino (${hookArgs.req.name}).codes.203`
-      );
-      t.equal(results.counters[0].value, 1);
+      assert.strictEqual(results.counters[0].name, `${defaultPluginPrefix}./dino (${hookArgs.req.name}).codes.203`);
+      assert.strictEqual(results.counters[0].value, 1);
 
-      t.equal(
-        results.histograms[0].name,
-        `${defaultPluginPrefix}.response_time./dino (${hookArgs.req.name})`
-      );
-      t.equal(
-        results.histograms[0].value,
-        hookArgs.res.timings.phases.firstByte
-      );
+      assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.response_time./dino (${hookArgs.req.name})`);
+      assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
     }
   );
 
-  t.test(
+  await t.test(
     'strips query string from url when stripQueryString is set',
     async (t) => {
       script.config.plugins['metrics-by-endpoint'] = {
@@ -522,20 +454,11 @@ test('beforeRequest and afterResponse', async (t) => {
         hookArgs.done
       );
 
-      t.equal(
-        results.counters[0].name,
-        `${defaultPluginPrefix}./dino.codes.203`
-      );
-      t.equal(results.counters[0].value, 1);
+      assert.strictEqual(results.counters[0].name, `${defaultPluginPrefix}./dino.codes.203`);
+      assert.strictEqual(results.counters[0].value, 1);
 
-      t.equal(
-        results.histograms[0].name,
-        `${defaultPluginPrefix}.response_time./dino`
-      );
-      t.equal(
-        results.histograms[0].value,
-        hookArgs.res.timings.phases.firstByte
-      );
+      assert.strictEqual(results.histograms[0].name, `${defaultPluginPrefix}.response_time./dino`);
+      assert.strictEqual(results.histograms[0].value, hookArgs.res.timings.phases.firstByte);
     }
   );
 });

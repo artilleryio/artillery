@@ -1,4 +1,8 @@
-const { test, before, beforeEach } = require('tap');
+const { test, before, beforeEach } = require('node:test');
+const assert = require('node:assert');
+
+// Per-test state (was tap's t.context; node:test has no context bag)
+const ctx = {};
 const { $ } = require('zx');
 const fs = require('node:fs');
 let got;
@@ -23,7 +27,7 @@ const baseTags = getTestTags(['type:acceptance']);
 
 beforeEach(async (t) => {
   $.verbose = true;
-  t.context.reportFilePath = generateTmpReportPath(t.name, 'json');
+  ctx.reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
 test('Cloud API key gets loaded from dotenv on Fargate runs', async (t) => {
@@ -42,31 +46,22 @@ test('Cloud API key gets loaded from dotenv on Fargate runs', async (t) => {
     await $`${A9_PATH} run-fargate ${scenarioPath} --record --tags ${baseTags}`;
   } catch (err) {
     console.log('Error in test run without API key: ', err.message);
-    t.ok(
-      err.message.includes(
+    assert.ok(err.message.includes(
         'Error: API key is required to record test results to Artillery Cloud'
-      ),
-      'Should error if API key is not provided'
-    );
+      ), 'Should error if API key is not provided');
   }
 
   // Run the test with the key provided in the dotenv file
   let output;
   try {
     output =
-      await $`${A9_PATH} run-fargate ${scenarioPath} --output ${t.context.reportFilePath} --record --tags ${baseTags} --dotenv ${dotEnvPath}`;
+      await $`${A9_PATH} run-fargate ${scenarioPath} --output ${ctx.reportFilePath} --record --tags ${baseTags} --dotenv ${dotEnvPath}`;
   } catch (err) {
     console.log(err);
-    t.error(
-      err,
-      'Should not have errored when running the test with the API key provided in the dotenv file'
-    );
-    t.ok(
-      !err.message.includes(
+    assert.ifError(err);
+    assert.ok(!err.message.includes(
         'Error: API key is required to record test results to Artillery Cloud'
-      ),
-      'The API key should be available when provided in the dotenv file'
-    );
+      ), 'The API key should be available when provided in the dotenv file');
   }
 
   // Get the test from the Artillery Cloud API
@@ -88,38 +83,25 @@ test('Cloud API key gets loaded from dotenv on Fargate runs', async (t) => {
       throwHttpErrors: false
     });
   } catch (err) {
-    t.error(
-      err,
-      'Should not have errored when getting the test from the Artillery Cloud API'
-    );
+    assert.ifError(err);
   }
   console.log(`Response status: ${res?.statusCode} ${res?.statusMessage}`);
 
   const testData = JSON.parse(res.body);
-  const report = JSON.parse(fs.readFileSync(t.context.reportFilePath, 'utf8'));
+  const report = JSON.parse(fs.readFileSync(ctx.reportFilePath, 'utf8'));
 
   // Assertions
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.ok(
-    output.stdout.includes(
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.ok(output.stdout.includes(
       'Artillery Cloud reporting is configured for this test run'
-    ),
-    'Should have configured Artillery Cloud reporting'
-  );
-  t.equal(
-    res.statusCode,
-    200,
-    'Should get a 200 response when getting the test by id from the Artillery Cloud API'
-  );
-  t.ok(
-    t.equal(testData.id, testRunId, 'Correct test should be returned') &&
+    ), 'Should have configured Artillery Cloud reporting');
+  assert.strictEqual(res.statusCode, 200, 'Should get a 200 response when getting the test by id from the Artillery Cloud API');
+  assert.ok(t.equal(testData.id, testRunId, 'Correct test should be returned') &&
       t.match(
         testData?.report?.summary,
         report.summary,
         'Report data should match the report file'
-      ),
-    'Should have successfully recorded the test to Artillery Cloud'
-  );
+      ), 'Should have successfully recorded the test to Artillery Cloud');
 
   fs.unlinkSync(dotEnvPath);
   checkForNegativeValues(t, report);

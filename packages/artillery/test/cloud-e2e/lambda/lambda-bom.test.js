@@ -1,4 +1,5 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const fs = require('node:fs');
 const { $ } = require('zx');
 const {
@@ -27,7 +28,7 @@ tap.beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-tap.test('Run simple-bom @windows', async (t) => {
+tap.test('Run simple-bom @windows', async (_t) => {
   const scenarioPath = toCorrectPath(
     `${__dirname}/../fargate/fixtures/simple-bom/simple-bom.yml`
   );
@@ -35,15 +36,11 @@ tap.test('Run simple-bom @windows', async (t) => {
   const output =
     await $`${A9_PATH} run-lambda ${scenarioPath} --architecture ${ARCHITECTURE} -e test --tags ${tags} --output ${reportFilePath} --count 51 --record`;
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
 
-  t.match(output.stdout, /summary report/i, 'print summary report');
-  t.match(output.stdout, /p99/i, 'a p99 value is reported');
-  t.match(
-    output.stdout,
-    /created:.+510/i,
-    'expected number of vusers is reported'
-  );
+  assert.match(output.stdout, /summary report/i, 'print summary report');
+  assert.match(output.stdout, /p99/i, 'a p99 value is reported');
+  assert.match(output.stdout, /created:.+510/i, 'expected number of vusers is reported');
 });
 
 tap.test('Run mixed-hierarchy test in Lambda Container', async (t) => {
@@ -55,18 +52,10 @@ tap.test('Run mixed-hierarchy test in Lambda Container', async (t) => {
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
 
-  t.equal(
-    report.aggregate.counters['vusers.completed'],
-    20,
-    'Should have 20 total VUs'
-  );
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    20,
-    'Should have 20 "200 OK" responses'
-  );
+  assert.strictEqual(report.aggregate.counters['vusers.completed'], 20, 'Should have 20 total VUs');
+  assert.strictEqual(report.aggregate.counters['http.codes.200'], 20, 'Should have 20 "200 OK" responses');
 
   checkForNegativeValues(t, report);
   checkAggregateCounterSums(t, report);

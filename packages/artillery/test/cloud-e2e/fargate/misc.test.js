@@ -1,4 +1,5 @@
-const { test, before, beforeEach } = require('tap');
+const { test, before, beforeEach } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('node:fs');
@@ -25,18 +26,18 @@ beforeEach(async (t) => {
   reportFilePath = generateTmpReportPath(t.name, 'json');
 });
 
-test('Playwright test in TypeScript (example)', async (t) => {
+test('Playwright test in TypeScript (example)', async (_t) => {
   const scenarioPath = path.resolve(
     __dirname,
     '../../../../../examples/browser-load-testing-playwright/browser-load-test.ts'
   );
   const output =
     await $`${A9_PATH} run-fargate ${scenarioPath} --record --tags ${baseTags}`;
-  t.ok(output.stdout.includes('Summary report'));
-  t.ok(output.stdout.includes('p99'));
-  t.ok(output.stdout.includes('vusers.completed'));
-  t.ok(output.stdout.includes('browser.page.FCP.https://www.artillery.io/'));
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.ok(output.stdout.includes('Summary report'));
+  assert.ok(output.stdout.includes('p99'));
+  assert.ok(output.stdout.includes('vusers.completed'));
+  assert.ok(output.stdout.includes('browser.page.FCP.https://www.artillery.io/'));
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
 });
 
 test('Kitchen Sink Test - multiple features together', async (t) => {
@@ -54,67 +55,37 @@ test('Kitchen Sink Test - multiple features together', async (t) => {
       launchConfig
     )}`;
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.ok(
-    output.stdout.includes(
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.ok(output.stdout.includes(
       `${chalk.green('ok')}: http.response_time.p99 < 10000`
-    )
-  );
-  t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
+    ));
+  assert.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-  t.equal(
-    report.aggregate.counters['vusers.completed'],
-    40,
-    'Should have 40 total VUs'
-  );
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    160,
-    'Should have 160 "200 OK" responses'
-  );
+  assert.strictEqual(report.aggregate.counters['vusers.completed'], 40, 'Should have 40 total VUs');
+  assert.strictEqual(report.aggregate.counters['http.codes.200'], 160, 'Should have 160 "200 OK" responses');
 
   // Check that each endpoint was hit correctly
-  t.equal(
-    report.aggregate.counters['plugins.metrics-by-endpoint./.codes.200'],
-    40,
-    'Should have 40 / "200 OK" responses'
-  );
-  t.equal(
-    report.aggregate.counters['plugins.metrics-by-endpoint./dino.codes.200'],
-    40,
-    'Should have 40 /dino "200 OK" responses'
-  );
-  t.equal(
-    report.aggregate.counters[
+  assert.strictEqual(report.aggregate.counters['plugins.metrics-by-endpoint./.codes.200'], 40, 'Should have 40 / "200 OK" responses');
+  assert.strictEqual(report.aggregate.counters['plugins.metrics-by-endpoint./dino.codes.200'], 40, 'Should have 40 /dino "200 OK" responses');
+  assert.strictEqual(report.aggregate.counters[
       'plugins.metrics-by-endpoint./armadillo.codes.200'
-    ],
-    40,
-    'Should have 40 /armadillo "200 OK" responses'
-  );
-  t.equal(
-    report.aggregate.counters['plugins.metrics-by-endpoint./pony.codes.200'],
-    40,
-    'Should have 40 /pony "200 OK" responses'
-  );
+    ], 40, 'Should have 40 /armadillo "200 OK" responses');
+  assert.strictEqual(report.aggregate.counters['plugins.metrics-by-endpoint./pony.codes.200'], 40, 'Should have 40 /pony "200 OK" responses');
 
   checkForNegativeValues(t, report);
   checkAggregateCounterSums(t, report);
 });
 
-test('Run lots-of-output', async (t) => {
+test('Run lots-of-output', async (_t) => {
   $.verbose = false; // we don't want megabytes of output on the console
 
   const output =
     await $`${A9_PATH} run:fargate ${__dirname}/fixtures/large-output/lots-of-output.yml --record --tags ${baseTags}`;
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
 
-  t.match(output.stdout, /summary report/i, 'print summary report');
-  t.match(
-    output.stdout,
-    /very.very.long.name.for.a.histogram.metric.so.that.we.generate.a.lot.of.console.output/i,
-    'includes custom metric output'
-  );
-  t.match(output.stdout, /p99/i, 'a p99 value is reported');
+  assert.match(output.stdout, /summary report/i, 'print summary report');
+  assert.match(output.stdout, /very.very.long.name.for.a.histogram.metric.so.that.we.generate.a.lot.of.console.output/i, 'includes custom metric output');
+  assert.match(output.stdout, /p99/i, 'a p99 value is reported');
 });

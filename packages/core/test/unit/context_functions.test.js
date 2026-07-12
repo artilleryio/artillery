@@ -1,7 +1,8 @@
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 let contextFuncs;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   ({ contextFuncs } = await import('../../lib/runner.ts'));
@@ -18,12 +19,9 @@ test('$randomString should return a string of the specified length', async (t) =
       }
     }
 
-    t.ok(
-      errors.length === 0,
-      `All strings should be of length ${length || defaultStringLength}. Got ${
+    assert.ok(errors.length === 0, `All strings should be of length ${length || defaultStringLength}. Got ${
         errors.length
-      } bad strings: ${JSON.stringify(errors)}`
-    );
+      } bad strings: ${JSON.stringify(errors)}`);
   };
 
   //test with different size strings

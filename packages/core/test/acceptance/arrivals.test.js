@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 let runner;
 let SSMS;
 const createTestServer = require('../targets/simple');
@@ -6,7 +7,7 @@ const createTestServer = require('../targets/simple');
 let server;
 let port;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   runner = (await import('../../index.ts')).runner.runner;
@@ -21,7 +22,7 @@ afterEach(() => {
   server.stop();
 });
 
-test('arrival phases', (t) => {
+test('arrival phases', (t, done) => {
   const script = require('../scripts/arrival_phases.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -36,17 +37,17 @@ test('arrival phases', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.equal(report.codes[200], 60, 'Should get 60 status 200 responses');
+      assert.strictEqual(report.codes[200], 60, 'Should get 60 status 200 responses');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('arrival phases - with modified time format', (t) => {
+test('arrival phases - with modified time format', (t, done) => {
   const script = require('../scripts/arrival_phases_time_format.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -64,16 +65,13 @@ test('arrival phases - with modified time format', (t) => {
       const finalTime = Date.now();
       const report = SSMS.legacyReport(nr).report();
 
-      t.equal(report.codes[200], 61, 'Did not get 61 status 200 responses');
-      t.ok(
-        finalTime - initialTime >= 50 * 1000,
-        `Took ${
+      assert.strictEqual(report.codes[200], 61, 'Did not get 61 status 200 responses');
+      assert.ok(finalTime - initialTime >= 50 * 1000, `Took ${
           finalTime - initialTime
-        }ms. Did not take at least 50 seconds (to account for pause time)`
-      );
+        }ms. Did not take at least 50 seconds (to account for pause time)`);
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();

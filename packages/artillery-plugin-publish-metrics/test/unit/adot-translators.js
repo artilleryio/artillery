@@ -1,4 +1,5 @@
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 
 const {
   getADOTRelevantReporterConfigs,
@@ -27,7 +28,7 @@ test('getADOTRelevantReporterConfigs returns the cloudwatch config only when it 
     }
   ];
   const result = getADOTRelevantReporterConfigs(pmConfigList);
-  t.same(result, [
+  assert.deepEqual(result, [
     {
       type: 'cloudwatch',
       traces: {}
@@ -50,7 +51,7 @@ test('getADOTRelevantReporterConfigs correctly filters out unsupported reporter 
     }
   ];
   const result = getADOTRelevantReporterConfigs(pmConfigList);
-  t.same(result, [
+  assert.deepEqual(result, [
     {
       type: 'datadog',
       traces: {}
@@ -66,7 +67,7 @@ test('getADOTRelevantReporterConfigs returns empty list when no relevant reporte
     }
   ];
   const result = getADOTRelevantReporterConfigs(pmConfigList);
-  t.same(result, []);
+  assert.deepEqual(result, []);
 });
 
 test('getADOTRelevantReporterConfigs does not return configuration when the supported signal type is not configured', async (t) => {
@@ -79,7 +80,7 @@ test('getADOTRelevantReporterConfigs does not return configuration when the supp
     }
   ];
   const result = getADOTRelevantReporterConfigs(pmConfigList);
-  t.same(result, []);
+  assert.deepEqual(result, []);
 });
 
 // Test vendorSpecificEnvVarsForCollector
@@ -92,7 +93,7 @@ test('when vendorSpecificEnvVarsForCollector is called with needed parameters, i
     DD_API_KEY: '123'
   };
   const result = vendorSpecificEnvVarsForCollector.datadog(config, dotenv);
-  t.same(result, { DD_API_KEY: '123' });
+  assert.deepEqual(result, { DD_API_KEY: '123' });
 });
 
 test('when vendorSpecificEnvVarsForCollector is called for datadog without apiKey or DD_API_KEY, it throws an error', async (t) => {
@@ -101,7 +102,7 @@ test('when vendorSpecificEnvVarsForCollector is called for datadog without apiKe
     tracing: {}
   };
   const dotenv = {};
-  t.throws(() => vendorSpecificEnvVarsForCollector.datadog(config, dotenv), {
+  assert.throws(() => vendorSpecificEnvVarsForCollector.datadog(config, dotenv), {
     message:
       "Datadog reporter Error: Missing Datadog API key. Provide it under 'apiKey' setting in your script or under 'DD_API_KEY' environment variable set in your dotenv file."
   });
@@ -115,7 +116,7 @@ test('when vendorSpecificEnvVarsForCollector is called for datadog with an apiKe
   };
   const dotenv = {};
   const result = vendorSpecificEnvVarsForCollector.datadog(config, dotenv);
-  t.same(result, { DD_API_KEY: '123' });
+  assert.deepEqual(result, { DD_API_KEY: '123' });
 });
 
 test('when vendorSpecificEnvVarsForCollector is called for datadog with an apiKey and DD_API_KEY, it returns an object with the DD_API_KEY as the apiKey', async (t) => {
@@ -128,7 +129,7 @@ test('when vendorSpecificEnvVarsForCollector is called for datadog with an apiKe
     DD_API_KEY: '456'
   };
   const result = vendorSpecificEnvVarsForCollector.datadog(config, dotenv);
-  t.same(result, { DD_API_KEY: '123' });
+  assert.deepEqual(result, { DD_API_KEY: '123' });
 });
 
 // Test getADOTEnvVars
@@ -143,7 +144,7 @@ test('when getADOTEnvVars is called with a list of adotRelevantconfigs and a dot
     DD_API_KEY: '123'
   };
   const result = getADOTEnvVars(adotRelevantconfigs, dotenv);
-  t.same(result, { DD_API_KEY: '123' });
+  assert.deepEqual(result, { DD_API_KEY: '123' });
 });
 
 // Maybe remove throwing an error in the function itself as it propagates to the resolveADOTConfigSettings and then we can handle it there
@@ -156,7 +157,7 @@ test('if an error happens in getADOTEnvVars it logs the error message and return
   ];
   const dotenv = {};
   const result = getADOTEnvVars(adotRelevantconfigs, dotenv);
-  t.same(result, {});
+  assert.deepEqual(result, {});
 });
 
 test('when getADOTEnvVars is called with a reporter that does not have a mapping to vendorSpecificEnvVarsForCollector properties, it returns an empty object', async (t) => {
@@ -169,14 +170,14 @@ test('when getADOTEnvVars is called with a reporter that does not have a mapping
   ];
   const dotenv = {};
   const result = getADOTEnvVars(adotRelevantconfigs, dotenv);
-  t.same(result, {});
+  assert.deepEqual(result, {});
 });
 
 test('when getADOTEnvVars is called with an empty list of adotRelevantconfigs and an empty dotenv object it returns an empty object', async (t) => {
   const adotRelevantconfigs = [];
   const dotenv = {};
   const result = getADOTEnvVars(adotRelevantconfigs, dotenv);
-  t.same(result, {});
+  assert.deepEqual(result, {});
 });
 
 // Test vendorToCollectorConfigTranslators
@@ -186,7 +187,7 @@ test('when vendorToCollectorConfigTranslators is called with a datadog config, i
     traces: {}
   };
   const result = vendorToCollectorConfigTranslators.datadog(config);
-  t.same(result, {
+  assert.deepEqual(result, {
     receivers: {
       otlp: {
         protocols: {
@@ -233,7 +234,7 @@ test('when vendorToCollectorConfigTranslators is called with a cloudwatch config
     traces: {}
   };
   const result = vendorToCollectorConfigTranslators.cloudwatch(config);
-  t.same(result, {
+  assert.deepEqual(result, {
     receivers: {
       otlp: {
         protocols: {
@@ -276,7 +277,7 @@ test('when vendorToCollectorConfigTranslators is called with a datadog config th
     type: 'datadog'
   };
   const result = vendorToCollectorConfigTranslators.datadog(config);
-  t.same(result, collectorConfigTemplate);
+  assert.deepEqual(result, collectorConfigTemplate);
 });
 
 // Test getADOTConfig
@@ -288,7 +289,7 @@ test('when getADOTConfig is called with a list of adotRelevantConfigs, it return
     }
   ];
   const result = getADOTConfig(adotRelevantConfigs);
-  t.same(result, {
+  assert.deepEqual(result, {
     receivers: {
       otlp: {
         protocols: {
@@ -332,7 +333,7 @@ test('when getADOTConfig is called with a list of adotRelevantConfigs, it return
 test('when getADOTConfig is called with an empty list of adotRelevantConfigs, it returns an object that is same as collector config template', async (t) => {
   const adotRelevantConfigs = [];
   const result = getADOTConfig(adotRelevantConfigs);
-  t.same(result, collectorConfigTemplate);
+  assert.deepEqual(result, collectorConfigTemplate);
 });
 
 // Test resolveADOTConfigSettings
@@ -349,7 +350,7 @@ test('when resolveADOTConfigSettings is called with a configList and a dotenv ob
     }
   };
   const result = resolveADOTConfigSettings(options);
-  t.same(result, {
+  assert.deepEqual(result, {
     adotConfig: {
       receivers: {
         otlp: {

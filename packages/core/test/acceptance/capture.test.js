@@ -1,4 +1,5 @@
-const { test, beforeEach } = require('tap');
+const { test, beforeEach } = require('node:test');
+const assert = require('node:assert');
 let runner;
 const nock = require('nock');
 const uuid = require('uuid');
@@ -6,7 +7,7 @@ let SSMS;
 
 let xmlCapture = null;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   runner = (await import('../../index.ts')).runner.runner;
@@ -18,7 +19,7 @@ try {
 
 beforeEach(() => nock.cleanAll());
 
-test('Capture - headers', (t) => {
+test('Capture - headers', (t, done) => {
   const script = {
     config: {
       target: 'http://127.0.0.1:3003',
@@ -51,11 +52,7 @@ test('Capture - headers', (t) => {
     .reply(200, 'ok', { 'x-auth': 'secret' })
     .get('/expectsHeader')
     .reply(200, function () {
-      t.equal(
-        this.req.headers['x-auth'],
-        xAuthHeader,
-        'the captured header should be sent to the next url'
-      );
+      assert.strictEqual(this.req.headers['x-auth'], xAuthHeader, 'the captured header should be sent to the next url');
 
       return { success: true };
     });
@@ -64,17 +61,17 @@ test('Capture - headers', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(target.isDone(), 'Should have made a request to all the endpoints');
-      t.equal(report.codes[200], 2, 'Should do expected number of requests');
+      assert.ok(target.isDone(), 'Should have made a request to all the endpoints');
+      assert.strictEqual(report.codes[200], 2, 'Should do expected number of requests');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('Capture - selector', (t) => {
+test('Capture - selector', (t, done) => {
   const productLinks = Array(20)
     .fill()
     .map((_, idx) => `/product/${idx}`);
@@ -141,25 +138,21 @@ test('Capture - selector', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(target.isDone(), 'Should have made a request to all the endpoints');
-      t.equal(
-        report.codes[200],
-        script.config.phases[0].arrivalRate *
+      assert.ok(target.isDone(), 'Should have made a request to all the endpoints');
+      assert.strictEqual(report.codes[200], script.config.phases[0].arrivalRate *
           script.config.phases[0].duration *
-          script.scenarios[0].flow.length,
-        'Number of 200 requests should be equal to arrivalRate*duration*numberOfRequests'
-      );
-      t.ok(report.codes[404] === undefined, 'it should only hit existing urls');
+          script.scenarios[0].flow.length, 'Number of 200 requests should be equal to arrivalRate*duration*numberOfRequests');
+      assert.ok(report.codes[404] === undefined, 'it should only hit existing urls');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('Capture - JSON', (t) => {
+test('Capture - JSON', (t, done) => {
   const db = {};
   const script = {
     config: {
@@ -238,16 +231,12 @@ test('Capture - JSON', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
-      t.equal(
-        report.codes[200],
-        report.codes[201],
-        'There should be a 200 for every 201'
-      );
-      t.ok(target.isDone(), 'Should have made a request to all the endpoints');
+      assert.ok(report.codes[201] > 0, 'There should be 201s in the test');
+      assert.strictEqual(report.codes[200], report.codes[201], 'There should be a 200 for every 201');
+      assert.ok(target.isDone(), 'Should have made a request to all the endpoints');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -255,7 +244,7 @@ test('Capture - JSON', (t) => {
   });
 });
 
-test('Capture and save to attribute of an Object in context.vars - JSON', (t) => {
+test('Capture and save to attribute of an Object in context.vars - JSON', (t, done) => {
   const db = {};
   const script = {
     config: {
@@ -334,16 +323,12 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
-      t.equal(
-        report.codes[200],
-        report.codes[201],
-        'There should be a 200 for every 201'
-      );
-      t.ok(target.isDone(), 'Should have made a request to all the endpoints');
+      assert.ok(report.codes[201] > 0, 'There should be 201s in the test');
+      assert.strictEqual(report.codes[200], report.codes[201], 'There should be a 200 for every 201');
+      assert.ok(target.isDone(), 'Should have made a request to all the endpoints');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -351,13 +336,13 @@ test('Capture and save to attribute of an Object in context.vars - JSON', (t) =>
   });
 });
 
-test('Capture - XML', (t) => {
+test('Capture - XML', (t, done) => {
   if (!xmlCapture) {
     console.log(
       'artillery-xml-capture does not seem to be installed, skipping XML capture test.'
     );
-    t.ok(true);
-    return t.end();
+    assert.ok(true);
+    return done();
   }
 
   const script = {
@@ -460,12 +445,12 @@ test('Capture - XML', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(target.isDone(), 'Should have made a request to all the endpoints');
-      t.ok(report.codes[200] > 0, 'Should have a few 200s');
-      t.ok(report.codes[404] === undefined, 'Should have no 404s');
+      assert.ok(target.isDone(), 'Should have made a request to all the endpoints');
+      assert.ok(report.codes[200] > 0, 'Should have a few 200s');
+      assert.ok(report.codes[404] === undefined, 'Should have no 404s');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -473,7 +458,7 @@ test('Capture - XML', (t) => {
   });
 });
 
-test('Capture - Random value from array', (t) => {
+test('Capture - Random value from array', (t, done) => {
   const script = {
     config: {
       target: 'http://127.0.0.1:3003',
@@ -555,12 +540,12 @@ test('Capture - Random value from array', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      //t.ok(target.isDone(), 'Should have made a request to all the endpoints');
-      t.ok(report.codes[200] > 0, 'Should have a few 200s');
-      t.ok(report.codes[404] === undefined, 'Should have no 404s');
+      //assert.ok(target.isDone(), 'Should have made a request to all the endpoints');
+      assert.ok(report.codes[200] > 0, 'Should have a few 200s');
+      assert.ok(report.codes[404] === undefined, 'Should have no 404s');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -568,7 +553,7 @@ test('Capture - Random value from array', (t) => {
   });
 });
 
-test('Capture - RegExp', (t) => {
+test('Capture - RegExp', (t, done) => {
   const db = {};
   const script = {
     config: {
@@ -633,16 +618,12 @@ test('Capture - RegExp', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.ok(report.codes[201] > 0, 'There should be 201s in the test');
-      t.equal(
-        report.codes[200],
-        report.codes[201],
-        'There should be a 200 for every 201'
-      );
-      t.ok(target.isDone(), 'Should have made a request to all the endpoints');
+      assert.ok(report.codes[201] > 0, 'There should be 201s in the test');
+      assert.strictEqual(report.codes[200], report.codes[201], 'There should be a 200 for every 201');
+      assert.ok(target.isDone(), 'Should have made a request to all the endpoints');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 

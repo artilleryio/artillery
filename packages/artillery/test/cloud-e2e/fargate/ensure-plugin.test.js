@@ -1,4 +1,5 @@
-const { test, before, beforeEach } = require('tap');
+const { test, before, beforeEach } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const chalk = require('chalk');
 const fs = require('node:fs');
@@ -24,25 +25,15 @@ beforeEach(async (t) => {
 test('Run uses ensure', async (t) => {
   try {
     await $`${A9_PATH} run:fargate ${__dirname}/fixtures/uses-ensure/with-ensure.yaml --record --tags ${baseTags} --output ${reportFilePath} --count 15`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`)
-    );
-    t.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`));
+    assert.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`));
 
     const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['vusers.completed'],
-      300,
-      'Should have 300 total VUs'
-    );
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      300,
-      'Should have 300 "200 OK" responses'
-    );
+    assert.strictEqual(report.aggregate.counters['vusers.completed'], 300, 'Should have 300 total VUs');
+    assert.strictEqual(report.aggregate.counters['http.codes.200'], 300, 'Should have 300 "200 OK" responses');
 
     checkForNegativeValues(t, report);
     checkAggregateCounterSums(t, report);

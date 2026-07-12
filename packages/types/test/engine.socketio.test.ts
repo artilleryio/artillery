@@ -1,25 +1,22 @@
-import * as tap from 'tap';
-import { validateTestScript } from './helpers';
+import * as tap from 'node:test';
+import assert from 'node:assert';
+import { validateTestScript } from './helpers.ts';
 
-tap.test('validates scenario flow when using "socketio" engine', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('validates scenario flow when using "socketio" engine', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 scenarios:
   - engine: socketio
     flow:
       - emit:
           channel: myChannel
           data: Hello world
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('supports emit as an array', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('supports emit as an array', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 scenarios:
   - engine: socketio
     flow:
@@ -27,16 +24,13 @@ scenarios:
           - "myChannel"
           - "hello"
           - "world"
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('supports namespace at same level as emit', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('supports namespace at same level as emit', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 scenarios:
   - engine: socketio
     flow:
@@ -45,18 +39,15 @@ scenarios:
           - "myChannel"
           - "hello"
           - "world"
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
 tap.test(
   'supports response with its options at the same level as emit',
-  (tap) => {
-    tap.same(
-      validateTestScript(`
+  (tap, done) => {
+    assert.deepEqual(validateTestScript(`
 scenarios:
   - engine: socketio
     flow:
@@ -70,19 +61,16 @@ scenarios:
           match:
             json: "$.something"
             value: "abc"
-    `),
-      []
-    );
+    `), []);
 
-    tap.end();
+    done();
   }
 );
 
 tap.test(
   'supports acknowledge with its options at the same level as emit',
-  (tap) => {
-    tap.same(
-      validateTestScript(`
+  (tap, done) => {
+    assert.deepEqual(validateTestScript(`
 scenarios:
   - engine: socketio
     flow:
@@ -95,17 +83,14 @@ scenarios:
           capture:
             json: "$"
             as: "myJson"
-    `),
-      []
-    );
+    `), []);
 
-    tap.end();
+    done();
   }
 );
 
-tap.test('allows general flow properties', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('allows general flow properties', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 scenarios:
   - engine: socketio
     flow:
@@ -114,14 +99,12 @@ scenarios:
           data: Hello world
       - think: 5
       - log: Debug here
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('supports HTTP flow properties for "socketio" engine', (tap) => {
+tap.test('supports HTTP flow properties for "socketio" engine', (tap, done) => {
   const errors = validateTestScript(`
 config:
   target: http://localhost:3000
@@ -147,6 +130,6 @@ scenarios:
         count: 5
 `);
 
-  tap.same(errors, []);
-  tap.end();
+  assert.deepEqual(errors, []);
+  done();
 });

@@ -1,9 +1,10 @@
-import * as tap from 'tap';
-import { validateTestScript } from './helpers';
+import * as tap from 'node:test';
+import assert from 'node:assert';
+import { validateTestScript } from './helpers.ts';
 
 tap.test(
   'arrival rate phase should not allow other properties (e.g. arrivalCount)',
-  (tap) => {
+  (tap, done) => {
     const errors = validateTestScript(`
     config:
       target: http://localhost:3000
@@ -13,19 +14,16 @@ tap.test(
           arrivalCount: 3
       `);
 
-    tap.same(
-      errors.find(
+    assert.deepEqual(errors.find(
         (error) => error.params?.additionalProperty === 'arrivalCount'
-      )?.message,
-      'must NOT have additional properties'
-    );
-    tap.end();
+      )?.message, 'must NOT have additional properties');
+    done();
   }
 );
 
 tap.test(
   'arrival count phase should not allow other properties (e.g. rampTo)',
-  (tap) => {
+  (tap, done) => {
     const errors = validateTestScript(`
     config:
       target: http://localhost:3000
@@ -35,18 +33,15 @@ tap.test(
           rampTo: 10
       `);
 
-    tap.same(
-      errors.find((error) => error.params?.additionalProperty === 'rampTo')
-        ?.message,
-      'must NOT have additional properties'
-    );
-    tap.end();
+    assert.deepEqual(errors.find((error) => error.params?.additionalProperty === 'rampTo')
+        ?.message, 'must NOT have additional properties');
+    done();
   }
 );
 
 tap.test(
   'pause phase should not allow other properties (e.g. duration)',
-  (tap) => {
+  (tap, done) => {
     const errors = validateTestScript(`
     config:
       target: http://localhost:3000
@@ -55,11 +50,8 @@ tap.test(
           pause: 3
       `);
 
-    tap.same(
-      errors.find((error) => error.params?.additionalProperty === 'duration')
-        ?.message,
-      'must NOT have additional properties'
-    );
-    tap.end();
+    assert.deepEqual(errors.find((error) => error.params?.additionalProperty === 'duration')
+        ?.message, 'must NOT have additional properties');
+    done();
   }
 );

@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 let runner;
 const http = require('node:http');
 const WebSocket = require('ws');
@@ -7,7 +8,7 @@ const { once } = require('node:events');
 let server;
 let wsServer;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   runner = (await import('../../index.ts')).runner.runner;
@@ -23,7 +24,7 @@ afterEach(async () => {
   server.close();
 });
 
-test('should match a websocket response without capture', (t) => {
+test('should match a websocket response without capture', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       ws.send(JSON.stringify({ foo: 'bar' }));
@@ -53,11 +54,11 @@ test('should match a websocket response without capture', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 0, 'There should be no failures');
-      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      assert.strictEqual(c['vusers.failed'], 0, 'There should be no failures');
+      assert.strictEqual(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -65,7 +66,7 @@ test('should match a websocket response without capture', (t) => {
   });
 });
 
-test('should wait for a websocket response without send', (t) => {
+test('should wait for a websocket response without send', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       ws.send(JSON.stringify({ bar: 'foo' }));
@@ -103,16 +104,12 @@ test('should wait for a websocket response without send', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 0, 'There should be no failures');
-      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
-      t.equal(
-        c['websocket.messages_received'],
-        2,
-        'All messages should be received'
-      );
+      assert.strictEqual(c['vusers.failed'], 0, 'There should be no failures');
+      assert.strictEqual(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      assert.strictEqual(c['websocket.messages_received'], 2, 'All messages should be received');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -120,7 +117,7 @@ test('should wait for a websocket response without send', (t) => {
   });
 });
 
-test('should wait for multiple websocket responses in a loop', (t) => {
+test('should wait for multiple websocket responses in a loop', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       ws.send(JSON.stringify({ baz: 'foo' }));
@@ -156,11 +153,11 @@ test('should wait for multiple websocket responses in a loop', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 0, 'There should be no failures');
-      t.equal(c['websocket.messages_sent'], 5, 'All messages should be sent');
+      assert.strictEqual(c['vusers.failed'], 0, 'There should be no failures');
+      assert.strictEqual(c['websocket.messages_sent'], 5, 'All messages should be sent');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -168,7 +165,7 @@ test('should wait for multiple websocket responses in a loop', (t) => {
   });
 });
 
-test('should use config.ws.timeout on capture', (t) => {
+test('should use config.ws.timeout on capture', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       setTimeout(() => {
@@ -201,10 +198,10 @@ test('should use config.ws.timeout on capture', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 1, 'There should be one failure');
-      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      assert.strictEqual(c['vusers.failed'], 1, 'There should be one failure');
+      assert.strictEqual(c['websocket.messages_sent'], 1, 'All messages should be sent');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -212,7 +209,7 @@ test('should use config.ws.timeout on capture', (t) => {
   });
 });
 
-test('should use config.timeout on capture', (t) => {
+test('should use config.timeout on capture', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       setTimeout(() => {
@@ -245,10 +242,10 @@ test('should use config.timeout on capture', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 1, 'There should be one failure');
-      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      assert.strictEqual(c['vusers.failed'], 1, 'There should be one failure');
+      assert.strictEqual(c['websocket.messages_sent'], 1, 'All messages should be sent');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -256,7 +253,7 @@ test('should use config.timeout on capture', (t) => {
   });
 });
 
-test('should allow an empty string payload to be sent', (t) => {
+test('should allow an empty string payload to be sent', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       ws.send(JSON.stringify({ bar: 'baz' }));
@@ -286,11 +283,11 @@ test('should allow an empty string payload to be sent', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 0, 'There should be no failures');
-      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      assert.strictEqual(c['vusers.failed'], 0, 'There should be no failures');
+      assert.strictEqual(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -298,7 +295,7 @@ test('should allow an empty string payload to be sent', (t) => {
   });
 });
 
-test('should allow a simple empty string to be sent', (t) => {
+test('should allow a simple empty string to be sent', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       ws.send(JSON.stringify({ bar: 'baz' }));
@@ -325,11 +322,11 @@ test('should allow a simple empty string to be sent', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 0, 'There should be no failures');
-      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      assert.strictEqual(c['vusers.failed'], 0, 'There should be no failures');
+      assert.strictEqual(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -337,7 +334,7 @@ test('should allow a simple empty string to be sent', (t) => {
   });
 });
 
-test('should match allow an undefined variable to be sent', (t) => {
+test('should match allow an undefined variable to be sent', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       ws.send(JSON.stringify({ baz: 'foo' }));
@@ -364,11 +361,11 @@ test('should match allow an undefined variable to be sent', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 0, 'There should be no failures');
-      t.equal(c['websocket.messages_sent'], 1, 'All messages should be sent');
+      assert.strictEqual(c['vusers.failed'], 0, 'There should be no failures');
+      assert.strictEqual(c['websocket.messages_sent'], 1, 'All messages should be sent');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 
@@ -376,7 +373,7 @@ test('should match allow an undefined variable to be sent', (t) => {
   });
 });
 
-test('should report an error if a step is not valid', (t) => {
+test('should report an error if a step is not valid', (t, done) => {
   wsServer.on('connection', (ws) => {
     ws.on('message', () => {
       ws.send(JSON.stringify({ baz: 'foo' }));
@@ -394,11 +391,11 @@ test('should report an error if a step is not valid', (t) => {
   runner(script).then((ee) => {
     ee.on('done', (report) => {
       const c = report.counters;
-      t.equal(c['vusers.failed'], 1, 'There should be one failure');
-      t.equal(c['errors.invalid_step'], 1, 'There should be one error');
+      assert.strictEqual(c['vusers.failed'], 1, 'There should be one failure');
+      assert.strictEqual(c['errors.invalid_step'], 1, 'There should be one error');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 

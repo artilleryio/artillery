@@ -2,11 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const data = require('../data/ssms-buckets.json');
 
-tap.test('Metric buckets', async (t) => {
+tap.test('Metric buckets', async (_t) => {
   const metrics = new SSMS();
 
   const intermediates = [];
@@ -35,9 +36,5 @@ tap.test('Metric buckets', async (t) => {
   const packedMetrics = SSMS.pack(intermediates);
 
   // compare
-  t.match(
-    packedMetrics.counters,
-    expectedCounters,
-    'should aggregate buckets from different time periods on the final aggregation'
-  );
+  assert.partialDeepStrictEqual(packedMetrics.counters, expectedCounters, 'should aggregate buckets from different time periods on the final aggregation');
 });

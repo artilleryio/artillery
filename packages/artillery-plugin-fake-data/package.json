@@ -7,22 +7,12 @@
     "access": "public"
   },
   "scripts": {
-    "test": "tap ./test/*.spec.js --timeout 120"
-  },
-  "tap": {
-    "disable-coverage": true,
-    "allow-empty-coverage": true,
-    "color": true,
-    "plugin": [
-      "!@tapjs/typescript"
-    ]
+    "test": "node --test --test-timeout=120000 \"test/*.spec.js\""
   },
   "license": "MPL-2.0",
   "dependencies": {
     "@faker-js/faker": "10.4.0"
   },
-  "devDependencies": {
-    "tap": "^19.0.2"
-  },
+  "devDependencies": {},
   "type": "module"
 }

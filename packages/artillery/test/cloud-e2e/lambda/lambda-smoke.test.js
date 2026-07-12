@@ -1,4 +1,5 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const fs = require('node:fs');
 const { $ } = require('zx');
 const {
@@ -28,33 +29,21 @@ tap.before(async () => {
 });
 
 //Note: we run this test always in x86_64 so we still run one x86_64 test in main pipeline as a smoke test
-tap.test('Run a test on AWS Lambda using containers', async (t) => {
+tap.test('Run a test on AWS Lambda using containers', async (_t) => {
   const configPath = `${__dirname}/fixtures/quick-loop-with-csv/config.yml`;
   const scenarioPath = `${__dirname}/fixtures/quick-loop-with-csv/blitz.yml`;
 
   const output =
     await $`${A9_PATH} run-lambda --count 10 --region us-east-1 --architecture x86_64 --config ${configPath} --record --tags ${tags} ${scenarioPath}`;
 
-  t.equal(output.exitCode, 0, 'CLI should exit with code 0');
+  assert.strictEqual(output.exitCode, 0, 'CLI should exit with code 0');
 
-  t.ok(
-    output.stdout.indexOf('Summary report') > 0,
-    'Should print summary report'
-  );
-  t.ok(
-    output.stdout.indexOf('http.codes.200') > 0,
-    'Should print http.codes.200'
-  );
+  assert.ok(output.stdout.indexOf('Summary report') > 0, 'Should print summary report');
+  assert.ok(output.stdout.indexOf('http.codes.200') > 0, 'Should print http.codes.200');
 
-  t.ok(
-    output.stdout.indexOf('csv_number_') > 0,
-    'Should print csv_number_ counters'
-  );
+  assert.ok(output.stdout.indexOf('csv_number_') > 0, 'Should print csv_number_ counters');
 
-  t.ok(
-    output.stdout.indexOf('csv_name_') > 0,
-    'Should print csv_name_ counters'
-  );
+  assert.ok(output.stdout.indexOf('csv_name_') > 0, 'Should print csv_name_ counters');
 });
 
 tap.test(
@@ -69,19 +58,11 @@ tap.test(
         reportFilePath
       )} --tags ${tags},typescript:true`;
 
-    t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+    assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
 
     const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-    t.equal(
-      report.aggregate.counters['http.codes.200'],
-      2,
-      'Should have made 2 requests'
-    );
-    t.equal(
-      report.aggregate.counters['errors.invalid_address'],
-      2,
-      'Should have emitted 2 errors'
-    );
+    assert.strictEqual(report.aggregate.counters['http.codes.200'], 2, 'Should have made 2 requests');
+    assert.strictEqual(report.aggregate.counters['errors.invalid_address'], 2, 'Should have emitted 2 errors');
 
     checkForNegativeValues(t, report);
     checkAggregateCounterSums(t, report);

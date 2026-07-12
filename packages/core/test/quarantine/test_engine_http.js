@@ -6,13 +6,14 @@
 // scenario just once.
 //
 
-var { test } = require('tap');
+var { test } = require('node:test');
+const assert = require('node:assert');
 var l = require('lodash');
 var nockify = require('./lib/nockify');
 
 let httpWorker;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   httpWorker = (await import('../../lib/engine_http.ts')).default;
@@ -24,7 +25,7 @@ var scripts = [
 ];
 
 l.each(scripts, (script) => {
-  test(script[0], (t) => {
+  test(script[0], (t, done) => {
     var server = nockify(script[1].scenarios[0].flow, script[1].config, t);
     var scenario = httpWorker.create(
       script[1].scenarios[0].flow,
@@ -32,17 +33,17 @@ l.each(scripts, (script) => {
       {}
     );
     scenario.on('error', (err) => {
-      t.fail(err);
+      assert.fail(err);
     });
     scenario.launch((err, context) => {
       if (!server.isDone()) {
         console.error('pending mocks: %j', server.pendingMocks());
-        t.fail(new Error());
+        assert.fail(new Error());
       }
       server.done();
-      t.error(err, 'Scenario completes without errors');
-      t.ok(context, 'context is returned');
-      t.end();
+      assert.ifError(err);
+      assert.ok(context, 'context is returned');
+      done();
     });
   });
 });

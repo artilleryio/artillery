@@ -2,7 +2,8 @@
 
 const promisify = require('node:util').promisify;
 const path = require('node:path');
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const {
   createBOM,
   applyScriptChanges
@@ -10,7 +11,7 @@ const {
 
 // TODO: Add tests for other functions in bom.js
 
-test('Self-contained .ts script with no dependencies', async (t) => {
+test('Self-contained .ts script with no dependencies', async (_t) => {
   const inputFilename = 'browser-load-test.ts';
   const inputScript = path.join(
     __dirname,
@@ -23,20 +24,12 @@ test('Self-contained .ts script with no dependencies', async (t) => {
     flags: {}
   });
   console.log(bom);
-  t.equal(
-    bom.files.length,
-    1,
-    'Input file is expected to have no dependencies'
-  );
-  t.equal(bom.files[0].orig.endsWith(inputFilename), true);
-  t.equal(
-    bom.files[0].noPrefix,
-    inputFilename,
-    'Unprefixed filename should be the same as the input filename'
-  );
+  assert.strictEqual(bom.files.length, 1, 'Input file is expected to have no dependencies');
+  assert.strictEqual(bom.files[0].orig.endsWith(inputFilename), true);
+  assert.strictEqual(bom.files[0].noPrefix, inputFilename, 'Unprefixed filename should be the same as the input filename');
 });
 
-test('applyScriptChanges should resolve config templates with cli variables', async (t) => {
+test('applyScriptChanges should resolve config templates with cli variables', async (_t) => {
   // Arrange
   global.artillery.testRunId = 'bombolini_id_1234567890';
   const context = {
@@ -76,37 +69,21 @@ test('applyScriptChanges should resolve config templates with cli variables', as
   // Act
   applyScriptChanges(context, (err, context) => {
     if (err) {
-      return t.fail(err);
+      return assert.fail(err);
     }
 
     // Assert
-    t.equal(
-      context.opts.scriptData.config.payload.path,
-      '/path/to/payload.json',
-      'Should resolve config templates with cli variables'
-    );
-    t.equal(
-      context.opts.scriptData.config.plugins['publish-metrics'][0].apiKey,
-      'my_bombolini_key_1234567890',
-      'Should resolve config templates with cli variables on all config depth levels'
-    );
-    t.equal(
-      context.opts.scriptData.config.plugins['publish-metrics'][0].traces
-        .serviceName,
-      'Bombolini',
-      'Should resolve config templates with cli variables on all config depth levels'
-    );
-    t.equal(
-      context.opts.scriptData.config.plugins['publish-metrics'][0].traces
-        .attributes.testId,
-      'bombolini_id_1234567890',
-      'Should resolve $testId with global.artillery.testRunId'
-    );
+    assert.strictEqual(context.opts.scriptData.config.payload.path, '/path/to/payload.json', 'Should resolve config templates with cli variables');
+    assert.strictEqual(context.opts.scriptData.config.plugins['publish-metrics'][0].apiKey, 'my_bombolini_key_1234567890', 'Should resolve config templates with cli variables on all config depth levels');
+    assert.strictEqual(context.opts.scriptData.config.plugins['publish-metrics'][0].traces
+        .serviceName, 'Bombolini', 'Should resolve config templates with cli variables on all config depth levels');
+    assert.strictEqual(context.opts.scriptData.config.plugins['publish-metrics'][0].traces
+        .attributes.testId, 'bombolini_id_1234567890', 'Should resolve $testId with global.artillery.testRunId');
   });
   delete global.artillery.testRunId;
 });
 
-test('applyScriptChanges should resolve config templates with env variables', async (t) => {
+test('applyScriptChanges should resolve config templates with env variables', async (_t) => {
   // Arrange
   process.env.FAKE_PATH_TO_PAYLOAD = '/path/to/payload.json';
   process.env.FAKE_DD_API_KEY = 'my_bombolini_key_1234567890';
@@ -146,32 +123,16 @@ test('applyScriptChanges should resolve config templates with env variables', as
   // Act
   applyScriptChanges(context, (err, context) => {
     if (err) {
-      t.fail(err);
+      assert.fail(err);
     }
 
     //Assert
-    t.equal(
-      context.opts.scriptData.config.payload.path,
-      '/path/to/payload.json',
-      'Should resolve $env templates with env vars'
-    );
-    t.equal(
-      context.opts.scriptData.config.plugins['publish-metrics'][0].apiKey,
-      'my_bombolini_key_1234567890',
-      'Should resolve $processEnvironment templates with env vars'
-    );
-    t.equal(
-      context.opts.scriptData.config.plugins['publish-metrics'][0].traces
-        .serviceName,
-      'Bombolini',
-      'Should resolve $environment templates with vars from flags.environment'
-    );
-    t.equal(
-      context.opts.scriptData.config.plugins['publish-metrics'][0].traces
-        .attributes.testId,
-      'bombolini_id_1234567890',
-      'Should resolve env vars on all levels of test script'
-    );
+    assert.strictEqual(context.opts.scriptData.config.payload.path, '/path/to/payload.json', 'Should resolve $env templates with env vars');
+    assert.strictEqual(context.opts.scriptData.config.plugins['publish-metrics'][0].apiKey, 'my_bombolini_key_1234567890', 'Should resolve $processEnvironment templates with env vars');
+    assert.strictEqual(context.opts.scriptData.config.plugins['publish-metrics'][0].traces
+        .serviceName, 'Bombolini', 'Should resolve $environment templates with vars from flags.environment');
+    assert.strictEqual(context.opts.scriptData.config.plugins['publish-metrics'][0].traces
+        .attributes.testId, 'bombolini_id_1234567890', 'Should resolve env vars on all levels of test script');
   });
 
   delete process.env.FAKE_PATH_TO_PAYLOAD;

@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 let runner;
 let updateGlobalObject;
 let SSMS;
@@ -7,7 +8,7 @@ const createTestServer = require('../targets/simple_tls');
 let server;
 let port;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   runner = (await import('../../lib/runner.ts')).runner;
@@ -25,7 +26,7 @@ afterEach(() => {
   server.close();
 });
 
-test('tls strict', (t) => {
+test('tls strict', (t, done) => {
   const script = require('../scripts/tls-strict.json');
   script.config.target = `https://127.0.0.1:${port}`;
   runner(script).then((ee) => {
@@ -33,17 +34,17 @@ test('tls strict', (t) => {
       const report = SSMS.legacyReport(nr).report();
       console.log(report);
       const rejected = report.errors.DEPTH_ZERO_SELF_SIGNED_CERT;
-      t.ok(rejected, 'requests to self-signed tls certs fail by default');
+      assert.ok(rejected, 'requests to self-signed tls certs fail by default');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('tls lax', (t) => {
+test('tls lax', (t, done) => {
   const script = require('../scripts/tls-lax.json');
   script.config.target = `https://127.0.0.1:${port}`;
   runner(script).then((ee) => {
@@ -54,10 +55,10 @@ test('tls lax', (t) => {
         'requests to self-signed tls certs pass ' +
         'when `rejectUnauthorized` is false';
 
-      t.ok(rejected == null, reason);
+      assert.ok(rejected == null, reason);
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();

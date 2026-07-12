@@ -1,16 +1,16 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import * as tap from 'tap';
-import { validateTestScript } from './helpers';
+import * as tap from 'node:test';
+import assert from 'node:assert';
+import { validateTestScript } from './helpers.ts';
 
-const ROOT_DIR = path.resolve(__dirname, '../../..');
+const ROOT_DIR = path.resolve(import.meta.dirname, '../../..');
 
 function fromExample(testScriptPath: string) {
-  return (tap: Tap.Test) => {
+  return () => {
     const absoluteTestScriptPath = path.join(ROOT_DIR, testScriptPath);
     const testScript = fs.readFileSync(absoluteTestScriptPath, 'utf8');
-    tap.same(validateTestScript(testScript), []);
-    tap.end();
+    assert.deepEqual(validateTestScript(testScript), []);
   };
 }
 

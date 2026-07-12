@@ -5,7 +5,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build && node scripts/build-tap-runner.mjs",
+    "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint  --continue",
     "lint-fix": "turbo run lint-fix  --continue",

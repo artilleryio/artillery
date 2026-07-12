@@ -1,7 +1,8 @@
-import * as tap from 'tap';
-import { validateTestScript } from './helpers';
+import * as tap from 'node:test';
+import assert from 'node:assert';
+import { validateTestScript } from './helpers.ts';
 
-tap.test('validates a script with 1 phase and 1 http scenario', (tap) => {
+tap.test('validates a script with 1 phase and 1 http scenario', (tap, done) => {
   const errors = validateTestScript(`
   config:
     target: http://localhost:3000
@@ -16,11 +17,11 @@ tap.test('validates a script with 1 phase and 1 http scenario', (tap) => {
             url: /resource
   `);
 
-  tap.same(errors, []);
-  tap.end();
+  assert.deepEqual(errors, []);
+  done();
 });
 
-tap.test('validates a script without "config" set', (tap) => {
+tap.test('validates a script without "config" set', (tap, done) => {
   const errors = validateTestScript(`
 scenarios:
   - engine: http
@@ -29,28 +30,24 @@ scenarios:
           url: /resource
     `);
 
-  tap.same(errors, []);
-  tap.end();
+  assert.deepEqual(errors, []);
+  done();
 });
 
-tap.test('supports base configurations (without scenarios)', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('supports base configurations (without scenarios)', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
   config:
     target: http://localhost:3000
     phases:
       - duration: 10
         arrivalRate: 5
         rampTo: 50
-    `),
-    []
-  );
-  tap.end();
+    `), []);
+  done();
 });
 
-tap.test('supports top-level "before" and "after" scenarios', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('supports top-level "before" and "after" scenarios', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 before:
   flow:
     - send: Hello world
@@ -59,12 +56,9 @@ scenarios:
     flow:
       - get:
           url: /two
-    `),
-    []
-  );
+    `), []);
 
-  tap.same(
-    validateTestScript(`
+  assert.deepEqual(validateTestScript(`
 after:
   flow:
     - send: Hello world
@@ -73,12 +67,9 @@ scenarios:
     flow:
       - get:
           url: /two
-    `),
-    []
-  );
+    `), []);
 
-  tap.same(
-    validateTestScript(`
+  assert.deepEqual(validateTestScript(`
 before:
   flow:
     - post:
@@ -92,16 +83,13 @@ scenarios:
     flow:
       - get:
           url: /two
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('treats "config.phases" as optional', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('treats "config.phases" as optional', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 config:
   target: http://127.0.0.1/api
 scenarios:
@@ -109,16 +97,13 @@ scenarios:
     flow:
       - get:
           url: /two
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('expects "payload.fields" to be an array', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('expects "payload.fields" to be an array', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 config:
   target: http://127.0.0.1/api
   payload:
@@ -131,11 +116,9 @@ scenarios:
     flow:
       - get:
           url: /two
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
 //TODO: fix this test when payload config is reviewed
@@ -181,22 +164,18 @@ scenarios:
 //   tap.end();
 // });
 
-tap.test('supports custom scenario properties', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('supports custom scenario properties', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 scenarios:
   - engine: playwright
     flowFunction: checkPage
-  `),
-    []
-  );
-  tap.end();
+  `), []);
+  done();
 });
 
-tap.test('supports playwright engine configuration', (tap) => {
+tap.test('supports playwright engine configuration', (tap, done) => {
   // Must not error on known options.
-  tap.same(
-    validateTestScript(`
+  assert.deepEqual(validateTestScript(`
 config:
   target: http://127.0.0.1/api
   engines:
@@ -210,16 +189,13 @@ scenarios:
   - name: Blog
     engine: playwright
     testFunction: "helloFlow"
-  `),
-    []
-  );
+  `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('supports non-object plugin options', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('supports non-object plugin options', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 config:
   target: http://127.0.0.1/api
   plugins:
@@ -231,9 +207,7 @@ scenarios:
   - name: Blog
     engine: playwright
     testFunction: "helloFlow"
-  `),
-    []
-  );
+  `), []);
 
-  tap.end();
+  done();
 });

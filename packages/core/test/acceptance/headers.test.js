@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 let runner;
 let SSMS;
 const createTestServer = require('../targets/simple');
@@ -6,7 +7,7 @@ const createTestServer = require('../targets/simple');
 let server;
 let port;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   runner = (await import('../../index.ts')).runner.runner;
@@ -21,7 +22,7 @@ afterEach(() => {
   server.stop();
 });
 
-test('Set header inside request', (t) => {
+test('Set header inside request', (t, done) => {
   const xAuthHeader = 'secret';
 
   const script = {
@@ -47,20 +48,16 @@ test('Set header inside request', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.equal(
-        report.codes[200],
-        1,
-        `Should have a 200 status code: ${JSON.stringify(report)}`
-      );
+      assert.strictEqual(report.codes[200], 1, `Should have a 200 status code: ${JSON.stringify(report)}`);
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('Set header from config.http.defaults', (t) => {
+test('Set header from config.http.defaults', (t, done) => {
   const xAuthHeader = 'secret';
 
   const script = {
@@ -95,20 +92,16 @@ test('Set header from config.http.defaults', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.equal(
-        report.codes[200],
-        2,
-        `Should have two 200 status code: ${JSON.stringify(report)}`
-      );
+      assert.strictEqual(report.codes[200], 2, `Should have two 200 status code: ${JSON.stringify(report)}`);
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('Set header from config.defaults', (t) => {
+test('Set header from config.defaults', (t, done) => {
   const xAuthHeader = 'secret';
 
   const script = {
@@ -141,13 +134,9 @@ test('Set header from config.defaults', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.equal(
-        report.codes[200],
-        2,
-        `Should have two 200 status code: ${JSON.stringify(report)}`
-      );
+      assert.strictEqual(report.codes[200], 2, `Should have two 200 status code: ${JSON.stringify(report)}`);
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();

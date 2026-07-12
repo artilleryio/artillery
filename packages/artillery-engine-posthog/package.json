@@ -4,18 +4,7 @@
   "description": "Load test PostHog with Artillery",
   "main": "index.ts",
   "scripts": {
-    "test": "tap test/index.js"
-  },
-  "tap": {
-    "disable-coverage": true,
-    "allow-empty-coverage": true,
-    "color": true,
-    "test-env": [
-      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
-    ],
-    "plugin": [
-      "!@tapjs/typescript"
-    ]
+    "test": "node --test --require ./test/setup-env.cjs test/index.js"
   },
   "keywords": [
     "posthog",
@@ -23,9 +12,7 @@
   ],
   "author": "Artillery <team@artillery.io>",
   "license": "MPL-2.0",
-  "devDependencies": {
-    "tap": "^19.0.2"
-  },
+  "devDependencies": {},
   "dependencies": {
     "async": "^3.2.4",
     "debug": "^4.3.4",

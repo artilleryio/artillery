@@ -1,6 +1,8 @@
+import { createRequire } from 'node:module';
 import Ajv from 'ajv';
 import * as yaml from 'js-yaml';
 
+const require = createRequire(import.meta.url);
 const schema = require('../schema.json');
 
 const ajv = new Ajv({

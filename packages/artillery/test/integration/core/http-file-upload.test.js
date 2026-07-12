@@ -1,7 +1,8 @@
 
 
 const { createTestServer } = require('../../targets/http-file-upload-server');
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 const fs = require('node:fs');
 const crypto = require('node:crypto');
 const { $ } = require('zx');
@@ -29,7 +30,7 @@ async function calculateFileHash(filePath) {
   });
 }
 
-test('HTTP engine successfully handles file uploads', async (t) => {
+test('HTTP engine successfully handles file uploads', async (_t) => {
   const expectedFiles = [
     {
       fieldName: 'guide',
@@ -62,7 +63,7 @@ test('HTTP engine successfully handles file uploads', async (t) => {
       )}`;
   } catch (err) {
     console.error('There has been an error in test run execution: ', err);
-    t.fail(err);
+    assert.fail(err);
   }
   // We log the response body from the processor so we can parse it from output
   const match = output.stdout.match(/RESPONSE BODY: (.*) RESPONSE BODY END/s);
@@ -79,17 +80,10 @@ test('HTTP engine successfully handles file uploads', async (t) => {
 
   const files = data?.files;
   const fields = data?.fields;
-  t.ok(
-    data?.files && data?.fields,
-    'Should successfully upload a combination of file and non-file form fields'
-  );
-  t.equal(data.status, 'success', 'Should have a success status');
-  t.equal(
-    files.length,
-    expectedFiles.length,
-    `${expectedFiles.length} files should be uploaded`
-  );
-  t.match(fields, expectedOtherFields, 'Should have the expected other fields');
+  assert.ok(data?.files && data?.fields, 'Should successfully upload a combination of file and non-file form fields');
+  assert.strictEqual(data.status, 'success', 'Should have a success status');
+  assert.strictEqual(files.length, expectedFiles.length, `${expectedFiles.length} files should be uploaded`);
+  assert.partialDeepStrictEqual(fields, expectedOtherFields, 'Should have the expected other fields');
 
   for (const expectedFile of expectedFiles) {
     const uploadedFile = files.find(
@@ -97,9 +91,7 @@ test('HTTP engine successfully handles file uploads', async (t) => {
     );
 
     if (!uploadedFile) {
-      t.fail(
-        `Could not find uploaded file with fieldName ${expectedFile.fieldName}`
-      );
+      assert.fail(`Could not find uploaded file with fieldName ${expectedFile.fieldName}`);
       continue;
     }
 
@@ -107,20 +99,8 @@ test('HTTP engine successfully handles file uploads', async (t) => {
       `${__dirname}/fixtures/files/${expectedFile.fileName}`
     );
 
-    t.equal(
-      uploadedFile.originalFilename,
-      expectedFile.fileName,
-      `Should have uploaded the ${expectedFile.fileName} file under the correct field`
-    );
-    t.equal(
-      uploadedFile.fileHash,
-      expectedHash,
-      'Uploaded file should match the sent file'
-    );
-    t.equal(
-      uploadedFile.headers['content-type'],
-      expectedFile.contentType,
-      'Should have uploaded file with correct content type'
-    );
+    assert.strictEqual(uploadedFile.originalFilename, expectedFile.fileName, `Should have uploaded the ${expectedFile.fileName} file under the correct field`);
+    assert.strictEqual(uploadedFile.fileHash, expectedHash, 'Uploaded file should match the sent file');
+    assert.strictEqual(uploadedFile.headers['content-type'], expectedFile.contentType, 'Should have uploaded file with correct content type');
   }
 });

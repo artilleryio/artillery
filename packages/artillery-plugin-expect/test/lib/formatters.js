@@ -1,8 +1,9 @@
-const { test, beforeEach } = require('tap');
+const { test, beforeEach } = require('node:test');
+const assert = require('node:assert');
 
 let expectations, formatters;
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   expectations = await import('../../lib/expectations.ts');
@@ -43,7 +44,7 @@ test('does not log ok status', async (t) => {
     userContext
   );
 
-  t.equal(loggedMessages.length, 0, 'No messages should be logged');
+  assert.strictEqual(loggedMessages.length, 0, 'No messages should be logged');
 });
 
 test('logs error with pretty formatter', async (t) => {
@@ -65,5 +66,5 @@ test('logs error with pretty formatter', async (t) => {
     userContext
   );
 
-  t.not(loggedMessages.length, 0, 'Messages should be logged');
+  assert.notStrictEqual(loggedMessages.length, 0, 'Messages should be logged');
 });

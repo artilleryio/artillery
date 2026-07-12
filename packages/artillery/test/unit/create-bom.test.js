@@ -1,9 +1,10 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const _path = require('node:path');
 
 const { commonPrefix } = require('../../lib/create-bom/create-bom');
 
-tap.test('Test commonPrefix', async (t) => {
+tap.test('Test commonPrefix', async (_t) => {
   const INPUTS = [
     {
       input: ['/home/user/documents/projectA', '/home/user/documents'],
@@ -131,12 +132,8 @@ tap.test('Test commonPrefix', async (t) => {
 
   for (const i of INPUTS) {
     const result = commonPrefix(i.input, i.sep);
-    t.equal(
-      result,
-      i.expected,
-      `commonPrefix should return ${i.expected} for input: ${JSON.stringify(
+    assert.strictEqual(result, i.expected, `commonPrefix should return ${i.expected} for input: ${JSON.stringify(
         i.input
-      )} - got: ${result}`
-    );
+      )} - got: ${result}`);
   }
 });

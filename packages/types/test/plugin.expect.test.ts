@@ -1,9 +1,9 @@
-import * as tap from 'tap';
-import { validateTestScript } from './helpers';
+import * as tap from 'node:test';
+import assert from 'node:assert';
+import { validateTestScript } from './helpers.ts';
 
-tap.test('validates expect plugin configuration options', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('validates expect plugin configuration options', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 config:
   target: http://127.0.0.1/api
   plugins:
@@ -11,16 +11,13 @@ config:
       outputFormat: json
       reportFailuresAsErrors: true
       expectDefault200: true
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('validates expect plugin expectations on HTTP flow', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('validates expect plugin expectations on HTTP flow', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 scenarios:
   - flow:
       - get:
@@ -35,16 +32,13 @@ scenarios:
             hasProperty: foo
             notHasProperty: bar
             cdnHit: true
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('supports array of expectations', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('supports array of expectations', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 scenarios:
   - flow:
       - post:
@@ -56,9 +50,7 @@ scenarios:
             - equals:
                 - "From Dusk Till Dawn"
                 - "{{ title }}"
-  `),
-    []
-  );
+  `), []);
 
-  tap.end();
+  done();
 });

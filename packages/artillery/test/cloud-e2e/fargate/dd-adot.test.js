@@ -1,6 +1,7 @@
 
 
-const { test, afterEach, beforeEach, before } = require('tap');
+const { test, afterEach, beforeEach, before } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const fs = require('node:fs');
 const {
@@ -68,7 +69,7 @@ test('traces succesfully arrive to datadog', async (t) => {
       expectedTotalSpans
     );
   } catch (err) {
-    t.fail(`Error getting spans from Datadog: ${err}`);
+    assert.fail(`Error getting spans from Datadog: ${err}`);
   }
 
   const vuSpans = spanList.filter((span) => span.attributes.parent_id === '0');
@@ -77,57 +78,17 @@ test('traces succesfully arrive to datadog', async (t) => {
   );
 
   // Assert
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.equal(
-    spanList.length,
-    expectedTotalSpans,
-    `${expectedTotalSpans} spans in total should have arrived to Datadog`
-  );
-  t.equal(
-    report.aggregate.counters['vusers.created'],
-    expectedVus,
-    `${expectedVus} VUs should have been created`
-  );
-  t.equal(
-    vuSpans.length,
-    report.aggregate.counters['vusers.created'],
-    'Num of traces (root spans) in Datadog should match num of vusers created in report'
-  );
-  t.equal(
-    requestSpans.length,
-    expectedRequests,
-    `${expectedRequests} request spans should have arrived to Datadog`
-  );
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    expectedStatusCode200,
-    `Should have ${expectedStatusCode200} "200 OK" responses`
-  );
-  t.equal(
-    requestSpans.filter(
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.strictEqual(spanList.length, expectedTotalSpans, `${expectedTotalSpans} spans in total should have arrived to Datadog`);
+  assert.strictEqual(report.aggregate.counters['vusers.created'], expectedVus, `${expectedVus} VUs should have been created`);
+  assert.strictEqual(vuSpans.length, report.aggregate.counters['vusers.created'], 'Num of traces (root spans) in Datadog should match num of vusers created in report');
+  assert.strictEqual(requestSpans.length, expectedRequests, `${expectedRequests} request spans should have arrived to Datadog`);
+  assert.strictEqual(report.aggregate.counters['http.codes.200'], expectedStatusCode200, `Should have ${expectedStatusCode200} "200 OK" responses`);
+  assert.strictEqual(requestSpans.filter(
       (span) => span?.attributes?.custom?.http?.status_code === '200'
-    ).length,
-    report.aggregate.counters['http.codes.200'],
-    'Num of request spans with status_code 200 in Datadog should match num of 200 OK responses in report'
-  );
-  t.equal(
-    report.aggregate.counters['vusers.failed'],
-    expectedVusFailed,
-    `Should have ${expectedVusFailed} failed VUs`
-  );
-  t.equal(
-    vuSpans.filter((span) => span.attributes.custom.error).length,
-    expectedVusFailed,
-    'Num of traces with error should match failed VUs in report'
-  );
-  t.hasProp(
-    requestSpans[0]?.attributes?.custom,
-    tag.key,
-    'Request span should have the correct tag set from reporters config'
-  );
-  t.equal(
-    requestSpans[0]?.attributes?.custom[tag.key],
-    tag.value,
-    'Request span should have the correct tag value set from reporters config'
-  );
+    ).length, report.aggregate.counters['http.codes.200'], 'Num of request spans with status_code 200 in Datadog should match num of 200 OK responses in report');
+  assert.strictEqual(report.aggregate.counters['vusers.failed'], expectedVusFailed, `Should have ${expectedVusFailed} failed VUs`);
+  assert.strictEqual(vuSpans.filter((span) => span.attributes.custom.error).length, expectedVusFailed, 'Num of traces with error should match failed VUs in report');
+  assert.ok(tag.key in requestSpans[0]?.attributes?.custom, 'Request span should have the correct tag set from reporters config');
+  assert.strictEqual(requestSpans[0]?.attributes?.custom[tag.key], tag.value, 'Request span should have the correct tag value set from reporters config');
 });

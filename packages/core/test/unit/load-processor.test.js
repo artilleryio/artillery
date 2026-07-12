@@ -4,13 +4,14 @@
 
 
 
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const path = require('node:path');
 let loadProcessor;
 
 const scriptPath = path.join(__dirname, 'dummy-script.yml');
 
-const __tap = require('tap');
+const __tap = require('node:test');
 // Modules under test are ES modules - load before tests run
 __tap.before(async () => {
   ({ loadProcessor } = (await import('../../lib/runner.ts')).runnerFuncs);
@@ -44,13 +45,13 @@ for (const { name, file } of FORMATS) {
     const script = await loadProcessor(makeScript(file), { scriptPath });
     const processor = script.config.processor;
 
-    t.type(processor.greet, 'function', 'exported function is available');
-    t.type(processor.formatName, 'string', 'exported value is available');
+    assert.strictEqual(typeof processor.greet, 'function', 'exported function is available');
+    assert.strictEqual(typeof processor.formatName, 'string', 'exported value is available');
 
     await new Promise((resolve) => {
       const context = { vars: {} };
       processor.greet(context, null, () => {
-        t.match(context.vars.greeting, /^hello from /, 'function is callable');
+        assert.match(context.vars.greeting, /^hello from /, 'function is callable');
         resolve();
       });
     });
@@ -64,16 +65,8 @@ test('loadProcessor - ESM default export is unwrapped', async (t) => {
   );
   const processor = script.config.processor;
 
-  t.type(
-    processor.greet,
-    'function',
-    'function from default export is available'
-  );
-  t.type(
-    processor.namedAlongsideDefault,
-    'function',
-    'named export alongside default is available'
-  );
+  assert.strictEqual(typeof processor.greet, 'function', 'function from default export is available');
+  assert.strictEqual(typeof processor.namedAlongsideDefault, 'function', 'named export alongside default is available');
 });
 
 test('loadProcessor - result is a plain mutable object', async (t) => {
@@ -87,17 +80,13 @@ test('loadProcessor - result is a plain mutable object', async (t) => {
 
     const marker = () => 'attached';
     processor.$rewriteMetricName = marker;
-    t.equal(
-      processor.$rewriteMetricName,
-      marker,
-      `property assignment sticks (${name})`
-    );
+    assert.strictEqual(processor.$rewriteMetricName, marker, `property assignment sticks (${name})`);
   }
 });
 
 test('loadProcessor - no processor configured is a no-op', async (t) => {
   const script = { config: {}, scenarios: [] };
   const result = await loadProcessor(script, { scriptPath });
-  t.equal(result, script, 'script returned unchanged');
-  t.equal(result.config.processor, undefined, 'no processor added');
+  assert.strictEqual(result, script, 'script returned unchanged');
+  assert.strictEqual(result.config.processor, undefined, 'no processor added');
 });

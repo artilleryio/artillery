@@ -1,8 +1,9 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const sleep = require('../helpers/sleep');
 
-tap.test('Basic metric collection', async (t) => {
+tap.test('Basic metric collection', async (_t) => {
   const mdb = new SSMS({ pullOnly: true });
 
   // Write a fixed number of metrics over a fixed small period.
@@ -24,22 +25,12 @@ tap.test('Basic metric collection', async (t) => {
   mdb.stop();
 
   const buckets = mdb.getBucketIds();
-  t.ok(
-    buckets.length > 0 && buckets.length <= 2,
-    'Should have no more than two buckets of metric data'
-  );
+  assert.ok(buckets.length > 0 && buckets.length <= 2, 'Should have no more than two buckets of metric data');
 
   const metrics = mdb.getMetrics(buckets[0]);
 
-  t.type(
-    metrics.histograms.sprint_duration.max,
-    'number',
-    'Histograms should be objects with readable fields'
-  );
-  t.ok(
-    metrics.histograms.sprint_duration,
-    'Should have a summary for sprint_duration histogram'
-  );
-  t.ok(metrics.counters.num_sprints, 'Should have num_sprints counter');
-  t.ok(metrics.rates.sprints, 'Should have sprints rate measurement');
+  assert.strictEqual(typeof metrics.histograms.sprint_duration.max, 'number', 'Histograms should be objects with readable fields');
+  assert.ok(metrics.histograms.sprint_duration, 'Should have a summary for sprint_duration histogram');
+  assert.ok(metrics.counters.num_sprints, 'Should have num_sprints counter');
+  assert.ok(metrics.rates.sprints, 'Should have sprints rate measurement');
 });

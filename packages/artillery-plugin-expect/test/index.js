@@ -1,4 +1,5 @@
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const createDebug = require('debug');
 const EventEmitter = require('node:events');
 
@@ -30,8 +31,8 @@ test('Basic interface checks', async (t) => {
   const events = new EventEmitter();
   const plugin = new ExpectationsPlugin.Plugin(script, events);
 
-  t.type(ExpectationsPlugin.Plugin, 'function');
-  t.type(plugin, 'object');
+  assert.strictEqual(typeof ExpectationsPlugin.Plugin, 'function');
+  assert.strictEqual(typeof plugin, 'object');
 });
 
 test('Expectation: statusCode', async (t) => {
@@ -59,7 +60,7 @@ test('Expectation: statusCode', async (t) => {
       e[2] // userContext
     );
 
-    t.equal(result.ok, e[3]);
+    assert.strictEqual(result.ok, e[3]);
   });
 });
 
@@ -109,7 +110,7 @@ test('Expectation: notStatusCode', async (t) => {
       e[2] // userContext
     );
 
-    t.equal(result.ok, e[3]);
+    assert.strictEqual(result.ok, e[3]);
   }
 });
 
@@ -127,7 +128,7 @@ test('Expectation: validRegex', async (t) => {
     '' // userContext
   );
 
-  t.equal(result.ok, true);
+  assert.strictEqual(result.ok, true);
 });
 
 test('Expectation: hasProperty', async (t) => {
@@ -167,7 +168,7 @@ test('Expectation: hasProperty', async (t) => {
       e[2]
     ); // userContext
 
-    t.equal(result.ok, e[3]);
+    assert.strictEqual(result.ok, e[3]);
   });
 });
 
@@ -208,7 +209,7 @@ test('Expectation: notHasProperty', async (t) => {
       e[2]
     ); // userContext
 
-    t.equal(result.ok, e[3]);
+    assert.strictEqual(result.ok, e[3]);
   });
 });
 
@@ -248,7 +249,7 @@ test('Expectation: contentType', async (t) => {
       { vars: e[3] } // userContext
     );
 
-    t.equal(result.ok, e[4]);
+    assert.strictEqual(result.ok, e[4]);
   });
 });
 
@@ -317,7 +318,7 @@ test('Expectation: headerEquals', async (t) => {
       e[1], // res
       e[2]
     ); // userContext
-    t.equal(result.ok, e[3]);
+    assert.strictEqual(result.ok, e[3]);
   });
 });
 
@@ -345,24 +346,12 @@ test('Integration with Artillery', async (t) => {
     console.log('Artillery output:');
     console.log(output);
   }
-  t.equal(
-    actualCount,
-    EXPECTED_EXPECTATION_COUNT,
-    'Expectation count should match'
-  );
+  assert.strictEqual(actualCount, EXPECTED_EXPECTATION_COUNT, 'Expectation count should match');
 
-  t.equal(
-    output.indexOf(`${chalk.green('ok')} contentType json`) > -1,
-    true,
-    'Should print ok contentType expectation'
-  );
-  t.equal(
-    output.indexOf(`${chalk.green('ok')} statusCode 404`) > -1,
-    true,
-    'Should print ok statusCode expectation'
-  );
-  t.equal(output.indexOf('Errors:') === -1, true, 'Should not print errors');
-  t.equal(result.code, 0, 'Should exit with code 0');
+  assert.strictEqual(output.indexOf(`${chalk.green('ok')} contentType json`) > -1, true, 'Should print ok contentType expectation');
+  assert.strictEqual(output.indexOf(`${chalk.green('ok')} statusCode 404`) > -1, true, 'Should print ok statusCode expectation');
+  assert.strictEqual(output.indexOf('Errors:') === -1, true, 'Should not print errors');
+  assert.strictEqual(result.code, 0, 'Should exit with code 0');
 });
 
 test('Produce metrics', async (t) => {
@@ -377,12 +366,8 @@ test('Produce metrics', async (t) => {
 
   const output = result.stdout;
 
-  t.equal(
-    output.indexOf('expect.ok') > -1,
-    true,
-    'Should print expect.ok metrics'
-  );
-  t.equal(result.code, 0, 'Should exit with code 0');
+  assert.strictEqual(output.indexOf('expect.ok') > -1, true, 'Should print expect.ok metrics');
+  assert.strictEqual(result.code, 0, 'Should exit with code 0');
 });
 
 test('Report failures as errors by request name', async (t) => {
@@ -397,11 +382,8 @@ test('Report failures as errors by request name', async (t) => {
 
   const output = result.stdout;
 
-  t.ok(
-    output.indexOf('errors.Failed expectations for request unicorns') > -1,
-    'Should print errors for request unicorns'
-  );
-  t.not(result.code, 0, 'Should exit with non-zero code');
+  assert.ok(output.indexOf('errors.Failed expectations for request unicorns') > -1, 'Should print errors for request unicorns');
+  assert.notStrictEqual(result.code, 0, 'Should exit with non-zero code');
 });
 
 test("Works as expected with 'parallel'", async (t) => {
@@ -426,30 +408,10 @@ test("Works as expected with 'parallel'", async (t) => {
   const report = require(reportPath);
   console.log(report.aggregate.counters);
 
-  t.equal(
-    output.indexOf('expect.ok') > -1,
-    true,
-    'Should print expect.ok metrics'
-  );
-  t.ok(result.code !== 0, 'Should exit with non zero code');
-  t.equal(
-    report.aggregate.counters['vusers.created'],
-    expectedVus,
-    `${expectedVus} VUs should have been created`
-  );
-  t.equal(
-    report.aggregate.counters['vusers.failed'],
-    expectedVusFailed,
-    `${expectedVusFailed} VUs should have failed`
-  );
-  t.equal(
-    report.aggregate.counters['plugins.expect.ok'],
-    shouldPass,
-    `${shouldPass} expectations should have passed`
-  );
-  t.equal(
-    report.aggregate.counters['plugins.expect.failed'],
-    shouldFail,
-    `${shouldFail} expectations should have failed`
-  );
+  assert.strictEqual(output.indexOf('expect.ok') > -1, true, 'Should print expect.ok metrics');
+  assert.ok(result.code !== 0, 'Should exit with non zero code');
+  assert.strictEqual(report.aggregate.counters['vusers.created'], expectedVus, `${expectedVus} VUs should have been created`);
+  assert.strictEqual(report.aggregate.counters['vusers.failed'], expectedVusFailed, `${expectedVusFailed} VUs should have failed`);
+  assert.strictEqual(report.aggregate.counters['plugins.expect.ok'], shouldPass, `${shouldPass} expectations should have passed`);
+  assert.strictEqual(report.aggregate.counters['plugins.expect.failed'], shouldFail, `${shouldFail} expectations should have failed`);
 });

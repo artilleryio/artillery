@@ -39,19 +39,8 @@
     "lint": "npx @biomejs/biome check .",
     "lint-fix": "npx @biomejs/biome check --write .",
     "test": "npm run test:unit && npm run test:acceptance",
-    "test:unit": "tap --timeout=300 test/unit/*.test.js",
-    "test:acceptance": "tap --timeout 300 test/acceptance/*.test.js && tap --timeout=300 test/acceptance/**/*.test.js"
-  },
-  "tap": {
-    "disable-coverage": true,
-    "allow-empty-coverage": true,
-    "color": true,
-    "test-env": [
-      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
-    ],
-    "plugin": [
-      "!@tapjs/typescript"
-    ]
+    "test:unit": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/unit/*.test.js\"",
+    "test:acceptance": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/acceptance/*.test.js\" \"test/acceptance/**/*.test.js\""
   },
   "devDependencies": {
     "@hapi/basic": "^6.0.0",
@@ -60,8 +49,7 @@
     "nock": "^11.8.2",
     "proxy": "^2.1.1",
     "sinon": "^4.5.0",
-    "socket.io": "^4.8.0",
-    "tap": "^19.0.2"
+    "socket.io": "^4.8.0"
   },
   "types": "./types.d.ts"
 }

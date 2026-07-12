@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext"
   },
-  "include": ["**/*.test.ts"]
+  "include": ["**/*.test.ts", "helpers.ts"]
 }

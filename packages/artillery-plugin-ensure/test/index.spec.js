@@ -1,4 +1,5 @@
-const { test, afterEach } = require('tap');
+const { test, afterEach } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const chalk = require('chalk');
 
@@ -25,17 +26,11 @@ test('works with multiple thresholds set', async (t) => {
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
 
   // Assert
-  t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
-  t.ok(
-    output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
-    'Console did not include vusers.created check'
-  );
-  t.ok(
-    output.stdout.includes(
+  assert.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
+  assert.ok(output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`), 'Console did not include vusers.created check');
+  assert.ok(output.stdout.includes(
       `${chalk.green('ok')}: http.response_time.p99 < 10000`
-    ),
-    'Console did not include http.response_time.p99 check'
-  );
+    ), 'Console did not include http.response_time.p99 check');
 });
 
 test('works with config under config.plugins.ensure instead', async (t) => {
@@ -58,17 +53,11 @@ test('works with config under config.plugins.ensure instead', async (t) => {
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
 
   // Assert
-  t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
-  t.ok(
-    output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
-    'Console did not include vusers.created check'
-  );
-  t.ok(
-    output.stdout.includes(
+  assert.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
+  assert.ok(output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`), 'Console did not include vusers.created check');
+  assert.ok(output.stdout.includes(
       `${chalk.green('ok')}: http.response_time.p99 < 10000`
-    ),
-    'Console did not include http.response_time.p99 check'
-  );
+    ), 'Console did not include http.response_time.p99 check');
 });
 
 test('fails thresholds correctly', async (t) => {
@@ -85,21 +74,15 @@ test('fails thresholds correctly', async (t) => {
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     //Assert
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
-    t.ok(
-      output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
-      'Console did not include vusers.created check'
-    );
-    t.ok(
-      output.stdout.includes(
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
+    assert.ok(output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`), 'Console did not include vusers.created check');
+    assert.ok(output.stdout.includes(
         `${chalk.red('fail')}: http.response_time.p99 < 1`
-      ),
-      'Console did not include http.response_time.p99 failed check'
-    );
+      ), 'Console did not include http.response_time.p99 failed check');
   }
 });
 
@@ -120,16 +103,10 @@ test('disables plugin correctly when process.env.ARTILLERY_DISABLE_ENSURE is set
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
 
   //Assert
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.ok(!output.stdout.includes('Checks:'), 'Console did not include Checks');
-  t.ok(
-    !output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`),
-    'Console did not include vusers.created check'
-  );
-  t.ok(
-    !output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`),
-    'Console did not include http.response_time.p99 failed check'
-  );
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.ok(!output.stdout.includes('Checks:'), 'Console did not include Checks');
+  assert.ok(!output.stdout.includes(`${chalk.green('ok')}: vusers.created < 3`), 'Console did not include vusers.created check');
+  assert.ok(!output.stdout.includes(`${chalk.red('fail')}: http.response_time.p99 < 1`), 'Console did not include http.response_time.p99 failed check');
 });
 
 test('passes and fails correctly multiple conditions and thresholds', async (t) => {
@@ -153,25 +130,16 @@ test('passes and fails correctly multiple conditions and thresholds', async (t) 
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     //Assert
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
-    t.ok(
-      output.stdout.includes(
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
+    assert.ok(output.stdout.includes(
         `${chalk.red('fail')}: http.response_time.p99 < 1`
-      ),
-      'Console did not include http.response_time.p99 threshold check'
-    );
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: ${failingExpression}`),
-      'Console did not include failing expression check'
-    );
-    t.ok(
-      output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`),
-      'Console did not include passing expression check'
-    );
+      ), 'Console did not include http.response_time.p99 threshold check');
+    assert.ok(output.stdout.includes(`${chalk.red('fail')}: ${failingExpression}`), 'Console did not include failing expression check');
+    assert.ok(output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`), 'Console did not include passing expression check');
   }
 });
 
@@ -196,19 +164,13 @@ test('strict set to false correctly does not fail conditions', async (t) => {
   const output =
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
 
-  t.ok(
-    output.stdout.includes(
+  assert.ok(output.stdout.includes(
       `${chalk.red('fail')}: ${failingExpression} (optional)`
-    ),
-    'Console did not include failing expression check with optional from strict'
-  );
-  t.ok(
-    output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`),
-    'Console did not include passing expression check'
-  );
+    ), 'Console did not include failing expression check with optional from strict');
+  assert.ok(output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`), 'Console did not include passing expression check');
 });
 
 test('works with legacy thresholds (passing and failing) together with new thresholds', async (t) => {
@@ -227,25 +189,16 @@ test('works with legacy thresholds (passing and failing) together with new thres
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     // Assert
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
-    t.ok(
-      output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`),
-      'Console did not p99 check'
-    );
-    t.ok(
-      output.stdout.includes(
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
+    assert.ok(output.stdout.includes(`${chalk.green('ok')}: p99 < 10000`), 'Console did not p99 check');
+    assert.ok(output.stdout.includes(
         `${chalk.red('fail')}: http.response_time.p95 < 1`
-      ),
-      'Console did not include p95 check'
-    );
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: max < 1`),
-      'Console did not include max check'
-    );
+      ), 'Console did not include p95 check');
+    assert.ok(output.stdout.includes(`${chalk.red('fail')}: max < 1`), 'Console did not include max check');
   }
 });
 
@@ -264,15 +217,12 @@ test('works with legacy maxErrorRate', async (t) => {
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     // Assert
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: maxErrorRate < 0`),
-      'Console did not include maxErrorRate check'
-    );
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
+    assert.ok(output.stdout.includes(`${chalk.red('fail')}: maxErrorRate < 0`), 'Console did not include maxErrorRate check');
   }
 });
 
@@ -293,7 +243,7 @@ test('checks are grouped in the correct order (ok first, fail after)', async (t)
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario.yml --overrides ${override}`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     const startIndex = output.stdout.indexOf('Checks:');
     // Get the relevant logs (the first 4 lines after the Checks: line)
@@ -303,28 +253,16 @@ test('checks are grouped in the correct order (ok first, fail after)', async (t)
       .slice(1, 5);
 
     // Assert
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
-    t.ok(
-      relevantLogs[0] === `${chalk.green('ok')}: maxErrorRate < 0` ||
-        relevantLogs[0] === `${chalk.green('ok')}: p99 < 10000`,
-      'First check should be a passed expectation'
-    );
-    t.ok(
-      relevantLogs[1] === `${chalk.green('ok')}: maxErrorRate < 0` ||
-        relevantLogs[1] === `${chalk.green('ok')}: p99 < 10000`,
-      'Second check should be a passed expectation'
-    );
-    t.ok(
-      relevantLogs[2] === `${chalk.red('fail')}: max < 1` ||
-        relevantLogs[2] === `${chalk.red('fail')}: http.response_time.p95 < 1`,
-      'Third check should be a failed expectation'
-    );
-    t.ok(
-      relevantLogs[3] === `${chalk.red('fail')}: max < 1` ||
-        relevantLogs[3] === `${chalk.red('fail')}: http.response_time.p95 < 1`,
-      'Fourth check should be a failed expectation'
-    );
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes('Checks:', 'Console did not include Checks'));
+    assert.ok(relevantLogs[0] === `${chalk.green('ok')}: maxErrorRate < 0` ||
+        relevantLogs[0] === `${chalk.green('ok')}: p99 < 10000`, 'First check should be a passed expectation');
+    assert.ok(relevantLogs[1] === `${chalk.green('ok')}: maxErrorRate < 0` ||
+        relevantLogs[1] === `${chalk.green('ok')}: p99 < 10000`, 'Second check should be a passed expectation');
+    assert.ok(relevantLogs[2] === `${chalk.red('fail')}: max < 1` ||
+        relevantLogs[2] === `${chalk.red('fail')}: http.response_time.p95 < 1`, 'Third check should be a failed expectation');
+    assert.ok(relevantLogs[3] === `${chalk.red('fail')}: max < 1` ||
+        relevantLogs[3] === `${chalk.red('fail')}: http.response_time.p95 < 1`, 'Fourth check should be a failed expectation');
   }
 });
 
@@ -354,27 +292,18 @@ test('works with custom metrics including weird characters like urls', async (t)
   try {
     //Act: run the test
     await $`../artillery/bin/run run ./test/fixtures/scenario-custom-metrics.yml --overrides ${override}`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
     //Assert
-    t.equal(output.exitCode, 1, 'CLI Exit Code should be 1');
-    t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
-    t.ok(
-      output.stdout.includes(
+    assert.strictEqual(output.exitCode, 1, 'CLI Exit Code should be 1');
+    assert.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
+    assert.ok(output.stdout.includes(
         `${chalk.green(
           'ok'
         )}: browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median < 1000`
-      ),
-      'Console did not include browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check'
-    );
-    t.ok(
-      output.stdout.includes(`${chalk.red('fail')}: ${failingExpression}`),
-      'Console did not include failing expression check'
-    );
-    t.ok(
-      output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`),
-      'Console did not include passing expression check'
-    );
+      ), 'Console did not include browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check');
+    assert.ok(output.stdout.includes(`${chalk.red('fail')}: ${failingExpression}`), 'Console did not include failing expression check');
+    assert.ok(output.stdout.includes(`${chalk.green('ok')}: ${passingExpression}`), 'Console did not include passing expression check');
   }
 });
 
@@ -405,24 +334,18 @@ test('works with templated values used in metrics', async (t) => {
   //Act: run the test
   const output =
     await $`../artillery/bin/run run ./test/fixtures/scenario-custom-metrics.yml --overrides ${override} --variables ${variables}`;
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.ok(output.stdout.includes('Checks:'), 'Console did not include Checks');
 
-  t.ok(
-    output.stdout.includes(
+  assert.ok(output.stdout.includes(
       `${chalk.green(
         'ok'
       )}: browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median < 1000`
-    ),
-    'Console did not include browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check'
-  );
+    ), 'Console did not include browser.page.FCP.https://www.artillery.io/13eba89r?a>;02-.median threshold check');
 
-  t.ok(
-    output.stdout.includes(
+  assert.ok(output.stdout.includes(
       `${chalk.green(
         'ok'
       )}: http.downloaded_bytes >= 0 or http.response_time.min >= 0`
-    ),
-    'Console did not include passing expression check'
-  );
+    ), 'Console did not include passing expression check');
 });
