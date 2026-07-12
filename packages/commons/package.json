@@ -18,5 +18,6 @@
     "lint": "npx @biomejs/biome check .",
     "lint-fix": "npx @biomejs/biome check --write .",
     "test": "echo \"No test specified\" && exit 0"
-  }
+  },
+  "types": "./types.d.ts"
 }

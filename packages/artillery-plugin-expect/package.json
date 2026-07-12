@@ -29,5 +29,6 @@
     "shelljs": "^0.8.4",
     "tap": "^19.0.2"
   },
-  "type": "module"
+  "type": "module",
+  "types": "./types.d.ts"
 }
