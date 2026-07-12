@@ -5,14 +5,13 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build",
+    "build": "turbo run build && node scripts/build-tap-runner.mjs",
     "test": "turbo run test",
     "lint": "turbo run lint  --continue",
     "lint-fix": "turbo run lint-fix  --continue",
     "format": "npx prettier -w ./packages/**/*.{js,ts,json}",
     "prepare": "npx simple-git-hooks",
-    "typecheck": "tsc -p tsconfig.json",
-    "postinstall": "node scripts/build-tap-runner.mjs"
+    "typecheck": "tsc -p tsconfig.json"
   },
   "overrides": {
     "engine.io-client": {
