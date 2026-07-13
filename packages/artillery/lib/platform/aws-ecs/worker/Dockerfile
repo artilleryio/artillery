@@ -64,6 +64,20 @@ COPY packages/artillery/lib/platform/aws-lambda/lambda-handler/ .
 # It gets deleted after install — only the lambda handler files remain.
 COPY package.json package.json
 
+# Build configs for TypeScript workspace packages (their
+# tsconfig.build.json extends the shared base at the repo root)
+COPY tsconfig.build-base.json tsconfig.build-base.json
+COPY globals.d.ts globals.d.ts
+
+# TypeScript workspace packages resolve their entry point from dist/,
+# which has to be compiled from source. Transpile only (--noCheck):
+# type checking runs in CI and would need every runtime dependency
+# installed here. The temporary compiler install is removed again so
+# nothing leaks into the runtime node_modules.
+RUN npm install --no-save --workspaces=false --ignore-scripts typescript@5.9.3 \
+    && for t in packages/*/tsconfig.build.json; do npx tsc -p "$t" --noCheck || exit 1; done \
+    && rm -rf node_modules
+
 # Install workspace deps. --ignore-scripts skips postinstall hooks
 # (faster, avoids side effects). --omit=dev drops test/build-only deps.
 RUN npm install -w artillery --ignore-scripts --omit=dev
