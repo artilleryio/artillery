@@ -1,6 +1,8 @@
 
 
 const { getTestId } = require('../fixtures/helpers.js');
+const assert = require('node:assert');
+const { hasProps } = require('../../helpers/expectations');
 
 const requestPhasesAttrs = [
   'dns_lookup.duration',
@@ -23,8 +25,8 @@ const httpResponseAttrs = [
   'http.user_agent'
 ];
 
-/**  Runs assertions for OTel Playwright tracing tests using 'tap' library. It checks that the trace data is correctly recorded, formatted and exported by the OTel plugin.
- * @param {Object} t - the tap library test object
+/**  Runs assertions for OTel Playwright tracing tests using node:assert. It checks that the trace data is correctly recorded, formatted and exported by the OTel plugin.
+ * @param {Object} _t - node:test context (unused; assertions throw via node:assert)
  * @param {Object} testRunData - an object containing the console output of the test run, the report summary and the exported spans - `{ output, reportSummary, spans }`
  * @namespace expectedOutcome
  * @param {Object} expectedOutcome - an object containing the expected outcome values for the test run.
@@ -74,29 +76,29 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
   const scenarioSpans = spans.filter((span) => !span.parentId);
 
   // Created VUs/traces
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['vusers.created'],
     expectedOutcome.vus,
     `${expectedOutcome.vus} VUs should have been created`
   );
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['vusers.created'],
     scenarioSpans.length,
     'The number of scenario spans should match the number of VUs created'
   );
-  t.equal(
+  assert.strictEqual(
     spans.length,
     expectedOutcome.totalSpans,
     `There should be ${expectedOutcome.totalSpans} spans created in total`
   );
 
   // Errors and failed VUs
-  t.equal(
+  assert.strictEqual(
     output.exitCode,
     expectedOutcome.exitCode,
     `CLI Exit Code should be ${expectedOutcome.exitCode}`
   );
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['vusers.failed'],
     expectedOutcome.vusFailed || 0,
     `${expectedOutcome.vusFailed} VUs should have failed`
@@ -109,19 +111,19 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
     (acc, metricName) => acc + reportSummary.counters[metricName],
     0
   );
-  t.equal(
+  assert.strictEqual(
     numErrorsReported,
     expectedOutcome.errors || 0,
     `There should be ${expectedOutcome.errors} errors reported`
   );
-  t.equal(
+  assert.strictEqual(
     spans.filter((span) => span.events[0]?.name === 'exception').length,
     expectedOutcome.errors || 0,
     'Num of errors in report should match the num of spans with error exception'
   ); // In http engine the only event we record is the error exception event so we can just check that event is present
 
   // We check the error span status separately from errors as it can be set to error even when no error is recorded, e.g. when http status code is 404 or over
-  t.equal(
+  assert.strictEqual(
     spans.filter((span) => span.status.code === 2).length,
     expectedOutcome.spansWithErrorStatus,
     `${expectedOutcome.spansWithErrorStatus} spans should have the 'error' status`
@@ -129,14 +131,14 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
 
   if (expectedOutcome.errors || numErrorsReported) {
     const errorNum = expectedOutcome.errors || numErrorsReported;
-    t.equal(
+    assert.strictEqual(
       spans.filter(
         (span) => span.events[0]?.name === 'exception' && span.status.code === 2
       ).length,
       errorNum,
       'Errors should be recorded on spans as an event and status code'
     );
-    t.equal(
+    assert.strictEqual(
       requestSpans.filter((span) => span.events[0]?.name === 'exception')
         .length,
       errorNum,
@@ -145,7 +147,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
     spans
       .filter((span) => span.events[0]?.name === 'exception')
       .forEach((span) => {
-        t.hasProps(
+        hasProps(
           span.events[0].attributes,
           ['exception.type', 'exception.message', 'exception.stacktrace'],
           'Every error event recorded should have the error type, message and stacktrace recorded'
@@ -154,13 +156,13 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
   }
 
   // Request level spans
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['http.requests'],
     expectedOutcome.req,
     `${expectedOutcome.req} requests should have been made`
   );
 
-  t.equal(
+  assert.strictEqual(
     requestSpans.length,
     expectedOutcome.reqSpans,
     `There should be ${expectedOutcome.reqSpans} request spans created in total.`
@@ -169,7 +171,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
   // If an error happens when trying to make a request (after before request hook) resulting in request not being made, we will still have the request span for it with the error recorded on the span
   // So the number of request spans will not be equal to the number of requests made
   if (!expectedOutcome.errors) {
-    t.equal(
+    assert.strictEqual(
       requestSpans.length,
       reportSummary.counters['http.requests'],
       'The number of request spans should match the number of requests made'
@@ -182,7 +184,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
     })
     .forEach((metric) => {
       const statusCode = metric.split('.')[2];
-      t.equal(
+      assert.strictEqual(
         requestSpans.filter(
           (span) =>
             span.attributes['http.status_code'] &&
@@ -194,7 +196,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
     });
 
   // Span names
-  t.equal(
+  assert.strictEqual(
     scenarioSpans[0].name,
     expectedOutcome.scenarioName,
     'The scenario span should have the name of the scenario when set'
@@ -204,7 +206,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
   expectedOutcome.spanNamesByReqName
     .filter((span) => !expectedOutcome.spanNamesReplaced.includes(span.name))
     .forEach((name) => {
-      t.equal(
+      assert.strictEqual(
         requestSpans.filter((span) => span.name === name).length,
         requestSpans.length / expectedOutcome.reqSpansPerVu,
         'When useRequestNames is set to true, the request span should have the name of the request if the name is set'
@@ -212,7 +214,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
     });
 
   expectedOutcome.spanNamesByMethod.forEach((name) => {
-    t.equal(
+    assert.strictEqual(
       requestSpans.filter((span) => span.name === name).length,
       requestSpans.length / expectedOutcome.reqSpansPerVu,
       'If useRequestNames is not set, or if no request name is provided,the request span will be named by the request method'
@@ -221,7 +223,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
 
   // `replaceSpanNameRegex` check
   expectedOutcome.spanNamesReplaced.forEach((name) => {
-    t.equal(
+    assert.strictEqual(
       spans.filter((span) => span.name === name).length,
       spans.length / expectedOutcome.spansPerVu,
       'replaceSpanNameRegex appropriately replaces the pattern in span name'
@@ -238,13 +240,13 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
       const siblingRequestSpans = requestSpans.filter(
         (requestSpan) => requestSpan.parentId === id
       );
-      t.equal(
+      assert.strictEqual(
         siblingRequestSpans.length,
         expectedOutcome.reqSpansPerVu,
         `Each trace should have ${expectedOutcome.reqSpansPerVu} request spans`
       );
       siblingRequestSpans.forEach((span) => {
-        t.ok(
+        assert.ok(
           reqSpanNamesPerVU.includes(span.name),
           `Each trace should have a request span called ${span.name}`
         );
@@ -252,24 +254,24 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
     });
 
   // Attributes
-  t.equal(
+  assert.strictEqual(
     spans.filter((span) => span.attributes.test_id).length,
     spans.length,
     'All spans should have the test_id attribute'
   );
-  t.equal(
+  assert.strictEqual(
     spans.filter((span) => span.attributes.test_id === testId).length,
     spans.length,
     'All spans should have the correct test_id attribute value'
   );
-  t.equal(
+  assert.strictEqual(
     spans.filter((span) => span.attributes['vu.uuid']).length,
     spans.length,
     'All spans should have the vu.uuid attribute'
   );
 
   requestSpans.forEach((span) => {
-    t.hasProps(
+    hasProps(
       span.attributes,
       httpRequestAttrs,
       'All request spans should have the http request specific attributes'
@@ -285,13 +287,13 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
         span.status.code !== 2
     )
     .forEach((span) => {
-      t.hasProps(
+      hasProps(
         span.attributes,
         httpResponseAttrs,
         'All successful request spans should have the http response specific attributes'
       );
 
-      t.hasProps(
+      hasProps(
         span.attributes,
         requestPhasesAttrs,
         'All successful request spans should have all request phases set as attributes'
@@ -299,12 +301,12 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
     });
 
   Object.keys(expectedOutcome.userSetAttributes).forEach((attr) => {
-    t.equal(
+    assert.strictEqual(
       requestSpans.filter((span) => span.attributes[attr]).length,
       requestSpans.length,
       'All request should have the user set attributes'
     );
-    t.equal(
+    assert.strictEqual(
       requestSpans.filter(
         (span) =>
           span.attributes[attr] === expectedOutcome.userSetAttributes[attr]
@@ -315,7 +317,7 @@ async function runHttpTraceAssertions(t, testRunData, expectedOutcome) {
   });
 
   // Counter metric reported
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['plugins.publish-metrics.spans.exported'],
     expectedOutcome.totalSpans,
     'The `plugins.publish-metrics.spans.exported` counter should match the total number of spans exported'

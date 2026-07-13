@@ -1,0 +1,24 @@
+import sleep from './sleep.ts';
+
+async function awaitOnEE(ee, message, pollMs = 1000, maxWaitMs = Infinity) {
+  let messageFired = false;
+  let args = null;
+  let waitedMs = 0;
+
+  ee.once(message, (...eventArgs) => {
+    messageFired = true;
+    args = eventArgs;
+  });
+
+  while (true && waitedMs < maxWaitMs) {
+    if (messageFired) {
+      break;
+    }
+    await sleep(pollMs);
+    waitedMs += pollMs;
+  }
+
+  return args;
+}
+
+export default awaitOnEE;

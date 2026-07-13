@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const validateScript = require('../../lib/util/validate-script');
+const validateScript = require('../../lib/util/validate-script.ts').default;
 const lodash = require('lodash');
 
 const baseScript = {

@@ -7,7 +7,7 @@ const assert = require('node:assert');
 const {
   createBOM,
   applyScriptChanges
-} = require('../../lib/platform/aws-ecs/legacy/bom');
+} = require('../../lib/platform/aws-ecs/legacy/bom.ts');
 
 // TODO: Add tests for other functions in bom.js
 

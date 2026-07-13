@@ -1,0 +1,22 @@
+{
+  "//": "Self-contained (no extends): the standalone CLI Docker image builds with packages/artillery as its context, so the repo-root tsconfig.build-base.json is not available there. Keep compilerOptions in sync with the base.",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2023",
+    "allowJs": false,
+    "noEmit": false,
+    "declaration": false,
+    "strict": false,
+    "skipLibCheck": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "verbatimModuleSyntax": true,
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "./dist"
+  },
+  "include": ["./lib/**/*.ts", "../../globals.d.ts"],
+  "exclude": ["node_modules", "dist", "test", "**/*.d.ts"]
+}

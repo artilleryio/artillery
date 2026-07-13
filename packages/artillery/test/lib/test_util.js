@@ -7,8 +7,8 @@ const sinon = require('sinon');
 const fs = require('node:fs');
 const os = require('node:os');
 
-const util = require('../../lib/util');
-const utilConfig = require('../../lib/utils-config');
+const util = require('../../lib/util.ts');
+const utilConfig = require('../../lib/utils-config.ts');
 
 let sandbox;
 test('util - setup', (_t, done) => {
@@ -60,8 +60,11 @@ test('updateArtilleryConfig', (_t, done) => {
   const addedConf = { newProperty: 'value2' };
   const fsWriteFileSyncStub = sandbox.stub(fs, 'writeFileSync');
 
-  sandbox.stub(utilConfig, 'readArtilleryConfig').returns(existingConf);
-
+  // NOTE: readArtilleryConfig is NOT stubbed here - sinon cannot stub ES
+  // module namespaces, and the old stub never affected the internal call
+  // anyway (it references the local binding). The fs.readFileSync stub
+  // from the previous test (shared sandbox, restored only in teardown)
+  // makes readArtilleryConfig return existingConf.
   utilConfig.updateArtilleryConfig(addedConf);
 
   const newConfiguration = fsWriteFileSyncStub.args[0][1];

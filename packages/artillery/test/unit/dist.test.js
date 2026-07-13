@@ -2,7 +2,7 @@
 
 const tap = require('node:test');
 const assert = require('node:assert');
-const divideWork = require('../../lib/dist');
+const divideWork = require('../../lib/dist.ts').default;
 
 tap.test('divideWork for arrivalCount single phase', (_t, done) => {
   const numWorkers = 5;

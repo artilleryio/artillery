@@ -2,7 +2,7 @@ const tap = require('node:test');
 const assert = require('node:assert');
 const _path = require('node:path');
 
-const { commonPrefix } = require('../../lib/create-bom/create-bom');
+const { commonPrefix } = require('../../lib/create-bom/create-bom.ts');
 
 tap.test('Test commonPrefix', async (_t) => {
   const INPUTS = [

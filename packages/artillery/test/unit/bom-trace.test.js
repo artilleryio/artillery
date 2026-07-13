@@ -5,7 +5,7 @@ const assert = require('node:assert');
 const {
   createBOM,
   enrichPackageJson
-} = require('../../lib/platform/aws-ecs/legacy/bom');
+} = require('../../lib/platform/aws-ecs/legacy/bom.ts');
 
 const FIXTURES = path.join(__dirname, 'fixtures', 'bom-trace');
 const createBOMAsync = promisify(createBOM);
