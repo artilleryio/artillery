@@ -7,7 +7,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
-const { loadPlugin, loadPlugins } = require('../../lib/load-plugins');
+const { loadPlugin, loadPlugins } = require('../../lib/load-plugins.ts');
 
 const fixturesDir = path.join(__dirname, 'fixtures', 'plugins');
 const requirePaths = ['', fixturesDir];

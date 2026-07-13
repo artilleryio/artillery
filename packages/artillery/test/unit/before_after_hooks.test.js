@@ -4,7 +4,7 @@ const { test, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
 const { cloneDeep } = require('lodash');
-const createLauncher = require('../../lib/launch-platform');
+const createLauncher = require('../../lib/launch-platform.ts').default;
 const {
   beforeHookBeforeRequest,
   afterHookBeforeRequest
