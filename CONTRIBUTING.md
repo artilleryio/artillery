@@ -8,6 +8,23 @@ If you are a first-time contributor and want some help getting started, feel fre
 
 * Hassy Veldstra - [h@artillery.io](mailto:h@artillery.io?subject=Artillery Contribution Help)
 
+## Development setup
+
+* Node.js `>= 22.18` is required for development (native TypeScript type-stripping is used by the test suites).
+* After cloning the repo (and after pulling changes), run:
+
+  ```sh
+  npm install
+  npm run build
+  ```
+
+  Packages are written in TypeScript (ESM) and compiled to `dist/` with `tsc`. Package entry points, the `artillery` CLI launcher (`bin/run`) and oclif command paths all point at the built output, so the CLI won't run until `dist/` exists.
+* Tests use `node:test` and load package sources directly (e.g. `require('../../lib/util.ts')`) where possible, so unit tests don't need a rebuild after each source change - but anything going through the CLI binary does.
+* TypeScript conventions:
+  * Only erasable TypeScript syntax is allowed (`erasableSyntaxOnly`) - no enums, namespaces or parameter properties. This keeps sources directly runnable via Node's native type stripping.
+  * Package entry files (`index.ts`, `lib/index.ts`) must stay free of TypeScript-only syntax entirely - see the note at the top of those files.
+* Run `npm run typecheck` at the repo root to type-check all packages.
+
 ## Guide for Contributions
 
 * We use the usual Fork+Pull model (more info here: [https://help.github.com/articles/using-pull-requests/](https://help.github.com/articles/using-pull-requests/)]
