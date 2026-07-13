@@ -1,4 +1,5 @@
-const { test, before } = require('tap');
+const { test, before } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const { getTestTags } = require('../../helpers');
 
@@ -14,29 +15,29 @@ const baseTags = getTestTags(['type:acceptance']);
 test('Fargate should exit with error code when workers run out of memory', async (t) => {
   try {
     await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:true --region us-east-1`;
-    t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+    assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
   } catch (output) {
-    t.equal(output.exitCode, 6, 'CLI Exit Code should be 6');
+    assert.strictEqual(output.exitCode, 6, 'CLI Exit Code should be 6');
 
-    t.match(output, /summary report/i, 'print summary report');
-    t.match(output, /p99/i, 'a p99 value is reported');
+    assert.match(output.stdout, /summary report/i, 'print summary report');
+    assert.match(output.stdout, /p99/i, 'a p99 value is reported');
   }
 });
 
-test('Fargate should not run out of memory when cpu and memory is increased via launch config', async (t) => {
+test('Fargate should not run out of memory when cpu and memory is increased via launch config', async (_t) => {
   const output =
     await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --launch-config '{"cpu":"8192", "memory":"20480"}'`;
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.match(output, /summary report/i, 'print summary report');
-  t.match(output, /p99/i, 'a p99 value is reported');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.match(output.stdout, /summary report/i, 'print summary report');
+  assert.match(output.stdout, /p99/i, 'a p99 value is reported');
 });
 
-test('Fargate should not run out of memory when cpu and memory is increased via flags', async (t) => {
+test('Fargate should not run out of memory when cpu and memory is increased via flags', async (_t) => {
   const output =
     await $`${A9_PATH} run-fargate ${__dirname}/fixtures/memory-hog/memory-hog.yml --record --tags ${baseTags},should_fail:false --region us-east-1 --cpu 8 --memory 20`;
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
-  t.match(output, /summary report/i, 'print summary report');
-  t.match(output, /p99/i, 'a p99 value is reported');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.match(output.stdout, /summary report/i, 'print summary report');
+  assert.match(output.stdout, /p99/i, 'a p99 value is reported');
 });

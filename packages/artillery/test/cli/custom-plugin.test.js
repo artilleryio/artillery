@@ -1,4 +1,5 @@
-const { test, beforeEach, before, afterEach } = require('tap');
+const { test, beforeEach, before, afterEach } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const http = require('node:http');
 const path = require('node:path');
@@ -51,7 +52,7 @@ afterEach(async () => {
   server.close();
 });
 
-test('plugins can attach functions to processor object', async (t) => {
+test('plugins can attach functions to processor object', async (_t) => {
   const pluginPath = toCorrectPath(path.join(__dirname, '../plugins'));
   const scenarioPath = toCorrectPath(
     path.join(
@@ -63,5 +64,5 @@ test('plugins can attach functions to processor object', async (t) => {
   const output =
     await $`ARTILLERY_PLUGIN_PATH=${pluginPath} ${A9} run --quiet --overrides ${overrides} ${scenarioPath}`;
 
-  t.match(output, /afterResponse hook/, 'plugin should have been called');
+  assert.match(output.stdout, /afterResponse hook/, 'plugin should have been called');
 });

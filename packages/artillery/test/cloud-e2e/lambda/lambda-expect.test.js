@@ -1,4 +1,5 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const _chalk = require('chalk');
 const fs = require('node:fs');
@@ -31,32 +32,17 @@ tap.test(
   async (t) => {
     try {
       await $`${A9_PATH} run-lambda ${__dirname}/../fargate/fixtures/cli-exit-conditions/with-expect.yml --architecture ${ARCHITECTURE} --record --tags ${tags} --output ${reportFilePath} --count 2`;
-      t.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
+      assert.fail(`Test "${t.name}" - Should have had non-zero exit code.`);
     } catch (output) {
-      t.equal(output.exitCode, 21, 'CLI Exit Code should be 21');
-      t.ok(
-        !output.stderr.includes('Worker exited with an error'),
-        'Should not have worker exit error message in stdout'
-      );
+      assert.strictEqual(output.exitCode, 21, 'CLI Exit Code should be 21');
+      assert.ok(!output.stderr.includes('Worker exited with an error'), 'Should not have worker exit error message in stdout');
 
       const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-      t.equal(
-        report.aggregate.counters['vusers.completed'],
-        10,
-        'Should have 10 total VUs'
-      );
+      assert.strictEqual(report.aggregate.counters['vusers.completed'], 10, 'Should have 10 total VUs');
 
-      t.equal(
-        report.aggregate.counters['plugins.expect.failed'],
-        10,
-        'Should have 20 failed expectations'
-      );
+      assert.strictEqual(report.aggregate.counters['plugins.expect.failed'], 10, 'Should have 20 failed expectations');
 
-      t.equal(
-        report.aggregate.counters['http.codes.200'],
-        10,
-        'Should have 10 "200 OK" responses'
-      );
+      assert.strictEqual(report.aggregate.counters['http.codes.200'], 10, 'Should have 10 "200 OK" responses');
 
       checkForNegativeValues(t, report);
       checkAggregateCounterSums(t, report);

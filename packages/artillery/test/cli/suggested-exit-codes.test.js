@@ -1,8 +1,9 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const { execute } = require('../helpers');
 const path = require('node:path');
 
-tap.test('Workers should be able to set exit codes', async (t) => {
+tap.test('Workers should be able to set exit codes', async (_t) => {
   const scenarioPath = path.resolve(
     __dirname,
     '..',
@@ -12,5 +13,5 @@ tap.test('Workers should be able to set exit codes', async (t) => {
 
   const [exitCode] = await execute(['run', scenarioPath]);
 
-  t.equal(exitCode, 17, 'CLI exited with error code set in a worker thread');
+  assert.strictEqual(exitCode, 17, 'CLI exited with error code set in a worker thread');
 });

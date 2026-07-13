@@ -53,23 +53,15 @@
     }
   },
   "scripts": {
-    "test:unit": "tap --timeout=420 test/unit/*.test.js",
-    "test:acceptance": "tap --timeout=420 test/cli/*.test.js && bash test/lib/run.sh && tap --timeout=420 test/publish-metrics/**/*.test.js && tap --timeout=420 test/integration/**/*.test.js",
+    "test:unit": "node --test --test-timeout=420000 --require ./test/setup-env.cjs \"test/unit/*.test.js\"",
+    "test:acceptance": "node --test --test-timeout=420000 --require ./test/setup-env.cjs \"test/cli/*.test.js\" && bash test/lib/run.sh && node --test --test-timeout=420000 --require ./test/setup-env.cjs \"test/publish-metrics/**/*.test.js\" && node --test --test-timeout=420000 --require ./test/setup-env.cjs \"test/integration/**/*.test.js\"",
     "test": " npm run test:unit && npm run test:acceptance",
-    "test:windows": "npm run test:unit && tap --timeout=420 test/cli/*.test.js",
-    "test:aws": "tap --timeout=4200 test/cloud-e2e/**/*.test.js",
-    "test:aws:ci": "tap --timeout=4200",
-    "test:aws:windows": "tap --timeout=420 test/cloud-e2e/**/*.test.js --grep \"@windows\"",
+    "test:windows": "npm run test:unit && node --test --test-timeout=420000 --require ./test/setup-env.cjs \"test/cli/*.test.js\"",
+    "test:aws": "node --test --test-timeout=4200000 --require ./test/setup-env.cjs \"test/cloud-e2e/**/*.test.js\"",
+    "test:aws:ci": "node --test --test-timeout=4200000 --require ./test/setup-env.cjs",
+    "test:aws:windows": "node --test --test-timeout=420000 --require ./test/setup-env.cjs --test-name-pattern \"@windows\" \"test/cloud-e2e/**/*.test.js\"",
     "lint": "npx @biomejs/biome check .",
     "lint-fix": "npx @biomejs/biome check --write ."
-  },
-  "tap": {
-    "disable-coverage": true,
-    "allow-empty-coverage": true,
-    "color": true,
-    "test-env": [
-      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
-    ]
   },
   "lint-staged": {
     "**/*.{js,ts,tsx}": "npx @biomejs/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched"
@@ -168,7 +160,6 @@
     "get-bin-path": "^5.1.0",
     "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
-    "tap": "^19.0.2",
     "zx": "^8.6.1"
   }
 }

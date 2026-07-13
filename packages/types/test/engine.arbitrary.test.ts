@@ -1,9 +1,9 @@
-import * as tap from 'tap';
-import { validateTestScript } from './helpers';
+import * as tap from 'node:test';
+import assert from 'node:assert';
+import { validateTestScript } from './helpers.ts';
 
-tap.test('allows arbitrary engines resembling existing one', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('allows arbitrary engines resembling existing one', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
 config:
   target: https://127.0.0.1/api
   engines:
@@ -13,16 +13,13 @@ scenarios:
     flow:
       - get:
           url: /resource
-  `),
-    []
-  );
+  `), []);
 
-  tap.end();
+  done();
 });
 
-tap.test('allows arbitrary engine doing something else', (tap) => {
-  tap.same(
-    validateTestScript(`
+tap.test('allows arbitrary engine doing something else', (tap, done) => {
+  assert.deepEqual(validateTestScript(`
   config:
     target: https://127.0.0.1/api
     engines:
@@ -30,9 +27,7 @@ tap.test('allows arbitrary engine doing something else', (tap) => {
   scenarios:
     - engine: my-custom-engine
       somethingelse: bananas
-    `),
-    []
-  );
+    `), []);
 
-  tap.end();
+  done();
 });

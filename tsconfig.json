@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "es2023",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "verbatimModuleSyntax": true,
+    "types": ["node"]
+  },
+  "exclude": [
+    "node_modules",
+    "**/test/**",
+    "**/*.test.ts",
+    "**/node_modules",
+    "packages/skytrace",
+    "packages/types",
+    "examples",
+    "**/dist"
+  ]
+}

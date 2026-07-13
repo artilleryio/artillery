@@ -1,5 +1,12 @@
-const { test } = require('tap');
-const { replaceMetricsWithHashes, hashString } = require('../utils');
+const { test } = require('node:test');
+const assert = require('node:assert');
+let replaceMetricsWithHashes, hashString;
+
+const __tap = require('node:test');
+// Module under test is an ES module - load before tests run
+__tap.before(async () => {
+  ({ replaceMetricsWithHashes, hashString } = await import('../utils.ts'));
+});
 
 test('works with boolean operators', async (t) => {
   const metricA = 'someMetricA';
@@ -14,7 +21,7 @@ test('works with boolean operators', async (t) => {
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works with built-in functions, even if a metric name includes it', async (t) => {
@@ -30,7 +37,7 @@ test('works with built-in functions, even if a metric name includes it', async (
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works with boolean operators without spaces', async (t) => {
@@ -46,7 +53,7 @@ test('works with boolean operators without spaces', async (t) => {
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works with ternary boolean operator', async (t) => {
@@ -56,7 +63,7 @@ test('works with ternary boolean operator', async (t) => {
 
   const result = replaceMetricsWithHashes([metricA], originalExpression);
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works with explicit operator precedence (parentheses) with spaces', async (t) => {
@@ -77,7 +84,7 @@ test('works with explicit operator precedence (parentheses) with spaces', async 
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works with explicit operator precedence (parentheses) without spaces', async (t) => {
@@ -98,7 +105,7 @@ test('works with explicit operator precedence (parentheses) without spaces', asy
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works with complex url expressions', async (t) => {
@@ -114,7 +121,7 @@ test('works with complex url expressions', async (t) => {
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works with space in name', async (t) => {
@@ -130,7 +137,7 @@ test('works with space in name', async (t) => {
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });
 
 test('works when metric names include special named operators and we use those special operators', async (t) => {
@@ -150,5 +157,5 @@ test('works when metric names include special named operators and we use those s
     originalExpression
   );
 
-  t.equal(result, modifiedExpression);
+  assert.strictEqual(result, modifiedExpression);
 });

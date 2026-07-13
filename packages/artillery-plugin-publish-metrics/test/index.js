@@ -2,7 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const _path = require('node:path');
 const EventEmitter = require('node:events');
 const _shelljs = require('shelljs');
@@ -33,5 +34,5 @@ test('Basic interface checks', async (t) => {
   const events = new EventEmitter();
   const PublishMetrics = require('../index');
   const _plugin = new PublishMetrics.Plugin(script, events);
-  t.type(PublishMetrics.Plugin, 'function');
+  assert.strictEqual(typeof PublishMetrics.Plugin, 'function');
 });

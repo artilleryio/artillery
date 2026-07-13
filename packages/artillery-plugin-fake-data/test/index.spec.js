@@ -1,11 +1,16 @@
 'use strict';
 
-const { test } = require('tap');
-const {
-  Plugin,
-  getFakerFunctions,
-  getDeprecatedAliases
-} = require('../index');
+const { test } = require('node:test');
+const assert = require('node:assert');
+let Plugin, getFakerFunctions, getDeprecatedAliases;
+
+const __tap = require('node:test');
+// Module under test is an ES module - load before tests run
+__tap.before(async () => {
+  ({ Plugin, getFakerFunctions, getDeprecatedAliases } = await import(
+    '../index.ts'
+  ));
+});
 
 const makeScript = (pluginConfig = {}) => ({
   config: {
@@ -25,10 +30,10 @@ const runHandler = (script) => {
   return { context, nextCalled };
 };
 
-test('exposes faker functions with flattened names', (t) => {
+test('exposes faker functions with flattened names', (t, done) => {
   const functions = getFakerFunctions();
 
-  t.ok(functions.length > 200, `found ${functions.length} functions`);
+  assert.ok(functions.length > 200, `found ${functions.length} functions`);
 
   for (const expected of [
     'internetEmail',
@@ -44,44 +49,40 @@ test('exposes faker functions with flattened names', (t) => {
     'dateBirthdate', // inherited via prototype chain (SimpleDateModule)
     'datePast'
   ]) {
-    t.ok(functions.includes(expected), `includes ${expected}`);
+    assert.ok(functions.includes(expected), `includes ${expected}`);
   }
 
-  t.end();
+  done();
 });
 
-test('attaches beforeScenario hook and processor function', (t) => {
+test('attaches beforeScenario hook and processor function', (t, done) => {
   const script = makeScript();
   new Plugin(script, null);
 
-  t.same(script.scenarios[0].beforeScenario, ['fakeDataHandler']);
-  t.type(script.config.processor.fakeDataHandler, 'function');
-  t.end();
+  assert.deepEqual(script.scenarios[0].beforeScenario, ['fakeDataHandler']);
+  assert.strictEqual(typeof script.config.processor.fakeDataHandler, 'function');
+  done();
 });
 
-test('injects working $functions into context.funcs', (t) => {
+test('injects working $functions into context.funcs', (t, done) => {
   const script = makeScript();
   new Plugin(script, null);
 
   const { context, nextCalled } = runHandler(script);
 
-  t.ok(nextCalled, 'next() was called');
-  t.type(context.funcs.$internetEmail, 'function');
+  assert.ok(nextCalled, 'next() was called');
+  assert.strictEqual(typeof context.funcs.$internetEmail, 'function');
 
   const email = context.funcs.$internetEmail();
-  t.match(email, /@/, `generated email: ${email}`);
+  assert.match(email, /@/, `generated email: ${email}`);
 
   const uuid = context.funcs.$stringUuid();
-  t.match(
-    uuid,
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-    `generated uuid: ${uuid}`
-  );
+  assert.match(uuid, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, `generated uuid: ${uuid}`);
 
-  t.end();
+  done();
 });
 
-test('passes plugin config as function options', (t) => {
+test('passes plugin config as function options', (t, done) => {
   const script = makeScript({
     internetPassword: { length: 5 },
     numberInt: { min: 10, max: 10 }
@@ -90,12 +91,12 @@ test('passes plugin config as function options', (t) => {
 
   const { context } = runHandler(script);
 
-  t.equal(context.funcs.$internetPassword().length, 5);
-  t.equal(context.funcs.$numberInt(), 10);
-  t.end();
+  assert.strictEqual(context.funcs.$internetPassword().length, 5);
+  assert.strictEqual(context.funcs.$numberInt(), 10);
+  done();
 });
 
-test('deprecated falso aliases work and warn once', (t) => {
+test('deprecated falso aliases work and warn once', (t, done) => {
   const script = makeScript();
   new Plugin(script, null);
 
@@ -109,39 +110,28 @@ test('deprecated falso aliases work and warn once', (t) => {
     for (const [aliasName, funcName] of Object.entries(
       getDeprecatedAliases()
     )) {
-      t.type(
-        context.funcs[`$${aliasName}`],
-        'function',
-        `$${aliasName} is exposed`
-      );
-      t.type(
-        context.funcs[`$${funcName}`],
-        'function',
-        `alias target $${funcName} exists`
-      );
-      t.ok(
-        context.funcs[`$${aliasName}`]() !== undefined,
-        `$${aliasName} returns a value`
-      );
+      assert.strictEqual(typeof context.funcs[`$${aliasName}`], 'function', `$${aliasName} is exposed`);
+      assert.strictEqual(typeof context.funcs[`$${funcName}`], 'function', `alias target $${funcName} exists`);
+      assert.ok(context.funcs[`$${aliasName}`]() !== undefined, `$${aliasName} returns a value`);
     }
 
     const email = context.funcs.$randEmail();
-    t.match(email, /@/, `alias generated email: ${email}`);
+    assert.match(email, /@/, `alias generated email: ${email}`);
 
     const aliasCount = Object.keys(getDeprecatedAliases()).length;
-    t.equal(warnings.length, aliasCount, 'warned once per alias');
+    assert.strictEqual(warnings.length, aliasCount, 'warned once per alias');
 
     // calling again must not warn again
     context.funcs.$randEmail();
-    t.equal(warnings.length, aliasCount, 'no duplicate warnings');
+    assert.strictEqual(warnings.length, aliasCount, 'no duplicate warnings');
   } finally {
     console.warn = originalWarn;
   }
 
-  t.end();
+  done();
 });
 
-test('reads config from config.fake-data as well as config.plugins.fake-data', (t) => {
+test('reads config from config.fake-data as well as config.plugins.fake-data', (t, done) => {
   const script = {
     config: {
       'fake-data': { internetPassword: { length: 7 } },
@@ -152,6 +142,6 @@ test('reads config from config.fake-data as well as config.plugins.fake-data', (
   new Plugin(script, null);
 
   const { context } = runHandler(script);
-  t.equal(context.funcs.$internetPassword().length, 7);
-  t.end();
+  assert.strictEqual(context.funcs.$internetPassword().length, 7);
+  done();
 });

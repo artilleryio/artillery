@@ -2,19 +2,11 @@
   "name": "artillery-plugin-metrics-by-endpoint",
   "version": "1.27.0",
   "description": "Per-endpoint breakdown of latency and response codes for Artillery HTTP tests.",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "npm run test:unit && npm run test:acceptance",
-    "test:acceptance": "tap ./test/*.spec.js --timeout 300",
-    "test:unit": "tap test/*.unit.js"
-  },
-  "tap": {
-    "disable-coverage": true,
-    "allow-empty-coverage": true,
-    "color": true,
-    "test-env": [
-      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
-    ]
+    "test:acceptance": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.spec.js\"",
+    "test:unit": "node --test --require ./test/setup-env.cjs \"test/*.unit.js\""
   },
   "keywords": [],
   "author": "Hassy Veldstra <h@artillery.io>",
@@ -23,7 +15,7 @@
     "debug": "^4.4.3"
   },
   "devDependencies": {
-    "tap": "^19.0.2",
     "zx": "^8.1.4"
-  }
+  },
+  "type": "module"
 }

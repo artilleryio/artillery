@@ -1,0 +1,6 @@
+{
+  "name": "artillery-plugin-esmmixed",
+  "private": true,
+  "type": "module",
+  "main": "index.js"
+}

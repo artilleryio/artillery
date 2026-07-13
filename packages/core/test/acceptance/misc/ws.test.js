@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 const { runGenericRunnerTest } = require('./helper');
 const createTestServer = require('../../targets/simple_ws');
 
@@ -14,9 +15,9 @@ afterEach(() => {
   server.close();
 });
 
-test('generic ws test works', (t) => {
+test('generic ws test works', async () => {
   const script = require('../../scripts/hello_ws.json');
   script.config.target = `ws://127.0.0.1:${port}`;
 
-  runGenericRunnerTest(script, t);
+  await runGenericRunnerTest(script);
 });

@@ -1,4 +1,5 @@
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const fs = require('node:fs');
 const { $ } = require('zx');
 const {
@@ -34,19 +35,11 @@ tap.test('Run dotenv test in Lambda Container', async (t) => {
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
 
-  t.equal(
-    report.aggregate.counters['vusers.created'],
-    50,
-    'Should have 50 vusers created'
-  );
+  assert.strictEqual(report.aggregate.counters['vusers.created'], 50, 'Should have 50 vusers created');
 
-  t.equal(
-    report.aggregate.counters['fruit.dragonfruit'],
-    50,
-    'Should have custom counter for env variable fruit'
-  );
+  assert.strictEqual(report.aggregate.counters['fruit.dragonfruit'], 50, 'Should have custom counter for env variable fruit');
 
   checkForNegativeValues(t, report);
   checkAggregateCounterSums(t, report);

@@ -1,12 +1,20 @@
-const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
+let runner;
+let SSMS;
 const http = require('node:http');
 const WebSocket = require('ws');
 const { once } = require('node:events');
 
 let targetServer;
 let wss;
+
+const __tap = require('node:test');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+  ({ SSMS } = await import('../../lib/ssms.ts'));
+});
 
 beforeEach(async () => {
   const server = http.createServer();
@@ -19,10 +27,10 @@ afterEach(() => {
   targetServer.close();
 });
 
-test('Capture WS - JSON', (t) => {
+test('Capture WS - JSON', (t, done) => {
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {
-      t.match(message, /hello (ws|bar|foo)/, 'matches incoming message');
+      assert.match(message, /hello (ws|bar|foo)/, 'matches incoming message');
       ws.send(JSON.stringify({ foo: 'bar', baz: 'foo' }));
     });
   });
@@ -56,14 +64,10 @@ test('Capture WS - JSON', (t) => {
     ee.on('done', (nr) => {
       const report = SSMS.legacyReport(nr).report();
 
-      t.equal(
-        Object.keys(report.errors).length,
-        0,
-        'There should be no WS errors'
-      );
+      assert.strictEqual(Object.keys(report.errors).length, 0, 'There should be no WS errors');
 
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
 

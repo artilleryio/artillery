@@ -1,10 +1,18 @@
-const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
-const { SSMS } = require('../../lib/ssms');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
+let runner;
+let SSMS;
 const createTestServer = require('../targets/simple');
 
 let server;
 let port;
+
+const __tap = require('node:test');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+  ({ SSMS } = await import('../../lib/ssms.ts'));
+});
 beforeEach(async () => {
   server = await createTestServer(0);
   port = server.info.port;
@@ -14,7 +22,7 @@ afterEach(() => {
   server.stop();
 });
 
-test('scenarios avoided - arrival rate', (t) => {
+test('scenarios avoided - arrival rate', (t, done) => {
   const script = require('../scripts/concurrent_requests_arrival_rate.json');
   script.config.target = `http://127.0.0.1:${port}`;
   console.log('script', script);
@@ -30,10 +38,10 @@ test('scenarios avoided - arrival rate', (t) => {
     ee.on('done', (nr) => {
       const stats = SSMS.legacyReport(nr).report();
 
-      t.equal(stats.codes['200'], 1, 'Should make expected number of requests');
-      t.equal(stats.scenariosAvoided, 999, 'Should skip all other VUs');
+      assert.strictEqual(stats.codes['200'], 1, 'Should make expected number of requests');
+      assert.strictEqual(stats.scenariosAvoided, 999, 'Should skip all other VUs');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
@@ -57,8 +65,8 @@ test('scenarios avoided - arrival rate', (t) => {
 //     ee.on('done', function (nr) {
 //       const stats = SSMS.legacyReport(nr).report();
 //       // console.log(stats)
-//       t.equal(stats.codes['200'], 1, 'Should make expected number of requests');
-//       t.equal(stats.scenariosAvoided, 999, 'Should skip all other VUs');
+//       assert.strictEqual(stats.codes['200'], 1, 'Should make expected number of requests');
+//       assert.strictEqual(stats.scenariosAvoided, 999, 'Should skip all other VUs');
 //       ee.stop().then(() => {
 //         t.end();
 //       });
@@ -67,7 +75,7 @@ test('scenarios avoided - arrival rate', (t) => {
 //   });
 // });
 
-test('scenarios avoided - ramp to', (t) => {
+test('scenarios avoided - ramp to', (t, done) => {
   const script = require('../scripts/concurrent_requests_ramp_to.json');
   script.config.target = `http://127.0.0.1:${port}`;
   console.log('script', script);
@@ -82,17 +90,17 @@ test('scenarios avoided - ramp to', (t) => {
 
     ee.on('done', (nr) => {
       const stats = SSMS.legacyReport(nr).report();
-      t.ok(stats.codes['200'] > 0, 'should receive some 200s');
-      t.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');
+      assert.ok(stats.codes['200'] > 0, 'should receive some 200s');
+      assert.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();
   });
 });
 
-test('scenarios avoided - multiple phases', (t) => {
+test('scenarios avoided - multiple phases', (t, done) => {
   const script = require('../scripts/concurrent_requests_multiple_phases.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -106,11 +114,11 @@ test('scenarios avoided - multiple phases', (t) => {
 
     ee.on('done', (nr) => {
       const stats = SSMS.legacyReport(nr).report();
-      t.ok(stats.codes['200'] > 0, 'should receive some 200s');
-      t.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');
-      t.ok(stats.scenariosAvoided < 1000, 'should avoid less than 1000');
+      assert.ok(stats.codes['200'] > 0, 'should receive some 200s');
+      assert.ok(stats.scenariosAvoided > 0, 'should avoid some scenarios');
+      assert.ok(stats.scenariosAvoided < 1000, 'should avoid less than 1000');
       ee.stop().then(() => {
-        t.end();
+        done();
       });
     });
     ee.run();

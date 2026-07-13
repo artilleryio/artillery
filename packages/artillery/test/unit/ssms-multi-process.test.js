@@ -2,7 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const tap = require('tap');
+const tap = require('node:test');
+const assert = require('node:assert');
 const { SSMS } = require('@artilleryio/int-core').ssms;
 const sleep = require('../helpers/sleep');
 const data = require('../data/geometric.json');
@@ -25,7 +26,7 @@ const MEASUREMENTS = [];
 // The code in the test case acts as the aggregator of metrics from multiple
 // workers.
 
-tap.teardown(async () => {
+tap.after(async () => {
   if (process.env.DEBUG) {
     console.log(JSON.stringify(MEASUREMENTS));
   }
@@ -68,7 +69,7 @@ tap.test('Metric aggregation', async (t) => {
     });
   }
 
-  t.comment('worker count:', workers.length);
+  t.diagnostic('worker count:', workers.length);
 
   const histogramNames = [
     'engines.http.response_time',
@@ -91,7 +92,7 @@ tap.test('Metric aggregation', async (t) => {
   for (let i = 0; i < 1; i++) {
     dataPoints = dataPoints.concat(data[i]);
   }
-  t.comment(`writing ${dataPoints.length} measurements`);
+  t.diagnostic(`writing ${dataPoints.length} measurements`);
 
   if (!process.env.FROM_DATA_FILE) {
     // Main test:
@@ -167,19 +168,11 @@ tap.test('Metric aggregation', async (t) => {
   // Now we can compare:
 
   for (const [bucket, summaries] of Object.entries(metricData)) {
-    t.comment(
-      `number of summaries in bucket: ${bucket} -> ${summaries.length}}`
-    );
-    t.ok(
-      summaries.length >= 1,
-      'Should have a summary from at least one worker for each bucket'
-    );
+    t.diagnostic(`number of summaries in bucket: ${bucket} -> ${summaries.length}}`);
+    assert.ok(summaries.length >= 1, 'Should have a summary from at least one worker for each bucket');
   }
 
-  t.ok(
-    _.isEqual(Object.keys(metricData).sort(), control.getBucketIds().sort()),
-    'Should have the same set of buckets'
-  );
+  assert.ok(_.isEqual(Object.keys(metricData).sort(), control.getBucketIds().sort()), 'Should have the same set of buckets');
   console.log(Object.keys(metricData).sort(), control.getBucketIds().sort());
 
   const combined = {};
@@ -212,10 +205,7 @@ tap.test('Metric aggregation', async (t) => {
 
     const m = combined[Object.keys(merged)[0]];
     for (const [h, v] of Object.entries(m.histograms)) {
-      t.ok(
-        v.max === histogramMax[h],
-        `max value on merged object equals to largest max value of a constituent metric object (${v.max} = ${histogramMax[h]})`
-      );
+      assert.ok(v.max === histogramMax[h], `max value on merged object equals to largest max value of a constituent metric object (${v.max} = ${histogramMax[h]})`);
     }
   }
 
@@ -226,84 +216,44 @@ tap.test('Metric aggregation', async (t) => {
   // Compare aggregated metrics with those recorded in the "control" SSMS instance
   //
   for (const [bucketId, summary] of Object.entries(combined)) {
-    t.comment(`bucketId: ${bucketId}, typeof = ${typeof bucketId}`);
+    t.diagnostic(`bucketId: ${bucketId}, typeof = ${typeof bucketId}`);
     const controlSummary = control.getMetrics(bucketId);
 
-    t.ok(
-      _.isEqual(summary.counters, controlSummary.counters),
-      'Aggregated counter values should be the same'
-    );
+    assert.ok(_.isEqual(summary.counters, controlSummary.counters), 'Aggregated counter values should be the same');
 
     for (const [hname, h] of Object.entries(summary.histograms)) {
-      t.comment(`histogram: ${hname}`);
-      t.ok(
-        h.min === controlSummary.histograms[hname].min,
-        'min values should be equal'
-      );
+      t.diagnostic(`histogram: ${hname}`);
+      assert.ok(h.min === controlSummary.histograms[hname].min, 'min values should be equal');
       console.log('h p99 =====>', round(h.getValueAtQuantile(0.99), 1));
       console.log(
         'control p99 ======>',
         round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1)
       );
-      t.ok(
-        round(h.getValueAtQuantile(0.99), 1) ===
-          round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1),
-        'p99 values should be equal'
-      );
-      t.ok(
-        h.count === controlSummary.histograms[hname].count,
-        'count values should be equal'
-      );
-      t.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
-      t.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
-      t.ok(
-        h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0,
-        'All aggregations are > 0'
-      );
+      assert.ok(round(h.getValueAtQuantile(0.99), 1) ===
+          round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1), 'p99 values should be equal');
+      assert.ok(h.count === controlSummary.histograms[hname].count, 'count values should be equal');
+      assert.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
+      assert.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
+      assert.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'All aggregations are > 0');
     }
 
     for (const [hname, h] of Object.entries(packed.histograms)) {
-      t.ok(
-        h.max > h.getValueAtQuantile(0.99),
-        `${hname} summary max is > p99 (${h.max} > ${h.getValueAtQuantile(
+      assert.ok(h.max > h.getValueAtQuantile(0.99), `${hname} summary max is > p99 (${h.max} > ${h.getValueAtQuantile(
           0.99
-        )})`
-      );
-      t.ok(
-        h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0,
-        `summary aggregations are > 0 (${hname} - ${h.min}, ${
+        )})`);
+      assert.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, `summary aggregations are > 0 (${hname} - ${h.min}, ${
           h.max
-        }, ${h.getValueAtQuantile(0.99)})`
-      );
+        }, ${h.getValueAtQuantile(0.99)})`);
     }
 
     // TODO: Add rates
 
     // Metadata:
-    t.comment(
-      'period comparison: summary ->',
-      summary.period,
-      typeof summary.period,
-      'controlSummary ->',
-      controlSummary.period,
-      typeof controlSummary.period
-    );
-    t.ok(
-      summary.period === controlSummary.period,
-      'bucket id should be the same'
-    );
-    t.ok(
-      summary.lastMetricAt === controlSummary.lastMetricAt,
-      'lastMetricAt should be equal'
-    );
-    t.ok(
-      summary.lastCounterAt === controlSummary.lastCounterAt,
-      'lastCounterAt should be equal'
-    );
-    t.ok(
-      summary.firstHistogramAt === controlSummary.firstHistogramAt,
-      'firstHistogramAt should be equal'
-    );
+    t.diagnostic('period comparison: summary ->', summary.period, typeof summary.period, 'controlSummary ->', controlSummary.period, typeof controlSummary.period);
+    assert.ok(summary.period === controlSummary.period, 'bucket id should be the same');
+    assert.ok(summary.lastMetricAt === controlSummary.lastMetricAt, 'lastMetricAt should be equal');
+    assert.ok(summary.lastCounterAt === controlSummary.lastCounterAt, 'lastCounterAt should be equal');
+    assert.ok(summary.firstHistogramAt === controlSummary.firstHistogramAt, 'firstHistogramAt should be equal');
   }
 });
 
@@ -344,7 +294,7 @@ tap.test('Metric aggregation - merged histograms', async (t) => {
     });
   }
 
-  t.comment('worker count:', workers.length);
+  t.diagnostic('worker count:', workers.length);
 
   for (const inputData of responseTimeHistogramsData) {
     const [workerIndex, , metricName, metricValue, ts] = inputData;
@@ -378,10 +328,7 @@ tap.test('Metric aggregation - merged histograms', async (t) => {
 
   // Now we can compare:
 
-  t.ok(
-    _.isEqual(Object.keys(metricData).sort(), control.getBucketIds().sort()),
-    'Should have the same set of buckets'
-  );
+  assert.ok(_.isEqual(Object.keys(metricData).sort(), control.getBucketIds().sort()), 'Should have the same set of buckets');
 
   const combined = {};
   for (const [_bucket, summaries] of Object.entries(metricData)) {
@@ -418,52 +365,39 @@ tap.test('Metric aggregation - merged histograms', async (t) => {
   // Compare aggregated metrics with those recorded in the "control" SSMS instance
   //
   for (const [bucketId, summary] of Object.entries(combined)) {
-    t.comment(`bucketId: ${bucketId}, typeof = ${typeof bucketId}`);
+    t.diagnostic(`bucketId: ${bucketId}, typeof = ${typeof bucketId}`);
     const controlSummary = control.getMetrics(bucketId);
 
     // TODO fix
-    // t.ok(_.isEqual(summary.counters, controlSummary.counters), 'Aggregated counter values should be the same');
+    // assert.ok(_.isEqual(summary.counters, controlSummary.counters), 'Aggregated counter values should be the same');
 
     for (const [hname, h] of Object.entries(summary.histograms)) {
-      t.comment(`histogram: ${hname}`);
+      t.diagnostic(`histogram: ${hname}`);
       console.log('h p99 =====>', round(h.getValueAtQuantile(0.99), 1));
       console.log(
         'control p99 ======>',
         round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1)
       );
-      t.ok(
-        round(h.getValueAtQuantile(0.99), 1) ===
-          round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1),
-        'p99 values should be equal'
-      );
-      t.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
-      t.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
+      assert.ok(round(h.getValueAtQuantile(0.99), 1) ===
+          round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1), 'p99 values should be equal');
+      assert.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
+      assert.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
       // TODO fix
-      // t.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'All aggregations are > 0');
+      // assert.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'All aggregations are > 0');
     }
 
     for (const [hname, h] of Object.entries(packed.histograms)) {
-      t.ok(
-        h.max > h.getValueAtQuantile(0.99),
-        `${hname} summary max is > p99 (${h.max} > ${h.getValueAtQuantile(
+      assert.ok(h.max > h.getValueAtQuantile(0.99), `${hname} summary max is > p99 (${h.max} > ${h.getValueAtQuantile(
           0.99
-        )})`
-      );
+        )})`);
       // TODO fix
-      // t.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, `summary aggregations are > 0 (${hname} - ${h.min}, ${h.max}, ${h.getValueAtQuantile(0.99)})`);
+      // assert.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, `summary aggregations are > 0 (${hname} - ${h.min}, ${h.max}, ${h.getValueAtQuantile(0.99)})`);
     }
 
     // Metadata:
-    t.comment(
-      'period comparison: summary ->',
-      summary.period,
-      typeof summary.period,
-      'controlSummary ->',
-      controlSummary.period,
-      typeof controlSummary.period
-    );
+    t.diagnostic('period comparison: summary ->', summary.period, typeof summary.period, 'controlSummary ->', controlSummary.period, typeof controlSummary.period);
     // TODO fix
-    // t.ok(summary.firstHistogramAt === controlSummary.firstHistogramAt, 'firstHistogramAt should be equal');
+    // assert.ok(summary.firstHistogramAt === controlSummary.firstHistogramAt, 'firstHistogramAt should be equal');
   }
 });
 

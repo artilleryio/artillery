@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 const { runGenericRunnerTest } = require('./helper');
 const createTestServers = require('../../targets/ws_proxy');
 
@@ -20,10 +21,10 @@ afterEach(() => {
   proxyServer.close();
 });
 
-test('generic ws test works', (t) => {
+test('generic ws test works', async () => {
   const script = require('../../scripts/ws_proxy.json');
   script.config.target = `ws://127.0.0.1:${port}`;
   script.config.ws.proxy.url = `http://127.0.0.1:${proxyPort}`;
 
-  runGenericRunnerTest(script, t);
+  await runGenericRunnerTest(script);
 });

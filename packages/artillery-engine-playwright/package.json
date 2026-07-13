@@ -2,19 +2,11 @@
   "name": "artillery-engine-playwright",
   "version": "1.30.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
-    "test": "tap test/*.test.js --timeout 300",
-    "test:aws": "tap test/*.aws.js --timeout 420",
-    "test:aws:ci": "tap --timeout=420"
-  },
-  "tap": {
-    "disable-coverage": true,
-    "allow-empty-coverage": true,
-    "color": true,
-    "test-env": [
-      "ARTILLERY_TELEMETRY_DEFAULTS={\"source\":\"test-suite\"}"
-    ]
+    "test": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.test.js\"",
+    "test:aws": "node --test --test-timeout=420000 --require ./test/setup-env.cjs \"test/*.aws.js\"",
+    "test:aws:ci": "node --test --test-timeout=420000 --require ./test/setup-env.cjs"
   },
   "keywords": [],
   "author": "",
@@ -26,7 +18,7 @@
     "playwright": "1.61.0"
   },
   "devDependencies": {
-    "tap": "^19.0.2",
     "zx": "^8.1.4"
-  }
+  },
+  "type": "module"
 }

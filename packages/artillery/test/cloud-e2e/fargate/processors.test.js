@@ -1,4 +1,5 @@
-const { test, before, beforeEach } = require('tap');
+const { test, before, beforeEach } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -35,19 +36,11 @@ test('Run with typescript processor and external package @windows', async (t) =>
       reportFilePath
     )} --record --tags ${baseTags},typescript:true`;
 
-  t.equal(output.exitCode, 0, 'CLI Exit Code should be 0');
+  assert.strictEqual(output.exitCode, 0, 'CLI Exit Code should be 0');
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    2,
-    'Should have made 2 requests'
-  );
-  t.equal(
-    report.aggregate.counters['errors.invalid_address'],
-    2,
-    'Should have emitted 2 errors'
-  );
+  assert.strictEqual(report.aggregate.counters['http.codes.200'], 2, 'Should have made 2 requests');
+  assert.strictEqual(report.aggregate.counters['errors.invalid_address'], 2, 'Should have emitted 2 errors');
 
   checkForNegativeValues(t, report);
   checkAggregateCounterSums(t, report);
@@ -64,20 +57,12 @@ test('Run a test with an ESM processor @windows', async (t) => {
       reportFilePath
     )} --record --tags ${baseTags}`;
 
-  t.equal(output.exitCode, 0, 'CLI exit code should be 0');
+  assert.strictEqual(output.exitCode, 0, 'CLI exit code should be 0');
 
   const report = JSON.parse(fs.readFileSync(reportFilePath, 'utf8'));
-  t.equal(
-    report.aggregate.counters['http.codes.200'],
-    10,
-    'Should have made 10 requests'
-  );
+  assert.strictEqual(report.aggregate.counters['http.codes.200'], 10, 'Should have made 10 requests');
 
-  t.equal(
-    report.aggregate.counters.hey_from_esm,
-    10,
-    'Should have emitted 10 custom metrics from ts processor'
-  );
+  assert.strictEqual(report.aggregate.counters.hey_from_esm, 10, 'Should have emitted 10 custom metrics from ts processor');
 
   checkForNegativeValues(t, report);
   checkAggregateCounterSums(t, report);

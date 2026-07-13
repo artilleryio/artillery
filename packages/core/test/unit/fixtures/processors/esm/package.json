@@ -1,0 +1,5 @@
+{
+  "name": "esm-processor-fixtures",
+  "private": true,
+  "type": "module"
+}

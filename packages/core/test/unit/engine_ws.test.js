@@ -2,11 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const sinon = require('sinon');
-const rewiremock = require('rewiremock/node');
 
-const HttpsProxyAgent = require('https-proxy-agent');
 const EventEmitter = require('node:events');
 const _ = require('lodash');
 
@@ -25,9 +24,8 @@ const baseScript = {
   ]
 };
 
-function setup() {
+async function setup(_t) {
   const sandbox = sinon.sandbox.create();
-  rewiremock.enable();
 
   class WsMockInstance extends EventEmitter {
     close() {}
@@ -39,20 +37,34 @@ function setup() {
 
   const WebsocketMock = sandbox.stub().returns(wsMockInstance);
 
-  rewiremock('ws').with(WebsocketMock);
+  // The engine is an ES module (frozen namespace) - swap the WebSocket
+  // implementation through the engine's injectable _deps object
+  const engineModule = await import('../../lib/engine_ws.ts');
+  const realWebSocket = engineModule._deps.WebSocket;
+  engineModule._deps.WebSocket = WebsocketMock;
+  const WebSocketEngine = engineModule.default;
 
-  const WebSocketEngine = require('../../lib/engine_ws');
-
-  return { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine };
+  return {
+    sandbox,
+    WebsocketMock,
+    wsMockInstance,
+    WebSocketEngine,
+    restoreWebSocket: () => {
+      engineModule._deps.WebSocket = realWebSocket;
+    }
+  };
 }
 
-function teardown(sandbox) {
+function teardown(sandbox, restoreWebSocket) {
   sandbox.restore();
-  rewiremock.disable();
+  if (restoreWebSocket) {
+    restoreWebSocket();
+  }
 }
 
-test('WebSocket engine - proxy', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
+test('WebSocket engine - proxy', async (t) => {
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine, restoreWebSocket } =
+    await setup(t);
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -76,31 +88,29 @@ test('WebSocket engine - proxy', (t) => {
     }, 200);
   });
 
-  runScenario({}, (err) => {
-    const [, , websocketOptions] = WebsocketMock.args[0];
+  await new Promise((resolve) => {
+    runScenario({}, (err) => {
+      const [, , websocketOptions] = WebsocketMock.args[0];
 
-    t.ok(!err, 'Virtual user finished successfully');
-    t.ok(
-      websocketOptions.agent instanceof HttpsProxyAgent,
-      'Passes an agent to the WebSocket constructor'
-    );
-    t.ok(
-      websocketOptions.agent.proxy.href.startsWith(script.config.ws.proxy.url),
-      'Gets the proxy url from the scenario'
-    );
-    t.equal(
-      websocketOptions.agent.proxy.localAddress,
-      script.config.ws.proxy.localAddress,
-      'Passes additional configuration properties to the agent constructor'
-    );
+      assert.ok(!err, 'Virtual user finished successfully');
+      // Note: constructor name check instead of instanceof - t.mockImport
+      // loads the engine's dependency graph from a fresh cache, so class
+      // identities differ from this file's require()d copies
+      assert.strictEqual(websocketOptions.agent?.constructor?.name, 'HttpsProxyAgent', 'Passes an agent to the WebSocket constructor');
+      assert.ok(websocketOptions.agent.proxy.href.startsWith(
+          script.config.ws.proxy.url
+        ), 'Gets the proxy url from the scenario');
+      assert.strictEqual(websocketOptions.agent.proxy.localAddress, script.config.ws.proxy.localAddress, 'Passes additional configuration properties to the agent constructor');
 
-    teardown(sandbox);
-    t.end();
+      teardown(sandbox, restoreWebSocket);
+      resolve();
+    });
   });
 });
 
-test('WebSocket engine - connect action (string)', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
+test('WebSocket engine - connect action (string)', async (t) => {
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine, restoreWebSocket } =
+    await setup(t);
 
   const script = _.cloneDeep(baseScript);
 
@@ -124,27 +134,30 @@ test('WebSocket engine - connect action (string)', (t) => {
     }, 200);
   });
 
-  runScenario(
-    {
-      vars: {
-        target: script.config.target
+  await new Promise((resolve) => {
+    runScenario(
+      {
+        vars: {
+          target: script.config.target
+        }
+      },
+      (err) => {
+        const [target] = WebsocketMock.args[0];
+
+        assert.ok(!err, 'Virtual user finished successfully');
+        assert.strictEqual(target, expectedTarget, 'Templates connection target');
+
+        teardown(sandbox, restoreWebSocket);
+        resolve();
       }
-    },
-    (err) => {
-      const [target] = WebsocketMock.args[0];
-
-      t.ok(!err, 'Virtual user finished successfully');
-      t.equal(target, expectedTarget, 'Templates connection target');
-
-      teardown(sandbox);
-      t.end();
-    }
-  );
+    );
+  });
 });
 
-test('WebSocket engine - connect action (function)', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
-  t.plan(4);
+test('WebSocket engine - connect action (function)', async (t) => {
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine, restoreWebSocket } =
+    await setup(t);
+  /* plan removed: t.plan(4) */;
   const script = _.cloneDeep(baseScript);
 
   WebsocketMock.resetHistory();
@@ -159,12 +172,8 @@ test('WebSocket engine - connect action (function)', (t) => {
 
   script.config.processor = {
     connectionHook: (params, userContext, callback) => {
-      t.equal(
-        params.target,
-        script.config.target,
-        'Processor fn receives global config target'
-      );
-      t.same(userContext, context, "Processor fn receives user's context");
+      assert.strictEqual(params.target, script.config.target, 'Processor fn receives global config target');
+      assert.deepEqual(userContext, context, "Processor fn receives user's context");
 
       params.subprotocols = [expectedSubProtocol];
 
@@ -188,22 +197,22 @@ test('WebSocket engine - connect action (function)', (t) => {
     }, 200);
   });
 
-  runScenario(context, (err) => {
-    const [, subprotocols] = WebsocketMock.args[0];
+  await new Promise((resolve) => {
+    runScenario(context, (err) => {
+      const [, subprotocols] = WebsocketMock.args[0];
 
-    t.ok(!err, 'Virtual user finished successfully');
-    t.same(
-      subprotocols,
-      [expectedSubProtocol],
-      'Processor fn can set WS constructor parameters'
-    );
+      assert.ok(!err, 'Virtual user finished successfully');
+      assert.deepEqual(subprotocols, [expectedSubProtocol], 'Processor fn can set WS constructor parameters');
 
-    teardown(sandbox);
+      teardown(sandbox, restoreWebSocket);
+      resolve();
+    });
   });
 });
 
-test('WebSocket engine - connect action (object)', (t) => {
-  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine } = setup();
+test('WebSocket engine - connect action (object)', async (t) => {
+  const { sandbox, WebsocketMock, wsMockInstance, WebSocketEngine, restoreWebSocket } =
+    await setup(t);
 
   const script = _.cloneDeep(baseScript);
 
@@ -241,31 +250,22 @@ test('WebSocket engine - connect action (object)', (t) => {
     }, 200);
   });
 
-  runScenario(context, (err) => {
-    const [target, subprotocols, wsOptions] = WebsocketMock.args[0];
+  await new Promise((resolve) => {
+    runScenario(context, (err) => {
+      const [target, subprotocols, wsOptions] = WebsocketMock.args[0];
 
-    t.ok(!err, 'Virtual user finished successfully');
-    t.equal(target, connectHook.target, 'Overrides connection target');
-    t.ok(
-      wsOptions.agent.proxy.href.startsWith(connectHook.proxy.url),
-      'Gets the proxy url from the connect object'
-    );
+      assert.ok(!err, 'Virtual user finished successfully');
+      assert.strictEqual(target, connectHook.target, 'Overrides connection target');
+      assert.ok(wsOptions.agent.proxy.href.startsWith(connectHook.proxy.url), 'Gets the proxy url from the connect object');
 
-    t.same(
-      subprotocols,
-      connectHook.subprotocols,
-      'Gets suprotocols from the connect object'
-    );
+      assert.deepEqual(subprotocols, connectHook.subprotocols, 'Gets suprotocols from the connect object');
 
-    t.same(
-      wsOptions.headers,
-      {
-        'Sec-WebSocket-Key': 'abcde'
-      },
-      'Gets headers from the connect object'
-    );
+      assert.deepEqual(wsOptions.headers, {
+          'Sec-WebSocket-Key': 'abcde'
+        }, 'Gets headers from the connect object');
 
-    teardown(sandbox);
-    t.end();
+      teardown(sandbox, restoreWebSocket);
+      resolve();
+    });
   });
 });

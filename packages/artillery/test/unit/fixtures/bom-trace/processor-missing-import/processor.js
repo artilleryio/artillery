@@ -1,7 +1,7 @@
 const helper = require('./not-here');
 
-function before(req, ctx, ee, done) {
-  helper && helper.tag(ctx);
+function before(_req, ctx, _ee, done) {
+  helper?.tag(ctx);
   return done();
 }
 

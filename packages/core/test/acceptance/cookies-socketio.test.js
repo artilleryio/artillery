@@ -1,12 +1,20 @@
-const { test, beforeEach, afterEach } = require('tap');
-const runner = require('../..').runner.runner;
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
+let runner;
 const l = require('lodash');
 let request;
-const { SSMS } = require('../../lib/ssms');
+let SSMS;
 const createTestServer = require('../targets/express_socketio');
 
 let server;
 let port;
+
+const __tap = require('node:test');
+// Modules under test are ES modules - load before tests run
+__tap.before(async () => {
+  runner = (await import('../../index.ts')).runner.runner;
+  ({ SSMS } = await import('../../lib/ssms.ts'));
+});
 
 beforeEach(async () => {
   if (!request) {
@@ -20,7 +28,7 @@ afterEach(() => {
   server.close();
 });
 
-test('cookie jar socketio', (t) => {
+test('cookie jar socketio', (t, done) => {
   const script = require('../scripts/cookies_socketio.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
@@ -38,18 +46,15 @@ test('cookie jar socketio', (t) => {
             console.log(report);
           }
 
-          t.ok(
-            hasScenariosCompleted,
-            'There should be some scenarios completed'
-          );
-          t.ok(hasUniqueCookies, 'Each scenario had a unique cookie');
+          assert.ok(hasScenariosCompleted, 'There should be some scenarios completed');
+          assert.ok(hasUniqueCookies, 'Each scenario had a unique cookie');
 
           ee.stop().then(() => {
-            t.end();
+            done();
           });
         })
         .catch((err) => {
-          t.fail(err);
+          assert.fail(err);
         });
     });
     ee.run();

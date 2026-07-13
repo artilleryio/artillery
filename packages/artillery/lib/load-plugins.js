@@ -4,6 +4,7 @@
 
 const debug = require('debug')('core');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 // Additional paths to load plugins can be set via ARTILLERY_PLUGIN_PATH
 // Additional plugin config mafy be set via ARTILLERY_PLUGINS (as JSON)
@@ -57,13 +58,25 @@ async function loadPlugin(name, config, requirePaths, testScript) {
     debug('Looking for plugin in:', p);
     try {
       loadedFrom = path.join(p, requireString);
-      PluginExport = require(loadedFrom);
+      // Resolve with CJS semantics (bare specifiers, directories via
+      // package.json "main"), load with import() - handles both CJS
+      // and ESM plugins, including ESM with top-level await
+      const resolvedPath = require.resolve(loadedFrom);
+      const ns = await import(pathToFileURL(resolvedPath).href);
+      // CJS: default === module.exports; ESM: unwrap default export,
+      // fall back to the namespace (named exports, e.g. Plugin)
+      PluginExport = ns.default ?? ns;
       if (typeof PluginExport === 'function') {
         version = 1;
       } else if (
         typeof PluginExport === 'object' &&
         typeof PluginExport.Plugin === 'function'
       ) {
+        version = 2;
+      } else if (typeof ns.Plugin === 'function') {
+        // ESM plugin with a named Plugin export alongside a
+        // non-function default export
+        PluginExport = ns;
         version = 2;
       } // TODO: Add v3
     } catch (err) {

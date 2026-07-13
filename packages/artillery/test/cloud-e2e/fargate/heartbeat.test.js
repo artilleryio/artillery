@@ -1,4 +1,5 @@
-const { test, before } = require('tap');
+const { test, before } = require('node:test');
+const assert = require('node:assert');
 const { spawn } = require('node:child_process');
 const {
   ECSClient,
@@ -86,7 +87,7 @@ test('Workers self-terminate when CLI is killed (heartbeat)', async (t) => {
     env: { ...process.env }
   });
 
-  t.teardown(() => {
+  t.after(() => {
     try {
       proc.kill('SIGKILL');
     } catch (_) {}
@@ -95,22 +96,20 @@ test('Workers self-terminate when CLI is killed (heartbeat)', async (t) => {
   // 2. Wait for workers to be running
   const output = await waitForOutput(proc, 'Workers are running');
   const testId = extractTestId(output);
-  t.ok(testId, `Got test run ID: ${testId}`);
+  assert.ok(testId, `Got test run ID: ${testId}`);
 
   // 3. SIGKILL the CLI — no graceful shutdown
-  t.comment(`Sending SIGKILL to artillery process (PID ${proc.pid})`);
+  t.diagnostic(`Sending SIGKILL to artillery process (PID ${proc.pid})`);
   proc.kill('SIGKILL');
   const killTime = Date.now();
 
   // 4. Confirm tasks are still running
   const tasksAfterKill = await listRunningTasks(testId);
   const runningCount = (tasksAfterKill.taskArns || []).length;
-  t.ok(runningCount > 0, `Tasks still running after SIGKILL: ${runningCount}`);
+  assert.ok(runningCount > 0, `Tasks still running after SIGKILL: ${runningCount}`);
 
   // 5. Poll until tasks stop
-  t.comment(
-    `Polling for task termination (interval=${POLL_INTERVAL_MS / 1000}s, timeout=${POLL_TIMEOUT_MS / 1000}s)`
-  );
+  t.diagnostic(`Polling for task termination (interval=${POLL_INTERVAL_MS / 1000}s, timeout=${POLL_TIMEOUT_MS / 1000}s)`);
 
   let tasksStopped = false;
   const deadline = Date.now() + POLL_TIMEOUT_MS;
@@ -121,7 +120,7 @@ test('Workers self-terminate when CLI is killed (heartbeat)', async (t) => {
     const result = await listRunningTasks(testId);
     const remaining = (result.taskArns || []).length;
     const elapsed = Math.round((Date.now() - killTime) / 1000);
-    t.comment(`  ${elapsed}s elapsed — ${remaining} task(s) still running`);
+    t.diagnostic(`  ${elapsed}s elapsed — ${remaining} task(s) still running`);
 
     if (remaining === 0) {
       tasksStopped = true;
@@ -130,16 +129,10 @@ test('Workers self-terminate when CLI is killed (heartbeat)', async (t) => {
   }
 
   const totalElapsed = (Date.now() - killTime) / 1000;
-  t.comment(`Total time from SIGKILL to tasks stopped: ${totalElapsed.toFixed(0)}s`);
+  t.diagnostic(`Total time from SIGKILL to tasks stopped: ${totalElapsed.toFixed(0)}s`);
 
   // 6. Assertions
-  t.ok(tasksStopped, 'Tasks stopped within timeout');
-  t.ok(
-    totalElapsed > HEARTBEAT_THRESHOLD_S,
-    `Tasks ran longer than heartbeat threshold (${totalElapsed.toFixed(0)}s > ${HEARTBEAT_THRESHOLD_S}s)`
-  );
-  t.ok(
-    totalElapsed < POLL_TIMEOUT_MS / 1000,
-    `Tasks stopped before poll timeout (${totalElapsed.toFixed(0)}s < ${POLL_TIMEOUT_MS / 1000}s)`
-  );
+  assert.ok(tasksStopped, 'Tasks stopped within timeout');
+  assert.ok(totalElapsed > HEARTBEAT_THRESHOLD_S, `Tasks ran longer than heartbeat threshold (${totalElapsed.toFixed(0)}s > ${HEARTBEAT_THRESHOLD_S}s)`);
+  assert.ok(totalElapsed < POLL_TIMEOUT_MS / 1000, `Tasks stopped before poll timeout (${totalElapsed.toFixed(0)}s < ${POLL_TIMEOUT_MS / 1000}s)`);
 });

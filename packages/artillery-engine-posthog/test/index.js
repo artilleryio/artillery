@@ -2,10 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const EventEmitter = require('node:events');
 
-const PosthogEngine = require('..');
+let PosthogEngine;
+
+const __tap = require('node:test');
+// Module under test is an ES module - load before tests run
+__tap.before(async () => {
+  PosthogEngine = (await import('../index.ts')).default;
+});
 
 const script = {
   config: {
@@ -35,11 +42,11 @@ const script = {
   ]
 };
 
-test('Engine interface', (t) => {
+test('Engine interface', (t, done) => {
   const events = new EventEmitter();
   const engine = new PosthogEngine(script, events, {});
   const scenario = engine.createScenario(script.scenarios[0], events);
-  t.ok(engine, 'Can construct an engine');
-  t.type(scenario, 'function', 'Can create a scenario');
-  t.end();
+  assert.ok(engine, 'Can construct an engine');
+  assert.strictEqual(typeof scenario, 'function', 'Can create a scenario');
+  done();
 });

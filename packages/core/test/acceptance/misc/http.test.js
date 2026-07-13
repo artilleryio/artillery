@@ -1,4 +1,5 @@
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
+const assert = require('node:assert');
 const { runGenericRunnerTest } = require('./helper');
 const createTestServer = require('../../targets/simple');
 
@@ -13,9 +14,9 @@ afterEach(() => {
   server.stop();
 });
 
-test('generic http test works', (t) => {
+test('generic http test works', async () => {
   const script = require('../../scripts/hello.json');
   script.config.target = `http://127.0.0.1:${port}`;
 
-  runGenericRunnerTest(script, t);
+  await runGenericRunnerTest(script);
 });

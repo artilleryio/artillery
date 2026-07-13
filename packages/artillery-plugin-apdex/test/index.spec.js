@@ -1,4 +1,5 @@
-const { test } = require('tap');
+const { test } = require('node:test');
+const assert = require('node:assert');
 const { $ } = require('zx');
 
 test('apdex plugin works when other after response hooks are set', async (t) => {
@@ -27,12 +28,8 @@ test('apdex plugin works when other after response hooks are set', async (t) => 
   ).length;
 
   // Assert
-  t.ok(apdexTest, 'Console did not include Apdex score');
-  t.equal(
-    afterResponseOccurrences,
-    5,
-    'After Response Handler did not run five times'
-  );
+  assert.ok(apdexTest, 'Console did not include Apdex score');
+  assert.strictEqual(afterResponseOccurrences, 5, 'After Response Handler did not run five times');
 });
 
 // Related to the following discussion: https://github.com/artilleryio/artillery/discussions/2209
@@ -54,8 +51,5 @@ test('apdex plugin reports all apdex metrics even if they never occured', async 
     output.stdout.includes('apdex.satisfied:') &&
     output.stdout.includes('apdex.tolerated:') &&
     output.stdout.includes('apdex.frustrated:');
-  t.ok(
-    allMetricsReported,
-    'All Apdex metrics counters are displayed in the report'
-  );
+  assert.ok(allMetricsReported, 'All Apdex metrics counters are displayed in the report');
 });

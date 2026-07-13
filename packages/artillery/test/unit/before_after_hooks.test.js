@@ -1,6 +1,6 @@
 
 
-const { test, beforeEach, afterEach } = require('tap');
+const { test, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const http = require('node:http');
 const { cloneDeep } = require('lodash');
@@ -72,40 +72,28 @@ afterEach(async () => {
   targetServer.close();
 });
 
-test('before/after hooks', (t) => {
+test('before/after hooks', (_t, done) => {
   const s = cloneDeep(script);
   createLauncher(s, {}, { scriptPath: '.' }).then((runner) => {
     runner.events.once('done', async () => {
       await runner.shutdown();
 
-      t.equal(
-        stats[beforeEndpoint],
-        1,
-        'should have made one request to the "before" endpoint'
-      );
-      t.equal(
-        stats[afterEndpoint],
-        1,
-        'should have made one request to "after" endpoint'
-      );
+      assert.strictEqual(stats[beforeEndpoint], 1, 'should have made one request to the "before" endpoint');
+      assert.strictEqual(stats[afterEndpoint], 1, 'should have made one request to "after" endpoint');
 
-      t.equal(
-        stats[scenarioEndpoint],
-        script.config.phases[0].duration * script.config.phases[0].arrivalRate,
-        'should call the endpoint in the scenario section'
-      );
+      assert.strictEqual(stats[scenarioEndpoint], script.config.phases[0].duration * script.config.phases[0].arrivalRate, 'should call the endpoint in the scenario section');
 
       // reset stats
       stats = {};
 
-      t.end();
+      done();
     });
 
     runner.run();
   });
 });
 
-test('before/after hooks - processor', (t) => {
+test('before/after hooks - processor', (_t, done) => {
   const s = cloneDeep(script);
 
   beforeHookBeforeRequest.resetHistory();
@@ -133,26 +121,20 @@ test('before/after hooks - processor', (t) => {
     runner.events.once('done', async () => {
       await runner.shutdown();
 
-      t.ok(
-        beforeHookBeforeRequest.calledOnce,
-        'should call processor functions in before hook'
-      );
-      t.ok(
-        afterHookBeforeRequest.calledOnce,
-        'should call processor functions in after hook'
-      );
+      assert.ok(beforeHookBeforeRequest.calledOnce, 'should call processor functions in before hook');
+      assert.ok(afterHookBeforeRequest.calledOnce, 'should call processor functions in after hook');
 
       // reset stats
       stats = {};
 
-      t.end();
+      done();
     });
 
     runner.run();
   });
 });
 
-test('before/after hooks - payload', (t) => {
+test('before/after hooks - payload', (_t, done) => {
   const s = cloneDeep(script);
   const payloadValue = 'value';
 
@@ -176,22 +158,14 @@ test('before/after hooks - payload', (t) => {
     runner.events.once('done', async () => {
       await runner.shutdown();
 
-      t.equal(
-        stats[`${beforeEndpoint}/${payloadValue}`],
-        1,
-        'should be able to use payload values in the "before" hook'
-      );
+      assert.strictEqual(stats[`${beforeEndpoint}/${payloadValue}`], 1, 'should be able to use payload values in the "before" hook');
 
-      t.equal(
-        stats[scenarioEndpoint],
-        script.config.phases[0].duration * script.config.phases[0].arrivalRate,
-        'should call the endpoint in the scenario section'
-      );
+      assert.strictEqual(stats[scenarioEndpoint], script.config.phases[0].duration * script.config.phases[0].arrivalRate, 'should call the endpoint in the scenario section');
 
       // reset stats
       stats = {};
 
-      t.end();
+      done();
     });
 
     runner.run();
