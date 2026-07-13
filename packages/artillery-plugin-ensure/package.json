@@ -2,11 +2,12 @@
   "name": "artillery-plugin-ensure",
   "version": "1.27.0",
   "description": "",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "scripts": {
     "test": "npm run test:unit && npm run test:acceptance",
     "test:acceptance": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.spec.js\"",
-    "test:unit": "node --test --require ./test/setup-env.cjs \"test/*.unit.js\""
+    "test:unit": "node --test --require ./test/setup-env.cjs \"test/*.unit.js\"",
+    "build": "tsc -p tsconfig.build.json"
   },
   "keywords": [],
   "author": "Artillery.io <team@artillery.io>",

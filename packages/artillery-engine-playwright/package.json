@@ -2,11 +2,12 @@
   "name": "artillery-engine-playwright",
   "version": "1.30.0",
   "description": "",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "scripts": {
     "test": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.test.js\"",
     "test:aws": "node --test --test-timeout=420000 --require ./test/setup-env.cjs \"test/*.aws.js\"",
-    "test:aws:ci": "node --test --test-timeout=420000 --require ./test/setup-env.cjs"
+    "test:aws:ci": "node --test --test-timeout=420000 --require ./test/setup-env.cjs",
+    "build": "tsc -p tsconfig.build.json"
   },
   "keywords": [],
   "author": "",

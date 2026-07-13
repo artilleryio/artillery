@@ -2,9 +2,10 @@
   "name": "artillery-engine-posthog",
   "version": "0.0.1",
   "description": "Load test PostHog with Artillery",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "scripts": {
-    "test": "node --test --require ./test/setup-env.cjs test/index.js"
+    "test": "node --test --require ./test/setup-env.cjs test/index.js",
+    "build": "tsc -p tsconfig.build.json"
   },
   "keywords": [
     "posthog",

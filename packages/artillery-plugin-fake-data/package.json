@@ -2,12 +2,13 @@
   "name": "artillery-plugin-fake-data",
   "version": "1.24.0",
   "description": "Add fake test data easily to your Artillery test scripts.",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "test": "node --test --test-timeout=120000 \"test/*.spec.js\""
+    "test": "node --test --test-timeout=120000 \"test/*.spec.js\"",
+    "build": "tsc -p tsconfig.build.json"
   },
   "license": "MPL-2.0",
   "dependencies": {

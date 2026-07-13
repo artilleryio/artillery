@@ -50,7 +50,19 @@ jobs:
         with:
           ref: ${{ env.WORKER_VERSION }}
           fetch-depth: 0
-      
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24.x
+
+      # The worker image copies workspace sources; TypeScript packages
+      # resolve their main from dist/, which must be built beforehand
+      - name: Build packages
+        run: |
+          npm install
+          npm run build
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
 
@@ -157,7 +169,19 @@ jobs:
         with:
           ref: ${{ env.WORKER_VERSION }}
           fetch-depth: 0
-      
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 24.x
+
+      # The worker image copies workspace sources; TypeScript packages
+      # resolve their main from dist/, which must be built beforehand
+      - name: Build packages
+        run: |
+          npm install
+          npm run build
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
 

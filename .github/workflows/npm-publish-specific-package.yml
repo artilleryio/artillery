@@ -58,6 +58,10 @@ jobs:
       - run: npm install -w skytrace --ignore-scripts && npm run build -w skytrace
         if: ${{ inputs.PACKAGE_FOLDER_NAME == 'skytrace'}}
         
+      - name: Install dependencies and build packages
+        run: |
+          npm install
+          npm run build
       - run: npm -w ${{ env.PACKAGE_NAME }} publish --tag ${{ inputs.CHANNEL }}
 
   publish-official-docker-image:

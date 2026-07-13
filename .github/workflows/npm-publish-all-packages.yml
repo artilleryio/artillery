@@ -60,6 +60,10 @@ jobs:
           scope: '@artilleryio'
       - run: node .github/workflows/scripts/replace-package-versions.js
       # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
+      - name: Install dependencies and build packages
+        run: |
+          npm install
+          npm run build
       - run: npm -w @artilleryio/int-commons publish
       - run: npm -w @artilleryio/int-core publish
       - run: npm -w artillery-plugin-expect publish

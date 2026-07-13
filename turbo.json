@@ -2,25 +2,29 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        ".next/**",
+        "dist/**"
+      ]
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "outputs": [],
       "inputs": [
         "src/**/*.js",
         "src/**/*.tsx",
         "src/**/*.ts",
-
         "test/**/*.ts",
         "test/**/*.tsx",
         "test/**/*.js",
-
         "lib/**/*.js",
         "lib/**/*.ts",
         "lib/**/*.tsx",
-
         "core/**/*.js",
         "core/**/*.ts",
         "core/**/*.tsx"

@@ -2,9 +2,10 @@
   "name": "artillery-plugin-apdex",
   "version": "1.24.0",
   "description": "Calculate and report Apdex scores",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "scripts": {
-    "test": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.spec.js\""
+    "test": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.spec.js\"",
+    "build": "tsc -p tsconfig.build.json"
   },
   "keywords": [],
   "author": "",
