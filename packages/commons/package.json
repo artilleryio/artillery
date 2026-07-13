@@ -2,7 +2,7 @@
   "name": "@artilleryio/int-commons",
   "version": "2.24.0",
   "type": "module",
-  "main": "./index.ts",
+  "main": "./dist/index.js",
   "license": "MPL-2.0",
   "dependencies": {
     "async": "^2.6.4",
@@ -17,7 +17,8 @@
   "scripts": {
     "lint": "npx @biomejs/biome check .",
     "lint-fix": "npx @biomejs/biome check --write .",
-    "test": "echo \"No test specified\" && exit 0"
+    "test": "echo \"No test specified\" && exit 0",
+    "build": "tsc -p tsconfig.build.json"
   },
   "types": "./types.d.ts"
 }

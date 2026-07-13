@@ -2,12 +2,13 @@
   "name": "artillery-plugin-slack",
   "version": "1.22.0",
   "description": "Send Artillery.io test notifications to Slack",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "echo \"Error: no test specified\" && exit 0",
+    "build": "tsc -p tsconfig.build.json"
   },
   "keywords": [],
   "license": "MPL-2.0",

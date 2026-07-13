@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build packages
+        run: npm run build
+
       # Uses the version from packages/artillery-engine-playwright
       - name: Install Playwright Browsers
         run: npm exec --workspace artillery-engine-playwright -- playwright install chromium --with-deps
@@ -62,6 +65,10 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Build packages
+        run: npm run build
+        working-directory: ${{ github.workspace }}
+
       - name: Test
         uses: artilleryio/action-cli@v1
         with:
@@ -91,6 +98,10 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      - name: Build packages
+        run: npm run build
+        working-directory: ${{ github.workspace }}
 
       - name: Run armadillo scenario
         uses: artilleryio/action-cli@v1
@@ -131,6 +142,10 @@ jobs:
 
       - name: Install
         run: npm ci
+
+      - name: Build packages
+        run: npm run build
+        working-directory: ${{ github.workspace }}
 
       - name: Test
         uses: artilleryio/action-cli@v1

@@ -19,6 +19,10 @@ jobs:
           node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
+      - name: Install dependencies and build packages
+        run: |
+          npm install
+          npm run build
       - run: npm -w artillery-plugin-memory-inspector publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

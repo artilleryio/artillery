@@ -2,7 +2,7 @@
   "name": "@artilleryio/int-core",
   "version": "2.28.0",
   "type": "module",
-  "main": "./index.ts",
+  "main": "./dist/index.js",
   "license": "MPL-2.0",
   "dependencies": {
     "@artilleryio/int-commons": "*",
@@ -40,7 +40,8 @@
     "lint-fix": "npx @biomejs/biome check --write .",
     "test": "npm run test:unit && npm run test:acceptance",
     "test:unit": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/unit/*.test.js\"",
-    "test:acceptance": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/acceptance/*.test.js\" \"test/acceptance/**/*.test.js\""
+    "test:acceptance": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/acceptance/*.test.js\" \"test/acceptance/**/*.test.js\"",
+    "build": "tsc -p tsconfig.build.json"
   },
   "devDependencies": {
     "@hapi/basic": "^6.0.0",

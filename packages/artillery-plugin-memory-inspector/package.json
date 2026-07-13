@@ -2,9 +2,10 @@
   "name": "artillery-plugin-memory-inspector",
   "version": "1.1.1",
   "description": "Inspect the memory of processes running together with your load tests!",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "scripts": {
-    "test": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.spec.js\""
+    "test": "node --test --test-timeout=300000 --require ./test/setup-env.cjs \"test/*.spec.js\"",
+    "build": "tsc -p tsconfig.build.json"
   },
   "author": "",
   "license": "MPL-2.0",

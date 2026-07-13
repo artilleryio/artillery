@@ -2,9 +2,10 @@
   "name": "artillery-plugin-expect",
   "version": "2.27.0",
   "description": "Expectations and assertions for HTTP scenarios",
-  "main": "index.ts",
+  "main": "./dist/index.js",
   "scripts": {
-    "test": "bash test/run.sh"
+    "test": "bash test/run.sh",
+    "build": "tsc -p tsconfig.build.json"
   },
   "author": "Hassy Veldstra <h@artillery.io>",
   "license": "SEE LICENSE IN LICENSE.txt",
