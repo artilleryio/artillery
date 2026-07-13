@@ -219,7 +219,9 @@ async function execArtillery(options) {
     ARTILLERY_BINARY_PATH || `${ARTILLERY_NODE_MODULES}/artillery/bin/run`;
 
   // Set the plugin path to the legacy SQS plugin as well as to user's test data for third party plugins
-  env.ARTILLERY_PLUGIN_PATH = `${TEST_DATA_NODE_MODULES}:${ARTILLERY_NODE_MODULES}/artillery/lib/platform/aws-ecs/legacy/plugins`;
+  // Note: the CLI's legacy plugins live in the compiled output (dist/);
+  // the old lib/ path is kept for compatibility with older images
+  env.ARTILLERY_PLUGIN_PATH = `${TEST_DATA_NODE_MODULES}:${ARTILLERY_NODE_MODULES}/artillery/dist/lib/platform/aws-ecs/legacy/plugins:${ARTILLERY_NODE_MODULES}/artillery/lib/platform/aws-ecs/legacy/plugins`;
   env.HOME = '/tmp';
   env.NODE_PATH = ['/artillery/node_modules', TEST_DATA_NODE_MODULES].join(
     path.delimiter
