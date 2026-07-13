@@ -4,33 +4,39 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
- const oclif = require('@oclif/core');
+// NOTE: this launcher runs the built output in ../dist. Run
+// `npm run build` after cloning the repo or pulling changes.
 
- // The repo root carries a tsconfig.json (native type-stripping setup).
- // Without this switch oclif detects it and remaps command paths through
- // its TypeScript dev-mode (ts-node), which breaks relative path
- // resolution. We run .ts directly via Node - no transpile needed.
- oclif.settings.enableAutoTranspile = false;
+import { flush, handle, run, settings } from '@oclif/core';
 
- const { createGlobalObject } = require('../lib/artillery-global');
+// The repo root carries a tsconfig.json (native type-stripping setup).
+// Without this switch oclif detects it and remaps command paths through
+// its TypeScript dev-mode (ts-node), which breaks relative path
+// resolution.
+settings.enableAutoTranspile = false;
 
- const { rainbow } = require('../util');
- const banner = require('../lib/cli/banner');
- const setupConsoleCapture = require('../lib/console-capture');
+import { createGlobalObject } from '../dist/lib/artillery-global.js';
 
- async function main() {
-   await createGlobalObject();
-   await setupConsoleCapture();
+import banner from '../dist/lib/cli/banner.js';
+import { rainbow } from '../dist/lib/util.js';
+import setupConsoleCapture from '../dist/lib/console-capture.js';
 
-   if (!process.argv.slice(2).length) {
-     console.log(Math.random() * 100 > 34 ?
-                 banner :
-                 rainbow(banner));
-   } else if (process.argv.slice(2).length === 1 && process.argv.slice(2)[0] === '-V') {
-     process.argv[2] = 'version';
-   }
+async function main() {
+  await createGlobalObject();
+  await setupConsoleCapture();
 
-   oclif.run().then(require('@oclif/core/flush')).catch(require('@oclif/core/handle'));
- }
+  if (!process.argv.slice(2).length) {
+    console.log(Math.random() * 100 > 34 ? banner : rainbow(banner));
+  } else if (
+    process.argv.slice(2).length === 1 &&
+    process.argv.slice(2)[0] === '-V'
+  ) {
+    process.argv[2] = 'version';
+  }
 
- main();
+  // import.meta.url tells oclif where to find the CLI's package.json
+  // (in CJS it derived this from require.main)
+  run(process.argv.slice(2), import.meta.url).then(flush).catch(handle);
+}
+
+main();

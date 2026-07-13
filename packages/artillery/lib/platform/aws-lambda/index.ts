@@ -1,0 +1,737 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+import { createRequire } from 'node:module';
+import createDebug from 'debug';
+
+const require = createRequire(import.meta.url);
+
+import EventEmitter from 'node:events';
+
+const debug = createDebug('platform:aws-lambda');
+
+import crypto, { randomUUID } from 'node:crypto';
+import _https from 'node:https';
+import path from 'node:path';
+import {
+  AttachRolePolicyCommand,
+  CreatePolicyCommand, 
+  CreateRoleCommand,
+  GetRoleCommand,
+  IAMClient
+} from '@aws-sdk/client-iam';
+import {
+  CreateFunctionCommand,
+  DeleteFunctionCommand,
+  GetFunctionConfigurationCommand,
+  InvokeCommand,
+  LambdaClient,
+  ResourceConflictException,
+  ResourceNotFoundException
+} from '@aws-sdk/client-lambda';
+import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteQueueCommand, SQSClient } from '@aws-sdk/client-sqs';
+import _ from 'lodash';
+import { QueueConsumer } from '../../queue-consumer/index.ts';
+import * as telemetry from '../../telemetry.ts';
+import sleep from '../../util/sleep.ts';
+import createSQSQueue from '../aws/aws-create-sqs-queue.ts';
+import ensureS3BucketExists from '../aws/aws-ensure-s3-bucket-exists.ts';
+import getAccountId from '../aws/aws-get-account-id.ts';
+import { getBucketRegion } from '../aws/aws-get-bucket-region.ts';
+import awsGetDefaultRegion from '../aws/aws-get-default-region.ts';
+import { SQS_QUEUES_NAME_PREFIX } from '../aws/constants.ts';
+import createS3Client from '../aws-ecs/legacy/create-s3-client.ts';
+import { createAndUploadTestDependencies } from './dependencies.ts';
+import prices from './prices.ts';
+
+const pkgVersion = require('artillery/package.json').version;
+
+// https://stackoverflow.com/a/66523153
+function memoryToVCPU(memMB) {
+  if (memMB < 832) {
+    return 0.5;
+  }
+
+  if (memMB < 3009) {
+    return 2;
+  }
+
+  if (memMB < 5308) {
+    return 3;
+  }
+
+  if (memMB < 7077) {
+    return 4;
+  }
+
+  if (memMB < 8846) {
+    return 5;
+  }
+
+  return 6;
+}
+
+class PlatformLambda {
+  // Untyped JS class - properties assigned dynamically
+  [key: string]: any;
+
+  constructor(script, payload, opts, platformOpts) {
+    this.workers = {};
+
+    this.count = 0;
+    this.waitingReadyCount = 0;
+
+    this.script = script;
+    this.payload = payload;
+    this.opts = opts;
+
+    this.events = new EventEmitter();
+
+    const platformConfig = platformOpts.platformConfig;
+
+    this.currentVersion = process.env.LAMBDA_IMAGE_VERSION || pkgVersion;
+    this.ecrImageUrl = process.env.WORKER_IMAGE_URL;
+    this.architecture = platformConfig.architecture || 'arm64';
+    this.region = platformConfig.region || 'us-east-1';
+    this.arnPrefix = this.region.startsWith('cn-') ? 'arn:aws-cn' : 'arn:aws';
+
+    this.securityGroupIds =
+      platformConfig['security-group-ids']?.split(',') || [];
+    this.subnetIds = platformConfig['subnet-ids']?.split(',') || [];
+
+    this.useVPC = this.securityGroupIds.length > 0 && this.subnetIds.length > 0;
+
+    this.memorySize = platformConfig['memory-size'] || 4096;
+
+    this.testRunId = platformOpts.testRunId;
+    this.lambdaRoleArn =
+      platformConfig['lambda-role-arn'] || platformConfig.lambdaRoleArn;
+
+    this.platformOpts = platformOpts;
+
+    this.cloudKey =
+      this.platformOpts.cliArgs.key || process.env.ARTILLERY_CLOUD_API_KEY;
+
+    this.s3LifecycleConfigurationRules = [
+      {
+        Expiration: { Days: 2 },
+        Filter: { Prefix: '/lambda' },
+        ID: 'RemoveAdHocTestData',
+        Status: 'Enabled'
+      },
+      {
+        Expiration: { Days: 7 },
+        Filter: { Prefix: '/' },
+        ID: 'RemoveTestRunMetadata',
+        Status: 'Enabled'
+      }
+    ];
+
+    this.artilleryArgs = [];
+  }
+
+  async init() {
+    global.artillery.awsRegion = (await awsGetDefaultRegion()) || this.region;
+    artillery.log('λ Preparing AWS Lambda function...');
+    this.accountId = await getAccountId();
+
+    const metadata = {
+      region: this.region,
+      platformConfig: {
+        memory: this.memorySize,
+        cpu: memoryToVCPU(this.memorySize)
+      }
+    };
+    global.artillery.globalEvents.emit('metadata', metadata);
+
+    //make sure the bucket exists to send the zip file or the dependencies to
+    const bucketName = await ensureS3BucketExists(
+      this.region,
+      this.s3LifecycleConfigurationRules,
+      true
+    );
+    this.bucketName = bucketName;
+
+    global.artillery.s3BucketRegion = await getBucketRegion(bucketName);
+
+    const { bom, s3Path }: any = await createAndUploadTestDependencies(
+      this.bucketName,
+      this.testRunId,
+      this.opts.absoluteScriptPath,
+      this.opts.absoluteConfigPath,
+      this.platformOpts.cliArgs
+    );
+
+    this.artilleryArgs.push('run');
+
+    if (this.platformOpts.cliArgs.environment) {
+      this.artilleryArgs.push('-e');
+      this.artilleryArgs.push(this.platformOpts.cliArgs.environment);
+    }
+    if (this.platformOpts.cliArgs.solo) {
+      this.artilleryArgs.push('--solo');
+    }
+
+    if (this.platformOpts.cliArgs.target) {
+      this.artilleryArgs.push('--target');
+      this.artilleryArgs.push(this.platformOpts.cliArgs.target);
+    }
+
+    if (this.platformOpts.cliArgs.variables) {
+      this.artilleryArgs.push('-v');
+      this.artilleryArgs.push(this.platformOpts.cliArgs.variables);
+    }
+
+    if (this.platformOpts.cliArgs.overrides) {
+      this.artilleryArgs.push('--overrides');
+      this.artilleryArgs.push(this.platformOpts.cliArgs.overrides);
+    }
+
+    if (this.platformOpts.cliArgs.dotenv) {
+      this.artilleryArgs.push('--dotenv');
+      this.artilleryArgs.push(path.basename(this.platformOpts.cliArgs.dotenv));
+    }
+
+    if (this.platformOpts.cliArgs['scenario-name']) {
+      this.artilleryArgs.push('--scenario-name');
+      this.artilleryArgs.push(this.platformOpts.cliArgs['scenario-name']);
+    }
+
+    if (this.platformOpts.cliArgs.config) {
+      this.artilleryArgs.push('--config');
+      const p = bom.files.filter(
+        (x) => x.orig === this.opts.absoluteConfigPath
+      )[0];
+      this.artilleryArgs.push(p.noPrefixPosix);
+    }
+
+    // This needs to be the last argument for now:
+    const p = bom.files.filter(
+      (x) => x.orig === this.opts.absoluteScriptPath
+    )[0];
+    this.artilleryArgs.push(p.noPrefixPosix);
+    // 36 is length of a UUUI v4 string
+    const queueName = `${SQS_QUEUES_NAME_PREFIX}_${this.testRunId.slice(
+      0,
+      36
+    )}.fifo`;
+
+    const sqsQueueUrl = await createSQSQueue(this.region, queueName);
+    this.sqsQueueUrl = sqsQueueUrl;
+
+    if (typeof this.lambdaRoleArn === 'undefined') {
+      const lambdaRoleArn = await this.createLambdaRole();
+      this.lambdaRoleArn = lambdaRoleArn;
+    } else {
+      artillery.log(` - Lambda role ARN: ${this.lambdaRoleArn}`);
+    }
+
+    this.functionName = this.createFunctionNameWithHash();
+
+    await this.createOrUpdateLambdaFunctionIfNeeded();
+
+    artillery.log(` - Lambda function: ${this.functionName}`);
+    artillery.log(` - Region: ${this.region}`);
+    artillery.log(` - AWS account: ${this.accountId}`);
+
+    debug({ bucketName, s3Path, sqsQueueUrl });
+
+    const consumer = new QueueConsumer();
+    consumer.create(
+      {
+        poolSize: Math.min(this.platformOpts.count, 100)
+      },
+      {
+        queueUrl: process.env.SQS_QUEUE_URL || this.sqsQueueUrl,
+        region: this.region,
+        waitTimeSeconds: 10,
+        messageAttributeNames: ['testId', 'workerId'],
+        visibilityTimeout: 60,
+        batchSize: 10,
+        handleMessage: async (message) => {
+          let body = null;
+          try {
+            body = JSON.parse(message.Body);
+          } catch (err) {
+            console.error(err);
+            console.log(message.Body);
+          }
+
+          //
+          // Ignore any messages that are invalid or not tagged properly.
+          //
+
+          if (process.env.LOG_SQS_MESSAGES) {
+            console.log(message);
+          }
+
+          if (!body) {
+            throw new Error('SQS message with empty body');
+          }
+
+          const attrs = message.MessageAttributes;
+          if (!attrs || !attrs.testId || !attrs.workerId) {
+            throw new Error('SQS message with no testId or workerId');
+          }
+
+          if (this.testRunId !== attrs.testId.StringValue) {
+            throw new Error('SQS message for an unknown testId');
+          }
+
+          const workerId = attrs.workerId.StringValue;
+
+          if (body.event === 'workerStats') {
+            this.events.emit('stats', workerId, body); // event consumer accesses body.stats
+          } else if (body.event === 'artillery.log') {
+            console.log(body.log);
+          } else if (body.event === 'done') {
+            // 'done' handler in Launcher exects the message argument to have an "id" and "report" fields
+            body.id = workerId;
+            body.report = body.stats; // Launcher expects "report", SQS reporter sends "stats"
+            this.events.emit('done', workerId, body);
+          } else if (
+            body.event === 'phaseStarted' ||
+            body.event === 'phaseCompleted'
+          ) {
+            body.id = workerId;
+            this.events.emit(body.event, workerId, { phase: body.phase });
+          } else if (body.event === 'workerError') {
+            global.artillery.suggestedExitCode = body.exitCode || 1;
+
+            if (body.exitCode !== 21) {
+              this.events.emit(body.event, workerId, {
+                id: workerId,
+                error: new Error(
+                  `A Lambda function has exited with an error. Reason: ${body.reason}`
+                ),
+                level: 'error',
+                aggregatable: false,
+                logs: body.logs
+              });
+            }
+          } else if (body.event === 'workerReady') {
+            this.events.emit(body.event, workerId);
+            this.waitingReadyCount++;
+
+            // TODO: Do this only for batches of workers with "wait" option set
+            if (this.waitingReadyCount === this.count) {
+              // TODO: Retry
+              const s3 = createS3Client();
+              await s3.send(
+                new PutObjectCommand({
+                  Body: Buffer.from(''),
+                  Bucket: this.bucketName,
+                  Key: `/${this.testRunId}/green`
+                })
+              );
+            }
+          } else {
+            debug(body);
+          }
+        }
+      }
+    );
+
+    let queueEmpty = 0;
+
+    consumer.on('error', (err) => {
+      artillery.log(err);
+    });
+    consumer.on('empty', (_err) => {
+      debug('queueEmpty:', queueEmpty);
+      queueEmpty++;
+    });
+
+    consumer.start();
+
+    this.sqsConsumer = consumer;
+
+    // TODO: Start the timer when the first worker is created
+    const startedAt = Date.now();
+    global.artillery.ext({
+      ext: 'beforeExit',
+      method: async (event) => {
+        try {
+          // NOTE: telemetry has no init/shutdown - this has always thrown
+          // and been swallowed by the catch below. Kept as-is.
+          await (telemetry as any).init().capture({
+            event: 'ping',
+            awsAccountId: crypto
+              .createHash('sha1')
+              .update(this.accountId)
+              .digest('base64')
+          });
+
+          process.nextTick(() => {
+            (telemetry as any).shutdown();
+          });
+        } catch (_err) {}
+
+        function round(number, decimals) {
+          const m = 10 ** decimals;
+          return Math.round(number * m) / m;
+        }
+
+        if (event.flags && event.flags.platform === 'aws:lambda') {
+          let price = 0;
+          if (!prices[this.region]) {
+            price = prices.base[this.architecture];
+          } else {
+            price = prices[this.region][this.architecture];
+          }
+
+          const duration = Math.ceil((Date.now() - startedAt) / 1000);
+          const total =
+            ((price * this.memorySize) / 1024) *
+            this.platformOpts.count *
+            duration;
+          const cost = round(total / 10e10, 4);
+          console.log(`\nEstimated AWS Lambda cost for this test: $${cost}\n`);
+        }
+      }
+    });
+  }
+
+  getDesiredWorkerCount() {
+    return this.platformOpts.count;
+  }
+
+  async startJob() {
+    await this.init();
+
+    for (let i = 0; i < this.platformOpts.count; i++) {
+      const { workerId } = await this.createWorker();
+      this.workers[workerId] = { id: workerId };
+      await this.runWorker(workerId);
+    }
+  }
+
+  async createWorker() {
+    const workerId = randomUUID();
+
+    return { workerId };
+  }
+
+  async runWorker(workerId) {
+    const lambda = new LambdaClient({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+    const event: any = {
+      SQS_QUEUE_URL: this.sqsQueueUrl,
+      SQS_REGION: this.region,
+      WORKER_ID: workerId,
+      ARTILLERY_ARGS: this.artilleryArgs,
+      TEST_RUN_ID: this.testRunId,
+      BUCKET: this.bucketName,
+      WAIT_FOR_GREEN: true,
+      ARTILLERY_CLOUD_API_KEY: this.cloudKey
+    };
+
+    if (process.env.ARTILLERY_CLOUD_ENDPOINT) {
+      event.ARTILLERY_CLOUD_ENDPOINT = process.env.ARTILLERY_CLOUD_ENDPOINT;
+    }
+
+    debug('Lambda event payload:');
+    debug({ event });
+
+    const payload = JSON.stringify(event);
+
+    // Wait for the function to be invocable:
+    const timeout = this.useVPC ? 240e3 : 120e3;
+    let waited = 0;
+    let ok = false;
+    let state;
+    while (waited < timeout) {
+      try {
+        state = (
+          await lambda.send(
+            new GetFunctionConfigurationCommand({
+              FunctionName: this.functionName
+            })
+          )
+        ).State;
+        if (state === 'Active') {
+          debug('Lambda function ready:', this.functionName);
+          ok = true;
+          break;
+        } else {
+          await sleep(10 * 1000);
+          waited += 10 * 1000;
+        }
+      } catch (err) {
+        debug('Error getting lambda state:', err);
+        await sleep(10 * 1000);
+        waited += 10 * 1000;
+      }
+    }
+
+    if (!ok) {
+      debug(
+        'Time out waiting for lamda function to be ready:',
+        this.functionName
+      );
+      throw new Error(
+        'Timeout waiting for lambda function to be ready for invocation'
+      );
+    }
+
+    await lambda.send(
+      new InvokeCommand({
+        FunctionName: this.functionName,
+        Payload: payload,
+        InvocationType: 'Event'
+      })
+    );
+
+    this.count++;
+  }
+
+  async stopWorker(_workerId) {
+    // TODO: Send message to that worker and have it exit early
+  }
+
+  async shutdown() {
+    if (this.sqsConsumer) {
+      this.sqsConsumer.stop();
+    }
+
+    const sqs = new SQSClient({ region: this.region });
+    const lambda = new LambdaClient({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    try {
+      await sqs.send(
+        new DeleteQueueCommand({
+          QueueUrl: this.sqsQueueUrl
+        })
+      );
+
+      if (process.env.RETAIN_LAMBDA === 'false') {
+        await lambda.send(
+          new DeleteFunctionCommand({
+            FunctionName: this.functionName
+          })
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async createLambdaRole() {
+    const ROLE_NAME = 'artilleryio-default-lambda-role-20230116';
+    const POLICY_NAME = 'artilleryio-lambda-policy-20230116';
+
+    const iam = new IAMClient({ region: global.artillery.awsRegion });
+
+    try {
+      const res = await iam.send(new GetRoleCommand({ RoleName: ROLE_NAME }));
+      return res.Role.Arn;
+    } catch (err) {
+      debug(err);
+    }
+
+    const principalService = this.region.startsWith('cn-')
+      ? 'lambda.amazonaws.com.cn'
+      : 'lambda.amazonaws.com';
+
+    const res = await iam.send(
+      new CreateRoleCommand({
+        AssumeRolePolicyDocument: `{
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Principal": {
+              "Service": "${principalService}"
+            },
+            "Action": "sts:AssumeRole"
+          }
+        ]
+      }`,
+        Path: '/',
+        RoleName: ROLE_NAME
+      })
+    );
+
+    const lambdaRoleArn = res.Role.Arn;
+
+    await iam.send(
+      new AttachRolePolicyCommand({
+        PolicyArn: `${this.arnPrefix}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole`,
+        RoleName: ROLE_NAME
+      })
+    );
+
+    await iam.send(
+      new AttachRolePolicyCommand({
+        PolicyArn: `${this.arnPrefix}:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole`,
+        RoleName: ROLE_NAME
+      })
+    );
+
+    const iamRes = await iam.send(
+      new CreatePolicyCommand({
+        PolicyDocument: `{
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["sqs:*"],
+            "Resource": "${this.arnPrefix}:sqs:*:${this.accountId}:artilleryio*"
+          },
+          {
+            "Effect": "Allow",
+            "Action": ["s3:HeadObject", "s3:PutObject", "s3:ListBucket", "s3:GetObject", "s3:GetObjectAttributes"],
+            "Resource": [ "${this.arnPrefix}:s3:::artilleryio-test-data*",  "${this.arnPrefix}:s3:::artilleryio-test-data*/*" ]
+          }
+        ]
+      }
+      `,
+        PolicyName: POLICY_NAME,
+        Path: '/'
+      })
+    );
+
+    await iam.send(
+      new AttachRolePolicyCommand({
+        PolicyArn: iamRes.Policy.Arn,
+        RoleName: ROLE_NAME
+      })
+    );
+
+    // See https://stackoverflow.com/a/37438525 for why we need this
+    await sleep(10 * 1000);
+
+    return lambdaRoleArn;
+  }
+
+  async createOrUpdateLambdaFunctionIfNeeded() {
+    const existingLambdaConfig = await this.getLambdaFunctionConfiguration();
+
+    if (existingLambdaConfig) {
+      debug(
+        'Lambda function with this configuration already exists. Using existing function.'
+      );
+      return;
+    }
+
+    try {
+      await this.createLambda({
+        bucketName: this.bucketName,
+        functionName: this.functionName
+      });
+      return;
+    } catch (err) {
+      if (err instanceof ResourceConflictException) {
+        debug(
+          'Lambda function with this configuration already exists. Using existing function.'
+        );
+        return;
+      }
+
+      throw new Error(`Failed to create Lambda Function: \n${err}`);
+    }
+  }
+
+  async getLambdaFunctionConfiguration() {
+    const lambda = new LambdaClient({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    try {
+      const res = await lambda.send(
+        new GetFunctionConfigurationCommand({
+          FunctionName: this.functionName
+        })
+      );
+
+      return res;
+    } catch (err) {
+      if (err instanceof ResourceNotFoundException) {
+        return null;
+      }
+
+      throw new Error(`Failed to get Lambda Function: \n${err}`);
+    }
+  }
+
+  createFunctionNameWithHash(_lambdaConfig?) {
+    const changeableConfig = {
+      MemorySize: this.memorySize,
+      VpcConfig: {
+        SecurityGroupIds: this.securityGroupIds,
+        SubnetIds: this.subnetIds
+      }
+    };
+
+    const configHash = crypto
+      .createHash('md5')
+      .update(JSON.stringify(changeableConfig))
+      .digest('hex');
+
+    let name = `artilleryio-v${this.currentVersion.replace(/\./g, '-')}-${
+      this.architecture
+    }-${configHash}`;
+
+    if (name.length > 64) {
+      name = name.slice(0, 64);
+    }
+
+    return name;
+  }
+
+  async createLambda(opts) {
+    const { functionName } = opts;
+
+    const lambda = new LambdaClient({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    const lambdaConfig: any = {
+      PackageType: 'Image',
+      Code: {
+        ImageUri:
+          this.ecrImageUrl ||
+          `248481025674.dkr.ecr.${this.region}.amazonaws.com/artillery-worker:${this.currentVersion}-${this.architecture}`
+      },
+      ImageConfig: {
+        Command: ['a9-handler-index.handler'],
+        EntryPoint: ['/usr/local/bin/npx', 'aws-lambda-ric']
+      },
+      FunctionName: functionName,
+      Description: 'Artillery.io test',
+      MemorySize: parseInt(this.memorySize, 10),
+      Timeout: 900,
+      Role: this.lambdaRoleArn,
+      //TODO: architecture influences the entrypoint. We should review which architecture to use in the end (may impact Playwright viability)
+      Architectures: [this.architecture],
+      Environment: {
+        Variables: {
+          S3_BUCKET_PATH: this.bucketName,
+          NPM_CONFIG_CACHE: '/tmp/.npm', //TODO: move this to Dockerfile
+          AWS_LAMBDA_LOG_FORMAT: 'JSON', //TODO: review this. we need to find a ways for logs to look better in Cloudwatch
+          ARTILLERY_WORKER_PLATFORM: 'aws:lambda'
+        }
+      }
+    };
+
+    if (this.useVPC) {
+      lambdaConfig.VpcConfig = {
+        SecurityGroupIds: this.securityGroupIds,
+        SubnetIds: this.subnetIds
+      };
+    }
+
+    await lambda.send(new CreateFunctionCommand(lambdaConfig));
+  }
+}
+
+export default PlatformLambda;

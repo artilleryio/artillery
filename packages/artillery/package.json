@@ -2,22 +2,24 @@
   "name": "artillery",
   "version": "2.0.33",
   "description": "Cloud-scale load testing. https://www.artillery.io",
+  "type": "module",
+  "main": "./dist/lib/index.js",
   "types": "./types.d.ts",
   "exports": {
     ".": {
-      "require": "./lib/index.js",
-      "types": "./types.d.ts"
+      "types": "./types.d.ts",
+      "default": "./dist/lib/index.js"
     },
-    "./util": {
-      "require": "./lib/util.js"
-    }
+    "./util": "./dist/lib/util.js",
+    "./package.json": "./package.json"
   },
   "engines": {
-    "node": ">= 22.13.0"
+    "node": ">= 22.18.0"
   },
   "files": [
     "/bin",
     "/lib",
+    "/dist",
     "console-reporter.js",
     "util.js",
     ".artilleryrc",
@@ -29,10 +31,10 @@
         "bucket": "artillery-cli-assets"
       }
     },
-    "commands": "./lib/cmds",
+    "commands": "./dist/lib/cmds",
     "hooks": {
       "init": [
-        "./lib/cli/hooks/version"
+        "./dist/lib/cli/hooks/version"
       ]
     },
     "bin": "artillery",
@@ -61,7 +63,8 @@
     "test:aws:ci": "node --test --test-timeout=4200000 --require ./test/setup-env.cjs",
     "test:aws:windows": "node --test --test-timeout=420000 --require ./test/setup-env.cjs --test-name-pattern \"@windows\" \"test/cloud-e2e/**/*.test.js\"",
     "lint": "npx @biomejs/biome check .",
-    "lint-fix": "npx @biomejs/biome check --write ."
+    "lint-fix": "npx @biomejs/biome check --write .",
+    "build": "tsc -p tsconfig.build.json"
   },
   "lint-staged": {
     "**/*.{js,ts,tsx}": "npx @biomejs/biome check --write --files-ignore-unknown=true --no-errors-on-unmatched"
