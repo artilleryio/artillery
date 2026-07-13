@@ -100,6 +100,7 @@ test('OTel reporter correctly records trace data for http engine test runs', asy
     await runHttpTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
     console.error(err);
+    assert.fail(err);
   }
 });
 
@@ -184,6 +185,7 @@ test('OTel reporter works appropriately with "parallel" scenario setting ', asyn
     await runHttpTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
     console.error(err);
+    assert.fail(err);
   }
 });
 
@@ -269,5 +271,6 @@ test('Otel reporter appropriately records traces for test runs with errors', asy
     await runHttpTraceAssertions(t, testRunData, expectedOutcome);
   } catch (err) {
     console.error(err);
+    assert.fail(err);
   }
 });

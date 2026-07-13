@@ -1,9 +1,11 @@
 
 
 const { getTestId } = require('../fixtures/helpers.js');
+const assert = require('node:assert');
+const { hasProps, hasSubset } = require('../../helpers/expectations');
 
-/**  Runs assertions for OTel Playwright tracing tests using 'tap' library. It checks that the trace data is correctly recorded, formatted and exported by the OTel plugin.
- * @param {Object} t - the tap library test object
+/**  Runs assertions for OTel Playwright tracing tests using node:assert. It checks that the trace data is correctly recorded, formatted and exported by the OTel plugin.
+ * @param {Object} _t - node:test context (unused; assertions throw via node:assert)
  * @param {Object} testRunData - an object containing the console output of the test run, the report summary and the exported spans - `{ output, reportSummary, spans }`
  * @namespace expectedOutcome
  * @param {Object} expectedOutcome - an object containing the expected outcome values for the test run.
@@ -62,46 +64,46 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
     .map((metricName) => metricName.replace('browser.step.', ''));
 
   // Span counts
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['vusers.created'],
     expectedOutcome.vus,
     `${expectedOutcome.vus} VUs should have been created`
   );
-  t.equal(
+  assert.strictEqual(
     [...new Set(spans.map((span) => span.traceId))].length,
     reportSummary.counters['vusers.created'],
     'The number of traces should match the number of VUs created'
   );
-  t.equal(
+  assert.strictEqual(
     scenarioSpans.length,
     reportSummary.counters['vusers.created'],
     'The number of scenario spans should match the number of VUs created'
   );
-  t.equal(
+  assert.strictEqual(
     pageSpans.length,
     expectedOutcome.pageSpans,
     `${expectedOutcome.pageSpans} page spans should have been created`
   );
 
   expectedOutcome.stepNames.forEach((name) => {
-    t.ok(
+    assert.ok(
       stepsReported.includes(name),
       'All expected steps should have been reported'
     );
   });
-  t.equal(
+  assert.strictEqual(
     stepSpans.length,
     expectedOutcome.stepSpans,
     `${expectedOutcome.stepSpans} step spans should have been created`
   );
-  t.equal(
+  assert.strictEqual(
     spans.length,
     expectedOutcome.totalSpans,
     `There should be ${expectedOutcome.totalSpans} spans created in total`
   );
 
   // Counter metric reported
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['plugins.publish-metrics.spans.exported'],
     expectedOutcome.totalSpans,
     'The `plugins.publish-metrics.spans.exported` counter should match the total number of spans exported'
@@ -120,35 +122,35 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
     span.events.some((event) => event.name === 'exception')
   );
 
-  t.equal(
+  assert.strictEqual(
     output.exitCode,
     expectedOutcome.exitCode,
     `CLI Exit Code should be ${expectedOutcome.exitCode}`
   );
-  t.equal(
+  assert.strictEqual(
     reportSummary.counters['vusers.failed'],
     expectedOutcome.vusFailed,
     `${expectedOutcome.vusFailed} VUs should have failed`
   );
-  t.equal(
+  assert.strictEqual(
     numErrorsReported,
     expectedOutcome.errors,
     `There should be ${expectedOutcome.errors} errors reported`
   );
 
   // Span status can be set to error even when no error is recorded so we check status separately from error events
-  t.equal(
+  assert.strictEqual(
     spansWithErrorStatus.length,
     expectedOutcome.spansWithErrorStatus,
     `${expectedOutcome.spansWithErrorStatus} spans should have the error status`
   );
 
-  t.equal(
+  assert.strictEqual(
     spansWithErrorEvents.length,
     numErrorsReported,
     'Num of errors in report should match the num of spans with the error status'
   );
-  t.ok(
+  assert.ok(
     spansWithErrorEvents.every((span) => span.status.code === 2),
     'The error status code should be set on all spans with error events'
   );
@@ -158,7 +160,7 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
     const numStepSpansPerStep =
       stepSpans.length / expectedOutcome.stepNames.length;
     expectedOutcome.modifiedSpanNames.steps.forEach((stepName) => {
-      t.equal(
+      assert.strictEqual(
         stepSpans.filter((span) => span.name === stepName).length,
         numStepSpansPerStep,
         `All step spans should have the modified name '${stepName}'`
@@ -168,7 +170,7 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
     const numPageSpansPerPage =
       pageSpans.length / expectedOutcome.pageSpanNames.length;
     expectedOutcome.modifiedSpanNames.pages.forEach((pageName) => {
-      t.equal(
+      assert.strictEqual(
         pageSpans.filter((span) => span.name === pageName).length,
         numPageSpansPerPage,
         `All page spans should have the modified name '${pageName}'`
@@ -177,7 +179,7 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
   }
   // Per VU/trace (this will check that each trace is nested correctly and all its data is where and what it is supposed to be):
   scenarioSpans.forEach((span) => {
-    t.equal(
+    assert.strictEqual(
       span.name,
       expectedOutcome.scenarioName,
       'The root span should be named after the scenario'
@@ -191,12 +193,12 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
       .map((stepSpan) => stepSpan.name);
     const eventNames = span.events.map((event) => event.name);
 
-    t.equal(
+    assert.strictEqual(
       pages.length,
       expectedOutcome.pageSpansPerVu,
       `Each scenario span should have ${expectedOutcome.pageSpansPerVu} page spans`
     );
-    t.equal(
+    assert.strictEqual(
       steps.length,
       expectedOutcome.stepSpansPerVu,
       `Each scenario span should have ${expectedOutcome.stepSpansPerVu} step spans`
@@ -204,13 +206,13 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
 
     // each scenario span has the appropriate page and step spans - by name
     expectedOutcome.stepNames.forEach((name) => {
-      t.ok(
+      assert.ok(
         steps.includes(name),
         `Each scenario span should have a step span named '${name}'`
       );
     });
     expectedOutcome.pageSpanNames.forEach((name) => {
-      t.ok(
+      assert.ok(
         pages.includes(name),
         `Each scenario span should have a page span named '${name}'`
       );
@@ -220,14 +222,14 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
     const navigationEvents = span.events
       .map((event) => event.name)
       .filter((eventName) => eventName.startsWith('navigated to'));
-    t.equal(
+    assert.strictEqual(
       navigationEvents.length,
       expectedOutcome.pageSpansPerVu,
       'The number of navigation events should match the number of pages visited'
     );
 
     expectedOutcome.pagesVisitedPerVU.forEach((page) => {
-      t.ok(
+      assert.ok(
         eventNames.includes(`navigated to ${page}`),
         `Each scenario span should have a navigation event for '${page}'`
       );
@@ -236,17 +238,17 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
 
   // Attributes
   spans.forEach((span) => {
-    t.has(
+    hasSubset(
       span.attributes,
       expectedOutcome.userSetAttributes,
       'All spans should have the user set attributes'
     );
-    t.hasProps(
+    hasProps(
       span.attributes,
       ['test_id', 'vu.uuid'],
       'All spans should have the test_id and vu.uuid attributes'
     );
-    t.equal(
+    assert.strictEqual(
       span.attributes.test_id,
       testId,
       'All spans should have the correct test_id attribute value'
@@ -279,7 +281,7 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
     // the metric name format is 'browser.page.[vital].[url]'
     const [, , vital, ...urlArr] = metricName.split('.');
     const url = urlArr.join('.');
-    t.ok(
+    assert.ok(
       pageSpansPerUrl[url].some(
         (pageSpan) =>
           Object.hasOwn(pageSpan.attributes, `web_vitals.${vital}.value`) &&
@@ -287,7 +289,7 @@ async function runPlaywrightTraceAssertions(t, testRunData, expectedOutcome) {
       ),
       `${vital} value and rating reported for '${url}' should be added to its page span`
     );
-    t.ok(
+    assert.ok(
       pageSpansPerUrl[url].some((pageSpan) =>
         pageSpan.events.some((event) => event.name === vital)
       ),

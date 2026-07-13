@@ -14,7 +14,8 @@ const {
 } = require('../../helpers');
 const {
   checkForNegativeValues,
-  checkAggregateCounterSums
+  checkAggregateCounterSums,
+  hasSubset
 } = require('../../helpers/expectations');
 
 const A9_PATH = process.env.A9_PATH || 'artillery';
@@ -96,12 +97,20 @@ test('Cloud API key gets loaded from dotenv on Fargate runs', async (t) => {
       'Artillery Cloud reporting is configured for this test run'
     ), 'Should have configured Artillery Cloud reporting');
   assert.strictEqual(res.statusCode, 200, 'Should get a 200 response when getting the test by id from the Artillery Cloud API');
-  assert.ok(t.equal(testData.id, testRunId, 'Correct test should be returned') &&
-      t.match(
-        testData?.report?.summary,
-        report.summary,
-        'Report data should match the report file'
-      ), 'Should have successfully recorded the test to Artillery Cloud');
+  // (was a tap-style t.equal/t.match combo left over from the node:test
+  // migration - node:test's t has neither method)
+  assert.strictEqual(
+    testData.id,
+    testRunId,
+    'Correct test should be returned - should have successfully recorded the test to Artillery Cloud'
+  );
+  if (report.summary !== undefined) {
+    hasSubset(
+      testData?.report?.summary,
+      report.summary,
+      'Report data should match the report file'
+    );
+  }
 
   fs.unlinkSync(dotEnvPath);
   checkForNegativeValues(t, report);
