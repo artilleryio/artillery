@@ -240,4 +240,6 @@ COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/help
 RUN ln -s /artillery/node_modules/.bin/artillery /usr/local/bin/artillery \
     && chmod +x /artillery/loadgen-worker
 
+ENV NODE_PATH="/home/node/artillery/node_modules"
+
 ENTRYPOINT ["/artillery/packages/artillery/bin/run"]

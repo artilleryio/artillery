@@ -19,4 +19,5 @@ RUN npm install --no-save --ignore-scripts typescript@5.9.3 \
     && rm -rf node_modules/typescript node_modules/.bin/tsc node_modules/.bin/tsserver
 
 ENV PATH="/home/node/artillery/bin:${PATH}"
+ENV NODE_PATH="/home/node/artillery/node_modules"
 ENTRYPOINT ["/home/node/artillery/bin/run"]
