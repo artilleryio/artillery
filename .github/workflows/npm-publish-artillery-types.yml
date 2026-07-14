@@ -21,6 +21,9 @@ jobs:
           scope: '@artilleryio'
       - run: node .github/workflows/scripts/replace-package-versions.js
       - run: npm ci
+      # Builds workspace deps in topological order (artillery-plugin-fake-data
+      # must be transpiled before the types build can require it)
+      - run: npm run build
       - run: npm -w '@artilleryio/types' publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
