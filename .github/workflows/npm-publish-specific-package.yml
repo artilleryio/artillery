@@ -55,9 +55,6 @@ jobs:
             PACKAGE_NAME=$(node -e "console.log(require('./packages/${{ inputs.PACKAGE_FOLDER_NAME }}/package.json').name)")
             echo "PACKAGE_NAME=$PACKAGE_NAME" >> "$GITHUB_ENV"
       
-      - run: npm install -w skytrace --ignore-scripts && npm run build -w skytrace
-        if: ${{ inputs.PACKAGE_FOLDER_NAME == 'skytrace'}}
-        
       - name: Install dependencies and build packages
         run: |
           npm install

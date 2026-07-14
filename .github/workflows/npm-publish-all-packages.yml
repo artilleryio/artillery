@@ -79,10 +79,6 @@ jobs:
         run: |
           ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
           echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> $GITHUB_OUTPUT
-      # # Skytrace is a Typescript Package and needs to install -> build -> publish
-      # - run: npm install -w skytrace --ignore-scripts
-      # - run: npm run build -w skytrace
-      # - run: npm -w skytrace publish
 
   publish-official-docker-image:
     uses: ./.github/workflows/docker-publish-artillery.yml

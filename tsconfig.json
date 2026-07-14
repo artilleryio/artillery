@@ -19,7 +19,6 @@
     "**/test/**",
     "**/*.test.ts",
     "**/node_modules",
-    "packages/skytrace",
     "packages/types",
     "examples",
     "**/dist"

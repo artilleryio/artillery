@@ -35,32 +35,3 @@
 
 
 → [Learn more](./packages/artillery#readme)
-
-<!--
-
-----
-
-<div align="center">
-  <img src="./packages/skytrace/skytrace-logo.svg" width="80">
-  <h1>Skytrace<br />fast & simple end-to-end testing</h1>
-</div>
-
-**Skytrace makes it easy to write, run and reuse e2e tests.**
-
-* Write flows fast with editor autocomplete and auto-reload mode
-* Set assertions and expectations on responses
-* Run locally, in CI/CD, or in production
-* Batteries-included with 20+ integrations for CICD, monitoring, and observability
-* Reuse flows for load testing with Artillery
-
-→ [Learn more](./packages/skytrace#readme)
-
-⚠️ Skytrace is an alpha project ⚠️
-
-----
-
-<img src="https://149753425.v2.pressablecdn.com/wp-content/uploads/2009/06/osi_symbol_100X100_0.png" width="36" align="left" />
-
-**Artillery** and **Skytrace** are open-source software distributed under the terms of the [MPLv2](https://www.mozilla.org/en-US/MPL/2.0/) license.
-
--->

@@ -1,4 +1,4 @@
-// Loose declarations for TypeScript consumers (e.g. skytrace).
+// Loose declarations for external TypeScript consumers.
 // package.json "types" points here so external tsc builds use these
 // instead of following "main" into the .ts sources, which would be
 // compiled with the consumer's own (incompatible) compiler settings.
