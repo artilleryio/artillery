@@ -20,7 +20,7 @@
     "joi-to-json": "^4.1.0",
     "js-yaml": "^4.1.0",
     "ts-node": "^10.9.1",
-    "typescript-json-schema": "^0.59.0"
+    "typescript-json-schema": "^0.67.1"
   },
   "dependencies": {
     "artillery-plugin-fake-data": "*"
