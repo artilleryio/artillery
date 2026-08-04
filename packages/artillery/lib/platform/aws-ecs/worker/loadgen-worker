@@ -258,7 +258,7 @@ install_dependencies () {
     debug "$(cat $METADATA_FILE || true)"
 
     # Needed to install all packages to the dir of the test files.
-    export NODE_PATH="$TEST_DATA:${NODE_PATH:-""}"
+    export NODE_PATH="$TEST_DATA/node_modules:${NODE_PATH:-""}"
 
     generate_npmrc >> ~/.npmrc
 

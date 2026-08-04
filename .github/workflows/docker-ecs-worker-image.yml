@@ -105,6 +105,18 @@ jobs:
           DOCKER_TAG: ${{ env.WORKER_VERSION }}-x86_64
         run: |
           docker build . --platform linux/amd64 --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+
+      - name: Smoke test Playwright imports (Public ECR)
+        if: matrix.registry == 'public'
+        env:
+          DOCKER_TAG: ${{ env.WORKER_VERSION }}-x86_64
+        run: |
+          docker run --rm --platform linux/amd64 \
+            --entrypoint node \
+            --workdir /tmp \
+            --mount type=bind,source="$PWD/.github/workflows/scripts/smoke-test-artillery-docker-image.mjs",target=/tmp/smoke-test.mjs,readonly \
+            public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_TAG }} \
+            /tmp/smoke-test.mjs
       
       - name: Push Docker image (Public ECR)
         if: matrix.registry == 'public'
@@ -134,6 +146,18 @@ jobs:
           DOCKER_TAG: ${{ env.WORKER_VERSION }}-x86_64
         run: |
           docker build . --platform linux/amd64 --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+
+      - name: Smoke test Playwright imports (Private ECR)
+        if: matrix.registry == 'private'
+        env:
+          DOCKER_TAG: ${{ env.WORKER_VERSION }}-x86_64
+        run: |
+          docker run --rm --platform linux/amd64 \
+            --entrypoint node \
+            --workdir /tmp \
+            --mount type=bind,source="$PWD/.github/workflows/scripts/smoke-test-artillery-docker-image.mjs",target=/tmp/smoke-test.mjs,readonly \
+            248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }} \
+            /tmp/smoke-test.mjs
 
       - name: Push Docker image (Private ECR)
         if: matrix.registry == 'private'
@@ -212,6 +236,18 @@ jobs:
           DOCKER_TAG: ${{ env.WORKER_VERSION }}-arm64
         run: |
           docker build . --platform linux/arm64 --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
+
+      - name: Smoke test Playwright imports (Public ECR)
+        if: matrix.registry == 'public'
+        env:
+          DOCKER_TAG: ${{ env.WORKER_VERSION }}-arm64
+        run: |
+          docker run --rm --platform linux/arm64 \
+            --entrypoint node \
+            --workdir /tmp \
+            --mount type=bind,source="$PWD/.github/workflows/scripts/smoke-test-artillery-docker-image.mjs",target=/tmp/smoke-test.mjs,readonly \
+            public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_TAG }} \
+            /tmp/smoke-test.mjs
       
       - name: Push Docker image (Public ECR)
         if: matrix.registry == 'public'
@@ -242,11 +278,21 @@ jobs:
         run: |
           docker build . --platform linux/arm64 --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
 
+      - name: Smoke test Playwright imports (Private ECR)
+        if: matrix.registry == 'private'
+        env:
+          DOCKER_TAG: ${{ env.WORKER_VERSION }}-arm64
+        run: |
+          docker run --rm --platform linux/arm64 \
+            --entrypoint node \
+            --workdir /tmp \
+            --mount type=bind,source="$PWD/.github/workflows/scripts/smoke-test-artillery-docker-image.mjs",target=/tmp/smoke-test.mjs,readonly \
+            248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }} \
+            /tmp/smoke-test.mjs
+
       - name: Push Docker image (Private ECR)
         if: matrix.registry == 'private'
         env: 
           DOCKER_TAG: ${{ env.WORKER_VERSION }}-arm64
         run: |
           docker push 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }}
-        
-      

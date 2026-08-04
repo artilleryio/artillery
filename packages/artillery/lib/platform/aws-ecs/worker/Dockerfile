@@ -237,9 +237,10 @@ COPY --from=builder ${FUNCTION_DIR}/a9-handler-index.js ${FUNCTION_DIR}/
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/loadgen-worker /artillery/loadgen-worker
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/helpers.sh
 
-RUN ln -s /artillery/node_modules/.bin/artillery /usr/local/bin/artillery \
+RUN ln -s /artillery/node_modules /node_modules \
+    && ln -s /artillery/node_modules/.bin/artillery /usr/local/bin/artillery \
     && chmod +x /artillery/loadgen-worker
 
-ENV NODE_PATH="/home/node/artillery/node_modules"
+ENV NODE_PATH="/artillery/node_modules"
 
 ENTRYPOINT ["/artillery/packages/artillery/bin/run"]

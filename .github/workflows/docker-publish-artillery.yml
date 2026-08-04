@@ -52,10 +52,28 @@ jobs:
             type=semver,pattern={{version}},value=${{env.ARTILLERY_VERSION}}
             type=raw,value=latest
 
-      - name: Build and push Docker image
+      - name: Build release candidate Docker image
         uses: useblacksmith/build-push-action@v2
         with:
           context: ./packages/artillery
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          load: true
+          tags: artilleryio/artillery:release-candidate
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Smoke test Playwright imports from user code
+        run: |
+          docker run --rm \
+            --entrypoint node \
+            --workdir /tmp \
+            --mount type=bind,source="$PWD/.github/workflows/scripts/smoke-test-artillery-docker-image.mjs",target=/tmp/smoke-test.mjs,readonly \
+            artilleryio/artillery:release-candidate \
+            /tmp/smoke-test.mjs
+
+      - name: Publish Docker image
+        env:
+          DOCKER_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          while IFS= read -r tag; do
+            docker tag artilleryio/artillery:release-candidate "$tag"
+            docker push "$tag"
+          done <<< "$DOCKER_TAGS"

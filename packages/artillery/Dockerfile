@@ -8,6 +8,10 @@ COPY package*.json ./
 RUN npm --ignore-scripts --production install
 RUN npx playwright install --with-deps chromium
 
+# Make Artillery's dependencies available to scripts mounted anywhere in the
+# container.
+RUN ln -s /home/node/artillery/node_modules /node_modules
+
 COPY . ./
 
 # Transpile TypeScript sources to dist/ (package main, bin and oclif
