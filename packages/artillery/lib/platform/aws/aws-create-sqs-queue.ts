@@ -16,19 +16,16 @@ async function createSQSQueue(region, queueName, tags = {}) {
     region
   });
 
-  const params: any = {
+  const params = {
     QueueName: queueName,
     Attributes: {
       FifoQueue: 'true',
       ContentBasedDeduplication: 'false',
       MessageRetentionPeriod: '1800',
       VisibilityTimeout: '600'
-    }
+    },
+    ...(Object.keys(tags).length > 0 ? { tags } : {})
   };
-
-  if (Object.keys(tags).length > 0) {
-    params.tags = tags;
-  }
 
   const result = await sqs.send(new CreateQueueCommand(params));
   const sqsQueueUrl = result.QueueUrl;

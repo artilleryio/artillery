@@ -19,7 +19,7 @@ interface ResourceTag {
 
 // Input format: "key:value,key:value". Values may contain ":" - the
 // entry is split on the first ":" only. Throws on invalid input.
-function parseResourceTags(input?: string): ResourceTag[] {
+function parseResourceTags(input?: string | null): ResourceTag[] {
   if (!input) {
     return [];
   }

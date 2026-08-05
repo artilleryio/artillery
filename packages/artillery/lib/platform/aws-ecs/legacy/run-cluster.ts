@@ -1330,21 +1330,21 @@ async function createQueue(context) {
     0,
     30
   )}.fifo`;
-  const params: any = {
+  const params = {
     QueueName: queueName,
     Attributes: {
       FifoQueue: 'true',
       ContentBasedDeduplication: 'false',
       MessageRetentionPeriod: '1800',
       VisibilityTimeout: '600' // 10 minutes
-    }
+    },
+    ...(context.resourceTags?.length > 0
+      ? { tags: toTagMap(context.resourceTags) }
+      : {})
   };
 
-  if (context.resourceTags?.length > 0) {
-    params.tags = toTagMap(context.resourceTags);
-  }
-    const result = await sqs.send(new CreateQueueCommand(params));
-    context.sqsQueueUrl = result.QueueUrl;
+  const result = await sqs.send(new CreateQueueCommand(params));
+  context.sqsQueueUrl = result.QueueUrl;
 
   // Wait for the queue to be available:
   let waited = 0;
