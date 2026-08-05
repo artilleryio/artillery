@@ -1,5 +1,6 @@
 import { Args, Command, Flags } from '@oclif/core';
 import { CommonRunFlags } from '../cli/common-flags.ts';
+import { parseResourceTags } from '../platform/aws/resource-tags.ts';
 
 import RunCommand from './run.ts';
 
@@ -38,6 +39,17 @@ class RunLambdaCommand extends Command {
     }
 
     flags.platform = 'aws:lambda';
+
+    // NOTE: --resource-tags is passed through as-is via flags (cliArgs),
+    // not via platform-opt. platform-opt values are split on "=" which
+    // would truncate tag values containing "=".
+    // Validate early, before any AWS resources are touched:
+    try {
+      parseResourceTags(flags['resource-tags']);
+    } catch (err) {
+      console.error(err.message);
+      process.exit(1);
+    }
 
     RunCommand.runCommandImplementation(flags, argv, args);
   }
@@ -86,6 +98,10 @@ RunLambdaCommand.flags = {
   'subnet-ids': Flags.string({
     description:
       'Comma-separated list of subnet IDs to use for the Lambda function'
+  }),
+  'resource-tags': Flags.string({
+    description:
+      'Comma-separated list of tags in key:value format to apply to AWS resources created for the test run (Lambda function and SQS queue), for example: --resource-tags "team:perf,cost-center:1234"'
   })
 };
 

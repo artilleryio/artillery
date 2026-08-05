@@ -141,6 +141,15 @@ Resources:
                     ecs:cluster:
                       Fn::Sub: "arn:aws:ecs:*:${AWS::AccountId}:cluster/*"
                 Resource: "*"
+              - Sid: "ECSTagResourceOnRunTask"
+                Effect: "Allow"
+                Action:
+                  - "ecs:TagResource"
+                Condition:
+                  StringEquals:
+                    ecs:CreateAction: "RunTask"
+                Resource:
+                  Fn::Sub: "arn:aws:ecs:*:${AWS::AccountId}:task/*"
               - Sid: "S3Permissions"
                 Effect: "Allow"
                 Action:

@@ -122,6 +122,7 @@ Resources:
                   - lambda:CreateFunction
                   - lambda:DeleteFunction
                   - lambda:GetFunctionConfiguration
+                  - lambda:TagResource
                 Resource: !Sub "arn:aws:lambda:*:${AWS::AccountId}:function:artilleryio-*"
               - Sid: EcrPullImagePermissions
                 Effect: Allow

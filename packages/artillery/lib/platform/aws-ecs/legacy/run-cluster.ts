@@ -59,6 +59,11 @@ import dotenv from 'dotenv';
 import awaitOnEE from '../../../util/await-on-ee.ts';
 import { setCloudwatchRetention } from '../../aws/aws-cloudwatch.ts';
 import getAccountId from '../../aws/aws-get-account-id.ts';
+import {
+  parseResourceTags,
+  toEcsTags,
+  toTagMap
+} from '../../aws/resource-tags.ts';
 import * as awsUtil from './aws-util.ts';
 import createS3Client from './create-s3-client.ts';
 import { createTest } from './create-test.ts';
@@ -222,6 +227,15 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   context.tags = parseTags(options.tags);
+
+  // AWS resource tags (Fargate tasks, SQS queue). Validated in the
+  // run-fargate command already; parse defensively anyway:
+  try {
+    context.resourceTags = parseResourceTags(options.resourceTags);
+  } catch (err) {
+    console.error(chalk.red(err.message));
+    process.exit(1);
+  }
 
   if (context.tags.length > TEST_RUNS_MAX_TAGS) {
     console.error(
@@ -1316,7 +1330,7 @@ async function createQueue(context) {
     0,
     30
   )}.fifo`;
-  const params = {
+  const params: any = {
     QueueName: queueName,
     Attributes: {
       FifoQueue: 'true',
@@ -1325,6 +1339,10 @@ async function createQueue(context) {
       VisibilityTimeout: '600' // 10 minutes
     }
   };
+
+  if (context.resourceTags?.length > 0) {
+    params.tags = toTagMap(context.resourceTags);
+  }
     const result = await sqs.send(new CreateQueueCommand(params));
     context.sqsQueueUrl = result.QueueUrl;
 
@@ -1520,6 +1538,10 @@ async function setupDefaultECSParams(context) {
     overrides: context.taskOverrides,
     startedBy: context.testId
   };
+
+  if (context.resourceTags?.length > 0) {
+    defaultParams.tags = toEcsTags(context.resourceTags);
+  }
 
   if (context.isFargate) {
     if (context.isCapacitySpot) {
