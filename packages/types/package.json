@@ -1,6 +1,7 @@
 {
   "name": "@artilleryio/types",
   "version": "0.11.0",
+  "private": true,
   "files": [
     "./definitions.ts",
     "./schema.json"
