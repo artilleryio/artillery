@@ -57,6 +57,8 @@ jobs:
         with:
           context: ./packages/artillery
           load: true
+          build-args: |
+            ARTILLERY_VERSION=${{ env.ARTILLERY_VERSION }}
           tags: artilleryio/artillery:release-candidate
           labels: ${{ steps.meta.outputs.labels }}
 
