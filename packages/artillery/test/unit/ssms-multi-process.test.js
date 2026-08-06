@@ -4,7 +4,7 @@
 
 const tap = require('node:test');
 const assert = require('node:assert');
-const { SSMS } = require('@artilleryio/int-core').ssms;
+const { SSMS } = require('../../lib/core/index.ts').ssms;
 const sleep = require('../helpers/sleep');
 const data = require('../data/geometric.json');
 const responseTimeHistogramsData = require('../data/response-times-histograms.json');

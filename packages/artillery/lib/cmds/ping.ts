@@ -6,7 +6,7 @@ import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import { format } from 'node:util';
 
-import { engine_http as HttpEngine } from '@artilleryio/int-core';
+import { engine_http as HttpEngine } from '../core/index.ts';
 import { Args, Command, Flags } from '@oclif/core';
 import chalkModule from 'chalk';
 import * as cheerio from 'cheerio';

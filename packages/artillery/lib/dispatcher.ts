@@ -4,6 +4,6 @@
 
 
 
-import * as core from '@artilleryio/int-core';
+import * as core from './core/index.ts';
 
 export default core;

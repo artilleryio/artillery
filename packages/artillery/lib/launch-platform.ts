@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-import { ssms as __ssms } from '@artilleryio/int-core';
+import { ssms as __ssms } from './core/index.ts';
 import createDebug from 'debug';
 
 const { SSMS } = __ssms;

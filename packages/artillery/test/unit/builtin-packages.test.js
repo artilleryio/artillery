@@ -48,7 +48,7 @@ for (const name of BUILTIN_PACKAGE_NAMES.filter((n) =>
 }
 
 test('bundled playwright engine loads from dist/builtin-packages', async () => {
-  // Mirrors the fallback in @artilleryio/int-core's loadEngines
+  // Mirrors the fallback in the engine loader (lib/core/runner.ts)
   const enginePath = require.resolve(
     path.join(builtinDir, 'artillery-engine-playwright')
   );

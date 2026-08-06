@@ -14,7 +14,7 @@ import {
   parentPort,
   threadId
 } from 'node:worker_threads';
-import * as core from '@artilleryio/int-core';
+import * as core from '../../core/index.ts';
 
 import { createGlobalObject } from '../../artillery-global.ts';
 import { getStash } from '../../stash.ts';
@@ -24,7 +24,7 @@ const debug = createDebug('artillery:worker');
 
 import _path from 'node:path';
 
-import { ssms as __ssms } from '@artilleryio/int-core';
+import { ssms as __ssms } from '../../core/index.ts';
 
 const { SSMS } = __ssms;
 
