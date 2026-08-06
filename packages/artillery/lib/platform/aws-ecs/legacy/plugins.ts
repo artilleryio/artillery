@@ -8,7 +8,8 @@ export const getOfficialPlugins = () => [
   'metrics-by-endpoint',
   'publish-metrics',
   'apdex',
-  'slack'
+  'slack',
+  'fake-data'
 ];
 
 export const getOfficialEngines = () => ['playwright'];

@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { ssms as __ssms } from '@artilleryio/int-core';
+import { ssms as __ssms } from '../core/index.ts';
 import dotenv from 'dotenv';
 import _ from 'lodash';
 import moment from 'moment';

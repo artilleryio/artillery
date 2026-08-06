@@ -1,6 +1,7 @@
 {
   "name": "artillery-plugin-apdex",
   "version": "1.24.0",
+  "private": true,
   "description": "Calculate and report Apdex scores",
   "main": "./dist/index.js",
   "scripts": {

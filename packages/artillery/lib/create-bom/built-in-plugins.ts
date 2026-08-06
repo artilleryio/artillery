@@ -8,5 +8,6 @@ export default [
   'publish-metrics',
   'expect',
   'apdex',
-  'slack'
+  'slack',
+  'fake-data'
 ];

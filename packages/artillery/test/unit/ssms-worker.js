@@ -10,7 +10,7 @@ const { isMainThread, parentPort, threadId } = require('node:worker_threads');
 
 const sleep = require('../helpers/sleep');
 
-const { SSMS } = require('@artilleryio/int-core').ssms;
+const { SSMS } = require('../../lib/core/index.ts').ssms;
 
 if (isMainThread) {
   console.log('# This script should be run as a worker thread, exiting');

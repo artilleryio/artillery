@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
-import { updateGlobalObject } from '@artilleryio/int-core';
 import createConsoleReporter from './console-reporter.ts';
+import { updateGlobalObject } from './core/index.ts';
 import * as telemetry from './telemetry.ts';
 
 const require = createRequire(import.meta.url);

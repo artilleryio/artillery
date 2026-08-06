@@ -44,18 +44,13 @@ const defaultOptions = rc('artillery');
 
 import EventEmitter from 'node:events';
 
-import * as EnsurePlugin from 'artillery-plugin-ensure';
-import {
-  getADOTRelevantReporterConfigs,
-  resolveADOTConfigSettings
-} from 'artillery-plugin-publish-metrics';
-import * as SlackPlugin from 'artillery-plugin-slack';
 import _ from 'lodash';
 import moment from 'moment';
 
 const pkg = require('artillery/package.json');
 
 import dotenv from 'dotenv';
+import { loadBuiltinPackage } from '../../../builtin-packages.ts';
 import awaitOnEE from '../../../util/await-on-ee.ts';
 import { setCloudwatchRetention } from '../../aws/aws-cloudwatch.ts';
 import getAccountId from '../../aws/aws-get-account-id.ts';
@@ -743,12 +738,14 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       });
 
       if (context.ensureSpec) {
+        const EnsurePlugin = await loadBuiltinPackage('artillery-plugin-ensure');
         new (EnsurePlugin as any).Plugin({
           config: { ensure: context.ensureSpec }
         });
       }
 
       if (context.fullyResolvedConfig?.plugins?.slack) {
+        const SlackPlugin = await loadBuiltinPackage('artillery-plugin-slack');
         new (SlackPlugin as any).Plugin({
           config: context.fullyResolvedConfig
         });
@@ -1023,6 +1020,9 @@ async function createADOTDefinitionIfNeeded(context) {
     debug('No publish-metrics plugin set, skipping ADOT configuration');
     return context;
   }
+
+  const { getADOTRelevantReporterConfigs, resolveADOTConfigSettings } =
+    await loadBuiltinPackage('artillery-plugin-publish-metrics');
 
   const adotRelevantConfigs =
     getADOTRelevantReporterConfigs(publishMetricsConfig);

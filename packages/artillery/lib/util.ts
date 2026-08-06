@@ -14,12 +14,12 @@ import moment from 'moment';
 
 const chalk: any = chalkModule;
 
-import { engine_util as engineUtil } from '@artilleryio/int-commons';
+import { engine_util as engineUtil } from './commons/index.ts';
 
 const renderVariables = engineUtil._renderVariables;
 const template = engineUtil.template;
 
-import { runner as __runner } from '@artilleryio/int-core';
+import { runner as __runner } from './core/index.ts';
 
 const { contextFuncs } = __runner;
 

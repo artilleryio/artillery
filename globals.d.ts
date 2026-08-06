@@ -1,5 +1,5 @@
 // Ambient declarations for globals used across the monorepo.
-// The `artillery` global object is set up by @artilleryio/int-core
+// The `artillery` global object is set up by the core runtime
 // (updateGlobalObject) and used by the CLI, engines and plugins.
 declare global {
   // eslint-disable-next-line no-var

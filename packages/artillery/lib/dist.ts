@@ -5,7 +5,7 @@
 
 
 import assert from 'node:assert';
-import { isIdlePhase } from '@artilleryio/int-core';
+import { isIdlePhase } from './core/index.ts';
 import L from 'lodash';
 
 export default divideWork;

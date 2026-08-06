@@ -1,6 +1,7 @@
 {
   "name": "artillery-plugin-memory-inspector",
   "version": "1.1.1",
+  "private": true,
   "description": "Inspect the memory of processes running together with your load tests!",
   "main": "./dist/index.js",
   "scripts": {

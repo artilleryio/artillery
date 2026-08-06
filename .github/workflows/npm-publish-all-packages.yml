@@ -39,18 +39,7 @@ jobs:
     env:
       NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       # this list should be kept in sync with create-release-pr.yml
-      PACKAGES_TO_RELEASE: "\
-        artillery-engine-playwright,\
-        artillery-plugin-apdex,\
-        artillery-plugin-ensure,\
-        artillery-plugin-expect,\
-        artillery-plugin-fake-data,\
-        artillery-plugin-slack,\
-        artillery-plugin-metrics-by-endpoint,\
-        artillery-plugin-publish-metrics,\
-        commons,\
-        core,\
-        artillery"
+      PACKAGES_TO_RELEASE: "artillery"
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -59,21 +48,10 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
       - run: node .github/workflows/scripts/replace-package-versions.js
-      # It must be published in this specific order to account for order of dependencies (e.g. artillery depends on commons, core, etc), in case failures happen in publishing.
       - name: Install dependencies and build packages
         run: |
           npm install
           npm run build
-      - run: npm -w @artilleryio/int-commons publish
-      - run: npm -w @artilleryio/int-core publish
-      - run: npm -w artillery-plugin-expect publish
-      - run: npm -w artillery-plugin-publish-metrics publish
-      - run: npm -w artillery-plugin-metrics-by-endpoint publish
-      - run: npm -w artillery-plugin-ensure publish
-      - run: npm -w artillery-plugin-apdex publish
-      - run: npm -w artillery-engine-playwright publish
-      - run: npm -w artillery-plugin-fake-data publish
-      - run: npm -w artillery-plugin-slack publish
       - run: npm -w artillery publish
       - id: get-artillery-version
         run: |

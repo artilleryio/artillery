@@ -1,6 +1,7 @@
 {
   "name": "artillery-engine-posthog",
   "version": "0.0.1",
+  "private": true,
   "description": "Load test PostHog with Artillery",
   "main": "./dist/index.js",
   "scripts": {

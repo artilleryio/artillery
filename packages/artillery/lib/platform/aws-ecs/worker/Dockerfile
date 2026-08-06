@@ -78,6 +78,11 @@ RUN npm install --no-save --workspaces=false --ignore-scripts typescript@5.9.3 \
     && for t in packages/*/tsconfig.build.json; do npx tsc -p "$t" --noCheck || exit 1; done \
     && rm -rf node_modules
 
+# Bundle built-in plugins/engines into dist/builtin-packages (mirrors the
+# artillery package's build script; also validates the dependency
+# invariant). Keeps in-image resolution identical to a published install.
+RUN node packages/artillery/scripts/copy-builtin-packages.mjs
+
 # Install workspace deps. --ignore-scripts skips postinstall hooks
 # (faster, avoids side effects). --omit=dev drops test/build-only deps.
 RUN npm install -w artillery --ignore-scripts --omit=dev

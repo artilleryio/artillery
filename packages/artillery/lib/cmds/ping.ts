@@ -6,15 +6,15 @@ import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import { format } from 'node:util';
 
-import { engine_http as HttpEngine } from '@artilleryio/int-core';
+import { engine_http as HttpEngine } from '../core/index.ts';
 import { Args, Command, Flags } from '@oclif/core';
-import { expectations } from 'artillery-plugin-expect';
 import chalkModule from 'chalk';
 import * as cheerio from 'cheerio';
 import createDebug from 'debug';
 import jmespath from 'jmespath';
 import YAML from 'js-yaml';
 import { temporaryFile } from 'tempy';
+import { loadBuiltinPackage } from '../builtin-packages.ts';
 
 const chalk: any = chalkModule;
 const debug = createDebug('commands:ping');
@@ -508,6 +508,9 @@ class PingCommand extends Command {
       }
 
       if (checks.length > 0) {
+        const { expectations } = await loadBuiltinPackage(
+          'artillery-plugin-expect'
+        );
         this.log(chalk.cyan('Expectations:\n'));
         const results = [];
 
