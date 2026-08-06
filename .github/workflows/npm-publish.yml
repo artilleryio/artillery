@@ -1,0 +1,148 @@
+name: Publish artillery to npm
+
+# Single publish workflow for both channels. npm trusted publishing (OIDC)
+# accepts one workflow filename per package - the artillery package's
+# trusted publisher config points at this file.
+#
+# Channel resolution:
+#   - push to main with a "ci: release v" commit (create-release-pr.yml
+#     merge) -> latest
+#   - any other push to main touching artillery or a bundled built-in
+#     package -> canary
+#   - manual dispatch -> explicit channel input (defaults to canary so an
+#     accidental dispatch never ships a stable release)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # built-in plugins/engines are bundled into the artillery package, so
+      # changes to them must trigger an artillery canary release
+      - 'packages/artillery/**'
+      - 'packages/artillery-engine-playwright/**'
+      - 'packages/artillery-plugin-apdex/**'
+      - 'packages/artillery-plugin-ensure/**'
+      - 'packages/artillery-plugin-expect/**'
+      - 'packages/artillery-plugin-metrics-by-endpoint/**'
+      - 'packages/artillery-plugin-publish-metrics/**'
+      - 'packages/artillery-plugin-fake-data/**'
+      - 'packages/artillery-plugin-slack/**'
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'npm dist-tag to publish to'
+        type: choice
+        options:
+          - 'canary'
+          - 'latest'
+        default: 'canary'
+
+jobs:
+  resolve-channel:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    outputs:
+      channel: ${{ steps.resolve.outputs.channel }}
+    steps:
+      - id: resolve
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            CHANNEL="${{ inputs.channel }}"
+          elif case "$COMMIT_MSG" in *"ci: release v"*) true;; *) false;; esac; then
+            CHANNEL="latest"
+          else
+            CHANNEL="canary"
+          fi
+          echo "Publishing channel: $CHANNEL"
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+
+  publish-fargate-worker-image:
+    needs: resolve-channel
+    uses: ./.github/workflows/docker-ecs-worker-image.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+      USE_COMMIT_SHA_IN_VERSION: ${{ needs.resolve-channel.outputs.channel == 'canary' }}
+      SHOULD_BUILD_ARM64: ${{ needs.resolve-channel.outputs.channel == 'latest' }}
+    secrets:
+      ECR_WORKER_IMAGE_PUSH_ROLE_ARN: ${{ secrets.ECR_WORKER_IMAGE_PUSH_ROLE_ARN }}
+      DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+      DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+
+  publish-artillery-to-npm:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: [resolve-channel, publish-fargate-worker-image]
+    permissions:
+      contents: read
+      # npm trusted publishing (OIDC)
+      id-token: write
+    outputs:
+      ARTILLERY_VERSION: ${{ steps.get-artillery-version.outputs.ARTILLERY_VERSION }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@artilleryio'
+      # Node 22 bundles npm 10.x; trusted publishing needs npm >= 11.5.1
+      - run: npm install -g npm@11
+      - name: Set canary version (X.Y.Z-<sha>)
+        if: needs.resolve-channel.outputs.channel == 'canary'
+        run: node .github/workflows/scripts/replace-package-versions.js
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+      - name: Install dependencies and build packages
+        run: |
+          npm install
+          npm run build
+      - run: npm -w artillery publish --provenance --tag ${{ needs.resolve-channel.outputs.channel }}
+      - id: get-artillery-version
+        run: |
+          ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
+          echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> $GITHUB_OUTPUT
+
+  # The image installs the just-published artillery@VERSION from the
+  # registry, so it must run after the npm publish job. Stable releases only.
+  publish-official-docker-image:
+    if: needs.resolve-channel.outputs.channel == 'latest'
+    needs: [resolve-channel, publish-artillery-to-npm]
+    uses: ./.github/workflows/docker-publish-artillery.yml
+    with:
+      COMMIT_SHA: ${{ github.sha }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+  run-distributed-tests:
+    needs: [resolve-channel, publish-artillery-to-npm]
+    uses: ./.github/workflows/run-distributed-tests.yml
+    with:
+      ARTILLERY_VERSION_OVERRIDE: ${{ needs.publish-artillery-to-npm.outputs.ARTILLERY_VERSION }}
+      HAS_ARM64_BUILD: ${{ needs.resolve-channel.outputs.channel == 'latest' }}
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      ARTILLERY_CLOUD_ENDPOINT_TEST: ${{ secrets.ARTILLERY_CLOUD_ENDPOINT_TEST }}
+      ARTILLERY_CLOUD_API_KEY_TEST: ${{ secrets.ARTILLERY_CLOUD_API_KEY_TEST }}
+      DD_TESTS_API_KEY: ${{ secrets.DD_TESTS_API_KEY }}
+      DD_TESTS_APP_KEY: ${{ secrets.DD_TESTS_APP_KEY }}
+      AWS_TEST_EXECUTION_ROLE_ARN_TEST5: ${{ secrets.AWS_TEST_EXECUTION_ROLE_ARN_TEST5 }}
+
+  publish-cloudformation-templates-to-s3:
+    needs: [resolve-channel, run-distributed-tests]
+    uses: ./.github/workflows/s3-publish-cf-templates.yml
+    with:
+      # canary channel updates the -canary template copies; stable releases
+      # update the real ones
+      canary: ${{ needs.resolve-channel.outputs.channel == 'canary' }}
+    permissions:
+      contents: read
+      id-token: write
+    secrets:
+      AWS_ASSET_UPLOAD_ROLE_ARN: ${{ secrets.AWS_ASSET_UPLOAD_ROLE_ARN }}

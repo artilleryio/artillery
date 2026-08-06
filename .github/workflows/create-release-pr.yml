@@ -14,7 +14,7 @@ jobs:
       # these are the packages we auto release. Built-in plugins/engines are
       # private workspace packages bundled into the artillery package at build
       # time (dist/builtin-packages) - they are not published or versioned.
-      # this list should be kept in sync with npm-publish-all-packages.yml
+      # artillery is the only auto-released package (see npm-publish.yml)
       PACKAGES_TO_RELEASE: "artillery"
     steps:
       - name: Checkout code

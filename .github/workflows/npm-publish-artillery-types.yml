@@ -11,7 +11,8 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
       contents: read
-      packages: write
+      # npm trusted publishing (OIDC)
+      id-token: write
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -19,11 +20,10 @@ jobs:
           node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      - run: node .github/workflows/scripts/replace-package-versions.js
+      # Node 22 bundles npm 10.x; trusted publishing needs npm >= 11.5.1
+      - run: npm install -g npm@11
       - run: npm ci
       # Builds workspace deps in topological order (artillery-plugin-fake-data
       # must be transpiled before the types build can require it)
       - run: npm run build
-      - run: npm -w '@artilleryio/types' publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm -w '@artilleryio/types' publish --access public --provenance

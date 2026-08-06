@@ -18,7 +18,7 @@ const versionMapping = {};
 /**
  * This script iterates through every folder in ./packages and replaces their package.version with VERSION-COMMIT_SHA.
  * It then replaces the versions of all dependencies that are in this repo with the new VERSION-COMMIT_SHA of the corresponding package.
- * It is only used by the npm-publish-all-packages-canary.yml script, for the purposes of releasing a canary version of every package scoped to the latest commit to main.
+ * It is only used by npm-publish.yml (canary channel) to release a canary version scoped to the latest commit to main.
  */
 const updatePackageVersions = () => {
   const packageFolders = fs
