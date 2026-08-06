@@ -13,7 +13,7 @@ import HttpAgent from 'agentkeepalive';
 import async from 'async';
 import createDebug from 'debug';
 import decompressResponse from 'decompress-response';
-import filtrex from 'filtrex';
+import { compileExpression as filtrex } from 'filtrex';
 import FormData from 'form-data';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import _ from 'lodash';
