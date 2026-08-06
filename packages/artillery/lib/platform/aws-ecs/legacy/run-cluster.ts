@@ -231,7 +231,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   // AWS resource tags (Fargate tasks, SQS queue). Validated in the
   // run-fargate command already; parse defensively anyway:
   try {
-    context.resourceTags = parseResourceTags(options.resourceTags);
+    context.resourceTags = parseResourceTags(options.awsTags);
   } catch (err) {
     console.error(chalk.red(err.message));
     process.exit(1);

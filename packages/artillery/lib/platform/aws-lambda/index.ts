@@ -118,7 +118,7 @@ class PlatformLambda {
 
     // Validated in the run-lambda command already:
     this.resourceTags = parseResourceTags(
-      this.platformOpts.cliArgs['resource-tags']
+      this.platformOpts.cliArgs['aws-tags']
     );
 
     this.s3LifecycleConfigurationRules = [
@@ -630,7 +630,7 @@ class PlatformLambda {
         'Lambda function with this configuration already exists. Using existing function.'
       );
       // Function is shared across test runs with the same configuration.
-      // Tags are overwritten by each run that sets --resource-tags
+      // Tags are overwritten by each run that sets --aws-tags
       // (last-writer-wins):
       await this.tagExistingFunction(existingLambdaConfig.FunctionArn);
       return;

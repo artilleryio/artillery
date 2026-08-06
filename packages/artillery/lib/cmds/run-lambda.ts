@@ -40,12 +40,12 @@ class RunLambdaCommand extends Command {
 
     flags.platform = 'aws:lambda';
 
-    // NOTE: --resource-tags is passed through as-is via flags (cliArgs),
+    // NOTE: --aws-tags is passed through as-is via flags (cliArgs),
     // not via platform-opt. platform-opt values are split on "=" which
     // would truncate tag values containing "=".
     // Validate early, before any AWS resources are touched:
     try {
-      parseResourceTags(flags['resource-tags']);
+      parseResourceTags(flags['aws-tags']);
     } catch (err) {
       console.error(err.message);
       process.exit(1);
@@ -99,9 +99,9 @@ RunLambdaCommand.flags = {
     description:
       'Comma-separated list of subnet IDs to use for the Lambda function'
   }),
-  'resource-tags': Flags.string({
+  'aws-tags': Flags.string({
     description:
-      'Comma-separated list of tags in key:value format to apply to AWS resources created for the test run (Lambda function and SQS queue), for example: --resource-tags "team:perf,cost-center:1234"'
+      'Comma-separated list of tags in key:value format to apply to AWS resources created for the test run (Lambda function and SQS queue), for example: --aws-tags "team:perf,cost-center:1234"'
   })
 };
 

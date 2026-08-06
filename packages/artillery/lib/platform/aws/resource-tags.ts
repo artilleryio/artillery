@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Parsing and formatting of --resource-tags. These tags are applied to
+// Parsing and formatting of --aws-tags. These tags are applied to
 // AWS resources created for a test run: ECS/Fargate tasks, Lambda
 // functions and SQS queues.
 
@@ -71,7 +71,7 @@ function parseResourceTags(input?: string | null): ResourceTag[] {
 
   if (errors.length > 0) {
     throw new Error(
-      `Invalid --resource-tags value:\n  - ${errors.join('\n  - ')}`
+      `Invalid --aws-tags value:\n  - ${errors.join('\n  - ')}`
     );
   }
 
