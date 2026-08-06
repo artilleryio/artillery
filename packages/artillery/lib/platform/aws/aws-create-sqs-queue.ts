@@ -11,7 +11,7 @@ const debug = createDebug('artillery:aws-create-sqs-queue');
 import sleep from '../../util/sleep.ts';
 
 // TODO: Add timestamp to SQS queue name for automatic GC
-async function createSQSQueue(region, queueName) {
+async function createSQSQueue(region, queueName, tags = {}) {
   const sqs = new SQSClient({
     region
   });
@@ -23,7 +23,8 @@ async function createSQSQueue(region, queueName) {
       ContentBasedDeduplication: 'false',
       MessageRetentionPeriod: '1800',
       VisibilityTimeout: '600'
-    }
+    },
+    ...(Object.keys(tags).length > 0 ? { tags } : {})
   };
 
   const result = await sqs.send(new CreateQueueCommand(params));

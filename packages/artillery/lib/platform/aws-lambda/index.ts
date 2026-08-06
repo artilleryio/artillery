@@ -28,7 +28,8 @@ import {
   InvokeCommand,
   LambdaClient,
   ResourceConflictException,
-  ResourceNotFoundException
+  ResourceNotFoundException,
+  TagResourceCommand
 } from '@aws-sdk/client-lambda';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { DeleteQueueCommand, SQSClient } from '@aws-sdk/client-sqs';
@@ -42,6 +43,7 @@ import getAccountId from '../aws/aws-get-account-id.ts';
 import { getBucketRegion } from '../aws/aws-get-bucket-region.ts';
 import awsGetDefaultRegion from '../aws/aws-get-default-region.ts';
 import { SQS_QUEUES_NAME_PREFIX } from '../aws/constants.ts';
+import { parseResourceTags, toTagMap } from '../aws/resource-tags.ts';
 import createS3Client from '../aws-ecs/legacy/create-s3-client.ts';
 import { createAndUploadTestDependencies } from './dependencies.ts';
 import prices from './prices.ts';
@@ -113,6 +115,11 @@ class PlatformLambda {
 
     this.cloudKey =
       this.platformOpts.cliArgs.key || process.env.ARTILLERY_CLOUD_API_KEY;
+
+    // Validated in the run-lambda command already:
+    this.resourceTags = parseResourceTags(
+      this.platformOpts.cliArgs['aws-tags']
+    );
 
     this.s3LifecycleConfigurationRules = [
       {
@@ -218,7 +225,11 @@ class PlatformLambda {
       36
     )}.fifo`;
 
-    const sqsQueueUrl = await createSQSQueue(this.region, queueName);
+    const sqsQueueUrl = await createSQSQueue(
+      this.region,
+      queueName,
+      toTagMap(this.resourceTags)
+    );
     this.sqsQueueUrl = sqsQueueUrl;
 
     if (typeof this.lambdaRoleArn === 'undefined') {
@@ -618,6 +629,10 @@ class PlatformLambda {
       debug(
         'Lambda function with this configuration already exists. Using existing function.'
       );
+      // Function is shared across test runs with the same configuration.
+      // Tags are overwritten by each run that sets --aws-tags
+      // (last-writer-wins):
+      await this.tagExistingFunction(existingLambdaConfig.FunctionArn);
       return;
     }
 
@@ -632,10 +647,39 @@ class PlatformLambda {
         debug(
           'Lambda function with this configuration already exists. Using existing function.'
         );
+        await this.tagExistingFunction(
+          `${this.arnPrefix}:lambda:${this.region}:${this.accountId}:function:${this.functionName}`
+        );
         return;
       }
 
       throw new Error(`Failed to create Lambda Function: \n${err}`);
+    }
+  }
+
+  // Best-effort. Tagging failure must not fail the test run.
+  async tagExistingFunction(functionArn) {
+    if (this.resourceTags.length === 0 || !functionArn) {
+      return;
+    }
+
+    const lambda = new LambdaClient({
+      apiVersion: '2015-03-31',
+      region: this.region
+    });
+
+    try {
+      await lambda.send(
+        new TagResourceCommand({
+          Resource: functionArn,
+          Tags: toTagMap(this.resourceTags)
+        })
+      );
+    } catch (err) {
+      artillery.log(
+        `WARNING: could not apply resource tags to Lambda function: ${err.message}`
+      );
+      debug(err);
     }
   }
 
@@ -728,6 +772,10 @@ class PlatformLambda {
         SecurityGroupIds: this.securityGroupIds,
         SubnetIds: this.subnetIds
       };
+    }
+
+    if (this.resourceTags.length > 0) {
+      lambdaConfig.Tags = toTagMap(this.resourceTags);
     }
 
     await lambda.send(new CreateFunctionCommand(lambdaConfig));

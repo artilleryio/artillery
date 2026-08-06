@@ -8,6 +8,7 @@ import { Args, Command, Flags } from '@oclif/core';
 import dotenv from 'dotenv';
 import { CommonRunFlags } from '../cli/common-flags.ts';
 import { ECS_WORKER_ROLE_NAME } from '../platform/aws/constants.ts';
+import { parseResourceTags } from '../platform/aws/resource-tags.ts';
 import PlatformECS from '../platform/aws-ecs/ecs.ts';
 import runCluster from '../platform/aws-ecs/legacy/run-cluster.ts';
 import { supportedRegions } from '../platform/aws-ecs/legacy/util.ts';
@@ -28,6 +29,14 @@ class RunCommand extends Command {
     flags['platform-opt'] = [`region=${flags.region}`];
 
     flags.platform = 'aws:ecs';
+
+    // Validate early, before any AWS resources are touched:
+    try {
+      parseResourceTags(flags['aws-tags']);
+    } catch (err) {
+      console.error(err.message);
+      process.exit(1);
+    }
 
     if (flags.dotenv) {
       const dotEnvPath = path.resolve(process.cwd(), flags.dotenv);
@@ -180,6 +189,10 @@ RunCommand.flags = {
   }),
   'max-duration': Flags.string({
     description: 'Maximum duration of the test run'
+  }),
+  'aws-tags': Flags.string({
+    description:
+      'Comma-separated list of tags in key:value format to apply to AWS resources created for the test run (Fargate tasks and SQS queue), for example: --aws-tags "team:perf,cost-center:1234"'
   }),
   'no-assign-public-ip': Flags.boolean({
     description:
