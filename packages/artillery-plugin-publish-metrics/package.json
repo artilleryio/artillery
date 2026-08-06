@@ -1,6 +1,7 @@
 {
   "name": "artillery-plugin-publish-metrics",
   "version": "2.38.0",
+  "private": true,
   "description": "Publish metrics from your Artillery.io tests to external monitoring & observability systems",
   "main": "index.js",
   "scripts": {

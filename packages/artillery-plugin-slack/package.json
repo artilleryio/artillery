@@ -1,6 +1,7 @@
 {
   "name": "artillery-plugin-slack",
   "version": "1.22.0",
+  "private": true,
   "description": "Send Artillery.io test notifications to Slack",
   "main": "./dist/index.js",
   "publishConfig": {

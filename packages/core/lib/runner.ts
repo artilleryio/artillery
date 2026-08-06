@@ -61,8 +61,22 @@ async function loadEngines(
       } else {
         // Resolve with CJS semantics (bare specifiers, directories via
         // package.json "main"), load with import() - handles both CJS
-        // and ESM engines, including ESM with top-level await
-        const enginePath = require.resolve(moduleName);
+        // and ESM engines, including ESM with top-level await.
+        // Bare specifier first (user-installed copies win); fall back
+        // to the built-in packages bundled with the artillery CLI
+        // (set by artillery's createGlobalObject)
+        let enginePath;
+        try {
+          enginePath = require.resolve(moduleName);
+        } catch (bareErr) {
+          if (process.env.ARTILLERY_BUILTIN_PACKAGES_DIR) {
+            enginePath = require.resolve(
+              path.join(process.env.ARTILLERY_BUILTIN_PACKAGES_DIR, moduleName)
+            );
+          } else {
+            throw bareErr;
+          }
+        }
         const ns = await import(pathToFileURL(enginePath).href);
         Engine = ns.default ?? ns;
       }

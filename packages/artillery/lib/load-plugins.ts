@@ -6,6 +6,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import createDebug from 'debug';
+import { BUILTIN_PACKAGES_DIR } from './builtin-packages.ts';
 
 const debug = createDebug('core');
 const require = createRequire(import.meta.url);
@@ -28,9 +29,9 @@ function loadPluginsConfig(pluginSpecs) {
 }
 
 async function loadPlugins(pluginSpecs, testScript, _opts?) {
-  let requirePaths = [''];
-
-  // requirePaths = requirePaths.concat(pro.getPluginPath());
+  // Bare specifier first (user-installed copies win), bundled built-in
+  // packages second, ARTILLERY_PLUGIN_PATH entries last
+  let requirePaths = ['', BUILTIN_PACKAGES_DIR];
 
   if (process.env.ARTILLERY_PLUGIN_PATH) {
     requirePaths = requirePaths.concat(

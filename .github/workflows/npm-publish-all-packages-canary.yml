@@ -4,9 +4,10 @@ on:
     branches:
       - main
     paths:
+      # built-in plugins/engines are bundled into the artillery package, so
+      # changes to them must trigger an artillery canary release
       - 'packages/artillery/**'
       - 'packages/artillery-engine-playwright/**'
-      - 'packages/artillery-engine-posthog/**'
       - 'packages/artillery-plugin-apdex/**'
       - 'packages/artillery-plugin-ensure/**'
       - 'packages/artillery-plugin-expect/**'
@@ -16,8 +17,7 @@ on:
       - 'packages/artillery-plugin-slack/**'
       - 'packages/commons/**'
       - 'packages/core/**'
-      - 'packages/artillery-plugin-memory-inspector/**'
-      
+
 jobs:
   publish-fargate-worker-image:
     if: "!contains( github.event.head_commit.message, 'ci: release v')"
@@ -62,21 +62,11 @@ jobs:
           npm run build
       - run: npm -w @artilleryio/int-commons publish --tag canary
       - run: npm -w @artilleryio/int-core publish --tag canary
-      - run: npm -w artillery-plugin-expect publish --tag canary
-      - run: npm -w artillery-plugin-publish-metrics publish --tag canary
-      - run: npm -w artillery-plugin-metrics-by-endpoint publish --tag canary
-      - run: npm -w artillery-plugin-ensure publish --tag canary
-      - run: npm -w artillery-plugin-apdex publish --tag canary
-      - run: npm -w artillery-engine-posthog publish --tag canary
-      - run: npm -w artillery-engine-playwright publish --tag canary
-      - run: npm -w artillery-plugin-fake-data publish --tag canary
-      - run: npm -w artillery-plugin-slack publish --tag canary
       - run: npm -w artillery publish --tag canary
       - id: get-artillery-version
         run: |
           ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
           echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> $GITHUB_OUTPUT
-      - run: npm -w artillery-plugin-memory-inspector publish --tag canary
 
   run-distributed-tests:
     uses: ./.github/workflows/run-distributed-tests.yml
