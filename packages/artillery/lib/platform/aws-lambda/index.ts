@@ -76,6 +76,9 @@ function memoryToVCPU(memMB) {
 }
 
 class PlatformLambda {
+  // Declared so the class satisfies LoadPlatform (index signatures do
+  // not satisfy required interface properties):
+  declare events: EventEmitter;
   // Untyped JS class - properties assigned dynamically
   [key: string]: any;
 

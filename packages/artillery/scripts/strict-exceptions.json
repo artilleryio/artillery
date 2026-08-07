@@ -1,5 +1,4 @@
 [
-  "lib/artillery-global.ts",
   "lib/cmds/ping.ts",
   "lib/cmds/quick.ts",
   "lib/cmds/run-fargate.ts",
@@ -7,7 +6,6 @@
   "lib/cmds/run.ts",
   "lib/console-reporter.ts",
   "lib/create-bom/create-bom.ts",
-  "lib/launch-platform.ts",
   "lib/platform/aws-ecs/ecs.ts",
   "lib/platform/aws-ecs/legacy/aws-util.ts",
   "lib/platform/aws-ecs/legacy/bom.ts",
@@ -35,6 +33,5 @@
   "lib/platform/az/aqs-queue-consumer.ts",
   "lib/platform/cloud/api.ts",
   "lib/platform/cloud/cloud.ts",
-  "lib/platform/cloud/http-client.ts",
-  "lib/queue-consumer/index.ts"
+  "lib/platform/cloud/http-client.ts"
 ]

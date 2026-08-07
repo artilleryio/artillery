@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
 import { ssms as __ssms } from './core/index.ts';
 import createDebug from 'debug';
 
@@ -10,21 +9,58 @@ const { SSMS } = __ssms;
 
 import { EventEmitter } from 'eventemitter3';
 import { loadPlugins, loadPluginsConfig } from './load-plugins.ts';
+import type { PluginLoadFailure } from './load-plugins.ts';
 
 const debug = createDebug('core');
 
 import { promisify as p } from 'node:util';
 import _ from 'lodash';
+import type { PeriodMetrics } from './core/ssms.ts';
 import PlatformLambda from './platform/aws-lambda/index.ts';
 import PlatformAzureACI from './platform/az/aci.ts';
 import PlatformLocal from './platform/local/index.ts';
 
-async function createLauncher(script, payload, opts, launcherOpts) {
+// The contract every load-generation platform implements. Worker
+// operations beyond these are platform-internal.
+export interface LoadPlatform {
+  events: {
+    on(event: string, listener: (...args: any[]) => void): unknown;
+  };
+  startJob(): Promise<unknown>;
+  shutdown(): Promise<unknown>;
+  getDesiredWorkerCount(): number;
+}
+
+export interface LauncherOpts {
+  platform?: string;
+  mode?: string;
+  count?: number;
+  platformConfig?: Record<string, string>;
+  cliArgs?: Record<string, any>;
+  testRunId?: string;
+}
+
+// Buffered worker message, grouped and printed by flushWorkerMessages.
+interface BufferedWorkerMessage {
+  id?: unknown;
+  ts: number;
+  error?: Error;
+  msg?: string;
+  level?: string;
+  [key: string]: any;
+}
+
+async function createLauncher(
+  script: { config: Record<string, any>; [key: string]: any },
+  payload: unknown,
+  opts: Record<string, any>,
+  launcherOpts?: LauncherOpts
+): Promise<Launcher | null> {
   launcherOpts = launcherOpts || {
     platform: 'local',
     mode: 'distribute'
   };
-  let l;
+  let l: Launcher;
   try {
     l = new Launcher(script, payload, opts, launcherOpts);
   } catch (err) {
@@ -35,10 +71,32 @@ async function createLauncher(script, payload, opts, launcherOpts) {
   return l;
 }
 class Launcher {
-  // Untyped JS class - properties assigned dynamically
-  [key: string]: any;
+  declare script: { config: Record<string, any>; [key: string]: any };
+  declare payload: unknown;
+  declare opts: Record<string, any>;
+  declare exitedWorkersCount: number;
+  declare workerMessageBuffer: BufferedWorkerMessage[];
+  declare metricsByPeriod: Record<string, PeriodMetrics[]>;
+  declare finalReportsByWorker: Record<string, PeriodMetrics>;
+  declare events: EventEmitter;
+  declare pluginEvents: EventEmitter;
+  declare pluginEventsLegacy: EventEmitter;
+  declare launcherOpts: LauncherOpts;
+  declare periodsReportedFor: string[];
+  declare platform: LoadPlatform;
+  declare phaseStartedEventsSeen: Record<string, number>;
+  declare phaseCompletedEventsSeen: Record<string, number>;
+  declare eventsByWorker: Record<string, unknown>;
+  declare i1: ReturnType<typeof setInterval>;
+  declare i2: ReturnType<typeof setInterval>;
+  declare workerExitWatcher: ReturnType<typeof setInterval>;
 
-  constructor(script, payload, opts, launcherOpts) {
+  constructor(
+    script: { config: Record<string, any>; [key: string]: any },
+    payload: unknown,
+    opts: Record<string, any>,
+    launcherOpts: LauncherOpts
+  ) {
     this.script = script;
     this.payload = payload;
     this.opts = opts;
@@ -74,7 +132,7 @@ class Launcher {
     this.eventsByWorker = {};
   }
 
-  async initWorkerEvents(workerEvents) {
+  async initWorkerEvents(workerEvents: LoadPlatform['events']) {
     workerEvents.on('workerError', (_workerId, message) => {
       const { id, error, level, aggregatable, logs } = message;
 
@@ -177,7 +235,7 @@ class Launcher {
     //
     // init plugins
     //
-    for (const [name, result] of Object.entries<any>(plugins)) {
+    for (const [name, result] of Object.entries(plugins)) {
       if (result.isLoaded) {
         if (result.version === 3) {
           // TODO: load the plugin, subscribe to events
@@ -231,9 +289,12 @@ class Launcher {
           }
         }
       } else {
+        // Cast: the boolean discriminant does not narrow under the
+        // loose (non-strictNullChecks) root typecheck.
+        const failure = result as PluginLoadFailure;
         global.artillery.log(`WARNING: Could not load plugin: ${name}`, 'warn');
-        global.artillery.log(result.msg, 'warn');
-        // global.artillery.log(result.error, 'warn');
+        global.artillery.log(failure.msg, 'warn');
+        // global.artillery.log(failure.error, 'warn');
       }
     }
   }
@@ -284,15 +345,22 @@ class Launcher {
       (m) => now - m.ts <= maxAge
     );
 
-    const readyMessages = okToPrint.reduce((acc, message) => {
-      const { error } = message;
-      // TODO: Take event type and level into account
-      if (typeof acc[error.message] === 'undefined') {
-        acc[error.message] = [];
-      }
-      acc[error.message].push(message);
-      return acc;
-    }, {});
+    const readyMessages = okToPrint.reduce(
+      (acc: Record<string, BufferedWorkerMessage[]>, message) => {
+        const { error } = message;
+        // TODO: Take event type and level into account
+        // NOTE: pre-existing behavior: throws when a buffered message
+        // has no error property (only workerError messages are
+        // buffered today).
+        const key = (error as Error).message;
+        if (typeof acc[key] === 'undefined') {
+          acc[key] = [];
+        }
+        acc[key].push(message);
+        return acc;
+      },
+      {}
+    );
 
     for (const [_logMessage, messageObjects] of Object.entries(readyMessages)) {
       if (messageObjects[0].error) {
@@ -372,7 +440,7 @@ class Launcher {
     }
   }
 
-  emitIntermediatesForPeriod(period) {
+  emitIntermediatesForPeriod(period: string) {
     debug(
       'Report @',
       new Date(Number(period)),
