@@ -154,7 +154,7 @@
     "dogapi": "^2.8.4",
     "dotenv": "^16.6.1",
     "driftless": "^2.0.3",
-    "esbuild-wasm": "^0.19.12",
+    "esbuild-wasm": "^0.28.1",
     "espree": "^10.3.0",
     "esprima": "^4.0.1",
     "eventemitter3": "^5.0.4",
