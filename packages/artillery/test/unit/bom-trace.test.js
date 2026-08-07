@@ -54,7 +54,9 @@ test('relative imports resolved by esbuild never become npm modules', async (_t)
   assert.strictEqual(bom.modules.filter((m) => m.startsWith('.') || m.startsWith('/')).length, 0, 'no relative/absolute specifiers in modules');
   assert.strictEqual(bom.externals.length, 0, 'no unresolved imports');
 
-  const fileNames = bom.files.map((f) => f.noPrefix).sort();
+  // noPrefix is platform-native (backslashes on Windows); noPrefixPosix is
+  // the cross-platform form.
+  const fileNames = bom.files.map((f) => f.noPrefixPosix).sort();
   assert.ok(fileNames.includes('scenarios/processor.ts'), 'processor included');
   assert.ok(fileNames.includes('shared/helper.ts'), ".js specifier resolved to .ts file and included");
   assert.ok(fileNames.includes('lib/src.js'), 'directory import resolved via package.json main and included');
