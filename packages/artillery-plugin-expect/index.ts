@@ -116,10 +116,10 @@ function expectationsPluginCheckExpectations(
 ) {
   debug('Checking expectations');
 
-  const expectations = _.isArray(req.expect)
+  const expectations: Record<string, unknown>[] = _.isArray(req.expect)
     ? req.expect
     : _.map(req.expect, (v, k) => {
-        const o = {};
+        const o: Record<string, unknown> = {};
         o[k] = v;
         return o;
       });
