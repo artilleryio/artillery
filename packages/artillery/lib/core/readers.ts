@@ -4,7 +4,22 @@
 
 import _ from 'lodash';
 
-export default function createReader(order, spec?) {
+// A payload row as parsed from CSV: an array of field values.
+type PayloadRow = unknown[];
+
+interface PayloadSpec {
+  name?: string;
+  loadAll?: boolean;
+  fields?: string[];
+  [key: string]: any;
+}
+
+export type PayloadReader = (data: PayloadRow[]) => unknown;
+
+export default function createReader(
+  order?: string,
+  spec?: PayloadSpec
+): PayloadReader {
   if (order === 'sequence') {
     return createSequencedReader();
   } else if (
@@ -19,7 +34,7 @@ export default function createReader(order, spec?) {
   }
 }
 
-function createSequencedReader() {
+function createSequencedReader(): PayloadReader {
   let i = 0;
   return (data) => {
     const result = data[i];
@@ -32,23 +47,24 @@ function createSequencedReader() {
   };
 }
 
-function createEverythingReader(spec) {
-  let parsedData;
+function createEverythingReader(spec: PayloadSpec): PayloadReader {
+  let parsedData: Array<Record<string, unknown>> | PayloadRow[] | undefined;
 
   return (data) => {
     if (!parsedData) {
-      parsedData = [];
+      const parsed: Array<Record<string, unknown>> = [];
 
       // Parse the row into an object based on the fields spec
-      if (spec.fields?.length > 0) {
+      if (spec.fields && spec.fields.length > 0) {
         for (const row of data) {
-          const o = {};
+          const o: Record<string, unknown> = {};
           for (let i = 0; i < spec.fields.length; i++) {
             const fieldName = spec.fields[i];
             o[fieldName] = row[i];
           }
-          parsedData.push(o);
+          parsed.push(o);
         }
+        parsedData = parsed;
       } else {
         // Otherwise just return the array of rows
         parsedData = data;
@@ -59,6 +75,6 @@ function createEverythingReader(spec) {
   };
 }
 
-function createRandomReader() {
+function createRandomReader(): PayloadReader {
   return (data) => data[Math.max(0, _.random(0, data.length - 1))];
 }
