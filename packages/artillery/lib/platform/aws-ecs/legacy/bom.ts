@@ -18,27 +18,70 @@ const BUILTIN_ENGINES = builtinPlugins.getOfficialEngines();
 
 import Table from 'cli-table3';
 import prepareTestExecutionPlan from '../../../util/prepare-test-execution-plan.ts';
-import { parseScript, readScript, resolveConfigTemplates } from '../../../util.ts';
+import type { MergedScript, ScriptPrepFlags } from '../../../util.ts';
+import {
+  parseScript,
+  readScript,
+  resolveConfigTemplates
+} from '../../../util.ts';
+
+interface UnresolvedImport {
+  name: string;
+  reason: string;
+  importer?: string;
+}
+
+// Accumulator passed through the legacy BOM waterfall. Richer than the
+// create-bom context: carries flags, the scenario path when a separate
+// config file is used, and dependency trace results.
+interface LegacyBomContext {
+  opts: {
+    scriptData: Record<string, any>;
+    absoluteScriptPath: string;
+    flags: Record<string, any> | undefined;
+    scenarioPath?: string;
+    [key: string]: any;
+  };
+  localFilePaths: string[];
+  npmModules: string[];
+  pkgDeps?: string[];
+  moduleVersions?: Record<string, string>;
+  unresolvedImports?: UnresolvedImport[];
+}
+
+type LegacyBomNext = (err: Error | null, context?: LegacyBomContext) => void;
 
 // NOTE: Code below presumes that all paths are absolute
 
 //Tests in Fargate run on ubuntu, which uses posix paths
 //This function converts a path to posix path, in case the original path was not posix (e.g. windows runs)
-function _convertToPosixPath(p) {
+function _convertToPosixPath(p: string) {
   return p.split(path.sep).join(path.posix.sep);
 }
 
 // NOTE: absoluteScriptPath here is actually the absolute path to the config file
-function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
+function createBOM(
+  absoluteScriptPath: string,
+  extraFiles: string[],
+  opts: {
+    packageJsonPath?: string;
+    flags?: Record<string, any>;
+    scenarioPath?: string;
+    [key: string]: any;
+  },
+  callback: (err: Error | null, manifest: Record<string, any> | null) => void
+) {
   A.waterfall(
     [
       A.constant(absoluteScriptPath),
-      async (scriptPath) => {
-        let scriptData;
+      async (scriptPath: string) => {
+        let scriptData: Record<string, any>;
         if (scriptPath.toLowerCase().endsWith('.ts')) {
           scriptData = await prepareTestExecutionPlan(
             [scriptPath],
-            opts.flags,
+            // NOTE: pre-existing behavior: flags are always set on this
+            // path (Fargate/Lambda runs pass CLI flags through).
+            opts.flags as ScriptPrepFlags,
             []
           );
           scriptData.config.processor = scriptPath;
@@ -49,7 +92,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
         return scriptData;
       },
-      (scriptData, next) => {
+      (scriptData: Record<string, any>, next: LegacyBomNext) => {
         return next(null, {
           opts: {
             scriptData,
@@ -72,7 +115,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       expandDirectories
     ],
 
-    (err, context) => {
+    (err: Error | null | undefined, context: LegacyBomContext) => {
       if (err) {
         return callback(err, null);
       }
@@ -149,7 +192,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       if (pkgPath) {
         const pkg = JSON.parse(fs.readFileSync(pkgPath.orig, 'utf8'));
-        const pkgDeps: any = [].concat(
+        const pkgDeps = ([] as string[]).concat(
           Object.keys(pkg.dependencies || {}),
           Object.keys(pkg.devDependencies || {})
         );
@@ -159,7 +202,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
         context.pkgDeps = [];
       }
 
-      const modules = _.uniq<any>(context.npmModules).filter(
+      const modules = _.uniq(context.npmModules).filter(
         (m) =>
           m !== 'artillery' &&
           m !== 'playwright' &&
@@ -170,7 +213,7 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       const unresolvedImports = context.unresolvedImports || [];
 
       const declaredDeps = new Set(context.pkgDeps);
-      const externals = [];
+      const externals: Array<{ name: string; reason: string }> = [];
       for (const m of modules) {
         if (!declaredDeps.has(m)) {
           externals.push({ name: m, reason: 'not-in-package-json' });
@@ -192,10 +235,12 @@ function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
   );
 }
 
-function applyScriptChanges(context, next) {
+function applyScriptChanges(context: LegacyBomContext, next: LegacyBomNext) {
   resolveConfigTemplates(
-    context.opts.scriptData,
-    context.opts.flags,
+    // NOTE: pre-existing behavior: missing flags crash inside
+    // resolveConfigTemplates; all in-repo callers pass them.
+    context.opts.scriptData as MergedScript,
+    context.opts.flags as ScriptPrepFlags,
     context.opts.absoluteScriptPath,
     context.opts.scenarioPath
   ).then((resolvedConfig) => {
@@ -204,10 +249,14 @@ function applyScriptChanges(context, next) {
   });
 }
 
-function getPlugins(context, next) {
+function getPlugins(context: LegacyBomContext, next: LegacyBomNext) {
   const environmentPlugins = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentPlugins(acc, envSpec, _envName) {
+    function getEnvironmentPlugins(
+      acc: string[],
+      envSpec: Record<string, any>,
+      _envName
+    ) {
       acc = acc.concat(Object.keys(envSpec.plugins || []));
       return acc;
     },
@@ -228,10 +277,14 @@ function getPlugins(context, next) {
   return next(null, context);
 }
 
-function getCustomEngines(context, next) {
+function getCustomEngines(context: LegacyBomContext, next: LegacyBomNext) {
   const environmentEngines = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentEngines(acc, envSpec, _envName) {
+    function getEnvironmentEngines(
+      acc: string[],
+      envSpec: Record<string, any>,
+      _envName
+    ) {
       acc = acc.concat(Object.keys(envSpec.engines || []));
       return acc;
     },
@@ -255,12 +308,12 @@ function getCustomEngines(context, next) {
 
 // async waterfall passes ONE arg to async functions and reads the result via
 // the returned promise — no `next` callback. Throws propagate as errors.
-async function getCustomJsDependencies(context) {
+async function getCustomJsDependencies(context: LegacyBomContext) {
   const scriptPath = context.opts.absoluteScriptPath;
   const isTypeScriptEntry = scriptPath.toLowerCase().endsWith('.ts');
   const resolveRoot = path.dirname(scriptPath);
 
-  const entries = [];
+  const entries: string[] = [];
 
   // .ts script entry: trace the script itself (handles imports in script body
   // when prepareTestExecutionPlan ingests TypeScript modules).
@@ -273,7 +326,7 @@ async function getCustomJsDependencies(context) {
   // — we want to trace the original source, not the already-bundled output.
   const originalProcessor = context.opts.scriptData.__originalProcessor;
   const declaredProcessor = context.opts.scriptData.config?.processor;
-  let processorEntry = null;
+  let processorEntry: string | null = null;
 
   if (originalProcessor) {
     processorEntry = originalProcessor;
@@ -324,22 +377,22 @@ async function getCustomJsDependencies(context) {
 // This is the only call site for initialize() in the codebase
 // (prepare-test-execution-plan.js uses buildSync, which doesn't need init),
 // so we don't need to defend against external "already initialized" errors.
-let esbuildInitPromise = null;
-function ensureEsbuildInitialized(esbuild) {
+let esbuildInitPromise: Promise<void> | null = null;
+function ensureEsbuildInitialized(esbuildMod: typeof esbuild) {
   if (!esbuildInitPromise) {
-    esbuildInitPromise = esbuild.initialize({});
+    esbuildInitPromise = esbuildMod.initialize({});
   }
   return esbuildInitPromise;
 }
 
-async function traceDependencies(entries, resolveRoot) {
-  const unresolved = [];
+async function traceDependencies(entries: string[], resolveRoot: string) {
+  const unresolved: UnresolvedImport[] = [];
 
   // Marker used to break recursion when we re-enter our own onResolve via
   // build.resolve() below.
   const RESOLVING = { artilleryRecoverResolving: true };
 
-  const recoverPlugin = {
+  const recoverPlugin: esbuild.Plugin = {
     name: 'artillery-recover-unresolved',
     setup(build) {
       // Intercept relative imports ('.', '..', './x', '../x') only to
@@ -394,11 +447,13 @@ async function traceDependencies(entries, resolveRoot) {
     plugins: [recoverPlugin]
   });
 
-  const localFiles = new Set<any>();
-  const npmPackages = new Set<any>();
+  const localFiles = new Set<string>();
+  const npmPackages = new Set<string>();
 
-  for (const inputPath of Object.keys(result.metafile.inputs)) {
-    const input = result.metafile.inputs[inputPath];
+  // metafile is always present: the build above sets metafile: true.
+  const metafile = result.metafile as esbuild.Metafile;
+  for (const inputPath of Object.keys(metafile.inputs)) {
+    const input = metafile.inputs[inputPath];
     const absInputPath = path.isAbsolute(inputPath)
       ? inputPath
       : path.resolve(resolveRoot, inputPath);
@@ -422,7 +477,7 @@ async function traceDependencies(entries, resolveRoot) {
   };
 }
 
-function extractPackageName(spec) {
+function extractPackageName(spec: string): string | null {
   // Relative or absolute specifiers are never npm packages. Without this
   // guard an unresolved '../x' import (kept external by recoverPlugin)
   // becomes a "package" named '..' and ends up npm-installed on remote
@@ -437,7 +492,10 @@ function extractPackageName(spec) {
   return spec.split('/')[0];
 }
 
-function resolvePackageVersion(pkgName, resolveRoot) {
+function resolvePackageVersion(
+  pkgName: string,
+  resolveRoot: string
+): string | null {
   try {
     const pkgJsonPath = require.resolve(`${pkgName}/package.json`, {
       paths: [resolveRoot]
@@ -449,14 +507,14 @@ function resolvePackageVersion(pkgName, resolveRoot) {
   }
 }
 
-function getVariableDataFiles(context, next) {
+function getVariableDataFiles(context: LegacyBomContext, next: LegacyBomNext) {
   // NOTE: assuming that context.opts.scriptData contains both the config and
   // the scenarios section here.
 
   // Iterate over environments
 
-  function resolvePayloadPaths(obj) {
-    const result = [];
+  function resolvePayloadPaths(obj: Record<string, any>) {
+    const result: string[] = [];
     if (obj.payload) {
       // When using a separate config file, resolve paths relative to the scenario file
       // Otherwise, resolve relative to the config file
@@ -465,12 +523,14 @@ function getVariableDataFiles(context, next) {
         : path.dirname(context.opts.absoluteScriptPath);
 
       if (_.isArray(obj.payload)) {
-        obj.payload.forEach((payloadSpec) => {
+        obj.payload.forEach((payloadSpec: { path: string }) => {
           result.push(path.resolve(baseDir, payloadSpec.path));
         });
       } else if (_.isObject(obj.payload)) {
         // isObject returns true for arrays, so this branch must come second
-        result.push(path.resolve(baseDir, obj.payload.path));
+        result.push(
+          path.resolve(baseDir, (obj.payload as { path: string }).path)
+        );
       }
     }
     return result;
@@ -482,7 +542,7 @@ function getVariableDataFiles(context, next) {
   context.opts.scriptData.config.environments =
     context.opts.scriptData.config.environments || {};
   Object.keys(context.opts.scriptData.config.environments).forEach(
-    (envName) => {
+    (envName: string) => {
       const envSpec = context.opts.scriptData.config.environments[envName];
       context.localFilePaths = context.localFilePaths.concat(
         resolvePayloadPaths(envSpec)
@@ -493,7 +553,10 @@ function getVariableDataFiles(context, next) {
   return next(null, context);
 }
 
-function getFileUploadPluginFiles(context, next) {
+function getFileUploadPluginFiles(
+  context: LegacyBomContext,
+  next: LegacyBomNext
+) {
   if (context.opts.scriptData.config?.plugins?.['http-file-uploads']) {
     // Append filePaths array if it's there:
 
@@ -506,7 +569,7 @@ function getFileUploadPluginFiles(context, next) {
 
       const absPaths = context.opts.scriptData.config.plugins[
         'http-file-uploads'
-      ].filePaths.map((p) => {
+      ].filePaths.map((p: string) => {
         return path.resolve(baseDir, p);
       });
       context.localFilePaths = context.localFilePaths.concat(absPaths);
@@ -517,7 +580,7 @@ function getFileUploadPluginFiles(context, next) {
   }
 }
 
-function getExtraFiles(context, next) {
+function getExtraFiles(context: LegacyBomContext, next: LegacyBomNext) {
   if (context.opts.scriptData.config?.includeFiles) {
     // When using a separate config file, resolve paths relative to the scenario file
     // Otherwise, resolve relative to the config file
@@ -525,11 +588,14 @@ function getExtraFiles(context, next) {
       ? path.dirname(context.opts.scenarioPath)
       : path.dirname(context.opts.absoluteScriptPath);
 
-    const absPaths = _.map(context.opts.scriptData.config.includeFiles, (p) => {
-      const includePath = path.resolve(baseDir, p);
-      debug('includeFile:', includePath);
-      return includePath;
-    });
+    const absPaths = _.map(
+      context.opts.scriptData.config.includeFiles,
+      (p: string) => {
+        const includePath = path.resolve(baseDir, p);
+        debug('includeFile:', includePath);
+        return includePath;
+      }
+    );
     context.localFilePaths = context.localFilePaths.concat(absPaths);
     return next(null, context);
   } else {
@@ -537,8 +603,10 @@ function getExtraFiles(context, next) {
   }
 }
 
-function getDotEnv(context, next) {
-  const flags = context.opts.flags;
+function getDotEnv(context: LegacyBomContext, next: LegacyBomNext) {
+  // NOTE: pre-existing behavior: missing flags crash here; all in-repo
+  // callers pass them.
+  const flags = context.opts.flags as Record<string, any>;
   if (!flags.dotenv || flags.platform === 'aws:ecs') {
     return next(null, context);
   }
@@ -555,7 +623,7 @@ function getDotEnv(context, next) {
   return next(null, context);
 }
 
-function expandDirectories(context, next) {
+function expandDirectories(context: LegacyBomContext, next: LegacyBomNext) {
   // This can potentially lead to VERY unexpected behaviour, when used
   // without due care with the file upload plugin (if filePaths is pointed at
   // a directory that contains files OTHER than those to be used with the
@@ -596,7 +664,7 @@ function expandDirectories(context, next) {
   return next(null, context);
 }
 
-function commonPrefix(paths, separator?) {
+function commonPrefix(paths: string[], separator?: string): string {
   if (
     !paths ||
     paths.length === 0 ||
@@ -638,7 +706,7 @@ function commonPrefix(paths, separator?) {
   }
 }
 
-function prettyPrint(manifest) {
+function prettyPrint(manifest: Record<string, any>) {
   artillery.logger({ showTimestamp: true }).log('Test bundle prepared...');
   artillery.log('Test bundle contents:');
   const t = new Table({ head: ['Name', 'Type', 'Notes'] });
@@ -647,7 +715,7 @@ function prettyPrint(manifest) {
   }
   for (const m of manifest.modules) {
     const version = manifest.moduleVersions?.[m];
-    const notes = [];
+    const notes: string[] = [];
     if (manifest.pkgDeps.indexOf(m) === -1) notes.push('not in package.json');
     if (version) notes.push(`v${version}`);
     t.push([m, 'package', notes.join(' · ')]);
@@ -655,7 +723,7 @@ function prettyPrint(manifest) {
   artillery.log(t.toString());
 
   const unresolvedExternals = (manifest.externals || []).filter(
-    (e) => e.reason !== 'not-in-package-json'
+    (e: UnresolvedImport) => e.reason !== 'not-in-package-json'
   );
   if (unresolvedExternals.length > 0) {
     artillery.log('Unresolved imports:');
@@ -668,12 +736,15 @@ function prettyPrint(manifest) {
   artillery.log();
 }
 
-function enrichPackageJson(content, moduleVersions) {
+function enrichPackageJson(
+  content: string | Record<string, any>,
+  moduleVersions?: Record<string, string>
+) {
   const pkg = typeof content === 'string' ? JSON.parse(content) : content;
 
-  const filterBundled = (deps) => {
+  const filterBundled = (deps: Record<string, unknown> | undefined) => {
     if (!deps) return deps;
-    const filtered = {};
+    const filtered: Record<string, unknown> = {};
     for (const [name, version] of Object.entries(deps)) {
       if (
         name !== 'artillery' &&

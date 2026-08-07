@@ -1,4 +1,3 @@
 [
-  "lib/platform/aws-ecs/legacy/bom.ts",
   "lib/platform/aws-ecs/legacy/run-cluster.ts"
 ]
