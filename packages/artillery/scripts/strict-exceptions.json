@@ -1,7 +1,5 @@
 [
   "lib/platform/aws-ecs/legacy/bom.ts",
   "lib/platform/aws-ecs/legacy/plugins/artillery-plugin-sqs-reporter/index.ts",
-  "lib/platform/aws-ecs/legacy/run-cluster.ts",
-  "lib/platform/aws-lambda/index.ts",
-  "lib/platform/az/aci.ts"
+  "lib/platform/aws-ecs/legacy/run-cluster.ts"
 ]

@@ -3,10 +3,7 @@
 //
 // Non-evaluation use of Artillery on Azure requires a commercial license
 
-
-import {
-  ContainerInstanceManagementClient
-} from '@azure/arm-containerinstance';
+import { ContainerInstanceManagementClient } from '@azure/arm-containerinstance';
 import { DefaultAzureCredential } from '@azure/identity';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { QueueClient } from '@azure/storage-queue';
@@ -30,10 +27,10 @@ import { regionNames } from './regions.ts';
 // got is loaded lazily via await import('got')
 
 // Helper to convert readable stream to string
-async function streamToString(readableStream) {
+async function streamToString(readableStream: NodeJS.ReadableStream) {
   return new Promise<string>((resolve, reject) => {
-    const chunks = [];
-    readableStream.on('data', (data) => {
+    const chunks: string[] = [];
+    readableStream.on('data', (data: Buffer | string) => {
       chunks.push(data.toString());
     });
     readableStream.on('end', () => {
@@ -50,7 +47,12 @@ class PlatformAzureACI {
   // Untyped JS class - properties assigned dynamically
   [key: string]: any;
 
-  constructor(script, variablePayload, opts, platformOpts) {
+  constructor(
+    script: Record<string, any>,
+    variablePayload: unknown,
+    opts: Record<string, any>,
+    platformOpts: Record<string, any>
+  ) {
     this.script = script;
     this.variablePayload = variablePayload;
     this.opts = opts;
@@ -163,7 +165,7 @@ class PlatformAzureACI {
     );
 
     const customSyncClient = {
-      send: async (command) => {
+      send: async (command: { input: Record<string, any> }) => {
         // command is always an instance of PutObjectCommand() from @aws-sdk/client-s3
         const { Key, Body } = command.input;
         const blockBlobClient =
@@ -238,7 +240,7 @@ class PlatformAzureACI {
     if (this.platformOpts.cliArgs.config) {
       this.artilleryArgs.push('--config');
       const p = manifest.files.filter(
-        (x) => x.orig === this.opts.absoluteConfigPath
+        (x: Record<string, any>) => x.orig === this.opts.absoluteConfigPath
       )[0];
       this.artilleryArgs.push(p.noPrefixPosix);
     }
@@ -249,7 +251,7 @@ class PlatformAzureACI {
 
     // This needs to be the last argument for now:
     const p = manifest.files.filter(
-      (x) => x.orig === this.opts.absoluteScriptPath
+      (x: Record<string, any>) => x.orig === this.opts.absoluteScriptPath
     )[0];
     this.artilleryArgs.push(p.noPrefixPosix);
 
@@ -285,10 +287,9 @@ class PlatformAzureACI {
           // Handle overflow messages stored in blob storage
           if (payload._overflowRef) {
             try {
-              const blobClient =
-                this.blobContainerClient.getBlockBlobClient(
-                  payload._overflowRef
-                );
+              const blobClient = this.blobContainerClient.getBlockBlobClient(
+                payload._overflowRef
+              );
               const downloadResponse = await blobClient.download();
               const downloaded = await streamToString(
                 downloadResponse.readableStreamBody
@@ -422,23 +423,24 @@ class PlatformAzureACI {
 
       containerGroupsInTestRun = [];
       for await (const containerGroup of containerGroupListResult) {
-        if (containerGroup.name.indexOf(this.testRunId) > 0) {
+        // NOTE: pre-existing behavior: a group with no name throws.
+        if ((containerGroup.name as string).indexOf(this.testRunId) > 0) {
           containerGroupsInTestRun.push(containerGroup);
         }
       }
 
-      const byStatus = containerGroupsInTestRun.reduce((acc, cg) => {
-        if (!acc[cg.provisioningState]) {
-          acc[cg.provisioningState] = 0;
-        }
-        acc[cg.provisioningState]++;
-        return acc;
-      }, {});
+      const byStatus = containerGroupsInTestRun.reduce(
+        (acc: Record<string, number>, cg: Record<string, any>) => {
+          if (!acc[cg.provisioningState]) {
+            acc[cg.provisioningState] = 0;
+          }
+          acc[cg.provisioningState]++;
+          return acc;
+        },
+        {}
+      );
 
-      if (
-        (byStatus.Succeeded || 0) + (byStatus.Running || 0) ===
-        this.count
-      ) {
+      if ((byStatus.Succeeded || 0) + (byStatus.Running || 0) === this.count) {
         instancesCreated = true;
         break;
       }
@@ -485,11 +487,12 @@ class PlatformAzureACI {
         );
 
       for await (const containerGroup of containerGroupListResult) {
-        if (containerGroup.name.indexOf(this.testRunId) > 0) {
+        // NOTE: pre-existing behavior: a group with no name throws.
+        if ((containerGroup.name as string).indexOf(this.testRunId) > 0) {
           try {
             await containerInstanceClient.containerGroups.beginDeleteAndWait(
               this.resourceGroupName,
-              containerGroup.name
+              containerGroup.name as string
             );
           } catch (err) {
             console.log(err);
@@ -510,7 +513,7 @@ class PlatformAzureACI {
     return { workerId };
   }
 
-  async runWorker(workerId, opts = { isLeader: false }) {
+  async runWorker(workerId: string, opts = { isLeader: false }) {
     const credential = new DefaultAzureCredential();
 
     const imageVersion =
@@ -653,7 +656,10 @@ class PlatformAzureACI {
       this.containerInstances.push(containerInstance);
 
       this.count++;
-    } catch (err) {
+    } catch (caughtErr) {
+      const err = caughtErr as NodeJS.ErrnoException & {
+        details?: { error?: { message?: string } };
+      };
       // TODO: Make this better
       console.log(err.code);
       console.log(err.details?.error?.message);
@@ -661,7 +667,7 @@ class PlatformAzureACI {
     }
   }
 
-  async stopWorker(_workerId) {}
+  async stopWorker(_workerId: string) {}
 
   async checkLicense() {
     const request = (await import('got')).default;
@@ -688,7 +694,8 @@ class PlatformAzureACI {
       }
 
       const activeMembership = body.memberships.find(
-        (membership) => membership.id === activeOrg
+        (membership: { id: string; plan?: string }) =>
+          membership.id === activeOrg
       );
 
       if (!activeMembership) {
