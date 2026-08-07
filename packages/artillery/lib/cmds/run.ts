@@ -27,6 +27,8 @@ import * as telemetry from '../telemetry.ts';
 import generateId from '../util/generate-id.ts';
 import parseTagString from '../util/parse-tag-string.ts';
 import prepareTestExecutionPlan from '../util/prepare-test-execution-plan.ts';
+import type { PeriodMetrics } from '../core/ssms.ts';
+import type { MergedScript } from '../util.ts';
 
 class RunCommand extends Command {
   // Untyped JS class - properties assigned dynamically
@@ -105,8 +107,12 @@ RunCommand.args = {
   })
 };
 
-let cloud;
-RunCommand.runCommandImplementation = async (flags, argv, args) => {
+let cloud: InstanceType<typeof CloudPlugin> | undefined;
+RunCommand.runCommandImplementation = async (
+  flags: Record<string, any>,
+  argv: string[],
+  args: Record<string, any>
+) => {
   // Collect all input files for reading/parsing - via args, --config, or -i
   const inputFiles = argv.concat(flags.input || [], flags.config || []);
 
@@ -144,334 +150,345 @@ RunCommand.runCommandImplementation = async (flags, argv, args) => {
   const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');
   console.log('Test run id:', testRunId);
   global.artillery.testRunId = testRunId;
-    cloud = new CloudPlugin(null, null, { flags });
-    global.artillery.cloudEnabled = cloud.enabled;
+  cloud = new CloudPlugin(null, null, { flags });
+  global.artillery.cloudEnabled = cloud.enabled;
 
-    if (cloud.enabled) {
-      try {
-        await cloud.init();
-      } catch (err) {
-        if (err.name === 'CloudAPIKeyMissing') {
-          console.error(
-            'Error: API key is required to record test results to Artillery Cloud'
-          );
-          console.error(
-            'See https://docs.art/get-started-cloud for more information'
-          );
-
-          await gracefulShutdown({ exitCode: 7 });
-        } else if (err.name === 'APIKeyUnauthorized') {
-          console.error(
-            'Error: API key is not recognized or is not authorized to record tests'
-          );
-
-          await gracefulShutdown({ exitCode: 7 });
-        } else if (err.name === 'PingFailed') {
-          console.error(
-            'Error: unable to reach Artillery Cloud API. This could be due to firewall restrictions on your network'
-          );
-          console.log('https://docs.art/cloud/err-ping');
-          await gracefulShutdown({ exitCode: 7 });
-        } else {
-          console.error(
-            'Error: something went wrong connecting to Artillery Cloud'
-          );
-          console.error('Check https://status.artillery.io for status updates');
-          console.error(err);
-        }
-      }
-    }
-
-    let script;
+  if (cloud.enabled) {
     try {
-      script = await prepareTestExecutionPlan(inputFiles, flags, args);
-    } catch (err) {
-      console.error('Error:', err.message);
-      await gracefulShutdown({ exitCode: 1 });
-    }
+      await cloud.init();
+    } catch (caughtErr) {
+      const err = caughtErr as Error;
+      if (err.name === 'CloudAPIKeyMissing') {
+        console.error(
+          'Error: API key is required to record test results to Artillery Cloud'
+        );
+        console.error(
+          'See https://docs.art/get-started-cloud for more information'
+        );
 
-    var runnerOpts: any = {
-      environment: flags.environment,
-      // This is used in the worker to resolve
-      // the path to the processor module
-      scriptPath: args.script,
-      // TODO: This should be an array of files, like inputFiles above
-      absoluteScriptPath: path.resolve(process.cwd(), args.script),
-      plugins: [],
-      scenarioName: flags['scenario-name']
-    };
+        await gracefulShutdown({ exitCode: 7 });
+      } else if (err.name === 'APIKeyUnauthorized') {
+        console.error(
+          'Error: API key is not recognized or is not authorized to record tests'
+        );
 
-    // Set "name" tag if not set explicitly
-    if (tagResult.tags.filter((t) => t.name === 'name').length === 0) {
-      tagResult.tags.push({
-        name: 'name',
-        value: path.basename(runnerOpts.scriptPath)
-      });
-    }
-    // Override the "name" tag with the value of --name if set
-    if (flags.name) {
-      for (const t of tagResult.tags) {
-        if (t.name === 'name') {
-          t.value = flags.name;
-        }
-      }
-    }
-
-    if (flags.config) {
-      runnerOpts.absoluteConfigPath = path.resolve(process.cwd(), flags.config);
-    }
-
-    if (process.env.WORKERS) {
-      runnerOpts.count = parseInt(process.env.WORKERS, 10) || 1;
-    }
-    if (flags.solo) {
-      runnerOpts.count = 1;
-    }
-
-    const platformConfig = {};
-    if (flags['platform-opt']) {
-      for (const opt of flags['platform-opt']) {
-        const [k, v] = opt.split('=');
-        platformConfig[k] = v;
-      }
-    }
-
-    const launcherOpts = {
-      platform: flags.platform,
-      platformConfig,
-      mode: flags.platform === 'local' ? 'distribute' : 'multiply',
-      count: parseInt(flags.count || 1, 10),
-      cliArgs: flags,
-      testRunId
-    };
-
-    var launcher = await createLauncher(
-      script,
-      script.config.payload,
-      runnerOpts,
-      launcherOpts
-    );
-
-    if (!launcher) {
-      console.log('Failed to create launcher');
-      await gracefulShutdown({ exitCode: 1 });
-    }
-
-    const intermediates = [];
-
-    const metricsToSuppress = getPluginMetricsToSuppress(script);
-    // TODO: Wire up workerLog or something like that
-    const consoleReporter = createConsoleReporter(launcher.events, {
-      quiet: flags.quiet || false,
-      metricsToSuppress
-    });
-
-    var reporters = [consoleReporter];
-    if (process.env.CUSTOM_REPORTERS) {
-      const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
-      for (const name of customReporterNames) {
-        // Resolve with CJS semantics, load with import() - handles both
-        // CJS and ESM reporters, including ESM with top-level await
-        const reporterPath = require.resolve(name);
-        const ns = await import(pathToFileURL(reporterPath).href);
-        const createReporter = ns.default ?? ns;
-        const reporter = createReporter(launcher.events, flags);
-        reporters.push(reporter);
-      }
-    }
-
-    launcher.events.on('phaseStarted', (_phase) => {});
-
-    launcher.events.on('stats', (stats) => {
-      if (artillery.runtimeOptions.legacyReporting) {
-        const report = SSMS.legacyReport(stats).report();
-        intermediates.push(report);
+        await gracefulShutdown({ exitCode: 7 });
+      } else if (err.name === 'PingFailed') {
+        console.error(
+          'Error: unable to reach Artillery Cloud API. This could be due to firewall restrictions on your network'
+        );
+        console.log('https://docs.art/cloud/err-ping');
+        await gracefulShutdown({ exitCode: 7 });
       } else {
-        intermediates.push(stats);
+        console.error(
+          'Error: something went wrong connecting to Artillery Cloud'
+        );
+        console.error('Check https://status.artillery.io for status updates');
+        console.error(err);
       }
+    }
+  }
+
+  let script: MergedScript | undefined;
+  try {
+    script = await prepareTestExecutionPlan(inputFiles, flags, args);
+  } catch (err) {
+    console.error('Error:', (err as Error).message);
+    await gracefulShutdown({ exitCode: 1 });
+  }
+  // gracefulShutdown() exits the process on failure, so the script
+  // is always set past this point:
+  const runScript = script as MergedScript;
+
+  var runnerOpts: any = {
+    environment: flags.environment,
+    // This is used in the worker to resolve
+    // the path to the processor module
+    scriptPath: args.script,
+    // TODO: This should be an array of files, like inputFiles above
+    absoluteScriptPath: path.resolve(process.cwd(), args.script),
+    plugins: [],
+    scenarioName: flags['scenario-name']
+  };
+
+  // Set "name" tag if not set explicitly
+  if (tagResult.tags.filter((t) => t.name === 'name').length === 0) {
+    tagResult.tags.push({
+      name: 'name',
+      value: path.basename(runnerOpts.scriptPath)
     });
+  }
+  // Override the "name" tag with the value of --name if set
+  if (flags.name) {
+    for (const t of tagResult.tags) {
+      if (t.name === 'name') {
+        t.value = flags.name;
+      }
+    }
+  }
 
-    launcher.events.on('done', async (stats) => {
-      let report;
-      if (artillery.runtimeOptions.legacyReporting) {
-        report = SSMS.legacyReport(stats).report();
-        report.phases = _.get(script, 'config.phases', []);
-      } else {
-        report = stats;
+  if (flags.config) {
+    runnerOpts.absoluteConfigPath = path.resolve(process.cwd(), flags.config);
+  }
+
+  if (process.env.WORKERS) {
+    runnerOpts.count = parseInt(process.env.WORKERS, 10) || 1;
+  }
+  if (flags.solo) {
+    runnerOpts.count = 1;
+  }
+
+  const platformConfig: Record<string, string> = {};
+  if (flags['platform-opt']) {
+    for (const opt of flags['platform-opt']) {
+      const [k, v] = opt.split('=');
+      platformConfig[k] = v;
+    }
+  }
+
+  const launcherOpts = {
+    platform: flags.platform,
+    platformConfig,
+    mode: flags.platform === 'local' ? 'distribute' : 'multiply',
+    count: parseInt(flags.count || 1, 10),
+    cliArgs: flags,
+    testRunId
+  };
+
+  var launcher = await createLauncher(
+    runScript,
+    runScript.config.payload,
+    runnerOpts,
+    launcherOpts
+  );
+
+  if (!launcher) {
+    console.log('Failed to create launcher');
+    await gracefulShutdown({ exitCode: 1 });
+  }
+  // As above: gracefulShutdown() exits when the launcher is missing.
+  const activeLauncher = launcher as NonNullable<typeof launcher>;
+
+  const intermediates: Array<Record<string, any>> = [];
+
+  const metricsToSuppress = getPluginMetricsToSuppress(runScript);
+  // TODO: Wire up workerLog or something like that
+  const consoleReporter = createConsoleReporter(activeLauncher.events, {
+    quiet: flags.quiet || false,
+    metricsToSuppress
+  });
+
+  var reporters = [consoleReporter];
+  if (process.env.CUSTOM_REPORTERS) {
+    const customReporterNames = process.env.CUSTOM_REPORTERS.split(',');
+    for (const name of customReporterNames) {
+      // Resolve with CJS semantics, load with import() - handles both
+      // CJS and ESM reporters, including ESM with top-level await
+      const reporterPath = require.resolve(name);
+      const ns = await import(pathToFileURL(reporterPath).href);
+      const createReporter = ns.default ?? ns;
+      const reporter = createReporter(activeLauncher.events, flags);
+      reporters.push(reporter);
+    }
+  }
+
+  activeLauncher.events.on('phaseStarted', (_phase: unknown) => {});
+
+  activeLauncher.events.on('stats', (stats: Record<string, any>) => {
+    if (artillery.runtimeOptions.legacyReporting) {
+      const report = SSMS.legacyReport(stats as PeriodMetrics).report();
+      intermediates.push(report);
+    } else {
+      intermediates.push(stats);
+    }
+  });
+
+  activeLauncher.events.on('done', async (stats: Record<string, any>) => {
+    let report: Record<string, any>;
+    if (artillery.runtimeOptions.legacyReporting) {
+      report = SSMS.legacyReport(stats as PeriodMetrics).report();
+      report.phases = _.get(runScript, 'config.phases', []);
+    } else {
+      report = stats;
+    }
+
+    if (flags.output) {
+      const logfile = getLogFilename(flags.output) as string;
+      if (!flags.quiet) {
+        console.log('Log file: %s', logfile);
       }
 
-      if (flags.output) {
-        const logfile = getLogFilename(flags.output);
-        if (!flags.quiet) {
-          console.log('Log file: %s', logfile);
-        }
+      for (const ix of intermediates) {
+        delete ix.histograms;
+        ix.histograms = ix.summaries;
+      }
+      delete report.histograms;
+      report.histograms = report.summaries;
 
-        for (const ix of intermediates) {
-          delete ix.histograms;
-          ix.histograms = ix.summaries;
-        }
-        delete report.histograms;
-        report.histograms = report.summaries;
+      fs.writeFileSync(
+        logfile,
+        JSON.stringify(
+          {
+            aggregate: report,
+            intermediate: intermediates
+          },
+          null,
+          2
+        ),
+        { flag: 'w' }
+      );
+    }
 
-        fs.writeFileSync(
-          logfile,
-          JSON.stringify(
-            {
-              aggregate: report,
-              intermediate: intermediates
-            },
-            null,
-            2
-          ),
-          { flag: 'w' }
+    // This is used in the beforeExit event handler in gracefulShutdown
+    finalReport = report;
+    await gracefulShutdown();
+  });
+
+  global.artillery.ext({
+    ext: 'beforeExit',
+    method: async (event) => {
+      try {
+        const duration = Math.round(
+          (event.report?.lastMetricAt - event.report?.firstMetricAt) / 1000
+        );
+        await sendTelemetry(runScript, flags, { duration });
+      } catch (_err) {}
+    }
+  });
+
+  global.artillery.testInfo = {
+    flags,
+    testRunId,
+    tags: tagResult.tags,
+    metadata: {
+      testId: testRunId,
+      startedAt: Date.now(),
+      count: runnerOpts.count || Number(flags.count),
+      tags: tagResult.tags,
+      launchType: flags.platform,
+      artilleryVersion: {
+        core: global.artillery.version
+      },
+      // Properties from the runnable script object:
+      // (see runScript alias above)
+      testConfig: {
+        target: runScript.config.target,
+        phases: runScript.config.phases,
+        plugins: runScript.config.plugins,
+        environment: runScript._environment,
+        scriptPath: runScript._scriptPath,
+        configPath: runScript._configPath
+      }
+    }
+  };
+
+  global.artillery.globalEvents.emit('test:init', global.artillery.testInfo);
+
+  activeLauncher.run();
+
+  var finalReport = {};
+  var shuttingDown = false;
+  process.on('SIGINT', async () => {
+    gracefulShutdown({ earlyStop: true, exitCode: 130 });
+  });
+  process.on('SIGTERM', async () => {
+    gracefulShutdown({ earlyStop: true, exitCode: 143 });
+  });
+
+  async function gracefulShutdown(opts: any = { exitCode: 0 }) {
+    debug('shutting down 🦑');
+    if (shuttingDown) {
+      return;
+    }
+
+    debug('Graceful shutdown initiated');
+
+    shuttingDown = true;
+    global.artillery.globalEvents.emit('shutdown:start', opts);
+
+    // Run beforeExit first, and then onShutdown
+
+    const ps = [];
+    for (const e of global.artillery.extensionEvents) {
+      const testInfo = { endTime: Date.now() };
+      if (e.ext === 'beforeExit') {
+        ps.push(
+          e.method({
+            ...opts,
+            report: finalReport,
+            flags,
+            runnerOpts,
+            testInfo
+          })
         );
       }
+    }
+    await Promise.allSettled(ps);
 
-      // This is used in the beforeExit event handler in gracefulShutdown
-      finalReport = report;
-      await gracefulShutdown();
-    });
-
-    global.artillery.ext({
-      ext: 'beforeExit',
-      method: async (event) => {
-        try {
-          const duration = Math.round(
-            (event.report?.lastMetricAt - event.report?.firstMetricAt) / 1000
-          );
-          await sendTelemetry(script, flags, { duration });
-        } catch (_err) {}
+    const ps2 = [];
+    for (const e of global.artillery.extensionEvents) {
+      if (e.ext === 'onShutdown') {
+        ps2.push(e.method(opts));
       }
-    });
+    }
+    await Promise.allSettled(ps2);
 
-    global.artillery.testInfo = {
-      flags,
-      testRunId,
-      tags: tagResult.tags,
-      metadata: {
-        testId: testRunId,
-        startedAt: Date.now(),
-        count: runnerOpts.count || Number(flags.count),
-        tags: tagResult.tags,
-        launchType: flags.platform,
-        artilleryVersion: {
-          core: global.artillery.version
-        },
-        // Properties from the runnable script object:
-        testConfig: {
-          target: script.config.target,
-          phases: script.config.phases,
-          plugins: script.config.plugins,
-          environment: script._environment,
-          scriptPath: script._scriptPath,
-          configPath: script._configPath
-        }
-      }
-    };
+    if (launcher) {
+      await launcher.shutdown();
+    }
 
-    global.artillery.globalEvents.emit('test:init', global.artillery.testInfo);
-
-    launcher.run();
-
-    var finalReport = {};
-    var shuttingDown = false;
-    process.on('SIGINT', async () => {
-      gracefulShutdown({ earlyStop: true, exitCode: 130 });
-    });
-    process.on('SIGTERM', async () => {
-      gracefulShutdown({ earlyStop: true, exitCode: 143 });
-    });
-
-    async function gracefulShutdown(opts: any = { exitCode: 0 }) {
-      debug('shutting down 🦑');
-      if (shuttingDown) {
-        return;
-      }
-
-      debug('Graceful shutdown initiated');
-
-      shuttingDown = true;
-      global.artillery.globalEvents.emit('shutdown:start', opts);
-
-      // Run beforeExit first, and then onShutdown
-
-      const ps = [];
-      for (const e of global.artillery.extensionEvents) {
-        const testInfo = { endTime: Date.now() };
-        if (e.ext === 'beforeExit') {
-          ps.push(
-            e.method({
-              ...opts,
-              report: finalReport,
-              flags,
-              runnerOpts,
-              testInfo
-            })
-          );
-        }
-      }
-      await Promise.allSettled(ps);
-
-      const ps2 = [];
-      for (const e of global.artillery.extensionEvents) {
-        if (e.ext === 'onShutdown') {
-          ps2.push(e.method(opts));
-        }
-      }
-      await Promise.allSettled(ps2);
-
-      if (launcher) {
-        await launcher.shutdown();
-      }
-
-      await (async () => {
-        if (reporters) {
-          for (const r of reporters) {
-            if (r.cleanup) {
-              try {
-                await p(r.cleanup.bind(r))();
-              } catch (cleanupErr) {
-                debug(cleanupErr);
-              }
+    await (async () => {
+      if (reporters) {
+        for (const r of reporters) {
+          if (r.cleanup) {
+            try {
+              await p(r.cleanup.bind(r))();
+            } catch (cleanupErr) {
+              debug(cleanupErr);
             }
           }
         }
+      }
 
-        if (
-          global.artillery.hasTypescriptProcessor &&
-          !process.env.ARTILLERY_TS_KEEP_BUNDLE
-        ) {
-          try {
-            fs.unlinkSync(global.artillery.hasTypescriptProcessor);
-          } catch (err) {
-            console.log(
-              `WARNING: Failed to remove typescript bundled file: ${global.artillery.hasTypescriptProcessor}`
-            );
-            console.log(err);
-          }
-          try {
-            fs.rmdirSync(path.dirname(global.artillery.hasTypescriptProcessor));
-          } catch (_err) {}
+      if (
+        global.artillery.hasTypescriptProcessor &&
+        !process.env.ARTILLERY_TS_KEEP_BUNDLE
+      ) {
+        try {
+          fs.unlinkSync(global.artillery.hasTypescriptProcessor);
+        } catch (err) {
+          console.log(
+            `WARNING: Failed to remove typescript bundled file: ${global.artillery.hasTypescriptProcessor}`
+          );
+          console.log(err);
         }
-        debug('Cleanup finished');
-        process.exit(artillery.suggestedExitCode || opts.exitCode);
-      })();
-    }
+        try {
+          fs.rmdirSync(path.dirname(global.artillery.hasTypescriptProcessor));
+        } catch (_err) {}
+      }
+      debug('Cleanup finished');
+      process.exit(artillery.suggestedExitCode || opts.exitCode);
+    })();
+  }
 
-    global.artillery.shutdown = gracefulShutdown;
+  global.artillery.shutdown = gracefulShutdown;
 };
 
-async function sendTelemetry(script, flags, extraProps) {
+async function sendTelemetry(
+  script: Record<string, any>,
+  flags: Record<string, any>,
+  extraProps: Record<string, any>
+) {
   if (process.env.WORKER_ID) {
     debug('Telemetry: Running in cloud worker, skipping test run event');
     return;
   }
 
-  function hash(str) {
+  function hash(str: string) {
     return crypto.createHash('sha1').update(str).digest('base64');
   }
 
-  const properties: any = {};
+  const properties: Record<string, any> = {};
 
   if (script.config?.__createdByQuickCommand) {
     properties.quick = true;
@@ -502,9 +519,9 @@ async function sendTelemetry(script, flags, extraProps) {
     }
 
     let macaddr;
-    const nonInternalIpv6Interfaces = [];
+    const nonInternalIpv6Interfaces: Array<{ mac: string }> = [];
     for (const [_iface, descrs] of Object.entries(os.networkInterfaces())) {
-      for (const o of descrs) {
+      for (const o of descrs ?? []) {
         if (o.internal === true) {
           continue;
         }
@@ -602,13 +619,13 @@ async function sendTelemetry(script, flags, extraProps) {
       properties.officialMonitoringReporters = script.config.plugins[
         'publish-metrics'
       ]
-        .map((reporter) => {
+        .map((reporter: Record<string, any>) => {
           if (OFFICIAL_REPORTERS.includes(reporter.type)) {
             return reporter.type;
           }
           return undefined;
         })
-        .filter((type) => type !== undefined);
+        .filter((type: string | undefined) => type !== undefined);
     }
 
     // before/after hooks
@@ -628,7 +645,7 @@ async function sendTelemetry(script, flags, extraProps) {
   }
 }
 
-function checkDirExists(output) {
+function checkDirExists(output: string | undefined): boolean | undefined {
   if (!output) {
     return;
   }
@@ -640,8 +657,8 @@ function checkDirExists(output) {
   return exists;
 }
 
-function getLogFilename(output, nameFormat?) {
-  let logfile;
+function getLogFilename(output: string, nameFormat?: string) {
+  let logfile: string | undefined;
 
   // is the destination a directory that exists?
   let isDir = false;
@@ -667,11 +684,11 @@ function getLogFilename(output, nameFormat?) {
   return logfile;
 }
 
-function getPluginMetricsToSuppress(script) {
+function getPluginMetricsToSuppress(script: Record<string, any>): string[] {
   if (!script.config.plugins) {
     return [];
   }
-  const metrics = [];
+  const metrics: string[] = [];
   for (const [plugin, options] of Object.entries<any>(script.config.plugins)) {
     if (options.suppressOutput) {
       metrics.push(`plugins.${plugin}`);
