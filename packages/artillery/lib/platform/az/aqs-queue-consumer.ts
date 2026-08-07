@@ -4,7 +4,6 @@
 // Non-evaluation use of Artillery on Azure requires a commercial license
 //
 
-
 import { DefaultAzureCredential } from '@azure/identity';
 import { QueueClient } from '@azure/storage-queue';
 import createDebug from 'debug';
@@ -17,13 +16,20 @@ class AzureQueueConsumer extends EventEmitter {
   [key: string]: any;
 
   constructor(
-    opts = { poolSize: 30 },
+    opts: { poolSize: number } = { poolSize: 30 },
     {
       queueUrl,
       pollIntervalMsec = 5000,
       visibilityTimeout = 60,
       batchSize = 32,
       handleMessage
+    }: {
+      queueUrl: string;
+      pollIntervalMsec?: number;
+      visibilityTimeout?: number;
+      batchSize?: number;
+      // Azure queue message - consumers read Body and metadata:
+      handleMessage: (message: any) => Promise<unknown> | unknown;
     }
   ) {
     super();

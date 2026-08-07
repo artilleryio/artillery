@@ -8,13 +8,17 @@ import createDebug from 'debug';
 // Artillery Core worker process
 //
 
-
-
-import {
-  parentPort,
-  threadId
-} from 'node:worker_threads';
+import { type MessagePort, parentPort, threadId } from 'node:worker_threads';
 import * as core from '../../core/index.ts';
+import type { PhaseSpec } from '../../core/phases.ts';
+import type { RunnerInstance } from '../../core/runner.ts';
+import type { PeriodMetrics } from '../../core/ssms.ts';
+import type {
+  PrepareWorkerOptions,
+  WorkerCommand,
+  WorkerEnvelope,
+  WorkerEvent
+} from './protocol.ts';
 
 import { createGlobalObject } from '../../artillery-global.ts';
 import { getStash } from '../../stash.ts';
@@ -39,19 +43,23 @@ import prepareTestExecutionPlan from '../../util/prepare-test-execution-plan.ts'
 
 process.env.LOCAL_WORKER_ID = String(threadId);
 
-parentPort.on('message', onMessage);
+// This module only runs inside a worker thread, where parentPort is
+// always set.
+const port = parentPort as MessagePort;
+
+port.on('message', onMessage);
 
 let shuttingDown = false;
 
-let runnerInstance = null;
+let runnerInstance: RunnerInstance | null = null;
 
-global.artillery._workerThreadSend = send;
+global.artillery._workerThreadSend = send as (data: unknown) => void;
 
 //
 // Supported messages: run, stop
 //
 
-async function onMessage(message) {
+async function onMessage(message: WorkerCommand) {
   if (message.command === 'prepare') {
     await prepare(message.opts);
     return;
@@ -75,7 +83,7 @@ async function onMessage(message) {
         } catch (cleanupErr) {
           send({
             event: 'workerError',
-            error: cleanupErr,
+            error: cleanupErr as Error,
             level: 'error',
             aggregatable: true
           });
@@ -104,20 +112,22 @@ async function cleanup() {
   });
 }
 
-async function createGlobalStashClient(cliArgs) {
+async function createGlobalStashClient(
+  cliArgs: Record<string, any> | undefined
+) {
   try {
     global.artillery.stash = await getStash({
       apiKey: cliArgs?.key || process.env.ARTILLERY_CLOUD_API_KEY
     });
   } catch (error) {
-    if (error.name !== 'CloudAPIKeyMissing') {
+    if ((error as Error).name !== 'CloudAPIKeyMissing') {
       console.error(error);
     }
     global.artillery.stash = null;
   }
 }
 
-async function prepare(opts) {
+async function prepare(opts: PrepareWorkerOptions) {
   await createGlobalObject();
   await createGlobalStashClient(opts.options.cliArgs);
 
@@ -141,7 +151,10 @@ async function prepare(opts) {
   }
 
   const { payload, options } = opts;
-  const script = await loadProcessor(_script, options);
+  const script = await loadProcessor(
+    _script as { config: Record<string, any> },
+    options as { scriptPath: string }
+  );
 
   if (opts.script.__phases) {
     script.config.phases = opts.script.__phases;
@@ -160,9 +173,12 @@ async function prepare(opts) {
   // they will receive individual stats/done events from workers,
   // instead of objects that have been properly aggregated.)
   const stubEE = new EventEmitter();
-  for (const [name, result] of Object.entries<any>(plugins)) {
+  for (const [name, result] of Object.entries(plugins)) {
     if (result.isLoaded) {
-      global.artillery.plugins[name] = result.plugin;
+      // NOTE: pre-existing quirk: keyed assignment onto the plugins
+      // array (used as both array and map - modernization plan F17).
+      (global.artillery.plugins as unknown as Record<string, unknown>)[name] =
+        result.plugin;
       if (result.version === 3) {
         // TODO: v3 plugins
       } else {
@@ -231,25 +247,25 @@ async function prepare(opts) {
       });
     });
 
-  function onPhaseStarted(phase) {
+  function onPhaseStarted(phase: PhaseSpec) {
     send({ event: 'phaseStarted', phase: phase });
   }
 
-  function onPhaseCompleted(phase) {
+  function onPhaseCompleted(phase: PhaseSpec) {
     send({ event: 'phaseCompleted', phase: phase });
   }
 
-  function onStats(stats) {
+  function onStats(stats: PeriodMetrics) {
     send({ event: 'stats', stats: SSMS.serializeMetrics(stats) });
   }
 
-  async function onDone(report) {
-    await runnerInstance.stop();
+  async function onDone(report: PeriodMetrics) {
+    await (runnerInstance as RunnerInstance).stop();
     send({ event: 'done', report: SSMS.serializeMetrics(report) });
   }
 }
 
-async function run(opts) {
+async function run(opts: Record<string, any>) {
   if (runnerInstance) {
     runnerInstance.run(opts);
     send({ event: 'running' });
@@ -259,8 +275,11 @@ async function run(opts) {
 }
 
 // TODO: id -> workerId, ts -> _ts
-function send(data) {
-  const payload = Object.assign({ id: threadId, ts: Date.now() }, data);
+function send(data: WorkerEvent) {
+  const payload: WorkerEnvelope = Object.assign(
+    { id: threadId, ts: Date.now() },
+    data
+  );
   debug(payload);
-  parentPort.postMessage(payload);
+  port.postMessage(payload);
 }

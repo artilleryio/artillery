@@ -11,11 +11,43 @@ import { BUILTIN_PACKAGES_DIR } from './builtin-packages.ts';
 const debug = createDebug('core');
 const require = createRequire(import.meta.url);
 
+// Result of attempting to load one plugin. Failures carry a
+// user-facing message; successes carry the loaded module and the
+// detected plugin API version (undefined when the module loaded but
+// its shape was not recognized).
+export type PluginLoadResult = PluginLoadFailure | LoadedPlugin;
+
+export interface PluginLoadFailure {
+  name: string;
+  isLoaded: false;
+  isInitialized: false;
+  msg: string;
+  error: unknown;
+}
+
+export interface LoadedPlugin {
+  name: string;
+  isLoaded: true;
+  isInitialized: false;
+  // v1: constructor function; v2: { Plugin } module. Typed as any
+  // until consumers (launch-platform, worker) migrate to guarded
+  // narrowing - see modernization plan F6.
+  PluginExport: any;
+  loadedFrom: string | undefined;
+  // 3 is reserved for a future plugin interface - loadPlugin never
+  // produces it today, but consumers already branch on it.
+  version: 1 | 2 | 3 | undefined;
+  // Instantiated plugin, attached by consumers after construction:
+  plugin?: any;
+}
+
 // Additional paths to load plugins can be set via ARTILLERY_PLUGIN_PATH
 // Additional plugin config mafy be set via ARTILLERY_PLUGINS (as JSON)
 // Version may be: v1, v2, v3 or any
-function loadPluginsConfig(pluginSpecs) {
-  let additionalPlugins = {};
+function loadPluginsConfig(
+  pluginSpecs: Record<string, unknown> | undefined
+): Record<string, unknown> {
+  let additionalPlugins: Record<string, unknown> = {};
 
   if (process.env.ARTILLERY_PLUGINS) {
     try {
@@ -28,7 +60,11 @@ function loadPluginsConfig(pluginSpecs) {
   return Object.assign({}, pluginSpecs, additionalPlugins);
 }
 
-async function loadPlugins(pluginSpecs, testScript, _opts?) {
+async function loadPlugins(
+  pluginSpecs: Record<string, unknown> | undefined,
+  testScript: Record<string, any>,
+  _opts?: unknown
+): Promise<Record<string, PluginLoadResult>> {
   // Bare specifier first (user-installed copies win), bundled built-in
   // packages second, ARTILLERY_PLUGIN_PATH entries last
   let requirePaths = ['', BUILTIN_PACKAGES_DIR];
@@ -41,7 +77,7 @@ async function loadPlugins(pluginSpecs, testScript, _opts?) {
 
   pluginSpecs = loadPluginsConfig(pluginSpecs);
 
-  const results: any = {};
+  const results: Record<string, PluginLoadResult> = {};
   for (const [name, config] of Object.entries(pluginSpecs)) {
     const result = await loadPlugin(name, config, requirePaths, testScript);
     results[name] = result;
@@ -50,14 +86,22 @@ async function loadPlugins(pluginSpecs, testScript, _opts?) {
   return results;
 }
 
-async function loadPlugin(name, config, requirePaths, testScript) {
+async function loadPlugin(
+  name: string,
+  config: any,
+  requirePaths: string[],
+  testScript: Record<string, any>
+): Promise<PluginLoadResult> {
   // TODO: Take scope in directly - don't need the full script
   const pluginConfigScope = config.scope || testScript.config.pluginsScope;
   const pluginPrefix = pluginConfigScope
     ? pluginConfigScope
     : 'artillery-plugin-';
   const requireString = pluginPrefix + name;
-  let PluginExport, pluginErr, loadedFrom, version;
+  let PluginExport: any;
+  let pluginErr: unknown;
+  let loadedFrom: string | undefined;
+  let version: 1 | 2 | undefined;
 
   for (const p of requirePaths) {
     debug('Looking for plugin in:', p);
@@ -95,15 +139,16 @@ async function loadPlugin(name, config, requirePaths, testScript) {
   }
 
   if (!PluginExport) {
-    let msg;
+    let msg: string;
 
     if (!pluginErr) {
       msg = `WARNING: Could not initialize plugin: ${name}`;
     } else {
-      if (pluginErr.code === 'MODULE_NOT_FOUND') {
-        msg = `WARNING: Plugin ${name} specified but module ${requireString} could not be found (${pluginErr.code})`;
+      const err = pluginErr as NodeJS.ErrnoException;
+      if (err.code === 'MODULE_NOT_FOUND') {
+        msg = `WARNING: Plugin ${name} specified but module ${requireString} could not be found (${err.code})`;
       } else {
-        msg = `WARNING: Could not initialize plugin: ${name} (${pluginErr.message})`;
+        msg = `WARNING: Could not initialize plugin: ${name} (${err.message})`;
       }
     }
 

@@ -14,8 +14,10 @@ import { engine_util as engineUtil } from '../commons/index.ts';
 import HttpEngine from './engine_http.ts';
 import SocketIoEngine from './engine_socketio.ts';
 import WSEngine from './engine_ws.ts';
+import type { PhaseSpec } from './phases.ts';
 import createPhaser from './phases.ts';
 import createReader from './readers.ts';
+import type { PeriodMetrics } from './ssms.ts';
 import { SSMS } from './ssms.ts';
 import wl from './weighted-pick.ts';
 
@@ -24,7 +26,48 @@ const debugPerf = createDebug('perf');
 
 const require = createRequire(import.meta.url);
 
-const Engines = {
+// Minimal structural view of a runnable script.
+type ScriptLike = { config: Record<string, any>; [key: string]: any };
+
+// A compiled scenario: run a VU through the flow.
+type ScenarioFn = (
+  context: any,
+  callback: (err: any, context: any) => void
+) => unknown;
+
+// Contract every engine (built-in or third-party) must satisfy:
+export interface EngineInstance {
+  createScenario(spec: Record<string, any>, ee: any): ScenarioFn;
+  init?: () => Promise<void>;
+  __name?: string;
+}
+
+type EngineConstructor = new (
+  script: ScriptLike,
+  ee?: any,
+  helpers?: any
+) => EngineInstance;
+
+interface EngineWarnings {
+  engines: Record<string, { message: string; error: unknown }>;
+}
+
+interface RunState {
+  pendingScenarios: number;
+  compiledScenarios: ScenarioFn[] | null;
+  scenarioEvents: EventEmitter | null;
+  picker: (() => [number, any]) | undefined;
+  engines: Array<EngineInstance | undefined>;
+  metrics: SSMS;
+}
+
+export interface RunnerInstance extends EventEmitter {
+  run(contextVars?: Record<string, any> | null): void;
+  stop(done?: unknown): Promise<void>;
+  warnings: EngineWarnings;
+}
+
+const Engines: Record<string, EngineConstructor> = {
   http: HttpEngine,
   ws: WSEngine,
   socketio: SocketIoEngine
@@ -44,19 +87,23 @@ const runnerFuncs = {
 export { runner, contextFuncs, runnerFuncs };
 
 async function loadEngines(
-  script,
-  ee,
-  warnings = {
+  script: ScriptLike,
+  ee: any,
+  warnings: EngineWarnings = {
     engines: {}
   }
 ) {
-  const engineSpecs = Object.assign({}, Engines, script.config.engines);
-  const loadedEngines = [];
+  const engineSpecs: Record<string, unknown> = Object.assign(
+    {},
+    Engines,
+    script.config.engines
+  );
+  const loadedEngines: Array<EngineInstance | undefined> = [];
 
   for (const engineName of Object.keys(engineSpecs)) {
     const moduleName = `artillery-engine-${engineName}`;
     try {
-      let Engine;
+      let Engine: EngineConstructor;
       if (typeof Engines[engineName] !== 'undefined') {
         Engine = Engines[engineName];
       } else {
@@ -78,7 +125,7 @@ async function loadEngines(
         engineName,
         moduleName
       );
-      console.log(err.stack);
+      console.log((err as Error).stack);
       warnings.engines[engineName] = {
         message: 'Could not load',
         error: err
@@ -90,7 +137,10 @@ async function loadEngines(
   return { loadedEngines, warnings };
 }
 
-async function loadProcessor(script, options) {
+async function loadProcessor(
+  script: ScriptLike,
+  options: { scriptPath: string; [key: string]: any }
+) {
   const absoluteScriptPath = path.resolve(process.cwd(), options.scriptPath);
   if (script.config.processor) {
     const processorPath = path.resolve(
@@ -116,10 +166,10 @@ async function loadProcessor(script, options) {
   return script;
 }
 
-function prepareScript(script, payload) {
+function prepareScript(script: ScriptLike, payload: any): ScriptLike {
   const runnableScript = _.cloneDeep(script);
 
-  _.each(runnableScript.config.phases, (phaseSpec) => {
+  _.each(runnableScript.config.phases, (phaseSpec: Record<string, any>) => {
     phaseSpec.mode = phaseSpec.mode || runnableScript.config.mode;
   });
 
@@ -137,7 +187,7 @@ function prepareScript(script, payload) {
       ];
     } else {
       runnableScript.config.payload = payload;
-      _.each(runnableScript.config.payload, (el) => {
+      _.each(runnableScript.config.payload, (el: Record<string, any>) => {
         el.reader = createReader(el.order, el);
       });
     }
@@ -146,14 +196,19 @@ function prepareScript(script, payload) {
   }
 
   // Flatten flows (can have nested arrays of request specs with YAML references):
-  _.each(runnableScript.scenarios, (scenarioSpec) => {
+  _.each(runnableScript.scenarios, (scenarioSpec: Record<string, any>) => {
     scenarioSpec.flow = _.flatten(scenarioSpec.flow);
   });
 
   return runnableScript;
 }
 
-async function runner(script, payload, options, callback?) {
+async function runner(
+  script: ScriptLike,
+  payload?: any,
+  options?: Record<string, any>,
+  callback?: (err: Error | null, runner?: RunnerInstance) => void
+): Promise<RunnerInstance> {
   const opts = _.assign(
     {
       periodicStats: script.config.statsInterval || 30,
@@ -164,13 +219,13 @@ async function runner(script, payload, options, callback?) {
 
   const metrics = new SSMS();
 
-  const warnings = {
+  const warnings: EngineWarnings = {
     engines: {}
   };
 
   const runnableScript = prepareScript(script, payload);
 
-  const ee: any = new EventEmitter();
+  const ee = new EventEmitter() as RunnerInstance;
 
   //
   // load engines:
@@ -191,9 +246,9 @@ async function runner(script, payload, options, callback?) {
     }
   }
 
-  const promise = new Promise<any>((resolve, _reject) => {
+  const promise = new Promise<RunnerInstance>((resolve, _reject) => {
     ee.run = (contextVars) => {
-      const runState = {
+      const runState: RunState = {
         pendingScenarios: 0,
         // pendingRequests: 0,
         compiledScenarios: null,
@@ -206,7 +261,7 @@ async function runner(script, payload, options, callback?) {
       run(runnableScript, ee, opts, runState, contextVars);
     };
 
-    ee.stop = async (_done) => {
+    ee.stop = async (_done: unknown) => {
       metrics.stop();
     };
 
@@ -224,15 +279,21 @@ async function runner(script, payload, options, callback?) {
   return promise;
 }
 
-function run(script, ee, options, runState, contextVars) {
+function run(
+  script: Record<string, any>,
+  ee: RunnerInstance,
+  options: Record<string, any>,
+  runState: RunState,
+  contextVars?: Record<string, any> | null
+) {
   const metrics = runState.metrics;
-  const intermediates = [];
+  const intermediates: PeriodMetrics[] = [];
 
   const phaser = createPhaser(script.config.phases);
   let _scenarioContext;
 
-  phaser.on('arrival', (spec) => {
-    if (runState.pendingScenarios >= spec.maxVusers) {
+  phaser.on('arrival', (spec: PhaseSpec) => {
+    if (runState.pendingScenarios >= (spec.maxVusers as number)) {
       metrics.counter('vusers.skipped', 1);
     } else {
       _scenarioContext = runScenario(
@@ -277,14 +338,20 @@ function run(script, ee, options, runState, contextVars) {
   phaser.run();
 }
 
-function runScenario(script, metrics, runState, contextVars, options) {
+function runScenario(
+  script: Record<string, any>,
+  metrics: SSMS,
+  runState: RunState,
+  contextVars: Record<string, any> | null | undefined,
+  options: Record<string, any>
+) {
   const start = process.hrtime();
 
   //
   // Compile scenarios if needed
   //
   if (!runState.compiledScenarios) {
-    _.each(script.scenarios, (scenario) => {
+    _.each(script.scenarios, (scenario: Record<string, any>) => {
       if (typeof scenario.weight === 'undefined') {
         scenario.weight = 1;
       } else {
@@ -308,35 +375,42 @@ function runScenario(script, metrics, runState, contextVars, options) {
     runState.picker = wl(script.scenarios);
 
     runState.scenarioEvents = new EventEmitter();
-    runState.scenarioEvents.on('counter', (name, value) => {
+    runState.scenarioEvents.on('counter', (name: string, value: number) => {
       metrics.counter(name, value);
     });
     // TODO: Deprecate
-    runState.scenarioEvents.on('customStat', (stat) => {
-      metrics.summary(stat.stat, stat.value);
-    });
-    runState.scenarioEvents.on('summary', (name, value) => {
+    runState.scenarioEvents.on(
+      'customStat',
+      (stat: { stat: string; value: number }) => {
+        metrics.summary(stat.stat, stat.value);
+      }
+    );
+    runState.scenarioEvents.on('summary', (name: string, value: number) => {
       metrics.summary(name, value);
     });
-    runState.scenarioEvents.on('histogram', (name, value) => {
+    runState.scenarioEvents.on('histogram', (name: string, value: number) => {
       metrics.summary(name, value);
     });
-    runState.scenarioEvents.on('rate', (name) => {
+    runState.scenarioEvents.on('rate', (name: string) => {
       metrics.rate(name);
     });
     runState.scenarioEvents.on('started', () => {
       runState.pendingScenarios++;
     });
     // TODO: Take an object so that it can have code, description etc
-    runState.scenarioEvents.on('error', (errCode) => {
+    runState.scenarioEvents.on('error', (errCode: string | number) => {
       metrics.counter(`errors.${errCode}`, 1);
     });
 
     runState.compiledScenarios = _.map(
       script.scenarios,
-      (scenarioSpec, scenarioIndex) => {
+      (scenarioSpec: Record<string, any>, scenarioIndex: number) => {
         const name = scenarioSpec.engine || script.config.engine || 'http';
-        const engine = runState.engines.find((e) => e.__name === name);
+        // NOTE: pre-existing behavior: throws when an engine failed to
+        // load (undefined entry in the engines list).
+        const engine = runState.engines.find(
+          (e) => (e as EngineInstance).__name === name
+        );
 
         if (typeof engine === 'undefined') {
           const scenarioNameOrIndex = scenarioSpec.name || scenarioIndex;
@@ -351,23 +425,26 @@ function runScenario(script, metrics, runState, contextVars, options) {
   }
 
   //default to weighted picked scenario
-  let i = runState.picker()[0];
+  // picker is always set by the compile block above on first arrival.
+  let i = (runState.picker as () => [number, any])()[0];
 
   if (options.scenarioName) {
-    let foundIndex;
-    const foundScenario = script.scenarios.filter((scenario, index) => {
-      const hasScenarioByRegex = new RegExp(options.scenarioName).test(
-        scenario.name
-      );
-      const hasScenarioByName = scenario.name === options.scenarioName;
-      const hasScenario = hasScenarioByName || hasScenarioByRegex;
+    let foundIndex: number | undefined;
+    const foundScenario = script.scenarios.filter(
+      (scenario: Record<string, any>, index: number) => {
+        const hasScenarioByRegex = new RegExp(options.scenarioName).test(
+          scenario.name
+        );
+        const hasScenarioByName = scenario.name === options.scenarioName;
+        const hasScenario = hasScenarioByName || hasScenarioByRegex;
 
-      if (hasScenario) {
-        foundIndex = index;
+        if (hasScenario) {
+          foundIndex = index;
+        }
+
+        return hasScenario;
       }
-
-      return hasScenario;
-    });
+    );
 
     if (foundScenario?.length === 0) {
       throw new Error(
@@ -379,7 +456,7 @@ function runScenario(script, metrics, runState, contextVars, options) {
       );
     } else {
       debug(`Scenario ${options.scenarioName} found in script. running it!`);
-      i = foundIndex;
+      i = foundIndex as number;
     }
   }
   debug(
@@ -403,33 +480,38 @@ function runScenario(script, metrics, runState, contextVars, options) {
     'runScenarioDelta: %s',
     Math.round((runScenarioDelta / 1e6) * 100) / 100
   );
-  runState.compiledScenarios[i](scenarioContext, (err, _context) => {
-    runState.pendingScenarios--;
-    if (err) {
-      debug(err);
-      metrics.counter('vusers.failed', 1);
-    } else {
-      metrics.counter('vusers.failed', 0);
-      metrics.counter('vusers.completed', 1);
-      const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
-      const delta = scenarioFinishedAt[0] * 1e9 + scenarioFinishedAt[1];
-      metrics.summary('vusers.session_length', delta / 1e6);
+  (runState.compiledScenarios as ScenarioFn[])[i](
+    scenarioContext,
+    (err, _context) => {
+      runState.pendingScenarios--;
+      if (err) {
+        debug(err);
+        metrics.counter('vusers.failed', 1);
+      } else {
+        metrics.counter('vusers.failed', 0);
+        metrics.counter('vusers.completed', 1);
+        const scenarioFinishedAt = process.hrtime(scenarioStartedAt);
+        const delta = scenarioFinishedAt[0] * 1e9 + scenarioFinishedAt[1];
+        metrics.summary('vusers.session_length', delta / 1e6);
+      }
     }
-  });
+  );
 
   return scenarioContext;
 }
 
-function datafileVariables(script) {
-  const result = {};
+function datafileVariables(
+  script: Record<string, any>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   if (script.config.payload) {
-    _.each(script.config.payload, (el) => {
+    _.each(script.config.payload, (el: Record<string, any>) => {
       if (!el.loadAll) {
         // Load individual fields from the CSV into VU context variables
         // If data = [] (i.e. the CSV file is empty, or only has headers and
         // skipHeaders = true), then row could = undefined
         const row = el.reader(el.data) || [];
-        _.each(el.fields, (fieldName, j) => {
+        _.each(el.fields, (fieldName: string, j: number) => {
           result[fieldName] = row[j];
         });
       } else {
@@ -448,10 +530,10 @@ function datafileVariables(script) {
   return result;
 }
 
-function inlineVariables(script) {
-  const result = {};
+function inlineVariables(script: Record<string, any>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   if (script.config.variables) {
-    _.each(script.config.variables, (v, k) => {
+    _.each(script.config.variables, (v: unknown, k: string) => {
       let val;
       if (_.isArray(v)) {
         val = _.sample(v);
@@ -467,14 +549,22 @@ function inlineVariables(script) {
 /**
  * Create initial context for a scenario.
  */
-function createContext(script, contextVars, additionalProperties = {}) {
+function createContext(
+  script: Record<string, any>,
+  contextVars: Record<string, any> | null | undefined,
+  additionalProperties: Record<string, any> = {}
+) {
   //allow for additional properties to be passed in, but not override vars and funcs
   const additionalPropertiesWithoutOverride = _.omit(additionalProperties, [
     'vars',
     'funcs'
   ]);
 
-  const INITIAL_CONTEXT: any = {
+  const INITIAL_CONTEXT: {
+    vars: Record<string, any>;
+    funcs: Record<string, (...args: any[]) => any>;
+    [key: string]: any;
+  } = {
     vars: Object.assign(
       {
         target: script.config.target,
@@ -488,7 +578,8 @@ function createContext(script, contextVars, additionalProperties = {}) {
     funcs: {
       $randomNumber: $randomNumber,
       $randomString: $randomString,
-      $template: (input) => engineUtil.template(input, { vars: result.vars })
+      $template: (input: unknown) =>
+        engineUtil.template(input, { vars: result.vars })
     },
     ...additionalPropertiesWithoutOverride
   };
@@ -517,7 +608,7 @@ function createContext(script, contextVars, additionalProperties = {}) {
 //
 // Generator functions for template strings:
 //
-function $randomNumber(min, max) {
+function $randomNumber(min: number, max: number): number {
   return _.random(min, max);
 }
 
@@ -534,7 +625,12 @@ function $randomString(length = 10) {
   return s;
 }
 
-async function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
+async function handleScriptHook(
+  hook: string,
+  script: ScriptLike,
+  hookEvents: { emit(event: string, ...args: any[]): unknown },
+  contextVars: Record<string, any> = {}
+) {
   if (!script[hook]) {
     return {};
   }
@@ -557,12 +653,14 @@ async function handleScriptHook(hook, script, hookEvents, contextVars = {}) {
     ee.on('request', () => {
       hookEvents.emit(`${hook}TestRequest`);
     });
-    ee.on('error', (error) => {
+    ee.on('error', (error: unknown) => {
       hookEvents.emit(`${hook}TestError`, error);
     });
 
     const name = script[hook].engine || 'http';
-    const engine = engines.find((e) => e.__name === name);
+    // NOTE: pre-existing behavior: throws when an engine failed to
+    // load (undefined entry in the engines list).
+    const engine = engines.find((e) => (e as EngineInstance).__name === name);
 
     if (typeof engine === 'undefined') {
       throw new Error(

@@ -1,10 +1,11 @@
-
 import createDebug from 'debug';
 
 const debug = createDebug('console-capture');
 
 function setupConsoleCapture() {
-  let outputLines = [];
+  // Elements are either console call argument arrays or the
+  // truncation warning string.
+  let outputLines: Array<unknown[] | string> = [];
   let truncated = false;
   let currentSize = 0;
   let sendFromIndex = 0;

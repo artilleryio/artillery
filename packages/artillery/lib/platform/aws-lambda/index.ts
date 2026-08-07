@@ -16,7 +16,7 @@ import _https from 'node:https';
 import path from 'node:path';
 import {
   AttachRolePolicyCommand,
-  CreatePolicyCommand, 
+  CreatePolicyCommand,
   CreateRoleCommand,
   GetRoleCommand,
   IAMClient
@@ -51,7 +51,7 @@ import prices from './prices.ts';
 const pkgVersion = require('artillery/package.json').version;
 
 // https://stackoverflow.com/a/66523153
-function memoryToVCPU(memMB) {
+function memoryToVCPU(memMB: number) {
   if (memMB < 832) {
     return 0.5;
   }
@@ -76,10 +76,18 @@ function memoryToVCPU(memMB) {
 }
 
 class PlatformLambda {
+  // Declared so the class satisfies LoadPlatform (index signatures do
+  // not satisfy required interface properties):
+  declare events: EventEmitter;
   // Untyped JS class - properties assigned dynamically
   [key: string]: any;
 
-  constructor(script, payload, opts, platformOpts) {
+  constructor(
+    script: Record<string, any>,
+    payload: unknown,
+    opts: Record<string, any>,
+    platformOpts: Record<string, any>
+  ) {
     this.workers = {};
 
     this.count = 0;
@@ -209,14 +217,14 @@ class PlatformLambda {
     if (this.platformOpts.cliArgs.config) {
       this.artilleryArgs.push('--config');
       const p = bom.files.filter(
-        (x) => x.orig === this.opts.absoluteConfigPath
+        (x: Record<string, any>) => x.orig === this.opts.absoluteConfigPath
       )[0];
       this.artilleryArgs.push(p.noPrefixPosix);
     }
 
     // This needs to be the last argument for now:
     const p = bom.files.filter(
-      (x) => x.orig === this.opts.absoluteScriptPath
+      (x: Record<string, any>) => x.orig === this.opts.absoluteScriptPath
     )[0];
     this.artilleryArgs.push(p.noPrefixPosix);
     // 36 is length of a UUUI v4 string
@@ -261,10 +269,15 @@ class PlatformLambda {
         messageAttributeNames: ['testId', 'workerId'],
         visibilityTimeout: 60,
         batchSize: 10,
-        handleMessage: async (message) => {
+        handleMessage: async (message: {
+          Body?: string;
+          MessageAttributes?: Record<string, any>;
+        }) => {
           let body = null;
           try {
-            body = JSON.parse(message.Body);
+            // NOTE: pre-existing behavior: a message with no Body
+            // throws here and is logged below.
+            body = JSON.parse(message.Body as string);
           } catch (err) {
             console.error(err);
             console.log(message.Body);
@@ -380,17 +393,20 @@ class PlatformLambda {
           });
         } catch (_err) {}
 
-        function round(number, decimals) {
+        function round(number: number, decimals: number) {
           const m = 10 ** decimals;
           return Math.round(number * m) / m;
         }
 
         if (event.flags && event.flags.platform === 'aws:lambda') {
+          type ArchPrices = { x86_64: number; arm64: number };
+          const priceTable = prices as unknown as Record<string, ArchPrices>;
+          const arch = this.architecture as keyof ArchPrices;
           let price = 0;
-          if (!prices[this.region]) {
-            price = prices.base[this.architecture];
+          if (!priceTable[this.region]) {
+            price = priceTable.base[arch];
           } else {
-            price = prices[this.region][this.architecture];
+            price = priceTable[this.region][arch];
           }
 
           const duration = Math.ceil((Date.now() - startedAt) / 1000);
@@ -425,7 +441,7 @@ class PlatformLambda {
     return { workerId };
   }
 
-  async runWorker(workerId) {
+  async runWorker(workerId: string) {
     const lambda = new LambdaClient({
       apiVersion: '2015-03-31',
       region: this.region
@@ -500,7 +516,7 @@ class PlatformLambda {
     this.count++;
   }
 
-  async stopWorker(_workerId) {
+  async stopWorker(_workerId: string) {
     // TODO: Send message to that worker and have it exit early
   }
 
@@ -542,7 +558,7 @@ class PlatformLambda {
 
     try {
       const res = await iam.send(new GetRoleCommand({ RoleName: ROLE_NAME }));
-      return res.Role.Arn;
+      return res.Role?.Arn;
     } catch (err) {
       debug(err);
     }
@@ -570,7 +586,7 @@ class PlatformLambda {
       })
     );
 
-    const lambdaRoleArn = res.Role.Arn;
+    const lambdaRoleArn = res.Role?.Arn;
 
     await iam.send(
       new AttachRolePolicyCommand({
@@ -611,7 +627,7 @@ class PlatformLambda {
 
     await iam.send(
       new AttachRolePolicyCommand({
-        PolicyArn: iamRes.Policy.Arn,
+        PolicyArn: iamRes.Policy?.Arn,
         RoleName: ROLE_NAME
       })
     );
@@ -658,7 +674,7 @@ class PlatformLambda {
   }
 
   // Best-effort. Tagging failure must not fail the test run.
-  async tagExistingFunction(functionArn) {
+  async tagExistingFunction(functionArn: string | undefined) {
     if (this.resourceTags.length === 0 || !functionArn) {
       return;
     }
@@ -677,7 +693,9 @@ class PlatformLambda {
       );
     } catch (err) {
       artillery.log(
-        `WARNING: could not apply resource tags to Lambda function: ${err.message}`
+        `WARNING: could not apply resource tags to Lambda function: ${
+          (err as Error).message
+        }`
       );
       debug(err);
     }
@@ -706,7 +724,7 @@ class PlatformLambda {
     }
   }
 
-  createFunctionNameWithHash(_lambdaConfig?) {
+  createFunctionNameWithHash(_lambdaConfig?: unknown) {
     const changeableConfig = {
       MemorySize: this.memorySize,
       VpcConfig: {
@@ -731,7 +749,7 @@ class PlatformLambda {
     return name;
   }
 
-  async createLambda(opts) {
+  async createLambda(opts: { functionName: string; [key: string]: any }) {
     const { functionName } = opts;
 
     const lambda = new LambdaClient({

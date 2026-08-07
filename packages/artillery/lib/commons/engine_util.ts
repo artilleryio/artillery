@@ -21,7 +21,10 @@ const require = createRequire(import.meta.url);
 
 // Optional dependency - loaded lazily and kept synchronous (no
 // top-level await: the package must stay require()-able)
-let xmlCapture;
+let xmlCapture: {
+  parseXML: ParserFn;
+  extractXPath: ExtractorFn;
+} | null;
 try {
   xmlCapture = require('artillery-xml-capture');
 } catch (_e) {
@@ -29,6 +32,48 @@ try {
 }
 
 // TODO Write tests
+
+// Pragmatic typing: user scripts and processor hooks feed dynamic
+// values through these utilities, so specs/params and VU variables
+// are typed Record<string, any> until canonical script input types
+// exist (modernization plan, phase 2).
+
+export interface TemplateContext {
+  vars: Record<string, any>;
+  funcs?: Record<string, (...args: any[]) => any>;
+  [key: string]: any;
+}
+
+type StepCallback = (err: Error | null | undefined, context?: any) => void;
+type StepFunction = (context: any, callback: StepCallback) => void;
+
+type ParserFn = (
+  body: unknown,
+  callback: (err: unknown, doc?: any) => void
+) => unknown;
+type ExtractorFn = (doc: any, expr: string, opts: Record<string, any>) => any;
+
+interface CaptureEntry {
+  value?: any;
+  error?: unknown;
+  strict?: boolean;
+  failed?: boolean;
+}
+
+interface MatchEntry {
+  success?: boolean;
+  expected?: any;
+  got?: any;
+  expression?: string;
+  error?: unknown;
+  strict?: boolean;
+}
+
+export interface CaptureOrMatchResult {
+  captures: Record<string, CaptureEntry>;
+  matches: Record<string, MatchEntry>;
+  failedCaptures: boolean;
+}
 
 export {
   createThink,
@@ -42,14 +87,19 @@ export {
   renderVariables as _renderVariables
 };
 
-function createThink(requestSpec, opts) {
+function createThink(
+  requestSpec: Record<string, any>,
+  opts?: Record<string, any>
+): StepFunction {
   opts = opts || {};
 
   const thinkspec = requestSpec.think;
 
-  const f = function think(context, callback) {
+  const f: StepFunction = function think(context, callback) {
     const templatedThink = template(thinkspec, context);
-    let thinktime = Number.isInteger(L.toNumber(templatedThink))
+    let thinktime: string | number = Number.isInteger(
+      L.toNumber(templatedThink)
+    )
       ? ms(`${templatedThink}s`)
       : ms(templatedThink);
 
@@ -57,19 +107,19 @@ function createThink(requestSpec, opts) {
       throw new Error(`Invalid think time: ${templatedThink || thinkspec}`);
     }
 
-    if (requestSpec.jitter || opts.jitter) {
-      thinktime = jitter(`${thinktime}:${requestSpec.jitter || opts.jitter}`);
+    if (requestSpec.jitter || opts?.jitter) {
+      thinktime = jitter(`${thinktime}:${requestSpec.jitter || opts?.jitter}`);
     }
     debug(
       'think %s, %s, %s -> %s',
       requestSpec.think,
       requestSpec.jitter,
-      opts.jitter,
+      opts?.jitter,
       thinktime
     );
     setTimeout(() => {
       callback(null, context);
-    }, thinktime);
+    }, thinktime as number);
   };
 
   return f;
@@ -77,7 +127,11 @@ function createThink(requestSpec, opts) {
 
 // "count" can be an integer (negative or positive) or a string defining a range
 // like "1-15"
-function createLoopWithCount(count, steps, opts) {
+function createLoopWithCount(
+  count: number | string,
+  steps: StepFunction[],
+  opts: Record<string, any> = {}
+): StepFunction {
   return function aLoop(context, callback) {
     let count2 = count;
     if (typeof count === 'string') {
@@ -94,12 +148,13 @@ function createLoopWithCount(count, steps, opts) {
     // Should we stop early because the value of "over" is not an array
     let abortEarly = false;
 
-    let overValues = null;
-    let loopValue = i; // default to the current iteration of the loop, ie same as $loopCount
+    let overValues: any[] | null = null;
+    let loopValue: any = i; // default to the current iteration of the loop, ie same as $loopCount
     if (typeof opts.overValues !== 'undefined') {
       if (opts.overValues && typeof opts.overValues === 'object') {
-        overValues = opts.overValues;
-        loopValue = overValues[i];
+        const ov = opts.overValues as any[];
+        overValues = ov;
+        loopValue = ov[i];
       } else if (opts.overValues && typeof opts.overValues === 'string') {
         overValues = L.get(context.vars, opts.overValues);
         if (L.isArray(overValues)) {
@@ -129,8 +184,9 @@ function createLoopWithCount(count, steps, opts) {
           return i < to || to === -1;
         }
       },
-      function repeated(cb) {
-        const zero = (cb2) => cb2(null, newContext);
+      function repeated(cb: (err?: Error | null, context?: any) => void) {
+        const zero = (cb2: (err: Error | null, context: any) => void) =>
+          cb2(null, newContext);
         const steps2 = L.flatten([zero, steps]);
 
         A.waterfall(steps2, (err, context2) => {
@@ -146,7 +202,7 @@ function createLoopWithCount(count, steps, opts) {
           }
 
           if (opts.whileTrue) {
-            opts.whileTrue(context2, function done(b) {
+            opts.whileTrue(context2, function done(b: boolean) {
               shouldContinue = b;
               return cb(err, context2);
             });
@@ -155,7 +211,7 @@ function createLoopWithCount(count, steps, opts) {
           }
         });
       },
-      (err, finalContext) => {
+      (err: Error | null | undefined, finalContext: any) => {
         if (typeof finalContext === 'undefined') {
           // this happens if test() returns false immediately, e.g. with
           // nested loops where one of the inner loops goes over an
@@ -168,7 +224,10 @@ function createLoopWithCount(count, steps, opts) {
   };
 }
 
-function createParallel(steps, opts) {
+function createParallel(
+  steps: StepFunction[],
+  opts?: Record<string, any>
+): StepFunction {
   const limit = opts?.limitValue || 100;
 
   return function aParallel(context, callback) {
@@ -176,7 +235,7 @@ function createParallel(steps, opts) {
     const newCallback = callback;
 
     // Remap the steps array to pass the context into each step.
-    const newSteps = L.map(steps, (step) => (callback) => {
+    const newSteps = L.map(steps, (step) => (callback: StepCallback) => {
       step(newContext, callback);
     });
 
@@ -188,7 +247,7 @@ function createParallel(steps, opts) {
   };
 }
 
-function isProbableEnough(obj) {
+function isProbableEnough(obj: Record<string, any>): boolean {
   if (typeof obj.probability === 'undefined') {
     return true;
   }
@@ -202,7 +261,8 @@ function isProbableEnough(obj) {
   return r < probability;
 }
 
-function template(o, context, inPlace?) {
+// Returns the same kind of value it was given - dynamic by design.
+function template(o: any, context: TemplateContext, inPlace?: boolean): any {
   let result;
 
   if (typeof o === 'undefined') {
@@ -237,9 +297,12 @@ function template(o, context, inPlace?) {
           syntax.body[0].expression.arguments,
           (arg) => arg.value
         );
-        if (funcName in context.funcs) {
+        // NOTE: pre-existing behavior: throws when the script uses a
+        // function-call template without any context funcs defined.
+        const funcs = context.funcs as NonNullable<TemplateContext['funcs']>;
+        if (funcName in funcs) {
           return template(
-            o.replace(funcCallRegex, context.funcs[funcName].apply(null, args)),
+            o.replace(funcCallRegex, funcs[funcName].apply(null, args)),
             context
           );
         }
@@ -259,7 +322,7 @@ function template(o, context, inPlace?) {
 }
 
 // Mutates the object in place
-function templateObjectOrArray(o, context) {
+function templateObjectOrArray(o: any, context: TemplateContext): void {
   deepForEach(o, (value, key, subj, path) => {
     const newPath = template(path, context, true);
 
@@ -295,7 +358,7 @@ function templateObjectOrArray(o, context) {
   });
 }
 
-function renderVariables(str, vars) {
+function renderVariables(str: string, vars: Record<string, any>): any {
   const RX = /{{{?[\s$\w.[\]'"-]+}}}?/g;
   let _rxmatch;
   let result = str.substring(0, str.length);
@@ -315,7 +378,7 @@ function renderVariables(str, vars) {
   }
 
   while (result.search(RX) > -1) {
-    const templateStr = result.match(RX)[0];
+    const templateStr = (result.match(RX) as RegExpMatchArray)[0];
     const varName = templateStr.replace(/{/g, '').replace(/}/g, '').trim();
 
     let varValue = L.get(vars, varName);
@@ -330,7 +393,7 @@ function renderVariables(str, vars) {
 }
 
 // Presume code is valid JS code (i.e. that it has been checked elsewhere)
-function evil(sandbox, code) {
+function evil(sandbox: Record<string, any>, code: string): unknown {
   const context = vm.createContext(sandbox);
   const script = new vm.Script(code);
   try {
@@ -340,7 +403,10 @@ function evil(sandbox, code) {
   }
 }
 
-function parseLoopCount(countSpec) {
+function parseLoopCount(countSpec: number | string): {
+  from: number;
+  to: number;
+} {
   let from = 0;
   let to = 0;
 
@@ -365,7 +431,10 @@ function parseLoopCount(countSpec) {
   return { from: from, to: to };
 }
 
-function isCaptureFailed(v, defaultStrict) {
+function isCaptureFailed(
+  v: Record<string, any>,
+  defaultStrict?: boolean
+): boolean {
   const noValue =
     typeof v.value === 'undefined' ||
     v.value === '' ||
@@ -385,16 +454,27 @@ function isCaptureFailed(v, defaultStrict) {
 
 // Helper function to wrap an object's property in a list if it's
 // defined, or set it to an empty list if not.
-function ensurePropertyIsAList(obj, prop) {
+function ensurePropertyIsAList(
+  obj: Record<string, any>,
+  prop: string
+): Record<string, any> {
   if (Array.isArray(obj[prop])) {
     return obj;
   }
 
-  obj[prop] = [].concat(typeof obj[prop] === 'undefined' ? [] : obj[prop]);
+  obj[prop] = ([] as any[]).concat(
+    typeof obj[prop] === 'undefined' ? [] : obj[prop]
+  );
   return obj;
 }
 
-function captureOrMatch(params, response, context, done) {
+function captureOrMatch(
+  params: Record<string, any>,
+  // WS/Socket.IO engines pass body-only faux responses:
+  response: { body?: unknown; headers?: Record<string, any> },
+  context: TemplateContext,
+  done: (err: Error | null, result: CaptureOrMatchResult | null) => void
+) {
   if (
     (!params.capture || params.capture.length === 0) &&
     (!params.match || params.match.length === 0)
@@ -402,7 +482,7 @@ function captureOrMatch(params, response, context, done) {
     return done(null, null);
   }
 
-  const result: any = {
+  const result: CaptureOrMatchResult = {
     captures: {},
     matches: {},
     failedCaptures: false
@@ -416,7 +496,7 @@ function captureOrMatch(params, response, context, done) {
 
   async.eachSeries(
     specs,
-    (spec, next) => {
+    (spec: Record<string, any>, next) => {
       const parsedSpec = parseSpec(spec, response);
       const parser = parsedSpec.parser;
       const extractor = parsedSpec.extractor;
@@ -428,7 +508,7 @@ function captureOrMatch(params, response, context, done) {
         content = response.headers;
       }
 
-      parser(content, (err, doc) => {
+      parser(content, (err: unknown, doc: any) => {
         if (err) {
           if (spec.as) {
             result.captures[spec.as] = {
@@ -504,10 +584,13 @@ function captureOrMatch(params, response, context, done) {
   );
 }
 
-function parseSpec(spec, response) {
-  let parser;
-  let extractor;
-  let expr;
+function parseSpec(
+  spec: Record<string, any>,
+  response: { body?: unknown; headers?: Record<string, any> }
+): { parser: ParserFn; extractor: ExtractorFn; expr: string } {
+  let parser: ParserFn;
+  let extractor: ExtractorFn;
+  let expr: string;
 
   if (spec.json) {
     parser = parseJSON;
@@ -552,9 +635,9 @@ function parseSpec(spec, response) {
 /*
  * Wrap JSON.parse in a callback
  */
-function parseJSON(body, callback) {
-  let r = null;
-  let err = null;
+function parseJSON(body: unknown, callback: (err: unknown, doc?: any) => void) {
+  let r: any = null;
+  let err: unknown = null;
 
   try {
     if (typeof body === 'string') {
@@ -569,12 +652,19 @@ function parseJSON(body, callback) {
   return callback(err, r);
 }
 
-function dummyParser(body, callback) {
+function dummyParser(
+  body: unknown,
+  callback: (err: unknown, doc?: any) => void
+) {
   return callback(null, body);
 }
 
 // doc is a JSON object
-function extractJSONPath(doc, expr, opts) {
+function extractJSONPath(
+  doc: any,
+  expr: string,
+  opts: Record<string, any>
+): any {
   // typeof null is 'object' hence the explicit check here
   if (typeof doc !== 'object' || doc === null) {
     return '';
@@ -604,10 +694,14 @@ function extractJSONPath(doc, expr, opts) {
 }
 
 // doc is a string or an object (body parsed by Request when headers indicate JSON)
-function extractRegExp(doc, expr, opts) {
+function extractRegExp(
+  doc: unknown,
+  expr: string,
+  opts: Record<string, any>
+): string | undefined {
   const group = opts.group;
   const flags = opts.flags;
-  let str;
+  let str: string;
   if (typeof doc === 'string') {
     str = doc;
   } else {
@@ -639,11 +733,15 @@ function extractRegExp(doc, expr, opts) {
   }
 }
 
-function extractHeader(headers, headerName) {
+function extractHeader(headers: any, headerName: string): any {
   return headers[headerName] || '';
 }
 
-function extractCheerio(doc, expr, opts) {
+function extractCheerio(
+  doc: any,
+  expr: string,
+  opts: Record<string, any>
+): string | undefined {
   const $ = cheerio.load(doc);
   const els = $(expr);
   let i = 0;
@@ -666,30 +764,34 @@ function dummyExtractor() {
 /*
  * Given a response object determine if it's JSON
  */
-function isJSON(res) {
-  debug('isJSON: content-type = %s', res.headers['content-type']);
-  return (
-    res.headers['content-type'] &&
-    /^application\/json/.test(res.headers['content-type'])
+function isJSON(res: { headers?: Record<string, any> }): boolean {
+  // NOTE: pre-existing behavior: throws when a body-only faux response
+  // reaches the content-type fallback (no capture type and no headers).
+  const headers = res.headers as Record<string, any>;
+  debug('isJSON: content-type = %s', headers['content-type']);
+  return Boolean(
+    headers['content-type'] &&
+      /^application\/json/.test(headers['content-type'])
   );
 }
 
 /*
  * Given a response object determine if it's some kind of XML
  */
-function isXML(res) {
-  return (
-    res.headers['content-type'] &&
-    (/^[a-zA-Z]+\/xml/.test(res.headers['content-type']) ||
-      /^[a-zA-Z]+\/[a-zA-Z]+\+xml/.test(res.headers['content-type']))
+function isXML(res: { headers?: Record<string, any> }): boolean {
+  const headers = res.headers as Record<string, any>;
+  return Boolean(
+    headers['content-type'] &&
+      (/^[a-zA-Z]+\/xml/.test(headers['content-type']) ||
+        /^[a-zA-Z]+\/[a-zA-Z]+\+xml/.test(headers['content-type']))
   );
 }
 
-function randomInt(low, high) {
+function randomInt(low: number, high: number): number {
   return Math.floor(Math.random() * (high - low + 1) + low);
 }
 
-function sanitiseValue(value) {
+function sanitiseValue(value: any): any {
   if (value === 0 || value === false || value === null || value === undefined)
     return value;
   return value ? value : '';

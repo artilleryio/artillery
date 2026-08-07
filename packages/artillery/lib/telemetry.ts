@@ -7,8 +7,6 @@ import createDebug from 'debug';
 
 const require = createRequire(import.meta.url);
 
-
-
 const { version: artilleryVersion } = require('artillery/package.json');
 
 import { name as ciName, isCI } from 'ci-info';
@@ -27,7 +25,7 @@ const isEnabled = () => {
   return typeof process.env.ARTILLERY_DISABLE_TELEMETRY === 'undefined';
 };
 
-async function capture(eventName, data) {
+async function capture(eventName: string, data: Record<string, any>) {
   if (!isEnabled()) {
     return;
   }
@@ -42,7 +40,11 @@ async function capture(eventName, data) {
 
   let telemetryDefaults = {};
   try {
-    telemetryDefaults = JSON.parse(process.env.ARTILLERY_TELEMETRY_DEFAULTS);
+    // Absent env var throws inside the try, leaving the default -
+    // same behavior as before typing.
+    telemetryDefaults = JSON.parse(
+      process.env.ARTILLERY_TELEMETRY_DEFAULTS as string
+    );
   } catch (_err) {
     /* empty */
   }

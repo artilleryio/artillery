@@ -6,9 +6,8 @@ import createDebug from 'debug';
 
 const debug = createDebug('platform:aws-ecs');
 
-
 import {
-  AttachRolePolicyCommand, 
+  AttachRolePolicyCommand,
   CreatePolicyCommand,
   CreateRoleCommand,
   GetRoleCommand,
@@ -26,7 +25,12 @@ class PlatformECS {
   // Untyped JS class - properties assigned dynamically
   [key: string]: any;
 
-  constructor(_script, _payload, opts, platformOpts) {
+  constructor(
+    _script: unknown,
+    _payload: unknown,
+    opts: Record<string, any>,
+    platformOpts: Record<string, any>
+  ) {
     this.opts = opts;
     this.platformOpts = platformOpts;
 
@@ -75,7 +79,7 @@ class PlatformECS {
     );
   }
 
-  async createIAMResources(accountId, taskRoleName) {
+  async createIAMResources(accountId: string, taskRoleName: string) {
     const workerRoleArn = await this.createWorkerRole(accountId, taskRoleName);
 
     return {
@@ -83,14 +87,14 @@ class PlatformECS {
     };
   }
 
-  async createWorkerRole(accountId, taskRoleName) {
+  async createWorkerRole(accountId: string, taskRoleName: string) {
     const iam = new IAMClient({ region: global.artillery.awsRegion });
 
     try {
       const res = await iam.send(
         new GetRoleCommand({ RoleName: taskRoleName })
       );
-      return res.Role.Arn;
+      return res.Role?.Arn;
     } catch (err) {
       debug(err);
     }
@@ -179,14 +183,14 @@ class PlatformECS {
 
     await iam.send(
       new AttachRolePolicyCommand({
-        PolicyArn: createPolicyResp.Policy.Arn,
+        PolicyArn: createPolicyResp.Policy?.Arn,
         RoleName: taskRoleName
       })
     );
 
     debug('Waiting for IAM role to be ready');
     await sleep(30 * 1000);
-    return createRoleResp.Role.Arn;
+    return createRoleResp.Role?.Arn;
   }
 
   async createWorker() {}
@@ -200,7 +204,7 @@ class PlatformECS {
   async shutdown() {}
 }
 
-async function ensureSSMParametersExist(region) {
+async function ensureSSMParametersExist(region: string) {
   await ensureParameterExists(
     '/artilleryio/NPM_TOKEN',
     'null',

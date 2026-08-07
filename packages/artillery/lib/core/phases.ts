@@ -16,14 +16,40 @@ const isUndefined = _.isUndefined;
 
 export default phaser;
 
-async function sleep(ms) {
+// A phase spec after phaser() normalization: durations and rates cast
+// to numbers. worker/totalWorkers only exist in distributed runs.
+export interface PhaseSpec {
+  name?: string;
+  duration?: number;
+  pause?: number;
+  arrivalRate?: number;
+  arrivalCount?: number;
+  rampTo?: number;
+  maxVusers?: number;
+  mode?: string;
+  index?: number;
+  id?: string;
+  startTime?: number;
+  endTime?: number;
+  worker?: number;
+  totalWorkers?: number;
+  [key: string]: any;
+}
+
+type PhaseTask = (callback: (err?: Error | null) => void) => unknown;
+
+export interface PhaserEmitter extends EventEmitter {
+  run(): void;
+}
+
+async function sleep(ms: number) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
 }
 
-function phaser(phaseSpecs) {
-  const ee: any = new EventEmitter();
+function phaser(phaseSpecs: PhaseSpec[]): PhaserEmitter {
+  const ee = new EventEmitter() as PhaserEmitter;
 
   const tasks = _.map(phaseSpecs, (spec, i) => {
     [
@@ -43,7 +69,7 @@ function phaser(phaseSpecs) {
         //otherwise, ms returns the value in milliseconds, so we need to convert to seconds
         const convertedDuration = Number.isInteger(_.toNumber(spec[k]))
           ? spec[k]
-          : ms(spec[k]) / 1000;
+          : ms(spec[k] as unknown as string) / 1000;
 
         //throw error if invalid time format to prevent test from running infinitely
         if (!convertedDuration) {
@@ -89,10 +115,13 @@ function phaser(phaseSpecs) {
     }
 
     console.log('Unknown phase spec\n%j\nThis should not happen', spec);
+    return undefined;
   });
 
   ee.run = () => {
-    async.series(tasks, (err) => {
+    // Unknown phase specs produce undefined tasks (crash inside async
+    // at run time) - pre-existing behavior.
+    async.series(tasks as PhaseTask[], (err) => {
       if (err) {
         debug(err);
       }
@@ -104,9 +133,9 @@ function phaser(phaseSpecs) {
   return ee;
 }
 
-function createPause(spec, ee) {
-  const duration = spec.pause * 1000;
-  const task = (callback) => {
+function createPause(spec: PhaseSpec, ee: PhaserEmitter): PhaseTask {
+  const duration = (spec.pause as number) * 1000;
+  const task: PhaseTask = (callback) => {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
@@ -119,12 +148,16 @@ function createPause(spec, ee) {
   return task;
 }
 
-function createRamp(spec, ee) {
+function createRamp(spec: PhaseSpec, ee: PhaserEmitter): PhaseTask {
   const duration = spec.duration || 1;
-  const arrivalRate = spec.arrivalRate;
-  const rampTo = spec.rampTo;
-  const worker = spec.worker;
-  const totalWorkers = spec.totalWorkers;
+  // Callers guarantee arrivalRate and rampTo are set for ramp phases.
+  // worker/totalWorkers are undefined in single-process runs - the
+  // NaN arithmetic that produces in adjustArrivalsByWorker() is
+  // pre-existing behavior (comparison is simply false).
+  const arrivalRate = spec.arrivalRate as number;
+  const rampTo = spec.rampTo as number;
+  const worker = spec.worker as number;
+  const totalWorkers = spec.totalWorkers as number;
 
   const difference = rampTo - arrivalRate;
   const periods = duration;
@@ -132,8 +165,8 @@ function createRamp(spec, ee) {
     `worker ${worker} totalWorkers ${totalWorkers} arrivalRate ${arrivalRate} rampTo ${rampTo} difference ${difference} periods ${periods}`
   );
 
-  const periodArrivals = [];
-  const periodTick = [];
+  const periodArrivals: number[] = [];
+  const periodTick: number[] = [];
   // if there is only one peridod we generate mean arrivals
   if (periods === 1) {
     const rawPeriodArrivals = (rampTo + arrivalRate) / 2;
@@ -164,7 +197,7 @@ function createRamp(spec, ee) {
   debug(`periodArrivals ${periodArrivals}`);
   debug(`periodTick ${periodTick}`);
 
-  return async function rampTask(_callback) {
+  return async function rampTask(_callback: (err?: Error | null) => void) {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
@@ -176,7 +209,11 @@ function createRamp(spec, ee) {
     ee.emit('phaseCompleted', spec);
   };
 
-  function adjustArrivalsByWorker(rawPeriodArrivals, totalWorkers, worker) {
+  function adjustArrivalsByWorker(
+    rawPeriodArrivals: number,
+    totalWorkers: number,
+    worker: number
+  ): number {
     // We use the floor of the expected arrivals, then we add up all decimal digits
     // and evaluate if one or more workers should bump their arrivalRate.
     let arrivals = Math.floor(rawPeriodArrivals);
@@ -189,7 +226,7 @@ function createRamp(spec, ee) {
     return arrivals;
   }
 
-  function ticker(currentPeriod) {
+  function ticker(currentPeriod: number) {
     // ensure we don't go past 1s
     const delay = Math.min(periodTick[currentPeriod], 1000);
     let currentArrivals = 0;
@@ -206,15 +243,15 @@ function createRamp(spec, ee) {
   }
 }
 
-function createArrivalCount(spec, ee) {
-  const task = (callback) => {
+function createArrivalCount(spec: PhaseSpec, ee: PhaserEmitter): PhaseTask {
+  const task: PhaseTask = (callback) => {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
-    const duration = spec.duration * 1000;
+    const duration = (spec.duration as number) * 1000;
 
-    if (spec.arrivalCount > 0) {
-      const interval = duration / spec.arrivalCount;
+    if ((spec.arrivalCount as number) > 0) {
+      const interval = duration / (spec.arrivalCount as number);
       const p = arrivals.uniform.process(interval, duration);
       p.on('arrival', () => {
         ee.emit('arrival', spec);
@@ -233,15 +270,19 @@ function createArrivalCount(spec, ee) {
   return task;
 }
 
-function createArrivalRate(spec, ee) {
-  const task = (callback) => {
+function createArrivalRate(spec: PhaseSpec, ee: PhaserEmitter): PhaseTask {
+  const task: PhaseTask = (callback) => {
     spec.startTime = Date.now();
     spec.id = randomUUID();
     ee.emit('phaseStarted', spec);
-    const ar = 1000 / spec.arrivalRate;
-    const duration = spec.duration * 1000;
+    const ar = 1000 / (spec.arrivalRate as number);
+    const duration = (spec.duration as number) * 1000;
     debug('creating a %s process for arrivalRate', spec.mode);
-    const p = arrivals[spec.mode].process(ar, duration);
+    // Unknown modes crash at runtime - pre-existing behavior.
+    const p = arrivals[spec.mode as 'uniform' | 'poisson'].process(
+      ar,
+      duration
+    );
     p.on('arrival', () => {
       ee.emit('arrival', spec);
     });

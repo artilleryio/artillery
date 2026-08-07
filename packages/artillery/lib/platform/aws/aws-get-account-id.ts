@@ -26,4 +26,4 @@ export default async function getAccountId(stsOpts: any = {}) {
 
   debug(awsAccountId);
   return awsAccountId;
-};
+}

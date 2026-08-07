@@ -1,4 +1,3 @@
-
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import createDebug from 'debug';
 import fs from 'fs-extra';
@@ -7,17 +6,28 @@ const debug = createDebug('platform:aws-lambda');
 
 import { promisify } from 'node:util';
 import Table from 'cli-table3';
+import type { BomFileEntry } from '../../create-bom/create-bom.ts';
 import { createBOM, enrichPackageJson } from '../aws-ecs/legacy/bom.ts';
 import createS3Client from '../aws-ecs/legacy/create-s3-client.ts';
 
+// The manifest shape produced by the legacy BOM (see
+// aws-ecs/legacy/bom.ts) as consumed here.
+interface LambdaBomManifest {
+  files: BomFileEntry[];
+  modules: string[];
+  pkgDeps: string[];
+  moduleVersions?: Record<string, string>;
+  [key: string]: any;
+}
+
 const _createLambdaBom = async (
-  absoluteScriptPath,
-  absoluteConfigPath,
-  flags
+  absoluteScriptPath: string,
+  absoluteConfigPath: string | undefined | null,
+  flags: Record<string, any> | undefined
 ) => {
-  const createBomOpts: any = {};
+  const createBomOpts: Record<string, any> = {};
   let entryPoint = absoluteScriptPath;
-  const extraFiles = [];
+  const extraFiles: string[] = [];
   createBomOpts.scenarioPath = absoluteScriptPath;
   if (absoluteConfigPath) {
     entryPoint = absoluteConfigPath;
@@ -29,15 +39,24 @@ const _createLambdaBom = async (
     createBomOpts.flags = flags;
   }
 
-  const bom: any = await promisify(createBOM)(entryPoint, extraFiles, createBomOpts);
+  const bom = (await promisify(createBOM)(
+    entryPoint,
+    extraFiles,
+    createBomOpts
+  )) as LambdaBomManifest;
 
   return bom;
 };
 
-async function _uploadFileToS3(item, testRunId, bucketName, moduleVersions) {
+async function _uploadFileToS3(
+  item: BomFileEntry,
+  testRunId: string,
+  bucketName: string,
+  moduleVersions: Record<string, string> | undefined
+) {
   const s3 = createS3Client();
   const prefix = `tests/${testRunId}`;
-  let body;
+  let body: Buffer | undefined;
   try {
     body = fs.readFileSync(item.orig);
   } catch (fsErr) {
@@ -53,21 +72,25 @@ async function _uploadFileToS3(item, testRunId, bucketName, moduleVersions) {
   }
 
   const key = `${prefix}/${item.noPrefixPosix}`;
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-        // TODO: stream, not readFileSync
-        Body: body
-      })
-    );
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      // TODO: stream, not readFileSync
+      Body: body
+    })
+  );
 
-    debug(`Uploaded ${key}`);
-    return;
+  debug(`Uploaded ${key}`);
+  return;
 }
 
-async function _syncS3(bomManifest, testRunId, bucketName) {
-  const metadata: any = {
+async function _syncS3(
+  bomManifest: LambdaBomManifest,
+  testRunId: string,
+  bucketName: string
+) {
+  const metadata: Record<string, any> = {
     createdOn: Date.now(),
     name: testRunId,
     modules: bomManifest.modules
@@ -88,26 +111,26 @@ async function _syncS3(bomManifest, testRunId, bucketName) {
 
   const plainS3 = createS3Client();
   const prefix = `tests/${testRunId}`;
-    const key = `${prefix}/metadata.json`;
-    await plainS3.send(
-      new PutObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-        // TODO: stream, not readFileSync
-        Body: JSON.stringify(metadata)
-      })
-    );
+  const key = `${prefix}/metadata.json`;
+  await plainS3.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      // TODO: stream, not readFileSync
+      Body: JSON.stringify(metadata)
+    })
+  );
 
-    debug(`Uploaded ${key}`);
-    return `s3://${bucketName}/${key}`;
+  debug(`Uploaded ${key}`);
+  return `s3://${bucketName}/${key}`;
 }
 
 const createAndUploadTestDependencies = async (
-  bucketName,
-  testRunId,
-  absoluteScriptPath,
-  absoluteConfigPath,
-  flags
+  bucketName: string,
+  testRunId: string,
+  absoluteScriptPath: string,
+  absoluteConfigPath: string | undefined | null,
+  flags: Record<string, any> | undefined
 ) => {
   const bom = await _createLambdaBom(
     absoluteScriptPath,

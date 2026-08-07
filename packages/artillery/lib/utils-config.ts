@@ -3,7 +3,7 @@ import os from 'node:os';
 
 const configFilePath = `${os.homedir()}/.artilleryrc`;
 
-function readArtilleryConfig() {
+function readArtilleryConfig(): Record<string, unknown> {
   try {
     const config = fs.readFileSync(configFilePath, 'utf-8');
 
@@ -13,7 +13,9 @@ function readArtilleryConfig() {
   }
 }
 
-function updateArtilleryConfig(data) {
+function updateArtilleryConfig(
+  data: Record<string, unknown>
+): Record<string, unknown> | undefined {
   try {
     const updatedConf = {
       ...readArtilleryConfig(),
@@ -25,6 +27,7 @@ function updateArtilleryConfig(data) {
     return updatedConf;
   } catch (err) {
     console.error(err);
+    return undefined;
   }
 }
 

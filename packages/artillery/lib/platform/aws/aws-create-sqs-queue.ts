@@ -1,7 +1,6 @@
-
 import {
   CreateQueueCommand,
-  ListQueuesCommand, 
+  ListQueuesCommand,
   SQSClient
 } from '@aws-sdk/client-sqs';
 import createDebug from 'debug';
@@ -11,7 +10,11 @@ const debug = createDebug('artillery:aws-create-sqs-queue');
 import sleep from '../../util/sleep.ts';
 
 // TODO: Add timestamp to SQS queue name for automatic GC
-async function createSQSQueue(region, queueName, tags = {}) {
+async function createSQSQueue(
+  region: string,
+  queueName: string,
+  tags: Record<string, string> = {}
+) {
   const sqs = new SQSClient({
     region
   });

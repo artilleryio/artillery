@@ -1,4 +1,3 @@
-
 import { createRequire } from 'node:module';
 import createDebug from 'debug';
 
@@ -10,17 +9,19 @@ import {
   DescribeClustersCommand,
   DescribeTaskDefinitionCommand,
   ECSClient,
-  InvalidParameterException, 
+  type Failure,
+  InvalidParameterException,
   RegisterTaskDefinitionCommand,
   RunTaskCommand,
-  StopTaskCommand
+  StopTaskCommand,
+  type Task
 } from '@aws-sdk/client-ecs';
 import { GetRoleCommand, IAMClient } from '@aws-sdk/client-iam';
 import { GetObjectCommand, NoSuchKey } from '@aws-sdk/client-s3';
 import {
   CreateQueueCommand,
   DeleteQueueCommand,
-  GetQueueAttributesCommand, 
+  GetQueueAttributesCommand,
   ListQueuesCommand,
   SQSClient
 } from '@aws-sdk/client-sqs';
@@ -82,12 +83,12 @@ import {
   LOGGROUP_RETENTION_DAYS,
   SQS_QUEUES_NAME_PREFIX,
   TASK_NAME,
-  TEST_RUNS_MAX_TAGS, 
+  TEST_RUNS_MAX_TAGS,
   WAIT_TIMEOUT
 } from './constants.ts';
 
 import {
-  ClientServerVersionMismatchError, 
+  ClientServerVersionMismatchError,
   NoAvailableQueueError,
   TestNotFoundError
 } from './errors.ts';
@@ -95,20 +96,24 @@ import {
 let IS_FARGATE = false;
 
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import type { ConsoleReporterOpts } from '../../../console-reporter.ts';
 import prepareTestExecutionPlan from '../../../util/prepare-test-execution-plan.ts';
 import awsGetDefaultRegion from '../../aws/aws-get-default-region.ts';
 import TEST_RUN_STATUS from './test-run-status.ts';
 
-function setupConsoleReporter(quiet) {
-  const reporterOpts = {
+// The run-cluster launch context: accumulates options, AWS resource
+// ids and state through the launch waterfall. Structural typing of
+// individual fields is future work - see modernization plan F13.
+type RunClusterContext = Record<string, any>;
+
+function setupConsoleReporter(quiet: boolean | undefined) {
+  const reporterOpts: ConsoleReporterOpts = {
     outputFormat: 'classic',
     printPeriod: false,
     quiet: quiet
   };
 
-  if (
-    global.artillery?.version?.startsWith('2')
-  ) {
+  if (global.artillery?.version?.startsWith('2')) {
     delete reporterOpts.outputFormat;
     delete reporterOpts.printPeriod;
   }
@@ -120,10 +125,7 @@ function setupConsoleReporter(quiet) {
   );
 
   // // Disable spinner on v1
-  if (
-    global.artillery?.version &&
-    !global.artillery.version.startsWith('2')
-  ) {
+  if (global.artillery?.version && !global.artillery.version.startsWith('2')) {
     consoleReporter.spinner.stop();
     consoleReporter.spinner.clear();
     consoleReporter.spinner = {
@@ -138,37 +140,39 @@ function setupConsoleReporter(quiet) {
   };
 }
 
-function runCluster(scriptPath, options) {
+function runCluster(scriptPath: string, options: Record<string, any>) {
   const artilleryReporter = setupConsoleReporter(options.quiet);
 
   // camelCase all flag names, e.g. `launch-config` becomes launchConfig
-  const options2 = {};
+  const options2: Record<string, any> = {};
   for (const [k, v] of Object.entries(options)) {
     options2[_.camelCase(k)] = v;
   }
   tryRunCluster(scriptPath, options2, artilleryReporter);
 }
 
-function logProgress(msg, opts: any = {}) {
+function logProgress(msg: string, opts: Record<string, any> = {}) {
   if (typeof opts.showTimestamp === 'undefined') {
     opts.showTimestamp = true;
   }
-  if (global.artillery?.log) {
+  if (typeof global.artillery?.log === 'function') {
     artillery.logger(opts).log(msg);
   } else {
     consoleReporter.toggleSpinner();
-    artillery.log(
-      `${msg} ${chalk.gray(`[${moment().format('HH:mm:ss')}]`)}`
-    );
+    artillery.log(`${msg} ${chalk.gray(`[${moment().format('HH:mm:ss')}]`)}`);
     consoleReporter.toggleSpinner();
   }
 }
 
-async function tryRunCluster(scriptPath, options, artilleryReporter) {
+async function tryRunCluster(
+  scriptPath: string,
+  options: Record<string, any>,
+  artilleryReporter: { reporterEvents: EventEmitter }
+) {
   global.artillery.awsRegion = (await awsGetDefaultRegion()) || options.region;
 
-  let context: any = {};
-  const inputFiles = [].concat(scriptPath, options.config || []);
+  let context: RunClusterContext = {};
+  const inputFiles = ([] as string[]).concat(scriptPath, options.config || []);
   const runnableScript = await prepareTestExecutionPlan(inputFiles, options);
 
   context.runnableScript = runnableScript;
@@ -217,8 +221,8 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   if (options.maxDuration) {
-      const maxDurationMs = timeStringToMs(options.maxDuration);
-      context.maxDurationMs = maxDurationMs;
+    const maxDurationMs = timeStringToMs(options.maxDuration);
+    context.maxDurationMs = maxDurationMs;
   }
 
   context.tags = parseTags(options.tags);
@@ -228,7 +232,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   try {
     context.resourceTags = parseResourceTags(options.awsTags);
   } catch (err) {
-    console.error(chalk.red(err.message));
+    console.error(chalk.red((err as Error).message));
     process.exit(1);
   }
 
@@ -243,7 +247,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   }
 
   // Set name tag if not already set:
-  if (context.tags.filter((t) => t.name === 'name').length === 0) {
+  if (
+    context.tags.filter((t: { name: string }) => t.name === 'name').length === 0
+  ) {
     if (typeof scriptPath !== 'undefined') {
       context.tags.push({
         name: 'name',
@@ -277,14 +283,14 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   if (!context.namedTest) {
     const contextPath = options.context
       ? path.resolve(options.context)
-      : path.dirname(absoluteScriptPath);
+      : path.dirname(absoluteScriptPath as string);
 
     debugVerbose('script:', absoluteScriptPath);
     debugVerbose('root:', contextPath);
 
     const containerScriptPath = path.join(
-      path.relative(contextPath, path.dirname(absoluteScriptPath)),
-      path.basename(absoluteScriptPath)
+      path.relative(contextPath, path.dirname(absoluteScriptPath as string)),
+      path.basename(absoluteScriptPath as string)
     );
 
     if (containerScriptPath.indexOf('..') !== -1) {
@@ -507,12 +513,19 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
     });
   }
 
-  async function newWaterfall(artilleryReporter) {
+  async function newWaterfall(artilleryReporter: {
+    reporterEvents: EventEmitter;
+  }) {
     let testRunCompletedSuccessfully = true;
 
     let shuttingDown = false;
 
-    async function gracefulShutdown(opts: any = { earlyStop: false, exitCode: 0 }) {
+    async function gracefulShutdown(
+      opts: { earlyStop?: boolean; exitCode?: number } = {
+        earlyStop: false,
+        exitCode: 0
+      }
+    ) {
       if (shuttingDown) {
         return;
       }
@@ -621,7 +634,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       if (context.tags.length > 0) {
         logProgress(
-          `Tags: ${context.tags.map((t) => `${t.name}:${t.value}`).join(', ')}`
+          `Tags: ${context.tags
+            .map((t: { name: string; value: string }) => `${t.name}:${t.value}`)
+            .join(', ')}`
         );
       }
       logProgress(`Test run ID: ${context.testId}`);
@@ -732,13 +747,18 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
 
       context.status = TEST_RUN_STATUS.COMPLETED;
 
-      let checks = [];
-      global.artillery.globalEvents.once('checks', async (results) => {
-        checks = results;
-      });
+      let checks: unknown[] = [];
+      global.artillery.globalEvents.once(
+        'checks',
+        async (results: unknown[]) => {
+          checks = results;
+        }
+      );
 
       if (context.ensureSpec) {
-        const EnsurePlugin = await loadBuiltinPackage('artillery-plugin-ensure');
+        const EnsurePlugin = await loadBuiltinPackage(
+          'artillery-plugin-ensure'
+        );
         new (EnsurePlugin as any).Plugin({
           config: { ensure: context.ensureSpec }
         });
@@ -779,17 +799,22 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
             }
           },
           ensure: checks.map((c) => {
+            const check = c as Record<string, any>;
             return {
-              condition: c.original,
-              success: c.result === 1,
-              strict: c.strict
+              condition: check.original,
+              success: check.result === 1,
+              strict: check.strict
             };
           })
         };
 
-        fs.writeFileSync(logfile, JSON.stringify(jsonReport, null, 2), {
-          flag: 'w'
-        });
+        fs.writeFileSync(
+          logfile as string,
+          JSON.stringify(jsonReport, null, 2),
+          {
+            flag: 'w'
+          }
+        );
       }
       debug(context.testId, 'done');
     } catch (err) {
@@ -814,9 +839,9 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
       ) {
         artillery.log(chalk.red('Error:', err.message));
       } else {
-        artillery.log(util.formatError(err));
+        artillery.log(util.formatError(err as NodeJS.ErrnoException));
         artillery.log(err);
-        artillery.log(err.stack);
+        artillery.log((err as Error).stack);
       }
       testRunCompletedSuccessfully = false;
       global.artillery.suggestedExitCode = 1;
@@ -835,7 +860,7 @@ async function tryRunCluster(scriptPath, options, artilleryReporter) {
   await newWaterfall(artilleryReporter);
 }
 
-async function cleanupResources(context) {
+async function cleanupResources(context: RunClusterContext) {
   try {
     if (context.sqsReporter) {
       context.sqsReporter.stop();
@@ -882,9 +907,13 @@ async function cleanupResources(context) {
   }
 }
 
-function checkFargateResourceConfig(cpu, memory) {
-  function generateListOfOptionsMiB(minGB, maxGB, incrementGB) {
-    const result = [];
+function checkFargateResourceConfig(cpu: number, memory: number) {
+  function generateListOfOptionsMiB(
+    minGB: number,
+    maxGB: number,
+    incrementGB: number
+  ) {
+    const result: number[] = [];
     for (let i = 0; i <= (maxGB - minGB) / incrementGB; i++) {
       result.push((minGB + incrementGB * i) * 1024);
     }
@@ -893,7 +922,7 @@ function checkFargateResourceConfig(cpu, memory) {
   }
 
   // Based on https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-  const FARGATE_VALID_CONFIGS = {
+  const FARGATE_VALID_CONFIGS: Record<number, number[]> = {
     256: [512, 1024, 2048],
     512: [1024, 2048, 3072, 4096],
     1024: [2048, 3072, 4096, 5120, 6144, 7168, 8192],
@@ -922,33 +951,33 @@ function checkFargateResourceConfig(cpu, memory) {
   return null;
 }
 
-async function createArtilleryCluster(context) {
+async function createArtilleryCluster(context: RunClusterContext) {
   const ecs = new ECSClient({
     apiVersion: '2014-11-13',
     region: context.region
   });
-    await ecs.send(
-      new CreateClusterCommand({
-        clusterName: ARTILLERY_CLUSTER_NAME,
-        capacityProviders: ['FARGATE_SPOT']
-      })
-    );
+  await ecs.send(
+    new CreateClusterCommand({
+      clusterName: ARTILLERY_CLUSTER_NAME,
+      capacityProviders: ['FARGATE_SPOT']
+    })
+  );
 
-    let retries = 0;
-    while (retries < 12) {
-      const clusterActive = await checkTargetCluster(context);
-      if (clusterActive) {
-        break;
-      }
-      retries++;
-      await sleep(10 * 1000);
+  let retries = 0;
+  while (retries < 12) {
+    const clusterActive = await checkTargetCluster(context);
+    if (clusterActive) {
+      break;
     }
+    retries++;
+    await sleep(10 * 1000);
+  }
 }
 
 //
 // Check that ECS cluster exists:
 //
-async function checkTargetCluster(context) {
+async function checkTargetCluster(context: RunClusterContext) {
   const ecs = new ECSClient({
     apiVersion: '2014-11-13',
     region: context.region
@@ -958,13 +987,16 @@ async function checkTargetCluster(context) {
       new DescribeClustersCommand({ clusters: [context.clusterName] })
     );
     debug(response);
-    if (response.clusters.length === 0 || response.failures.length > 0) {
+    if (
+      (response.clusters?.length ?? 0) === 0 ||
+      (response.failures?.length ?? 0) > 0
+    ) {
       debugVerbose(response);
       return false;
     } else {
-      const activeClusters = response.clusters.filter(
-        (c) => c.status === 'ACTIVE'
-      );
+      const activeClusters = (
+        response.clusters as NonNullable<typeof response.clusters>
+      ).filter((c) => c.status === 'ACTIVE');
       return activeClusters.length > 0;
     }
   } catch (err) {
@@ -973,7 +1005,7 @@ async function checkTargetCluster(context) {
   }
 }
 
-async function maybeGetSubnetIdsForFargate(context) {
+async function maybeGetSubnetIdsForFargate(context: RunClusterContext) {
   if (!context.isFargate) {
     return context;
   }
@@ -1000,7 +1032,7 @@ async function maybeGetSubnetIdsForFargate(context) {
   return context;
 }
 
-async function createTestBundle(context) {
+async function createTestBundle(context: RunClusterContext) {
   const result: any = await createTest(context.scriptPath, {
     name: context.testId,
     config: context.cliOptions.config,
@@ -1013,7 +1045,7 @@ async function createTestBundle(context) {
   return context;
 }
 
-async function createADOTDefinitionIfNeeded(context) {
+async function createADOTDefinitionIfNeeded(context: RunClusterContext) {
   const publishMetricsConfig =
     context.fullyResolvedConfig.plugins?.['publish-metrics'];
   if (!publishMetricsConfig) {
@@ -1073,12 +1105,14 @@ async function createADOTDefinitionIfNeeded(context) {
       }
     };
   } catch (err) {
-    throw new Error(err);
+    // NOTE: pre-existing behavior: wraps the original error's string
+    // representation.
+    throw new Error(err as string);
   }
   return context;
 }
 
-async function ensureTaskExists(context) {
+async function ensureTaskExists(context: RunClusterContext) {
   const ecs = new ECSClient({
     apiVersion: '2014-11-13',
     region: context.region
@@ -1108,15 +1142,19 @@ async function ensureTaskExists(context) {
     }
 
     if (lc.ulimits) {
-      lc.ulimits.forEach((u) => {
-        if (!defaultUlimits[u.name]) {
-          defaultUlimits[u.name] = {};
+      lc.ulimits.forEach(
+        (u: { name: string; softLimit: number; hardLimit?: number }) => {
+          const limits = defaultUlimits as Record<
+            string,
+            { softLimit: number; hardLimit: number }
+          >;
+          limits[u.name] = {
+            softLimit: u.softLimit,
+            hardLimit:
+              typeof u.hardLimit === 'number' ? u.hardLimit : u.softLimit
+          };
         }
-        defaultUlimits[u.name] = {
-          softLimit: u.softLimit,
-          hardLimit: typeof u.hardLimit === 'number' ? u.hardLimit : u.softLimit
-        };
-      });
+      );
     }
 
     // TODO: Check this earlier to return an error faster.
@@ -1129,10 +1167,14 @@ async function ensureTaskExists(context) {
   }
 
   ulimits = Object.keys(defaultUlimits).map((name) => {
+    const limits = defaultUlimits as Record<
+      string,
+      { softLimit: number; hardLimit: number }
+    >;
     return {
       name: name,
-      softLimit: defaultUlimits[name].softLimit,
-      hardLimit: defaultUlimits[name].hardLimit
+      softLimit: limits[name].softLimit,
+      hardLimit: limits[name].hardLimit
     };
   });
 
@@ -1237,7 +1279,7 @@ async function ensureTaskExists(context) {
       );
       debug('OK: ECS task registered');
       debugVerbose(JSON.stringify(response, null, 4));
-      context.taskDefinitionArn = response.taskDefinition.taskDefinitionArn;
+      context.taskDefinitionArn = response.taskDefinition?.taskDefinitionArn;
       debug(`Task definition ARN: ${context.taskDefinitionArn}`);
       return context;
     } catch (registerErr) {
@@ -1248,21 +1290,21 @@ async function ensureTaskExists(context) {
   }
 }
 
-async function checkCustomTaskRole(context) {
+async function checkCustomTaskRole(context: RunClusterContext) {
   if (!context.customTaskRoleName) {
     return;
   }
 
   const iam = new IAMClient({ region: global.artillery.awsRegion });
-    const roleData = await iam.send(
-      new GetRoleCommand({ RoleName: context.customTaskRoleName })
-    );
-    context.customRoleArn = roleData.Role.Arn;
-    context.taskRoleArn = roleData.Role.Arn;
-    debug(roleData);
+  const roleData = await iam.send(
+    new GetRoleCommand({ RoleName: context.customTaskRoleName })
+  );
+  context.customRoleArn = roleData.Role?.Arn;
+  context.taskRoleArn = roleData.Role?.Arn;
+  debug(roleData);
 }
 
-async function gcQueues(context) {
+async function gcQueues(context: RunClusterContext) {
   const sqs = new SQSClient({
     region: context.region
   });
@@ -1288,7 +1330,7 @@ async function gcQueues(context) {
             AttributeNames: ['CreatedTimestamp']
           })
         );
-        const ts = Number(data.Attributes.CreatedTimestamp) * 1000;
+        const ts = Number(data.Attributes?.CreatedTimestamp) * 1000;
         // Delete after 96 hours
         if (Date.now() - ts > 96 * 60 * 60 * 1000) {
           await sqs.send(new DeleteQueueCommand({ QueueUrl: qu }));
@@ -1304,7 +1346,7 @@ async function gcQueues(context) {
   }
 }
 
-async function deleteQueue(context) {
+async function deleteQueue(context: RunClusterContext) {
   if (!context.sqsQueueUrl) {
     return;
   }
@@ -1321,7 +1363,7 @@ async function deleteQueue(context) {
   }
 }
 
-async function createQueue(context) {
+async function createQueue(context: RunClusterContext) {
   const sqs = new SQSClient({
     region: context.region
   });
@@ -1374,7 +1416,7 @@ async function createQueue(context) {
   }
 }
 
-async function getManifest(context) {
+async function getManifest(context: RunClusterContext) {
   try {
     const s3 = createS3Client({ region: global.artillery.s3BucketRegion });
     const params = {
@@ -1383,7 +1425,10 @@ async function getManifest(context) {
     };
 
     const data = await s3.send(new GetObjectCommand(params));
-    const metadata = JSON.parse(await data.Body.transformToString());
+    // NOTE: pre-existing behavior: a missing body throws here.
+    const metadata = JSON.parse(
+      await (data.Body as NonNullable<typeof data.Body>).transformToString()
+    );
     context.newScriptPath = metadata.scriptPath;
 
     if (metadata.configPath) {
@@ -1400,7 +1445,7 @@ async function getManifest(context) {
   }
 }
 
-async function generateTaskOverrides(context) {
+async function generateTaskOverrides(context: RunClusterContext) {
   const cliArgs = ['run'].concat(
     context.cliOptions.environment
       ? ['--environment', context.cliOptions.environment]
@@ -1531,7 +1576,7 @@ async function generateTaskOverrides(context) {
   return context;
 }
 
-async function setupDefaultECSParams(context) {
+async function setupDefaultECSParams(context: RunClusterContext) {
   const defaultParams: any = {
     taskDefinition: context.taskName,
     cluster: context.clusterName,
@@ -1576,7 +1621,7 @@ async function setupDefaultECSParams(context) {
   return context;
 }
 
-async function launchLeadTask(context) {
+async function launchLeadTask(context: RunClusterContext) {
   const metadata = {
     testId: context.testId,
     startedAt: Date.now(),
@@ -1627,35 +1672,34 @@ async function launchLeadTask(context) {
     name: 'IS_LEADER',
     value: 'true'
   });
-    const runData = await ecs.send(new RunTaskCommand(leaderParams));
-    if (runData.failures.length > 0) {
-      if (runData.failures.length === context.count) {
-        artillery.log('ERROR: Worker start failure');
-        const uniqueReasons = [
-          ...new Set(runData.failures.map((f) => f.reason))
-        ];
-        artillery.log('Reason:', uniqueReasons);
-        throw new Error('Could not start workers');
-      } else {
-        artillery.log('WARNING: Some workers failed to start');
-        artillery.log(chalk.red(JSON.stringify(runData.failures, null, 4)));
-        throw new Error('Not enough capacity - terminating');
-      }
+  const runData = await ecs.send(new RunTaskCommand(leaderParams));
+  const leadFailures = runData.failures ?? [];
+  if (leadFailures.length > 0) {
+    if (leadFailures.length === context.count) {
+      artillery.log('ERROR: Worker start failure');
+      const uniqueReasons = [...new Set(leadFailures.map((f) => f.reason))];
+      artillery.log('Reason:', uniqueReasons);
+      throw new Error('Could not start workers');
+    } else {
+      artillery.log('WARNING: Some workers failed to start');
+      artillery.log(chalk.red(JSON.stringify(leadFailures, null, 4)));
+      throw new Error('Not enough capacity - terminating');
     }
+  }
 
-    context.taskArns = context.taskArns.concat(
-      runData.tasks.map((task) => task.taskArn)
-    );
-    artillery.globalEvents.emit('metadata', {
-      platformMetadata: { taskArns: context.taskArns }
-    });
+  context.taskArns = context.taskArns.concat(
+    (runData.tasks ?? []).map((task) => task.taskArn)
+  );
+  artillery.globalEvents.emit('metadata', {
+    platformMetadata: { taskArns: context.taskArns }
+  });
 
   return context;
 }
 
 // TODO: When launching >20 containers on Fargate, adjust WAIT_TIMEOUT dynamically to
 // add extra time spent in waiting between runTask calls: WAIT_TIMEOUT + worker_count.
-async function ecsRunTask(context) {
+async function ecsRunTask(context: RunClusterContext) {
   const ecs = new ECSClient({
     apiVersion: '2014-11-13',
     region: context.region
@@ -1691,7 +1735,9 @@ async function ecsRunTask(context) {
       tasksRemaining -= launchedTasksCount;
 
       if (launchedTasksCount > 0) {
-        const newTaskArns = runData.tasks.map((task) => task.taskArn);
+        const newTaskArns = (
+          runData.tasks as NonNullable<typeof runData.tasks>
+        ).map((task) => task.taskArn);
         context.taskArns = context.taskArns.concat(newTaskArns);
         artillery.globalEvents.emit('metadata', {
           platformMetadata: { taskArns: newTaskArns }
@@ -1699,17 +1745,17 @@ async function ecsRunTask(context) {
         debug(`Launched ${launchedTasksCount} tasks`);
       }
 
-      if (runData.failures.length > 0) {
+      const runFailures = runData.failures ?? [];
+      if (runFailures.length > 0) {
         artillery.log('Some workers failed to start');
-        const uniqueReasons = [
-          ...new Set(runData.failures.map((f) => f.reason))
-        ];
+        const uniqueReasons = [...new Set(runFailures.map((f) => f.reason))];
         artillery.log(chalk.red(uniqueReasons));
         artillery.log('Retrying...');
         await sleep(10 * 1000);
         throw new Error('Not enough ECS capacity');
       }
-    } catch (runErr) {
+    } catch (caughtRunErr) {
+      const runErr = caughtRunErr as Error;
       // NOTE: @aws-sdk/client-ecs does not export a ThrottlingException
       // class (the old `instanceof` check here would have thrown) - match
       // on the error name instead
@@ -1734,14 +1780,14 @@ async function ecsRunTask(context) {
   return context;
 }
 
-async function waitForTasks2(context) {
+async function waitForTasks2(context: RunClusterContext) {
   const params = {
     tasks: context.taskArns,
     cluster: context.clusterName
   };
 
-  let failedTasks = [];
-  let stoppedTasks = [];
+  let failedTasks: Failure[] = [];
+  let stoppedTasks: Task[] = [];
   let maybeErr = null;
 
   const silentWaitTimeout = new Timeout(30 * 1000).start(); // wait this long before updating the user
@@ -1826,7 +1872,7 @@ async function waitForTasks2(context) {
   return context;
 }
 
-async function waitForWorkerSync(context) {
+async function waitForWorkerSync(context: RunClusterContext) {
   const MAGIC_PREFIX = 'synced_';
   const prefix = `test-runs/${context.testId}/${MAGIC_PREFIX}`;
 
@@ -1860,7 +1906,7 @@ async function waitForWorkerSync(context) {
   }
 }
 
-async function sendGoSignal(context) {
+async function sendGoSignal(context: RunClusterContext) {
   const s3 = createS3Client();
   const params = {
     Body: Buffer.from(context.testId),
@@ -1871,7 +1917,7 @@ async function sendGoSignal(context) {
   return context;
 }
 
-async function writeHeartbeat(context) {
+async function writeHeartbeat(context: RunClusterContext) {
   const s3 = createS3Client();
   const params = {
     Body: Buffer.from(String(Date.now())),
@@ -1882,12 +1928,12 @@ async function writeHeartbeat(context) {
     await s3.send(new PutObjectCommand(params));
     debug('Heartbeat written: %s', params.Body.toString());
   } catch (err) {
-    debug('Heartbeat write failed: %s', err.message);
+    debug('Heartbeat write failed: %s', (err as Error).message);
     // Non-fatal. Workers tolerate missed heartbeats via 180s threshold.
   }
 }
 
-function startHeartbeat(context) {
+function startHeartbeat(context: RunClusterContext) {
   writeHeartbeat(context).catch(debug);
   const intervalId = setInterval(() => {
     writeHeartbeat(context).catch(debug);
@@ -1895,12 +1941,14 @@ function startHeartbeat(context) {
   return intervalId;
 }
 
-async function listen(context, ee) {
+async function listen(context: RunClusterContext, ee: EventEmitter) {
   return new Promise((resolve, _reject) => {
     context.intermediateReports = [];
     context.aggregateReport = null;
 
-    const r = new SqsReporter(context);
+    const r = new SqsReporter(
+      context as ConstructorParameters<typeof SqsReporter>[0]
+    );
     context.sqsReporter = r;
     r.on('workersDone', (state) => {
       ee.emit('workersDone', state);
@@ -2007,7 +2055,7 @@ async function listen(context, ee) {
   });
 }
 
-async function deregisterTaskDefinition(context) {
+async function deregisterTaskDefinition(context: RunClusterContext) {
   if (!context.taskDefinitionArn) {
     return;
   }
@@ -2032,7 +2080,10 @@ async function deregisterTaskDefinition(context) {
 }
 
 // TODO: Remove - duplicated in run.js
-function getLogFilename(output, userDefaultFilenameFormat) {
+function getLogFilename(
+  output: string | undefined,
+  userDefaultFilenameFormat: string
+) {
   let logfile;
 
   // is the destination a directory that exists?
@@ -2054,7 +2105,7 @@ function getLogFilename(output, userDefaultFilenameFormat) {
   } else {
     // -o is set with a directory
     logfile = path.join(
-      output,
+      output as string,
       moment().format(userDefaultFilenameFormat || defaultFormat)
     );
   }

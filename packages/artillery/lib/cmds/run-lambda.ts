@@ -47,7 +47,7 @@ class RunLambdaCommand extends Command {
     try {
       parseResourceTags(flags['aws-tags']);
     } catch (err) {
-      console.error(err.message);
+      console.error((err as Error).message);
       process.exit(1);
     }
 

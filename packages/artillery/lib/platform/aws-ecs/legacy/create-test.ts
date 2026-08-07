@@ -1,11 +1,7 @@
-
-
-
 import A from 'async';
 import createDebug from 'debug';
 
 const debug = createDebug('commands:create-test');
-
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,11 +10,22 @@ import { createBOM, enrichPackageJson, prettyPrint } from './bom.ts';
 import createS3Client from './create-s3-client.ts';
 import { getBucketName } from './util.ts';
 
-function tryCreateTest(scriptPath, options) {
+// Minimal structural view of an S3-compatible sync client (the Azure
+// platform passes a custom client).
+type SyncClient = { send: (command: any) => Promise<any> };
+
+function tryCreateTest(scriptPath: string, options: Record<string, any>) {
   createTest(scriptPath, options);
 }
 
-async function createTest(scriptPath, options, callback?) {
+async function createTest(
+  scriptPath: string,
+  options: Record<string, any>,
+  callback?: (
+    err: Error | null | undefined,
+    context: Record<string, any>
+  ) => void
+) {
   const absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
 
   const contextPath = options.context
@@ -28,7 +35,7 @@ async function createTest(scriptPath, options, callback?) {
   debug('script:', absoluteScriptPath);
   debug('root:', contextPath);
 
-  const context: any = {
+  const context: Record<string, any> = {
     contextDir: contextPath,
     scriptPath: absoluteScriptPath,
     originalScriptPath: scriptPath,
@@ -51,7 +58,7 @@ async function createTest(scriptPath, options, callback?) {
     A.waterfall(
       [
         A.constant(context),
-        async (context) => {
+        async (context: Record<string, any>) => {
           if (!context.customSyncClient) {
             context.s3Bucket = await getBucketName();
             return context;
@@ -65,7 +72,7 @@ async function createTest(scriptPath, options, callback?) {
         syncS3,
         writeTestMetadata
       ],
-      (err, context) => {
+      (err: Error | null | undefined, context: Record<string, any>) => {
         if (err) {
           console.log(err);
           return;
@@ -83,9 +90,12 @@ async function createTest(scriptPath, options, callback?) {
   });
 }
 
-function prepareManifest(context, callback) {
+function prepareManifest(
+  context: Record<string, any>,
+  callback: (err: Error | null, context?: Record<string, any>) => void
+) {
   let fileToAnalyse = context.scriptPath;
-  const extraFiles = [];
+  const extraFiles: string[] = [];
   if (context.configPath) {
     debug('context has been provided; extraFiles =', extraFiles);
     fileToAnalyse = context.configPath;
@@ -100,7 +110,7 @@ function prepareManifest(context, callback) {
       flags: context.flags,
       scenarioPath: context.scriptPath
     },
-    (err, bom) => {
+    (err: Error | null, bom: unknown) => {
       debug(err);
       debug(bom);
       context.manifest = bom;
@@ -109,13 +119,16 @@ function prepareManifest(context, callback) {
   );
 }
 
-function printManifest(context, callback) {
+function printManifest(
+  context: Record<string, any>,
+  callback: (err: Error | null, context?: Record<string, any>) => void
+) {
   prettyPrint(context.manifest);
   return callback(null, context);
 }
 
-async function syncS3(context) {
-  let s3;
+async function syncS3(context: Record<string, any>) {
+  let s3: SyncClient;
   if (context.customSyncClient) {
     s3 = context.customSyncClient;
   } else {
@@ -136,13 +149,13 @@ async function syncS3(context) {
     A.eachLimit(
       context.manifest.files,
       3,
-      async (item, eachDone) => {
+      async (item: Record<string, any>, eachDone) => {
         // If we can't read the file, it may have been specified with a
         // template in its name, e.g. a payload file like:
         // {{ $environment }}-users.csv
         // If so, ignore it, hope config.includeFiles was used, and let
         // "artillery run" in the worker deal with it.
-        let body;
+        let body: Buffer | undefined;
         try {
           body = fs.readFileSync(item.orig);
         } catch (fsErr) {
@@ -182,8 +195,8 @@ async function syncS3(context) {
 }
 
 // create just overwrites an existing test for now
-async function writeTestMetadata(context) {
-  const metadata: any = {
+async function writeTestMetadata(context: Record<string, any>) {
+  const metadata: Record<string, any> = {
     createdOn: Date.now(),
     name: context.name,
     modules: context.manifest.modules
@@ -191,21 +204,23 @@ async function writeTestMetadata(context) {
 
   // Here we need to provide config information (if given) -- so that the worker knows how to load it
   if (context.configPath) {
-    const res = context.manifest.files.filter((o) => {
+    const res = context.manifest.files.filter((o: Record<string, any>) => {
       return o.orig === context.configPath;
     });
     const newConfigPath = res[0].noPrefixPosix; // if we have been given a config, we must have an entry
     metadata.configPath = newConfigPath;
   }
 
-  const newScriptPath = context.manifest.files.filter((o) => {
-    return o.orig === context.scriptPath;
-  })[0].noPrefixPosix;
+  const newScriptPath = context.manifest.files.filter(
+    (o: Record<string, any>) => {
+      return o.orig === context.scriptPath;
+    }
+  )[0].noPrefixPosix;
   metadata.scriptPath = newScriptPath;
 
   debug('metadata', metadata);
 
-  let s3 = null;
+  let s3: SyncClient;
   if (context.customSyncClient) {
     s3 = context.customSyncClient;
   } else {

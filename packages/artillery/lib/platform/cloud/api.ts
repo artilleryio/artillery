@@ -4,7 +4,7 @@ class Client {
   // Untyped JS class - properties assigned dynamically
   [key: string]: any;
 
-  constructor({ apiKey, baseUrl }) {
+  constructor({ apiKey, baseUrl }: { apiKey?: string; baseUrl?: string }) {
     this.apiKey = apiKey || process.env.ARTILLERY_CLOUD_API_KEY;
 
     if (!apiKey) {
@@ -37,7 +37,7 @@ class Client {
     return body;
   }
 
-  async getStashDetails({ orgId }) {
+  async getStashDetails({ orgId }: { orgId?: string }) {
     const request = await getCloudHttpClient();
     const currentOrgId = orgId || this.orgId;
 
@@ -68,7 +68,7 @@ class Client {
   }
 }
 
-function createClient(opts) {
+function createClient(opts: { apiKey?: string; baseUrl?: string }) {
   return new Client(opts);
 }
 

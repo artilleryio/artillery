@@ -6,7 +6,7 @@ import * as telemetry from './telemetry.ts';
 const require = createRequire(import.meta.url);
 const version = require('artillery/package.json').version;
 
-async function createGlobalObject(_opts?) {
+async function createGlobalObject(_opts?: unknown) {
   await updateGlobalObject({
     version,
     telemetry
@@ -24,8 +24,7 @@ async function createGlobalObject(_opts?) {
 
   global.artillery.shutdown =
     global.artillery.shutdown ||
-    (
-    async () => {
+    (async () => {
       // TODO: Move graceful shutdown logic into here
       process.exit(global.artillery.suggestedExitCode);
     });

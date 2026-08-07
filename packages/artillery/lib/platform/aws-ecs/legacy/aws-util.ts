@@ -1,7 +1,12 @@
-
-import { DescribeTasksCommand, ECSClient } from '@aws-sdk/client-ecs';
 import {
-  DeleteParameterCommand, 
+  DescribeTasksCommand,
+  ECSClient,
+  type Failure,
+  type Task
+} from '@aws-sdk/client-ecs';
+import type { ParameterType } from '@aws-sdk/client-ssm';
+import {
+  DeleteParameterCommand,
   GetParameterCommand,
   PutParameterCommand,
   SSMClient
@@ -10,24 +15,37 @@ import createDebug from 'debug';
 
 const debug = createDebug('util');
 
-export { ecsDescribeTasks, ensureParameterExists, parameterExists, putParameter, getParameter, deleteParameter };
+export {
+  ecsDescribeTasks,
+  ensureParameterExists,
+  parameterExists,
+  putParameter,
+  getParameter,
+  deleteParameter
+};
 // Wraps ecs.describeTasks to support more than 100 task ARNs in params.tasks
-async function ecsDescribeTasks(params, region) {
+async function ecsDescribeTasks(
+  params: { tasks: string[]; [key: string]: any },
+  region: string
+) {
   const ecs = new ECSClient({ apiVersion: '2014-11-13', region });
   const taskArnChunks = splitIntoSublists(params.tasks, 100);
-  const results = { tasks: [], failures: [] };
+  const results: { tasks: Task[]; failures: Failure[] } = {
+    tasks: [],
+    failures: []
+  };
   for (let i = 0; i < taskArnChunks.length; i++) {
     const params2 = Object.assign({}, params, { tasks: taskArnChunks[i] });
-      const ecsData = await ecs.send(new DescribeTasksCommand(params2));
-      results.tasks = results.tasks.concat(ecsData.tasks);
-      results.failures = results.failures.concat(ecsData.failures);
+    const ecsData = await ecs.send(new DescribeTasksCommand(params2));
+    results.tasks = results.tasks.concat(ecsData.tasks ?? []);
+    results.failures = results.failures.concat(ecsData.failures ?? []);
   }
   return results;
 }
 
 // Slice input list into several lists, where each list has no more than maxGroupSize elements
-function splitIntoSublists(list, maxGroupSize) {
-  const result = [];
+function splitIntoSublists<T>(list: T[], maxGroupSize: number): T[][] {
+  const result: T[][] = [];
   const numGroups = Math.ceil(list.length / maxGroupSize);
   for (let i = 0; i < numGroups; i++) {
     result.push(list.slice(i * maxGroupSize, i * maxGroupSize + maxGroupSize));
@@ -42,15 +60,20 @@ function splitIntoSublists(list, maxGroupSize) {
 // ********************
 
 // If parameter exists, do nothing; otherwise set the value
-async function ensureParameterExists(ssmPath, defaultValue, type, region) {
-    const exists = await parameterExists(ssmPath, region);
-    if (exists) {
-      return;
-    }
-    return putParameter(ssmPath, defaultValue, type, region);
+async function ensureParameterExists(
+  ssmPath: string,
+  defaultValue: string,
+  type: ParameterType | string,
+  region: string
+) {
+  const exists = await parameterExists(ssmPath, region);
+  if (exists) {
+    return;
+  }
+  return putParameter(ssmPath, defaultValue, type, region);
 }
 
-async function parameterExists(path, region) {
+async function parameterExists(path: string, region: string) {
   const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
   const getParams = {
     Name: path,
@@ -61,7 +84,7 @@ async function parameterExists(path, region) {
     await ssm.send(new GetParameterCommand(getParams));
     return true;
   } catch (ssmErr) {
-    if (ssmErr.name === 'ParameterNotFound') {
+    if ((ssmErr as Error).name === 'ParameterNotFound') {
       return false;
     } else {
       throw ssmErr;
@@ -69,12 +92,17 @@ async function parameterExists(path, region) {
   }
 }
 
-async function putParameter(path, value, type, region) {
+async function putParameter(
+  path: string,
+  value: string,
+  type: ParameterType | string,
+  region: string
+) {
   const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
 
   const putParams = {
     Name: path,
-    Type: type,
+    Type: type as ParameterType,
     Value: value,
     Overwrite: true
   };
@@ -82,7 +110,7 @@ async function putParameter(path, value, type, region) {
   await ssm.send(new PutParameterCommand(putParams));
 }
 
-async function getParameter(path, region) {
+async function getParameter(path: string, region: string) {
   const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
 
   try {
@@ -96,7 +124,7 @@ async function getParameter(path, region) {
     debug({ ssmResponse });
     return ssmResponse.Parameter?.Value;
   } catch (ssmErr) {
-    if (ssmErr.name === 'ParameterNotFound') {
+    if ((ssmErr as Error).name === 'ParameterNotFound') {
       return false;
     } else {
       throw ssmErr;
@@ -104,7 +132,7 @@ async function getParameter(path, region) {
   }
 }
 
-async function deleteParameter(path, region) {
+async function deleteParameter(path: string, region: string) {
   const ssm = new SSMClient({ apiVersion: '2014-11-06', region });
 
   try {
@@ -117,7 +145,7 @@ async function deleteParameter(path, region) {
     debug({ ssmResponse });
     return ssmResponse;
   } catch (ssmErr) {
-    if (ssmErr.name === 'ParameterNotFound') {
+    if ((ssmErr as Error).name === 'ParameterNotFound') {
       return false;
     } else {
       throw ssmErr;

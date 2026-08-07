@@ -30,7 +30,7 @@ function parseSpec(str: string) {
 
   if (format1.test(str)) {
     const components: string[] = str.split('=');
-    const result = {};
+    const result: Record<string, string> = {};
     result[components[0]] = components[1];
     debug('parse: format1:', str, result);
     return result;
@@ -38,7 +38,7 @@ function parseSpec(str: string) {
 
   if (format2.test(str)) {
     const components: string[] = str.split(':');
-    const result = {};
+    const result: Record<string, string> = {};
     result[components[0]] = components[1];
     debug('parse: format2:', str, result);
     return result;
@@ -146,7 +146,13 @@ class PingCommand extends Command {
         },
         tls: {},
         processor: {
-          captureRequestDetails: (req, res, context, _events, next) => {
+          captureRequestDetails: (
+            req: any,
+            res: any,
+            context: any,
+            _events: any,
+            next: () => void
+          ) => {
             context.vars.requestHeaders = res.req._header;
             context.vars.ip =
               res.ip || res.socket?.remoteAddress || res.client?.remoteAddress;
@@ -302,7 +308,7 @@ class PingCommand extends Command {
     }
 
     // Set spec
-    script.scenarios[0].flow[0][verb] = requestSpec;
+    (script.scenarios[0].flow[0] as Record<string, any>)[verb] = requestSpec;
 
     if (flags.insecure) {
       script.config.tls = {
@@ -324,7 +330,7 @@ class PingCommand extends Command {
             )
           );
           console.error(chalk.red(ex));
-          console.error(chalk.red(parseErr.message));
+          console.error(chalk.red((parseErr as Error).message));
           console.error('Example: --expect "{statusCode: 200}"');
           process.exit(1);
         }

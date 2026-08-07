@@ -2,11 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-export default function isIdlePhase(phase) {
+export default function isIdlePhase(phase: {
+  arrivalRate?: number;
+  rampTo?: number;
+  arrivalCount?: number;
+  maxVusers?: number;
+  pause?: number;
+}): boolean {
   return (
     (phase.arrivalRate === 0 && !phase.rampTo) ||
     phase.arrivalCount === 0 ||
     phase.maxVusers === 0 ||
-    phase.pause > 0
+    (phase.pause ?? 0) > 0
   );
 }

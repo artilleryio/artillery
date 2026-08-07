@@ -1,4 +1,3 @@
-
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -28,4 +27,4 @@ export const LOGGROUP_RETENTION_DAYS =
 export const IMAGE_VERSION = process.env.ECR_IMAGE_VERSION || DEFAULT_IMAGE_TAG;
 export const WAIT_TIMEOUT = WAIT_TIMEOUT_SEC;
 export const TEST_RUNS_MAX_TAGS =
-  parseInt(process.env.TEST_RUNS_MAX_TAGS, 10) || 8;
+  parseInt(process.env.TEST_RUNS_MAX_TAGS as string, 10) || 8;

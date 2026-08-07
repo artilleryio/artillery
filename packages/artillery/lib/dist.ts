@@ -2,13 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
 import assert from 'node:assert';
-import { isIdlePhase } from './core/index.ts';
 import L from 'lodash';
+import { isIdlePhase } from './core/index.ts';
+import type { PhaseSpec } from './core/phases.ts';
 
 export default divideWork;
+
+// Structural view of a prepared script as divideWork consumes it:
+// phases and (optional) payload data are present and normalized.
+interface DividableScript {
+  config: {
+    phases: PhaseSpec[];
+    payload?: Array<{ data: unknown[] } & Record<string, any>>;
+    [key: string]: any;
+  };
+  before?: unknown;
+  after?: unknown;
+  [key: string]: any;
+}
 
 /**
  *
@@ -20,7 +32,10 @@ export default divideWork;
  *
  * @todo: Distribute payload data to workers
  */
-function divideWork(script, numWorkers) {
+function divideWork(
+  script: DividableScript,
+  numWorkers: number
+): DividableScript[] {
   const workerScripts = createWorkerScriptBases(numWorkers, script);
   for (const phase of script.config.phases) {
     //  switching on phase type to determine how to distribute work
@@ -71,15 +86,14 @@ function divideWork(script, numWorkers) {
 
     // Distribute payload data to workers
     if (hasPayload) {
-      for (
-        let payloadIdx = 0;
-        payloadIdx < script.config.payload.length;
-        payloadIdx++
-      ) {
+      const payload = script.config.payload as Array<{ data: unknown[] }>;
+      for (let payloadIdx = 0; payloadIdx < payload.length; payloadIdx++) {
         // If there are more workers than payload data, then we will repeat the payload data
-        const scriptPayloadData = script.config.payload[payloadIdx].data;
+        const scriptPayloadData = payload[payloadIdx].data;
         const idxToMatch = i % scriptPayloadData.length;
-        result[i].config.payload[payloadIdx].data = scriptPayloadData.filter(
+        (result[i].config.payload as Array<{ data: unknown[] }>)[
+          payloadIdx
+        ].data = scriptPayloadData.filter(
           (_, index) => index % result.length === idxToMatch
         );
       }
@@ -89,11 +103,15 @@ function divideWork(script, numWorkers) {
   return result;
 }
 
-function scriptHasPayload(script) {
-  return script.config.payload && script.config.payload.length > 0;
+function scriptHasPayload(script: DividableScript): boolean {
+  return Boolean(script.config.payload && script.config.payload.length > 0);
 }
 
-function handleArrivalCountPhase(workerScripts, phase, numWorkers) {
+function handleArrivalCountPhase(
+  workerScripts: DividableScript[],
+  phase: PhaseSpec,
+  numWorkers: number
+) {
   workerScripts[0].config.phases.push(L.cloneDeep(phase));
 
   for (let i = 1; i < numWorkers; i++) {
@@ -104,8 +122,12 @@ function handleArrivalCountPhase(workerScripts, phase, numWorkers) {
   }
 }
 
-function handleArrivalRatePhase(phase, numWorkers, workerScripts) {
-  const rates = distribute(phase.arrivalRate, numWorkers);
+function handleArrivalRatePhase(
+  phase: PhaseSpec,
+  numWorkers: number,
+  workerScripts: DividableScript[]
+) {
+  const rates = distribute(phase.arrivalRate as number, numWorkers);
   const activeWorkers = rates.reduce(
     (acc, rate) => acc + (rate > 0 ? 1 : 0),
     0
@@ -123,11 +145,15 @@ function handleArrivalRatePhase(phase, numWorkers, workerScripts) {
   }
 }
 
-function handleRampToPhase(phase, numWorkers, workerScripts) {
+function handleRampToPhase(
+  phase: PhaseSpec,
+  numWorkers: number,
+  workerScripts: DividableScript[]
+) {
   phase.arrivalRate = phase.arrivalRate || 0;
 
   const rate = phase.arrivalRate / numWorkers;
-  const ramp = phase.rampTo / numWorkers;
+  const ramp = (phase.rampTo as number) / numWorkers;
   const activeWorkers = rate > 0 || ramp > 0 ? numWorkers : 0;
   const maxVusers = phase.maxVusers
     ? distribute(phase.maxVusers, activeWorkers)
@@ -144,8 +170,11 @@ function handleRampToPhase(phase, numWorkers, workerScripts) {
   }
 }
 
-function createWorkerScriptBases(numWorkers, script) {
-  const bases = [];
+function createWorkerScriptBases(
+  numWorkers: number,
+  script: DividableScript
+): DividableScript[] {
+  const bases: DividableScript[] = [];
   for (let i = 0; i < numWorkers; i++) {
     const newScript = L.cloneDeep({
       ...script,
@@ -153,12 +182,14 @@ function createWorkerScriptBases(numWorkers, script) {
         ...script.config,
         phases: [],
         ...(scriptHasPayload(script) && {
-          payload: script.config.payload.map((payload) => {
-            return {
-              ...payload,
-              data: []
-            };
-          })
+          payload: (script.config.payload as Array<Record<string, any>>).map(
+            (payload) => {
+              return {
+                ...payload,
+                data: []
+              };
+            }
+          )
         })
       }
     });
@@ -171,11 +202,11 @@ function createWorkerScriptBases(numWorkers, script) {
   return bases;
 }
 
-function distribute(m, n) {
+function distribute(m: number | string, n: number | string): number[] {
   m = Number(m);
   n = Number(n);
 
-  const result = [];
+  const result: number[] = [];
 
   if (m < n) {
     for (let i = 0; i < n; i++) {
@@ -196,7 +227,7 @@ function distribute(m, n) {
   return result;
 }
 
-function sum(a) {
+function sum(a: number[]): number {
   let result = 0;
   for (let i = 0; i < a.length; i++) {
     result += a[i];

@@ -34,7 +34,7 @@ class RunCommand extends Command {
     try {
       parseResourceTags(flags['aws-tags']);
     } catch (err) {
-      console.error(err.message);
+      console.error((err as Error).message);
       process.exit(1);
     }
 
@@ -56,7 +56,8 @@ class RunCommand extends Command {
     if (cloud.enabled) {
       try {
         await cloud.init();
-      } catch (err) {
+      } catch (caughtErr) {
+        const err = caughtErr as Error;
         if (err.name === 'CloudAPIKeyMissing') {
           console.error(
             'Error: API key is required to record test results to Artillery Cloud'

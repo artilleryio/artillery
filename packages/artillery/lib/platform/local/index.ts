@@ -1,4 +1,3 @@
-
 import createDebug from 'debug';
 import core from '../../dispatcher.ts';
 import { ArtilleryWorker } from './artillery-worker-local.ts';
@@ -12,12 +11,33 @@ import os from 'node:os';
 import _ from 'lodash';
 import divideWork from '../../dist.ts';
 import STATES from '../worker-states.ts';
+import type { WorkerState } from '../worker-states.ts';
+import type { WorkerEnvelope } from './protocol.ts';
+
+interface WorkerRecord {
+  id: number;
+  script: Record<string, any>;
+  state: WorkerState;
+  proc: ArtilleryWorker;
+}
 
 class PlatformLocal {
-  // Untyped JS class - properties assigned dynamically
-  [key: string]: any;
+  declare script: { config: Record<string, any>; [key: string]: any };
+  declare payload: unknown;
+  declare opts: Record<string, any>;
+  declare events: EventEmitter;
+  declare platformOpts: Record<string, any>;
+  declare workers: Record<string, WorkerRecord>;
+  declare workerScripts: Array<Record<string, any>>;
+  declare count: number;
+  declare contextVars: unknown;
 
-  constructor(script, payload, opts, platformOpts) {
+  constructor(
+    script: { config: Record<string, any>; [key: string]: any },
+    payload: unknown,
+    opts: Record<string, any>,
+    platformOpts: Record<string, any>
+  ) {
     // We need these to run before/after hooks:
     this.script = script;
     this.payload = payload;
@@ -25,7 +45,7 @@ class PlatformLocal {
     this.events = new EventEmitter(); // send worker events such as workerError, etc
     this.platformOpts = platformOpts;
     this.workers = {};
-    this.workerScripts = {};
+    this.workerScripts = [];
     this.count = Infinity;
   }
 
@@ -41,7 +61,10 @@ class PlatformLocal {
       const count = this.script.config.engines?.playwright
         ? 1
         : Math.max(1, os.cpus().length - 1);
-      this.workerScripts = divideWork(this.script, count);
+      this.workerScripts = divideWork(
+        this.script as Parameters<typeof divideWork>[0],
+        count
+      );
       this.count = this.workerScripts.length;
     } else {
       // --count may only be used when mode is "multiply"
@@ -96,35 +119,35 @@ class PlatformLocal {
     await worker.init();
 
     const workerId = worker.workerId;
-    worker.events.on('workerError', (message) => {
+    worker.events.on('workerError', (message: WorkerEnvelope) => {
       this.events.emit('workerError', workerId, message);
     });
-    worker.events.on('log', (message) => {
+    worker.events.on('log', (message: WorkerEnvelope) => {
       this.events.emit('log', workerId, message);
     });
-    worker.events.on('phaseStarted', (message) => {
+    worker.events.on('phaseStarted', (message: WorkerEnvelope) => {
       this.events.emit('phaseStarted', workerId, message);
     });
-    worker.events.on('phaseCompleted', (message) => {
+    worker.events.on('phaseCompleted', (message: WorkerEnvelope) => {
       this.events.emit('phaseCompleted', workerId, message);
     });
-    worker.events.on('stats', (message) => {
+    worker.events.on('stats', (message: WorkerEnvelope) => {
       this.events.emit('stats', workerId, message);
     });
-    worker.events.on('done', (message) => {
+    worker.events.on('done', (message: WorkerEnvelope) => {
       this.events.emit('done', workerId, message);
     });
-    worker.events.on('readyWaiting', (message) => {
+    worker.events.on('readyWaiting', (message: WorkerEnvelope) => {
       this.events.emit('readyWaiting', workerId, message);
     });
-    worker.events.on('setSuggestedExitCode', (message) => {
+    worker.events.on('setSuggestedExitCode', (message: WorkerEnvelope) => {
       this.events.emit('setSuggestedExitCode', workerId, message);
     });
-    worker.events.on('exit', (message) => {
+    worker.events.on('exit', (message: number) => {
       this.events.emit('exit', workerId, message);
     });
 
-    worker.events.on('error', (_err) => {
+    worker.events.on('error', (_err: Error) => {
       // TODO: Only exit if ALL workers fail, otherwise log and carry on
       process.nextTick(() => process.exit(11));
     });
@@ -132,17 +155,24 @@ class PlatformLocal {
     return worker;
   }
 
-  async prepareWorker(workerId, opts) {
+  async prepareWorker(
+    workerId: string | number,
+    opts: {
+      script: Record<string, any>;
+      payload: unknown;
+      options: Record<string, any>;
+    }
+  ) {
     return this.workers[workerId].proc.prepare(opts);
   }
 
-  async runWorker(workerId, contextVarsString) {
+  async runWorker(workerId: string | number, contextVarsString: string) {
     // TODO: this will become opts
     debug('runWorker', workerId);
     return this.workers[workerId].proc.run(contextVarsString);
   }
 
-  async stopWorker(workerId) {
+  async stopWorker(workerId: string | number) {
     return this.workers[workerId].proc.stop();
   }
 
@@ -158,21 +188,21 @@ class PlatformLocal {
 
   // ********
 
-  async runHook(hook, initialContextVars?) {
+  async runHook(hook: 'before' | 'after', initialContextVars?: unknown) {
     if (!this.script[hook]) {
       return {};
     }
 
     const runnableScript = await loadProcessor(
       prepareScript(this.script, _.cloneDeep(this.payload)),
-      this.opts
+      this.opts as { scriptPath: string }
     );
 
     const contextVars = await handleScriptHook(
       hook,
       runnableScript,
       this.events,
-      initialContextVars
+      initialContextVars as Record<string, any> | undefined
     );
 
     debug(`hook ${hook} context vars`, contextVars);

@@ -4,17 +4,23 @@ import { engine_util } from '../commons/index.ts';
 import { SSMS } from './ssms.ts';
 
 // NOTE: This may be called more than once, and so should be non-destructive
-async function updateGlobalObject(opts: any = {}) {
-  global.artillery = global.artillery || {};
+async function updateGlobalObject(
+  opts: { version?: string; telemetry?: ArtilleryTelemetry } = {}
+) {
+  // Bootstrap: properties are filled in below and by later callers.
+  global.artillery = global.artillery || ({} as ArtilleryGlobal);
 
   global.artillery.runtimeOptions = global.artillery.runtimeOptions || {};
   global.artillery.runtimeOptions.extendedHTTPMetrics =
     typeof process.env.ARTILLERY_EXTENDED_HTTP_METRICS !== 'undefined';
 
   global.artillery.metrics = global.artillery.metrics || {};
-  global.artillery.metrics.event = async (msg, opts) => {
+  global.artillery.metrics.event = async (
+    msg: string,
+    opts: { level?: string }
+  ) => {
     if (opts.level === 'error') {
-      console.log((chalk as any).red(msg));
+      console.log(chalk.red(msg));
     } else {
       console.log(msg);
     }
@@ -30,7 +36,10 @@ async function updateGlobalObject(opts: any = {}) {
 
   global.artillery.ext =
     global.artillery.ext ||
-    async function (event) {
+    async function (
+      this: { extensionEvents: unknown[] },
+      event: { ext: string; method: (...args: any[]) => Promise<unknown> }
+    ) {
       // TODO: Validate events object
       this.extensionEvents.push(event);
     };
@@ -62,15 +71,15 @@ async function updateGlobalObject(opts: any = {}) {
 
   global.artillery.logger =
     global.artillery.logger ||
-    ((opts) => ({
-      log: (...args) => {
+    ((opts: Record<string, unknown>) => ({
+      log: (...args: unknown[]) => {
         global.artillery.globalEvents.emit('log', opts, ...args);
       }
     }));
 
   global.artillery.log =
     global.artillery.log ||
-    ((...args) => {
+    ((...args: unknown[]) => {
       global.artillery.globalEvents.emit('log', {}, ...args);
     });
 

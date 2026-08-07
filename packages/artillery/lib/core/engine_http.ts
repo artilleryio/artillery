@@ -4,6 +4,7 @@
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import type http from 'node:http';
 import path from 'node:path';
 import qs from 'node:querystring';
 import { parse as urlparse } from 'node:url';
@@ -27,7 +28,99 @@ const ensurePropertyIsAList = engineUtil.ensurePropertyIsAList;
 const template = engineUtil.template;
 const { HttpsAgent } = HttpAgent;
 
-export default HttpEngine;
+// NOTE on typing: request specs, request params and VU variables are
+// dynamic by design (user scripts + processor hooks may attach
+// arbitrary properties), so they are typed as Record<string, any>
+// until the canonical script/flow input types exist (modernization
+// plan, phase 2). Structural contracts that are stable - engine
+// surface, VU context internals, response handling - are typed.
+
+type ProcessorFunction = (...args: any[]) => any;
+
+// Structural view of got's request function: its own overloaded types
+// reject dynamically-assembled option objects.
+interface CancelableRequestLike extends Promise<unknown> {
+  on(event: string, listener: (...args: any[]) => void): CancelableRequestLike;
+}
+type GotRequester = (options: Record<string, any>) => CancelableRequestLike;
+
+type StepCallback = (
+  err: Error | null | undefined,
+  context?: VUContext
+) => void;
+type StepFunction = (context: VUContext, callback: StepCallback) => void;
+
+interface EventEmitterLike {
+  emit(event: string, ...args: any[]): unknown;
+}
+
+// What callers hand to a compiled scenario: VU variables plus
+// whatever the runner attached. Engine internals (_jar, agents,
+// counters) are attached by setInitialContext().
+export interface InitialVUContext {
+  vars: Record<string, any>;
+  [key: string]: any;
+}
+
+export interface VUContext {
+  vars: Record<string, any>;
+  _successCount: number;
+  _enableCookieJar: boolean;
+  _jar: tough.CookieJar;
+  _defaultCookie?: Record<string, string>;
+  _defaultStrictCapture?: boolean;
+  _httpAgent: http.Agent;
+  _httpsAgent: http.Agent;
+  // Engines, plugins and user hooks attach ad-hoc state:
+  [key: string]: any;
+}
+
+// Raw response as surfaced by got's 'response' event: an
+// http.IncomingMessage with got's timing info attached.
+interface WireResponse {
+  statusCode: number;
+  headers: Record<string, string | string[] | undefined>;
+  timings: { phases: Record<string, number> };
+  body?: unknown;
+  on(event: string, listener: (...args: any[]) => void): unknown;
+}
+
+interface AgentOptions {
+  keepAlive?: boolean;
+  keepAliveMsec?: number;
+  maxSockets?: number;
+  maxFreeSockets?: number;
+  timeout?: number;
+  proxy?: string;
+}
+
+interface HttpDefaultsConfig {
+  headers?: Record<string, string>;
+  cookie?: Record<string, string>;
+  strictCapture?: boolean | string;
+  think?: Record<string, unknown>;
+  [key: string]: any;
+}
+
+interface NormalizedHttpEngineConfig {
+  target?: string;
+  timeout?: number;
+  tls?: Record<string, unknown>;
+  processor?: Record<string, ProcessorFunction>;
+  defaults: HttpDefaultsConfig;
+  http: {
+    defaults: HttpDefaultsConfig;
+    cookieJarOptions: Record<string, unknown>;
+    pool?: number | string;
+    timeout?: number;
+    extendedMetrics?: boolean;
+    distributedTracing?:
+      | boolean
+      | { enabled?: boolean; sampled?: boolean; traceIdPrefix?: string };
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
 
 const GOT_OPTION_NAMES = [
   'url',
@@ -53,7 +146,10 @@ const GOT_OPTION_NAMES = [
   'throwHttpErrors'
 ];
 
-const DEFAULT_AGENT_OPTIONS = {
+// NOTE: pre-existing quirk preserved: this object is mutated by
+// Object.assign() in the constructor and in setInitialContext(), so
+// options accumulate on the shared constant across instances.
+const DEFAULT_AGENT_OPTIONS: AgentOptions = {
   keepAlive: true,
   keepAliveMsec: 1000
 };
@@ -64,774 +160,789 @@ const DEFAULT_AGENT_OPTIONS = {
 // `error.code = 'ERR_SOCKET_TIMEOUT'` regardless of the user's configured
 // `http.timeout`. Mirror `http.timeout` (or top-level `timeout`) into the agent
 // so the YAML config becomes the actual binding constraint.
-function deriveAgentTimeoutMs(scriptConfig) {
-  const timeoutSec =
-    scriptConfig?.timeout || scriptConfig?.http?.timeout;
+function deriveAgentTimeoutMs(
+  scriptConfig: Record<string, any>
+): number | undefined {
+  const timeoutSec = scriptConfig?.timeout || scriptConfig?.http?.timeout;
   if (typeof timeoutSec !== 'number') return undefined;
   // Never go below the existing 8s floor — preserves current behaviour for
   // users who explicitly configure a smaller http.timeout.
   return Math.max(8000, timeoutSec * 1000);
 }
 
-function createAgents(proxies, opts) {
-  const agentOpts = Object.assign({}, DEFAULT_AGENT_OPTIONS, opts);
-
-  const result = {
-    httpAgent: null,
-    httpsAgent: null
-  };
+function createAgents(
+  proxies: { http?: string; https?: string },
+  opts: AgentOptions
+): { httpAgent: http.Agent; httpsAgent: http.Agent } {
+  const agentOpts: AgentOptions = Object.assign(
+    {},
+    DEFAULT_AGENT_OPTIONS,
+    opts
+  );
 
   // HTTP proxy endpoint will be used for all requests, unless a separate
   // HTTPS proxy URL is also set, which will be used for HTTPS requests:
   if (proxies.http) {
     agentOpts.proxy = proxies.http;
-    result.httpAgent = new HttpProxyAgent(agentOpts);
+    const httpAgent = new HttpProxyAgent(
+      agentOpts as ConstructorParameters<typeof HttpProxyAgent>[0]
+    );
 
     if (proxies.https) {
       agentOpts.proxy = proxies.https;
     }
 
-    result.httpsAgent = new HttpsProxyAgent(agentOpts);
-    return result;
+    const httpsAgent = new HttpsProxyAgent(
+      agentOpts as ConstructorParameters<typeof HttpsProxyAgent>[0]
+    );
+    return { httpAgent, httpsAgent };
   }
 
   // If only HTTPS proxy is provided, it will be used for HTTPS requests,
   // but not for HTTP requests:
   if (proxies.https) {
-    result.httpAgent = new HttpAgent(agentOpts);
-    result.httpsAgent = new HttpsProxyAgent(
-      Object.assign({ proxy: proxies.https }, agentOpts)
-    );
-
-    return result;
+    return {
+      httpAgent: new HttpAgent(agentOpts),
+      httpsAgent: new HttpsProxyAgent(
+        Object.assign(
+          { proxy: proxies.https },
+          agentOpts
+        ) as ConstructorParameters<typeof HttpsProxyAgent>[0]
+      )
+    };
   }
 
   // By default nothing is proxied:
-  result.httpAgent = new HttpAgent(agentOpts);
-  result.httpsAgent = new HttpsAgent(agentOpts);
-  return result;
+  return {
+    httpAgent: new HttpAgent(agentOpts),
+    httpsAgent: new HttpsAgent(agentOpts)
+  };
 }
 
-function HttpEngine(script) {
-  this.config = script.config;
+export default class HttpEngine {
+  declare config: NormalizedHttpEngineConfig;
+  declare maxSockets: number;
+  declare _httpAgent: http.Agent;
+  declare _httpsAgent: http.Agent;
+  declare extendedHTTPMetrics?: boolean;
+  declare request: GotRequester;
+  // Set by the runner after loading:
+  declare __name?: string;
 
-  if (typeof this.config.defaults === 'undefined') {
-    this.config.defaults = {};
-  }
+  constructor(script: { config: Record<string, any> }) {
+    this.config = script.config as NormalizedHttpEngineConfig;
 
-  if (typeof this.config.http === 'undefined') {
-    this.config.http = {};
-  }
-
-  if (typeof this.config.http.defaults === 'undefined') {
-    this.config.http.defaults = {};
-  }
-
-  if (typeof this.config.http.cookieJarOptions === 'undefined') {
-    this.config.http.cookieJarOptions = {};
-  }
-
-  // If config.http.pool is set, create & reuse agents for all requests (with
-  // max sockets set). That's what we're done here.
-  // If config.http.pool is not set, we create new agents for each virtual user.
-  // That's done when the VU is initialized.
-
-  this.maxSockets = Infinity;
-  if (script.config.http?.pool) {
-    this.maxSockets = Number(script.config.http.pool);
-  }
-  const agentOpts: any = Object.assign(DEFAULT_AGENT_OPTIONS, {
-    maxSockets: this.maxSockets,
-    maxFreeSockets: this.maxSockets
-  });
-  const agentTimeoutMs = deriveAgentTimeoutMs(script.config);
-  if (agentTimeoutMs !== undefined) {
-    agentOpts.timeout = agentTimeoutMs;
-  }
-
-  const agents = createAgents(
-    {
-      http: process.env.HTTP_PROXY,
-      https: process.env.HTTPS_PROXY
-    },
-    agentOpts
-  );
-
-  this._httpAgent = agents.httpAgent;
-  this._httpsAgent = agents.httpsAgent;
-
-  if (
-    (script.config.http && script.config.http.extendedMetrics === true) ||
-    global.artillery?.runtimeOptions.extendedHTTPMetrics
-  ) {
-    this.extendedHTTPMetrics = true;
-  }
-}
-
-HttpEngine.prototype.init = async function () {
-  this.request = (await import('got')).default;
-};
-
-HttpEngine.prototype._isDistributedTracingEnabled = (config) => {
-  const dtConfig = config.http?.distributedTracing;
-  if (!dtConfig) {
-    return false;
-  }
-  
-  // Handle both boolean and object forms
-  if (typeof dtConfig === 'boolean') {
-    return dtConfig;
-  }
-  
-  if (typeof dtConfig === 'object' && dtConfig.enabled !== undefined) {
-    return dtConfig.enabled;
-  }
-  
-  // Default to true if distributedTracing is set but enabled is not specified
-  return true;
-};
-
-HttpEngine.prototype._generateTraceparent = (config) => {
-  // W3C Trace Context format: version-trace-id-parent-id-trace-flags
-  const version = '00';
-  
-  // Get configuration
-  const dtConfig = config.http?.distributedTracing;
-  let sampled = true; // Default to sampled
-  let traceIdPrefix = 'a9'; // Default prefix
-  
-  if (typeof dtConfig === 'object') {
-    if (dtConfig.sampled !== undefined) {
-      sampled = dtConfig.sampled;
+    if (typeof this.config.defaults === 'undefined') {
+      this.config.defaults = {};
     }
-    if (dtConfig.traceIdPrefix !== undefined) {
-      traceIdPrefix = dtConfig.traceIdPrefix;
+
+    if (typeof this.config.http === 'undefined') {
+      this.config.http = {} as NormalizedHttpEngineConfig['http'];
     }
-  }
-  
-  // Validate and normalize prefix (must be valid hex, max 8 chars)
-  traceIdPrefix = traceIdPrefix.toLowerCase().replace(/[^0-9a-f]/g, '').slice(0, 8);
-  if (traceIdPrefix.length === 0) {
-    traceIdPrefix = 'a9'; // Fallback to default if invalid
-  }
-  
-  // Generate trace-id with prefix (32 hex chars total)
-  const remainingBytes = Math.ceil((32 - traceIdPrefix.length) / 2);
-  const randomPart = crypto.randomBytes(remainingBytes).toString('hex');
-  const traceId = (traceIdPrefix + randomPart).slice(0, 32);
-  
-  // Generate 8-byte parent-id (16 hex chars)
-  const parentId = crypto.randomBytes(8).toString('hex');
-  
-  const traceFlags = sampled ? '01' : '00';
-  
-  return `${version}-${traceId}-${parentId}-${traceFlags}`;
-};
 
-HttpEngine.prototype.createScenario = function (scenarioSpec, ee) {
-  ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
-  ensurePropertyIsAList(scenarioSpec, 'afterResponse');
-  ensurePropertyIsAList(scenarioSpec, 'beforeScenario');
-  ensurePropertyIsAList(scenarioSpec, 'afterScenario');
-  ensurePropertyIsAList(scenarioSpec, 'onError');
+    if (typeof this.config.http.defaults === 'undefined') {
+      this.config.http.defaults = {};
+    }
 
-  // Add scenario-level hooks if needed:
-  // For now, just turn them into function steps and insert them
-  // directly into the flow array.
-  // TODO: Scenario-level hooks will probably want access to the
-  // entire scenario spec rather than just the userContext.
-  const beforeScenarioFns = _.map(
-    scenarioSpec.beforeScenario,
-    (hookFunctionName) => ({ function: hookFunctionName })
-  );
-  const afterScenarioFns = _.map(
-    scenarioSpec.afterScenario,
-    (hookFunctionName) => ({ function: hookFunctionName })
-  );
+    if (typeof this.config.http.cookieJarOptions === 'undefined') {
+      this.config.http.cookieJarOptions = {};
+    }
 
-  const newFlow = beforeScenarioFns.concat(
-    scenarioSpec.flow.concat(afterScenarioFns)
-  );
+    // If config.http.pool is set, create & reuse agents for all requests (with
+    // max sockets set). That's what we're done here.
+    // If config.http.pool is not set, we create new agents for each virtual user.
+    // That's done when the VU is initialized.
 
-  scenarioSpec.flow = newFlow;
-
-  const tasks = _.map(scenarioSpec.flow, (rs) =>
-    this.step(rs, ee, {
-      beforeRequest: scenarioSpec.beforeRequest,
-      afterResponse: scenarioSpec.afterResponse,
-      onError: scenarioSpec.onError
-    })
-  );
-
-  return this.compile(tasks, scenarioSpec, ee);
-};
-
-HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
-  opts = opts || {};
-  const self = this;
-  const config = this.config;
-
-  if (requestSpec.loop) {
-    const steps = _.map(requestSpec.loop, (rs) => self.step(rs, ee, opts));
-
-    return engineUtil.createLoopWithCount(requestSpec.count || -1, steps, {
-      loopValue: requestSpec.loopValue || '$loopCount',
-      loopElement: requestSpec.loopElement || '$loopElement',
-      overValues: requestSpec.over,
-      whileTrue: self.config.processor
-        ? self.config.processor[requestSpec.whileTrue]
-        : undefined
+    this.maxSockets = Infinity;
+    if (script.config.http?.pool) {
+      this.maxSockets = Number(script.config.http.pool);
+    }
+    const agentOpts: AgentOptions = Object.assign(DEFAULT_AGENT_OPTIONS, {
+      maxSockets: this.maxSockets,
+      maxFreeSockets: this.maxSockets
     });
-  }
-
-  if (requestSpec.parallel) {
-    const steps = _.map(requestSpec.parallel, (rs) => self.step(rs, ee, opts));
-
-    return engineUtil.createParallel(steps, {
-      limitValue: requestSpec.limit
-    });
-  }
-
-  if (typeof requestSpec.think !== 'undefined') {
-    return engineUtil.createThink(
-      requestSpec,
-      self.config.http.defaults.think || self.config.defaults.think
-    );
-  }
-
-  if (typeof requestSpec.log !== 'undefined') {
-    return (context, callback) => {
-      console.log(template(requestSpec.log, context));
-      return process.nextTick(() => {
-        callback(null, context);
-      });
-    };
-  }
-
-  if (requestSpec.function) {
-    return (context, callback) => {
-      const processFunc = self.config.processor[requestSpec.function];
-      if (processFunc) {
-        let f;
-        if (processFunc.constructor.name === 'Function') {
-          f = processFunc;
-        } else {
-          f = callbackify(processFunc);
-        }
-        return f(context, ee, (hookErr) => callback(hookErr, context));
-      } else {
-        debug(`Function "${requestSpec.function}" not defined`);
-        debug('processor: %o', self.config.processor);
-        ee.emit('error', `Undefined function "${requestSpec.function}"`);
-        return process.nextTick(() => {
-          callback(null, context);
-        });
-      }
-    };
-  }
-
-  const f = (context, callback) => {
-    const method = _.keys(requestSpec)[0].toUpperCase();
-    const params = requestSpec[method.toLowerCase()];
-
-    const onErrorHandlers = opts.onError; // only scenario-lever onError handlers are supported
-
-    // A special case for when "url" attribute is missing. We need to check for
-    // it manually as request.js won't emit an 'error' event when the argument
-    // is missing.
-    // This will be obsoleted by better script validation.
-    if (!params.url && !params.uri) {
-      const err = new Error('an URL must be specified');
-      return callback(err, context);
+    const agentTimeoutMs = deriveAgentTimeoutMs(script.config);
+    if (agentTimeoutMs !== undefined) {
+      agentOpts.timeout = agentTimeoutMs;
     }
 
-    const tls = config.tls || {};
-    const timeout = config.timeout || _.get(config, 'http.timeout') || 10;
-
-    if (!engineUtil.isProbableEnough(params)) {
-      return process.nextTick(() => {
-        callback(null, context);
-      });
-    }
-
-    if (!_.isUndefined(params.ifTrue)) {
-      let result;
-      try {
-        const cond = _.has(config.processor, params.ifTrue)
-          ? config.processor[params.ifTrue]
-          : filtrex(params.ifTrue);
-        result = cond(context.vars);
-      } catch (err) {
-        debug('ifTrue error:', err);
-        result = 1; // if the expression is incorrect, just proceed
-      }
-      if (!result) {
-        return process.nextTick(() => {
-          callback(null, context);
-        });
-      }
-    }
-
-    // Run beforeRequest processors (scenario-level ones too)
-    const requestParams = _.extend(_.clone(params), {
-      url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
-      method: method,
-      timeout: timeout,
-      uuid: crypto.randomUUID()
-    });
-
-    if (context._enableCookieJar) {
-      requestParams.cookieJar = context._jar;
-    }
-
-    if (tls) {
-      requestParams.https = requestParams.https || {};
-      requestParams.https = _.extend(requestParams.https, tls);
-    }
-
-    const functionNames = _.concat(
-      opts.beforeRequest || [],
-      params.beforeRequest || []
-    );
-
-    async.eachSeries(
-      functionNames,
-      function iteratee(functionName, next) {
-        const fn = template(functionName, context);
-        let processFunc = config.processor[fn];
-        if (!processFunc) {
-          processFunc = (_r, _c, _e, cb) => cb(null);
-          console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
-        }
-
-        if (processFunc.constructor.name === 'Function') {
-          processFunc(requestParams, context, ee, (err) => {
-            if (err) {
-              return next(err);
-            }
-            return next(null);
-          });
-        } else {
-          processFunc(requestParams, context, ee).then(next).catch(next);
-        }
+    const agents = createAgents(
+      {
+        http: process.env.HTTP_PROXY,
+        https: process.env.HTTPS_PROXY
       },
-      function done(err) {
-        if (err) {
-          debug(err);
-          return callback(err, context);
-        }
+      agentOpts
+    );
 
-        // Order of precedence: json set in a function, json set in the script, body set in a function, body set in the script.
-        if (requestParams.json) {
-          requestParams.json = template(requestParams.json, context);
-          delete requestParams.body;
-        } else if (requestParams.body) {
-          requestParams.body = template(requestParams.body, context);
-          // TODO: Warn if body is not a string or a buffer
-        }
+    this._httpAgent = agents.httpAgent;
+    this._httpsAgent = agents.httpsAgent;
 
-        // add loop, name & uri elements to be interpolated
-        if (context.vars.$loopElement) {
-          context.vars.$loopElement = template(
-            context.vars.$loopElement,
-            context
-          );
-        }
-        if (requestParams.name) {
-          requestParams.name = template(requestParams.name, context);
-        }
-        if (requestParams.uri) {
-          requestParams.uri = template(requestParams.uri, context);
-        }
-        if (requestParams.url) {
-          requestParams.url = template(requestParams.url, context);
-        }
+    if (
+      (script.config.http && script.config.http.extendedMetrics === true) ||
+      global.artillery?.runtimeOptions.extendedHTTPMetrics
+    ) {
+      this.extendedHTTPMetrics = true;
+    }
+  }
 
-        // Follow all redirects by default unless specified otherwise
-        if (typeof requestParams.followRedirect === 'undefined') {
-          requestParams.followRedirect = true;
-        }
+  async init(): Promise<void> {
+    this.request = (await import('got')).default as unknown as GotRequester;
+  }
 
-        // TODO: Use traverse on the entire flow instead
+  _isDistributedTracingEnabled(config: NormalizedHttpEngineConfig): boolean {
+    const dtConfig = config.http?.distributedTracing;
+    if (!dtConfig) {
+      return false;
+    }
 
-        // Request.js -> Got.js translation
-        if (params.qs) {
-          requestParams.searchParams = qs.stringify(
-            template(params.qs, context)
-          );
-        }
+    // Handle both boolean and object forms
+    if (typeof dtConfig === 'boolean') {
+      return dtConfig;
+    }
 
-        if (typeof params.gzip === 'boolean') {
-          requestParams.decompress = params.gzip;
-        } else {
-          requestParams.decompress = true;
-        }
+    if (typeof dtConfig === 'object' && dtConfig.enabled !== undefined) {
+      return dtConfig.enabled;
+    }
 
-        if (params.form) {
-          requestParams.form = _.reduce(
-            requestParams.form,
-            (acc, v, k) => {
-              acc[k] = template(v, context);
-              return acc;
-            },
-            {}
-          );
-        }
+    // Default to true if distributedTracing is set but enabled is not specified
+    return true;
+  }
 
-        if (params.formData) {
-          let fileUpload;
-          const f = new FormData();
-          requestParams.body = _.reduce(
-            requestParams.formData,
-            (acc, v, k) => {
-              let V = template(v, context);
-              let options;
-              if (V && _.isPlainObject(V)) {
-                if (V.contentType) {
-                  options = { contentType: V.contentType };
-                }
-                if (V.fromFile) {
-                  const absPath = path.resolve(
-                    path.dirname(context.vars.$scenarioFile),
-                    V.fromFile
-                  );
-                  fileUpload = absPath;
-                  V = fs.createReadStream(absPath);
-                } else if (V.value) {
-                  V = V.value;
-                }
-              }
-              acc.append(k, V, options);
-              return acc;
-            },
-            f
-          );
-          if (params.setContentLengthHeader && fileUpload) {
-            try {
-              requestParams.headers = requestParams.headers || {};
-              requestParams.headers['content-length'] =
-                fs.statSync(fileUpload).size;
-            } catch (err) {
-              debug(`stat() on ${fileUpload} failed with ${err}`);
-            }
-          }
-        }
+  _generateTraceparent(config: NormalizedHttpEngineConfig): string {
+    // W3C Trace Context format: version-trace-id-parent-id-trace-flags
+    const version = '00';
 
-        // Assign default headers then overwrite as needed
-        const defaultHeaders = lowcaseKeys(
-          config.http.defaults.headers ||
-            config.defaults.headers || { 'user-agent': USER_AGENT }
-        );
-        const combinedHeaders = _.extend(
-          defaultHeaders,
-          lowcaseKeys(params.headers),
-          lowcaseKeys(requestParams.headers)
-        );
-        const templatedHeaders = _.mapValues(combinedHeaders, (v, _k, _obj) =>
-          template(v, context)
-        );
-        requestParams.headers = templatedHeaders;
+    // Get configuration
+    const dtConfig = config.http?.distributedTracing;
+    let sampled = true; // Default to sampled
+    let traceIdPrefix = 'a9'; // Default prefix
 
-        // We compute the url here so that the cookies are set properly afterwards
-        const url = maybePrependBase(
-          template(requestParams.uri || requestParams.url, context),
-          config
-        );
+    if (typeof dtConfig === 'object') {
+      if (dtConfig.sampled !== undefined) {
+        sampled = dtConfig.sampled;
+      }
+      if (dtConfig.traceIdPrefix !== undefined) {
+        traceIdPrefix = dtConfig.traceIdPrefix;
+      }
+    }
 
-        if (requestParams.uri) {
-          // If a hook function sets requestParams.uri to something, request.js
-          // will pick that over .url, so we need to delete it.
-          delete requestParams.uri;
-        }
+    // Validate and normalize prefix (must be valid hex, max 8 chars)
+    traceIdPrefix = traceIdPrefix
+      .toLowerCase()
+      .replace(/[^0-9a-f]/g, '')
+      .slice(0, 8);
+    if (traceIdPrefix.length === 0) {
+      traceIdPrefix = 'a9'; // Fallback to default if invalid
+    }
 
-        requestParams.url = url;
+    // Generate trace-id with prefix (32 hex chars total)
+    const remainingBytes = Math.ceil((32 - traceIdPrefix.length) / 2);
+    const randomPart = crypto.randomBytes(remainingBytes).toString('hex');
+    const traceId = (traceIdPrefix + randomPart).slice(0, 32);
 
-        if (
-          typeof requestParams.cookie === 'object' ||
-          typeof context._defaultCookie === 'object'
-        ) {
-          requestParams.cookieJar = context._jar;
-          const cookie = Object.assign(
-            {},
-            context._defaultCookie,
-            requestParams.cookie
-          );
-          Object.keys(cookie).forEach((k) => {
-            context._jar.setCookieSync(
-              `${k}=${template(cookie[k], context)}`,
-              requestParams.url
+    // Generate 8-byte parent-id (16 hex chars)
+    const parentId = crypto.randomBytes(8).toString('hex');
+
+    const traceFlags = sampled ? '01' : '00';
+
+    return `${version}-${traceId}-${parentId}-${traceFlags}`;
+  }
+
+  createScenario(scenarioSpec: Record<string, any>, ee: EventEmitterLike) {
+    ensurePropertyIsAList(scenarioSpec, 'beforeRequest');
+    ensurePropertyIsAList(scenarioSpec, 'afterResponse');
+    ensurePropertyIsAList(scenarioSpec, 'beforeScenario');
+    ensurePropertyIsAList(scenarioSpec, 'afterScenario');
+    ensurePropertyIsAList(scenarioSpec, 'onError');
+
+    // Add scenario-level hooks if needed:
+    // For now, just turn them into function steps and insert them
+    // directly into the flow array.
+    // TODO: Scenario-level hooks will probably want access to the
+    // entire scenario spec rather than just the userContext.
+    const beforeScenarioFns = _.map(
+      scenarioSpec.beforeScenario,
+      (hookFunctionName) => ({ function: hookFunctionName })
+    );
+    const afterScenarioFns = _.map(
+      scenarioSpec.afterScenario,
+      (hookFunctionName) => ({ function: hookFunctionName })
+    );
+
+    const newFlow = beforeScenarioFns.concat(
+      scenarioSpec.flow.concat(afterScenarioFns)
+    );
+
+    scenarioSpec.flow = newFlow;
+
+    const tasks = _.map(scenarioSpec.flow, (rs) =>
+      this.step(rs, ee, {
+        beforeRequest: scenarioSpec.beforeRequest,
+        afterResponse: scenarioSpec.afterResponse,
+        onError: scenarioSpec.onError
+      })
+    );
+
+    return this.compile(tasks, scenarioSpec, ee);
+  }
+
+  step(
+    requestSpec: Record<string, any>,
+    ee: EventEmitterLike,
+    opts?: {
+      beforeRequest?: string[];
+      afterResponse?: string[];
+      onError?: string[];
+    }
+  ): StepFunction {
+    opts = opts || {};
+    const self = this;
+    const config = this.config;
+
+    if (requestSpec.loop) {
+      const steps = _.map(requestSpec.loop, (rs) => self.step(rs, ee, opts));
+
+      return engineUtil.createLoopWithCount(requestSpec.count || -1, steps, {
+        loopValue: requestSpec.loopValue || '$loopCount',
+        loopElement: requestSpec.loopElement || '$loopElement',
+        overValues: requestSpec.over,
+        whileTrue: self.config.processor
+          ? self.config.processor[requestSpec.whileTrue]
+          : undefined
+      });
+    }
+
+    if (requestSpec.parallel) {
+      const steps = _.map(requestSpec.parallel, (rs) =>
+        self.step(rs, ee, opts)
+      );
+
+      return engineUtil.createParallel(steps, {
+        limitValue: requestSpec.limit
+      });
+    }
+
+    if (typeof requestSpec.think !== 'undefined') {
+      return engineUtil.createThink(
+        requestSpec,
+        self.config.http.defaults.think || self.config.defaults.think
+      );
+    }
+
+    if (typeof requestSpec.log !== 'undefined') {
+      return (context, callback) => {
+        console.log(template(requestSpec.log, context));
+        return process.nextTick(() => {
+          callback(null, context);
+        });
+      };
+    }
+
+    if (requestSpec.function) {
+      return (context, callback) => {
+        const processFunc = self.config.processor?.[requestSpec.function];
+        if (processFunc) {
+          let f: ProcessorFunction;
+          if (processFunc.constructor.name === 'Function') {
+            f = processFunc;
+          } else {
+            f = callbackify(
+              processFunc as (...args: any[]) => Promise<unknown>
             );
+          }
+          return f(context, ee, (hookErr: Error | null | undefined) =>
+            callback(hookErr, context)
+          );
+        } else {
+          debug(`Function "${requestSpec.function}" not defined`);
+          debug('processor: %o', self.config.processor);
+          ee.emit('error', `Undefined function "${requestSpec.function}"`);
+          return process.nextTick(() => {
+            callback(null, context);
           });
         }
+      };
+    }
 
-        if (typeof requestParams.auth === 'object') {
-          requestParams.username = template(requestParams.auth.user, context);
-          requestParams.password = template(requestParams.auth.pass, context);
-          delete requestParams.auth;
+    const f: StepFunction = (context, callback) => {
+      const method = _.keys(requestSpec)[0].toUpperCase();
+      const params: Record<string, any> = requestSpec[method.toLowerCase()];
+
+      const onErrorHandlers = opts.onError; // only scenario-lever onError handlers are supported
+
+      // A special case for when "url" attribute is missing. We need to check for
+      // it manually as request.js won't emit an 'error' event when the argument
+      // is missing.
+      // This will be obsoleted by better script validation.
+      if (!params.url && !params.uri) {
+        const err = new Error('an URL must be specified');
+        return callback(err, context);
+      }
+
+      const tls = config.tls || {};
+      const timeout = config.timeout || _.get(config, 'http.timeout') || 10;
+
+      if (!engineUtil.isProbableEnough(params)) {
+        return process.nextTick(() => {
+          callback(null, context);
+        });
+      }
+
+      if (!_.isUndefined(params.ifTrue)) {
+        let result;
+        try {
+          const cond = _.has(config.processor, params.ifTrue)
+            ? (config.processor as Record<string, ProcessorFunction>)[
+                params.ifTrue
+              ]
+            : filtrex(params.ifTrue);
+          result = cond(context.vars);
+        } catch (err) {
+          debug('ifTrue error:', err);
+          result = 1; // if the expression is incorrect, just proceed
         }
-
-        // TODO: Bypass proxy if "proxy: false" is set
-        requestParams.agent = {
-          http: context._httpAgent,
-          https: context._httpsAgent
-        };
-
-        requestParams.throwHttpErrors = false;
-
-        if (!requestParams.url || !requestParams.url.startsWith('http')) {
-          const err = new Error(`Invalid URL - ${requestParams.url}`);
-          return callback(err, context);
+        if (!result) {
+          return process.nextTick(() => {
+            callback(null, context);
+          });
         }
+      }
 
-        function responseProcessor(isLast, res, body, done) {
-          if (process.env.DEBUG) {
-            let requestInfo: any = {
-              url: requestParams.url,
-              method: requestParams.method,
-              headers: requestParams.headers
-            };
+      // Run beforeRequest processors (scenario-level ones too)
+      const requestParams: Record<string, any> = _.extend(_.clone(params), {
+        url: maybePrependBase(params.url || params.uri, config), // *NOT* templating here
+        method: method,
+        timeout: timeout,
+        uuid: crypto.randomUUID()
+      });
 
-            if (
-              context._jar._jar &&
-              typeof context._jar._jar.getCookieStringSync === 'function'
-            ) {
-              requestInfo = Object.assign(requestInfo, {
-                cookie: context._jar._jar.getCookieStringSync(requestParams.url)
-              });
-            }
+      if (context._enableCookieJar) {
+        requestParams.cookieJar = context._jar;
+      }
 
-            if (requestParams.json && typeof requestParams.json !== 'boolean') {
-              requestInfo.json = requestParams.json;
-            }
+      if (tls) {
+        requestParams.https = requestParams.https || {};
+        requestParams.https = _.extend(requestParams.https, tls);
+      }
 
-            // If "json" is set to an object, it will be serialised and sent as body and the value of the "body" attribute will be ignored.
-            if (requestParams.body && typeof requestParams.json !== 'object') {
-              if (process.env.DEBUG.indexOf('http:full_body') > -1) {
-                // Show the entire body
-                requestInfo.body = requestParams.body;
-              } else {
-                // Only show the beginning of long bodies
-                if (typeof requestParams.body === 'string') {
-                  requestInfo.body = requestParams.body.substring(0, 512);
-                  if (requestParams.body.length > 512) {
-                    requestInfo.body += ' ...';
-                  }
-                } else if (typeof requestParams.body === 'object') {
-                  requestInfo.body = `< ${requestParams.body.constructor.name} >`;
-                } else {
-                  requestInfo.body = String(requestInfo.body);
-                }
-              }
-            }
+      const functionNames = _.concat(
+        opts.beforeRequest || [],
+        params.beforeRequest || []
+      );
 
-            if (requestParams.qs) {
-              requestInfo.qs = qs.encode(
-                Object.assign(
-                  qs.parse(urlparse(requestParams.url).query),
-                  template(requestParams.qs, context)
-                )
-              );
-            }
-
-            debug('request: %s', JSON.stringify(requestInfo, null, 2));
+      async.eachSeries(
+        functionNames,
+        function iteratee(functionName: string, next) {
+          const fn = template(functionName, context);
+          let processFunc = config.processor?.[fn];
+          if (!processFunc) {
+            processFunc = (_r: unknown, _c: unknown, _e: unknown, cb: any) =>
+              cb(null);
+            console.log(`WARNING: custom function ${fn} could not be found`); // TODO: a 'warning' event
           }
 
-          debugResponse(JSON.stringify(res.headers, null, 2));
-          debugResponse(JSON.stringify(body, null, 2));
-
-          // capture/match/response hooks run only for last request in a task
-          if (!isLast) {
-            return done(null, context);
-          }
-
-          const resForCapture = { headers: res.headers, body: body };
-
-          engineUtil.captureOrMatch(
-            params,
-            resForCapture,
-            context,
-            function captured(err, result) {
+          if (processFunc.constructor.name === 'Function') {
+            processFunc(requestParams, context, ee, (err: unknown) => {
               if (err) {
-                // Run onError hooks and end the scenario:
-                runOnErrorHooks(
-                  onErrorHandlers,
-                  config.processor,
-                  err,
-                  requestParams,
-                  context,
-                  ee,
-                  (_asyncErr) => done(err, context)
-                );
+                return next(err as Error);
               }
+              return next(null);
+            });
+          } else {
+            processFunc(requestParams, context, ee).then(next).catch(next);
+          }
+        },
+        function done(err) {
+          if (err) {
+            debug(err);
+            return callback(err as Error, context);
+          }
 
-              let haveFailedMatches = false;
-              let haveFailedCaptures = false;
+          // Order of precedence: json set in a function, json set in the script, body set in a function, body set in the script.
+          if (requestParams.json) {
+            requestParams.json = template(requestParams.json, context);
+            delete requestParams.body;
+          } else if (requestParams.body) {
+            requestParams.body = template(requestParams.body, context);
+            // TODO: Warn if body is not a string or a buffer
+          }
 
-              if (result !== null) {
-                ee.emit('trace:http:capture', result, requestParams.uuid);
-                if (
-                  Object.keys(result.matches).length > 0 ||
-                  Object.keys(result.captures).length > 0
-                ) {
-                  debug('captures and matches:');
-                  debug(result.matches);
-                  debug(result.captures);
+          // add loop, name & uri elements to be interpolated
+          if (context.vars.$loopElement) {
+            context.vars.$loopElement = template(
+              context.vars.$loopElement,
+              context
+            );
+          }
+          if (requestParams.name) {
+            requestParams.name = template(requestParams.name, context);
+          }
+          if (requestParams.uri) {
+            requestParams.uri = template(requestParams.uri, context);
+          }
+          if (requestParams.url) {
+            requestParams.url = template(requestParams.url, context);
+          }
+
+          // Follow all redirects by default unless specified otherwise
+          if (typeof requestParams.followRedirect === 'undefined') {
+            requestParams.followRedirect = true;
+          }
+
+          // TODO: Use traverse on the entire flow instead
+
+          // Request.js -> Got.js translation
+          if (params.qs) {
+            requestParams.searchParams = qs.stringify(
+              template(params.qs, context)
+            );
+          }
+
+          if (typeof params.gzip === 'boolean') {
+            requestParams.decompress = params.gzip;
+          } else {
+            requestParams.decompress = true;
+          }
+
+          if (params.form) {
+            requestParams.form = _.reduce(
+              requestParams.form,
+              (acc: Record<string, unknown>, v, k) => {
+                acc[k] = template(v, context);
+                return acc;
+              },
+              {}
+            );
+          }
+
+          if (params.formData) {
+            let fileUpload: string | undefined;
+            const f = new FormData();
+            requestParams.body = _.reduce(
+              requestParams.formData,
+              (acc: FormData, v, k) => {
+                let V = template(v, context);
+                let options;
+                if (V && _.isPlainObject(V)) {
+                  if (V.contentType) {
+                    options = { contentType: V.contentType };
+                  }
+                  if (V.fromFile) {
+                    const absPath = path.resolve(
+                      path.dirname(context.vars.$scenarioFile),
+                      V.fromFile
+                    );
+                    fileUpload = absPath;
+                    V = fs.createReadStream(absPath);
+                  } else if (V.value) {
+                    V = V.value;
+                  }
                 }
-
-                // match and capture are strict by default:
-                haveFailedMatches = _.some(
-                  result.matches,
-                  (v, _k) => !v.success && v.strict !== false
-                );
-
-                haveFailedCaptures = _.some(
-                  result.captures,
-                  (v, _k) => v.failed
-                );
-
-                if (haveFailedMatches || haveFailedCaptures) {
-                  // TODO: Emit the details of each failed capture/match
-                } else {
-                  _.each(result.matches, (v, _k) => {
-                    ee.emit('match', v.success, {
-                      expected: v.expected,
-                      got: v.got,
-                      expression: v.expression,
-                      strict: v.strict
-                    });
-                  });
-
-                  _.each(result.captures, (v, k) => {
-                    _.set(context.vars, k, v.value);
-                  });
-                }
+                acc.append(k, V, options);
+                return acc;
+              },
+              f
+            );
+            if (params.setContentLengthHeader && fileUpload) {
+              try {
+                requestParams.headers = requestParams.headers || {};
+                requestParams.headers['content-length'] =
+                  fs.statSync(fileUpload).size;
+              } catch (err) {
+                debug(`stat() on ${fileUpload} failed with ${err}`);
               }
-
-              // Now run afterResponse processors
-              const functionNames = _.concat(
-                opts.afterResponse || [],
-                params.afterResponse || []
-              );
-              async.eachSeries(
-                functionNames,
-                function iteratee(functionName, next) {
-                  const fn = template(functionName, context);
-                  let processFunc = config.processor[fn];
-                  if (!processFunc) {
-                    // TODO: DRY - #223
-                    processFunc = (_r, _res, _c, _e, cb) => cb(null);
-                    console.log(
-                      `WARNING: custom function ${fn} could not be found`
-                    ); // TODO: a 'warning' event
-                  }
-
-                  // Got does not have res.body which Request.js used to have, so we attach it here:
-                  res.body = body;
-
-                  if (processFunc.constructor.name === 'Function') {
-                    processFunc(requestParams, res, context, ee, (err) => {
-                      if (err) {
-                        return next(err);
-                      }
-                      return next(null);
-                    });
-                  } else {
-                    processFunc(requestParams, res, context, ee)
-                      .then(next)
-                      .catch(next);
-                  }
-                },
-                (err) => {
-                  if (err) {
-                    debug(err);
-                    return done(err, context);
-                  }
-
-                  if (haveFailedMatches || haveFailedCaptures) {
-                    // FIXME: This means only one error in the report even if multiple captures failed for the same request.
-                    return done(new Error('Failed capture or match'), context);
-                  }
-                  return done(null, context);
-                }
-              );
             }
+          }
+
+          // Assign default headers then overwrite as needed
+          const defaultHeaders = lowcaseKeys(
+            config.http.defaults.headers ||
+              config.defaults.headers || { 'user-agent': USER_AGENT }
           );
-        }
-
-        let needToProcessResponse = false;
-        if (
-          typeof requestParams.capture === 'object' ||
-          typeof requestParams.match === 'object' ||
-          requestParams.afterResponse ||
-          (typeof opts.afterResponse === 'object' &&
-            opts.afterResponse.length > 0) ||
-          process.env.DEBUG
-        ) {
-          needToProcessResponse = true;
-        }
-
-        if (!requestParams.url) {
-          const err = new Error('an URL must be specified');
-
-          // Run onError hooks and end the scenario
-          runOnErrorHooks(
-            onErrorHandlers,
-            config.processor,
-            err,
-            requestParams,
-            context,
-            ee,
-            (_asyncErr) => callback(err, context)
+          const combinedHeaders = _.extend(
+            defaultHeaders,
+            lowcaseKeys(params.headers),
+            lowcaseKeys(requestParams.headers)
           );
-        }
+          const templatedHeaders = _.mapValues(combinedHeaders, (v, _k, _obj) =>
+            template(v, context)
+          );
+          requestParams.headers = templatedHeaders;
 
-        requestParams.retry = { limit: 0 }; // disable retries - ignored when using streams
-        // Convert scalar seconds to Got v14 timeout object right before request
-        const gotOptions = _.pick(requestParams, GOT_OPTION_NAMES);
-        gotOptions.timeout = { response: requestParams.timeout * 1000 };
+          // We compute the url here so that the cookies are set properly afterwards
+          const url = maybePrependBase(
+            template(requestParams.uri || requestParams.url, context),
+            config
+          );
 
-        // Add W3C Trace Context headers if distributed tracing is enabled
-        if (self._isDistributedTracingEnabled(config)) {
-          const traceparent = self._generateTraceparent(config);
-          gotOptions.headers = gotOptions.headers || {};
-          gotOptions.headers.traceparent = traceparent;
-        }
+          if (requestParams.uri) {
+            // If a hook function sets requestParams.uri to something, request.js
+            // will pick that over .url, so we need to delete it.
+            delete requestParams.uri;
+          }
 
-        let totalDownloaded = 0;
-        self
-          .request(gotOptions)
-          .on('request', (req) => {
-            ee.emit('trace:http:request', requestParams, requestParams.uuid);
+          requestParams.url = url;
 
-            debugRequests('request start: %s', req.path);
-            ee.emit('counter', 'http.requests', 1);
-            ee.emit('rate', 'http.request_rate');
-            req.on('response', (res) => {
-              res.on('end', () => {
-                ee.emit('counter', 'http.downloaded_bytes', totalDownloaded);
-              });
-              ee.emit('trace:http:response', res, requestParams.uuid);
-              self._handleResponse(
-                requestParams,
-                res,
-                ee,
-                context,
-                needToProcessResponse ? responseProcessor : null,
-                callback
+          if (
+            typeof requestParams.cookie === 'object' ||
+            typeof context._defaultCookie === 'object'
+          ) {
+            requestParams.cookieJar = context._jar;
+            const cookie: Record<string, unknown> = Object.assign(
+              {},
+              context._defaultCookie,
+              requestParams.cookie
+            );
+            Object.keys(cookie).forEach((k) => {
+              context._jar.setCookieSync(
+                `${k}=${template(cookie[k], context)}`,
+                requestParams.url
               );
             });
-          })
-          .on('downloadProgress', (progress) => {
-            totalDownloaded = progress.total;
-          })
-          .on('error', (err, _body, _res) => {
-            ee.emit('trace:http:error', err, requestParams.uuid);
-            if (err.name === 'HTTPError') {
-              return;
+          }
+
+          if (typeof requestParams.auth === 'object') {
+            requestParams.username = template(requestParams.auth.user, context);
+            requestParams.password = template(requestParams.auth.pass, context);
+            delete requestParams.auth;
+          }
+
+          // TODO: Bypass proxy if "proxy: false" is set
+          requestParams.agent = {
+            http: context._httpAgent,
+            https: context._httpsAgent
+          };
+
+          requestParams.throwHttpErrors = false;
+
+          if (!requestParams.url || !requestParams.url.startsWith('http')) {
+            const err = new Error(`Invalid URL - ${requestParams.url}`);
+            return callback(err, context);
+          }
+
+          function responseProcessor(
+            isLast: boolean,
+            res: WireResponse,
+            body: string,
+            done: StepCallback
+          ) {
+            if (process.env.DEBUG) {
+              let requestInfo: Record<string, any> = {
+                url: requestParams.url,
+                method: requestParams.method,
+                headers: requestParams.headers
+              };
+
+              // Internal handle of the wrapped cookie jar - debug only:
+              const jarInternal = (
+                context._jar as unknown as {
+                  _jar?: { getCookieStringSync?: (url: string) => string };
+                }
+              )._jar;
+              if (
+                jarInternal &&
+                typeof jarInternal.getCookieStringSync === 'function'
+              ) {
+                requestInfo = Object.assign(requestInfo, {
+                  cookie: jarInternal.getCookieStringSync(requestParams.url)
+                });
+              }
+
+              if (
+                requestParams.json &&
+                typeof requestParams.json !== 'boolean'
+              ) {
+                requestInfo.json = requestParams.json;
+              }
+
+              // If "json" is set to an object, it will be serialised and sent as body and the value of the "body" attribute will be ignored.
+              if (
+                requestParams.body &&
+                typeof requestParams.json !== 'object'
+              ) {
+                if (process.env.DEBUG.indexOf('http:full_body') > -1) {
+                  // Show the entire body
+                  requestInfo.body = requestParams.body;
+                } else {
+                  // Only show the beginning of long bodies
+                  if (typeof requestParams.body === 'string') {
+                    requestInfo.body = requestParams.body.substring(0, 512);
+                    if (requestParams.body.length > 512) {
+                      requestInfo.body += ' ...';
+                    }
+                  } else if (typeof requestParams.body === 'object') {
+                    requestInfo.body = `< ${requestParams.body.constructor.name} >`;
+                  } else {
+                    requestInfo.body = String(requestInfo.body);
+                  }
+                }
+              }
+
+              if (requestParams.qs) {
+                requestInfo.qs = qs.encode(
+                  Object.assign(
+                    qs.parse(urlparse(requestParams.url).query ?? ''),
+                    template(requestParams.qs, context)
+                  )
+                );
+              }
+
+              debug('request: %s', JSON.stringify(requestInfo, null, 2));
             }
-            // this is an ENOTFOUND, ECONNRESET etc
-            debug(err);
-            // Run onError hooks and end the scenario:
+
+            debugResponse(JSON.stringify(res.headers, null, 2));
+            debugResponse(JSON.stringify(body, null, 2));
+
+            // capture/match/response hooks run only for last request in a task
+            if (!isLast) {
+              return done(null, context);
+            }
+
+            const resForCapture = { headers: res.headers, body: body };
+
+            engineUtil.captureOrMatch(
+              params,
+              resForCapture,
+              context,
+              function captured(err: Error | null, result: any) {
+                if (err) {
+                  // Run onError hooks and end the scenario:
+                  runOnErrorHooks(
+                    onErrorHandlers,
+                    config.processor,
+                    err,
+                    requestParams,
+                    context,
+                    ee,
+                    (_asyncErr: unknown) => done(err, context)
+                  );
+                }
+
+                let haveFailedMatches = false;
+                let haveFailedCaptures = false;
+
+                if (result !== null) {
+                  ee.emit('trace:http:capture', result, requestParams.uuid);
+                  if (
+                    Object.keys(result.matches).length > 0 ||
+                    Object.keys(result.captures).length > 0
+                  ) {
+                    debug('captures and matches:');
+                    debug(result.matches);
+                    debug(result.captures);
+                  }
+
+                  // match and capture are strict by default:
+                  haveFailedMatches = _.some(
+                    result.matches,
+                    (v: any, _k) => !v.success && v.strict !== false
+                  );
+
+                  haveFailedCaptures = _.some(
+                    result.captures,
+                    (v: any, _k) => v.failed
+                  );
+
+                  if (haveFailedMatches || haveFailedCaptures) {
+                    // TODO: Emit the details of each failed capture/match
+                  } else {
+                    _.each(result.matches, (v: any, _k) => {
+                      ee.emit('match', v.success, {
+                        expected: v.expected,
+                        got: v.got,
+                        expression: v.expression,
+                        strict: v.strict
+                      });
+                    });
+
+                    _.each(result.captures, (v: any, k) => {
+                      _.set(context.vars, k, v.value);
+                    });
+                  }
+                }
+
+                // Now run afterResponse processors
+                const functionNames = _.concat(
+                  opts?.afterResponse || [],
+                  params.afterResponse || []
+                );
+                async.eachSeries(
+                  functionNames,
+                  function iteratee(functionName: string, next) {
+                    const fn = template(functionName, context);
+                    let processFunc = config.processor?.[fn];
+                    if (!processFunc) {
+                      // TODO: DRY - #223
+                      processFunc = (
+                        _r: unknown,
+                        _res: unknown,
+                        _c: unknown,
+                        _e: unknown,
+                        cb: any
+                      ) => cb(null);
+                      console.log(
+                        `WARNING: custom function ${fn} could not be found`
+                      ); // TODO: a 'warning' event
+                    }
+
+                    // Got does not have res.body which Request.js used to have, so we attach it here:
+                    res.body = body;
+
+                    if (processFunc.constructor.name === 'Function') {
+                      processFunc(
+                        requestParams,
+                        res,
+                        context,
+                        ee,
+                        (err: unknown) => {
+                          if (err) {
+                            return next(err as Error);
+                          }
+                          return next(null);
+                        }
+                      );
+                    } else {
+                      processFunc(requestParams, res, context, ee)
+                        .then(next)
+                        .catch(next);
+                    }
+                  },
+                  (err) => {
+                    if (err) {
+                      debug(err);
+                      return done(err as Error, context);
+                    }
+
+                    if (haveFailedMatches || haveFailedCaptures) {
+                      // FIXME: This means only one error in the report even if multiple captures failed for the same request.
+                      return done(
+                        new Error('Failed capture or match'),
+                        context
+                      );
+                    }
+                    return done(null, context);
+                  }
+                );
+              }
+            );
+          }
+
+          let needToProcessResponse = false;
+          if (
+            typeof requestParams.capture === 'object' ||
+            typeof requestParams.match === 'object' ||
+            requestParams.afterResponse ||
+            (typeof opts?.afterResponse === 'object' &&
+              opts.afterResponse.length > 0) ||
+            process.env.DEBUG
+          ) {
+            needToProcessResponse = true;
+          }
+
+          if (!requestParams.url) {
+            const err = new Error('an URL must be specified');
+
+            // Run onError hooks and end the scenario
             runOnErrorHooks(
               onErrorHandlers,
               config.processor,
@@ -839,139 +950,302 @@ HttpEngine.prototype.step = function step(requestSpec, ee, opts) {
               requestParams,
               context,
               ee,
-              (_asyncErr) => callback(err, context)
+              (_asyncErr: unknown) => callback(err, context)
             );
-          })
-          .catch((gotErr) => {
-            // TODO: Handle the error properly with run hooks
-            debug(gotErr);
-            runOnErrorHooks(
-              onErrorHandlers,
-              config.processor,
-              gotErr,
-              requestParams,
-              context,
-              ee,
-              (_asyncErr) => callback(gotErr, context)
-            );
-          });
-      }
-    ); // eachSeries
-  };
+          }
 
-  return f;
-};
-
-HttpEngine.prototype._handleResponse = function (
-  requestParams,
-  res,
-  ee,
-  context,
-  responseProcessor,
-  callback
-) {
-  const url = requestParams.url;
-
-  if (requestParams.decompress) {
-    res = decompressResponse(res);
-  }
-
-  const code = res.statusCode;
-  if (!context._enableCookieJar) {
-    const rawCookies = res.headers['set-cookie'];
-    if (rawCookies) {
-      context._enableCookieJar = true;
-      rawCookies.forEach((cookieString) => {
-        try {
-          context._jar.setCookieSync(cookieString, url);
-        } catch (err) {
-          debug(
-            `Could not parse cookieString "${cookieString}" from response header, skipping it`
+          requestParams.retry = { limit: 0 }; // disable retries - ignored when using streams
+          // Convert scalar seconds to Got v14 timeout object right before request
+          const gotOptions: Record<string, any> = _.pick(
+            requestParams,
+            GOT_OPTION_NAMES
           );
-          debug(err);
-          ee.emit('error', 'cookie_parse_error_invalid_cookie');
+          gotOptions.timeout = { response: requestParams.timeout * 1000 };
+
+          // Add W3C Trace Context headers if distributed tracing is enabled
+          if (self._isDistributedTracingEnabled(config)) {
+            const traceparent = self._generateTraceparent(config);
+            gotOptions.headers = gotOptions.headers || {};
+            gotOptions.headers.traceparent = traceparent;
+          }
+
+          let totalDownloaded: number | undefined = 0;
+          self
+            .request(gotOptions)
+            .on('request', (req: http.ClientRequest) => {
+              ee.emit('trace:http:request', requestParams, requestParams.uuid);
+
+              debugRequests('request start: %s', req.path);
+              ee.emit('counter', 'http.requests', 1);
+              ee.emit('rate', 'http.request_rate');
+              req.on('response', (res) => {
+                res.on('end', () => {
+                  ee.emit('counter', 'http.downloaded_bytes', totalDownloaded);
+                });
+                ee.emit('trace:http:response', res, requestParams.uuid);
+                self._handleResponse(
+                  requestParams,
+                  res as unknown as WireResponse,
+                  ee,
+                  context,
+                  needToProcessResponse ? responseProcessor : null,
+                  callback
+                );
+              });
+            })
+            .on('downloadProgress', (progress: { total?: number }) => {
+              totalDownloaded = progress.total;
+            })
+            .on('error', (err: NodeJS.ErrnoException) => {
+              ee.emit('trace:http:error', err, requestParams.uuid);
+              if (err.name === 'HTTPError') {
+                return;
+              }
+              // this is an ENOTFOUND, ECONNRESET etc
+              debug(err);
+              // Run onError hooks and end the scenario:
+              runOnErrorHooks(
+                onErrorHandlers,
+                config.processor,
+                err,
+                requestParams,
+                context,
+                ee,
+                (_asyncErr: unknown) => callback(err, context)
+              );
+            })
+            .catch((gotErr: Error) => {
+              // TODO: Handle the error properly with run hooks
+              debug(gotErr);
+              runOnErrorHooks(
+                onErrorHandlers,
+                config.processor,
+                gotErr,
+                requestParams,
+                context,
+                ee,
+                (_asyncErr: unknown) => callback(gotErr, context)
+              );
+            });
         }
-      });
+      ); // eachSeries
+    };
+
+    return f;
+  }
+
+  _handleResponse(
+    requestParams: Record<string, any>,
+    res: WireResponse,
+    ee: EventEmitterLike,
+    context: VUContext,
+    responseProcessor:
+      | ((
+          isLast: boolean,
+          res: WireResponse,
+          body: string,
+          done: StepCallback
+        ) => void)
+      | null,
+    callback: StepCallback
+  ): void {
+    const url = requestParams.url;
+
+    if (requestParams.decompress) {
+      res = decompressResponse(
+        res as unknown as Parameters<typeof decompressResponse>[0]
+      ) as unknown as WireResponse;
     }
-  }
 
-  ee.emit('counter', `http.codes.${code}`, 1);
-  ee.emit('counter', 'http.responses', 1);
-  // ee.emit('rate', 'http.response_rate');
-  ee.emit('histogram', 'http.response_time', res.timings.phases.firstByte);
+    const code = res.statusCode;
+    if (!context._enableCookieJar) {
+      const rawCookies = res.headers['set-cookie'];
+      if (rawCookies) {
+        context._enableCookieJar = true;
+        (rawCookies as string[]).forEach((cookieString) => {
+          try {
+            context._jar.setCookieSync(cookieString, url);
+          } catch (err) {
+            debug(
+              `Could not parse cookieString "${cookieString}" from response header, skipping it`
+            );
+            debug(err);
+            ee.emit('error', 'cookie_parse_error_invalid_cookie');
+          }
+        });
+      }
+    }
 
-  const statusCode = res.statusCode;
-  if (statusCode >= 200 && statusCode < 300) {
-    ee.emit(
-      'histogram',
-      'http.response_time.2xx',
-      res.timings.phases.firstByte
-    );
-  } else if (statusCode >= 300 && statusCode < 400) {
-    ee.emit(
-      'histogram',
-      'http.response_time.3xx',
-      res.timings.phases.firstByte
-    );
-  } else if (statusCode >= 400 && statusCode < 500) {
-    ee.emit(
-      'histogram',
-      'http.response_time.4xx',
-      res.timings.phases.firstByte
-    );
-  } else if (statusCode >= 500 && statusCode < 600) {
-    ee.emit(
-      'histogram',
-      'http.response_time.5xx',
-      res.timings.phases.firstByte
-    );
-  }
+    ee.emit('counter', `http.codes.${code}`, 1);
+    ee.emit('counter', 'http.responses', 1);
+    // ee.emit('rate', 'http.response_rate');
+    ee.emit('histogram', 'http.response_time', res.timings.phases.firstByte);
 
-  if (this.extendedHTTPMetrics) {
-    ee.emit('histogram', 'http.dns', res.timings.phases.dns);
-    ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
-    ee.emit('histogram', 'http.tls', res.timings.phases.tls);
-  }
-  let body = '';
-  if (responseProcessor) {
-    res.on('data', (d) => {
-      body += d;
-    });
-  } else {
-    res.on('data', () => {});
-  }
+    const statusCode = res.statusCode;
+    if (statusCode >= 200 && statusCode < 300) {
+      ee.emit(
+        'histogram',
+        'http.response_time.2xx',
+        res.timings.phases.firstByte
+      );
+    } else if (statusCode >= 300 && statusCode < 400) {
+      ee.emit(
+        'histogram',
+        'http.response_time.3xx',
+        res.timings.phases.firstByte
+      );
+    } else if (statusCode >= 400 && statusCode < 500) {
+      ee.emit(
+        'histogram',
+        'http.response_time.4xx',
+        res.timings.phases.firstByte
+      );
+    } else if (statusCode >= 500 && statusCode < 600) {
+      ee.emit(
+        'histogram',
+        'http.response_time.5xx',
+        res.timings.phases.firstByte
+      );
+    }
 
-  res.on('end', () => {
     if (this.extendedHTTPMetrics) {
-      ee.emit('histogram', 'http.total', res.timings.phases.total);
+      ee.emit('histogram', 'http.dns', res.timings.phases.dns);
+      ee.emit('histogram', 'http.tcp', res.timings.phases.tcp);
+      ee.emit('histogram', 'http.tls', res.timings.phases.tls);
+    }
+    let body = '';
+    if (responseProcessor) {
+      res.on('data', (d: Buffer | string) => {
+        body += d;
+      });
+    } else {
+      res.on('data', () => {});
     }
 
-    context._successCount++;
+    res.on('end', () => {
+      if (this.extendedHTTPMetrics) {
+        ee.emit('histogram', 'http.total', res.timings.phases.total);
+      }
 
-    // config.defaults won't be taken into account for this
-    const isLastRequest = lastRequest(res, requestParams);
+      context._successCount++;
 
-    if (responseProcessor) {
-      responseProcessor(isLastRequest, res, body, (processResponseErr) => {
-        // capture/match returned an error object, or a hook function returned
-        // with an error
-        if (processResponseErr) {
-          return callback(processResponseErr, context);
-        }
+      // config.defaults won't be taken into account for this
+      const isLastRequest = lastRequest(res, requestParams);
 
+      if (responseProcessor) {
+        responseProcessor(isLastRequest, res, body, (processResponseErr) => {
+          // capture/match returned an error object, or a hook function returned
+          // with an error
+          if (processResponseErr) {
+            return callback(processResponseErr, context);
+          }
+
+          if (isLastRequest) {
+            return callback(null, context);
+          }
+        });
+      } else {
         if (isLastRequest) {
           return callback(null, context);
         }
-      });
-    } else {
-      if (isLastRequest) {
-        return callback(null, context);
       }
-    }
-  });
-};
+    });
+  }
 
-function lastRequest(res, requestParams) {
+  setInitialContext(initialContext: InitialVUContext): VUContext {
+    initialContext._successCount = 0;
+
+    initialContext._defaultStrictCapture = true;
+    if (
+      this.config.http?.defaults?.strictCapture === false ||
+      this.config.defaults?.strictCapture === false
+    ) {
+      initialContext._defaultStrictCapture = false;
+    }
+
+    initialContext._jar = new tough.CookieJar(
+      null,
+      this.config.http.cookieJarOptions
+    );
+
+    initialContext._enableCookieJar = false;
+    // If a default cookie is set, we will use the jar straightaway:
+    if (
+      typeof this.config.http.defaults.cookie === 'object' ||
+      typeof this.config.defaults.cookie === 'object'
+    ) {
+      initialContext._defaultCookie =
+        this.config.http.defaults.cookie || this.config.defaults.cookie;
+      initialContext._enableCookieJar = true;
+    }
+
+    if (this.config.http && typeof this.config.http.pool !== 'undefined') {
+      // Reuse common agents (created in the engine instance constructor)
+      initialContext._httpAgent = this._httpAgent;
+      initialContext._httpsAgent = this._httpsAgent;
+    } else {
+      // Create agents just for this VU
+      const agentOpts: AgentOptions = Object.assign(DEFAULT_AGENT_OPTIONS, {
+        maxSockets: 1,
+        maxFreeSockets: 1
+      });
+      const agentTimeoutMs = deriveAgentTimeoutMs(this.config);
+      if (agentTimeoutMs !== undefined) {
+        agentOpts.timeout = agentTimeoutMs;
+      }
+
+      const agents = createAgents(
+        {
+          http: process.env.HTTP_PROXY,
+          https: process.env.HTTPS_PROXY
+        },
+        agentOpts
+      );
+
+      initialContext._httpAgent = agents.httpAgent;
+      initialContext._httpsAgent = agents.httpsAgent;
+    }
+    return initialContext as VUContext;
+  }
+
+  compile(
+    tasks: StepFunction[],
+    _scenarioSpec: Record<string, any>,
+    ee: EventEmitterLike
+  ) {
+    const self = this;
+
+    return async function scenario(
+      initialContext: InitialVUContext,
+      callback?: StepCallback
+    ): Promise<VUContext | undefined> {
+      let context = self.setInitialContext(initialContext);
+
+      ee.emit('started');
+      for (const task of tasks) {
+        try {
+          context = (await promisify(task)(context)) as VUContext;
+        } catch (taskErr) {
+          const err = taskErr as NodeJS.ErrnoException;
+          ee.emit('error', err.code || err.message);
+          if (callback) {
+            return callback(err, context) as undefined;
+          }
+          throw taskErr;
+        }
+      }
+      if (callback) {
+        return callback(null, context) as undefined;
+      }
+      return context;
+    };
+  }
+}
+
+function lastRequest(
+  res: WireResponse,
+  requestParams: Record<string, any>
+): boolean {
   // We're done when:
   // - 3xx response and not following redirects
   // - not a 3xx response
@@ -985,89 +1259,7 @@ function lastRequest(res, requestParams) {
   );
 }
 
-HttpEngine.prototype.setInitialContext = function (initialContext) {
-  initialContext._successCount = 0;
-
-  initialContext._defaultStrictCapture = true;
-  if (
-    this.config.http?.defaults?.strictCapture === false ||
-    this.config.defaults?.strictCapture === false
-  ) {
-    initialContext._defaultStrictCapture = false;
-  }
-
-  initialContext._jar = new tough.CookieJar(
-    null,
-    this.config.http.cookieJarOptions
-  );
-
-  initialContext._enableCookieJar = false;
-  // If a default cookie is set, we will use the jar straightaway:
-  if (
-    typeof this.config.http.defaults.cookie === 'object' ||
-    typeof this.config.defaults.cookie === 'object'
-  ) {
-    initialContext._defaultCookie =
-      this.config.http.defaults.cookie || this.config.defaults.cookie;
-    initialContext._enableCookieJar = true;
-  }
-
-  if (this.config.http && typeof this.config.http.pool !== 'undefined') {
-    // Reuse common agents (created in the engine instance constructor)
-    initialContext._httpAgent = this._httpAgent;
-    initialContext._httpsAgent = this._httpsAgent;
-  } else {
-    // Create agents just for this VU
-    const agentOpts: any = Object.assign(DEFAULT_AGENT_OPTIONS, {
-      maxSockets: 1,
-      maxFreeSockets: 1
-    });
-    const agentTimeoutMs = deriveAgentTimeoutMs(this.config);
-    if (agentTimeoutMs !== undefined) {
-      agentOpts.timeout = agentTimeoutMs;
-    }
-
-    const agents = createAgents(
-      {
-        http: process.env.HTTP_PROXY,
-        https: process.env.HTTPS_PROXY
-      },
-      agentOpts
-    );
-
-    initialContext._httpAgent = agents.httpAgent;
-    initialContext._httpsAgent = agents.httpsAgent;
-  }
-  return initialContext;
-};
-
-HttpEngine.prototype.compile = function compile(tasks, _scenarioSpec, ee) {
-  const self = this;
-
-  return async function scenario(initialContext, callback) {
-    initialContext = self.setInitialContext(initialContext);
-
-    ee.emit('started');
-    let context = initialContext;
-    for (const task of tasks) {
-      try {
-        context = await promisify(task)(context);
-      } catch (taskErr) {
-        ee.emit('error', taskErr.code || taskErr.message);
-        if (callback) {
-          return callback(taskErr, context);
-        }
-        throw taskErr;
-      }
-    }
-    if (callback) {
-      return callback(null, context);
-    }
-    return context;
-  };
-};
-
-function maybePrependBase(uri, config) {
+function maybePrependBase(uri: string, config: { target?: string }): string {
   if (_.startsWith(uri, '/')) {
     return config.target + uri;
   } else {
@@ -1078,34 +1270,37 @@ function maybePrependBase(uri, config) {
 /*
  * Given a dictionary, return a dictionary with all keys lowercased.
  */
-function lowcaseKeys(h): any {
-  return _.transform(h, (result, v, k) => {
-    result[String(k).toLowerCase()] = v;
-  });
+function lowcaseKeys(h: unknown): Record<string, unknown> {
+  return _.transform(
+    (h || {}) as Record<string, unknown>,
+    (result: Record<string, unknown>, v, k) => {
+      result[String(k).toLowerCase()] = v;
+    }
+  );
 }
 
 function runOnErrorHooks(
-  functionNames,
-  functions,
-  err,
-  requestParams,
-  context,
-  ee,
-  callback
-) {
+  functionNames: string[] | undefined,
+  functions: Record<string, ProcessorFunction> | undefined,
+  err: Error,
+  requestParams: Record<string, any>,
+  context: VUContext,
+  ee: EventEmitterLike,
+  callback: (err?: Error | null) => void
+): void {
   async.eachSeries(
     functionNames,
-    function iteratee(functionName, next) {
-      const processFunc = functions[functionName];
-      processFunc(err, requestParams, context, ee, (asyncErr) => {
+    function iteratee(functionName: string, next) {
+      const processFunc = functions?.[functionName] as ProcessorFunction;
+      processFunc(err, requestParams, context, ee, (asyncErr: unknown) => {
         if (asyncErr) {
-          return next(asyncErr);
+          return next(asyncErr as Error);
         }
         return next(null);
       });
     },
     function done(asyncErr) {
-      return callback(asyncErr);
+      return callback(asyncErr as Error | null | undefined);
     }
   );
 }

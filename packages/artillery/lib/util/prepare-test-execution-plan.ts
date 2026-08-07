@@ -11,8 +11,9 @@ const debug = createDebug('artillery');
 // from the Lambda bundle to keep package size down).
 const require = createRequire(import.meta.url);
 
-
 import _ from 'lodash';
+import type { Config, PayloadConfig, TestScript } from '../../types.js';
+import type { MergedScript, ScriptPrepFlags } from '../util.ts';
 import {
   addDefaultPlugins,
   addOverrides,
@@ -20,14 +21,27 @@ import {
   checkConfig,
   parseScript,
   readScript,
-  resolveConfigPath, 
+  resolveConfigPath,
   resolveConfigTemplates
 } from '../util.ts';
 import validateScript from './validate-script.ts';
 
-async function prepareTestExecutionPlan(inputFiles, flags, _args?) {
+// A payload spec once CSV data has been read into it.
+type PayloadWithData = PayloadConfig & {
+  data?: unknown[];
+  options?: Record<string, unknown>;
+};
+
+async function prepareTestExecutionPlan(
+  inputFiles: string[],
+  flags: ScriptPrepFlags,
+  _args?: unknown
+): Promise<MergedScript> {
   const scriptPath = inputFiles[0];
-  let script1: any = {};
+  let script1: TestScript & {
+    __transpiledTypeScriptPath?: string;
+    __originalScriptPath?: string;
+  } = {};
 
   for (const fn of inputFiles) {
     const fn2 = fn.toLowerCase();
@@ -74,14 +88,17 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args?) {
   // cases where the value of config.target is set to a value from the environment which
   // is not available at this point in time. Example: target is set to an environment variable
   // the value of which is only available at runtime in AWS Fargate
+  // NOTE: pre-existing behavior: throws when the merged input has no
+  // config section at all.
   const hasOriginalTarget =
-    typeof script1.config.target !== 'undefined' ||
-    typeof script1.config.environments?.[flags.environment]?.target !==
-      'undefined';
+    typeof (script1.config as Config).target !== 'undefined' ||
+    typeof (script1.config as Config).environments?.[
+      flags.environment as string
+    ]?.target !== 'undefined';
 
-  script1 = await checkConfig(script1, scriptPath, flags);
+  const merged = await checkConfig(script1, scriptPath, flags);
 
-  const script2 = await resolveConfigPath(script1, flags, scriptPath);
+  const script2 = await resolveConfigPath(merged, flags, scriptPath);
 
   const script3 = await addOverrides(script2, flags);
   const script4 = await addVariables(script3, flags);
@@ -89,7 +106,8 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args?) {
   const script5 = await resolveConfigTemplates(
     script4,
     flags,
-    script4._configPath,
+    // Always set by resolveConfigPath above:
+    script4._configPath as string,
     script4._scriptPath
   );
 
@@ -124,12 +142,13 @@ async function prepareTestExecutionPlan(inputFiles, flags, _args?) {
   return script8;
 }
 
-async function readPayload(script) {
+async function readPayload(script: MergedScript): Promise<MergedScript> {
   if (!script.config.payload) {
     return script;
   }
 
-  for (const payloadSpec of script.config.payload) {
+  // Normalized to an array by checkConfig:
+  for (const payloadSpec of script.config.payload as PayloadWithData[]) {
     const data = fs.readFileSync(payloadSpec.path, 'utf-8');
 
     const csvOpts = Object.assign(
@@ -144,14 +163,18 @@ async function readPayload(script) {
       },
       payloadSpec.options
     );
-      const parsedData = await (p(csv) as any)(data, csvOpts);
-      payloadSpec.data = parsedData;
+    const parsedData = await (p(csv) as any)(data, csvOpts);
+    payloadSpec.data = parsedData;
   }
 
   return script;
 }
 
-function transpileTypeScript(entryPoint, outputPath, userExternalPackages) {
+function transpileTypeScript(
+  entryPoint: string,
+  outputPath: string,
+  userExternalPackages: string[]
+) {
   const esbuild = require('esbuild-wasm');
 
   esbuild.buildSync({
@@ -167,7 +190,10 @@ function transpileTypeScript(entryPoint, outputPath, userExternalPackages) {
   return outputPath;
 }
 
-function replaceProcessorIfTypescript(script, scriptPath) {
+function replaceProcessorIfTypescript(
+  script: MergedScript,
+  scriptPath: string
+): MergedScript {
   const relativeProcessorPath = script.config.processor;
   const userExternalPackages = script.config.bundling?.external || [];
 
@@ -210,7 +236,9 @@ function replaceProcessorIfTypescript(script, scriptPath) {
       external: ['@playwright/test', ...userExternalPackages]
     });
   } catch (error) {
-    throw new Error(`Failed to compile Typescript processor\n${error.message}`);
+    throw new Error(
+      `Failed to compile Typescript processor\n${(error as Error).message}`
+    );
   }
 
   global.artillery.hasTypescriptProcessor = newProcessorPath;

@@ -2,7 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-export function jitter(sApprox) {
+// Takes "<number>:<jitter>" (jitter as absolute value or percentage,
+// e.g. "1000:20%") and returns a randomized number around the base
+// value. Anything else is returned unchanged.
+export function jitter(sApprox: string | number): string | number {
   if (!sApprox) {
     return sApprox;
   }

@@ -8,10 +8,10 @@ import l from 'lodash';
 export default create;
 
 // naive implementation of selection with replacement
-function create(list) {
+function create<T extends { weight: number }>(list: T[]): () => [number, T] {
   const dist = l.reduce(
     list,
-    (acc, el, i) => {
+    (acc: number[], el, i) => {
       for (let j = 0; j < el.weight * 100; j++) {
         acc.push(i);
       }

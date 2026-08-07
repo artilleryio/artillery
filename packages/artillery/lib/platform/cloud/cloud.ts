@@ -4,8 +4,6 @@
 
 import createDebug from 'debug';
 
-
-
 const debug = createDebug('cloud');
 const debugErrors = createDebug('cloud:errors');
 
@@ -26,7 +24,11 @@ class ArtilleryCloudPlugin {
   // Untyped JS class - properties assigned dynamically
   [key: string]: any;
 
-  constructor(_script, _events, { flags }) {
+  constructor(
+    _script: unknown,
+    _events: unknown,
+    { flags }: { flags: Record<string, any> }
+  ) {
     this.enabled = false;
 
     const isInteractiveUse = typeof flags.record !== 'undefined';
@@ -62,7 +64,8 @@ class ArtilleryCloudPlugin {
 
     let testEndInfo: any = {};
 
-    this.testRunId = process.env.ARTILLERY_TEST_RUN_ID || global.artillery?.testRunId;
+    this.testRunId =
+      process.env.ARTILLERY_TEST_RUN_ID || global.artillery?.testRunId;
 
     if (isInteractiveUse) {
       global.artillery.globalEvents.on('test:init', async (testInfo) => {
@@ -321,7 +324,7 @@ class ArtilleryCloudPlugin {
     });
   }
 
-  async _uploadAsset(localFilename) {
+  async _uploadAsset(localFilename: string) {
     const filename = path.basename(localFilename);
 
     try {
@@ -349,7 +352,8 @@ class ArtilleryCloudPlugin {
 
         const body = JSON.parse(res.body);
         url = body.urls && body.urls[filename];
-      } catch (err) {
+      } catch (caughtErr) {
+        const err = caughtErr as NodeJS.ErrnoException;
         console.error(
           'Could not get upload URL for Playwright trace recording:',
           filename,
@@ -361,7 +365,9 @@ class ArtilleryCloudPlugin {
       }
 
       if (!url) {
-        console.error('Could not get upload URL for Playwright trace recording');
+        console.error(
+          'Could not get upload URL for Playwright trace recording'
+        );
         return;
       }
 
@@ -391,7 +397,10 @@ class ArtilleryCloudPlugin {
           retry: { limit: 0 },
           timeout: { request: 5 * 60 * 1000 }
         });
-      } catch (error) {
+      } catch (caughtErr) {
+        const error = caughtErr as NodeJS.ErrnoException & {
+          response?: { statusCode?: number; headers?: unknown; body?: unknown };
+        };
         console.error(
           'Failed to upload Playwright trace recording:',
           filename,
@@ -415,7 +424,7 @@ class ArtilleryCloudPlugin {
     }
   }
 
-  async waitOnUnprocessedLogs(maxWaitTime) {
+  async waitOnUnprocessedLogs(maxWaitTime: number) {
     let waitedTime = 0;
     while (
       (this.unprocessedLogsCounter > 0 || this.uploading > 0) &&
@@ -429,13 +438,10 @@ class ArtilleryCloudPlugin {
     return true;
   }
 
-  async waitOnPendingEventRequests(maxWaitTime) {
+  async waitOnPendingEventRequests(maxWaitTime: number) {
     let waitedTime = 0;
     while (this.pendingEventRequests > 0 && waitedTime < maxWaitTime) {
-      debug(
-        'waiting on pending event requests',
-        this.pendingEventRequests
-      );
+      debug('waiting on pending event requests', this.pendingEventRequests);
       await sleep(500);
       waitedTime += 500;
     }
@@ -484,7 +490,7 @@ class ArtilleryCloudPlugin {
     }
   }
 
-  async _event(eventName, eventPayload) {
+  async _event(eventName: string, eventPayload: Record<string, any>) {
     debug('☁️', eventName, eventPayload);
 
     this.pendingEventRequests += 1;
@@ -526,7 +532,7 @@ class ArtilleryCloudPlugin {
     }
   }
 
-  cleanup(done) {
+  cleanup(done: (err: Error | null) => void) {
     debug('cleaning up');
     done(null);
   }

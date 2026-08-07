@@ -18,5 +18,6 @@
     "outDir": "./dist"
   },
   "include": ["./lib/**/*.ts", "../../globals.d.ts"],
-  "exclude": ["node_modules", "dist", "test", "**/*.d.ts"]
+  "exclude": ["node_modules", "dist", "test", "**/*.d.ts"],
+  "files": ["./lib/typings/untyped-deps.d.ts"]
 }
