@@ -330,7 +330,7 @@ function maybePluralize(
 
 function padded(
   str1: string,
-  str2: string,
+  str2: string | number,
   length = 79,
   formatPadding: (s: string) => string = chalk.gray
 ): string {
