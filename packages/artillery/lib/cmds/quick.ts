@@ -38,7 +38,8 @@ class QuickCommand extends Command {
     const target = `${p.protocol}//${p.host}`;
     script.config.target = target;
 
-    if (flags.insecure && p.protocol.match(/https/)) {
+    // NOTE: pre-existing behavior: a target with no protocol crashes here.
+    if (flags.insecure && (p.protocol as string).match(/https/)) {
       script.config.tls = {
         rejectUnauthorized: false
       };
@@ -50,9 +51,9 @@ class QuickCommand extends Command {
     });
 
     let requestSpec: any = {};
-    if (p.protocol.match('http')) {
+    if ((p.protocol as string).match('http')) {
       requestSpec.get = { url: url };
-    } else if (p.protocol.match('ws')) {
+    } else if ((p.protocol as string).match('ws')) {
       requestSpec.send = 'hello from Artillery!';
     } else {
       console.error('Unknown protocol in target:', args.target);
@@ -68,7 +69,7 @@ class QuickCommand extends Command {
     }
 
     script.scenarios[0].flow.push(requestSpec);
-    if (p.protocol.match(/ws/)) {
+    if ((p.protocol as string).match(/ws/)) {
       script.scenarios[0].engine = 'ws';
     }
 
@@ -76,7 +77,7 @@ class QuickCommand extends Command {
     const tmpf = temporaryFile({ extension: 'yml' });
     fs.writeFileSync(tmpf, JSON.stringify(script, null, 2), { flag: 'w' });
 
-    const runArgs = [];
+    const runArgs: string[] = [];
     if (flags.output) {
       runArgs.push('--output');
       runArgs.push(flags.output);
@@ -96,13 +97,13 @@ QuickCommand.flags = {
   count: Flags.string({
     char: 'c',
     description: 'Number of VUs to create',
-    parse: (input) => parseInt(input, 10),
+    parse: (input: string) => parseInt(input, 10),
     default: 10
   } as any),
   num: Flags.string({
     char: 'n',
     description: 'Number of requests/messages that each VU will send',
-    parse: (input) => parseInt(input, 10),
+    parse: (input: string) => parseInt(input, 10),
     default: 10
   } as any),
   output: Flags.string({

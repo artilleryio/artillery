@@ -1,7 +1,4 @@
 [
-  "lib/cmds/ping.ts",
-  "lib/cmds/quick.ts",
-  "lib/cmds/run-fargate.ts",
   "lib/cmds/run.ts",
   "lib/platform/aws-ecs/legacy/aws-util.ts",
   "lib/platform/aws-ecs/legacy/bom.ts",
