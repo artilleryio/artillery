@@ -1,4 +1,3 @@
-
 import EventEmitter from 'node:events';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import createDebug from 'debug';
@@ -14,7 +13,13 @@ class SqsReporter extends EventEmitter {
   // Untyped JS class - properties assigned dynamically
   [key: string]: any;
 
-  constructor(opts) {
+  constructor(opts: {
+    sqsQueueUrl?: string;
+    region: string;
+    testId: string;
+    count: number;
+    [key: string]: any;
+  }) {
     super();
 
     this.sqsQueueUrl = opts.sqsQueueUrl;
@@ -57,7 +62,7 @@ class SqsReporter extends EventEmitter {
     return Object.keys(this.workerState).length === this.count;
   }
 
-  async _fetchFromS3(s3Key) {
+  async _fetchFromS3(s3Key: string) {
     const response = await this.s3.send(
       new GetObjectCommand({
         Bucket: this.s3Bucket,
@@ -199,109 +204,119 @@ class SqsReporter extends EventEmitter {
       this.emit('workersDone', this.workerState);
     }, 5 * 1000);
 
-    this.ee.on('message', (body, attrs) => {
-      const workerId = attrs.workerId?.StringValue;
+    this.ee.on(
+      'message',
+      (body: Record<string, any>, attrs: Record<string, any>) => {
+        const workerId = attrs.workerId?.StringValue;
 
-      if (!workerId) {
-        debug('Got message with no workerId');
-        debug(body);
-        return;
-      }
-      if (body.event === 'workerDone' || body.event === 'workerError') {
-        this.workerState[workerId] = body.event;
-        this.emit(body.event, body, attrs);
+        if (!workerId) {
+          debug('Got message with no workerId');
+          debug(body);
+          return;
+        }
+        if (body.event === 'workerDone' || body.event === 'workerError') {
+          this.workerState[workerId] = body.event;
+          this.emit(body.event, body, attrs);
 
-        debug(workerId, body.event);
-        return;
-      }
-
-      //TODO: this code is repeated from `launch-platform.js` - refactor later
-      if (body.event === 'phaseStarted') {
-        if (
-          typeof this.phaseStartedEventsSeen[body.phase.index] === 'undefined'
-        ) {
-          this.phaseStartedEventsSeen[body.phase.index] = Date.now();
-          this.emit(body.event, body.phase);
+          debug(workerId, body.event);
+          return;
         }
 
-        return;
-      }
-
-      //TODO: this code is repeated from `launch-platform.js` - refactor later
-      if (body.event === 'phaseCompleted') {
-        if (
-          typeof this.phaseCompletedEventsSeen[body.phase.index] === 'undefined'
-        ) {
-          this.phaseCompletedEventsSeen[body.phase.index] = Date.now();
-          this.emit(body.event, body.phase);
-        }
-
-        return;
-      }
-
-      // 'done' event is from SQS Plugin - unused for now
-      if (body.event === 'done') {
-        return;
-      }
-
-      if (body.msg) {
-        this.emit('workerMessage', body, attrs);
-        return;
-      }
-
-      if (body.event === 'workerStats') {
-        // v2 SSMS stats
-        const workerStats = global.artillery.__SSMS.deserializeMetrics(
-          body.stats
-        );
-        const period = workerStats.period;
-
-        debug(
-          'processing workerStats event, worker:',
-          workerId,
-          'period',
-          period
-        );
-
-        debugV(workerStats);
-        if (typeof this.metricsByPeriod[period] === 'undefined') {
-          this.metricsByPeriod[period] = [];
-        }
-        this.metricsByPeriod[period].push(workerStats);
-
-        if (process.env.DEBUG === 'sqs-reporter:v') {
+        //TODO: this code is repeated from `launch-platform.js` - refactor later
+        if (body.event === 'phaseStarted') {
           if (
-            typeof this.metricsMessagesFromWorkers[workerId] === 'undefined'
+            typeof this.phaseStartedEventsSeen[body.phase.index] === 'undefined'
           ) {
-            this.metricsMessagesFromWorkers[workerId] = [];
+            this.phaseStartedEventsSeen[body.phase.index] = Date.now();
+            this.emit(body.event, body.phase);
           }
-          this.metricsMessagesFromWorkers[workerId].push(workerStats);
+
+          return;
         }
 
-        debugV('metricsByPeriod:');
-        debugV(this.metricsByPeriod);
-        debug('number of periods processed');
-        debug(Object.keys(this.metricsByPeriod));
-        debug('number of metrics collections for period:', period, ':');
-        debug(this.metricsByPeriod[period].length, 'expecting:', this.count);
+        //TODO: this code is repeated from `launch-platform.js` - refactor later
+        if (body.event === 'phaseCompleted') {
+          if (
+            typeof this.phaseCompletedEventsSeen[body.phase.index] ===
+            'undefined'
+          ) {
+            this.phaseCompletedEventsSeen[body.phase.index] = Date.now();
+            this.emit(body.event, body.phase);
+          }
+
+          return;
+        }
+
+        // 'done' event is from SQS Plugin - unused for now
+        if (body.event === 'done') {
+          return;
+        }
+
+        if (body.msg) {
+          this.emit('workerMessage', body, attrs);
+          return;
+        }
+
+        if (body.event === 'workerStats') {
+          // v2 SSMS stats
+          const workerStats = global.artillery.__SSMS.deserializeMetrics(
+            body.stats
+          );
+          const period = workerStats.period;
+
+          debug(
+            'processing workerStats event, worker:',
+            workerId,
+            'period',
+            period
+          );
+
+          debugV(workerStats);
+          if (typeof this.metricsByPeriod[period] === 'undefined') {
+            this.metricsByPeriod[period] = [];
+          }
+          this.metricsByPeriod[period].push(workerStats);
+
+          if (process.env.DEBUG === 'sqs-reporter:v') {
+            if (
+              typeof this.metricsMessagesFromWorkers[workerId] === 'undefined'
+            ) {
+              this.metricsMessagesFromWorkers[workerId] = [];
+            }
+            this.metricsMessagesFromWorkers[workerId].push(workerStats);
+          }
+
+          debugV('metricsByPeriod:');
+          debugV(this.metricsByPeriod);
+          debug('number of periods processed');
+          debug(Object.keys(this.metricsByPeriod));
+          debug('number of metrics collections for period:', period, ':');
+          debug(this.metricsByPeriod[period].length, 'expecting:', this.count);
+        }
       }
-    });
+    );
 
     this.ee.on('messageReceiveTimeout', () => {
       // TODO: 10 polls with no results, e.g. if all workers crashed
     });
 
-    const createConsumer = (i) => Consumer.create({
+    const createConsumer = (i: number) =>
+      Consumer.create({
         queueUrl: process.env.SQS_QUEUE_URL || this.sqsQueueUrl,
         region: this.region,
         waitTimeSeconds: 10,
         messageAttributeNames: ['testId', 'workerId'],
         visibilityTimeout: 60,
         batchSize: 10,
-        handleMessage: async (message) => {
+        handleMessage: async (message: {
+          Body?: string;
+          MessageAttributes?: Record<string, any>;
+        }) => {
           let body = null;
           try {
-            body = JSON.parse(message.Body);
+            // NOTE: pre-existing behavior: a message with no Body
+            // throws here and is logged below.
+            body = JSON.parse(message.Body as string);
           } catch (err) {
             console.error(err);
             console.log(message.Body);
@@ -382,10 +397,10 @@ class SqsReporter extends EventEmitter {
 
   // Given a (combined) stats object, what's the difference between the
   // time of earliest and latest requests made?
-  calculateSpread(stats) {
+  calculateSpread(stats: Record<string, any>) {
     const period = _.reduce(
       stats._requestTimestamps,
-      (acc, ts) => {
+      (acc: { min: number; max: number }, ts: number) => {
         acc.min = Math.min(acc.min, ts);
         acc.max = Math.max(acc.max, ts);
         return acc;
@@ -398,7 +413,7 @@ class SqsReporter extends EventEmitter {
   }
 }
 
-function round(number, decimals) {
+function round(number: number, decimals: number) {
   const m = 10 ** decimals;
   return Math.round(number * m) / m;
 }
