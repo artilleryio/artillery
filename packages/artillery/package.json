@@ -64,6 +64,7 @@
     "test:aws:windows": "node --test --test-timeout=420000 --require ./test/setup-env.cjs --test-name-pattern \"@windows\" \"test/cloud-e2e/**/*.test.js\"",
     "lint": "npx @biomejs/biome check .",
     "lint-fix": "npx @biomejs/biome check --write .",
+    "typecheck:strict": "node scripts/check-strict.mjs",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-builtin-packages.mjs"
   },
   "lint-staged": {

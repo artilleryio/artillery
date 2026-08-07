@@ -11,7 +11,8 @@
     "lint-fix": "turbo run lint-fix  --continue",
     "format": "npx prettier -w ./packages/**/*.{js,ts,json}",
     "prepare": "npx simple-git-hooks",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "typecheck:strict": "npm run typecheck:strict --workspace artillery"
   },
   "overrides": {
     "engine.io-client": {
