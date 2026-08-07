@@ -15,11 +15,91 @@ const debug = createDebug('ssms');
 
 const MAX_METRIC_NAME_LENGTH = 1024;
 
-class SSMS extends EventEmitter {
-  // Untyped JS class - properties assigned dynamically
-  [key: string]: any;
+export interface HistogramSummary {
+  min: number;
+  max: number;
+  count: number;
+  mean: number;
+  p50: number;
+  median: number;
+  p75: number;
+  p90: number;
+  p95: number;
+  p99: number;
+  p999: number;
+}
 
-  constructor(_options?) {
+// Metric data for one reporting period (a normalized timeslice).
+// counters/histograms/rates are only present when the period recorded
+// metrics of that kind (see getMetrics). The launcher attaches
+// `summaries` (summarized histograms) before emitting reports.
+export interface PeriodMetrics {
+  period: number | string;
+  counters?: Record<string, number>;
+  histograms?: Record<string, DDSketch>;
+  rates?: Record<string, number>;
+  firstCounterAt?: number;
+  firstHistogramAt?: number;
+  lastCounterAt?: number;
+  lastHistogramAt?: number;
+  firstMetricAt?: number;
+  lastMetricAt?: number;
+  summaries?: Record<string, HistogramSummary>;
+}
+
+// PeriodMetrics with the metric containers guaranteed present -
+// the shape produced by mergeBuckets() and pack().
+export type MergedPeriodMetrics = PeriodMetrics & {
+  counters: Record<string, number>;
+  histograms: Record<string, DDSketch>;
+  rates: Record<string, number>;
+};
+
+// 1.6.x-compatible report shape produced by legacyReport().
+export interface LegacyReportData {
+  customStats: Record<string, unknown>;
+  counters: Record<string, number>;
+  scenariosAvoided: number;
+  timestamp: Date;
+  scenariosCreated: number;
+  scenariosCompleted: number;
+  requestsCompleted: number;
+  latency: Partial<HistogramSummary>;
+  rps: { mean: number; count: number };
+  scenarioDuration: Partial<HistogramSummary>;
+  scenarioCounts: Record<string, number>;
+  errors: Record<string, number>;
+  codes: Record<number, number>;
+}
+
+interface SSMSOptions {
+  pullOnly?: boolean;
+}
+
+class SSMS extends EventEmitter {
+  // Type-only field declarations ("declare" emits nothing and is
+  // erasable); all fields are assigned in the constructor.
+  declare opts: SSMSOptions;
+  declare _counterEarliestMeasurementByPeriod: Record<string, number>;
+  declare _counterLastMeasurementByPeriod: Record<string, number>;
+  declare _histogramEarliestMeasurementByPeriod: Record<string, number>;
+  declare _histogramLastMeasurementByPeriod: Record<string, number>;
+  declare _aggregationIntervalSec: number;
+  declare _aggregateInterval: number;
+  declare _emitInterval: number;
+  declare _lastPeriod: string | null;
+  declare isPullOnly: boolean;
+  // Flat buffers of (timestamp, name, value) triples - and (timestamp,
+  // name) pairs for rates. Kept flat deliberately (hot path).
+  declare _counters: Array<number | string>;
+  declare _histograms: Array<number | string>;
+  declare _rates: Array<number | string>;
+  declare _active: boolean;
+  declare _aggregatedCounters: Record<string, Record<string, number>>;
+  declare _aggregatedHistograms: Record<string, Record<string, DDSketch>>;
+  declare _aggregatedRates: Record<string, Record<string, number>>;
+
+  constructor(_options?: SSMSOptions) {
     super();
 
     this.opts = _options || {};
@@ -37,7 +117,7 @@ class SSMS extends EventEmitter {
 
     this._lastPeriod = null;
 
-    this.isPullOnly = this.opts.pullOnly;
+    this.isPullOnly = Boolean(this.opts.pullOnly);
 
     if (!this.isPullOnly) {
       this._emitInterval = setDriftlessInterval(
@@ -57,7 +137,7 @@ class SSMS extends EventEmitter {
     this._aggregatedRates = {};
   }
 
-  stop() {
+  stop(): this {
     this._active = false;
     clearDriftless(this._aggregateInterval);
 
@@ -68,12 +148,12 @@ class SSMS extends EventEmitter {
     return this;
   }
 
-  static report(pds) {
+  static report<T>(pds: T): T {
     return pds;
   }
 
   // TODO: first/last metric timestamps should not = period
-  static empty(ts) {
+  static empty(ts?: number): PeriodMetrics {
     const period = normalizeTs(ts || Date.now());
     return {
       counters: {},
@@ -89,26 +169,29 @@ class SSMS extends EventEmitter {
     };
   }
 
-  static summarizeHistogram(h) {
+  static summarizeHistogram(h: DDSketch): HistogramSummary {
     return summarizeHistogram(h);
   }
 
   // Take metric data for a period and return a summary object with 1.6.x-compatible format
-  static legacyReport(pd) {
-    const result = {
+  static legacyReport(pd: PeriodMetrics): { report(): LegacyReportData } {
+    const counters = pd.counters || {};
+    const histograms = pd.histograms;
+
+    const result: LegacyReportData = {
       // Custom field compatibility not supported:
       customStats: {},
       counters: {},
 
-      scenariosAvoided: pd.counters['vusers.skipped'] || 0,
+      scenariosAvoided: counters['vusers.skipped'] || 0,
       timestamp: new Date(pd.period),
-      scenariosCreated: pd.counters['vusers.created'] || 0,
-      scenariosCompleted: pd.counters['vusers.completed'] || 0,
+      scenariosCreated: counters['vusers.created'] || 0,
+      scenariosCompleted: counters['vusers.completed'] || 0,
 
       requestsCompleted:
-        pd.counters['http.responses'] ||
-        pd.counters['socketio.emit'] ||
-        pd.counters['websocket.messages_sent'] ||
+        counters['http.responses'] ||
+        counters['socketio.emit'] ||
+        counters['websocket.messages_sent'] ||
         0,
       latency: {},
       rps: {
@@ -117,8 +200,7 @@ class SSMS extends EventEmitter {
             pd.rates['socketio.emit_rate'] ||
             0
           : 0,
-        count:
-          pd.counters['http.responses'] || pd.counters['socketio.emit'] || 0
+        count: counters['http.responses'] || counters['socketio.emit'] || 0
       },
       scenarioDuration: {},
       scenarioCounts: {},
@@ -128,48 +210,47 @@ class SSMS extends EventEmitter {
     };
 
     if (
-      pd.histograms &&
-      typeof pd.histograms['vusers.session_length'] !== 'undefined'
+      histograms &&
+      typeof histograms['vusers.session_length'] !== 'undefined'
     ) {
       result.scenarioDuration = summarizeHistogram(
-        pd.histograms['vusers.session_length']
+        histograms['vusers.session_length']
       );
     }
 
     // scenarioCounts
-    const names = Object.keys(pd.counters).filter((k) =>
+    const names = Object.keys(counters).filter((k) =>
       k.startsWith('vusers.created_by_name.')
     );
     for (const n of names) {
       result.scenarioCounts[n.split('vusers.created_by_name.')[1]] =
-        pd.counters[n];
+        counters[n];
     }
 
     // latency
-    const latencyh = pd.histograms
-      ? pd.histograms['http.response_time'] ||
-        pd.histograms['socketio.response_time']
+    const latencyh = histograms
+      ? histograms['http.response_time'] || histograms['socketio.response_time']
       : null;
     if (latencyh) {
       result.latency = summarizeHistogram(latencyh);
     }
 
     // HTTP codes
-    const codeNames = Object.keys(pd.counters).filter((k) =>
+    const codeNames = Object.keys(counters).filter((k) =>
       k.match(/^(http|socketio)\.codes.*/)
     );
     for (const n of codeNames) {
       const code = parseInt(n.split('.codes.')[1], 10);
-      result.codes[code] = pd.counters[n];
+      result.codes[code] = counters[n];
     }
 
     // errors
-    const errNames = Object.keys(pd.counters).filter((k) =>
+    const errNames = Object.keys(counters).filter((k) =>
       k.startsWith('errors.')
     );
     for (const n of errNames) {
       const errName = n.split('errors.')[1];
-      result.errors[errName] = pd.counters[n];
+      result.errors[errName] = counters[n];
     }
 
     return {
@@ -178,32 +259,40 @@ class SSMS extends EventEmitter {
   }
 
   // Return object indexed by period (as string):
-  static mergeBuckets(periodData) {
+  static mergeBuckets(
+    periodData: PeriodMetrics[]
+  ): Record<string, MergedPeriodMetrics> {
     debug(`mergeBuckets // timeslices: ${periodData.map((pd) => pd.period)}`);
 
     // Returns result[timestamp] = {histograms:{},counters:{},rates:{}}
     // ie. the result is indexed by timeslice
-    const result = {};
+    const result: Record<string, MergedPeriodMetrics> = {};
 
     for (const pd of periodData) {
       const ts = pd.period;
 
       if (!result[ts]) {
         result[ts] = {
+          period: ts,
           counters: {},
           histograms: {},
           rates: {}
         };
       }
 
-      pd.counters = pd.counters || {};
-      pd.histograms = pd.histograms || {};
-      pd.rates = pd.rates || {};
+      // Normalize in place - callers may rely on the input objects
+      // having these containers after a merge.
+      const counters = pd.counters || {};
+      pd.counters = counters;
+      const histograms = pd.histograms || {};
+      pd.histograms = histograms;
+      const rates = pd.rates || {};
+      pd.rates = rates;
 
       //
       // counters
       //
-      for (const [name, value] of Object.entries(pd.counters)) {
+      for (const [name, value] of Object.entries(counters)) {
         if (!result[ts].counters[name]) {
           result[ts].counters[name] = 0;
         }
@@ -214,7 +303,7 @@ class SSMS extends EventEmitter {
       //
       // histograms
       //
-      for (const [name, origValue] of Object.entries(pd.histograms)) {
+      for (const [name, origValue] of Object.entries(histograms)) {
         const value = SSMS.cloneHistogram(origValue);
         if (typeof result[ts].histograms[name] === 'undefined') {
           result[ts].histograms[name] = value;
@@ -228,7 +317,7 @@ class SSMS extends EventEmitter {
       //
       // rates
       //
-      for (const [name, value] of Object.entries(pd.rates)) {
+      for (const [name, value] of Object.entries(rates)) {
         if (typeof result[ts].rates[name] === 'undefined') {
           result[ts].rates[name] = 0;
         }
@@ -236,8 +325,14 @@ class SSMS extends EventEmitter {
         result[ts].rates[name] += value;
       }
 
-      for (const name of Object.keys(pd.rates)) {
-        result[ts][name] = round(result[ts][name] / periodData.length, 1);
+      // NOTE: pre-existing quirk preserved as-is: this writes
+      // `result[ts][name]` (rate names directly on the period object,
+      // not on `.rates`), and `result[ts][name]` starts undefined so
+      // the division yields NaN. Kept byte-for-byte for output
+      // compatibility until the metrics model is consolidated.
+      for (const name of Object.keys(rates)) {
+        const r = result[ts] as unknown as Record<string, number>;
+        r[name] = round(r[name] / periodData.length, 1);
       }
 
       result[ts].firstCounterAt = min([
@@ -273,8 +368,9 @@ class SSMS extends EventEmitter {
 
   // Aggregate at lower resolution, i.e. combine three distinct periods of 10s into one of 30s
   // Note: does not check that periods are contiguous, everything is simply merged together
-  static pack(periods) {
-    const result: any = {
+  static pack(periods: PeriodMetrics[]): MergedPeriodMetrics {
+    const result: MergedPeriodMetrics = {
+      period: 0,
       counters: {},
       histograms: {},
       rates: {}
@@ -331,17 +427,19 @@ class SSMS extends EventEmitter {
     ]);
     result.lastMetricAt = max([result.lastHistogramAt, result.lastCounterAt]);
 
-    result.period = max(periods.map((p) => p.period));
+    // Kept as-is: max() returns undefined when every period lacks a
+    // period value; real inputs always carry one.
+    result.period = max(periods.map((p) => p.period as number)) as number;
     return result;
   }
 
-  static cloneHistogram(h) {
+  static cloneHistogram(h: DDSketch): DDSketch {
     return DDSketch.fromProto(h.toProto());
   }
 
-  static serializeMetrics(pd) {
+  static serializeMetrics(pd: PeriodMetrics): string {
     // TODO: Add ability to include arbitrary metadata e.g. worker IDs
-    const serializedHistograms = {};
+    const serializedHistograms: Record<string, Uint8Array> = {};
     const ph = pd.histograms;
     if (ph) {
       for (const n of Object.keys(ph)) {
@@ -357,17 +455,21 @@ class SSMS extends EventEmitter {
     return stringify(result);
   }
 
-  static deserializeMetrics(pd) {
-    const object = parse(pd);
+  static deserializeMetrics(pd: string): PeriodMetrics {
+    // Serialized form always carries a histograms map (see
+    // serializeMetrics) with protobuf buffers as values.
+    const object = parse(pd) as PeriodMetrics & {
+      histograms: Record<string, DDSketch>;
+    };
     for (const [name, buf] of Object.entries(object.histograms)) {
-      const h = DDSketch.fromProto(buf as any);
+      const h = DDSketch.fromProto(buf as unknown as Uint8Array);
       object.histograms[name] = h;
     }
 
     return object;
   }
 
-  getBucketIds() {
+  getBucketIds(): string[] {
     return [
       ...new Set(
         Object.keys(this._aggregatedCounters)
@@ -378,11 +480,11 @@ class SSMS extends EventEmitter {
   }
 
   // TODO: Deprecate
-  counter(name, value) {
+  counter(name: string, value: number): void {
     this.incr(name.slice(0, MAX_METRIC_NAME_LENGTH), value);
   }
 
-  incr(name, value, t?) {
+  incr(name: string, value: number, t?: number): void {
     this._counters.push(
       t || Date.now(),
       name.slice(0, MAX_METRIC_NAME_LENGTH),
@@ -391,11 +493,11 @@ class SSMS extends EventEmitter {
   }
 
   // TODO: Deprecate
-  summary(name, value) {
+  summary(name: string, value: number): void {
     this.histogram(name.slice(0, MAX_METRIC_NAME_LENGTH), value);
   }
 
-  histogram(name, value, t?) {
+  histogram(name: string, value: number, t?: number): void {
     this._histograms.push(
       t || Date.now(),
       name.slice(0, MAX_METRIC_NAME_LENGTH),
@@ -403,12 +505,12 @@ class SSMS extends EventEmitter {
     );
   }
 
-  rate(name, t?) {
+  rate(name: string, t?: number): void {
     this._rates.push(t || Date.now(), name.slice(0, MAX_METRIC_NAME_LENGTH));
   }
 
-  getMetrics(period) {
-    const result: any = {};
+  getMetrics(period: string | number): PeriodMetrics {
+    const result: PeriodMetrics = { period };
 
     const counters = this._aggregatedCounters[period];
     const histograms = this._aggregatedHistograms[period];
@@ -426,7 +528,6 @@ class SSMS extends EventEmitter {
       result.rates = rates;
     }
 
-    result.period = period;
     result.firstCounterAt = this._counterEarliestMeasurementByPeriod[period];
     result.firstHistogramAt =
       this._histogramEarliestMeasurementByPeriod[period];
@@ -445,9 +546,9 @@ class SSMS extends EventEmitter {
     return result;
   }
 
-  _aggregateHistograms(upToTimeslice) {
+  _aggregateHistograms(upToTimeslice: number): void {
     for (let i = 0; i < this._histograms.length; i += 3) {
-      const ts = this._histograms[i];
+      const ts = this._histograms[i] as number;
       const timeslice = normalizeTs(ts);
 
       if (timeslice >= upToTimeslice) {
@@ -455,8 +556,8 @@ class SSMS extends EventEmitter {
         return;
       }
 
-      const name = this._histograms[i + 1];
-      const value = this._histograms[i + 2];
+      const name = this._histograms[i + 1] as string;
+      const value = this._histograms[i + 2] as number;
 
       if (!this._aggregatedHistograms[timeslice]) {
         this._aggregatedHistograms[timeslice] = {};
@@ -478,13 +579,13 @@ class SSMS extends EventEmitter {
     this._histograms.splice(0, this._histograms.length);
   }
 
-  _aggregateCounters(upToTimeslice) {
+  _aggregateCounters(upToTimeslice: number): void {
     // Consider memory-CPU tradeoff. Depending on the length of the buffer, we may want to
     // not exceed N total entries we're processing if we can delay reporting by one or more
     // reporting periods
 
     for (let i = 0; i < this._counters.length; i += 3) {
-      const ts = this._counters[i];
+      const ts = this._counters[i] as number;
       const timeslice = normalizeTs(ts);
 
       if (timeslice >= upToTimeslice) {
@@ -492,8 +593,8 @@ class SSMS extends EventEmitter {
         return;
       }
 
-      const name = this._counters[i + 1];
-      const value = this._counters[i + 2];
+      const name = this._counters[i + 1] as string;
+      const value = this._counters[i + 2] as number;
 
       if (!this._aggregatedCounters[timeslice]) {
         this._aggregatedCounters[timeslice] = {};
@@ -512,14 +613,17 @@ class SSMS extends EventEmitter {
     this._counters.splice(0, this._counters.length);
   }
 
-  _aggregateRates(upToTimeslice) {
+  _aggregateRates(upToTimeslice: number): void {
     debug('_aggregateRates to', upToTimeslice, new Date(upToTimeslice));
 
-    const a = {};
+    const a: Record<
+      string,
+      Record<string, { first: number; last: number; count: number }>
+    > = {};
     let spliceTo = this._rates.length;
 
     for (let i = 0; i < this._rates.length; i += 2) {
-      const ts = this._rates[i];
+      const ts = this._rates[i] as number;
       const timeslice = normalizeTs(ts);
 
       if (timeslice >= upToTimeslice) {
@@ -534,7 +638,7 @@ class SSMS extends EventEmitter {
         break;
       }
 
-      const name = this._rates[i + 1];
+      const name = this._rates[i + 1] as string;
       if (!a[timeslice]) {
         a[timeslice] = {};
       }
@@ -569,7 +673,7 @@ class SSMS extends EventEmitter {
     this._rates.splice(0, spliceTo);
   }
 
-  aggregate(forceAll) {
+  aggregate(forceAll?: boolean): void {
     const currentTimeslice =
       normalizeTs(Date.now()) + (forceAll ? 30 * 1000 : 0);
 
@@ -584,9 +688,9 @@ class SSMS extends EventEmitter {
     }
   }
 
-  _emitPeriods() {
+  _emitPeriods(): void {
     const bucketIds = this.getBucketIds();
-    const lastPeriod = parseInt(this._lastPeriod, 10);
+    const lastPeriod = parseInt(this._lastPeriod ?? '', 10);
 
     for (let i = 0; i < bucketIds.length; i++) {
       const period = bucketIds[i];
@@ -597,7 +701,7 @@ class SSMS extends EventEmitter {
     }
   }
 
-  _maybeEmitMostRecentPeriod() {
+  _maybeEmitMostRecentPeriod(): void {
     const p = this.getBucketIds()[0];
 
     if (p && p !== this._lastPeriod) {
@@ -607,7 +711,7 @@ class SSMS extends EventEmitter {
   }
 }
 
-function normalizeTs(epochMs, windowSize = 10) {
+function normalizeTs(epochMs: number, windowSize = 10): number {
   // Reset down to minute
   const m = Math.floor((epochMs - (epochMs % 1000)) / 1000 / 60) * 60 * 1000;
   // Number of seconds past the minute
@@ -625,13 +729,13 @@ function normalizeTs(epochMs, windowSize = 10) {
 //   ];
 // }
 
-function round(number, decimals) {
+function round(number: number, decimals: number): number {
   const m = 10 ** decimals;
   return Math.round(number * m) / m;
 }
 
 // h is an instance of DDSketch
-function summarizeHistogram(h) {
+function summarizeHistogram(h: DDSketch): HistogramSummary {
   return {
     min: round(h.min, 1),
     max: round(h.max, 1),
@@ -648,15 +752,20 @@ function summarizeHistogram(h) {
 }
 
 /// ///////////////////////////////////////////
-function stringify(value, space?) {
+function stringify(value: unknown, space?: string | number): string {
   return JSON.stringify(value, replacer, space);
 }
 
-function parse(text) {
+function parse(text: string): unknown {
   return JSON.parse(text, reviver);
 }
 
-function replacer(_key, value) {
+interface BufferLikeObject {
+  type: 'Buffer';
+  data: number[] | string;
+}
+
+function replacer(_key: string, value: unknown): unknown {
   if (isBufferLike(value) && isArray(value.data)) {
     if (value.data.length > 0) {
       value.data = `base64:${Buffer.from(value.data).toString('base64')}`;
@@ -668,7 +777,7 @@ function replacer(_key, value) {
   return value;
 }
 
-function reviver(_key, value) {
+function reviver(_key: string, value: unknown): unknown {
   if (isBufferLike(value)) {
     if (isArray(value.data)) {
       return Buffer.from(value.data);
@@ -687,21 +796,21 @@ function reviver(_key, value) {
   return value;
 }
 
-function isBufferLike(x) {
+function isBufferLike(x: unknown): x is BufferLikeObject {
   return (
     isObject(x) && x.type === 'Buffer' && (isArray(x.data) || isString(x.data))
   );
 }
 
-function isArray(x) {
+function isArray(x: unknown): x is number[] {
   return Array.isArray(x);
 }
 
-function isString(x) {
+function isString(x: unknown): x is string {
   return typeof x === 'string';
 }
 
-function isObject(x) {
+function isObject(x: unknown): x is Record<string, unknown> {
   return typeof x === 'object' && x !== null;
 }
 /// /////////////////
@@ -709,13 +818,15 @@ function isObject(x) {
 // Like Math.min and Math.max but take a list of values, and ignore
 // undefined's rather than returning NaN when a value is undefined.
 // Returns undefined if all arguments are undefined.
-function min(values) {
-  const m = Math.min(...values.filter((x) => x));
+// NOTE: pre-existing quirk preserved: the truthiness filter also drops
+// legitimate zero values.
+function min(values: Array<number | undefined>): number | undefined {
+  const m = Math.min(...(values.filter((x) => x) as number[]));
   return m === Number.POSITIVE_INFINITY ? undefined : m;
 }
 
-function max(values) {
-  const m = Math.max(...values.filter((x) => x));
+function max(values: Array<number | undefined>): number | undefined {
+  const m = Math.max(...(values.filter((x) => x) as number[]));
   return m === Number.NEGATIVE_INFINITY ? undefined : m;
 }
 
