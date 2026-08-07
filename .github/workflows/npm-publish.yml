@@ -74,7 +74,9 @@ jobs:
       DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
 
   publish-artillery-to-npm:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    # Must be a GitHub-hosted runner: npm provenance rejects OIDC tokens
+    # with runner_environment "self-hosted" (which Blacksmith runners report)
+    runs-on: ubuntu-latest
     needs: [resolve-channel, publish-fargate-worker-image]
     permissions:
       contents: read
