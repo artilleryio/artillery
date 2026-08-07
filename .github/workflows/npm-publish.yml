@@ -85,13 +85,15 @@ jobs:
     outputs:
       ARTILLERY_VERSION: ${{ steps.get-artillery-version.outputs.ARTILLERY_VERSION }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '22.x'
+          node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@artilleryio'
-      # Node 22 bundles npm 10.x; trusted publishing needs npm >= 11.5.1
+      # trusted publishing needs npm >= 11.5.1; min-release-age (.npmrc) needs
+      # npm >= 11.6.0 - install latest npm 11 explicitly to not depend on the
+      # version bundled with the Node.js release
       - run: npm install -g npm@11
       - name: Set canary version (X.Y.Z-<sha>)
         if: needs.resolve-channel.outputs.channel == 'canary'

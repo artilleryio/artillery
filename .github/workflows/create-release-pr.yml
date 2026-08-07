@@ -18,7 +18,7 @@ jobs:
       PACKAGES_TO_RELEASE: "artillery"
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
       - name: Replace package folder name with actual name from package.json
         run: |
