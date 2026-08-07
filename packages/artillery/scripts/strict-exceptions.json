@@ -36,8 +36,5 @@
   "lib/platform/cloud/api.ts",
   "lib/platform/cloud/cloud.ts",
   "lib/platform/cloud/http-client.ts",
-  "lib/platform/local/artillery-worker-local.ts",
-  "lib/platform/local/index.ts",
-  "lib/platform/local/worker.ts",
   "lib/queue-consumer/index.ts"
 ]

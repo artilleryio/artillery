@@ -34,7 +34,11 @@ export interface LoadedPlugin {
   // narrowing - see modernization plan F6.
   PluginExport: any;
   loadedFrom: string | undefined;
-  version: 1 | 2 | undefined;
+  // 3 is reserved for a future plugin interface - loadPlugin never
+  // produces it today, but consumers already branch on it.
+  version: 1 | 2 | 3 | undefined;
+  // Instantiated plugin, attached by consumers after construction:
+  plugin?: any;
 }
 
 // Additional paths to load plugins can be set via ARTILLERY_PLUGIN_PATH

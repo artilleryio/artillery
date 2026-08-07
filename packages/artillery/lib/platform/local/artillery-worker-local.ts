@@ -7,6 +7,12 @@ import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'eventemitter3';
 import awaitOnEE from '../../util/await-on-ee.ts';
 import STATES from '../worker-states.ts';
+import type { WorkerState } from '../worker-states.ts';
+import type {
+  PrepareWorkerOptions,
+  WorkerCommand,
+  WorkerEnvelope
+} from './protocol.ts';
 
 // Emitted output runs from dist/ where the sibling module is worker.js;
 // when this file is loaded directly from source (tests importing .ts),
@@ -16,7 +22,7 @@ const workerModulePath = path.join(
   import.meta.filename.endsWith('.ts') ? 'worker.ts' : 'worker.js'
 );
 
-const returnWorkerEnv = (needsSourcemap) => {
+const returnWorkerEnv = (needsSourcemap: unknown) => {
   const env = { ...process.env };
 
   if (needsSourcemap) {
@@ -29,16 +35,20 @@ const returnWorkerEnv = (needsSourcemap) => {
 };
 
 class ArtilleryWorker {
-  // Untyped JS class - properties assigned dynamically
-  [key: string]: any;
+  declare opts: unknown;
+  declare events: EventEmitter;
+  declare workerEvents: EventEmitter;
+  declare worker: Worker;
+  declare workerId: number;
+  declare state: WorkerState;
 
-  constructor(opts?) {
+  constructor(opts?: unknown) {
     this.opts = opts;
     this.events = new EventEmitter(); // events for consumers of this object
     this.workerEvents = new EventEmitter(); // turn events delivered via 'message' events into their own messages
   }
 
-  async init(_opts?) {
+  async init(_opts?: unknown) {
     this.state = STATES.initializing;
 
     const workerEnv = returnWorkerEnv(global.artillery.hasTypescriptProcessor);
@@ -49,18 +59,18 @@ class ArtilleryWorker {
     this.workerId = this.worker.threadId;
     this.worker.on('error', this.onError.bind(this));
     // TODO:
-    this.worker.on('exit', (exitCode) => {
+    this.worker.on('exit', (exitCode: number) => {
       this.events.emit('exit', exitCode);
     });
 
-    this.worker.on('messageerror', (_err) => {});
+    this.worker.on('messageerror', (_err: Error) => {});
 
     // TODO: Expose performance metrics via getHeapSnapshot() and performance object.
 
     await awaitOnEE(this.worker, 'online', 10);
 
     // Relay messages onto the real event emitter:
-    this.worker.on('message', (message) => {
+    this.worker.on('message', (message: WorkerEnvelope) => {
       switch (message.event) {
         case 'log':
           this.events.emit('log', message);
@@ -108,11 +118,15 @@ class ArtilleryWorker {
     this.state = STATES.online;
   }
 
-  async prepare(opts) {
+  async prepare(opts: {
+    script: Record<string, any>;
+    payload: unknown;
+    options: Record<string, any>;
+  }) {
     this.state = STATES.preparing;
 
     const { script, payload, options } = opts;
-    let scriptForWorker = script;
+    let scriptForWorker: Record<string, any> = script;
 
     if (script.__transpiledTypeScriptPath && script.__originalScriptPath) {
       scriptForWorker = {
@@ -122,35 +136,39 @@ class ArtilleryWorker {
       };
     }
 
-    this.worker.postMessage({
+    const prepareOpts: PrepareWorkerOptions = {
+      script: scriptForWorker,
+      payload,
+      options,
+      testRunId: global.artillery.testRunId
+    };
+    const command: WorkerCommand = {
       command: 'prepare',
-      opts: {
-        script: scriptForWorker,
-        payload,
-        options,
-        testRunId: global.artillery.testRunId
-      }
-    });
+      opts: prepareOpts
+    };
+    this.worker.postMessage(command);
 
     await awaitOnEE(this.workerEvents, 'readyWaiting', 50);
     this.state = STATES.readyWaiting;
   }
 
-  async run(opts) {
-    this.worker.postMessage({
+  async run(opts: string) {
+    const command: WorkerCommand = {
       command: 'run',
       opts: JSON.parse(opts)
-    });
+    };
+    this.worker.postMessage(command);
 
     await awaitOnEE(this.workerEvents, 'running', 50);
     this.state = STATES.running;
   }
 
   async stop() {
-    this.worker.postMessage({ command: 'stop' });
+    const command: WorkerCommand = { command: 'stop' };
+    this.worker.postMessage(command);
   }
 
-  onError(err) {
+  onError(err: Error) {
     // TODO: set state, clean up
     this.events.emit('error', err);
     console.log('worker error, id:', this.workerId, err);
