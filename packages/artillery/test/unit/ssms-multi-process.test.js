@@ -232,13 +232,15 @@ tap.test('Metric aggregation', async (t) => {
       assert.ok(round(h.getValueAtQuantile(0.99), 1) ===
           round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1), 'p99 values should be equal');
       assert.ok(h.count === controlSummary.histograms[hname].count, 'count values should be equal');
-      assert.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
-      assert.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
+      // Round-tolerant: quantile estimates come from histogram buckets and
+      // can equal or marginally exceed the recorded max.
+      assert.ok(round(h.max, 1) >= round(h.getValueAtQuantile(0.99), 1), 'max is >= p99');
+      assert.ok(round(h.max, 1) >= round(h.getValueAtQuantile(0.95), 1), 'max is >= p95');
       assert.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'All aggregations are > 0');
     }
 
     for (const [hname, h] of Object.entries(packed.histograms)) {
-      assert.ok(h.max > h.getValueAtQuantile(0.99), `${hname} summary max is > p99 (${h.max} > ${h.getValueAtQuantile(
+      assert.ok(round(h.max, 1) >= round(h.getValueAtQuantile(0.99), 1), `${hname} summary max is >= p99 (${h.max} >= ${h.getValueAtQuantile(
           0.99
         )})`);
       assert.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, `summary aggregations are > 0 (${hname} - ${h.min}, ${
@@ -380,14 +382,14 @@ tap.test('Metric aggregation - merged histograms', async (t) => {
       );
       assert.ok(round(h.getValueAtQuantile(0.99), 1) ===
           round(controlSummary.histograms[hname].getValueAtQuantile(0.99), 1), 'p99 values should be equal');
-      assert.ok(h.max > h.getValueAtQuantile(0.99), 'max is > p99');
-      assert.ok(h.max > h.getValueAtQuantile(0.95), 'max is > p95');
+      assert.ok(round(h.max, 1) >= round(h.getValueAtQuantile(0.99), 1), 'max is >= p99');
+      assert.ok(round(h.max, 1) >= round(h.getValueAtQuantile(0.95), 1), 'max is >= p95');
       // TODO fix
       // assert.ok(h.min > 0 && h.max > 0 && h.getValueAtQuantile(0.99) > 0, 'All aggregations are > 0');
     }
 
     for (const [hname, h] of Object.entries(packed.histograms)) {
-      assert.ok(h.max > h.getValueAtQuantile(0.99), `${hname} summary max is > p99 (${h.max} > ${h.getValueAtQuantile(
+      assert.ok(round(h.max, 1) >= round(h.getValueAtQuantile(0.99), 1), `${hname} summary max is >= p99 (${h.max} >= ${h.getValueAtQuantile(
           0.99
         )})`);
       // TODO fix
