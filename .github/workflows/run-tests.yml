@@ -65,7 +65,6 @@ jobs:
     timeout-minutes: 60
     runs-on: windows-latest
     needs: generate-matrix-with-packages
-    continue-on-error: true
     permissions:
       contents: read
       id-token: write
