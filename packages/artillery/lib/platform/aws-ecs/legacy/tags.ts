@@ -1,7 +1,7 @@
-
-
-function parseTags(input) {
-  const tags = [];
+function parseTags(
+  input: string | null | undefined
+): Array<{ name: string; value: string }> {
+  const tags: Array<{ name: string; value: string }> = [];
   if (input) {
     const tagList = input.split(',').map((x) => x.trim());
     for (const t of tagList) {

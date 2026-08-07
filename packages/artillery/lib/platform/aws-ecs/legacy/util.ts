@@ -1,18 +1,8 @@
-
-
-
 import createDebug from 'debug';
 
 const _debug = createDebug('artillery:util');
 
-import chalkModule from 'chalk';
-
-const chalk: any = chalkModule;
-
-
-import _A from 'async';
-import _ from 'lodash';
-
+import chalk from 'chalk';
 import createS3Client from './create-s3-client.ts';
 
 const supportedRegions = [
@@ -45,10 +35,10 @@ import { paginateListObjectsV2 } from '@aws-sdk/client-s3';
 import getAccountId from '../../aws/aws-get-account-id.ts';
 import { S3_BUCKET_NAME_PREFIX } from './constants.ts';
 
-function atob(data) {
+function atob(data: string): string {
   return Buffer.from(data, 'base64').toString('ascii');
 }
-function btoa(data) {
+function btoa(data: string): string {
   return Buffer.from(data).toString('base64');
 }
 
@@ -63,13 +53,13 @@ async function getBucketName() {
   return bucketName;
 }
 
-function formatError(err) {
-  return (
-    `${chalk.red('Error')}: ${err.message}${err.code ? ` (${err.code})` : ''}`
-  );
+function formatError(err: NodeJS.ErrnoException): string {
+  return `${chalk.red('Error')}: ${err.message}${
+    err.code ? ` (${err.code})` : ''
+  }`;
 }
 
-async function listAllObjectsWithPrefix(bucketName, prefix) {
+async function listAllObjectsWithPrefix(bucketName: string, prefix: string) {
   const s3Client = createS3Client();
   const allObjects = [];
 
@@ -81,13 +71,21 @@ async function listAllObjectsWithPrefix(bucketName, prefix) {
       MaxKeys: 1000
     }
   );
-    for await (const page of paginator) {
-      if (page.Contents) {
-        allObjects.push(...page.Contents);
-      }
+  for await (const page of paginator) {
+    if (page.Contents) {
+      allObjects.push(...page.Contents);
     }
+  }
 
   return allObjects;
 }
 
-export { supportedRegions, getAccountId, atob, btoa, formatError, listAllObjectsWithPrefix, getBucketName };
+export {
+  supportedRegions,
+  getAccountId,
+  atob,
+  btoa,
+  formatError,
+  listAllObjectsWithPrefix,
+  getBucketName
+};

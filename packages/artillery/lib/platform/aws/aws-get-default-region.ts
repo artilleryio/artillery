@@ -1,4 +1,3 @@
-
 import {
   loadConfig,
   NODE_REGION_CONFIG_FILE_OPTIONS,
@@ -9,7 +8,7 @@ import createDebug from 'debug';
 const debug = createDebug('util:aws:get-default-region');
 
 let defaultRegionAlreadyChecked = false;
-let currentDefaultRegion = null;
+let currentDefaultRegion: string | null = null;
 
 export default async function getDefaultRegion() {
   if (!defaultRegionAlreadyChecked) {
@@ -26,4 +25,4 @@ export default async function getDefaultRegion() {
   }
 
   return currentDefaultRegion;
-};
+}

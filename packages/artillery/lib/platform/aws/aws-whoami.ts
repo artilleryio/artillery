@@ -12,4 +12,4 @@ export default async function whoami() {
   } catch (stsErr) {
     return stsErr;
   }
-};
+}

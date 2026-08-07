@@ -2,13 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
 import { btoa } from '../../util.ts';
 
 export { ArtilleryInspectScriptPlugin as Plugin };
 
-function ArtilleryInspectScriptPlugin(script, events) {
+function ArtilleryInspectScriptPlugin(
+  this: { script: Record<string, any>; events: unknown },
+  script: Record<string, any>,
+  events: unknown
+) {
   this.script = script;
   this.events = events;
 
@@ -22,6 +24,8 @@ function ArtilleryInspectScriptPlugin(script, events) {
 
   return this;
 }
-ArtilleryInspectScriptPlugin.prototype.cleanup = (done) => {
+ArtilleryInspectScriptPlugin.prototype.cleanup = (
+  done: (err: Error | null) => void
+) => {
   done(null);
 };

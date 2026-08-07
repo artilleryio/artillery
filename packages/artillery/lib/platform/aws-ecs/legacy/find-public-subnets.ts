@@ -1,71 +1,76 @@
 import { strict as assert } from 'node:assert';
 import {
   DescribeRouteTablesCommand,
-  DescribeSubnetsCommand, 
+  DescribeSubnetsCommand,
   DescribeVpcsCommand,
-  EC2Client
+  EC2Client,
+  type EC2ClientConfig,
+  type RouteTable,
+  type Subnet
 } from '@aws-sdk/client-ec2';
 
 class VPCSubnetFinder {
-  // Untyped JS class - properties assigned dynamically
-  [key: string]: any;
+  declare ec2: EC2Client;
 
-  constructor(opts) {
+  constructor(opts: EC2ClientConfig) {
     this.ec2 = new EC2Client(opts);
   }
 
-  async getRouteTables(vpcId) {
-      const rts = await this.ec2.send(
-        new DescribeRouteTablesCommand({
-          Filters: [
-            {
-              Name: 'vpc-id',
-              Values: [vpcId]
-            }
-          ]
-        })
-      );
+  async getRouteTables(vpcId: string) {
+    const rts = await this.ec2.send(
+      new DescribeRouteTablesCommand({
+        Filters: [
+          {
+            Name: 'vpc-id',
+            Values: [vpcId]
+          }
+        ]
+      })
+    );
 
-      return rts.RouteTables;
+    return rts.RouteTables;
   }
 
   async findDefaultVpc() {
-      const vpcRes = await this.ec2.send(
-        new DescribeVpcsCommand({
-          Filters: [
-            {
-              Name: 'isDefault',
-              Values: ['true']
-            }
-          ]
-        })
-      );
+    const vpcRes = await this.ec2.send(
+      new DescribeVpcsCommand({
+        Filters: [
+          {
+            Name: 'isDefault',
+            Values: ['true']
+          }
+        ]
+      })
+    );
 
-      assert.ok(vpcRes.Vpcs.length <= 1);
+    // NOTE: pre-existing behavior: throws when the API returns no
+    // Vpcs field at all.
+    const vpcs = vpcRes.Vpcs as NonNullable<typeof vpcRes.Vpcs>;
+    assert.ok(vpcs.length <= 1);
 
-      if (vpcRes.Vpcs.length !== 1) {
-        return null;
-      } else {
-        return vpcRes.Vpcs[0].VpcId;
-      }
+    if (vpcs.length !== 1) {
+      return null;
+    } else {
+      return vpcs[0].VpcId;
+    }
   }
 
-  async getSubnets(vpcId) {
-      const subRes = await this.ec2.send(
-        new DescribeSubnetsCommand({
-          Filters: [
-            {
-              Name: 'vpc-id',
-              Values: [vpcId]
-            }
-          ]
-        })
-      );
+  async getSubnets(vpcId: string) {
+    const subRes = await this.ec2.send(
+      new DescribeSubnetsCommand({
+        Filters: [
+          {
+            Name: 'vpc-id',
+            Values: [vpcId]
+          }
+        ]
+      })
+    );
 
-      return subRes.Subnets;
+    return subRes.Subnets;
   }
 
-  isSubnetPublic(routeTables, subnetId) {
+  isSubnetPublic(routeTables: RouteTable[], subnetId: string | undefined) {
     //
     // Inspect associations of each route table (of a specific VPC). A route
     // table record has an Associations field, which is a list of association
@@ -79,7 +84,9 @@ class VPCSubnetFinder {
 
     // Route table for the subnet - can there only be one?
     let subnetTable = routeTables.filter((rt) => {
-      const explicitAssoc = rt.Associations.filter((assoc) => {
+      const explicitAssoc = (
+        rt.Associations as NonNullable<typeof rt.Associations>
+      ).filter((assoc) => {
         return assoc.SubnetId && assoc.SubnetId === subnetId;
       });
 
@@ -92,7 +99,9 @@ class VPCSubnetFinder {
       // There is no explicit association for this subnet so it will be implicitly
       // associated with the VPC's main routing table.
       subnetTable = routeTables.filter((rt) => {
-        const implicitAssoc = rt.Associations.filter((assoc) => {
+        const implicitAssoc = (
+          rt.Associations as NonNullable<typeof rt.Associations>
+        ).filter((assoc) => {
           return assoc.Main === true;
         });
 
@@ -108,7 +117,9 @@ class VPCSubnetFinder {
       );
     }
 
-    const igwRoutes = subnetTable[0].Routes.filter((route) => {
+    const igwRoutes = (
+      subnetTable[0].Routes as NonNullable<(typeof subnetTable)[0]['Routes']>
+    ).filter((route) => {
       // NOTE: there may be no IGW attached to route
       return route.GatewayId?.startsWith('igw-');
     });
@@ -119,12 +130,14 @@ class VPCSubnetFinder {
   // TODO: Distinguish between there being no default VPC,
   // or being given an invalid VPC ID, and no public subnets
   // existing in a VPC that definitely exists.
-  async findPublicSubnets(vpcId?) {
+  async findPublicSubnets(vpcId?: string | null): Promise<Subnet[]> {
     if (!vpcId) {
       vpcId = await this.findDefaultVpc();
     }
-    const rts = await this.getRouteTables(vpcId);
-    const subnets = await this.getSubnets(vpcId);
+    // NOTE: pre-existing behavior: a missing VPC/API response fields
+    // surface as runtime errors here.
+    const rts = (await this.getRouteTables(vpcId as string)) as RouteTable[];
+    const subnets = (await this.getSubnets(vpcId as string)) as Subnet[];
 
     const publicSubnets = subnets.filter((subnet) => {
       return this.isSubnetPublic(rts, subnet.SubnetId);

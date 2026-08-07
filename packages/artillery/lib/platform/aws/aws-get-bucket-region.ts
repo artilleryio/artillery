@@ -1,6 +1,6 @@
 import { GetBucketLocationCommand, S3Client } from '@aws-sdk/client-s3';
 
-async function getBucketRegion(bucketName) {
+async function getBucketRegion(bucketName: string): Promise<string> {
   const c = new S3Client({ region: global.artillery.awsRegion || 'us-east-1' });
   const command = new GetBucketLocationCommand({
     Bucket: bucketName

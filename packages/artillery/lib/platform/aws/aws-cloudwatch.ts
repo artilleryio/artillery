@@ -1,4 +1,3 @@
-
 import {
   CloudWatchLogsClient,
   PutRetentionPolicyCommand
@@ -13,9 +12,9 @@ const allowedRetentionDays = [
 ];
 
 async function _putCloudwatchRetentionPolicy(
-  logGroupName,
-  retentionInDays,
-  region
+  logGroupName: string,
+  retentionInDays: number,
+  region: string
 ) {
   const cloudwatchlogs = new CloudWatchLogsClient({
     apiVersion: '2014-11-06',
@@ -31,13 +30,23 @@ async function _putCloudwatchRetentionPolicy(
   );
 }
 
+interface RetentionRetryOptions {
+  maxRetries: number;
+  waitPerRetry: number;
+  incr?: number;
+}
+
 function setCloudwatchRetention(
-  logGroupName,
-  retentionInDays,
-  region,
-  options: any = { maxRetries: 5, waitPerRetry: 1000 }
+  logGroupName: string,
+  // NOTE: pre-existing quirk: when set via the
+  // ARTILLERY_LOGGROUP_RETENTION_DAYS env var this arrives as a
+  // string, which never matches the numeric allowlist below - the
+  // retention policy is then skipped with a warning.
+  retentionInDays: number | string,
+  region: string,
+  options: RetentionRetryOptions = { maxRetries: 5, waitPerRetry: 1000 }
 ) {
-  if (!allowedRetentionDays.includes(retentionInDays)) {
+  if (!allowedRetentionDays.includes(retentionInDays as number)) {
     console.log(
       `WARNING: Skipping setting CloudWatch retention, as invalid value specified: ${retentionInDays}. Allowed values are: ${allowedRetentionDays.join(
         ', '
@@ -47,7 +56,7 @@ function setCloudwatchRetention(
   }
 
   const interval = setInterval(
-    async (opts) => {
+    async (opts: RetentionRetryOptions) => {
       debug(
         `Trying to set CloudWatch Log group ${logGroupName} retention policy to ${retentionInDays} days`
       );
@@ -56,14 +65,15 @@ function setCloudwatchRetention(
       try {
         const _res = await _putCloudwatchRetentionPolicy(
           logGroupName,
-          retentionInDays,
+          retentionInDays as number,
           region
         );
         debug(
           `Successfully set CloudWatch Logs retention policy to ${retentionInDays} days`
         );
         clearInterval(interval);
-      } catch (error) {
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException;
         const resumeTestMessage =
           'The test will continue without setting the retention policy.';
         if (error?.code === 'AccessDeniedException') {
@@ -86,7 +96,7 @@ function setCloudwatchRetention(
           return;
         }
 
-        if (opts.incr >= opts.maxRetries) {
+        if ((opts.incr as number) >= opts.maxRetries) {
           console.log(`\n${error.message}`);
           console.log(
             `\nWARNING: Cannot find log group ${logGroupName}\nMax retries exceeded setting CloudWatch retention policy:`

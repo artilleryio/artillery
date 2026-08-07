@@ -8,7 +8,8 @@ const debug = createDebug('util:aws:ensureS3BucketExists');
 
 import {
   CreateBucketCommand,
-  NoSuchBucket, 
+  type LifecycleRule,
+  NoSuchBucket,
   PutBucketLifecycleConfigurationCommand,
   S3Client
 } from '@aws-sdk/client-s3';
@@ -18,9 +19,9 @@ import { getBucketRegion } from './aws-get-bucket-region.ts';
 import { S3_BUCKET_NAME_PREFIX } from './constants.ts';
 
 const setBucketLifecyclePolicy = async (
-  bucketName,
-  lifecycleConfigurationRules,
-  region
+  bucketName: string,
+  lifecycleConfigurationRules: LifecycleRule[],
+  region: string | undefined
 ) => {
   const s3 = createS3Client({ region });
   const params = {
@@ -43,8 +44,8 @@ const setBucketLifecyclePolicy = async (
 // creating Lambda functions from a zip file in S3 the region of the
 // Lambda and the region of the S3 bucket must match.
 export default async function ensureS3BucketExists(
-  region,
-  lifecycleConfigurationRules = [],
+  region?: string,
+  lifecycleConfigurationRules: LifecycleRule[] = [],
   withRegionSpecificName = false
 ) {
   const accountId = await getAWSAccountId();
@@ -76,4 +77,4 @@ export default async function ensureS3BucketExists(
 
   debug(bucketName);
   return bucketName;
-};
+}

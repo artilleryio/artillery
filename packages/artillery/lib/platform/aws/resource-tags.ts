@@ -70,9 +70,7 @@ function parseResourceTags(input?: string | null): ResourceTag[] {
   }
 
   if (errors.length > 0) {
-    throw new Error(
-      `Invalid --aws-tags value:\n  - ${errors.join('\n  - ')}`
-    );
+    throw new Error(`Invalid --aws-tags value:\n  - ${errors.join('\n  - ')}`);
   }
 
   return tags;

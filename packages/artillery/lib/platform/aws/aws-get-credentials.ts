@@ -22,7 +22,7 @@ async function getSSOCredentials() {
   } catch (err) {
     debug(err);
 
-    if (/SSO.+expired/.test(err.message)) {
+    if (/SSO.+expired/.test((err as Error).message)) {
       return [true, null];
     } else {
       return [false, null];

@@ -5,12 +5,17 @@
 
 import { randomUUID } from 'node:crypto';
 import { DefaultAzureCredential } from '@azure/identity';
-import { BlobServiceClient } from '@azure/storage-blob';
+import { BlobServiceClient, type ContainerClient } from '@azure/storage-blob';
 import { QueueClient } from '@azure/storage-queue';
 
+// A worker-message tag: { key, value } pairs attached to queue messages.
+type MessageTag = { key: string; value: string };
+
 function getAQS() {
+  // NOTE: pre-existing behavior: constructing with an undefined URL
+  // fails inside the client when the env var is not set.
   return new QueueClient(
-    process.env.AZURE_STORAGE_QUEUE_URL,
+    process.env.AZURE_STORAGE_QUEUE_URL as string,
     new DefaultAzureCredential()
   );
 }
@@ -19,7 +24,7 @@ function getAQS() {
 // Use 60KB threshold to leave margin for encoding overhead
 const AQS_SIZE_LIMIT = 60 * 1024;
 
-let blobContainerClient = null;
+let blobContainerClient: ContainerClient | null = null;
 
 function getBlobClient() {
   if (!blobContainerClient) {
@@ -39,10 +44,14 @@ function getBlobClient() {
   return blobContainerClient;
 }
 
-async function sendMessage(queue, body, tags) {
+async function sendMessage(
+  queue: QueueClient,
+  body: Record<string, any>,
+  tags: MessageTag[]
+) {
   const payload = JSON.stringify({
     payload: body,
-    attributes: tags.reduce((acc, tag) => {
+    attributes: tags.reduce((acc: Record<string, string>, tag) => {
       acc[tag.key] = tag.value;
       return acc;
     }, {})
@@ -65,7 +74,7 @@ async function sendMessage(queue, body, tags) {
         _overflowRef: blobName,
         event: body.event
       },
-      attributes: tags.reduce((acc, tag) => {
+      attributes: tags.reduce((acc: Record<string, string>, tag) => {
         acc[tag.key] = tag.value;
         return acc;
       }, {})

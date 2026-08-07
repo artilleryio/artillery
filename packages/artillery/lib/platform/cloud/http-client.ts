@@ -2,19 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import type { Got } from 'got';
+
 const DEFAULT_TIMEOUT_MS = 20 * 10000;
 const DEFAULT_RETRY_LIMIT = 3;
 
-let _got;
-async function getGot() {
+let _got: Got | undefined;
+async function getGot(): Promise<Got> {
   if (!_got) {
     _got = (await import('got')).default;
   }
   return _got;
 }
 
-let _client;
-async function getCloudHttpClient() {
+let _client: Got | undefined;
+async function getCloudHttpClient(): Promise<Got> {
   if (!_client) {
     const got = await getGot();
     _client = got.extend({
