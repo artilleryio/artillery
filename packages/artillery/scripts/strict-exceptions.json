@@ -5,7 +5,6 @@
   "lib/cmds/run-fargate.ts",
   "lib/cmds/run-lambda.ts",
   "lib/cmds/run.ts",
-  "lib/console-capture.ts",
   "lib/console-reporter.ts",
   "lib/create-bom/create-bom.ts",
   "lib/dist.ts",
@@ -42,13 +41,5 @@
   "lib/platform/local/artillery-worker-local.ts",
   "lib/platform/local/index.ts",
   "lib/platform/local/worker.ts",
-  "lib/queue-consumer/index.ts",
-  "lib/stash.ts",
-  "lib/telemetry.ts",
-  "lib/util.ts",
-  "lib/util/await-on-ee.ts",
-  "lib/util/parse-tag-string.ts",
-  "lib/util/prepare-test-execution-plan.ts",
-  "lib/util/sleep.ts",
-  "lib/utils-config.ts"
+  "lib/queue-consumer/index.ts"
 ]

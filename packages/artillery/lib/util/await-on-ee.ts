@@ -1,8 +1,18 @@
 import sleep from './sleep.ts';
 
-async function awaitOnEE(ee, message, pollMs = 1000, maxWaitMs = Infinity) {
+// Waits for an event, polling. Returns the event arguments, or null
+// when maxWaitMs elapses first. NOTE: the timeout leaves the listener
+// attached and does not reject - see modernization plan F17.
+async function awaitOnEE(
+  ee: {
+    once(event: string, listener: (...args: any[]) => void): unknown;
+  },
+  message: string,
+  pollMs = 1000,
+  maxWaitMs = Infinity
+): Promise<unknown[] | null> {
   let messageFired = false;
-  let args = null;
+  let args: unknown[] | null = null;
   let waitedMs = 0;
 
   ee.once(message, (...eventArgs) => {

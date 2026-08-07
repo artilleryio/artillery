@@ -1,7 +1,9 @@
 import { Redis } from '@upstash/redis';
 import { createClient } from './platform/cloud/api.ts';
 
-async function init(details) {
+async function init(
+  details: { url: string; token: string } | null | undefined
+): Promise<Redis | null> {
   if (details) {
     return new Redis({ url: details.url, token: details.token });
   } else {

@@ -1,6 +1,3 @@
-
-
-
 import fs from 'node:fs';
 import path from 'node:path';
 import createDebug from 'debug';
@@ -8,12 +5,10 @@ import YAML from 'js-yaml';
 
 const debug = createDebug('util');
 
-import chalkModule from 'chalk';
+import chalk from 'chalk';
 import _ from 'lodash';
 import moment from 'moment';
-
-const chalk: any = chalkModule;
-
+import type { Config, PayloadConfig, TestScript } from '../types.js';
 import { engine_util as engineUtil } from './commons/index.ts';
 
 const renderVariables = engineUtil._renderVariables;
@@ -25,23 +20,66 @@ const { contextFuncs } = __runner;
 
 import { promisify as p } from 'node:util';
 
-export { readScript, parseScript, addOverrides, addVariables, addDefaultPlugins, resolveConfigPath, resolveConfigTemplates, checkConfig, renderVariables, template, formatDuration, padded, rainbow };
-async function readScript(scriptPath) {
-  const data = p(fs.readFile)(scriptPath, 'utf-8');
+// A test script after checkConfig(): config is guaranteed, payload is
+// normalized to an array, internal path/environment markers are set.
+// The index signature admits internal fields attached along the
+// preparation pipeline (__transpiledTypeScriptPath etc.).
+export type MergedScript = TestScript & {
+  config: Config;
+  _environment?: string;
+  _scriptPath?: string;
+  _configPath?: string;
+  [key: string]: unknown;
+};
+
+// CLI flags consumed by the script preparation helpers.
+export interface ScriptPrepFlags {
+  environment?: string;
+  target?: string;
+  insecure?: boolean;
+  payload?: string;
+  config?: string;
+  overrides?: string;
+  variables?: string;
+  [flag: string]: unknown;
+}
+
+export {
+  readScript,
+  parseScript,
+  addOverrides,
+  addVariables,
+  addDefaultPlugins,
+  resolveConfigPath,
+  resolveConfigTemplates,
+  checkConfig,
+  renderVariables,
+  template,
+  formatDuration,
+  padded,
+  rainbow
+};
+async function readScript(scriptPath: string): Promise<string> {
+  const data = p(fs.readFile)(scriptPath, 'utf-8') as Promise<string>;
   return data;
 }
 
-async function parseScript(data) {
-  // js-yaml v3 API (repo-level @types are for v4)
-  return (YAML as any).safeLoad(data);
+async function parseScript(data: string): Promise<TestScript> {
+  // js-yaml v3 types say string | object | undefined; scripts are
+  // objects. Structural validation happens later in the pipeline
+  // (validate-script).
+  return YAML.safeLoad(data) as TestScript;
 }
 
-async function addOverrides(script, flags) {
+async function addOverrides(
+  script: MergedScript,
+  flags: ScriptPrepFlags
+): Promise<MergedScript> {
   if (!flags.overrides) {
     return script;
   }
 
-  const o = JSON.parse(flags.overrides);
+  const o: unknown = JSON.parse(flags.overrides);
   const result = _.mergeWith(
     script,
     o,
@@ -57,21 +95,25 @@ async function addOverrides(script, flags) {
   return result;
 }
 
-async function addVariables(script, flags) {
+async function addVariables(
+  script: MergedScript,
+  flags: ScriptPrepFlags
+): Promise<MergedScript> {
   if (!flags.variables) {
     return script;
   }
 
-  const variables = JSON.parse(flags.variables);
-  script.config.variables = script.config.variables || {};
+  const variables: Record<string, unknown> = JSON.parse(flags.variables);
+  const scriptVariables = script.config.variables || {};
+  script.config.variables = scriptVariables;
   for (const [k, v] of Object.entries(variables)) {
-    script.config.variables[k] = v;
+    scriptVariables[k] = v;
   }
 
   return script;
 }
 
-function addDefaultPlugins(script) {
+function addDefaultPlugins(script: MergedScript): MergedScript {
   const finalScript = _.cloneDeep(script);
 
   if (!script.config.plugins) {
@@ -82,18 +124,25 @@ function addDefaultPlugins(script) {
     'metrics-by-endpoint': { suppressOutput: true, stripQueryString: true }
   };
 
+  const plugins = finalScript.config.plugins || {};
+  finalScript.config.plugins = plugins;
   for (const [pluginName, pluginOptions] of Object.entries(
     additionalPluginsAndOptions
   )) {
-    if (!finalScript.config.plugins[pluginName]) {
-      finalScript.config.plugins[pluginName] = pluginOptions;
+    if (!plugins[pluginName]) {
+      plugins[pluginName] = pluginOptions;
     }
   }
 
   return finalScript;
 }
 
-async function resolveConfigTemplates(script, flags, configPath, scriptPath) {
+async function resolveConfigTemplates(
+  script: MergedScript,
+  flags: ScriptPrepFlags,
+  configPath: string,
+  scriptPath: string | undefined
+): Promise<MergedScript> {
   const cliVariables = flags.variables ? JSON.parse(flags.variables) : {};
 
   script.config = engineUtil.template(script.config, {
@@ -112,15 +161,25 @@ async function resolveConfigTemplates(script, flags, configPath, scriptPath) {
   return script;
 }
 
-async function checkConfig(script, scriptPath, flags) {
-  script._environment = flags.environment;
-  script.config = script.config || {};
+async function checkConfig(
+  script: TestScript,
+  scriptPath: string,
+  flags: ScriptPrepFlags
+): Promise<MergedScript> {
+  const merged = script as MergedScript;
+  merged._environment = flags.environment;
+  merged.config = merged.config || {};
+  return checkMergedConfig(merged, scriptPath, flags);
+}
 
+async function checkMergedConfig(
+  script: MergedScript,
+  scriptPath: string,
+  flags: ScriptPrepFlags
+): Promise<MergedScript> {
   if (flags.environment) {
     debug('environment specified: %s', flags.environment);
-    if (
-      script.config.environments?.[flags.environment]
-    ) {
+    if (script.config.environments?.[flags.environment]) {
       _.merge(script.config, script.config.environments[flags.environment]);
     } else {
       // TODO: Emit an event instead
@@ -160,23 +219,24 @@ async function checkConfig(script, scriptPath, flags) {
     if (_.isArray(script.config.payload)) {
       // an array - nothing to do
     } else if (_.isObject(script.config.payload)) {
-      if (flags.payload && !_.get(script.config.payload, 'path')) {
-        script.config.payload.path = path.resolve(process.cwd(), flags.payload);
-      } else if (!flags.payload && !_.get(script.config.payload, 'path')) {
+      const payload = script.config.payload as PayloadConfig;
+      if (flags.payload && !_.get(payload, 'path')) {
+        payload.path = path.resolve(process.cwd(), flags.payload);
+      } else if (!flags.payload && !_.get(payload, 'path')) {
         console.log(
           'WARNING: config.payload.path not set and payload file not specified with -p'
         );
-      } else if (flags.payload && _.get(script.config.payload, 'path')) {
+      } else if (flags.payload && _.get(payload, 'path')) {
         console.log(
           'WARNING - both -p and config.payload.path are set, config.payload.path will be ignored.'
         );
-        script.config.payload.path = flags.payload;
+        payload.path = flags.payload;
       } else {
         // no -p but config.payload.path is set - nothing to do
       }
 
       // Make it an array
-      script.config.payload = [script.config.payload];
+      script.config.payload = [payload];
     } else {
       console.log('Ignoring config.payload, not an object or an array.');
     }
@@ -186,7 +246,7 @@ async function checkConfig(script, scriptPath, flags) {
   // Resolve all payload paths to absolute paths now:
   //
   const absoluteScriptPath = path.resolve(process.cwd(), scriptPath);
-  _.forEach(script.config.payload, (payloadSpec) => {
+  _.forEach(script.config.payload as PayloadConfig[], (payloadSpec) => {
     const resolvedPathToPayload = path.resolve(
       path.dirname(absoluteScriptPath),
       payloadSpec.path
@@ -197,7 +257,11 @@ async function checkConfig(script, scriptPath, flags) {
   return script;
 }
 
-async function resolveConfigPath(script, flags, scriptPath) {
+async function resolveConfigPath(
+  script: MergedScript,
+  flags: ScriptPrepFlags,
+  scriptPath: string
+): Promise<MergedScript> {
   if (!flags.config) {
     script._configPath = scriptPath;
     return script;
@@ -230,7 +294,7 @@ async function resolveConfigPath(script, flags, scriptPath) {
   return script;
 }
 
-function formatDuration(durationInMs) {
+function formatDuration(durationInMs: number): string {
   const duration = moment.duration(durationInMs);
 
   const days = duration.days();
@@ -238,7 +302,7 @@ function formatDuration(durationInMs) {
   const minutes = duration.minutes();
   const seconds = duration.seconds();
 
-  const timeComponents = [];
+  const timeComponents: string[] = [];
   if (days) {
     timeComponents.push(`${days} ${maybePluralize(days, 'day')}`);
   }
@@ -256,11 +320,20 @@ function formatDuration(durationInMs) {
   return timeComponents.join(', ');
 }
 
-function maybePluralize(amount, singular, plural = `${singular}s`) {
+function maybePluralize(
+  amount: number,
+  singular: string,
+  plural = `${singular}s`
+): string {
   return amount === 1 ? singular : plural;
 }
 
-function padded(str1, str2, length = 79, formatPadding = chalk.gray) {
+function padded(
+  str1: string,
+  str2: string,
+  length = 79,
+  formatPadding: (s: string) => string = chalk.gray
+): string {
   const truncated = maybeTruncate(str1, length);
   return (
     truncated +
@@ -271,19 +344,25 @@ function padded(str1, str2, length = 79, formatPadding = chalk.gray) {
   );
 }
 
-function maybeTruncate(str, length) {
+function maybeTruncate(str: string, length: number): string {
   return str.length > length ? `${str.slice(0, length - 3)}...` : str;
 }
 
-function rainbow(str) {
+function rainbow(str: string): string {
   const letters = str.split('');
-  const colors = ['red', 'yellow', 'green', 'cyan', 'blue', 'magenta'];
+  const colors = [
+    chalk.red,
+    chalk.yellow,
+    chalk.green,
+    chalk.cyan,
+    chalk.blue,
+    chalk.magenta
+  ];
   const colorsCount = colors.length;
 
   return letters
     .map((l, i) => {
-      const color = colors[i % colorsCount];
-      return chalk[color](l);
+      return colors[i % colorsCount](l);
     })
     .join('');
 }

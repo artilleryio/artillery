@@ -1,5 +1,12 @@
-export default function parseTagString(input) {
-  const result = {
+export interface ParsedTags {
+  tags: Array<{ name: string; value: string }>;
+  errors: string[];
+}
+
+export default function parseTagString(
+  input: string | null | undefined
+): ParsedTags {
+  const result: ParsedTags = {
     tags: [],
     errors: []
   };
@@ -18,4 +25,4 @@ export default function parseTagString(input) {
     }
   }
   return result;
-};
+}
