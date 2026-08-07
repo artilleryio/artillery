@@ -20,14 +20,49 @@ import { parseScript, readScript } from '../util.ts';
 
 import BUILTIN_PLUGINS from './built-in-plugins.ts';
 
+// A file included in a test bundle. noPrefixPosix is attached when
+// the manifest is prepared for upload (see legacy create-test.ts).
+export interface BomFileEntry {
+  orig: string;
+  noPrefix: string;
+  noPrefixPosix?: string;
+}
+
+// The bill of materials for a test: local files to upload and npm
+// packages to install on workers.
+export interface BomManifest {
+  files: BomFileEntry[];
+  modules: string[];
+  pkgDeps: string[];
+}
+
+// Accumulator passed through the BOM waterfall steps.
+export interface BomContext {
+  opts: {
+    scriptData: Record<string, any>;
+    absoluteScriptPath: string;
+    [key: string]: any;
+  };
+  localFilePaths: string[];
+  npmModules: string[];
+  pkgDeps?: string[];
+}
+
+export type BomNext = (err: Error | null, context?: BomContext) => void;
+
 // NOTE: Presumes ALL paths are absolute.
-async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
+async function createBOM(
+  absoluteScriptPath: string,
+  extraFiles: string[],
+  opts: { packageJsonPath?: string; [key: string]: any },
+  callback: (err: Error | null, manifest: BomManifest | null) => void
+) {
   A.waterfall(
     [
       A.constant(absoluteScriptPath),
       readScript,
       parseScript,
-      (scriptData, next) => {
+      (scriptData: Record<string, any>, next: BomNext) => {
         return next(null, {
           opts: {
             scriptData,
@@ -46,7 +81,7 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
       // expandDirectories
     ],
 
-    (err, context) => {
+    (err: Error | null | undefined, context: BomContext) => {
       if (err) {
         return callback(err, null);
       }
@@ -115,7 +150,7 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       if (pkgPath) {
         const pkg = JSON.parse(fs.readFileSync(pkgPath.orig, 'utf8'));
-        const pkgDeps = [].concat(
+        const pkgDeps = ([] as string[]).concat(
           Object.keys(pkg.dependencies || {}),
           Object.keys(pkg.devDependencies || {})
         );
@@ -127,22 +162,26 @@ async function createBOM(absoluteScriptPath, extraFiles, opts, callback) {
 
       return callback(null, {
         files: _.uniqWith(files, _.isEqual),
-        modules: _.uniq<any>(context.npmModules).filter(
+        modules: _.uniq(context.npmModules).filter(
           (m) =>
             m !== 'artillery' &&
             m !== 'playwright' &&
             !m.startsWith('@playwright/')
         ),
-        pkgDeps: context.pkgDeps
+        pkgDeps: context.pkgDeps as string[]
       });
     }
   );
 }
 
-function getPlugins(context, next) {
+function getPlugins(context: BomContext, next: BomNext) {
   const environmentPlugins = _.reduce(
     _.get(context, 'opts.scriptData.config.environments', {}),
-    function getEnvironmentPlugins(acc, envSpec, _envName) {
+    function getEnvironmentPlugins(
+      acc: string[],
+      envSpec: Record<string, any>,
+      _envName
+    ) {
       acc = acc.concat(Object.keys(envSpec.plugins || []));
       return acc;
     },
@@ -164,7 +203,7 @@ function getPlugins(context, next) {
   return next(null, context);
 }
 
-function getCustomEngines(context, next) {
+function getCustomEngines(context: BomContext, next: BomNext) {
   // TODO: Environment-specific engines (see getPlugins())
   const engineNames = _.uniq(
     Object.keys(_.get(context, 'opts.scriptData.config.engines', {}))
@@ -175,7 +214,7 @@ function getCustomEngines(context, next) {
   return next(null, context);
 }
 
-function getVariableDataFiles(context, next) {
+function getVariableDataFiles(context: BomContext, next: BomNext) {
   // NOTE: Presuming that the script has been run through the functions
   // that normalize the config.payload definition (presume it's an array).
   // Also assuming that context.opts.scriptData contains both the config and
@@ -183,8 +222,8 @@ function getVariableDataFiles(context, next) {
 
   // Iterate over environments
 
-  function resolvePayloadPaths(obj) {
-    const result = [];
+  function resolvePayloadPaths(obj: Record<string, any>) {
+    const result: string[] = [];
     if (obj.payload) {
       if (_.isArray(obj.payload)) {
         obj.payload.forEach((payloadSpec) => {
@@ -201,7 +240,7 @@ function getVariableDataFiles(context, next) {
         result.push(
           path.resolve(
             path.dirname(context.opts.absoluteScriptPath),
-            obj.payload.path
+            (obj.payload as { path: string }).path
           )
         );
       }
@@ -215,7 +254,7 @@ function getVariableDataFiles(context, next) {
   context.opts.scriptData.config.environments =
     context.opts.scriptData.config.environments || {};
   Object.keys(context.opts.scriptData.config.environments).forEach(
-    (envName) => {
+    (envName: string) => {
       const envSpec = context.opts.scriptData.config.environments[envName];
       context.localFilePaths = context.localFilePaths.concat(
         resolvePayloadPaths(envSpec)
@@ -225,18 +264,19 @@ function getVariableDataFiles(context, next) {
   return next(null, context);
 }
 
-function getExtraFiles(context, next) {
-  if (
-    context.opts.scriptData.config?.includeFiles
-  ) {
-    const absPaths = _.map(context.opts.scriptData.config.includeFiles, (p) => {
-      const includePath = path.resolve(
-        path.dirname(context.opts.absoluteScriptPath),
-        p
-      );
-      debug('includeFile:', includePath);
-      return includePath;
-    });
+function getExtraFiles(context: BomContext, next: BomNext) {
+  if (context.opts.scriptData.config?.includeFiles) {
+    const absPaths = _.map(
+      context.opts.scriptData.config.includeFiles,
+      (p: string) => {
+        const includePath = path.resolve(
+          path.dirname(context.opts.absoluteScriptPath),
+          p
+        );
+        debug('includeFile:', includePath);
+        return includePath;
+      }
+    );
     context.localFilePaths = context.localFilePaths.concat(absPaths);
     return next(null, context);
   } else {
@@ -244,7 +284,7 @@ function getExtraFiles(context, next) {
   }
 }
 
-function commonPrefix(paths, separator?) {
+function commonPrefix(paths: string[], separator?: string): string {
   if (
     !paths ||
     paths.length === 0 ||
@@ -286,7 +326,7 @@ function commonPrefix(paths, separator?) {
   }
 }
 
-function prettyPrint(manifest) {
+function prettyPrint(manifest: BomManifest) {
   const t = new Table({ head: ['Name', 'Type', 'Notes'] });
   for (const f of manifest.files) {
     t.push([f.noPrefix, 'file']);
