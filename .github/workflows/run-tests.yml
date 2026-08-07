@@ -60,14 +60,6 @@ jobs:
       - run: npm run test --workspace ${{ matrix.package }}
         env:
           FORCE_COLOR: 1
-      - name: Notify about failures
-        if: failure() && github.ref == 'refs/heads/main'
-        uses: 8398a7/action-slack@v3.15.1
-        with:
-          status: ${{ job.status }}
-          fields: repo,message,commit,author,eventName,job,took,pullRequest
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
   test-windows:
     timeout-minutes: 60
@@ -85,18 +77,7 @@ jobs:
           node-version: 24.x
       - run: npm install
       - run: npm run build
-      - name: Run windows tests and capture exit code
-        continue-on-error: true
-        run: |
-          npm run test:windows --workspace artillery
-          echo "HAS_PASSED=$?" >> $env:GITHUB_ENV
+      - name: Run windows tests
+        run: npm run test:windows --workspace artillery
         env:
           FORCE_COLOR: 1
-      - name: Notify about failures
-        if: env.HAS_PASSED == 'False'
-        uses: 8398a7/action-slack@v3.15.1
-        with:
-          status: failure
-          fields: repo,message,commit,author,eventName,job,took,pullRequest
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
