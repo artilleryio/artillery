@@ -50,6 +50,5 @@
   "lib/util/parse-tag-string.ts",
   "lib/util/prepare-test-execution-plan.ts",
   "lib/util/sleep.ts",
-  "lib/util/validate-script.ts",
   "lib/utils-config.ts"
 ]

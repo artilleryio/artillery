@@ -1,6 +1,7 @@
 {
-  "//": "Strict type-checking ratchet. Compiles the whole lib graph with strict settings; scripts/check-strict.mjs allows errors only in files listed in scripts/strict-exceptions.json. That list may only shrink - fix a file, remove it from the list. New files must be strict-clean from the start. See CONTRIBUTING.md.",
+  "//": "Strict type-checking ratchet. Compiles the whole lib graph plus the public type surface with strict settings; scripts/check-strict.mjs allows errors only in files listed in scripts/strict-exceptions.json. That list may only shrink - fix a file, remove it from the list. New files must be strict-clean from the start. See CONTRIBUTING.md.",
   "extends": "./tsconfig.build.json",
+  "files": ["./lib/typings/untyped-deps.d.ts", "./types.d.ts"],
   "compilerOptions": {
     "noEmit": true,
     "strict": true,

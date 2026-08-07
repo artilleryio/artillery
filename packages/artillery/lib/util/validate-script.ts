@@ -1,4 +1,5 @@
 import BaseJoi from 'joi';
+import type { TestScript } from '../../types.js';
 
 const Joi = BaseJoi.defaults((schema) =>
   schema.options({ allowUnknown: true, abortEarly: true })
@@ -125,10 +126,13 @@ const schema = Joi.object({
   after: beforeAfterSchema
 });
 
-export default (script) => {
+// Runtime validation of a (merged) test script. Stricter than the
+// input model in one way: scenarios are required at this stage.
+export default (script: TestScript): string | undefined => {
   const { error } = schema.validate(script);
 
   if (error?.details.length) {
     return error.details[0].message;
   }
+  return undefined;
 };
