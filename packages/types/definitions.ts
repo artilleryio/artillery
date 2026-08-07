@@ -1,3 +1,8 @@
+// NOTE: the canonical compile-time model of an Artillery test script
+// lives in packages/artillery/types.d.ts (the published type surface).
+// This file is retained for the private schema package only - when it
+// disagrees with the canonical model, correct it against that file.
+
 import type { ExpectPluginConfig, ExpectPluginMetrics } from './plugins/expect';
 
 export type TestScript = {
@@ -147,7 +152,7 @@ export type PayloadConfig = {
    * @default "random"
    * @example ["sequence", "random"]
    */
-  random?: 'random' | 'sequence';
+  order?: 'random' | 'sequence';
   /**
    * Set to `true` to make Artillery skip the first row in the CSV file
    * (typically the header row).
@@ -276,12 +281,7 @@ export type TestPhase = {
        * The number of virtual users generated every second.
        * @title Arrival rate
        */
-      arrivalRate?: number | string;
-      /**
-       * Fixed number of virtual users.
-       * @title Arrival count
-       */
-      arrivalCount?: number | string;
+      arrivalRate: number | string;
       /**
        * @title Ramp rate
        */
@@ -290,6 +290,24 @@ export type TestPhase = {
        * Maximum number of virtual users generated at any given time.
        * @title Maximum virtual users
        */
+      maxVusers?: number | string;
+    }
+  | {
+      duration: number | string;
+      arrivalRate?: number | string;
+      /**
+       * @title Ramp rate
+       */
+      rampTo: number | string;
+      maxVusers?: number | string;
+    }
+  | {
+      duration: number | string;
+      /**
+       * Fixed number of virtual users over the phase duration.
+       * @title Arrival count
+       */
+      arrivalCount: number | string;
       maxVusers?: number | string;
     }
   | {
