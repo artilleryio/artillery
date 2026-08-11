@@ -1,6 +1,6 @@
 {
   "name": "artillery-monorepo",
-  "packageManager": "^npm@10.8.2",
+  "packageManager": "npm@10.8.2",
   "workspaces": [
     "packages/*"
   ],
@@ -15,14 +15,20 @@
     "typecheck:strict": "npm run typecheck:strict --workspace artillery"
   },
   "overrides": {
+    "engine.io": {
+      "ws": "^8.21.0"
+    },
     "engine.io-client": {
-      "ws": "^8.20.1"
+      "ws": "^8.21.0"
+    },
+    "socket.io-adapter": {
+      "ws": "^8.21.0"
     }
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.3",
-    "@commitlint/cli": "^9.1.2",
-    "@commitlint/config-conventional": "^7.6.0",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
     "@types/debug": "^4.1.13",
     "@types/fs-extra": "^11.0.4",
     "@types/jmespath": "^0.15.2",
@@ -31,10 +37,10 @@
     "@types/node": "^22.20.1",
     "@types/rc": "^1.2.4",
     "@types/ws": "^7.4.7",
-    "lint-staged": "^13.2.3",
+    "lint-staged": "^16.4.0",
     "prettier": "^2.8.8",
     "simple-git-hooks": "^2.8.1",
-    "turbo": "2.0.11",
+    "turbo": "2.10.8",
     "typescript": "^5.9.3"
   },
   "simple-git-hooks": {
