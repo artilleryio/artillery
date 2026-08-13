@@ -13,6 +13,7 @@ import type {
   WorkerCommand,
   WorkerEnvelope
 } from './protocol.ts';
+import type { StashDetails } from '../../stash.ts';
 
 // Emitted output runs from dist/ where the sibling module is worker.js;
 // when this file is loaded directly from source (tests importing .ts),
@@ -122,10 +123,11 @@ class ArtilleryWorker {
     script: Record<string, any>;
     payload: unknown;
     options: Record<string, any>;
+    stashDetails?: StashDetails | null;
   }) {
     this.state = STATES.preparing;
 
-    const { script, payload, options } = opts;
+    const { script, payload, options, stashDetails } = opts;
     let scriptForWorker: Record<string, any> = script;
 
     if (script.__transpiledTypeScriptPath && script.__originalScriptPath) {
@@ -140,7 +142,8 @@ class ArtilleryWorker {
       script: scriptForWorker,
       payload,
       options,
-      testRunId: global.artillery.testRunId
+      testRunId: global.artillery.testRunId,
+      stashDetails
     };
     const command: WorkerCommand = {
       command: 'prepare',

@@ -13,6 +13,8 @@ import divideWork from '../../dist.ts';
 import STATES from '../worker-states.ts';
 import type { WorkerState } from '../worker-states.ts';
 import type { WorkerEnvelope } from './protocol.ts';
+import { fetchStashDetails } from '../../stash.ts';
+import type { StashDetails } from '../../stash.ts';
 
 interface WorkerRecord {
   id: number;
@@ -86,12 +88,15 @@ class PlatformLocal {
       debug(`worker init ok: ${w1.workerId}`);
     }
 
+    const stashDetails = await this.getStashDetailsOnce();
+
     for (const [workerId, w] of Object.entries<any>(this.workers)) {
       this.opts.cliArgs = this.platformOpts.cliArgs;
       await this.prepareWorker(workerId, {
         script: w.script,
         payload: this.payload,
-        options: this.opts
+        options: this.opts,
+        stashDetails
       });
       this.workers[workerId].state = STATES.preparing;
     }
@@ -111,6 +116,34 @@ class PlatformLocal {
     // its context is then passed to the workers
     const contextVars = await this.runHook('before');
     this.contextVars = contextVars; // TODO: Rename to something more descriptive
+  }
+
+  // Stash is an Artillery Cloud feature. Fetch connection details once
+  // in the main process and hand them to every worker via prepare -
+  // workers make no cloud API calls of their own. Only reach out to
+  // the cloud API when cloud reporting is enabled for this run:
+  // `--record` for interactive use, WORKER_ID for cloud workers
+  // (Fargate/Lambda/ACI). Mirrors ArtilleryCloudPlugin gating.
+  // Presence of an API key alone must not trigger network calls:
+  // on-prem/airgapped environments may blackhole app.artillery.io.
+  async getStashDetailsOnce(): Promise<StashDetails | null> {
+    const cliArgs = this.platformOpts.cliArgs;
+    const cloudReportingEnabled =
+      typeof cliArgs?.record !== 'undefined' ||
+      typeof process.env.WORKER_ID !== 'undefined';
+
+    if (!cloudReportingEnabled) {
+      return null;
+    }
+
+    try {
+      return await fetchStashDetails({ apiKey: cliArgs?.key });
+    } catch (err) {
+      if ((err as Error).name !== 'CloudAPIKeyMissing') {
+        console.error(err);
+      }
+      return null;
+    }
   }
 
   async createWorker() {
@@ -161,6 +194,7 @@ class PlatformLocal {
       script: Record<string, any>;
       payload: unknown;
       options: Record<string, any>;
+      stashDetails?: StashDetails | null;
     }
   ) {
     return this.workers[workerId].proc.prepare(opts);

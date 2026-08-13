@@ -12,12 +12,16 @@
 // work (modernization plan F7).
 
 import type { PhaseSpec } from '../../core/phases.ts';
+import type { StashDetails } from '../../stash.ts';
 
 export interface PrepareWorkerOptions {
   script: Record<string, any>;
   payload: unknown;
   options: Record<string, any>;
   testRunId: string;
+  // Fetched once by the main process; workers must not call the
+  // cloud API themselves:
+  stashDetails?: StashDetails | null;
 }
 
 export type WorkerCommand =

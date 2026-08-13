@@ -21,7 +21,7 @@ import type {
 } from './protocol.ts';
 
 import { createGlobalObject } from '../../artillery-global.ts';
-import { getStash } from '../../stash.ts';
+import { initStash } from '../../stash.ts';
 
 const createRunner = core.runner.runner;
 const debug = createDebug('artillery:worker');
@@ -112,39 +112,14 @@ async function cleanup() {
   });
 }
 
-async function createGlobalStashClient(
-  cliArgs: Record<string, any> | undefined
-) {
-  // Stash is an Artillery Cloud feature. Only call the Cloud API when
-  // cloud reporting is enabled for this run: `--record` for interactive
-  // use, WORKER_ID for cloud workers (Fargate/Lambda/ACI). Mirrors
-  // ArtilleryCloudPlugin gating. Presence of an API key alone must not
-  // trigger network calls: on-prem/airgapped environments may blackhole
-  // app.artillery.io and every worker would stall on TCP timeouts.
-  const cloudReportingEnabled =
-    typeof cliArgs?.record !== 'undefined' ||
-    typeof process.env.WORKER_ID !== 'undefined';
-
-  if (!cloudReportingEnabled) {
-    global.artillery.stash = null;
-    return;
-  }
-
-  try {
-    global.artillery.stash = await getStash({
-      apiKey: cliArgs?.key || process.env.ARTILLERY_CLOUD_API_KEY
-    });
-  } catch (error) {
-    if ((error as Error).name !== 'CloudAPIKeyMissing') {
-      console.error(error);
-    }
-    global.artillery.stash = null;
-  }
-}
-
 async function prepare(opts: PrepareWorkerOptions) {
   await createGlobalObject();
-  await createGlobalStashClient(opts.options.cliArgs);
+
+  // Stash connection details are fetched once by the main process
+  // (see PlatformLocal.getStashDetailsOnce) and passed in; workers
+  // make no cloud API calls. initStash() only constructs a client -
+  // @upstash/redis is HTTP-based and opens no connections here.
+  global.artillery.stash = await initStash(opts.stashDetails);
 
   global.artillery.globalEvents.on('log', (...args) => {
     send({ event: 'log', args });
