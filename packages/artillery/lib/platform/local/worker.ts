@@ -21,7 +21,7 @@ import type {
 } from './protocol.ts';
 
 import { createGlobalObject } from '../../artillery-global.ts';
-import { getStash } from '../../stash.ts';
+import { initStash } from '../../stash.ts';
 
 const createRunner = core.runner.runner;
 const debug = createDebug('artillery:worker');
@@ -112,24 +112,14 @@ async function cleanup() {
   });
 }
 
-async function createGlobalStashClient(
-  cliArgs: Record<string, any> | undefined
-) {
-  try {
-    global.artillery.stash = await getStash({
-      apiKey: cliArgs?.key || process.env.ARTILLERY_CLOUD_API_KEY
-    });
-  } catch (error) {
-    if ((error as Error).name !== 'CloudAPIKeyMissing') {
-      console.error(error);
-    }
-    global.artillery.stash = null;
-  }
-}
-
 async function prepare(opts: PrepareWorkerOptions) {
   await createGlobalObject();
-  await createGlobalStashClient(opts.options.cliArgs);
+
+  // Stash connection details are fetched once by the main process
+  // (see PlatformLocal.getStashDetailsOnce) and passed in; workers
+  // make no cloud API calls. initStash() only constructs a client -
+  // @upstash/redis is HTTP-based and opens no connections here.
+  global.artillery.stash = await initStash(opts.stashDetails);
 
   global.artillery.globalEvents.on('log', (...args) => {
     send({ event: 'log', args });
