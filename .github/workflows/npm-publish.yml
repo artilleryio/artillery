@@ -5,8 +5,8 @@ name: Publish artillery to npm
 # trusted publisher config points at this file.
 #
 # Channel resolution:
-#   - push to main with a "ci: release v" commit (create-release-pr.yml
-#     merge) -> latest
+#   - push to main with a commit message starting with "ci: release v"
+#     (create-release-pr.yml merge) -> latest
 #   - any other push to main touching artillery or a bundled built-in
 #     package -> canary
 #   - manual dispatch -> explicit channel input (defaults to canary so an
@@ -50,7 +50,9 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             CHANNEL="${{ inputs.channel }}"
-          elif case "$COMMIT_MSG" in *"ci: release v"*) true;; *) false;; esac; then
+          # prefix match, not substring - e.g. a revert of a release commit
+          # (Revert "ci: release v...") must not resolve to latest
+          elif case "$COMMIT_MSG" in "ci: release v"*) true;; *) false;; esac; then
             CHANNEL="latest"
           else
             CHANNEL="canary"
