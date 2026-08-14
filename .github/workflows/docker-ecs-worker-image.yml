@@ -237,18 +237,10 @@ jobs:
         run: |
           docker build . --platform linux/arm64 --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
 
-      - name: Smoke test Playwright imports (Public ECR)
-        if: matrix.registry == 'public'
-        env:
-          DOCKER_TAG: ${{ env.WORKER_VERSION }}-arm64
-        run: |
-          docker run --rm --platform linux/arm64 \
-            --entrypoint node \
-            --workdir /tmp \
-            --mount type=bind,source="$PWD/.github/workflows/scripts/smoke-test-artillery-docker-image.mjs",target=/tmp/smoke-test.mjs,readonly \
-            public.ecr.aws/d8a4z9o5/artillery-worker:${{ env.DOCKER_TAG }} \
-            /tmp/smoke-test.mjs
-      
+      # NOTE: no smoke test for arm64. `docker run --platform linux/arm64` fails with
+      # "exec format error" on Blacksmith amd64 runners - QEMU binfmt emulation works
+      # for `docker build` but not for `docker run`. Smoke test runs on amd64 only.
+
       - name: Push Docker image (Public ECR)
         if: matrix.registry == 'public'
         env: 
@@ -278,17 +270,7 @@ jobs:
         run: |
           docker build . --platform linux/arm64 --build-arg="WORKER_VERSION=${{ env.WORKER_VERSION }}" --tag 248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }} -f ./packages/artillery/lib/platform/aws-ecs/worker/Dockerfile
 
-      - name: Smoke test Playwright imports (Private ECR)
-        if: matrix.registry == 'private'
-        env:
-          DOCKER_TAG: ${{ env.WORKER_VERSION }}-arm64
-        run: |
-          docker run --rm --platform linux/arm64 \
-            --entrypoint node \
-            --workdir /tmp \
-            --mount type=bind,source="$PWD/.github/workflows/scripts/smoke-test-artillery-docker-image.mjs",target=/tmp/smoke-test.mjs,readonly \
-            248481025674.dkr.ecr.eu-west-1.amazonaws.com/artillery-worker:${{ env.DOCKER_TAG }} \
-            /tmp/smoke-test.mjs
+      # NOTE: no smoke test for arm64 - see comment in the public ECR steps above.
 
       - name: Push Docker image (Private ECR)
         if: matrix.registry == 'private'
