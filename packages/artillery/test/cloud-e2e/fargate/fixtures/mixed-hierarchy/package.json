@@ -11,8 +11,8 @@
     "license": "ISC",
     "dependencies": {
       "@babel/core": "latest",
-      "aws-sdk": "^2.1534.0",
+      "aws-sdk": "^2.1693.0",
       "aws4": "^1.12.0",
-      "lodash": "^4.17.21"
+      "lodash": "^4.17.23"
     }
   }
