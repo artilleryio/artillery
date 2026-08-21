@@ -1,10 +1,10 @@
 # =============================================================================
 # Stage 1: Builder
 #
-# Compiles native Node.js addons (aws-lambda-ric) and installs CLIs.
-# Everything useful is copied to the runtime stage; the rest is discarded.
-# This keeps ~500MB of build toolchain (g++, cmake, headers) out of the
-# final image.
+# Compiles native Node.js addons (aws-lambda-ric) and transpiles the
+# TypeScript workspace packages. Everything useful is copied to the
+# runtime stage; the rest is discarded. This keeps ~500MB of build
+# toolchain (g++, cmake, headers) out of the final image.
 # =============================================================================
 FROM dhi.io/node:24-debian13-sfw-dev@sha256:df8622ac78486f140b81a64ba50d3e8ab6bed6d3455af89dd8ab8c32bfa066b3 AS builder
 
@@ -14,42 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     make \
     cmake \
-    unzip \
     libcurl4-openssl-dev \
     autoconf \
     libtool \
-    curl \
     python3 \
-    python3-venv \
     ca-certificates \
     xz-utils \
     && rm -rf /var/lib/apt/lists/*
-
-# --- AWS CLI v2 (standalone installer) ---
-# The old Dockerfile installed v1 via pip, which pulls in botocore (~300MB
-# of JSON service definitions for every AWS service). The v2 standalone
-# installer is ~200MB — about 40% smaller — and bundles its own Python
-# so it doesn't need python3 in the runtime image.
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip" \
-        -o /tmp/awscliv2.zip \
-    && unzip -q /tmp/awscliv2.zip -d /tmp \
-    && /tmp/aws/install \
-    && rm -rf /tmp/awscliv2.zip /tmp/aws
-
-# --- Azure Storage SDK (replaces the full azure-cli) ---
-# The old Dockerfile installed azure-cli==2.76.0 (~800MB-1GB) but only used
-# 5 subcommands: login, blob upload/download/download-batch, and queue send.
-# We replace it with 3 targeted Python SDK packages (~6MB):
-#   azure-storage-blob   - blob operations
-#   azure-storage-queue  - queue message operations
-#   azure-identity       - service principal authentication
-# A small wrapper script (azure-storage-helper) provides the same CLI
-# interface that loadgen-worker expects.
-RUN python3 -m venv /opt/azure-sdk \
-    && /opt/azure-sdk/bin/pip install --no-cache-dir \
-        azure-storage-blob \
-        azure-storage-queue \
-        azure-identity
 
 # --- Artillery application + npm dependencies ---
 ARG FUNCTION_DIR="/artillery"
@@ -140,17 +111,12 @@ RUN rm -rf /var/task && ln -s ${FUNCTION_DIR} /var/task
 COPY --from=builder ${FUNCTION_DIR}/node_modules ${FUNCTION_DIR}/node_modules
 
 # --- Runtime system packages ---
-# Worker shell script (loadgen-worker) tools:
-#   jq       - JSON parsing for metadata, SQS messages
-#   pwgen    - generate deduplication IDs for SQS messages
-#   curl     - ECS metadata endpoint, general HTTP
-#   git      - user test repos may need it
+# Worker (loadgen-worker, Node.js) tools:
+#   git      - user test dependencies may need it (npm installs from git)
 #   zip      - leader packs node_modules.zip for follower workers
 #   unzip    - followers unpack node_modules.zip from leader
-#   tree     - debug logging of test directory structure
-#   procps   - pgrep, used to find Artillery CLI PID
-#   python3  - required by azure-storage-helper (its venv references system python3)
-#   bash     - worker scripts are bash (base slim image only has dash)
+#   curl     - user convenience (test scripts may shell out)
+#   bash     - user convenience (base slim image only has dash)
 #
 # Chromium runtime libs (list mirrors Playwright 1.62.1's own Debian 13
 # profile from playwright-core/src/server/registry/nativeDeps.ts). We
@@ -164,15 +130,10 @@ COPY --from=builder ${FUNCTION_DIR}/node_modules ${FUNCTION_DIR}/node_modules
 # --no-install-recommends avoids pulling in suggested packages we don't need.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
-    jq \
-    pwgen \
     curl \
     git \
     zip \
     unzip \
-    tree \
-    procps \
-    python3 \
     libasound2t64 \
     libatk-bridge2.0-0t64 \
     libatk1.0-0t64 \
@@ -206,25 +167,6 @@ RUN npx playwright install chromium
 # The worker uses `yarn install` when the test bundle ships a yarn.lock.
 # Node 24 ships corepack but `yarn` isn't on $PATH until enabled.
 RUN corepack enable
-
-# --- AWS CLI v2 (copied from builder, ~200MB) ---
-# The standalone v2 installer bundles its own Python runtime, so no system
-# python3 dependency. Only the install directory needs copying.
-# /usr/local/bin/aws must be a symlink (not a copied binary) because aws
-# is a PyInstaller bundle that locates libpython relative to the real
-# binary path. COPY resolves symlinks, so we recreate it manually.
-COPY --from=builder /usr/local/aws-cli /usr/local/aws-cli
-RUN ln -s /usr/local/aws-cli/v2/current/bin/aws /usr/local/bin/aws
-
-# --- Azure Storage SDK + helper script (copied from builder) ---
-# The venv is self-contained except for the python3 interpreter symlink.
-# python3 was installed above in the runtime packages step.
-# Total size: ~6MB (vs ~800MB for the full azure-cli).
-COPY --from=builder /opt/azure-sdk /opt/azure-sdk
-# The helper script uses #!/opt/azure-sdk/bin/python3 as its shebang,
-# so it automatically picks up the venv's installed packages.
-COPY ./packages/artillery/lib/platform/aws-ecs/worker/azure-storage-helper /usr/local/bin/azure-storage-helper
-RUN chmod +x /usr/local/bin/azure-storage-helper
 
 ARG WORKER_VERSION
 ENV WORKER_VERSION=$WORKER_VERSION
