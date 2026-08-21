@@ -106,7 +106,7 @@ RUN npm cache clean --force && rm ./package.json
 #
 # Dual-use invariant: this image is consumed by
 #   (a) the Fargate worker — ENTRYPOINT overridden by the ECS task
-#       definition to /artillery/loadgen-worker (bash script);
+#       definition to /artillery/loadgen-worker (node shim);
 #   (b) the Artillery GitHub Action — runs the Dockerfile ENTRYPOINT
 #       /artillery/packages/artillery/bin/run directly.
 # GitHub Actions requires the container to run as root to access
@@ -203,8 +203,8 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright
 # No --with-deps: we installed the chromium libs explicitly above.
 RUN npx playwright install chromium
 
-# The worker script (loadgen-worker) checks for `yarn` in its DEPENDENCIES
-# array. Node 24 ships corepack but `yarn` isn't on $PATH until enabled.
+# The worker uses `yarn install` when the test bundle ships a yarn.lock.
+# Node 24 ships corepack but `yarn` isn't on $PATH until enabled.
 RUN corepack enable
 
 # --- AWS CLI v2 (copied from builder, ~200MB) ---
@@ -237,10 +237,11 @@ COPY --from=builder ${FUNCTION_DIR}/a9-handler-dependencies.js ${FUNCTION_DIR}/
 COPY --from=builder ${FUNCTION_DIR}/a9-handler-helpers.js ${FUNCTION_DIR}/
 COPY --from=builder ${FUNCTION_DIR}/a9-handler-index.js ${FUNCTION_DIR}/
 
-# Fargate worker scripts — copied from the build context (not builder stage)
-# because they may change independently of npm dependencies.
+# Fargate worker entry shim (node) — ECS task definitions override the
+# container entryPoint to this exact path. The worker implementation is
+# TypeScript under packages/.../worker/src, compiled into dist/ by the
+# tsc step in the builder stage; the shim imports the compiled output.
 COPY ./packages/artillery/lib/platform/aws-ecs/worker/loadgen-worker /artillery/loadgen-worker
-COPY ./packages/artillery/lib/platform/aws-ecs/worker/helpers.sh /artillery/helpers.sh
 
 RUN ln -s /artillery/node_modules /node_modules \
     && ln -s /artillery/node_modules/.bin/artillery /usr/local/bin/artillery \
