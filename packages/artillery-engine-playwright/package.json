@@ -14,10 +14,10 @@
   "author": "",
   "license": "MPL-2.0",
   "dependencies": {
-    "@playwright/browser-chromium": "1.62.1",
-    "@playwright/test": "1.62.1",
+    "@playwright/browser-chromium": "1.63.0",
+    "@playwright/test": "1.63.0",
     "debug": "^4.4.3",
-    "playwright": "1.62.1"
+    "playwright": "1.63.0"
   },
   "devDependencies": {
     "zx": "^8.1.4"
