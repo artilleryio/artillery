@@ -1,7 +1,6 @@
 import { createRequire } from 'node:module';
 import { promisify as p } from 'node:util';
 import { Args, Command, Flags } from '@oclif/core';
-import _csv from 'csv-parse';
 import createDebug from 'debug';
 import { CommonRunFlags } from '../cli/common-flags.ts';
 

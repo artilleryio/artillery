@@ -144,7 +144,7 @@
     "chokidar": "^3.6.0",
     "ci-info": "^4.3.1",
     "cli-table3": "^0.6.5",
-    "csv-parse": "^4.16.3",
+    "csv-parse": "^7.0.2",
     "datadog-metrics": "^0.12.1",
     "debug": "^4.4.3",
     "decompress-response": "^6.0.0",
