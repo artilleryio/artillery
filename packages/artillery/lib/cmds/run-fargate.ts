@@ -45,7 +45,7 @@ class RunCommand extends Command {
       } catch (_err) {
         console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
       }
-      dotenv.config({ path: dotEnvPath });
+      dotenv.config({ path: dotEnvPath, quiet: true });
     }
 
     const testRunId = process.env.ARTILLERY_TEST_RUN_ID || generateId('t');

@@ -136,7 +136,7 @@ RunCommand.runCommandImplementation = async (
     } catch (_err) {
       console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
     }
-    dotenv.config({ path: dotEnvPath });
+    dotenv.config({ path: dotEnvPath, quiet: true });
   }
 
   if (flags.output) {
