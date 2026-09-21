@@ -145,7 +145,6 @@
     "ci-info": "^4.3.1",
     "cli-table3": "^0.6.5",
     "cookie-parser": "^1.4.7",
-    "cross-spawn": "^7.0.6",
     "csv-parse": "^4.16.3",
     "datadog-metrics": "^0.12.1",
     "debug": "^4.4.3",
@@ -156,7 +155,6 @@
     "driftless": "^2.0.3",
     "esbuild-wasm": "^0.28.1",
     "espree": "^10.3.0",
-    "esprima": "^4.0.1",
     "eventemitter3": "^5.0.4",
     "fast-deep-equal": "^3.1.3",
     "filtrex": "^2.2.3",
@@ -170,7 +168,6 @@
     "joi": "^17.13.4",
     "js-yaml": "^3.15.1",
     "jsonpath-plus": "^10.3.0",
-    "jsonwebtoken": "^9.0.3",
     "lodash": "^4.18.0",
     "mixpanel": "^0.18.0",
     "moment": "^2.30.1",
@@ -190,8 +187,7 @@
     "tough-cookie": "^5.1.2",
     "uuid": "^11.1.1",
     "walk-sync": "^0.2.3",
-    "ws": "^7.5.13",
-    "yaml-js": "^0.3.1"
+    "ws": "^7.5.13"
   },
   "devDependencies": {
     "@aws-sdk/client-xray": "^3.1101.0",
@@ -203,7 +199,6 @@
     "get-bin-path": "^5.1.0",
     "nock": "^11.8.2",
     "proxy": "^2.1.1",
-    "rewiremock": "^3.14.3",
     "sinon": "^4.5.0",
     "socket.io": "^4.8.0",
     "zx": "^8.6.1"
