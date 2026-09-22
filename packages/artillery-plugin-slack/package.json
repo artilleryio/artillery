@@ -15,7 +15,8 @@
   "license": "MPL-2.0",
   "dependencies": {
     "debug": "^4.4.3",
-    "got": "^14.6.6"
+    "got": "^14.6.6",
+    "moment": "^2.31.0"
   },
   "type": "module"
 }
