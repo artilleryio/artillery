@@ -177,7 +177,7 @@ test('ramp with string inputs', async (t) => {
 });
 
 function testRamp(t, phaseSpec) {
-  const { promise, resolve } = Promise.withResolvers();
+  const { promise, resolve, reject } = Promise.withResolvers();
   const phaser = createPhaser([phaseSpec]);
 
   let expected = 0;
@@ -217,19 +217,27 @@ function testRamp(t, phaseSpec) {
     arrivals++;
   });
   phaser.on('done', () => {
-    const delta = Date.now() - startedAt;
-    assert.ok(delta >= phaseSpec.duration * 1000, util.format(
-        'rampTo ran for at least %s ms (delta: %s)',
-        phaseSpec.duration * 1000,
-        delta
-      ));
+    try {
+      const delta = Date.now() - startedAt;
+      const minMs = Number(phaseSpec.duration) * 1000;
+      // setTimeout(1000) can fire early; 15 sleeps can land ~1ms under 15000.
+      // A throw here used to skip resolve() and hang until the 420s timeout.
+      assert.ok(
+        delta >= minMs - 100,
+        util.format('rampTo ran for at least %s ms (delta: %s)', minMs, delta)
+      );
 
-    debug('expected: %s, arrived: %s', expected, arrivals);
+      debug('expected: %s, arrived: %s', expected, arrivals);
 
-    assert.ok(Math.abs(arrivals - expected) <= expected * 0.2, // large allowance
-      `seen arrivals within expected bounds: ${arrivals} vs ${expected}`);
+      assert.ok(
+        Math.abs(arrivals - expected) <= expected * 0.2, // large allowance
+        `seen arrivals within expected bounds: ${arrivals} vs ${expected}`
+      );
 
-    resolve();
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
   });
   startedAt = Date.now();
   phaser.run();
