@@ -2,10 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import url from 'node:url';
 import async from 'async';
 import createDebug from 'debug';
-import HttpsProxyAgent from 'https-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import _ from 'lodash';
 import WebSocket from 'ws';
 import { engine_util as engineUtil } from '../commons/index.ts';
@@ -398,10 +397,7 @@ function getWsConfig(config: Record<string, any>) {
 
     debug('Set proxy: %s, options: %s', proxyUrl, proxyOptions);
 
-    const agent = new (HttpsProxyAgent as any)({
-      ...url.parse(proxyUrl),
-      ...proxyOptions
-    });
+    const agent = new (HttpsProxyAgent as any)(proxyUrl, proxyOptions);
 
     options.agent = agent;
   }

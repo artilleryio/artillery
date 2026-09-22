@@ -100,7 +100,7 @@ test('WebSocket engine - proxy', async (t) => {
       assert.ok(websocketOptions.agent.proxy.href.startsWith(
           script.config.ws.proxy.url
         ), 'Gets the proxy url from the scenario');
-      assert.strictEqual(websocketOptions.agent.proxy.localAddress, script.config.ws.proxy.localAddress, 'Passes additional configuration properties to the agent constructor');
+      assert.strictEqual(websocketOptions.agent.connectOpts.localAddress, script.config.ws.proxy.localAddress, 'Passes additional configuration properties to the agent constructor');
 
       teardown(sandbox, restoreWebSocket);
       resolve();

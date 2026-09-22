@@ -162,7 +162,7 @@
     "got": "^14.6.6",
     "hot-shots": "^10.2.1",
     "hpagent": "^1.2.0",
-    "https-proxy-agent": "^5.0.0",
+    "https-proxy-agent": "^9.1.0",
     "jmespath": "^0.16.0",
     "joi": "^17.13.8",
     "js-yaml": "^4.3.2",
