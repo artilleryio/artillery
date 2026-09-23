@@ -274,11 +274,21 @@ export default class WSEngine {
 
       function one(context: any, cb: (err: any, context?: any) => void) {
         const { wsArgs, ...contextWithoutWsArgs } = context;
-        const ws = new _deps.WebSocket(
-          wsArgs.target,
-          wsArgs.subprotocols,
-          wsArgs.options
-        );
+        let ws: WebSocket;
+        try {
+          ws = new _deps.WebSocket(
+            wsArgs.target,
+            wsArgs.subprotocols,
+            wsArgs.options
+          );
+        } catch (err) {
+          debug(err);
+          ee.emit(
+            'error',
+            (err as Error).message || (err as NodeJS.ErrnoException).code
+          );
+          return cb(err, {});
+        }
 
         ws.on('open', () => {
           contextWithoutWsArgs.ws = ws;
@@ -330,7 +340,8 @@ function getWsOptions(config: Record<string, any>) {
     );
   }
 
-  return { options, subprotocols };
+  // ws v8 throws SyntaxError on duplicate protocol names.
+  return { options, subprotocols: [...new Set(subprotocols)] };
 }
 
 function getWsInstance(
