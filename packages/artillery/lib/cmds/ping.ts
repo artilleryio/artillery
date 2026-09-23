@@ -44,7 +44,7 @@ function parseSpec(str: string) {
     return result;
   }
 
-  const result: any = YAML.safeLoad(str);
+  const result: any = YAML.load(str);
   debug('parse: YAML:', str, result);
 
   if (typeof result !== 'object') {

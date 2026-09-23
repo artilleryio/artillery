@@ -30,7 +30,12 @@ afterEach(() => {
 test('Capture WS - JSON', (t, done) => {
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {
-      assert.match(message, /hello (ws|bar|foo)/, 'matches incoming message');
+      // ws v8 delivers text frames as Buffer on the Node 'message' event
+      assert.match(
+        String(message),
+        /hello (ws|bar|foo)/,
+        'matches incoming message'
+      );
       ws.send(JSON.stringify({ foo: 'bar', baz: 'foo' }));
     });
   });
@@ -62,13 +67,17 @@ test('Capture WS - JSON', (t, done) => {
 
   runner(script).then((ee) => {
     ee.on('done', (nr) => {
-      const report = SSMS.legacyReport(nr).report();
-
-      assert.strictEqual(Object.keys(report.errors).length, 0, 'There should be no WS errors');
-
-      ee.stop().then(() => {
-        done();
-      });
+      try {
+        const report = SSMS.legacyReport(nr).report();
+        assert.strictEqual(
+          Object.keys(report.errors).length,
+          0,
+          'There should be no WS errors'
+        );
+        ee.stop().then(() => done());
+      } catch (err) {
+        ee.stop().then(() => done(err));
+      }
     });
 
     ee.run();

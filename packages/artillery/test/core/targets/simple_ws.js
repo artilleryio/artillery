@@ -25,7 +25,9 @@ const createTestServer = (_port, _host = '127.0.0.1') => {
 
   function handleProtocols(protocols, _request) {
     const SUBPROTOCOL = 'my-custom-protocol';
-    if (protocols.indexOf(SUBPROTOCOL) > -1) {
+    // ws v8 passes a Set, not an array
+    const list = Array.isArray(protocols) ? protocols : [...protocols];
+    if (list.indexOf(SUBPROTOCOL) > -1) {
       console.log('setting', SUBPROTOCOL);
       return SUBPROTOCOL;
     } else {

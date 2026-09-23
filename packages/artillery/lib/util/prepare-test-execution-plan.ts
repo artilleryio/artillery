@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
-import { promisify as p } from 'node:util';
-import csv from 'csv-parse';
+import { parse as parseCsv } from 'csv-parse/sync';
 import createDebug from 'debug';
 
 const debug = createDebug('artillery');
@@ -163,8 +162,7 @@ async function readPayload(script: MergedScript): Promise<MergedScript> {
       },
       payloadSpec.options
     );
-    const parsedData = await (p(csv) as any)(data, csvOpts);
-    payloadSpec.data = parsedData;
+    payloadSpec.data = parseCsv(data, csvOpts);
   }
 
   return script;

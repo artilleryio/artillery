@@ -1,7 +1,6 @@
 import { createRequire } from 'node:module';
 import { promisify as p } from 'node:util';
 import { Args, Command, Flags } from '@oclif/core';
-import _csv from 'csv-parse';
 import createDebug from 'debug';
 import { CommonRunFlags } from '../cli/common-flags.ts';
 
@@ -137,7 +136,7 @@ RunCommand.runCommandImplementation = async (
     } catch (_err) {
       console.log(`WARNING: could not read dotenv file: ${flags.dotenv}`);
     }
-    dotenv.config({ path: dotEnvPath });
+    dotenv.config({ path: dotEnvPath, quiet: true });
   }
 
   if (flags.output) {

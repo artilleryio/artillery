@@ -171,17 +171,17 @@ function createLoopWithCount(
     let shouldContinue = true;
 
     A.whilst(
-      function test() {
+      function test(cb: (err: Error | null, truth?: boolean) => void) {
         if (abortEarly) {
-          return false;
+          return cb(null, false);
         }
         if (opts.whileTrue) {
-          return shouldContinue;
+          return cb(null, shouldContinue);
         }
         if (overValues !== null) {
-          return i !== overValues.length;
+          return cb(null, i !== overValues.length);
         } else {
-          return i < to || to === -1;
+          return cb(null, i < to || to === -1);
         }
       },
       function repeated(cb: (err?: Error | null, context?: any) => void) {

@@ -65,10 +65,9 @@ async function readScript(scriptPath: string): Promise<string> {
 }
 
 async function parseScript(data: string): Promise<TestScript> {
-  // js-yaml v3 types say string | object | undefined; scripts are
-  // objects. Structural validation happens later in the pipeline
-  // (validate-script).
-  return YAML.safeLoad(data) as TestScript;
+  // Scripts are objects. Structural validation happens later in the
+  // pipeline (validate-script).
+  return YAML.load(data) as TestScript;
 }
 
 async function addOverrides(

@@ -3,7 +3,7 @@ const assert = require('node:assert');
 let runner;
 const fs = require('node:fs');
 const path = require('node:path');
-const csv = require('csv-parse');
+const { parse: parseCsv } = require('csv-parse/sync');
 const async = require('async');
 let SSMS;
 const createTestServer = require('../targets/simple');
@@ -34,12 +34,9 @@ test('single payload', (t, done) => {
   const data = fs.readFileSync(
     path.join(__dirname, '../scripts/data/pets.csv')
   );
-  csv(data, (err, parsedData) => {
-    if (err) {
-      assert.fail(err);
-    }
+  const parsedData = parseCsv(data);
 
-    runner(script, parsedData, {}).then((ee) => {
+  runner(script, parsedData, {}).then((ee) => {
       ee.on('phaseStarted', (x) => {
         assert.ok(x, 'phaseStarted event emitted');
       });
@@ -66,7 +63,6 @@ test('single payload', (t, done) => {
 
       ee.run();
     });
-  });
 });
 
 test('multiple_payloads', (t, done) => {
@@ -80,10 +76,12 @@ test('multiple_payloads', (t, done) => {
       const payloadFile = path.resolve(path.dirname(fn), item.path);
 
       const data = fs.readFileSync(payloadFile, 'utf-8');
-      csv(data, (err, parsedData) => {
-        item.data = parsedData;
+      try {
+        item.data = parseCsv(data);
+        return callback(null, item);
+      } catch (err) {
         return callback(err, item);
-      });
+      }
     },
     (err, _results) => {
       if (err) {
