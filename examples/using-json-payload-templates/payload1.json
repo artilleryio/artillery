@@ -1,0 +1,13 @@
+{
+  "first_name": "{{ first_name }}",
+  "last_name": "{{ last_name }}",
+  "address": "{{ address }}",
+  "city": "{{ city }}",
+  "state": "{{ state }}",
+  "country": "{{ country }}",
+  "postcode": "{{ postcode }}",
+  "phone": "{{ phone }}",
+  "dob": "{{ dob }}",
+  "email": "{{ email }}",
+  "password": "{{ password }}"
+}
