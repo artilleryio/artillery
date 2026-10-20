@@ -111,6 +111,9 @@ jobs:
         run: |
           ARTILLERY_VERSION=$(node -e "console.log(require('./packages/artillery/package.json').version)")
           echo "ARTILLERY_VERSION=$ARTILLERY_VERSION" >> $GITHUB_OUTPUT
+      # publish --provenance returns before the version is installable
+      - name: Wait until npm registry serves the new version
+        run: .github/workflows/scripts/wait-for-npm-package.sh artillery "${{ steps.get-artillery-version.outputs.ARTILLERY_VERSION }}"
 
   # The image installs the just-published artillery@VERSION from the
   # registry, so it must run after the npm publish job. Stable releases only.
